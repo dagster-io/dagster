@@ -145,3 +145,7 @@ class AssetCheckExecutionContext:
     @_copy_docs_from_op_execution_context
     def is_subset(self):
         return self.op_execution_context.is_subset
+
+    @property
+    def partition_keys(self):
+        return self.op_execution_context.partition_keys

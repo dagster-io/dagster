@@ -18,6 +18,7 @@ from dagster import (
     ObserveResult,
     ResourceParam,
     SourceAsset,
+    StaticPartitionsDefinition,
     _check as check,
     asset,
     asset_check,
@@ -35,6 +36,11 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
+from dagster._core.test_utils import instance_for_test
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -45,6 +51,8 @@ def execute_assets_and_checks(
     resources=None,
     instance=None,
     selection: Optional[AssetSelection] = None,
+    tags: Optional[dict] = None,
+    partition_key: Optional[str] = None,
 ) -> ExecuteInProcessResult:
     defs = Definitions(
         assets=assets,
@@ -58,7 +66,9 @@ def execute_assets_and_checks(
         ],
     )
     job_def = defs.get_job_def("job1")
-    return job_def.execute_in_process(raise_on_error=raise_on_error, instance=instance)
+    return job_def.execute_in_process(
+        raise_on_error=raise_on_error, instance=instance, tags=tags, partition_key=partition_key
+    )
 
 
 def test_asset_check_decorator() -> None:
@@ -1195,3 +1205,55 @@ def test_nonsense_input_name() -> None:
         )
         def my_check(nonsense: int, asset2: int):
             pass
+
+
+def test_asset_check_downstream_of_single_run_backfill() -> None:
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    def asset1() -> None:
+        return None
+
+    @asset_check(asset=asset1)
+    def my_check(context: AssetCheckExecutionContext) -> AssetCheckResult:
+        for partition_key in context.partition_keys:
+            return AssetCheckResult(passed=True, partition_key=partition_key)
+
+    with instance_for_test() as instance:
+        result = execute_assets_and_checks(
+            assets=[asset1],
+            asset_checks=[my_check],
+            instance=instance,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "c"},
+        )
+        assert result.success
+        execution_records = instance.event_log_storage.get_asset_check_execution_history(
+            my_check.check_key, limit=10
+        )
+        assert len(execution_records) == 3
+
+        assert set(execution_record.partition for execution_record in execution_records) == {
+            "a",
+            "b",
+            "c",
+        }
+
+
+def test_asset_check_single_partition() -> None:
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c"]))
+    def asset1() -> None:
+        return None
+
+    @asset_check(asset=asset1)
+    def my_check(context: AssetCheckExecutionContext) -> AssetCheckResult:
+        return AssetCheckResult(passed=True, partition_key=next(iter(context.partition_keys)))
+
+    with instance_for_test() as instance:
+        result = execute_assets_and_checks(
+            assets=[asset1], asset_checks=[my_check], instance=instance, partition_key="a"
+        )
+
+        assert result.success
+        execution_records = instance.event_log_storage.get_asset_check_execution_history(
+            my_check.check_key, limit=10
+        )
+        assert len(execution_records) == 1
+        assert execution_records[0].partition == "a"

@@ -31,6 +31,7 @@ class AssetCheckResult(
             ("metadata", PublicAttr[Mapping[str, MetadataValue]]),
             ("severity", PublicAttr[AssetCheckSeverity]),
             ("description", PublicAttr[Optional[str]]),
+            ("partition_key", PublicAttr[Optional[str]]),
         ],
     ),
     EventWithMetadata,
@@ -63,6 +64,7 @@ class AssetCheckResult(
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
+        partition_key: Optional[str] = None,
     ):
         normalized_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -75,6 +77,7 @@ class AssetCheckResult(
             metadata=normalized_metadata,
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
             description=check.opt_str_param(description, "description"),
+            partition_key=check.opt_str_param(partition_key, "partition_key"),
         )
 
     def resolve_target_check_key(
@@ -169,6 +172,7 @@ class AssetCheckResult(
             target_materialization_data=target_materialization_data,
             severity=self.severity,
             description=self.description,
+            partition_key=self.partition_key,
         )
 
     def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":

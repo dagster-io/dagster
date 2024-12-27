@@ -1,10 +1,13 @@
-from typing import Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.events import AssetKey, MetadataValue
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.partition import PartitionsSubset
 
 
 @whitelist_for_serdes
@@ -14,16 +17,30 @@ class AssetCheckEvaluationPlanned(
         [
             ("asset_key", AssetKey),
             ("check_name", str),
+            ("partition_key", Optional[str]),
+            ("partition_subset", Optional["PartitionsSubset"]),
         ],
     )
 ):
     """Metadata for the event when an asset check is launched."""
 
-    def __new__(cls, asset_key: AssetKey, check_name: str):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        check_name: str,
+        partition_key: Optional[str],
+        partition_subset: Optional["PartitionsSubset"],
+    ):
+        from dagster._core.definitions.partition import PartitionsSubset
+
         return super(AssetCheckEvaluationPlanned, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             check_name=check.str_param(check_name, "check_name"),
+            partition_key=check.opt_str_param(partition_key, "partition_key"),
+            partition_subset=check.opt_inst_param(
+                partition_subset, "partition_subset", PartitionsSubset
+            ),
         )
 
     @property
@@ -68,6 +85,7 @@ class AssetCheckEvaluation(
             ),
             ("severity", AssetCheckSeverity),
             ("description", Optional[str]),
+            ("partition_key", Optional[str]),
         ],
     )
 ):
@@ -101,6 +119,7 @@ class AssetCheckEvaluation(
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
+        partition_key: Optional[str] = None,
     ):
         normed_metadata = normalize_metadata(
             check.dict_param(metadata, "metadata", key_type=str),
@@ -119,6 +138,7 @@ class AssetCheckEvaluation(
             ),
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
             description=check.opt_str_param(description, "description"),
+            partition_key=check.opt_str_param(partition_key, "partition_key"),
         )
 
     @property

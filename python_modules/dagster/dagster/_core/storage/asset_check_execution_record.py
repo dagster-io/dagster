@@ -56,6 +56,7 @@ class AssetCheckExecutionRecord(
             # Old records won't have an event if the status is PLANNED.
             ("event", Optional[EventLogEntry]),
             ("create_timestamp", float),
+            ("partition", Optional[str]),
         ],
     ),
     LoadableBy[AssetCheckKey],
@@ -68,6 +69,7 @@ class AssetCheckExecutionRecord(
         status: AssetCheckExecutionRecordStatus,
         event: Optional[EventLogEntry],
         create_timestamp: float,
+        partition: Optional[str] = None,
     ):
         check.inst_param(key, "key", AssetCheckKey)
         check.int_param(id, "id")
@@ -75,6 +77,7 @@ class AssetCheckExecutionRecord(
         check.inst_param(status, "status", AssetCheckExecutionRecordStatus)
         check.opt_inst_param(event, "event", EventLogEntry)
         check.float_param(create_timestamp, "create_timestamp")
+        check.opt_str_param(partition, "partition")
 
         event_type = event.dagster_event_type if event else None
         if status == AssetCheckExecutionRecordStatus.PLANNED:
@@ -101,6 +104,7 @@ class AssetCheckExecutionRecord(
             status=status,
             event=event,
             create_timestamp=create_timestamp,
+            partition=partition,
         )
 
     @property
@@ -125,6 +129,7 @@ class AssetCheckExecutionRecord(
                 else None
             ),
             create_timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
+            partition=row["partition"],
         )
 
     @classmethod

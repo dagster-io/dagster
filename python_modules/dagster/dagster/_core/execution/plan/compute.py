@@ -64,7 +64,8 @@ def create_step_outputs(
 
     step_outputs: List[StepOutput] = []
     for name, output_def in node.definition.output_dict.items():
-        asset_key = asset_layer.asset_key_for_output(handle, name)
+        asset_check_key = asset_layer.asset_check_key_for_output(handle, name)
+        asset_key = asset_layer.asset_key_for_output(handle, name) or asset_check_key.asset_key
         asset_node = asset_layer.asset_graph.get(asset_key) if asset_key else None
 
         step_outputs.append(
@@ -81,7 +82,7 @@ def create_step_outputs(
                     if asset_node and asset_node.key in asset_layer.asset_keys_for_node(handle)
                     else None,
                     is_asset_partitioned=bool(asset_node.partitions_def) if asset_node else False,
-                    asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
+                    asset_check_key=asset_check_key,
                 ),
             )
         )

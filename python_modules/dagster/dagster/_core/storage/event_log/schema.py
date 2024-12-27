@@ -162,7 +162,7 @@ AssetCheckExecutionsTable = db.Table(
     ),
     db.Column("asset_key", db.Text),
     db.Column("check_name", db.Text),
-    db.Column("partition", db.Text),  # Currently unused. Planned for future partition support
+    db.Column("partition", db.Text),
     db.Column("run_id", db.String(255)),
     db.Column("execution_status", db.String(255)),  # Planned, Success, or Failure
     # Either an AssetCheckEvaluationPlanned or AssetCheckEvaluation event

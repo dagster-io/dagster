@@ -2819,16 +2819,31 @@ class SqlEventLogStorage(EventLogStorage):
             AssetCheckEvaluationPlanned, check.not_none(event.dagster_event).event_specific_data
         )
         with self.index_connection() as conn:
-            conn.execute(
-                AssetCheckExecutionsTable.insert().values(
-                    asset_key=planned.asset_key.to_string(),
-                    check_name=planned.check_name,
-                    run_id=event.run_id,
-                    execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
-                    evaluation_event=serialize_value(event),
-                    evaluation_event_timestamp=self._event_insert_timestamp(event),
+            if planned.partition_subset is None:
+                conn.execute(
+                    AssetCheckExecutionsTable.insert().values(
+                        asset_key=planned.asset_key.to_string(),
+                        check_name=planned.check_name,
+                        run_id=event.run_id,
+                        execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                        evaluation_event=serialize_value(event),
+                        evaluation_event_timestamp=self._event_insert_timestamp(event),
+                        partition=planned.partition_key,
+                    )
                 )
-            )
+            else:
+                for partition in planned.partition_subset.get_partition_keys():
+                    conn.execute(
+                        AssetCheckExecutionsTable.insert().values(
+                            asset_key=planned.asset_key.to_string(),
+                            check_name=planned.check_name,
+                            run_id=event.run_id,
+                            execution_status=AssetCheckExecutionRecordStatus.PLANNED.value,
+                            evaluation_event=serialize_value(event),
+                            evaluation_event_timestamp=self._event_insert_timestamp(event),
+                            partition=partition,
+                        )
+                    )
 
     def _event_insert_timestamp(self, event):
         # Postgres requires a datetime that is in UTC but has no timezone info
@@ -2859,6 +2874,7 @@ class SqlEventLogStorage(EventLogStorage):
                         if evaluation.target_materialization_data
                         else None
                     ),
+                    partition=evaluation.partition_key,
                 )
             )
 
@@ -2875,6 +2891,7 @@ class SqlEventLogStorage(EventLogStorage):
                         AssetCheckExecutionsTable.c.asset_key == evaluation.asset_key.to_string(),
                         AssetCheckExecutionsTable.c.check_name == evaluation.check_name,
                         AssetCheckExecutionsTable.c.run_id == event.run_id,
+                        AssetCheckExecutionsTable.c.partition == evaluation.partition_key,
                     )
                 )
                 .values(
@@ -2921,6 +2938,7 @@ class SqlEventLogStorage(EventLogStorage):
                     AssetCheckExecutionsTable.c.execution_status,
                     AssetCheckExecutionsTable.c.evaluation_event,
                     AssetCheckExecutionsTable.c.create_timestamp,
+                    AssetCheckExecutionsTable.c.partition,
                 ]
             )
             .where(
@@ -2980,6 +2998,7 @@ class SqlEventLogStorage(EventLogStorage):
                 AssetCheckExecutionsTable.c.execution_status,
                 AssetCheckExecutionsTable.c.evaluation_event,
                 AssetCheckExecutionsTable.c.create_timestamp,
+                AssetCheckExecutionsTable.c.partition,
             ]
         ).select_from(
             AssetCheckExecutionsTable.join(

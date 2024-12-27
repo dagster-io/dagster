@@ -108,7 +108,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.partition import PartitionsDefinition
+    from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
     )
@@ -1353,17 +1353,16 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return execution_plan_snapshot_id
 
-    def _log_materialization_planned_event_for_asset(
+    def _extract_partition_key_and_subset_for_asset(
         self,
-        dagster_run: DagsterRun,
         asset_key: AssetKey,
-        job_name: str,
-        step: "ExecutionStepSnap",
-        output: "ExecutionStepOutputSnap",
+        tags: Mapping[str, str],
         asset_graph: Optional["BaseAssetGraph"],
-    ) -> None:
+        dagster_run: DagsterRun,
+        output: "ExecutionStepOutputSnap",
+        step: "ExecutionStepSnap",
+    ) -> Tuple[Optional[str], Optional["PartitionsSubset"]]:
         from dagster._core.definitions.partition import DynamicPartitionsDefinition
-        from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
         partition_range_start, partition_range_end = (
@@ -1412,6 +1411,22 @@ class DagsterInstance(DynamicPartitionsStore):
         partition = (
             partition_tag if check.not_none(output.properties).is_asset_partitioned else None
         )
+        return partition, partitions_subset
+
+    def _log_materialization_planned_event_for_asset(
+        self,
+        dagster_run: DagsterRun,
+        asset_key: AssetKey,
+        job_name: str,
+        step: "ExecutionStepSnap",
+        output: "ExecutionStepOutputSnap",
+        asset_graph: Optional["BaseAssetGraph"],
+    ) -> None:
+        from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
+
+        partition, partitions_subset = self._extract_partition_key_and_subset_for_asset(
+            asset_key, dagster_run.tags, asset_graph, dagster_run, output, step
+        )
         materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
             job_name,
             step.key,
@@ -1446,7 +1461,16 @@ class DagsterInstance(DynamicPartitionsStore):
                         )
                         target_asset_key = asset_check_key.asset_key
                         check_name = asset_check_key.name
-
+                        partition, partition_subset = (
+                            self._extract_partition_key_and_subset_for_asset(
+                                target_asset_key,
+                                dagster_run.tags,
+                                asset_graph,
+                                dagster_run,
+                                output,
+                                step,
+                            )
+                        )
                         event = DagsterEvent(
                             event_type_value=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
                             job_name=job_name,
@@ -1457,6 +1481,8 @@ class DagsterInstance(DynamicPartitionsStore):
                             event_specific_data=AssetCheckEvaluationPlanned(
                                 target_asset_key,
                                 check_name=check_name,
+                                partition_key=partition,
+                                partition_subset=partition_subset,
                             ),
                             step_key=step.key,
                         )
