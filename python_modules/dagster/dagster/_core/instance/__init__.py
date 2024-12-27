@@ -3189,6 +3189,11 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         # TODO(deepyaman): Abstract logic shared with `dagster-graphql`.
         from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+        from dagster._core.definitions.selector import (
+            PartitionRangeSelector,
+            PartitionsByAssetSelector,
+            PartitionsSelector,
+        )
         from dagster._core.execution.backfill import PartitionBackfill
 
         backfill_id = make_new_backfill_id()
@@ -3218,10 +3223,21 @@ class DagsterInstance(DynamicPartitionsStore):
                 description=description,
             )
         elif partitions_by_assets is not None:
+            partitions_by_asset_selectors = []
+            for asset_key, partitions in partitions_by_assets:
+                partitions_selector = (
+                    PartitionsSelector(ranges=[PartitionRangeSelector(*r) for r in partitions])
+                    if partitions is not None
+                    else None
+                )
+                partitions_by_asset_selectors.append(
+                    PartitionsByAssetSelector(asset_key=asset_key, partitions=partitions_selector)
+                )
+
             backfill = PartitionBackfill.from_partitions_by_assets(
                 backfill_id=backfill_id,
                 asset_graph=asset_graph,
-                partitions_by_assets=partitions_by_assets,
+                partitions_by_assets=partitions_by_asset_selectors,
                 backfill_timestamp=backfill_timestamp,
                 tags=tags,
                 dynamic_partitions_store=dynamic_partitions_store,
