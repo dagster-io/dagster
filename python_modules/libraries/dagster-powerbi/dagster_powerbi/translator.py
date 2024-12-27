@@ -78,7 +78,8 @@ class PowerBIContentData:
     properties: Dict[str, Any]
 
 
-class PowerBITranslatorData(NamedTuple):
+@record
+class PowerBITranslatorData:
     """A record representing a piece of content in PowerBI and the PowerBI workspace data.
     Includes the content's type and data as returned from the API.
     """
