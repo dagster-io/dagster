@@ -32,6 +32,7 @@ class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
 
 
 looker_specs = load_looker_asset_specs(
-    looker_resource, dagster_looker_translator=CustomDagsterLookerApiTranslator  # type: ignore
+    looker_resource,
+    dagster_looker_translator=CustomDagsterLookerApiTranslator,  # type: ignore
 )
 defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})
