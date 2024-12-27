@@ -3170,7 +3170,7 @@ class DagsterInstance(DynamicPartitionsStore):
         all_partitions: bool = False,
         title: Optional[str] = None,
         description: Optional[str] = None,
-    ) -> None:
+    ) -> str:
         """Launch a set of partition backfill runs.
 
         Args:
@@ -3180,6 +3180,9 @@ class DagsterInstance(DynamicPartitionsStore):
                 List of partitions for each asset key to backfill.
             partition_names (Optional[Sequence[str]]): List of partition names to backfill. Only
                 valid if `asset_selection` is provided.
+
+        Returns:
+            str: The ID of the backfill.
         """
         # TODO(deepyaman): Abstract logic shared with `dagster-graphql`.
         from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
@@ -3247,6 +3250,7 @@ class DagsterInstance(DynamicPartitionsStore):
         assert backfill_datetime is not None
 
         self.add_backfill(backfill)
+        return backfill_id
 
     @property
     def should_start_background_run_thread(self) -> bool:
