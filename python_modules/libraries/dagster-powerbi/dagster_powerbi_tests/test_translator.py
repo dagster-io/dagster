@@ -154,7 +154,7 @@ def test_translator_custom_metadata(workspace_data: PowerBIWorkspaceData) -> Non
 
     translator = MyCustomTranslator()
     asset_spec = translator.get_asset_spec(
-        PowerBITranslatorData(  # type: ignore
+        PowerBITranslatorData(
             content_data=dashboard,
             workspace_data=workspace_data,
         )
