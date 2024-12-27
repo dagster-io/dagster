@@ -22,7 +22,7 @@ tableau_workspace = TableauCloudWorkspace(
 class MyCustomTableauTranslator(DagsterTableauTranslator):
     def get_asset_spec(self, data: TableauContentData) -> dg.AssetSpec:
         # We create the default asset spec using super()
-        default_spec = super().get_asset_spec(data)
+        default_spec = super().get_asset_spec(data)  # type: ignore
         # We customize the metadata and asset key prefix for all assets, including sheets,
         # and we customize the team owner tag only for sheets.
         return default_spec.replace_attributes(

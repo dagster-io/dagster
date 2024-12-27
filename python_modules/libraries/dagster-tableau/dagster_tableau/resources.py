@@ -32,6 +32,7 @@ from dagster_tableau.translator import (
     TableauContentType,
     TableauMetadataSet,
     TableauTagSet,
+    TableauTranslatorData,
     TableauWorkspaceData,
 )
 
@@ -607,7 +608,7 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
         return self.workspace.fetch_tableau_workspace_data()
 
     def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:
-        translator = self.translator_cls(context=state)
+        translator = self.translator_cls()
 
         all_external_data = [
             *state.data_sources_by_id.values(),
@@ -616,7 +617,10 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
         ]
 
         all_external_asset_specs = [
-            translator.get_asset_spec(content) for content in all_external_data
+            translator.get_asset_spec(
+                TableauTranslatorData(content_data=content, workspace_data=state)
+            )
+            for content in all_external_data
         ]
 
         return Definitions(assets=all_external_asset_specs)
