@@ -1494,6 +1494,71 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
     assert all([run.status == DagsterRunStatus.SUCCESS] for run in runs)
 
 
+def test_pure_asset_backfill_with_multiple_assets_selected_using_python_api(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    asset_selection = [
+        AssetKey("asset_a"),
+        AssetKey("asset_b"),
+        AssetKey("asset_c"),
+        AssetKey("asset_d"),
+    ]
+
+    partition_keys = partitions_a.get_partition_keys()
+
+    backfill_id = instance.launch_backfill(
+        asset_graph=workspace_context.create_request_context().asset_graph,
+        asset_selection=asset_selection,
+        partition_names=partition_keys,
+        tags={"custom_tag_key": "custom_tag_value"},
+        all_partitions=False,
+        title=None,
+        description=None,
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 1
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+    run = instance.get_runs()[0]
+    assert run.tags[BACKFILL_ID_TAG] == backfill_id
+    assert run.tags["custom_tag_key"] == "custom_tag_value"
+    assert run.asset_selection == {AssetKey(["asset_a"])}
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 4
+    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    runs = instance.get_runs()
+
+    assert any([run.asset_selection == {AssetKey(["asset_b"])}] for run in runs)
+    assert any([run.asset_selection == {AssetKey(["asset_c"])}] for run in runs)
+    assert any([run.asset_selection == {AssetKey(["asset_d"])}] for run in runs)
+
+    assert all([run.status == DagsterRunStatus.SUCCESS] for run in runs)
+
+
 def test_pure_asset_backfill(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
