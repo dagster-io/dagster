@@ -533,14 +533,15 @@ class BaseTableauWorkspace(ConfigurableResource):
 @experimental
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
-    dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+    dagster_tableau_translator: Optional[DagsterTableauTranslator] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
     Args:
         workspace (Union[TableauCloudWorkspace, TableauServerWorkspace]): The Tableau workspace to fetch assets from.
-        dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
-            to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
+        dagster_tableau_translator (Optional[DagsterTableauTranslator]): The translator to use
+            to convert Tableau content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterTableauTranslator`.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
@@ -549,7 +550,7 @@ def load_tableau_asset_specs(
         return check.is_list(
             TableauWorkspaceDefsLoader(
                 workspace=initialized_workspace,
-                translator_cls=dagster_tableau_translator,
+                translator=dagster_tableau_translator or DagsterTableauTranslator(),
             )
             .build_defs()
             .assets,
@@ -598,7 +599,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 @record
 class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: BaseTableauWorkspace
-    translator_cls: Type[DagsterTableauTranslator]
+    translator: Type[DagsterTableauTranslator]
 
     @property
     def defs_key(self) -> str:
@@ -608,8 +609,6 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
         return self.workspace.fetch_tableau_workspace_data()
 
     def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:
-        translator = self.translator_cls()
-
         all_external_data = [
             *state.data_sources_by_id.values(),
             *state.sheets_by_id.values(),
@@ -617,7 +616,7 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
         ]
 
         all_external_asset_specs = [
-            translator.get_asset_spec(
+            self.translator.get_asset_spec(
                 TableauTranslatorData(content_data=content, workspace_data=state)
             )
             for content in all_external_data

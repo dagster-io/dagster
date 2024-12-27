@@ -214,7 +214,7 @@ def test_translator_custom_metadata(
         resource.build_client()
 
         all_asset_specs = load_tableau_asset_specs(
-            workspace=resource, dagster_tableau_translator=MyCustomTranslator
+            workspace=resource, dagster_tableau_translator=MyCustomTranslator()
         )
         asset_spec = next(spec for spec in all_asset_specs)
 
