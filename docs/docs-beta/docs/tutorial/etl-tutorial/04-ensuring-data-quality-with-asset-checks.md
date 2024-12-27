@@ -9,7 +9,7 @@ last_update:
 
 Data Quality is critical in data pipelines. Much like in a factory producing cars, inspecting parts after they complete certain steps ensures that defects are caught before the car is completely assembled. 
 
-In Dagster, you define [asset checks](guides/build/test/asset-checks) in a similar way that you would define an Asset. In this step you will:
+In Dagster, you define [asset checks](/guides/test/asset-checks) in a similar way that you would define an Asset. In this step you will:
 
 - Define an asset check
 - Execute that asset check in the UI
@@ -50,4 +50,4 @@ Asset checks will run when an asset is materialized, but asset checks can also b
 
 ## Next steps
 
-- Continue this tutorial with [Asset Checks](/tutorial/04-ensuring-data-quality-with-asset-checks)
+- Continue this tutorial with [Asset Checks](/tutorial/etl-tutorial/04-ensuring-data-quality-with-asset-checks)

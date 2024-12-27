@@ -130,9 +130,7 @@ To make sure Dagster and its dependencies were installed correctly, navigate to 
 
 followed by a bash code snippet for `dagster dev`
 
-[screenshot of ui]
-
 
 ## Next steps
 
-- Continue this tutorial by [creating and materializing assets](/tutorial/02-create-and-materialize-assets)
+- Continue this tutorial by [creating and materializing assets](/tutorial/etl-tutorial/02-create-and-materialize-assets)

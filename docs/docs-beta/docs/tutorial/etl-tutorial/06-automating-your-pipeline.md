@@ -7,7 +7,7 @@ last_update:
 
 # Automation
 
-There are several ways to automate pipelines and assets [in Dagster](guides/automation). 
+There are several ways to automate pipelines and assets [in Dagster](/guides/automate). 
 
 In this step you will:
 
@@ -16,7 +16,7 @@ In this step you will:
 
 ## 1. Automating asset materialization 
 
-Ideally, the reporting assets created in the last step should refresh whenever the upstream data is updated. This can be done simply using [declarative automation](guides/declarative-automation) and adding an automation condition to the asset definition.
+Ideally, the reporting assets created in the last step should refresh whenever the upstream data is updated. This can be done simply using [declarative automation](/guides/automate/declarative-automation) and adding an automation condition to the asset definition.
 
 Update the `monthly_sales_performance` asset to have the automation condition in the decorator:
 
@@ -24,7 +24,7 @@ Update the `monthly_sales_performance` asset to have the automation condition in
 
 Do the same thing for `product_performance`:
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="217" lineEnd="267"/>
+<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="216" lineEnd="267"/>
 
 ## 2. Scheduled Jobs
 
@@ -32,7 +32,7 @@ CRON based schedules are common in data orchestration. For our pipeline, assume 
 
 Copy the following code underneath the `product performance` asset:
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="267" lineEnd="273"/>
+<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="268" lineEnd="273"/>
 
 ## 3. Running the entire pipeline
 
@@ -54,4 +54,4 @@ Additionally if you navigate to the runs tab you will see that materializations 
 
 ## Next steps
 
-- Continue this tutorial with adding a [sensor based asset](/tutorial/07-creating-a-sensor-asset)
+- Continue this tutorial with adding a [sensor based asset](/tutorial/etl-tutorial/07-creating-a-sensor-asset)

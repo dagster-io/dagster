@@ -5,8 +5,6 @@ last_update:
   author: Alex Noonan
 ---
 
-# Refactoring code
-
 Many engineers generally leave something alone once its working as expected. But the first time you do something is rarely the best implementation of a use case and all projects benefit from incremental improvements.
 
 ## Splitting up project structure

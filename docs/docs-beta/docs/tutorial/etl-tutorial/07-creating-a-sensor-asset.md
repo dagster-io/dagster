@@ -5,9 +5,7 @@ last_update:
   author: Alex Noonan
 ---
 
-# Sensors 
-
-[Sensors](guides/sensors) in Dagster are a powerful tool for automating workflows based on external events or conditions. They allow you to trigger jobs when specific criteria are met, making them essential for event-driven automation. 
+[Sensors](/guides/automate/sensors) in Dagster are a powerful tool for automating workflows based on external events or conditions. They allow you to trigger jobs when specific criteria are met, making them essential for event-driven automation. 
 
 Event driven automations to support situations where jobs occur at irregular cadences or in rapid succession.  is the building block in Dagster you can use to support this. 
 
@@ -23,7 +21,7 @@ In this step you will:
 
 ## 1. Event Driven Asset
 
-For our pipeline, we want to model a situation where an executive wants a pivot table report of sales results by department and product. They want that processed in real time from their request and it isnt a high priority to build the reporting to have this available and refreshing. 
+For our pipeline, we want to model a situation where an executive wants a pivot table report of sales results by department and product. They want that processed in real time from their request and it isn't a high priority to build the reporting to have this available and refreshing. 
 
 For this asset we need to define the structure of the request that it is expecting in the materialization context. 
 
@@ -70,4 +68,4 @@ sensors include the following elements:
 
 Now that we have our complete project, the next step is to refactor the project into more a more manageable structure so we can add to it as needed. 
 
-Finish the tutorial with [refactoring the project](tutorial/refactoring-the-project)
+Finish the tutorial with [refactoring the project](/tutorial/etl-tutorial/08-refactoring-the-project)
