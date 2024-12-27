@@ -1,7 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Box} from '@dagster-io/ui-components';
-import React, {useMemo} from 'react';
+import {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
@@ -15,15 +15,21 @@ import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
+import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 export const AssetsOverviewRoot = ({
   writeAssetVisit,
   headerBreadcrumbs,
   documentTitlePrefix,
+  renderExtraSidebarEntries,
 }: {
   writeAssetVisit?: (assetKey: AssetKey) => void;
   headerBreadcrumbs: BreadcrumbProps[];
   documentTitlePrefix: string;
+  renderExtraSidebarEntries?: (
+    repoAddress: {name: string; location: string},
+    assetNode: AssetNodeDefinitionFragment,
+  ) => React.ReactNode;
 }) => {
   useTrackPageView();
 
@@ -76,6 +82,7 @@ export const AssetsOverviewRoot = ({
       headerBreadcrumbs={headerBreadcrumbs}
       writeAssetVisit={writeAssetVisit}
       currentPath={currentPath}
+      renderExtraSidebarEntries={renderExtraSidebarEntries}
     />
   );
 };
