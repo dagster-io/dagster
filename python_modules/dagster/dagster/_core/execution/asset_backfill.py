@@ -1532,8 +1532,6 @@ def execute_asset_backfill_iteration_inner(
         else "No asset partitions to request."
     )
 
-    asset_partitions_to_request = set(asset_subset_to_request.iterate_asset_partitions())
-
     if len(not_requested_and_reasons) > 0:
 
         def _format_graph_subset(asset_graph_subset: AssetGraphSubset):
@@ -1555,7 +1553,7 @@ def execute_asset_backfill_iteration_inner(
         )
 
     run_requests = build_run_requests_with_backfill_policies(
-        asset_partitions=asset_partitions_to_request,
+        asset_subset_to_request=asset_subset_to_request,
         asset_graph=asset_graph,
         dynamic_partitions_store=instance_queryer,
     )
