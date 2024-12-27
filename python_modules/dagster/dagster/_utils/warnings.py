@@ -15,6 +15,31 @@ _warnings_on = ContextVar("_warnings_on", default=True)
 # ########################
 
 
+class PreviewWarning(FutureWarning):
+    pass
+
+
+def preview_warning(
+    subject: str,
+    additional_warn_text: Optional[str] = None,
+    stacklevel: int = 3,
+):
+    if not _warnings_on.get():
+        return
+
+    warnings.warn(
+        f"{subject} is a preview in early testing phase with frequent changes, not recommended for production use."
+        + ((" " + additional_warn_text) if additional_warn_text else ""),
+        category=PreviewWarning,
+        stacklevel=stacklevel,
+    )
+
+
+# ########################
+# ##### SUPERSEDED
+# ########################
+
+
 class SupersessionWarning(FutureWarning):
     pass
 
