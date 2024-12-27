@@ -1,0 +1,5 @@
+steps:
+  - label: "Example Test - pass"
+    command: echo "Hello! (from mono repo branch)"
+    notify:
+      - slack: "#test-buildkite-dec-2024"
