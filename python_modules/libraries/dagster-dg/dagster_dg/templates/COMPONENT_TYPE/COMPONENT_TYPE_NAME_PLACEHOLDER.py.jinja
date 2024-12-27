@@ -1,12 +1,11 @@
 from dagster import Definitions
 from dagster_components import (
     Component,
-    ComponentRegistry,
     ComponentLoadContext,
-    component,
+    component_type,
 )
 
-@component(name="{{ name }}")
+@component_type(name="{{ name }}")
 class {{ component_type_class_name }}(Component):
 
     @classmethod
