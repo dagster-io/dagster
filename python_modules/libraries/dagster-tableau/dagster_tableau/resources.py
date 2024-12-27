@@ -503,7 +503,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
         resource_key = "tableau"
 
-        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator)
+        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator())
 
         non_executable_asset_specs = [
             spec
@@ -599,7 +599,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 @record
 class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: BaseTableauWorkspace
-    translator: Type[DagsterTableauTranslator]
+    translator: DagsterTableauTranslator
 
     @property
     def defs_key(self) -> str:
