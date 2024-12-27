@@ -142,8 +142,8 @@ def test_translator_semantic_model_many_tables(second_workspace_data: PowerBIWor
 
 
 class MyCustomTranslator(DagsterPowerBITranslator):
-    def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
-        default_spec = super().get_asset_spec(data)  # type: ignore
+    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
         ).merge_attributes(metadata={"custom": "metadata"})

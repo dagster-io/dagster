@@ -25,7 +25,7 @@ from dagster._utils.test.definitions import lazy_definitions
 from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.assets import build_semantic_model_refresh_asset_definition
 from dagster_powerbi.resource import BASE_API_URL, PowerBIToken, load_powerbi_asset_specs
-from dagster_powerbi.translator import DagsterPowerBITranslator, PowerBIContentData
+from dagster_powerbi.translator import DagsterPowerBITranslator, PowerBITranslatorData
 
 from dagster_powerbi_tests.conftest import SAMPLE_SEMANTIC_MODEL
 
@@ -85,8 +85,8 @@ def test_translator_dashboard_spec(workspace_data_api_mocks: None, workspace_id:
 
 
 class MyCustomTranslator(DagsterPowerBITranslator):
-    def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
-        default_spec = super().get_asset_spec(data)  # type: ignore
+    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
         ).merge_attributes(metadata={"custom": "metadata"})
