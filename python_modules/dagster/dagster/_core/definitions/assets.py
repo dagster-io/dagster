@@ -406,6 +406,33 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         # invoke against self to allow assets def information to be used
         return direct_invocation_result(self, *args, **kwargs)
 
+    @staticmethod
+    def from_node_with_specs(
+        node_def: NodeDefinition,
+        specs: Sequence[AssetSpec],
+        *,
+        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
+        can_subset: bool = False,
+        backfill_policy: Optional[BackfillPolicy] = None,
+        check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+    ) -> "AssetsDefinition":
+        return AssetsDefinition.dagster_internal_init(
+            keys_by_input_name=keys_by_input_name or {},
+            keys_by_output_name=keys_by_output_name or {},
+            node_def=node_def,
+            specs=specs,
+            can_subset=can_subset,
+            selected_asset_keys=None,  # node has no subselection info
+            check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_keys=None,
+            is_subset=False,
+            resource_defs=resource_defs,
+            backfill_policy=backfill_policy,
+            execution_type=AssetExecutionType.MATERIALIZATION,
+        )
+
     @public
     @experimental_param(param="resource_defs")
     @staticmethod
@@ -755,7 +782,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             partitions_def=partitions_def,
         )
 
-        return AssetsDefinition.dagster_internal_init(
+        return AssetsDefinition.from_node_with_specs(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name_with_prefix,
             node_def=node_def,
@@ -764,12 +791,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
             can_subset=can_subset,
-            selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name=check_specs_by_output_name,
-            selected_asset_check_keys=None,
-            is_subset=False,
             specs=specs,
-            execution_type=AssetExecutionType.MATERIALIZATION,
         )
 
     @public
@@ -1599,7 +1622,7 @@ def _infer_keys_by_output_names(
     return inferred_keys_by_output_names
 
 
-def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None):
+def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[str]] = None, return_outputs: bool) -> None:
     """Ensure that all leaf nodes are mapped to graph outputs."""
     from dagster._core.definitions.graph_definition import GraphDefinition, create_adjacency_lists
 

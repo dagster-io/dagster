@@ -1520,3 +1520,18 @@ def test_graph_inputs_error():
         assert "'_' decorated function does not have argument(s) 'start'" in str(err)
         # Ensure that dagster type code path doesn't throw since we're using Nothing type.
         assert "except for Ins that have the Nothing dagster_type" not in str(err)
+
+def test_graph_asset_no_return() -> None:
+    @op
+    def foo():
+        return 1
+
+    @graph_asset(return_outputs=False)
+    def bar():
+        foo()
+
+    result = materialize_to_memory([bar])
+    assert result.success
+    assert result.output_for_node("bar.foo") == 1
+
+    
