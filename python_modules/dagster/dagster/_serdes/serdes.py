@@ -15,6 +15,7 @@ Why not pickle?
 
 import collections.abc
 import dataclasses
+import os
 from abc import ABC, abstractmethod
 from dataclasses import is_dataclass
 from enum import Enum
@@ -59,6 +60,8 @@ from dagster._record import (
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
+
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 if TYPE_CHECKING:
     # There is no actual class backing Dataclasses, _typeshed provides this
@@ -152,6 +155,17 @@ class SerializableNonScalarKeyMapping(Mapping[_K, _V]):
 ###################################################################################################
 
 
+def _is_integration_class(classname: str) -> bool:
+    module_name = classname.split(".")[0]
+    return module_name.startswith("dagster_") and module_name not in (
+        "dagster_test",
+        "dagster_pipes",
+        "dagster_graphql",
+        "dagster_webserver",
+        "dagster_cloud",
+    )
+
+
 class WhitelistMap(NamedTuple):
     object_serializers: Dict[str, "ObjectSerializer"]
     object_deserializers: Dict[str, "ObjectSerializer"]
@@ -234,6 +248,18 @@ class WhitelistMap(NamedTuple):
             object_deserializers={},
             enum_serializers={},
             object_type_map={},
+        )
+
+    def without_integration_entries(self) -> "WhitelistMap":
+        return WhitelistMap(
+            object_serializers={
+                name: serializer
+                for name, serializer in self.object_serializers.items()
+                if not _is_integration_class(serializer.klass.__module__)
+            },
+            object_deserializers=self.object_deserializers,
+            enum_serializers=self.enum_serializers,
+            object_type_map=self.object_type_map,
         )
 
 
@@ -961,17 +987,49 @@ def _transform_for_serialization(
             )
         enum_serializer = whitelist_map.enum_serializers[klass_name]
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
+    print(val)
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))
         or isinstance(val, BaseModel)
         or (is_dataclass(val) and not isinstance(val, type))
     ):
         klass_name = val.__class__.__name__
+        print(val.__class__.__name__)
+        # if IS_BUILDKITE:
+        #     import inspect
+
+        #     print(descent_path)
+        #     module = inspect.getmodule(val)
+        #     module_name = module.__name__.split(".")[0] if module else None
+        #     is_integration_class = (
+        #         module_name
+        #         and module_name.startswith("dagster_")
+        #         and module_name
+        #         not in (
+        #             "dagster_test",
+        #             "dagster_pipes",
+        #             "dagster_graphql",
+        #             "dagster_webserver",
+        #             "dagster_cloud",
+        #         )
+        #     )
+        #     if is_integration_class:
+        #         raise SerializationError()
+
+        print(whitelist_map.object_serializers.keys())
         if klass_name not in whitelist_map.object_serializers:
             raise SerializationError(
                 "Can only serialize whitelisted namedtuples, received"
                 f" {val}.\nDescent path: {descent_path}",
             )
+
+        if IS_BUILDKITE:
+            return object_handler(
+                cast(SerializableObject, val),
+                whitelist_map.without_integration_entries(),
+                descent_path,
+            )
+
         return object_handler(
             cast(SerializableObject, val),
             whitelist_map,
