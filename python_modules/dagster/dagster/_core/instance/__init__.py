@@ -3257,8 +3257,25 @@ class DagsterInstance(DynamicPartitionsStore):
                 "Backfill requested without specifying partition set selector or asset selection"
             )
 
-        # TODO(deepyaman): Assert valid asset partition backfill
-        assert backfill_datetime is not None
+        # Check that the partition keys can be found in the asset graph.
+        # TODO(deepyaman): Abstract logic shared with `dagster-graphql`.
+        asset_backfill_data = backfill.asset_backfill_data
+        if asset_backfill_data:
+            partition_subset_by_asset_key = (
+                asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+            )
+            for asset_key, partition_subset in partition_subset_by_asset_key.items():
+                partitions_def = asset_graph.get(asset_key).partitions_def
+                if not partitions_def:
+                    continue
+
+                invalid_keys = set(partition_subset.get_partition_keys()) - set(
+                    partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
+                )
+                if invalid_keys:
+                    raise DagsterError(
+                        f"Partition keys `{sorted(invalid_keys)}` could not be found."
+                    )
 
         self.add_backfill(backfill)
         return backfill_id
