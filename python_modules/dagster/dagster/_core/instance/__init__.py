@@ -40,6 +40,7 @@ from dagster._core.definitions.asset_check_evaluation import (
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.utils import check_valid_title
 from dagster._core.errors import (
     DagsterError,
     DagsterHomeNotSetError,
@@ -3213,6 +3214,8 @@ class DagsterInstance(DynamicPartitionsStore):
                 "partitions_by_assets cannot be used together with asset_selection or"
                 " partition_names or if all_partitions is True"
             )
+
+        check_valid_title(title)
 
         if asset_selection is not None:
             backfill = PartitionBackfill.from_asset_partitions(
