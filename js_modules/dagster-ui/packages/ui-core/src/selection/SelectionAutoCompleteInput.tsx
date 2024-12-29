@@ -102,6 +102,10 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         showHint(instance, hintRef.current);
       });
 
+      cmInstance.current.on('focus', (instance: Editor) => {
+        showHint(instance, hintRef.current);
+      });
+
       cmInstance.current.on('cursorActivity', (instance: Editor) => {
         applyStaticSyntaxHighlighting(instance);
         showHint(instance, hintRef.current);

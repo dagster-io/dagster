@@ -13,11 +13,16 @@ export const useAssetSelectionInput = <
     key: {path: Array<string>};
     definition?: FilterableAssetDefinition | null;
   },
->(
-  assets: T[],
-  assetsLoading?: boolean,
-) => {
-  const [assetSelection, setAssetSelection] = useAssetSelectionState();
+>({
+  assets,
+  assetsLoading,
+  syncCatalogView = true,
+}: {
+  assets: T[];
+  assetsLoading?: boolean;
+  syncCatalogView?: boolean;
+}) => {
+  const [assetSelection, setAssetSelection] = useAssetSelectionState({syncCatalogView});
 
   const {graphQueryItems, loading, filtered} = useAssetSelectionFiltering({
     assetSelection,
