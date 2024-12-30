@@ -1,0 +1,11 @@
+langchain
+gql
+python-dotenv
+langchain-community
+langchain-openai
+dagster
+chromadb
+tenacity
+tqdm
+bs4
+lxml
