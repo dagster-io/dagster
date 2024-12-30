@@ -27,6 +27,8 @@ interface AssetSelectionInputProps {
 
 const FUNCTIONS = ['sinks', 'roots'];
 
+const linter = createSelectionLinter({Lexer: AssetSelectionLexer, Parser: AssetSelectionParser});
+
 export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInputProps) => {
   const attributesMap = useMemo(() => {
     const assetNamesSet: Set<string> = new Set();
@@ -87,10 +89,6 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
     };
   }, [assets]);
 
-  const linter = useMemo(
-    () => createSelectionLinter({Lexer: AssetSelectionLexer, Parser: AssetSelectionParser}),
-    [],
-  );
   return (
     <WrapperDiv>
       <SelectionAutoCompleteInput

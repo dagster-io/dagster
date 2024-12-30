@@ -1,6 +1,6 @@
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
-export function useAssetSelectionState(..._any: any[]) {
+export function useAssetSelectionState() {
   return useQueryPersistedState<string>({
     queryKey: 'asset-selection',
     defaults: {['asset-selection']: ''},

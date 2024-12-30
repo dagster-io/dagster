@@ -16,13 +16,11 @@ export const useAssetSelectionInput = <
 >({
   assets,
   assetsLoading,
-  syncCatalogView = true,
 }: {
   assets: T[];
   assetsLoading?: boolean;
-  syncCatalogView?: boolean;
 }) => {
-  const [assetSelection, setAssetSelection] = useAssetSelectionState({syncCatalogView});
+  const [assetSelection, setAssetSelection] = useAssetSelectionState();
 
   const {graphQueryItems, loading, filtered} = useAssetSelectionFiltering({
     assetSelection,
