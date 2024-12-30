@@ -379,13 +379,13 @@ def execute_k8s_job(
             )
 
             while True:
-                log_stream = watch.stream(
-                    api_client.core_api.read_namespaced_pod_log,
-                    name=pod_to_watch,
-                    namespace=namespace,
-                    container=container_name,
-                )
                 try:
+                    log_stream = watch.stream(
+                        api_client.core_api.read_namespaced_pod_log,
+                        name=pod_to_watch,
+                        namespace=namespace,
+                        container=container_name,
+                    )
                     while True:
                         if timeout and time.time() - start_time > timeout:
                             watch.stop()
