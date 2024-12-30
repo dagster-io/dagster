@@ -11,9 +11,12 @@ from typing import Any, Generator, List
 
 import pytest
 import requests
+from azure.identity import ClientSecretCredential
+from azure.storage.blob import ContainerClient
 from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
 from dagster._utils import process_is_alive
+from dagster_azure.blob.utils import create_blob_client
 
 
 def integration_test_dir() -> Path:
@@ -30,6 +33,12 @@ def _dagster_is_ready(port: int) -> bool:
 
 def path_to_dagster_yamls() -> Path:
     return Path(__file__).parent / "dagster-yamls"
+
+
+def delete_blobs_with_prefix(prefix: str) -> None:
+    container_client = get_container_client(get_credentials())
+    for blob in container_client.list_blobs(name_starts_with=prefix):
+        container_client.delete_blob(blob.name)
 
 
 @pytest.fixture(name="dagster_yaml")
@@ -58,8 +67,11 @@ def setup_dagster_home(dagster_yaml: Path) -> Generator[str, None, None]:
 @pytest.fixture
 def prefix_env() -> Generator[str, None, None]:
     prefix = f"prefix_{uuid.uuid4().hex}"
-    with environ({"TEST_AZURE_LOG_PREFIX": prefix}):
-        yield prefix
+    try:
+        with environ({"TEST_AZURE_LOG_PREFIX": prefix}):
+            yield prefix
+    finally:
+        delete_blobs_with_prefix(prefix)
 
 
 @pytest.fixture(name="dagster_dev")
@@ -95,3 +107,28 @@ def stand_up_dagster(
     finally:
         if process_is_alive(process.pid):
             os.killpg(process.pid, signal.SIGKILL)
+
+
+def get_credentials() -> ClientSecretCredential:
+    return ClientSecretCredential(
+        tenant_id=os.environ["TEST_AZURE_TENANT_ID"],
+        client_id=os.environ["TEST_AZURE_CLIENT_ID"],
+        client_secret=os.environ["TEST_AZURE_CLIENT_SECRET"],
+    )
+
+
+def get_container_client(credentials: ClientSecretCredential) -> ContainerClient:
+    return create_blob_client(
+        storage_account="chriscomplogmngr",
+        credential=credentials,
+    ).get_container_client("mycontainer")
+
+
+@pytest.fixture(name="credentials")
+def setup_credentials() -> Generator[ClientSecretCredential, None, None]:
+    yield get_credentials()
+
+
+@pytest.fixture(name="container_client")
+def setup_container_client() -> Generator[ContainerClient, None, None]:
+    yield get_container_client(get_credentials())
