@@ -1,17 +1,14 @@
 from functools import total_ordering
 from heapq import heapify, heappop, heappush
-from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple, Sequence, Tuple
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 
 if TYPE_CHECKING:
     from dagster._core.asset_graph_view.entity_subset import EntitySubset
-    from dagster._core.definitions.asset_key import AssetKey
 
 
 class AssetGraphViewBfsFilterConditionResult(NamedTuple):
@@ -97,55 +94,24 @@ def bfs_filter_asset_graph_view(
     return result, failed_reasons
 
 
-def sort_key_for_asset_key(asset_graph: BaseAssetGraph, asset_key: "AssetKey") -> float:
-    """Returns an integer sort key such that asset partition ranges are sorted in
-    the order in which they should be materialized. For assets without a time
-    window partition dimension, this is always 0.
-    Assets with a time window partition dimension will be sorted from newest to oldest, unless they
-    have a self-dependency, in which case they are sorted from oldest to newest.
-    """
-    partitions_def = asset_graph.get(asset_key).partitions_def
-    time_partitions_def = get_time_partitions_def(partitions_def)
-    if time_partitions_def is None:
-        return 0
-
-    # A sort key such that time window partitions are sorted from oldest start time to newest start time
-    start_timestamp = time_partitions_def.start_ts.timestamp
-
-    if asset_graph.get(asset_key).has_self_dependency:
-        # sort self dependencies from oldest to newest, as older partitions must exist before
-        # new ones can execute
-        return start_timestamp
-    else:
-        # sort non-self dependencies from newest to oldest, as newer partitions are more relevant
-        # than older ones
-        return -1 * start_timestamp
-
-
 class ToposortedPriorityQueue:
     """Queue that returns parents before their children."""
 
     @total_ordering
     class QueueItem(NamedTuple):
         level: int
-        partition_sort_key: Optional[float]
+        sort_key: str
         asset_graph_subset: AssetGraphSubset
 
         def __eq__(self, other: object) -> bool:
             if isinstance(other, ToposortedPriorityQueue.QueueItem):
-                return (
-                    self.level == other.level
-                    and self.partition_sort_key == other.partition_sort_key
-                )
+                return self.level == other.level and self.sort_key == other.sort_key
             return False
 
         def __lt__(self, other: object) -> bool:
             if isinstance(other, ToposortedPriorityQueue.QueueItem):
                 return self.level < other.level or (
-                    self.level == other.level
-                    and self.partition_sort_key is not None
-                    and other.partition_sort_key is not None
-                    and self.partition_sort_key < other.partition_sort_key
+                    self.level == other.level and self.sort_key < other.sort_key
                 )
             raise TypeError()
 
@@ -213,7 +179,7 @@ class ToposortedPriorityQueue:
 
         return ToposortedPriorityQueue.QueueItem(
             level,
-            sort_key_for_asset_key(self._asset_graph_view.asset_graph, asset_key),
+            asset_key.to_string(),
             asset_graph_subset=asset_graph_subset,
         )
 

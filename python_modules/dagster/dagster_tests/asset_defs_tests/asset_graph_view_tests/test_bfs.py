@@ -56,7 +56,7 @@ def test_bfs_filter_dependency_chain():
     )
 
     def condition_fn(subset, visited):
-        # Only allow asset1 and asset3
+        # Only allow asset1 and asset2
         if AssetKey("asset3") in subset.asset_keys:
             assert visited == AssetGraphSubset.from_entity_subsets(
                 [
