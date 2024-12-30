@@ -478,10 +478,13 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
         task_overrides = self._get_task_overrides(container_context, run)
 
+        environment = self._environment(container_context)
+
         container_overrides: List[Dict[str, Any]] = [
             {
                 "name": self.get_container_name(container_context),
                 "command": command,
+                "environment": environment,
                 # containerOverrides expects cpu/memory as integers
                 **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
             }
