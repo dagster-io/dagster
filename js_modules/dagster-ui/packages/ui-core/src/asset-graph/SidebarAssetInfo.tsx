@@ -274,6 +274,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     backfillPolicy {
       description
     }
+    pools
     partitionDefinition {
       description
     }

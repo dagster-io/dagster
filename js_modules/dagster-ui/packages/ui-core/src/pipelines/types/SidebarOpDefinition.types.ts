@@ -7,6 +7,7 @@ export type SidebarOpDefinitionFragment_CompositeSolidDefinition = {
   id: string;
   name: string;
   description: string | null;
+  pools: Array<string>;
   inputMappings: Array<{
     __typename: 'InputMapping';
     definition: {__typename: 'InputDefinition'; name: string};
@@ -86,6 +87,7 @@ export type SidebarOpDefinitionFragment_SolidDefinition = {
   __typename: 'SolidDefinition';
   name: string;
   description: string | null;
+  pools: Array<string>;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
   configField: {
     __typename: 'ConfigTypeField';

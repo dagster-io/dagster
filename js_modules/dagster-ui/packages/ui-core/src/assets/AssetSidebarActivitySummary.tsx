@@ -15,6 +15,7 @@ import {useGroupedEvents} from './groupByPartition';
 import {RecentAssetEvents} from './useRecentAssetEvents';
 import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
+import {PoolTag} from '../instance/PoolTag';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 
 interface Props {
@@ -42,6 +43,7 @@ export const AssetSidebarActivitySummary = ({
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isObservable ? observations[0] : materializations[0];
+  const pools = asset.pools || [];
 
   useEffect(() => {
     refetch();
@@ -59,6 +61,16 @@ export const AssetSidebarActivitySummary = ({
           <CurrentRunsBanner stepKey={stepKey} border="top" liveData={liveData} />
         </>
       )}
+
+      {pools.length ? (
+        <SidebarSection title={pools.length === 1 ? 'Pool' : 'Pools'}>
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 4}}>
+            {pools.map((pool, idx) => (
+              <PoolTag key={idx} pool={pool} />
+            ))}
+          </Box>
+        </SidebarSection>
+      ) : null}
 
       {asset.freshnessPolicy && (
         <SidebarSection title="Freshness policy">
