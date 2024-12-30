@@ -126,7 +126,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         )
                         break
                     except Exception:
-                        error_info = DaemonErrorCapture.on_exception(
+                        error_info = DaemonErrorCapture.process_exception(
                             exc_info=sys.exc_info(),
                             logger=self._logger,
                             log_message="Caught error, daemon loop will restart",

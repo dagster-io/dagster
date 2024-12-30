@@ -22,9 +22,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 STUB_LOCATION_PATH = (
-    Path(__file__).parent.parent
-    / "stub_code_locations"
-    / "templated_custom_keys_dbt_project_location"
+    Path(__file__).parent.parent / "code_locations" / "templated_custom_keys_dbt_project_location"
 )
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
 

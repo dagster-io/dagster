@@ -40,7 +40,6 @@ from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 
 from dagster_dbt.asset_utils import (
-    dagster_name_fn,
     default_metadata_from_dbt_resource_props,
     get_asset_check_key_for_test,
 )
@@ -395,19 +394,18 @@ class DbtCliEventMessage:
                     exc_info=True,
                 )
 
-            if has_asset_def:
+            dbt_resource_props = manifest["nodes"][unique_id]
+            asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
+            if context and has_asset_def:
                 yield Output(
                     value=None,
-                    output_name=dagster_name_fn(event_node_info),
+                    output_name=asset_key.to_python_identifier(),
                     metadata={
                         **default_metadata,
                         **lineage_metadata,
                     },
                 )
             else:
-                dbt_resource_props = manifest["nodes"][unique_id]
-                asset_key = dagster_dbt_translator.get_asset_key(dbt_resource_props)
-
                 yield AssetMaterialization(
                     asset_key=asset_key,
                     metadata={

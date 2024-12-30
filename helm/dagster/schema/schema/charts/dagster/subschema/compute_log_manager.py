@@ -20,6 +20,7 @@ class AzureBlobComputeLogManager(BaseModel):
     container: StringSource
     secretCredential: Optional[dict] = None
     defaultAzureCredential: Optional[dict] = None
+    accessKeyOrSasToken: Optional[StringSource] = None
     localDir: Optional[StringSource] = None
     prefix: Optional[StringSource] = None
     uploadInterval: Optional[int] = None

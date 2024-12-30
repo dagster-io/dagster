@@ -696,6 +696,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
     container = "container"
     secret_credential = {"client_id": "id", "client_secret": "secret", "tenant_id": "tenant"}
     default_azure_credential = {"exclude_cli_credential": True}
+    access_key_or_sas_token = "token"
     local_dir = "/dir"
     prefix = "prefix"
     upload_interval = 30
@@ -708,6 +709,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
                     container=container,
                     secretCredential=secret_credential,
                     defaultAzureCredential=default_azure_credential,
+                    accessKeyOrSasToken=access_key_or_sas_token,
                     localDir=local_dir,
                     prefix=prefix,
                     uploadInterval=upload_interval,
@@ -731,6 +733,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
         "local_dir": local_dir,
         "prefix": prefix,
         "upload_interval": upload_interval,
+        "access_key_or_sas_token": access_key_or_sas_token,
     }
 
     # Test all config fields in configurable class

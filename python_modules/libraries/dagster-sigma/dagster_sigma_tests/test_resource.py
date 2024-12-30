@@ -76,7 +76,11 @@ def test_model_organization_data(sigma_auth_token: str, sigma_sample_data: None)
         client_secret=fake_client_secret,
     )
 
-    data = asyncio.run(resource.build_organization_data(sigma_filter=None, fetch_column_data=True))
+    data = asyncio.run(
+        resource.build_organization_data(
+            sigma_filter=None, fetch_column_data=True, fetch_lineage_data=True
+        )
+    )
 
     assert len(data.workbooks) == 1
     assert data.workbooks[0].properties["name"] == "Sample Workbook"
@@ -115,6 +119,7 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
             resource.build_organization_data(
                 sigma_filter=SigmaFilter(workbook_folders=[("My Documents", "Test Folder")]),
                 fetch_column_data=True,
+                fetch_lineage_data=True,
             )
         )
         assert len(data.workbooks) == 0
@@ -130,6 +135,7 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
                     include_unused_datasets=False,
                 ),
                 fetch_column_data=True,
+                fetch_lineage_data=True,
             )
         )
         assert len(data.workbooks) == 0
@@ -145,6 +151,7 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
                     include_unused_datasets=False,
                 ),
                 fetch_column_data=True,
+                fetch_lineage_data=True,
             )
         )
 
@@ -161,6 +168,7 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
             resource.build_organization_data(
                 sigma_filter=SigmaFilter(workbook_folders=[("My Documents",)]),
                 fetch_column_data=True,
+                fetch_lineage_data=True,
             )
         )
 
@@ -169,7 +177,9 @@ def test_model_organization_data_filter(sigma_auth_token: str, sigma_sample_data
 
 
 @responses.activate
-def test_model_organization_data_skip_fetch(sigma_auth_token: str, sigma_sample_data: None) -> None:
+def test_model_organization_data_skip_fetch_col_data(
+    sigma_auth_token: str, sigma_sample_data: None
+) -> None:
     fake_client_id = uuid.uuid4().hex
     fake_client_secret = uuid.uuid4().hex
 
@@ -181,8 +191,7 @@ def test_model_organization_data_skip_fetch(sigma_auth_token: str, sigma_sample_
 
     data = asyncio.run(
         resource.build_organization_data(
-            sigma_filter=None,
-            fetch_column_data=False,
+            sigma_filter=None, fetch_column_data=False, fetch_lineage_data=True
         )
     )
 
@@ -191,6 +200,29 @@ def test_model_organization_data_skip_fetch(sigma_auth_token: str, sigma_sample_
 
     assert data.datasets[0].properties["name"] == "Orders Dataset"
     assert data.datasets[0].columns == set()
+
+
+@responses.activate
+def test_model_organization_data_skip_fetch_lineage(
+    sigma_auth_token: str, sigma_sample_data: None
+) -> None:
+    fake_client_id = uuid.uuid4().hex
+    fake_client_secret = uuid.uuid4().hex
+
+    resource = SigmaOrganization(
+        base_url=SigmaBaseUrl.AWS_US,
+        client_id=fake_client_id,
+        client_secret=fake_client_secret,
+    )
+
+    data = asyncio.run(
+        resource.build_organization_data(
+            sigma_filter=None, fetch_column_data=True, fetch_lineage_data=False
+        )
+    )
+
+    assert len(data.datasets) == 1
+    assert data.workbooks[0].datasets == set()
 
 
 @responses.activate
@@ -208,7 +240,11 @@ def test_model_organization_data_warn_err(
     )
 
     with pytest.raises(ClientResponseError):
-        asyncio.run(resource.build_organization_data(sigma_filter=None, fetch_column_data=True))
+        asyncio.run(
+            resource.build_organization_data(
+                sigma_filter=None, fetch_column_data=True, fetch_lineage_data=True
+            )
+        )
 
 
 @responses.activate
@@ -226,7 +262,9 @@ def test_model_organization_data_warn_no_err(
     )
 
     data = asyncio.run(
-        resource_warn.build_organization_data(sigma_filter=None, fetch_column_data=True)
+        resource_warn.build_organization_data(
+            sigma_filter=None, fetch_column_data=True, fetch_lineage_data=True
+        )
     )
 
     assert len(data.workbooks) == 1

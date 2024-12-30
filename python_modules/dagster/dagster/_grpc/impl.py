@@ -27,7 +27,7 @@ from dagster._core.definitions.partition import (
     PartitionedConfig,
     PartitionsDefinition,
 )
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
 from dagster._core.errors import (
@@ -274,6 +274,7 @@ def start_run_in_subprocess(
 
 def get_external_pipeline_subset_result(
     repo_def: RepositoryDefinition,
+    recon_repo: ReconstructableRepository,
     job_name: str,
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
@@ -290,7 +291,11 @@ def get_external_pipeline_subset_result(
         job_data_snap = JobDataSnap.from_job_def(
             definition, include_parent_snapshot=include_parent_snapshot
         )
-        return RemoteJobSubsetResult(success=True, job_data_snap=job_data_snap)
+        return RemoteJobSubsetResult(
+            success=True,
+            job_data_snap=job_data_snap,
+            repository_python_origin=recon_repo.get_python_origin(),
+        )
     except Exception:
         return RemoteJobSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
