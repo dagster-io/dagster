@@ -15,6 +15,7 @@ export type ConcurrencyLimitFragment = {
   __typename: 'ConcurrencyKeyInfo';
   concurrencyKey: string;
   slotCount: number;
+  limit: number | null;
   claimedSlots: Array<{__typename: 'ClaimedConcurrencySlot'; runId: string; stepKey: string}>;
   pendingSteps: Array<{
     __typename: 'PendingConcurrencyStep';
@@ -89,6 +90,7 @@ export type ConcurrencyKeyDetailsQuery = {
       __typename: 'ConcurrencyKeyInfo';
       concurrencyKey: string;
       slotCount: number;
+      limit: number | null;
       claimedSlots: Array<{__typename: 'ClaimedConcurrencySlot'; runId: string; stepKey: string}>;
       pendingSteps: Array<{
         __typename: 'PendingConcurrencyStep';
@@ -126,7 +128,7 @@ export const DeleteConcurrencyLimitVersion = '03397142bc71bc17649f43dd17aabf4ea7
 
 export const FreeConcurrencySlotsVersion = '7363c435dba06ed2a4be96e1d9bf1f1f8d9c90533b80ff42896fe9d50879d60e';
 
-export const ConcurrencyKeyDetailsQueryVersion = '52af385169eb4399ef46e98eb206f911c7fd1562c3a86a971ef038a32a7ff12e';
+export const ConcurrencyKeyDetailsQueryVersion = '218e24b90517c54e4ab1eb91ac59c3bfae7f06f336956db535693912f0c8dc8b';
 
 export const RunsForConcurrencyKeyQueryVersion = '35ebd16622a13c6aaa35577c7694bf8ffdeb16921b46c6040a407bb3095eaf75';
 
