@@ -52,7 +52,7 @@ class PipesSubprocessScriptCollection(Component):
             if not script_path.exists():
                 raise FileNotFoundError(f"Script {script_path} does not exist")
             path_specs[script_path] = [
-                AssetSpec(**asset.get_resolved_attributes(context.templated_value_resolver))
+                AssetSpec(**asset.render_properties(context.templated_value_resolver))
                 for asset in script.assets
             ]
 
