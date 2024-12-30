@@ -1,6 +1,7 @@
-import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
+import {Body, Box, Colors, NonIdealState} from '@dagster-io/ui-components';
 
 import {ExplorerPath} from './PipelinePathUtils';
+import {SidebarSection} from './SidebarComponents';
 import {SIDEBAR_OP_DEFINITION_FRAGMENT, SidebarOpDefinition} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
 import {SIDEBAR_OP_INVOCATION_FRAGMENT, SidebarOpInvocation} from './SidebarOpInvocation';
@@ -12,6 +13,7 @@ import {
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
+import {ConcurrencyGroupTag} from '../instance/ConcurrencyGroupTag';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
@@ -120,7 +122,7 @@ export const SidebarOp = ({
       </Box>
     );
   }
-
+  const pool = solidContainer!.solidHandle!.solid.definition.pool;
   return (
     <>
       <SidebarOpInvocation
@@ -132,6 +134,17 @@ export const SidebarOp = ({
             : undefined
         }
       />
+
+      {pool && (
+        <SidebarSection title="Concurrency group">
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 12, alignItems: 'flex-start'}}>
+            <Body style={{flex: 1}}>
+              <ConcurrencyGroupTag groupName={pool} />
+            </Body>
+          </Box>
+        </SidebarSection>
+      )}
+
       {!isGraph && repoAddress && (
         <SidebarOpExecutionGraphs
           key={`${handleID}-graphs`}

@@ -93,6 +93,7 @@ export type SidebarOpFragment_CompositeSolidDefinition = {
           }
         | {
             __typename: 'SolidDefinition';
+            pool: string | null;
             name: string;
             description: string | null;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
@@ -867,6 +868,7 @@ export type SidebarOpFragment_Graph = {
           }
         | {
             __typename: 'SolidDefinition';
+            pool: string | null;
             name: string;
             description: string | null;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
@@ -1641,6 +1643,7 @@ export type SidebarOpFragment_Job = {
           }
         | {
             __typename: 'SolidDefinition';
+            pool: string | null;
             name: string;
             description: string | null;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
@@ -2415,6 +2418,7 @@ export type SidebarOpFragment_Pipeline = {
           }
         | {
             __typename: 'SolidDefinition';
+            pool: string | null;
             name: string;
             description: string | null;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
@@ -3189,6 +3193,7 @@ export type SidebarOpFragment_PipelineSnapshot = {
           }
         | {
             __typename: 'SolidDefinition';
+            pool: string | null;
             name: string;
             description: string | null;
             requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
@@ -3983,6 +3988,7 @@ export type SidebarPipelineOpQuery = {
                 }
               | {
                   __typename: 'SolidDefinition';
+                  pool: string | null;
                   name: string;
                   description: string | null;
                   requiredResources: Array<{
@@ -4779,6 +4785,7 @@ export type SidebarGraphOpQuery = {
                 }
               | {
                   __typename: 'SolidDefinition';
+                  pool: string | null;
                   name: string;
                   description: string | null;
                   requiredResources: Array<{
@@ -5472,6 +5479,6 @@ export type SidebarGraphOpQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SidebarPipelineOpQueryVersion = 'e7c81b4abaefc0eeea9128b4e39c74a1c68d7b28f154ac5ad9cd2d5182d48d5f';
+export const SidebarPipelineOpQueryVersion = '76229eb89b8578b04fda2d24eb99a4d1ced572115d46f62955d7f25b5ce646bc';
 
-export const SidebarGraphOpQueryVersion = 'c53856856bea89e1eb944ab02f6e175a8dbccc99ee4c8600f0df96e05535be89';
+export const SidebarGraphOpQueryVersion = 'dc6be653e04f15e6b10cc5e16c0804d19f821219682daf9f0a98db3f211d93de';

@@ -226,6 +226,7 @@ export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
           }
         }
       }
+      pool
     }
     ... on CompositeSolidDefinition {
       id

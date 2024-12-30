@@ -6,6 +6,7 @@ export type SidebarAssetFragment = {
   __typename: 'AssetNode';
   id: string;
   description: string | null;
+  pools: Array<string>;
   opVersion: string | null;
   jobNames: Array<string>;
   changedReasons: Array<Types.ChangeReason>;
@@ -16133,6 +16134,7 @@ export type SidebarAssetQuery = {
         __typename: 'AssetNode';
         id: string;
         description: string | null;
+        pools: Array<string>;
         opVersion: string | null;
         jobNames: Array<string>;
         changedReasons: Array<Types.ChangeReason>;
@@ -32411,4 +32413,4 @@ export type SidebarAssetQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const SidebarAssetQueryVersion = '93a3d84b13e1be3e32ea74d05e8d77b37e4bab1dd09573f2c2765cf50d9096e2';
+export const SidebarAssetQueryVersion = '5f38c406efbfe5b009416f7f9605072a820228ab893cb774af310f8f162827ae';

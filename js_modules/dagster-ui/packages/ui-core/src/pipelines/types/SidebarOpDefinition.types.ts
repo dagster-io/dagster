@@ -84,6 +84,7 @@ export type SidebarOpDefinitionFragment_CompositeSolidDefinition = {
 
 export type SidebarOpDefinitionFragment_SolidDefinition = {
   __typename: 'SolidDefinition';
+  pool: string | null;
   name: string;
   description: string | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
