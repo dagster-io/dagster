@@ -176,6 +176,15 @@ def skip_if_not_azure_commit():
     )
 
 
+def skip_if_not_gcp_commit():
+    """If no dagster-gcp files are changed, skip the gcp live tests."""
+    return (
+        None
+        if (any("dagster-gcp" in str(path) for path in ChangedFiles.all))
+        else "Not a dagster-gcp commit"
+    )
+
+
 def build_azure_live_test_suite_steps() -> List[BuildkiteTopLevelStep]:
     return PackageSpec(
         os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests"),
@@ -187,6 +196,15 @@ def build_azure_live_test_suite_steps() -> List[BuildkiteTopLevelStep]:
             "TEST_AZURE_STORAGE_ACCOUNT_ID",
             "TEST_AZURE_CONTAINER_ID",
             "TEST_AZURE_ACCESS_KEY",
+        ],
+    ).build_steps()
+
+
+def build_gcp_live_test_suite_steps() -> List[BuildkiteTopLevelStep]:
+    return PackageSpec(
+        os.path.join("integration_tests", "test_suites", "dagster-gcp-live-tests"),
+        env_vars=[
+            "GCP_LIVE_TEST_CREDENTIALS",
         ],
     ).build_steps()
 
