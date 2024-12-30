@@ -184,6 +184,7 @@ class OpDefSnap:
     tags: Mapping[str, str]
     required_resource_keys: Sequence[str]
     config_field_snap: Optional[ConfigFieldSnap]
+    pool: Optional[str]
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -273,6 +274,7 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
             if op_def.has_config_field
             else None
         ),
+        pool=op_def.pool,
     )
 
 
