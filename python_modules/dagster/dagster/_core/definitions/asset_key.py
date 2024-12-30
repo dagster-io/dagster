@@ -101,7 +101,7 @@ class AssetKey(IHaveNew):
         if suffix is not None:
             path.append(suffix)
 
-        return "__".join(path).replace("-", "_")
+        return "__".join(path).replace("-", "_").replace(".", "_")
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
