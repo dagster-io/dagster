@@ -114,7 +114,7 @@ class GraphenePendingConcurrencyStep(graphene.ObjectType):
     stepKey = graphene.NonNull(graphene.String)
     enqueuedTimestamp = graphene.NonNull(graphene.Float)
     assignedTimestamp = graphene.Float()
-    priority = graphene.Int()
+    priority = graphene.BigInt()
 
     class Meta:
         name = "PendingConcurrencyStep"
