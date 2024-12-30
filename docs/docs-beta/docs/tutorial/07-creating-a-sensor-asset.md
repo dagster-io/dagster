@@ -68,4 +68,4 @@ sensors include the following elements:
 
 Now that we have our complete project, the next step is to refactor the project into more a more manageable structure so we can add to it as needed. 
 
-Finish the tutorial with [refactoring the project](/tutorial/etl-tutorial/refactoring-the-project)
+Finish the tutorial with [refactoring the project](/tutorial/refactoring-the-project)

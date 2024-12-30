@@ -48,4 +48,4 @@ Asset checks will run when an asset is materialized, but asset checks can also b
 
 ## Next steps
 
-- Continue this tutorial with [Asset Checks](/tutorial/etl-tutorial/create-and-materialize-partitioned-asset)
+- Continue this tutorial with [Asset Checks](/tutorial/create-and-materialize-partitioned-asset)
