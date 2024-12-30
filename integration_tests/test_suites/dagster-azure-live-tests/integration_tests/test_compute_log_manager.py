@@ -1,7 +1,5 @@
-import os
 import subprocess
 from pathlib import Path
-from typing import Generator
 
 import pytest
 from azure.identity import ClientSecretCredential
@@ -12,24 +10,6 @@ from dagster import (
     EventRecordsFilter,
     _check as check,
 )
-from dagster_azure.blob.utils import create_blob_client
-
-
-@pytest.fixture
-def credentials() -> ClientSecretCredential:
-    return ClientSecretCredential(
-        tenant_id=os.environ["TEST_AZURE_TENANT_ID"],
-        client_id=os.environ["TEST_AZURE_CLIENT_ID"],
-        client_secret=os.environ["TEST_AZURE_CLIENT_SECRET"],
-    )
-
-
-@pytest.fixture
-def container_client(credentials: ClientSecretCredential) -> Generator[ContainerClient, None, None]:
-    yield create_blob_client(
-        storage_account="chriscomplogmngr",
-        credential=credentials,
-    ).get_container_client("mycontainer")
 
 
 @pytest.mark.parametrize(

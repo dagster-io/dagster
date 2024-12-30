@@ -186,6 +186,7 @@ def build_azure_live_test_suite_steps() -> List[BuildkiteTopLevelStep]:
             "TEST_AZURE_CLIENT_SECRET",
             "TEST_AZURE_STORAGE_ACCOUNT_ID",
             "TEST_AZURE_CONTAINER_ID",
+            "TEST_AZURE_ACCESS_KEY",
         ],
     ).build_steps()
 
