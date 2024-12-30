@@ -61,6 +61,21 @@
                     "default": null,
                     "title": "Defaultazurecredential"
                 },
+                "accessKeyOrSasToken": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Accesskeyorsastoken"
+                },
                 "localDir": {
                     "anyOf": [
                         {
