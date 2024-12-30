@@ -28,7 +28,7 @@ GrapheneAssetCheckExecutionResolvedStatus = graphene.Enum.from_enum(
 
 
 class GrapheneAssetCheckEvaluationTargetMaterializationData(graphene.ObjectType):
-    storageId = graphene.NonNull(graphene.Int)
+    storageId = graphene.NonNull(graphene.BigInt)
     runId = graphene.NonNull(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
 
