@@ -545,6 +545,7 @@ def experimental(
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
+# TODO: delete this
 def experimental(
     __obj: Optional[T_Annotatable] = None,
     *,
