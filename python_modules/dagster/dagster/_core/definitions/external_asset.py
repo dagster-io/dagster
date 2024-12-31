@@ -1,7 +1,7 @@
 from typing import List, Sequence
 
 from dagster import _check as check
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import deprecated
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
@@ -23,7 +23,6 @@ def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:
 
 
 @deprecated(breaking_version="1.9.0", additional_warn_text="Directly use the AssetSpecs instead.")
-@experimental
 def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinition]:
     """Create an external assets definition from a sequence of asset specs.
 
