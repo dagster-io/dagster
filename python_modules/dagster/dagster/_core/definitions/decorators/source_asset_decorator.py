@@ -1,7 +1,7 @@
 from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
 
 import dagster._check as check
-from dagster._annotations import experimental, hidden_param
+from dagster._annotations import hidden_param
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -63,7 +63,6 @@ def observable_source_asset(
     breaking_version="1.10.0",
     additional_warn_text="use freshness checks instead.",
 )
-@experimental
 def observable_source_asset(
     observe_fn: Optional[SourceAssetObserveFunction] = None,
     *,
@@ -224,7 +223,6 @@ class _ObservableSourceAsset:
             )
 
 
-@experimental
 def multi_observable_source_asset(
     *,
     specs: Sequence[AssetSpec],
