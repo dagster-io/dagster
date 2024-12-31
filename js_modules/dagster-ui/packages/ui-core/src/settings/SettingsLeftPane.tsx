@@ -57,7 +57,7 @@ export const SettingsLeftPane = () => {
             <SideNavItem
               key={item.key}
               item={item}
-              active={item.type === 'link' && pathname === item.path}
+              active={item.type === 'link' && pathname.startsWith(item.path)}
             />
           );
         })}
