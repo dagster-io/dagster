@@ -6,22 +6,25 @@ readme = "README.md"
 requires-python = ">=3.9,<3.13"
 dependencies = [
     "langchain",
+    "langchain-core",
     "gql",
     "python-dotenv",
     "langchain-community",
     "langchain-openai",
+    "langchain-chroma",
     "dagster",
+    "dagster-webserver",
     "chromadb",
+    "tokenizers",
     "tenacity",
-    "tqdm"
+    "tqdm",
     "bs4",
     "lxml",
-    "openai"
+    "openai",
     ]
 
 [project.optional-dependencies]
 dev = [
-    "dagster-webserver",
     "pytest",
     "ruff",
 ]
@@ -35,4 +38,4 @@ module_name = "project_ask_ai_dagster.definitions"
 project_name = "project_ask_ai_dagster"
 
 [tool.setuptools.packages.find]
-exclude=["project_ask_ai_dagster"]
+exclude=["project_ask_ai_dagster_tests"]
