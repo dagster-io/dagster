@@ -74,6 +74,7 @@ class ConcurrencyKeyInfo:
     slot_count: int
     claimed_slots: List[ClaimedSlotInfo]
     pending_steps: List[PendingStepInfo]
+    configured_limit: Optional[int]
 
     ###################################################
     # Fields that we need to keep around for backcompat
