@@ -406,7 +406,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return direct_invocation_result(self, *args, **kwargs)
 
     @public
-    @experimental_param(param="resource_defs")
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",

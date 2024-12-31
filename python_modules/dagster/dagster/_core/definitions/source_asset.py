@@ -167,8 +167,6 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
     return DecoratedOpFunction(fn)
 
 
-@experimental_param(param="resource_defs")
-@experimental_param(param="io_manager_def")
 @experimental_param(param="freshness_policy")
 @deprecated(
     breaking_version="2.0.0",
