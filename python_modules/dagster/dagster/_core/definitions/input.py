@@ -14,7 +14,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated_param, experimental_param
+from dagster._annotations import PublicAttr, deprecated_param, superseded
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.inference import InferredInputProps
 from dagster._core.definitions.metadata import (
@@ -59,8 +59,7 @@ def _check_default_value(input_name: str, dagster_type: DagsterType, default_val
     return default_value  # type: ignore  # (pyright bug)
 
 
-@experimental_param(param="asset_key")
-@experimental_param(param="asset_partitions")
+@superseded(additional_warn_text="Use `In` instead", emit_runtime_warning=False)
 class InputDefinition:
     """Defines an argument to an op's compute function.
 

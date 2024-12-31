@@ -19,7 +19,7 @@ from typing import (
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.loader import LoadableBy, LoadingContext
@@ -615,7 +615,6 @@ class RunsFilter(IHaveNew):
     created_before: Optional[datetime]
     exclude_subruns: Optional[bool]
 
-    @experimental_param(param="exclude_subruns")
     def __new__(
         cls,
         run_ids: Optional[Sequence[str]] = None,

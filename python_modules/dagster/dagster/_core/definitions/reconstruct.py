@@ -25,7 +25,6 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import experimental
 from dagster._core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -449,7 +448,6 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
     return bootstrap_standalone_recon_job(pointer)
 
 
-@experimental
 def build_reconstructable_job(
     reconstructor_module_name: str,
     reconstructor_function_name: str,
