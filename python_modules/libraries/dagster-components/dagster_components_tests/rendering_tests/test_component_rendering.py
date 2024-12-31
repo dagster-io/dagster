@@ -4,7 +4,7 @@ import pytest
 from dagster_components.core.component_rendering import (
     RenderedModel,
     RenderingMetadata,
-    TemplatedValueResolver,
+    TemplatedValueRenderer,
     can_render_with_default_scope,
 )
 from pydantic import BaseModel, TypeAdapter, ValidationError
@@ -71,7 +71,7 @@ def test_render() -> None:
         },
     }
 
-    renderer = TemplatedValueResolver(context={"foo_val": "foo", "bar_val": "bar"})
+    renderer = TemplatedValueRenderer(context={"foo_val": "foo", "bar_val": "bar"})
     rendered_data = renderer.render_params(data, Outer)
 
     assert rendered_data == {
@@ -104,8 +104,8 @@ def test_valid_rendering() -> None:
         the_str="{{ some_str }}",
         the_opt_int="{{ some_int }}",
     )
-    resolver = TemplatedValueResolver(context={"some_int": 1, "some_str": "aaa"})
-    resolved_properties = rm.render_properties(resolver)
+    renderer = TemplatedValueRenderer(context={"some_int": 1, "some_str": "aaa"})
+    resolved_properties = rm.render_properties(renderer)
 
     assert resolved_properties == {
         "the_renderable_int": 1,
@@ -123,8 +123,8 @@ def test_invalid_rendering() -> None:
         the_opt_int="{{ some_str }}",
     )
 
-    resolver = TemplatedValueResolver(context={"some_int": 1, "some_str": "aaa"})
+    renderer = TemplatedValueRenderer(context={"some_int": 1, "some_str": "aaa"})
 
     with pytest.raises(ValidationError):
         # string is not a valid output type for the_opt_int
-        rm.render_properties(resolver)
+        rm.render_properties(renderer)
