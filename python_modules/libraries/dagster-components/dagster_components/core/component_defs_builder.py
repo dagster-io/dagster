@@ -10,10 +10,10 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
-    ComponentRegistry,
+    ComponentTypeRegistry,
     TemplatedValueResolver,
-    get_component_name,
-    is_registered_component,
+    get_component_type_name,
+    is_registered_component_type,
 )
 from dagster_components.core.component_decl_builder import (
     ComponentFolder,
@@ -54,7 +54,7 @@ def load_components_from_context(context: ComponentLoadContext) -> Sequence[Comp
 
 
 def component_type_from_yaml_decl(
-    registry: ComponentRegistry, decl_node: YamlComponentDecl
+    registry: ComponentTypeRegistry, decl_node: YamlComponentDecl
 ) -> Type[Component]:
     parsed_defs = decl_node.component_file_model
     if parsed_defs.type.startswith("."):
@@ -69,8 +69,8 @@ def component_type_from_yaml_decl(
             for _name, obj in inspect.getmembers(module, inspect.isclass):
                 assert isinstance(obj, Type)
                 if (
-                    is_registered_component(obj)
-                    and get_component_name(obj) == component_registry_key
+                    is_registered_component_type(obj)
+                    and get_component_type_name(obj) == component_registry_key
                 ):
                     return obj
 
@@ -91,7 +91,7 @@ def build_components_from_component_folder(
 
 def build_defs_from_component_path(
     path: Path,
-    registry: ComponentRegistry,
+    registry: ComponentTypeRegistry,
     resources: Mapping[str, object],
 ) -> "Definitions":
     """Build a definitions object from a folder within the components hierarchy."""
@@ -128,7 +128,7 @@ def defs_from_components(
 def build_component_defs(
     code_location_root: Path,
     resources: Optional[Mapping[str, object]] = None,
-    registry: Optional["ComponentRegistry"] = None,
+    registry: Optional["ComponentTypeRegistry"] = None,
     components_folder: Optional[Path] = None,
 ) -> "Definitions":
     """Build a Definitions object for all the component instances in a given code location.
@@ -141,7 +141,7 @@ def build_component_defs(
 
     context = CodeLocationProjectContext.from_code_location_path(
         code_location_root,
-        registry or ComponentRegistry.from_entry_point_discovery(),
+        registry or ComponentTypeRegistry.from_entry_point_discovery(),
         components_folder=components_folder,
     )
 

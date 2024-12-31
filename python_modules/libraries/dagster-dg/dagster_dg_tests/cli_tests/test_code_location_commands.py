@@ -17,15 +17,23 @@ from dagster_dg_tests.utils import (
 # ##### GENERATE
 # ########################
 
+# At this time all of our tests are against an editable install of dagster-components. The reason
+# for this is that this package should always be tested against the corresponding version of
+# dagster-copmonents (i.e. from the same commit), and the only way to achieve this right now is
+# using the editable install variant of `dg code-location generate`.
+#
+# Ideally we would have a way to still use the matching dagster-components without using the
+# editable install variant, but this will require somehow configuring uv to ensure that it builds
+# and returns the local version of the package.
 
-def test_code_location_generate_inside_deployment_success() -> None:
-    # Don't use the test component lib because it is not present in published dagster-components,
-    # which this test is currently accessing since we are not doing an editable install.
-    with (
-        ProxyRunner.test(use_test_component_lib=False) as runner,
-        isolated_example_deployment_foo(runner),
-    ):
-        result = runner.invoke("code-location", "generate", "bar")
+
+def test_code_location_generate_inside_deployment_success(monkeypatch) -> None:
+    # Remove when we are able to test without editable install
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
+        result = runner.invoke("code-location", "generate", "bar", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("code_locations/bar").exists()
         assert Path("code_locations/bar/bar").exists()
@@ -38,23 +46,26 @@ def test_code_location_generate_inside_deployment_success() -> None:
         assert Path("code_locations/bar/.venv").exists()
         assert Path("code_locations/bar/uv.lock").exists()
 
-        with open("code_locations/bar/pyproject.toml") as f:
-            toml = tomli.loads(f.read())
-
-            # No tool.uv.sources added without --use-editable-dagster
-            assert "uv" not in toml["tool"]
+        # Restore when we are able to test without editable install
+        # with open("code_locations/bar/pyproject.toml") as f:
+        #     toml = tomli.loads(f.read())
+        #
+        #     # No tool.uv.sources added without --use-editable-dagster
+        #     assert "uv" not in toml["tool"]
 
         # Check cache was populated
         with pushd("code_locations/bar"):
-            result = runner.invoke("--verbose", "component-type", "list")
+            result = runner.invoke("component-type", "list", "--verbose")
             assert "CACHE [hit]" in result.output
 
 
-def test_code_location_generate_outside_deployment_success() -> None:
-    # Don't use the test component lib because it is not present in published dagster-components,
-    # which this test is currently accessing since we are not doing an editable install.
-    with ProxyRunner.test(use_test_component_lib=False) as runner, runner.isolated_filesystem():
-        result = runner.invoke("code-location", "generate", "bar")
+def test_code_location_generate_outside_deployment_success(monkeypatch) -> None:
+    # Remove when we are able to test without editable install
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("code-location", "generate", "bar", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("bar").exists()
         assert Path("bar/bar").exists()

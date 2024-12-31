@@ -7,7 +7,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
-from dagster_components import Component, ComponentLoadContext, component
+from dagster_components import Component, ComponentLoadContext, component_type
 from dagster_components.core.component import ComponentGenerateRequest
 from dagster_components.core.component_decl_builder import YamlComponentDecl
 from dagster_components.generate import generate_component_yaml
@@ -21,7 +21,7 @@ class SimpleAssetParams(BaseModel):
     value: str
 
 
-@component(name="simple_asset")
+@component_type(name="simple_asset")
 class SimpleAsset(Component):
     """A simple asset that returns a constant string value."""
 

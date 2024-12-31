@@ -1585,8 +1585,7 @@ def can_run_with_parent(
     # checks if there is a simple partition mapping between the parent and the child
     has_identity_partition_mapping = (
         # both unpartitioned
-        not candidate_node.is_partitioned
-        and not parent_node.is_partitioned
+        (not candidate_node.is_partitioned and not parent_node.is_partitioned)
         # normal identity partition mapping
         or isinstance(partition_mapping, IdentityPartitionMapping)
         # for assets with the same time partitions definition, a non-offset partition

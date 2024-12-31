@@ -21,7 +21,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -1013,6 +1013,8 @@ class FivetranWorkspace(ConfigurableResource):
                     },
                 )
 
+    @public
+    @experimental
     def sync_and_poll(
         self, context: AssetExecutionContext
     ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:

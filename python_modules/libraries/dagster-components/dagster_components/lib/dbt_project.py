@@ -6,7 +6,6 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster._utils import pushd
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 from dbt.cli.main import dbtRunner
 from pydantic import BaseModel, Field
@@ -16,7 +15,7 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import (
     ComponentGenerateRequest,
     TemplatedValueResolver,
-    component,
+    component_type,
 )
 from dagster_components.core.component_rendering import RenderingScope
 from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
@@ -71,7 +70,7 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
         )
 
 
-@component(name="dbt_project")
+@component_type(name="dbt_project")
 class DbtProjectComponent(Component):
     params_schema = DbtProjectParams
     generate_params_schema = DbtGenerateParams
@@ -90,9 +89,7 @@ class DbtProjectComponent(Component):
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
-        # all paths should be resolved relative to the directory we're in
-        with pushd(str(context.path)):
-            loaded_params = context.load_params(cls.params_schema)
+        loaded_params = context.load_params(cls.params_schema)
 
         return cls(
             dbt_resource=loaded_params.dbt,

@@ -25,6 +25,7 @@ def generate_component_yaml(
         yaml.dump(
             component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
         )
+        f.writelines([""])
 
 
 def generate_component_instance(

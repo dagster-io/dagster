@@ -822,7 +822,9 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
 
     subset = cast(
         TimeWindowPartitionsSubset,
-        TimeWindowPartitionsSubset.empty_subset(partitions_def).with_partition_keys(subset_keys),
+        TimeWindowPartitionsSubset.create_empty_subset(partitions_def).with_partition_keys(
+            subset_keys
+        ),
     )
     for partition_key in subset_keys:
         assert partition_key in subset
@@ -951,7 +953,7 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         if initial[i] != "+" and added[i] != "+":
             expected_keys_not_in_updated_subset.append(full_set_keys[i])
 
-    subset = TimeWindowPartitionsSubset.empty_subset(partitions_def).with_partition_keys(
+    subset = TimeWindowPartitionsSubset.create_empty_subset(partitions_def).with_partition_keys(
         initial_subset_keys
     )
     assert all(partition_key in subset for partition_key in initial_subset_keys)
@@ -1029,7 +1031,9 @@ def test_current_time_window_partitions_serialization():
 def test_time_window_partitions_contains() -> None:
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     keys = ["2015-01-06", "2015-01-07", "2015-01-08", "2015-01-10"]
-    subset = TimeWindowPartitionsSubset.empty_subset(partitions_def).with_partition_keys(keys)
+    subset = TimeWindowPartitionsSubset.create_empty_subset(partitions_def).with_partition_keys(
+        keys
+    )
     for key in keys:
         assert key in subset
 

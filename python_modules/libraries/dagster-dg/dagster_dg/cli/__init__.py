@@ -3,12 +3,11 @@ from pathlib import Path
 
 import click
 
-from dagster_dg.cache import DgCache
 from dagster_dg.cli.code_location import code_location_group
 from dagster_dg.cli.component import component_group
 from dagster_dg.cli.component_type import component_type_group
 from dagster_dg.cli.deployment import deployment_group
-from dagster_dg.config import DgConfig, set_config_on_cli_context
+from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.context import (
     DgContext,
     ensure_uv_lock,
@@ -20,44 +19,30 @@ from dagster_dg.context import (
 from dagster_dg.utils import DgClickGroup
 from dagster_dg.version import __version__
 
+DG_CLI_MAX_OUTPUT_WIDTH = 120
+
 
 def create_dg_cli():
-    commands = {
-        "code-location": code_location_group,
-        "deployment": deployment_group,
-        "component": component_group,
-        "component-type": component_type_group,
-    }
-
-    # Defaults are defined on the DgConfig object.
     @click.group(
-        commands=commands,
-        context_settings={"max_content_width": 120, "help_option_names": ["-h", "--help"]},
+        name="dg",
+        commands={
+            "code-location": code_location_group,
+            "deployment": deployment_group,
+            "component": component_group,
+            "component-type": component_type_group,
+        },
+        context_settings={
+            "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,
+            "help_option_names": ["-h", "--help"],
+        },
         invoke_without_command=True,
         cls=DgClickGroup,
     )
-    @click.option(
-        "--builtin-component-lib",
-        type=str,
-        default=DgConfig.builtin_component_lib,
-        help="Specify a builitin component library to use.",
-    )
-    @click.option(
-        "--verbose",
-        is_flag=True,
-        default=DgConfig.verbose,
-        help="Enable verbose output for debugging.",
-    )
-    @click.option(
-        "--disable-cache",
-        is_flag=True,
-        default=DgConfig.disable_cache,
-        help="Disable caching of component registry data.",
-    )
+    @dg_global_options
     @click.option(
         "--clear-cache",
         is_flag=True,
-        help="Clear the cache before running the command.",
+        help="Clear the cache.",
         default=False,
     )
     @click.option(
@@ -69,33 +54,15 @@ def create_dg_cli():
         ),
         default=False,
     )
-    @click.option(
-        "--cache-dir",
-        type=Path,
-        default=DgConfig.cache_dir,
-        help="Specify a directory to use for the cache.",
-    )
     @click.version_option(__version__, "--version", "-v")
     @click.pass_context
     def group(
         context: click.Context,
-        builtin_component_lib: str,
-        verbose: bool,
-        disable_cache: bool,
-        cache_dir: Path,
         clear_cache: bool,
         rebuild_component_registry: bool,
+        **global_options: object,
     ):
-        """CLI tools for working with Dagster components."""
-        context.ensure_object(dict)
-        config = DgConfig(
-            builtin_component_lib=builtin_component_lib,
-            verbose=verbose,
-            disable_cache=disable_cache,
-            cache_dir=cache_dir,
-        )
-        set_config_on_cli_context(context, config)
-
+        """CLI for working with Dagster components."""
         if clear_cache and rebuild_component_registry:
             click.echo(
                 click.style(
@@ -104,10 +71,12 @@ def create_dg_cli():
             )
             sys.exit(1)
         elif clear_cache:
-            DgCache.from_config(config).clear_all()
+            dg_context = DgContext.from_cli_global_options(global_options)
+            dg_context.cache.clear_all()
             if context.invoked_subcommand is None:
                 context.exit(0)
         elif rebuild_component_registry:
+            dg_context = DgContext.from_cli_global_options(global_options)
             if context.invoked_subcommand is not None:
                 click.echo(
                     click.style(
@@ -115,7 +84,7 @@ def create_dg_cli():
                     )
                 )
                 sys.exit(1)
-            _rebuild_component_registry(context)
+            _rebuild_component_registry(dg_context)
         elif context.invoked_subcommand is None:
             click.echo(context.get_help())
             context.exit(0)
@@ -123,8 +92,7 @@ def create_dg_cli():
     return group
 
 
-def _rebuild_component_registry(cli_context: click.Context):
-    dg_context = DgContext.from_cli_context(cli_context)
+def _rebuild_component_registry(dg_context: DgContext):
     if not is_inside_code_location_directory(Path.cwd()):
         click.echo(
             click.style(
@@ -132,7 +100,7 @@ def _rebuild_component_registry(cli_context: click.Context):
             )
         )
         sys.exit(1)
-    if not dg_context.cache:
+    if not dg_context.has_cache:
         click.echo(
             click.style("Cache is disabled. This command cannot be run without a cache.", fg="red")
         )

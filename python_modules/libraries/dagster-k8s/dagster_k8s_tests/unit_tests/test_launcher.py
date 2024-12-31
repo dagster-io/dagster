@@ -700,7 +700,7 @@ def test_check_run_health(kubeconfig_file):
             assert health.status == WorkerStatus.FAILED, health.msg
 
             mock_k8s_client_batch_api.read_namespaced_job_status.side_effect = (
-                kubernetes.client.rest.ApiException(reason="Not Found")
+                kubernetes.client.rest.ApiException(status=404, reason="Not Found")
             )
 
             finished_k8s_job_name = get_job_name_from_run_id(finished_run.run_id)

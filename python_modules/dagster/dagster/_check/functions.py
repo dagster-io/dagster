@@ -157,7 +157,7 @@ def is_callable(obj: T_Callable, additional_message: Optional[str] = None) -> T_
     if not callable(obj):
         raise CheckError(
             "Must be callable. Got"
-            f" {obj}.{additional_message and f' Description: {additional_message}.' or ''}"
+            f" {obj}.{(additional_message and f' Description: {additional_message}.') or ''}"
         )
     return obj
 
@@ -1788,8 +1788,8 @@ def _param_class_mismatch_exception(
     additional_message: Optional[str] = None,
 ) -> ParameterCheckError:
     additional_message = " " + additional_message if additional_message else ""
-    opt_clause = optional and "be None or" or ""
-    subclass_clause = superclass and f"that inherits from {superclass.__name__}" or ""
+    opt_clause = (optional and "be None or") or ""
+    subclass_clause = (superclass and f"that inherits from {superclass.__name__}") or ""
     return ParameterCheckError(
         f'Param "{param_name}" must {opt_clause}be a class{subclass_clause}. Got {obj!r} of'
         f" type {type(obj)}.{additional_message}"

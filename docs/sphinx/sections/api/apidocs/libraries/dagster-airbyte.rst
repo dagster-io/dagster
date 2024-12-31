@@ -17,6 +17,10 @@ Assets (Airbyte API)
 
 .. autofunction:: load_airbyte_cloud_asset_specs
 
+.. autodecorator:: airbyte_assets
+
+.. autofunction:: build_airbyte_assets_definitions
+
 
 Legacy
 ======

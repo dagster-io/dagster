@@ -16,12 +16,12 @@ from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
 )
-from dagster_components.lib.sling_replication import SlingReplicationComponent, component
+from dagster_components.lib.sling_replication import SlingReplicationComponent, component_type
 from dagster_embedded_elt.sling import SlingResource
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
-STUB_LOCATION_PATH = Path(__file__).parent.parent / "stub_code_locations" / "sling_location"
+STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "sling_location"
 COMPONENT_RELPATH = "components/ingest"
 
 
@@ -137,7 +137,7 @@ def test_load_from_path(sling_path: Path) -> None:
 
 
 def test_sling_subclass() -> None:
-    @component(name="debug_sling_replication")
+    @component_type(name="debug_sling_replication")
     class DebugSlingReplicationComponent(SlingReplicationComponent):
         def execute(
             self, context: AssetExecutionContext, sling: SlingResource

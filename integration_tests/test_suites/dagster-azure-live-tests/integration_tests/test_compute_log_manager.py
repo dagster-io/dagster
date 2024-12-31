@@ -1,6 +1,5 @@
-import os
 import subprocess
-from typing import Generator
+from pathlib import Path
 
 import pytest
 from azure.identity import ClientSecretCredential
@@ -11,31 +10,19 @@ from dagster import (
     EventRecordsFilter,
     _check as check,
 )
-from dagster_azure.blob.utils import create_blob_client
 
 
-@pytest.fixture
-def credentials() -> ClientSecretCredential:
-    return ClientSecretCredential(
-        tenant_id=os.environ["TEST_AZURE_TENANT_ID"],
-        client_id=os.environ["TEST_AZURE_CLIENT_ID"],
-        client_secret=os.environ["TEST_AZURE_CLIENT_SECRET"],
-    )
-
-
-@pytest.fixture
-def container_client(credentials: ClientSecretCredential) -> Generator[ContainerClient, None, None]:
-    yield create_blob_client(
-        storage_account="chriscomplogmngr",
-        credential=credentials,
-    ).get_container_client("mycontainer")
-
-
+@pytest.mark.parametrize(
+    "dagster_yaml",
+    ["secret-credential.yaml", "default-credential.yaml", "access-key-credential.yaml"],
+    indirect=True,
+)
 def test_compute_log_manager(
     dagster_dev: subprocess.Popen,
     container_client: ContainerClient,
     prefix_env: str,
     credentials: ClientSecretCredential,
+    dagster_yaml: Path,
 ) -> None:
     subprocess.run(
         ["dagster", "asset", "materialize", "--select", "my_asset", "-m", "azure_test_proj.defs"],

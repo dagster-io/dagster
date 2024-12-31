@@ -10,7 +10,7 @@ from dagster import (
     build_init_resource_context,
 )
 from dagster._core.definitions.metadata import MetadataValue
-from dagster_airbyte import AirbyteOutput, AirbyteResource, AirbyteState, airbyte_resource
+from dagster_airbyte import AirbyteJobStatusType, AirbyteOutput, AirbyteResource, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
 from dagster_airbyte_tests.utils import (
@@ -65,7 +65,12 @@ def test_trigger_connection_fail(
 @responses.activate
 @pytest.mark.parametrize(
     "state",
-    [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
+    [
+        AirbyteJobStatusType.SUCCEEDED,
+        AirbyteJobStatusType.CANCELLED,
+        AirbyteJobStatusType.ERROR,
+        "unrecognized",
+    ],
 )
 @pytest.mark.parametrize(
     "forward_logs",
@@ -113,11 +118,11 @@ def test_sync_and_poll(
     if state == "unrecognized":
         responses.add(responses.POST, f"{ab_resource.api_base_url}/jobs/cancel", status=204)
 
-    if state == AirbyteState.ERROR:
+    if state == AirbyteJobStatusType.ERROR:
         with pytest.raises(Failure, match="Job failed"):
             ab_resource.sync_and_poll("some_connection", 0)
 
-    elif state == AirbyteState.CANCELLED:
+    elif state == AirbyteJobStatusType.CANCELLED:
         with pytest.raises(Failure, match="Job was cancelled"):
             ab_resource.sync_and_poll("some_connection", 0)
 
@@ -295,7 +300,7 @@ def test_logging_multi_attempts(
         method=responses.POST,
         url=ab_resource.api_base_url + "/jobs/get",
         json={
-            "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
+            "job": {"id": 1, "status": AirbyteJobStatusType.SUCCEEDED},
             "attempts": [
                 _get_attempt(ls) for ls in [["log1a", "log1b", "log1c"], ["log2a", "log2b"]]
             ],

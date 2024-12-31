@@ -508,7 +508,9 @@ class SigmaOrganization(ConfigurableResource):
             f"workbooks/{workbook_id}/materialization-schedules"
         )
 
-    async def load_workbook_data(self, raw_workbook_data: Dict[str, Any]) -> SigmaWorkbook:
+    async def load_workbook_data(
+        self, raw_workbook_data: Dict[str, Any], fetch_lineage_data: bool
+    ) -> SigmaWorkbook:
         dataset_deps = set()
         direct_table_deps = set()
 
@@ -537,13 +539,17 @@ class SigmaOrganization(ConfigurableResource):
 
             return {"dependencies": {}}
 
-        lineages = await asyncio.gather(
-            *[
-                safe_fetch_lineage_for_element(
-                    raw_workbook_data["workbookId"], element["elementId"]
-                )
-                for element in elements
-            ]
+        lineages = (
+            await asyncio.gather(
+                *[
+                    safe_fetch_lineage_for_element(
+                        raw_workbook_data["workbookId"], element["elementId"]
+                    )
+                    for element in elements
+                ]
+            )
+            if fetch_lineage_data
+            else []
         )
         for lineage in lineages:
             for item in lineage["dependencies"].values():
@@ -585,7 +591,7 @@ class SigmaOrganization(ConfigurableResource):
 
     @cached_method
     async def build_organization_data(
-        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool
+        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool, fetch_lineage_data: bool
     ) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
@@ -596,11 +602,18 @@ class SigmaOrganization(ConfigurableResource):
         workbooks_to_fetch = await self._fetch_workbooks_and_filter(_sigma_filter)
 
         workbooks: List[SigmaWorkbook] = await asyncio.gather(
-            *[self.load_workbook_data(workbook) for workbook in workbooks_to_fetch]
+            *[
+                self.load_workbook_data(workbook, fetch_lineage_data)
+                for workbook in workbooks_to_fetch
+            ]
         )
 
         datasets: List[SigmaDataset] = []
-        deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode(_sigma_filter)
+        deps_by_dataset_inode = (
+            await self._fetch_dataset_upstreams_by_inode(_sigma_filter)
+            if fetch_lineage_data
+            else {}
+        )
 
         columns_by_dataset_inode = (
             await self._fetch_dataset_columns_by_inode(_sigma_filter) if fetch_column_data else {}
@@ -621,7 +634,7 @@ class SigmaOrganization(ConfigurableResource):
                     SigmaDataset(
                         properties=dataset,
                         columns=columns_by_dataset_inode.get(inode, set()),
-                        inputs=deps_by_dataset_inode[inode],
+                        inputs=deps_by_dataset_inode.get(inode, set()),
                     )
                 )
 
@@ -673,6 +686,7 @@ def load_sigma_asset_specs(
     ] = DagsterSigmaTranslator,
     sigma_filter: Optional[SigmaFilter] = None,
     fetch_column_data: bool = True,
+    fetch_lineage_data: bool = True,
     snapshot_path: Optional[Union[str, Path]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
@@ -683,6 +697,7 @@ def load_sigma_asset_specs(
             to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
         sigma_filter (Optional[SigmaFilter]): Filters the set of Sigma objects to fetch.
         fetch_column_data (bool): Whether to fetch column data for datasets, which can be slow.
+        fetch_lineage_data (bool): Whether to fetch any lineage data for workbooks and datasets.
         snapshot_path (Optional[Union[str, Path]]): Path to a snapshot file to load Sigma data from,
             rather than fetching it from the Sigma API.
 
@@ -700,6 +715,7 @@ def load_sigma_asset_specs(
                 translator_cls=dagster_sigma_translator,
                 sigma_filter=sigma_filter,
                 fetch_column_data=fetch_column_data,
+                fetch_lineage_data=fetch_lineage_data,
                 snapshot=snapshot,
             )
             .build_defs()
@@ -728,6 +744,7 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
     snapshot: Optional[RepositoryLoadData]
     sigma_filter: Optional[SigmaFilter] = None
     fetch_column_data: bool = True
+    fetch_lineage_data: bool = True
 
     @property
     def defs_key(self) -> str:
@@ -739,7 +756,9 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
 
         return asyncio.run(
             self.organization.build_organization_data(
-                sigma_filter=self.sigma_filter, fetch_column_data=self.fetch_column_data
+                sigma_filter=self.sigma_filter,
+                fetch_column_data=self.fetch_column_data,
+                fetch_lineage_data=self.fetch_lineage_data,
             )
         )
 

@@ -16,7 +16,7 @@ from dagster import (
     materialize,
 )
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resource import DbtCliResource
+from dagster_dbt.core.resource import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY, DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from dagster_dbt_tests.dbt_projects import test_asset_checks_path, test_dbt_alias_path
@@ -76,7 +76,13 @@ def test_asset_checks_enabled_by_default(test_asset_checks_manifest: Dict[str, A
     )
     assert my_dbt_assets.check_specs_by_output_name
 
-    assert my_dbt_assets.check_specs_by_output_name == {
+    # too annoying to manually input all of the individual metadata fields
+    stripped_specs_by_output_name = {}
+    for output_name, spec in my_dbt_assets.check_specs_by_output_name.items():
+        assert spec.metadata and spec.metadata[DAGSTER_DBT_UNIQUE_ID_METADATA_KEY]
+        stripped_specs_by_output_name[output_name] = spec._replace(metadata={})
+
+    assert stripped_specs_by_output_name == {
         "customers_not_null_customers_customer_id": AssetCheckSpec(
             name="not_null_customers_customer_id",
             asset=AssetKey(["customers"]),

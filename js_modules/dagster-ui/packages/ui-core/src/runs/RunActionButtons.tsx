@@ -1,5 +1,6 @@
 import {Box, Button, Group, Icon} from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {IRunMetadataDict, IStepState} from './RunMetadataProvider';
 import {doneStatuses, failedStatuses} from './RunStatuses';
@@ -11,10 +12,12 @@ import {RunFragment, RunPageFragment} from './types/RunFragments.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {showSharedToaster} from '../app/DomUtils';
+import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {ReexecutionStrategy} from '../graphql/types';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../launchpad/LaunchButton';
+import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 
 interface RunActionButtonsProps {
@@ -185,8 +188,11 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
       }
-      const selectionAndDownstreamQuery = selection.keys.map((k) => `${k}*`).join(',');
-      const selectionKeys = filterByQuery(graph, selectionAndDownstreamQuery).all.map(
+      const selectionAndDownstreamQuery = featureEnabled(FeatureFlag.flagRunSelectionSyntax)
+        ? selection.keys.map((k) => `name:"${k}"*`).join(' or ')
+        : selection.keys.map((k) => `${k}*`).join(',');
+
+      const selectionKeys = filterRunSelectionByQuery(graph, selectionAndDownstreamQuery).all.map(
         (node) => node.name,
       );
 
