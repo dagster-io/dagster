@@ -163,17 +163,17 @@ def assert_valid_asset_partition_backfill(
     if not asset_backfill_data:
         return
 
-    partition_subset_by_asset_key = (
+    partitions_subsets_by_asset_key = (
         asset_backfill_data.target_subset.partitions_subsets_by_asset_key
     )
 
-    for asset_key, partition_subset in partition_subset_by_asset_key.items():
+    for asset_key, partitions_subset in partitions_subsets_by_asset_key.items():
         partitions_def = asset_graph.get(asset_key).partitions_def
 
         if not partitions_def:
             continue
 
-        invalid_keys = set(partition_subset.get_partition_keys()) - set(
+        invalid_keys = set(partitions_subset.get_partition_keys()) - set(
             partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
         )
 
