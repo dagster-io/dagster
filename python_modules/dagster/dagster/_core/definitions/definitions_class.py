@@ -57,7 +57,6 @@ if TYPE_CHECKING:
 
 
 @public
-@experimental
 def create_repository_using_definitions_args(
     name: str,
     assets: Optional[
