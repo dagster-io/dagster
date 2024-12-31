@@ -6,6 +6,7 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
+    Iterable,
     Literal,
     NamedTuple,
     Optional,
@@ -17,6 +18,7 @@ from typing import (
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
@@ -192,6 +194,34 @@ class AssetGraphView(LoadingContext):
         partitions_def = self._get_partitions_def(key)
         value = partitions_def.empty_subset() if partitions_def else False
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
+
+    def get_entity_subset_from_asset_graph_subset(
+        self, asset_graph_subset: AssetGraphSubset, key: AssetKey
+    ) -> EntitySubset[AssetKey]:
+        check.invariant(
+            self.asset_graph.has(key), f"Asset graph does not contain {key.to_user_string()}"
+        )
+
+        serializable_subset = asset_graph_subset.get_asset_subset(key, self.asset_graph)
+        check.invariant(
+            serializable_subset.is_compatible_with_partitions_def(
+                self._get_partitions_def(key),
+            ),
+            f"Partitions definition for {key.to_user_string()} is not compatible with the passed in AssetGraphSubset",
+        )
+
+        return EntitySubset(
+            self, key=key, value=_ValidatedEntitySubsetValue(serializable_subset.value)
+        )
+
+    def iterate_asset_subsets(
+        self, asset_graph_subset: AssetGraphSubset
+    ) -> Iterable[EntitySubset[AssetKey]]:
+        """Returns an Iterable of EntitySubsets representing the subset of each asset that this
+        AssetGraphSubset contains.
+        """
+        for asset_key in asset_graph_subset.asset_keys:
+            yield self.get_entity_subset_from_asset_graph_subset(asset_graph_subset, asset_key)
 
     def get_subset_from_serializable_subset(
         self, serializable_subset: SerializableEntitySubset[T_EntityKey]

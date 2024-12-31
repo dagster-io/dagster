@@ -63,6 +63,28 @@ class SigmaMaterializationStatus(str, enum.Enum):
     READY = "ready"
 
 
+def build_folder_path_err(folder: Any, idx: int, param_name: str):
+    return (
+        f"{param_name} at index {idx} is not a sequence: `{folder!r}`.\n"
+        "Paths should be specified as a list of folder names, starting from the root folder."
+    )
+
+
+def validate_folder_path_input(folder_input: Optional[Sequence[Sequence[str]]], param_name: str):
+    check.opt_sequence_param(folder_input, param_name, of_type=Sequence)
+    if folder_input:
+        for idx, folder in enumerate(folder_input):
+            check.invariant(
+                not isinstance(folder, str),
+                build_folder_path_err(folder, idx, param_name),
+            )
+            check.is_iterable(
+                folder,
+                of_type=str,
+                additional_message=build_folder_path_err(folder, idx, param_name),
+            )
+
+
 @record_custom
 class SigmaFilter(IHaveNew):
     """Filters the set of Sigma objects to fetch.
@@ -71,21 +93,30 @@ class SigmaFilter(IHaveNew):
         workbook_folders (Optional[Sequence[Sequence[str]]]): A list of folder paths to fetch workbooks from.
             Each folder path is a list of folder names, starting from the root folder. All workbooks
             contained in the specified folders will be fetched. If not provided, all workbooks will be fetched.
+        workbooks (Optional[Sequence[Sequence[str]]]): A list of fully qualified workbook paths to fetch.
+            Each workbook path is a list of folder names, starting from the root folder, and ending
+            with the workbook name. If not provided, all workbooks will be fetched.
         include_unused_datasets (bool): Whether to include datasets that are not used in any workbooks.
             Defaults to True.
     """
 
     workbook_folders: Optional[Sequence[Sequence[str]]] = None
+    workbooks: Optional[Sequence[Sequence[str]]] = None
     include_unused_datasets: bool = True
 
     def __new__(
         cls,
         workbook_folders: Optional[Sequence[Sequence[str]]] = None,
+        workbooks: Optional[Sequence[Sequence[str]]] = None,
         include_unused_datasets: bool = True,
     ):
+        validate_folder_path_input(workbook_folders, "workbook_folders")
+        validate_folder_path_input(workbooks, "workbooks")
+
         return super().__new__(
             cls,
             workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []]),
+            workbooks=tuple([tuple(workbook) for workbook in workbooks or []]),
             include_unused_datasets=include_unused_datasets,
         )
 
@@ -575,14 +606,21 @@ class SigmaOrganization(ConfigurableResource):
     async def _fetch_workbooks_and_filter(self, sigma_filter: SigmaFilter) -> List[Dict[str, Any]]:
         raw_workbooks = await self._fetch_workbooks()
         workbooks_to_fetch = []
-        if sigma_filter.workbook_folders:
+        if sigma_filter.workbook_folders or sigma_filter.workbooks:
             workbook_filter_strings = [
-                "/".join(folder).lower() for folder in sigma_filter.workbook_folders
+                "/".join(folder).lower() for folder in sigma_filter.workbook_folders or []
             ]
+            workbook_strings = ["/".join(folder).lower() for folder in sigma_filter.workbooks or []]
             for workbook in raw_workbooks:
-                workbook_path = str(workbook["path"]).lower()
-                if any(
-                    workbook_path.startswith(folder_str) for folder_str in workbook_filter_strings
+                workbook_path_and_name = (
+                    f"{str(workbook['path']).lower()}/{workbook['name'].lower()}"
+                )
+                if (
+                    any(
+                        workbook_path_and_name.startswith(folder_str)
+                        for folder_str in workbook_filter_strings
+                    )
+                    or workbook_path_and_name in workbook_strings
                 ):
                     workbooks_to_fetch.append(workbook)
         else:
