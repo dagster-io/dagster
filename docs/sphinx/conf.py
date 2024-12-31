@@ -128,6 +128,7 @@ autodoc_mock_imports = [
     "pypd",
     "sentry_sdk",
     "slack_sdk",
+    "sling_mac_arm64",
     "snowflake",
     "sshtunnel",
     "toposort",
