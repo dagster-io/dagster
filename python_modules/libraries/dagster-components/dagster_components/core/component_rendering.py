@@ -81,18 +81,18 @@ class RenderedModel(BaseModel):
     model_config = ConfigDict(json_schema_extra={JSON_SCHEMA_EXTRA_KEY: True})
 
     def _render_property(
-        self, key: str, raw_value: Any, value_resolver: "TemplatedValueResolver"
+        self, key: str, raw_value: Any, value_renderer: "TemplatedValueRenderer"
     ) -> Any:
-        return value_resolver.render_obj(raw_value)
+        return value_renderer.render_obj(raw_value)
 
-    def render_properties(self, value_resolver: "TemplatedValueResolver") -> Mapping[str, Any]:
+    def render_properties(self, value_renderer: "TemplatedValueRenderer") -> Mapping[str, Any]:
         """Returns a dictionary of rendered properties for this class."""
         raw_properties = self.model_dump(exclude_unset=True)
 
         # validate that the rendered properties match the output type
         rendered_properties = {}
         for k, v in raw_properties.items():
-            rendered = self._render_property(k, v, value_resolver)
+            rendered = self._render_property(k, v, value_renderer)
             annotation = self.__annotations__[k]
             expected_type = _get_expected_type(annotation)
             if expected_type is not None:
@@ -106,17 +106,17 @@ class RenderedModel(BaseModel):
 
 
 @record
-class TemplatedValueResolver:
+class TemplatedValueRenderer:
     context: Mapping[str, Any]
 
     @staticmethod
-    def default() -> "TemplatedValueResolver":
-        return TemplatedValueResolver(
+    def default() -> "TemplatedValueRenderer":
+        return TemplatedValueRenderer(
             context={"env": _env, "automation_condition": automation_condition_scope()}
         )
 
-    def with_context(self, **additional_context) -> "TemplatedValueResolver":
-        return TemplatedValueResolver(context={**self.context, **additional_context})
+    def with_context(self, **additional_context) -> "TemplatedValueRenderer":
+        return TemplatedValueRenderer(context={**self.context, **additional_context})
 
     def _render_value(self, val: Any) -> Any:
         """Renders a single value, if it is a templated string."""
