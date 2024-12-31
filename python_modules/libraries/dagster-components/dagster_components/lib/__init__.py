@@ -7,8 +7,8 @@ if _has_dagster_dbt:
     from dagster_components.lib.dbt_project import DbtProjectComponent as DbtProjectComponent
 
 if _has_dagster_embedded_elt:
-    from dagster_components.lib.sling_replication import (
-        SlingReplicationComponent as SlingReplicationComponent,
+    from dagster_components.lib.sling_replication_collection import (
+        SlingReplicationCollectionComponent as SlingReplicationCollectionComponent,
     )
 
 from dagster_components.lib.definitions_component import (
