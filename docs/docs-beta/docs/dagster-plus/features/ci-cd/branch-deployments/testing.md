@@ -8,14 +8,14 @@ unlisted: true
 This guide is applicable to Dagster+.
 :::
 
-This guide details a workflow to test Dagster code in your cloud environment without impacting your production data. To highlight this functionality, we’ll leverage Dagster+ branch deployments and a Snowflake database to:
+This guide details a workflow to test Dagster code in your cloud environment without impacting your production data. To highlight this functionality, we'll leverage Dagster+ branch deployments and a Snowflake database to:
 
 - Execute code on a feature branch directly on Dagster+
 - Read and write to a unique per-branch clone of our Snowflake data
 
 With these tools, we can merge changes with confidence in the impact on our data platform and with the assurance that our code will execute as intended.
 
-Here’s an overview of the main concepts we’ll be using:
+Here’s an overview of the main concepts we'll be using:
 
 {/* - [Assets](/concepts/assets/software-defined-assets) - We'll define three assets that each persist a table to Snowflake. */}
 - [Assets](/todo) - We'll define three assets that each persist a table to Snowflake.
@@ -35,7 +35,7 @@ Here’s an overview of the main concepts we’ll be using:
 ## Prerequisites
 
 :::note
-  This guide is an extension of the <a href="/guides/dagster/transitioning-data-pipelines-from-development-to-production"> Transitioning data pipelines from development to production </a> guide, illustrating a workflow for staging deployments. We’ll use the examples from this guide to build a workflow atop Dagster+’s branch deployment feature.
+  This guide is an extension of the <a href="/guides/dagster/transitioning-data-pipelines-from-development-to-production"> Transitioning data pipelines from development to production </a> guide, illustrating a workflow for staging deployments. We'll use the examples from this guide to build a workflow atop Dagster+’s branch deployment feature.
 :::
 
 To complete the steps in this guide, you'll need:
@@ -52,7 +52,7 @@ To complete the steps in this guide, you'll need:
 
 ## Overview
 
-We have a `PRODUCTION` Snowflake database with a schema named `HACKER_NEWS`. In our production cloud environment, we’d like to write tables to Snowflake containing subsets of Hacker News data. These tables will be:
+We have a `PRODUCTION` Snowflake database with a schema named `HACKER_NEWS`. In our production cloud environment, we'd like to write tables to Snowflake containing subsets of Hacker News data. These tables will be:
 
 - `ITEMS` - A table containing the entire dataset
 - `COMMENTS` - A table containing data about comments
@@ -128,14 +128,14 @@ As you can see, our assets use an [I/O manager](/todo) named `snowflake_io_manag
 
 ## Step 2: Configure our assets for each environment
 
-At runtime, we’d like to determine which environment our code is running in: branch deployment, or production. This information dictates how our code should execute, specifically with which credentials and with which database.
+At runtime, we'd like to determine which environment our code is running in: branch deployment, or production. This information dictates how our code should execute, specifically with which credentials and with which database.
 
-To ensure we can't accidentally write to production from within our branch deployment, we’ll use a different set of credentials from production and write to our database clone.
+To ensure we can't accidentally write to production from within our branch deployment, we'll use a different set of credentials from production and write to our database clone.
 
 {/* Dagster automatically sets certain [environment variables](/dagster-plus/managing-deployments/reserved-environment-variables) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment. */}
 Dagster automatically sets certain [environment variables](/todo) containing deployment metadata, allowing us to read these environment variables to discern between deployments. We can access the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable to determine the currently executing environment.
 
-Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we’ll configure a separate I/O manager for each environment:
+Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we'll configure a separate I/O manager for each environment:
 
 ```python file=/guides/dagster/development_to_production/branch_deployments/repository_v1.py startafter=start_repository endbefore=end_repository
 # definitions.py
@@ -232,7 +232,7 @@ def drop_prod_clone():
     drop_database_clone()
 ```
 
-We’ve defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
+We've defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
 
 We now need to define resources that configure our jobs to the current environment. We can modify the resource mapping by environment as follows:
 
@@ -322,7 +322,7 @@ Opening a pull request for our current branch will automatically kick off a bran
 
 Alternatively, the logs for the branch deployment workflow can be found in the **Actions** tab on the GitHub pull request.
 
-We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we’ll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
+We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we'll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
 
 ![Instance overview](/images/guides/development_to_production/branch_deployments/snowflake.png)
 
@@ -383,7 +383,7 @@ Opening a merge request for our current branch will automatically kick off a bra
 
 ![Instance overview](/images/guides/development_to_production/branch_deployments/instance_overview.png)
 
-We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we’ll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
+We can also view our database in Snowflake to confirm that a clone exists for each branch deployment. When we materialize our assets within our branch deployment, we'll now be writing to our clone of `PRODUCTION`. Within Snowflake, we can run queries against this clone to confirm the validity of our data:
 
 ![Instance overview](/images/guides/development_to_production/branch_deployments/snowflake.png)
 
@@ -489,4 +489,4 @@ close_branch:
 
 After merging our branch, viewing our Snowflake database will confirm that our branch deployment step has successfully deleted our database clone.
 
-We’ve now built an elegant workflow that enables future branch deployments to automatically have access to their own clones of our production database that are cleaned up upon merge!
+We've now built an elegant workflow that enables future branch deployments to automatically have access to their own clones of our production database that are cleaned up upon merge!

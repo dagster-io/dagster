@@ -11,7 +11,7 @@ The `workspace.yaml` file is used to configure code locations in Dagster. It tel
 
 ## Location of workspace.yaml
 
-Dagster command-line tools (like dagster dev, dagster-webserver, or dagster-daemon run) look for workspace files in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments
+Dagster command-line tools (like `dagster dev`, `dagster-webserver`, or `dagster-daemon run`) look for workspace files in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments
 
 To load the workspace.yaml file from a different folder, use the -w argument:
 

@@ -8,7 +8,7 @@ unlisted: true
 This guide is applicable to Dagster+.
 :::
 
-Branch Deployments Change Tracking makes it eaiser for you and your team to identify how changes in a pull request will impact data assets. By the end of this guide, you'll understand how Change Tracking works and what types of asset changes can be detected.
+Branch Deployments Change Tracking makes it easier for you and your team to identify how changes in a pull request will impact data assets. By the end of this guide, you'll understand how Change Tracking works and what types of asset changes can be detected.
 
 ## How it works
 

@@ -38,7 +38,7 @@ Configuring a ops job to use the custom logger slightly differs from the asset j
 
 ### Expected `json_console_logger` output
 
-The `json_console_logger` will emit an exhaustive single line JSON document containing the full log record, including the dagster metadata fields.
+The `json_console_logger` will emit an exhaustive single line JSON document containing the full log record, including the Dagster metadata fields.
 
 Here's an example of the output for reference, formatted for readability:
 

@@ -10,4 +10,4 @@ unlisted: true
 
 ## Sensors
 
-{/* the fact that you need to enable the automation condition sensor in the dagster UI needs to be mentioned much earlier — as is, the current page is very confusing */}
+{/* The fact that you need to enable the automation condition sensor in the Dagster UI needs to be mentioned much earlier--as is, the current page is confusing. */}
