@@ -320,8 +320,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     )
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
     isValidSerialization = graphene.NonNull(graphene.Boolean)
-    numPartitions = graphene.Field(graphene.Int)
-    numCancelable = graphene.NonNull(graphene.Int)
+    numPartitions = graphene.Field(graphene.Int)  # BigInt partitions would mean a problem
+    numCancelable = graphene.NonNull(graphene.Int)  # Same
     fromFailure = graphene.NonNull(graphene.Boolean)
     reexecutionSteps = graphene.List(graphene.NonNull(graphene.String))
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
@@ -345,14 +345,15 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     partitionSet = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     runs = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
-        limit=graphene.Int(),
+        limit=graphene.Int(),  # Don't see this needing BigInt
     )
     unfinishedRuns = graphene.Field(
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
-        limit=graphene.Int(),
+        limit=graphene.Int(),  # Same
     )
     cancelableRuns = graphene.Field(
-        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"), limit=graphene.Int()
+        non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
+        limit=graphene.Int(),  # Same
     )
     error = graphene.Field(GraphenePythonError)
     partitionStatuses = graphene.Field(
@@ -746,7 +747,7 @@ GrapheneBackfillPolicyType = graphene.Enum.from_enum(BackfillPolicyType)
 
 
 class GrapheneBackfillPolicy(graphene.ObjectType):
-    maxPartitionsPerRun = graphene.Field(graphene.Int())
+    maxPartitionsPerRun = graphene.Field(graphene.Int())  # BigInt is too many partitions
     description = graphene.NonNull(graphene.String)
     policyType = graphene.NonNull(GrapheneBackfillPolicyType)
 

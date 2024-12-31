@@ -124,7 +124,7 @@ class GraphenePartitionRun(graphene.ObjectType):
 
 class GraphenePartitionStatusCounts(graphene.ObjectType):
     runStatus = graphene.NonNull(GrapheneRunStatus)
-    count = graphene.NonNull(graphene.Int)
+    count = graphene.NonNull(graphene.Int)  # Can't have a BigInt number of partitions
 
     class Meta:
         name = "PartitionStatusCounts"
@@ -148,10 +148,10 @@ class GrapheneAssetPartitionsStatusCounts(graphene.ObjectType):
         name = "AssetPartitionsStatusCounts"
 
     assetKey = graphene.NonNull(GrapheneAssetKey)
-    numPartitionsTargeted = graphene.NonNull(graphene.Int)
-    numPartitionsInProgress = graphene.NonNull(graphene.Int)
-    numPartitionsMaterialized = graphene.NonNull(graphene.Int)
-    numPartitionsFailed = graphene.NonNull(graphene.Int)
+    numPartitionsTargeted = graphene.NonNull(graphene.Int)  # Same
+    numPartitionsInProgress = graphene.NonNull(graphene.Int)  # Same
+    numPartitionsMaterialized = graphene.NonNull(graphene.Int)  # Same
+    numPartitionsFailed = graphene.NonNull(graphene.Int)  # Same
 
 
 class GrapheneUnpartitionedAssetStatus(graphene.ObjectType):
@@ -237,7 +237,7 @@ class GraphenePartition(graphene.ObjectType):
         non_null_list(GrapheneRun),
         filter=graphene.Argument(GrapheneRunsFilter),
         cursor=graphene.String(),
-        limit=graphene.Int(),
+        limit=graphene.Int(),  # I guess BigInt number of runs would be unreasonable? Not sure on this one
     )
     status = graphene.Field(GrapheneRunStatus)
 
@@ -332,7 +332,7 @@ class GraphenePartitionSet(graphene.ObjectType):
     partitionsOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionsOrError),
         cursor=graphene.String(),
-        limit=graphene.Int(),
+        limit=graphene.Int(),  # Can't have BigInt number of partitions
         reverse=graphene.Boolean(),
     )
     partition = graphene.Field(GraphenePartition, partition_name=graphene.NonNull(graphene.String))
@@ -342,7 +342,7 @@ class GraphenePartitionSet(graphene.ObjectType):
     backfills = graphene.Field(
         non_null_list(GraphenePartitionBackfill),
         cursor=graphene.String(),
-        limit=graphene.Int(),
+        limit=graphene.Int(),  # Can't have BigInt number of backfills
     )
 
     class Meta:
