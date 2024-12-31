@@ -114,7 +114,7 @@ def evaluate_automation_conditions(
 
     if asset_selection is None:
         asset_selection = (
-            AssetSelection.all(include_sources=True) | AssetSelection.all_asset_checks()
+            AssetSelection.all(include_external_assets=True) | AssetSelection.all_asset_checks()
         )
 
     asset_graph = defs.get_asset_graph()

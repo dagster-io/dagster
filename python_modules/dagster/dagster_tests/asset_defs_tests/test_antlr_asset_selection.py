@@ -74,7 +74,7 @@ from dagster._core.storage.tags import KIND_PREFIX
     ],
 )
 def test_antlr_tree(selection_str, expected_tree_str) -> None:
-    asset_selection = AntlrAssetSelectionParser(selection_str, include_sources=True)
+    asset_selection = AntlrAssetSelectionParser(selection_str, include_external_assets=True)
     assert asset_selection.tree_str == expected_tree_str
 
     generated_selection = asset_selection.asset_selection
@@ -82,7 +82,7 @@ def test_antlr_tree(selection_str, expected_tree_str) -> None:
     # Ensure the generated selection can be converted back to a selection string, and then back to the same selection
     regenerated_selection = AntlrAssetSelectionParser(
         generated_selection.to_selection_str(),
-        include_sources=True,
+        include_external_assets=True,
     ).asset_selection
     assert regenerated_selection == generated_selection
 
@@ -115,7 +115,10 @@ def test_antlr_tree_invalid(selection_str):
         ('key:"*/a+"', AssetSelection.assets("*/a+")),
         ("key_substring:a", AssetSelection.key_substring("a")),
         ('key_substring:"*/a+"', AssetSelection.key_substring("*/a+")),
-        ("not key:a", AssetSelection.all(include_sources=True) - AssetSelection.assets("a")),
+        (
+            "not key:a",
+            AssetSelection.all(include_external_assets=True) - AssetSelection.assets("a"),
+        ),
         ("key:a and key:b", AssetSelection.assets("a") & AssetSelection.assets("b")),
         ("key:a or key:b", AssetSelection.assets("a") | AssetSelection.assets("b")),
         ("+key:a", AssetSelection.assets("a").upstream(1)),
@@ -144,11 +147,14 @@ def test_antlr_tree_invalid(selection_str):
         ),
         ("sinks(key:a)", AssetSelection.assets("a").sinks()),
         ("roots(key:c)", AssetSelection.assets("c").roots()),
-        ("tag:foo", AssetSelection.tag("foo", "", include_sources=True)),
-        ("tag:foo=bar", AssetSelection.tag("foo", "bar", include_sources=True)),
+        ("tag:foo", AssetSelection.tag("foo", "", include_external_assets=True)),
+        ("tag:foo=bar", AssetSelection.tag("foo", "bar", include_external_assets=True)),
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
-        ("group:my_group", AssetSelection.groups("my_group", include_sources=True)),
-        ("kind:my_kind", AssetSelection.tag(f"{KIND_PREFIX}my_kind", "", include_sources=True)),
+        ("group:my_group", AssetSelection.groups("my_group", include_external_assets=True)),
+        (
+            "kind:my_kind",
+            AssetSelection.tag(f"{KIND_PREFIX}my_kind", "", include_external_assets=True),
+        ),
         (
             "code_location:my_location",
             CodeLocationAssetSelection(selected_code_location="my_location"),
@@ -170,14 +176,14 @@ def test_antlr_visit_basic(selection_str, expected_assets) -> None:
     def c(): ...
 
     generated_selection = AntlrAssetSelectionParser(
-        selection_str, include_sources=True
+        selection_str, include_external_assets=True
     ).asset_selection
     assert generated_selection == expected_assets
 
     # Ensure the generated selection can be converted back to a selection string, and then back to the same selection
     regenerated_selection = AntlrAssetSelectionParser(
         generated_selection.to_selection_str(),
-        include_sources=True,
+        include_external_assets=True,
     ).asset_selection
     assert regenerated_selection == expected_assets
 

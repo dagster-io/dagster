@@ -7,7 +7,7 @@ from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental_param, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_key import (
@@ -92,15 +92,14 @@ class AssetSelection(ABC):
     """
 
     @public
-    @experimental_param(param="include_sources")
     @staticmethod
-    def all(include_sources: bool = False) -> "AllSelection":
+    def all(include_external_assets: bool = False) -> "AllSelection":
         """Returns a selection that includes all assets and their asset checks.
 
         Args:
-            include_sources (bool): If True, then include all source assets.
+            include_external_assets (bool): If True, then include all external assets.
         """
-        return AllSelection(include_sources=include_sources)
+        return AllSelection(include_external_assets=include_external_assets)
 
     @public
     @staticmethod
@@ -177,12 +176,12 @@ class AssetSelection(ABC):
     @public
     @staticmethod
     def key_prefixes(
-        *key_prefixes: CoercibleToAssetKeyPrefix, include_sources: bool = False
+        *key_prefixes: CoercibleToAssetKeyPrefix, include_external_assets: bool = False
     ) -> "KeyPrefixesAssetSelection":
         """Returns a selection that includes assets that match any of the provided key prefixes and all the asset checks that target them.
 
         Args:
-            include_sources (bool): If True, then include source assets matching the key prefix(es)
+            include_external_assets (bool): If True, then include external assets matching the key prefix(es)
                 in the selection.
 
         Examples:
@@ -197,17 +196,18 @@ class AssetSelection(ABC):
         """
         _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
         return KeyPrefixesAssetSelection(
-            selected_key_prefixes=_asset_key_prefixes, include_sources=include_sources
+            selected_key_prefixes=_asset_key_prefixes,
+            include_external_assets=include_external_assets,
         )
 
     @staticmethod
     def key_substring(
-        key_substring: str, include_sources: bool = False
+        key_substring: str, include_external_assets: bool = False
     ) -> "KeySubstringAssetSelection":
         """Returns a selection that includes assets whose string representation contains the provided substring and all the asset checks that target it.
 
         Args:
-            include_sources (bool): If True, then include source assets matching the substring
+            include_external_assets (bool): If True, then include external assets matching the substring
                 in the selection.
 
         Examples:
@@ -222,52 +222,59 @@ class AssetSelection(ABC):
               AssetSelection.key_substring("b/c")
         """
         return KeySubstringAssetSelection(
-            selected_key_substring=key_substring, include_sources=include_sources
+            selected_key_substring=key_substring, include_external_assets=include_external_assets
         )
 
     @public
     @staticmethod
-    def groups(*group_strs, include_sources: bool = False) -> "GroupsAssetSelection":
+    def groups(*group_strs, include_external_assets: bool = False) -> "GroupsAssetSelection":
         """Returns a selection that includes materializable assets that belong to any of the
         provided groups and all the asset checks that target them.
 
         Args:
-            include_sources (bool): If True, then include source assets matching the group in the
+            include_external_assets (bool): If True, then include external assets matching the group in the
                 selection.
         """
         check.tuple_param(group_strs, "group_strs", of_type=str)
-        return GroupsAssetSelection(selected_groups=group_strs, include_sources=include_sources)
+        return GroupsAssetSelection(
+            selected_groups=group_strs, include_external_assets=include_external_assets
+        )
 
     @public
     @staticmethod
-    @experimental_param(param="include_sources")
-    def tag(key: str, value: str, include_sources: bool = False) -> "AssetSelection":
+    def tag(key: str, value: str, include_external_assets: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
 
         Args:
-            include_sources (bool): If True, then include source assets matching the group in the
+            include_external_assets (bool): If True, then include external assets matching the group in the
                 selection.
         """
-        return TagAssetSelection(key=key, value=value, include_sources=include_sources)
+        return TagAssetSelection(
+            key=key, value=value, include_external_assets=include_external_assets
+        )
 
     @staticmethod
-    def tag_string(string: str, include_sources: bool = False) -> "AssetSelection":
+    def tag_string(string: str, include_external_assets: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
 
         Args:
-            include_sources (bool): If True, then include source assets matching the group in the
+            include_external_assets (bool): If True, then include external assets matching the group in the
                 selection.
         """
         split_by_equals_segments = string.split("=")
         if len(split_by_equals_segments) == 1:
-            return TagAssetSelection(key=string, value="", include_sources=include_sources)
+            return TagAssetSelection(
+                key=string, value="", include_external_assets=include_external_assets
+            )
         elif len(split_by_equals_segments) == 2:
             key, value = split_by_equals_segments
-            return TagAssetSelection(key=key, value=value, include_sources=include_sources)
+            return TagAssetSelection(
+                key=key, value=value, include_external_assets=include_external_assets
+            )
         else:
             check.failed(f"Invalid tag selection string: {string}. Must have no more than one '='.")
 
@@ -339,8 +346,8 @@ class AssetSelection(ABC):
         the asset checks targeting the returned assets. Iterates through each asset in this
         selection and returns the union of all upstream assets.
 
-        Because mixed selections of source and materializable assets are currently not supported,
-        keys corresponding to `SourceAssets` will not be included as upstream of regular assets.
+        Because mixed selections of external and materializable assets are currently not supported,
+        keys corresponding to external assets will not be included as upstream of regular assets.
 
         Args:
             depth (Optional[int]): If provided, then only include assets to the given depth. A depth
@@ -380,8 +387,8 @@ class AssetSelection(ABC):
         A root asset is an asset that has no upstream dependencies within the asset selection.
         The root asset can have downstream dependencies outside of the asset selection.
 
-        Because mixed selections of source and materializable assets are currently not supported,
-        keys corresponding to `SourceAssets` will not be included as roots. To select source assets,
+        Because mixed selections of external and materializable assets are currently not supported,
+        keys corresponding to external assets will not be included as roots. To select external assets,
         use the `upstream_source_assets` method.
         """
         return RootsAssetSelection(child=self)
@@ -402,15 +409,15 @@ class AssetSelection(ABC):
         A root asset is a materializable asset that has no upstream dependencies within the asset
         selection. The root asset can have downstream dependencies outside of the asset selection.
 
-        Because mixed selections of source and materializable assets are currently not supported,
-        keys corresponding to `SourceAssets` will not be included as roots. To select source assets,
+        Because mixed selections of external and materializable assets are currently not supported,
+        keys corresponding to external assets will not be included as roots. To select external assets,
         use the `upstream_source_assets` method.
         """
         return self.roots()
 
     @public
     def upstream_source_assets(self) -> "ParentSourcesAssetSelection":
-        """Given an asset selection, returns a new asset selection that contains all of the source
+        """Given an asset selection, returns a new asset selection that contains all of the external
         assets that are parents of assets in the original selection. Includes the asset checks
         targeting the returned assets.
         """
@@ -494,13 +501,13 @@ class AssetSelection(ABC):
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
 
     @classmethod
-    def from_string(cls, string: str, include_sources=False) -> "AssetSelection":
+    def from_string(cls, string: str, include_external_assets=False) -> "AssetSelection":
         from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
             AntlrAssetSelectionParser,
         )
 
         try:
-            return AntlrAssetSelectionParser(string, include_sources).asset_selection
+            return AntlrAssetSelectionParser(string, include_external_assets).asset_selection
         except:
             pass
         if string == "*":
@@ -599,14 +606,14 @@ class AssetSelection(ABC):
 @whitelist_for_serdes
 @record
 class AllSelection(AssetSelection):
-    include_sources: Optional[bool] = None
+    include_external_assets: Optional[bool] = None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         return (
             asset_graph.get_all_asset_keys()
-            if self.include_sources
+            if self.include_external_assets
             else asset_graph.materializable_asset_keys
         )
 
@@ -912,14 +919,14 @@ class DownstreamAssetSelection(ChainedAssetSelection):
 @record
 class GroupsAssetSelection(AssetSelection):
     selected_groups: Sequence[str]
-    include_sources: bool
+    include_external_assets: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
-            if self.include_sources
+            if self.include_external_assets
             else asset_graph.materializable_asset_keys
         )
         return {
@@ -947,14 +954,14 @@ class GroupsAssetSelection(AssetSelection):
 class TagAssetSelection(AssetSelection):
     key: str
     value: str
-    include_sources: bool
+    include_external_assets: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
-            if self.include_sources
+            if self.include_external_assets
             else asset_graph.materializable_asset_keys
         )
 
@@ -1055,14 +1062,14 @@ class KeysAssetSelection(AssetSelection):
 @record
 class KeyPrefixesAssetSelection(AssetSelection):
     selected_key_prefixes: Sequence[Sequence[str]]
-    include_sources: bool
+    include_external_assets: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
-            if self.include_sources
+            if self.include_external_assets
             else asset_graph.materializable_asset_keys
         )
         return {
@@ -1079,14 +1086,14 @@ class KeyPrefixesAssetSelection(AssetSelection):
 @record
 class KeySubstringAssetSelection(AssetSelection):
     selected_key_substring: str
-    include_sources: bool
+    include_external_assets: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
-            if self.include_sources
+            if self.include_external_assets
             else asset_graph.materializable_asset_keys
         )
         return {key for key in base_set if self.selected_key_substring in key.to_user_string()}
