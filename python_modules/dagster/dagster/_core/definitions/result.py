@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
@@ -75,7 +75,6 @@ class MaterializeResult(AssetResult):
     """
 
 
-@experimental
 class ObserveResult(AssetResult):
     """An object representing a successful observation of an asset. These can be returned from an
     @observable_source_asset decorated function to pass metadata.
