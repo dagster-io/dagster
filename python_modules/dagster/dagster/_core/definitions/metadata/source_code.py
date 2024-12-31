@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import beta, public
 from dagster._core.definitions.metadata.metadata_set import (
     NamespacedMetadataSet as NamespacedMetadataSet,
     TableMetadataSet as TableMetadataSet,
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 DEFAULT_SOURCE_FILE_KEY = "asset_definition"
 
 
-@experimental
+@beta
 @whitelist_for_serdes
 class LocalFileCodeReference(DagsterModel):
     """Represents a local file source location."""
@@ -32,7 +32,7 @@ class LocalFileCodeReference(DagsterModel):
     label: Optional[str] = None
 
 
-@experimental
+@beta
 @whitelist_for_serdes
 class UrlCodeReference(DagsterModel):
     """Represents a source location which points at a URL, for example
@@ -43,7 +43,7 @@ class UrlCodeReference(DagsterModel):
     label: Optional[str] = None
 
 
-@experimental
+@beta
 @whitelist_for_serdes
 class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):
     """Metadata value type which represents source locations (locally or otherwise)
@@ -148,7 +148,7 @@ def _with_code_source_single_definition(
     )
 
 
-@experimental
+@beta
 class FilePathMapping(ABC):
     """Base class which defines a file path mapping function. These functions are used to map local file paths
     to their corresponding paths in a source control repository.
@@ -172,7 +172,7 @@ class FilePathMapping(ABC):
         """
 
 
-@experimental
+@beta
 @dataclass
 class AnchorBasedFilePathMapping(FilePathMapping):
     """Specifies the mapping between local file paths and their corresponding paths in a source control repository,
@@ -291,7 +291,7 @@ def _build_gitlab_url(url: str, branch: str) -> str:
     return f"{url}/-/tree/{branch}"
 
 
-@experimental
+@beta
 def link_code_references_to_git(
     assets_defs: Sequence[
         Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]
@@ -353,7 +353,7 @@ def link_code_references_to_git(
     ]
 
 
-@experimental
+@beta
 def with_source_code_references(
     assets_defs: Sequence[
         Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]
