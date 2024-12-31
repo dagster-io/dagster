@@ -25,7 +25,7 @@ class OpSpecBaseModel(BaseModel):
 
 
 class AssetAttributesModel(RenderedModel):
-    key: Optional[str] = None
+    key: Annotated[Optional[str], RenderingMetadata(output_type=AssetKey)] = None
     deps: Sequence[str] = []
     description: Optional[str] = None
     metadata: Annotated[
@@ -41,6 +41,13 @@ class AssetAttributesModel(RenderedModel):
     automation_condition: Annotated[
         Optional[str], RenderingMetadata(output_type=Optional[AutomationCondition])
     ] = None
+
+    def _render_property(self, key, raw_value, value_resolver):
+        rendered = super()._render_property(key, raw_value, value_resolver)
+        if key == "key":
+            # coerce the string asset key into an AssetKey object
+            return AssetKey.from_user_string(rendered) if rendered else None
+        return rendered
 
 
 class AssetSpecProcessor(ABC, BaseModel):

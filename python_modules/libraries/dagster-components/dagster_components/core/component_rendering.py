@@ -80,19 +80,27 @@ class RenderedModel(BaseModel):
 
     model_config = ConfigDict(json_schema_extra={JSON_SCHEMA_EXTRA_KEY: True})
 
+    def _render_property(
+        self, key: str, raw_value: Any, value_resolver: "TemplatedValueResolver"
+    ) -> Any:
+        return value_resolver.render_obj(raw_value)
+
     def render_properties(self, value_resolver: "TemplatedValueResolver") -> Mapping[str, Any]:
         """Returns a dictionary of rendered properties for this class."""
-        rendered_properties = value_resolver.render_obj(self.model_dump(exclude_unset=True))
+        raw_properties = self.model_dump(exclude_unset=True)
 
         # validate that the rendered properties match the output type
-        for k, v in rendered_properties.items():
+        rendered_properties = {}
+        for k, v in raw_properties.items():
+            rendered = self._render_property(k, v, value_resolver)
             annotation = self.__annotations__[k]
             expected_type = _get_expected_type(annotation)
             if expected_type is not None:
                 # hook into pydantic's type validation to handle complicated stuff like Optional[Mapping[str, int]]
                 TypeAdapter(
                     expected_type, config={"arbitrary_types_allowed": True}
-                ).validate_python(v)
+                ).validate_python(rendered)
+            rendered_properties[k] = rendered
 
         return rendered_properties
 

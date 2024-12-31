@@ -87,7 +87,7 @@ def test_python_params_group(dbt_path: Path) -> None:
             params={
                 "dbt": {"project_dir": "jaffle_shop"},
                 "translator": {
-                    "group": "some_group",
+                    "group_name": "some_group",
                 },
             },
         ),
@@ -126,7 +126,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
                 params={
                     "dbt": {"project_dir": "jaffle_shop"},
                     "translator": {
-                        "group": "{{ env('GROUP_AS_ENV') }}",
+                        "group_name": "{{ env('GROUP_AS_ENV') }}",
                     },
                 },
             ),
