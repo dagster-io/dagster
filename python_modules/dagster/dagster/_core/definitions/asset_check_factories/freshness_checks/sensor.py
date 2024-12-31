@@ -2,7 +2,7 @@ import datetime
 from typing import Iterator, Optional, Sequence, Tuple, Union, cast
 
 from dagster import _check as check
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.asset_check_factories.utils import (
     FRESH_UNTIL_METADATA_KEY,
     ensure_no_duplicate_asset_checks,
@@ -33,7 +33,7 @@ FRESHNESS_SENSOR_DESCRIPTION = """
     """
 
 
-@experimental
+@beta
 def build_sensor_for_freshness_checks(
     *,
     freshness_checks: Sequence[AssetChecksDefinition],
