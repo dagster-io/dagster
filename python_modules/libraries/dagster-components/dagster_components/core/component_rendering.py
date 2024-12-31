@@ -4,6 +4,9 @@ import os
 from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Type, TypeVar, Union
 
 import dagster._check as check
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._record import record
 from jinja2.nativetypes import NativeTemplate
 from pydantic import BaseModel, Field
@@ -15,6 +18,13 @@ REF_BASE = "#/$defs/"
 REF_TEMPLATE = f"{REF_BASE}{{model}}"
 
 CONTEXT_KEY = "required_rendering_scope"
+
+
+def automation_condition_scope() -> Mapping[str, Any]:
+    return {
+        "eager": AutomationCondition.eager,
+        "on_cron": AutomationCondition.on_cron,
+    }
 
 
 def RenderingScope(field: Optional[FieldInfo] = None, *, required_scope: AbstractSet[str]) -> Any:
@@ -50,7 +60,9 @@ class TemplatedValueResolver:
 
     @staticmethod
     def default() -> "TemplatedValueResolver":
-        return TemplatedValueResolver(context={"env": _env})
+        return TemplatedValueResolver(
+            context={"env": _env, "automation_condition": automation_condition_scope()}
+        )
 
     def with_context(self, **additional_context) -> "TemplatedValueResolver":
         return TemplatedValueResolver(context={**self.context, **additional_context})
