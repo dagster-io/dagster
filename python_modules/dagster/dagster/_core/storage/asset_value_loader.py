@@ -2,7 +2,7 @@ from contextlib import ExitStack
 from typing import Any, Dict, Mapping, Optional, Type, cast
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, public
+from dagster._annotations import confirmed_deprecated_param, public
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.job_definition import (
@@ -65,7 +65,7 @@ class AssetValueLoader:
         ):
             self._resource_instance_cache[built_resource_key] = built_resource
 
-    @deprecated_param(
+    @confirmed_deprecated_param(
         param="metadata",
         breaking_version="2.0",
         additional_warn_text="Use `input_definition_metadata` instead.",

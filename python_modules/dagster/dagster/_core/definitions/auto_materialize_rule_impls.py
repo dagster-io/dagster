@@ -14,7 +14,7 @@ from typing import (
     Set,
 )
 
-from dagster._annotations import deprecated
+from dagster._annotations import confirmed_deprecated
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
@@ -221,7 +221,7 @@ class MaterializeOnCronRule(
 
 
 @whitelist_for_serdes
-@deprecated(breaking_version="1.10.0")
+@confirmed_deprecated(breaking_version="1.10.0")
 class AutoMaterializeAssetPartitionsFilter(
     NamedTuple(
         "_AutoMaterializeAssetPartitionsFilter",

@@ -24,7 +24,12 @@ from typing import (
 from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
+from dagster._annotations import (
+    PublicAttr,
+    confirmed_deprecated,
+    confirmed_deprecated_param,
+    public,
+)
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
@@ -65,7 +70,9 @@ INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v",
 PartitionConfigFn: TypeAlias = Callable[[str], Union[RunConfig, Mapping[str, Any]]]
 
 
-@deprecated(breaking_version="2.0", additional_warn_text="Use string partition keys instead.")
+@confirmed_deprecated(
+    breaking_version="2.0", additional_warn_text="Use string partition keys instead."
+)
 class Partition(Generic[T_cov]):
     """A Partition represents a single slice of the entire set of a job's possible work. It consists
     of a value, which is an object that represents that partition, and an optional name, which is
@@ -398,7 +405,7 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
         return self._instance.has_dynamic_partition(partitions_def_name, partition_key)
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="partition_fn",
     breaking_version="2.0",
     additional_warn_text="Provide partition definition name instead.",
@@ -575,12 +582,12 @@ class DynamicPartitionsDefinition(
         return DeleteDynamicPartitionsRequest(validated_name, partition_keys)
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="run_config_for_partition_fn",
     breaking_version="2.0",
     additional_warn_text="Use `run_config_for_partition_key_fn` instead.",
 )
-@deprecated_param(
+@confirmed_deprecated_param(
     param="tags_for_partition_fn",
     breaking_version="2.0",
     additional_warn_text="Use `tags_for_partition_key_fn` instead.",
@@ -636,7 +643,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         """T_PartitionsDefinition: The partitions definition associated with this PartitionedConfig."""
         return self._partitions
 
-    @deprecated(
+    @confirmed_deprecated(
         breaking_version="2.0",
         additional_warn_text="Use `run_config_for_partition_key_fn` instead.",
     )
@@ -661,7 +668,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
         """
         return self._run_config_for_partition_key_fn
 
-    @deprecated(
+    @confirmed_deprecated(
         breaking_version="2.0", additional_warn_text="Use `tags_for_partition_key_fn` instead."
     )
     @public
@@ -787,7 +794,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             return self._decorated_fn(*args, **kwargs)
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="tags_for_partition_fn",
     breaking_version="2.0",
     additional_warn_text="Use tags_for_partition_key_fn instead.",
@@ -878,7 +885,7 @@ def partitioned_config(
     return inner
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="tags_for_partition_fn",
     breaking_version="2.0",
     additional_warn_text="Use tags_for_partition_key_fn instead.",

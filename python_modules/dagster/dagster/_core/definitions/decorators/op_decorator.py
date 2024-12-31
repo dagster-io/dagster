@@ -16,7 +16,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated_param
+from dagster._annotations import confirmed_deprecated_param
 from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
@@ -157,7 +157,7 @@ def op(
 ) -> _Op: ...
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="version", breaking_version="2.0", additional_warn_text="Use `code_version` instead"
 )
 def op(

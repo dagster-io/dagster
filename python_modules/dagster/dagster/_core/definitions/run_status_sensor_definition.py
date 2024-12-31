@@ -21,7 +21,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import beta_param, deprecated_param, public
+from dagster._annotations import beta_param, confirmed_deprecated_param, public
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
@@ -449,12 +449,12 @@ def run_failure_sensor(
 ]: ...
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="job_selection",
     breaking_version="2.0",
     additional_warn_text="Use `monitored_jobs` instead.",
 )
-@deprecated_param(
+@confirmed_deprecated_param(
     param="monitor_all_repositories",
     breaking_version="2.0",
     additional_warn_text="Use `monitor_all_code_locations` instead.",
@@ -1038,12 +1038,12 @@ class RunStatusSensorDefinition(SensorDefinition):
         return SensorType.RUN_STATUS
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="job_selection",
     breaking_version="2.0",
     additional_warn_text="Use `monitored_jobs` instead.",
 )
-@deprecated_param(
+@confirmed_deprecated_param(
     param="monitor_all_repositories",
     breaking_version="2.0",
     additional_warn_text="Use `monitor_all_code_locations` instead.",

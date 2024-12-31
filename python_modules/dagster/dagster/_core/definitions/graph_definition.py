@@ -22,7 +22,7 @@ from toposort import CircularDependencyError
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, public
+from dagster._annotations import confirmed_deprecated_param, public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
@@ -130,7 +130,7 @@ def create_adjacency_lists(
     return (forward_edges, backward_edges)
 
 
-@deprecated_param(
+@confirmed_deprecated_param(
     param="node_input_source_assets",
     breaking_version="2.0",
     additional_warn_text="Use `input_assets` instead.",

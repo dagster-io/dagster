@@ -32,7 +32,7 @@ import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import confirmed_deprecated, public
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
@@ -2007,7 +2007,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
     @traced
-    @deprecated(breaking_version="2.0")
+    @confirmed_deprecated(breaking_version="2.0")
     def get_event_records(
         self,
         event_records_filter: "EventRecordsFilter",
@@ -2076,7 +2076,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
 
     @traced
-    @deprecated(breaking_version="2.0")
+    @confirmed_deprecated(breaking_version="2.0")
     def fetch_planned_materializations(
         self,
         records_filter: Union[AssetKey, "AssetRecordsFilter"],

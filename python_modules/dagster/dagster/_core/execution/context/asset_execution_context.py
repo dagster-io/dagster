@@ -1,7 +1,7 @@
 from typing import AbstractSet, Any, Iterator, Mapping, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import confirmed_deprecated, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
@@ -168,59 +168,59 @@ class AssetExecutionContext:
 
     ######## Deprecated methods
 
-    @deprecated(**_get_deprecation_kwargs("dagster_run"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("dagster_run"))
     @property
     @_copy_docs_from_op_execution_context
     def dagster_run(self) -> DagsterRun:
         return self.op_execution_context.dagster_run
 
-    @deprecated(**_get_deprecation_kwargs("run_id"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("run_id"))
     @property
     @_copy_docs_from_op_execution_context
     def run_id(self) -> str:
         return self.op_execution_context.run_id
 
-    @deprecated(**_get_deprecation_kwargs("run_config"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("run_config"))
     @property
     @_copy_docs_from_op_execution_context
     def run_config(self) -> Mapping[str, object]:
         return self.op_execution_context.run_config
 
-    @deprecated(**_get_deprecation_kwargs("run_tags"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("run_tags"))
     @property
     @_copy_docs_from_op_execution_context
     def run_tags(self) -> Mapping[str, str]:
         return self.op_execution_context.run_tags
 
-    @deprecated(**_get_deprecation_kwargs("has_tag"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("has_tag"))
     @public
     @_copy_docs_from_op_execution_context
     def has_tag(self, key: str) -> bool:
         return self.op_execution_context.has_tag(key)
 
-    @deprecated(**_get_deprecation_kwargs("get_tag"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("get_tag"))
     @public
     @_copy_docs_from_op_execution_context
     def get_tag(self, key: str) -> Optional[str]:
         return self.op_execution_context.get_tag(key)
 
-    @deprecated(**_get_deprecation_kwargs("get_op_execution_context"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("get_op_execution_context"))
     def get_op_execution_context(self) -> "OpExecutionContext":
         return self.op_execution_context
 
-    @deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("asset_partition_key_for_output"))
     @public
     @_copy_docs_from_op_execution_context
     def asset_partition_key_for_output(self, output_name: str = "result") -> str:
         return self.op_execution_context.asset_partition_key_for_output(output_name=output_name)
 
-    @deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_output"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("asset_partitions_time_window_for_output"))
     @public
     @_copy_docs_from_op_execution_context
     def asset_partitions_time_window_for_output(self, output_name: str = "result") -> TimeWindow:
         return self.op_execution_context.asset_partitions_time_window_for_output(output_name)
 
-    @deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_output"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("asset_partition_key_range_for_output"))
     @public
     @_copy_docs_from_op_execution_context
     def asset_partition_key_range_for_output(
@@ -228,50 +228,50 @@ class AssetExecutionContext:
     ) -> PartitionKeyRange:
         return self.op_execution_context.asset_partition_key_range_for_output(output_name)
 
-    @deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_output"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("asset_partitions_def_for_output"))
     @public
     @_copy_docs_from_op_execution_context
     def asset_partitions_def_for_output(self, output_name: str = "result") -> PartitionsDefinition:
         return self.op_execution_context.asset_partitions_def_for_output(output_name=output_name)
 
-    @deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_output"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("asset_partition_keys_for_output"))
     @public
     @_copy_docs_from_op_execution_context
     def asset_partition_keys_for_output(self, output_name: str = "result") -> Sequence[str]:
         return self.op_execution_context.asset_partition_keys_for_output(output_name=output_name)
 
-    @deprecated(**_get_deprecation_kwargs("op_config"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("op_config"))
     @public
     @property
     @_copy_docs_from_op_execution_context
     def op_config(self) -> Any:
         return self.op_execution_context.op_config
 
-    @deprecated(**_get_deprecation_kwargs("node_handle"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("node_handle"))
     @property
     @_copy_docs_from_op_execution_context
     def node_handle(self) -> NodeHandle:
         return self.op_execution_context.node_handle
 
-    @deprecated(**_get_deprecation_kwargs("op_handle"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("op_handle"))
     @property
     @_copy_docs_from_op_execution_context
     def op_handle(self) -> NodeHandle:
         return self.op_execution_context.op_handle
 
-    @deprecated(**_get_deprecation_kwargs("op"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("op"))
     @property
     @_copy_docs_from_op_execution_context
     def op(self) -> Node:
         return self.op_execution_context.op
 
-    @deprecated(**_get_deprecation_kwargs("get_mapping_key"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("get_mapping_key"))
     @public
     @_copy_docs_from_op_execution_context
     def get_mapping_key(self) -> Optional[str]:
         return self.op_execution_context.get_mapping_key()
 
-    @deprecated(**_get_deprecation_kwargs("selected_output_names"))
+    @confirmed_deprecated(**_get_deprecation_kwargs("selected_output_names"))
     @public
     @property
     @_copy_docs_from_op_execution_context
@@ -389,7 +389,9 @@ class AssetExecutionContext:
     def has_partition_key_range(self) -> bool:
         return self.op_execution_context.has_partition_key_range
 
-    @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
+    @confirmed_deprecated(
+        breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead."
+    )
     @public
     @property
     @_copy_docs_from_op_execution_context
