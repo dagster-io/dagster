@@ -142,6 +142,8 @@ class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
     pendingStepRunIds = non_null_list(graphene.String)
     assignedStepCount = graphene.NonNull(graphene.Int)
     assignedStepRunIds = non_null_list(graphene.String)
+    limit = graphene.Int()
+    usingDefaultLimit = graphene.Boolean()
 
     class Meta:
         name = "ConcurrencyKeyInfo"
@@ -192,6 +194,12 @@ class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
 
     def resolve_assignedStepRunIds(self, graphene_info: ResolveInfo):
         return list(self._get_concurrency_key_info(graphene_info).assigned_run_ids)
+
+    def resolve_limit(self, graphene_info: ResolveInfo):
+        return self._get_concurrency_key_info(graphene_info).limit
+
+    def resolve_usingDefaultLimit(self, graphene_info: ResolveInfo):
+        return self._get_concurrency_key_info(graphene_info).using_default_limit
 
 
 class GrapheneRunQueueConfig(graphene.ObjectType):
