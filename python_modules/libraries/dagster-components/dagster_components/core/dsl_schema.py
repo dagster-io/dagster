@@ -12,7 +12,11 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
 
-from dagster_components.core.component_rendering import RenderingScope, TemplatedValueResolver
+from dagster_components.core.component_rendering import (
+    RenderedModel,
+    RenderingMetadata,
+    TemplatedValueResolver,
+)
 
 
 class OpSpecBaseModel(BaseModel):
@@ -20,26 +24,23 @@ class OpSpecBaseModel(BaseModel):
     tags: Optional[Dict[str, str]] = None
 
 
-class AssetAttributesModel(BaseModel):
+class AssetAttributesModel(RenderedModel):
     key: Optional[str] = None
     deps: Sequence[str] = []
     description: Optional[str] = None
-    metadata: Union[str, Mapping[str, Any]] = {}
+    metadata: Annotated[
+        Union[str, Mapping[str, Any]], RenderingMetadata(output_type=Mapping[str, Any])
+    ] = {}
     group_name: Optional[str] = None
     skippable: bool = False
     code_version: Optional[str] = None
     owners: Sequence[str] = []
-    tags: Union[str, Mapping[str, str]] = {}
-    automation_condition: Optional[Union[str, AutomationCondition]] = RenderingScope(
-        Field(None), required_scope={"automation_condition"}
-    )
-
-    class Config:
-        # required for AutomationCondition
-        arbitrary_types_allowed = True
-
-    def get_resolved_attributes(self, value_resolver: TemplatedValueResolver) -> Mapping[str, Any]:
-        return value_resolver.render_obj(self.model_dump(exclude_unset=True))
+    tags: Annotated[
+        Union[str, Mapping[str, str]], RenderingMetadata(output_type=Mapping[str, str])
+    ] = {}
+    automation_condition: Annotated[
+        Optional[str], RenderingMetadata(output_type=Optional[AutomationCondition])
+    ] = None
 
 
 class AssetSpecProcessor(ABC, BaseModel):
@@ -62,7 +63,7 @@ class AssetSpecProcessor(ABC, BaseModel):
 
         # add the original spec to the context and resolve values
         return self._apply_to_spec(
-            spec, self.attributes.get_resolved_attributes(value_resolver.with_context(asset=spec))
+            spec, self.attributes.render_properties(value_resolver.with_context(asset=spec))
         )
 
     def apply(self, defs: Definitions, value_resolver: TemplatedValueResolver) -> Definitions:
@@ -102,8 +103,5 @@ class ReplaceAttributes(AssetSpecProcessor):
 
 
 AssetAttributes = Sequence[
-    Annotated[
-        Union[MergeAttributes, ReplaceAttributes],
-        RenderingScope(Field(union_mode="left_to_right"), required_scope={"asset"}),
-    ]
+    Annotated[Union[MergeAttributes, ReplaceAttributes], Field(union_mode="left_to_right")]
 ]
