@@ -75,7 +75,7 @@ class SlingReplicationComponent(Component):
 
         defs = Definitions(assets=[_fn], resources={"sling": self.resource})
         for transform in self.asset_processors:
-            defs = transform.apply(defs, context.templated_value_resolver)
+            defs = transform.apply(defs, context.templated_value_renderer)
         return defs
 
     def execute(

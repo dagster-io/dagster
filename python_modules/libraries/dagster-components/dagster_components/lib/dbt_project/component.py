@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import TemplatedValueResolver, component_type
+from dagster_components.core.component import TemplatedValueRenderer, component_type
 from dagster_components.core.dsl_schema import (
     AssetAttributes,
     AssetAttributesModel,
@@ -30,16 +30,16 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
         self,
         *,
         params: Optional[AssetAttributesModel],
-        value_resolver: TemplatedValueResolver,
+        value_renderer: TemplatedValueRenderer,
     ):
         self.params = params or AssetAttributesModel()
-        self.value_resolver = value_resolver
+        self.value_renderer = value_renderer
 
     def _get_rendered_attribute(
         self, attribute: str, dbt_resource_props: Mapping[str, Any], default_method
     ) -> Any:
-        resolver = self.value_resolver.with_context(node=dbt_resource_props)
-        rendered_attribute = self.params.render_properties(resolver).get(attribute)
+        renderer = self.value_renderer.with_context(node=dbt_resource_props)
+        rendered_attribute = self.params.render_properties(renderer).get(attribute)
         return (
             rendered_attribute
             if rendered_attribute is not None
@@ -92,7 +92,7 @@ class DbtProjectComponent(Component):
             op_spec=loaded_params.op,
             dbt_translator=DbtProjectComponentTranslator(
                 params=loaded_params.translator,
-                value_resolver=context.templated_value_resolver,
+                value_renderer=context.templated_value_renderer,
             ),
             asset_processors=loaded_params.asset_attributes or [],
         )
@@ -113,7 +113,7 @@ class DbtProjectComponent(Component):
 
         defs = Definitions(assets=[_fn])
         for transform in self.asset_processors:
-            defs = transform.apply(defs, context.templated_value_resolver)
+            defs = transform.apply(defs, context.templated_value_renderer)
         return defs
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
