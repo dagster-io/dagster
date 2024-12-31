@@ -54,7 +54,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             log manager when newed up from config.
 
     Examples:
-    Using an Azure Blob Storage account with an [AzureSecretCredential](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.clientsecretcredential?view=azure-python):
+    Using an Azure Blob Storage account with an `AzureSecretCredential <https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.clientsecretcredential?view=azure-python>`_:
 
     .. code-block:: YAML
 
@@ -72,7 +72,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             local_dir: "/tmp/cool"
             upload_interval: 30
 
-    Using an Azure Blob Storage account with a [DefaultAzureCredential](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.defaultazurecredential?view=azure-python):
+    Using an Azure Blob Storage account with a `DefaultAzureCredential` <https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.defaultazurecredential?view=azure-python>`_:
 
     .. code-block:: YAML
 
