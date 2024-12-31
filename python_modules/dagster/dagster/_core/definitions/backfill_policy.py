@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Iterable, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._annotations import experimental, public
+from dagster._annotations import beta, public
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -12,7 +12,7 @@ class BackfillPolicyType(Enum):
     MULTI_RUN = "MULTI_RUN"
 
 
-@experimental
+@beta
 @whitelist_for_serdes
 class BackfillPolicy(
     NamedTuple(
