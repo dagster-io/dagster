@@ -1,6 +1,7 @@
 ---
 title: Declarative automation
 sidebar_position: 20
+unlisted: true
 ---
 
 {/* TODO: What is DA, when would you use it */}

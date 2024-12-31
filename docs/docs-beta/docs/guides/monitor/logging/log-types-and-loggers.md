@@ -1,6 +1,7 @@
 ---
 title: Log types and loggers
 sidebar_position: 100
+unlisted: true
 ---
 
 ## Log types
