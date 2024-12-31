@@ -4,8 +4,7 @@ import pytest
 from dagster_components.core.component_rendering import (
     RenderingScope,
     TemplatedValueResolver,
-    _should_render,
-    preprocess_value,
+    has_rendering_scope,
 )
 from pydantic import BaseModel, Field, TypeAdapter
 
@@ -44,7 +43,9 @@ class Outer(BaseModel):
     ],
 )
 def test_should_render(path, expected: bool) -> None:
-    assert _should_render(path, Outer.model_json_schema(), Outer.model_json_schema()) == expected
+    assert (
+        has_rendering_scope(path, Outer.model_json_schema(), Outer.model_json_schema()) == expected
+    )
 
 
 def test_render() -> None:
@@ -61,7 +62,7 @@ def test_render() -> None:
     }
 
     renderer = TemplatedValueResolver(context={"foo_val": "foo", "bar_val": "bar"})
-    rendered_data = preprocess_value(renderer, data, Outer)
+    rendered_data = renderer.render_params(data, Outer)
 
     assert rendered_data == {
         "a": "foo",

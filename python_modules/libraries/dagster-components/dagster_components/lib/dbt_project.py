@@ -56,7 +56,7 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
             return super().get_asset_key(dbt_resource_props)
 
         return AssetKey.from_user_string(
-            self.value_resolver.with_context(node=dbt_resource_props).resolve(
+            self.value_resolver.with_context(node=dbt_resource_props).render_obj(
                 self.translator_params.key
             )
         )
@@ -65,7 +65,7 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
         if not self.translator_params or not self.translator_params.group:
             return super().get_group_name(dbt_resource_props)
 
-        return self.value_resolver.with_context(node=dbt_resource_props).resolve(
+        return self.value_resolver.with_context(node=dbt_resource_props).render_obj(
             self.translator_params.group
         )
 
@@ -117,7 +117,7 @@ class DbtProjectComponent(Component):
 
         defs = Definitions(assets=[_fn])
         for transform in self.asset_processors:
-            defs = transform.apply(defs)
+            defs = transform.apply(defs, context.templated_value_resolver)
         return defs
 
     @classmethod
