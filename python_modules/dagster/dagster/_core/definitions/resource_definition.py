@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import experimental_param, public
+from dagster._annotations import beta_param, public
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
     get_function_params,
@@ -56,7 +56,7 @@ ResourceFunction: TypeAlias = Union[
 ]
 
 
-@experimental_param(param="version")
+@beta_param(param="version")
 class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
     """Core class for defining resources.
 
