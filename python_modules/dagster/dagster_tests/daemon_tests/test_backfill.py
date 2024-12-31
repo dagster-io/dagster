@@ -2499,9 +2499,7 @@ def test_asset_backfill_with_single_run_backfill_policy_using_python_api(
 
     backfill_id = instance.launch_backfill(
         asset_graph=asset_graph,
-        partitions_by_assets=[
-            (asset_with_single_run_backfill_policy.key, [(partitions[0], partitions[-1])])
-        ],
+        partitions_by_assets={asset_with_single_run_backfill_policy.key: set(partitions)},
         tags={},
         title=None,
         description=None,
