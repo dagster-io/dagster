@@ -2,7 +2,7 @@ from typing import Dict, Mapping, Sequence, Tuple, Union, cast
 
 from pydantic import BaseModel
 
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.asset_check_factories.utils import build_multi_asset_check
 from dagster._core.definitions.asset_check_spec import (
     AssetCheckKey,
@@ -17,7 +17,7 @@ from dagster._core.definitions.metadata import TableColumn, TableMetadataSet, Ta
 from dagster._core.instance import DagsterInstance
 
 
-@experimental
+@beta
 def build_column_schema_change_checks(
     *,
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
