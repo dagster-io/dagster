@@ -27,6 +27,7 @@
 </div>
 
 1
+2
 
 **Dagster is a cloud-native data pipeline orchestrator for the whole development lifecycle, with integrated lineage and observability, a declarative programming model, and best-in-class testability.**
 
