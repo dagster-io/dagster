@@ -18,7 +18,7 @@ from tenacity import (
 )
 import openai
 
-from ingestion.github import GithubResource
+from project_ask_ai_dagster.project_ask_ai_dagster.resources.github import GithubResource
 from ingestion.openai import RateLimitedOpenAIEmbeddings
 from ingestion.webscrape import SitemapScraper
 # Load environment variables
@@ -33,7 +33,7 @@ class RAGApplication:
         self.github = github_resource
         self.scraper = site_scraper
         # Validate OpenAI API key
-        self.openai_key = os.getenv('OPENAI_API_KEY')
+        self.openai_key = dg.getenv('OPENAI_API_KEY')
         if not self.openai_key:
             raise ValueError("OPENAI_API_KEY not found in environment")
         
