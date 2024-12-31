@@ -612,7 +612,6 @@ class Definitions(IHaveNew):
         defs.get_repository_def().load_all_definitions()
 
     @public
-    @experimental
     @staticmethod
     def merge(*def_sets: "Definitions") -> "Definitions":
         """Merges multiple Definitions objects into a single Definitions object.
