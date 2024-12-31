@@ -72,7 +72,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             local_dir: "/tmp/cool"
             upload_interval: 30
 
-    Using an Azure Blob Storage account with a `DefaultAzureCredential` <https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.defaultazurecredential?view=azure-python>`_:
+    Using an Azure Blob Storage account with a `DefaultAzureCredential <https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.defaultazurecredential?view=azure-python>`_:
 
     .. code-block:: YAML
 
