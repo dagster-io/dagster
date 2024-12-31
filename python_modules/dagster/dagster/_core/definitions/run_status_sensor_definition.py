@@ -110,7 +110,12 @@ class RunStatusSensorCursor(
         ],
     )
 ):
-    def __new__(cls, record_id, update_timestamp=None, record_timestamp=None):
+    def __new__(
+        cls,
+        record_id: int,
+        update_timestamp: Optional[str] = None,
+        record_timestamp: Optional[str] = None,
+    ):
         return super(RunStatusSensorCursor, cls).__new__(
             cls,
             record_id=check.int_param(record_id, "record_id"),

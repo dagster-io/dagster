@@ -2,7 +2,7 @@ from typing import Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
-from dagster._core.definitions.events import AssetKey, MetadataValue
+from dagster._core.definitions.events import AssetKey, MetadataValue, RawMetadataValue
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._serdes import whitelist_for_serdes
 
@@ -97,7 +97,7 @@ class AssetCheckEvaluation(
         asset_key: AssetKey,
         check_name: str,
         passed: bool,
-        metadata: Mapping[str, MetadataValue],
+        metadata: Mapping[str, RawMetadataValue],
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,

@@ -179,7 +179,7 @@ class InProcessCodeLocationOrigin(
         loadable_target_origin: LoadableTargetOrigin,
         container_image: Optional[str] = None,
         entry_point: Optional[Sequence[str]] = None,
-        container_context=None,
+        container_context: Optional[Mapping[str, Any]] = None,
         location_name: Optional[str] = None,
     ):
         return super(InProcessCodeLocationOrigin, cls).__new__(

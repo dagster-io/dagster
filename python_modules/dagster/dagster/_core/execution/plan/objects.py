@@ -5,6 +5,7 @@ import dagster._check as check
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
+    RawMetadataValue,
     normalize_metadata,
 )
 from dagster._serdes import whitelist_for_serdes
@@ -30,7 +31,13 @@ class TypeCheckData(
         ],
     )
 ):
-    def __new__(cls, success, label, description=None, metadata=None):
+    def __new__(
+        cls,
+        success: bool,
+        label: str,
+        description: Optional[str] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    ):
         return super(TypeCheckData, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
@@ -56,7 +63,12 @@ class UserFailureData(
         ],
     )
 ):
-    def __new__(cls, label, description=None, metadata=None):
+    def __new__(
+        cls,
+        label: str,
+        description: Optional[str] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    ):
         return super(UserFailureData, cls).__new__(
             cls,
             label=check.str_param(label, "label"),
@@ -86,11 +98,16 @@ class StepFailureData(
         [
             ("error", Optional[SerializableErrorInfo]),
             ("user_failure_data", Optional[UserFailureData]),
-            ("error_source", ErrorSource),
+            ("error_source", Optional[ErrorSource]),
         ],
     )
 ):
-    def __new__(cls, error, user_failure_data, error_source=None):
+    def __new__(
+        cls,
+        error: Optional[SerializableErrorInfo],
+        user_failure_data: Optional[UserFailureData],
+        error_source: Optional[ErrorSource] = None,
+    ):
         return super(StepFailureData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -148,10 +165,12 @@ def step_failure_event_from_exc_info(
 class StepRetryData(
     NamedTuple(
         "_StepRetryData",
-        [("error", SerializableErrorInfo), ("seconds_to_wait", Optional[check.Numeric])],
+        [("error", Optional[SerializableErrorInfo]), ("seconds_to_wait", Optional[check.Numeric])],
     )
 ):
-    def __new__(cls, error, seconds_to_wait=None):
+    def __new__(
+        cls, error: Optional[SerializableErrorInfo], seconds_to_wait: Optional[check.Numeric] = None
+    ):
         return super(StepRetryData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -161,7 +180,7 @@ class StepRetryData(
 
 @whitelist_for_serdes
 class StepSuccessData(NamedTuple("_StepSuccessData", [("duration_ms", float)])):
-    def __new__(cls, duration_ms):
+    def __new__(cls, duration_ms: float):
         return super(StepSuccessData, cls).__new__(
             cls, duration_ms=check.float_param(duration_ms, "duration_ms")
         )

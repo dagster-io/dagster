@@ -1,4 +1,4 @@
-from typing import Callable, Mapping, NamedTuple, Optional, Union
+from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -65,14 +65,14 @@ class EventLogEntry(
 
     def __new__(
         cls,
-        error_info,
-        level,
-        user_message,
-        run_id,
-        timestamp,
-        step_key=None,
-        job_name=None,
-        dagster_event=None,
+        error_info: Optional[SerializableErrorInfo],
+        level: Union[str, int],
+        user_message: str,
+        run_id: str,
+        timestamp: float,
+        step_key: Optional[str] = None,
+        job_name: Optional[str] = None,
+        dagster_event: Optional[DagsterEvent] = None,
     ):
         return super(EventLogEntry, cls).__new__(
             cls,
@@ -182,12 +182,12 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
 
     return EventLogEntry(
         level=logger_message.level,
-        user_message=logger_message.meta["orig_message"],
-        run_id=logger_message.meta["run_id"],
+        user_message=cast(str, logger_message.meta["orig_message"]),
+        run_id=cast(str, logger_message.meta["run_id"]),
         timestamp=logger_message.record.created,
-        step_key=logger_message.meta.get("step_key"),
-        job_name=logger_message.meta.get("job_name"),
-        dagster_event=logger_message.meta.get("dagster_event"),
+        step_key=cast(Optional[str], logger_message.meta.get("step_key")),
+        job_name=cast(Optional[str], logger_message.meta.get("job_name")),
+        dagster_event=cast(Optional[DagsterEvent], logger_message.meta.get("dagster_event")),
         error_info=None,
     )
 

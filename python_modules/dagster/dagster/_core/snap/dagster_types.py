@@ -5,6 +5,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
+    RawMetadataMapping,
     normalize_metadata,
 )
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
@@ -82,16 +83,16 @@ class DagsterTypeSnap(
 ):
     def __new__(
         cls,
-        kind,
-        key,
-        name,
-        description,
-        display_name,
-        is_builtin,
-        type_param_keys,
-        loader_schema_key=None,
-        materializer_schema_key=None,
-        metadata=None,
+        kind: DagsterTypeKind,
+        key: str,
+        name: Optional[str],
+        description: Optional[str],
+        display_name: str,
+        is_builtin: bool,
+        type_param_keys: Sequence[str],
+        loader_schema_key: Optional[str] = None,
+        materializer_schema_key: Optional[str] = None,
+        metadata: Optional[RawMetadataMapping] = None,
     ):
         return super(DagsterTypeSnap, cls).__new__(
             cls,

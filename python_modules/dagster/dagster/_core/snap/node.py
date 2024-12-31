@@ -15,6 +15,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
+    RawMetadataValue,
     normalize_metadata,
 )
 from dagster._core.snap.dep_snapshot import (
@@ -43,7 +44,7 @@ class InputDefSnap(IHaveNew):
         name: str,
         dagster_type_key: str,
         description: Optional[str],
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         return super().__new__(
             cls,
@@ -76,7 +77,7 @@ class OutputDefSnap(IHaveNew):
         dagster_type_key: str,
         description: Optional[str],
         is_required: bool,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         is_dynamic: bool = False,
     ):
         return super().__new__(

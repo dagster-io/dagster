@@ -7,6 +7,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
+    RawMetadataValue,
     normalize_metadata,
 )
 from dagster._core.execution.plan.handle import UnresolvedStepHandle
@@ -125,7 +126,7 @@ class StepOutputData(
         step_output_handle: "StepOutputHandle",
         type_check_data: Optional[TypeCheckData] = None,
         version: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         # graveyard
         intermediate_materialization: Optional[AssetMaterialization] = None,
     ):

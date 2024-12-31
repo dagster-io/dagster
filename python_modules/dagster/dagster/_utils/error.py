@@ -3,7 +3,7 @@ import sys
 import traceback
 import uuid
 from types import TracebackType
-from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from typing import NamedTuple, Optional, Sequence, Tuple, Type, Union
 
 from typing_extensions import TypeAlias
 
@@ -20,8 +20,8 @@ class SerializableErrorInfo(
             ("message", str),
             ("stack", Sequence[str]),
             ("cls_name", Optional[str]),
-            ("cause", Any),
-            ("context", Any),
+            ("cause", Optional["SerializableErrorInfo"]),
+            ("context", Optional["SerializableErrorInfo"]),
         ],
     )
 ):

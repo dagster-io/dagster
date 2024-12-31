@@ -5,19 +5,7 @@ from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from datetime import datetime
 from functools import lru_cache
-from typing import (
-    Collection,
-    Dict,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Type, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -859,7 +847,7 @@ class StaticPartitionMapping(
         [
             (
                 "downstream_partition_keys_by_upstream_partition_key",
-                PublicAttr[Mapping[str, Union[str, Collection[str]]]],
+                PublicAttr[Mapping[str, Union[str, Sequence[str]]]],
             )
         ],
     ),
@@ -874,7 +862,7 @@ class StaticPartitionMapping(
     def __init__(
         self,
         downstream_partition_keys_by_upstream_partition_key: Mapping[
-            str, Union[str, Collection[str]]
+            str, Union[str, Sequence[str]]
         ],
     ):
         check.mapping_param(

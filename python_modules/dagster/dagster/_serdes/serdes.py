@@ -90,7 +90,7 @@ PackableValue: TypeAlias = Union[
     None,
     NamedTuple,
     BaseModel,
-    "DataclassInstance",
+    "DataclassInstance",  # REVIEW: Any dataclass instance is packable? That's not true, is this just to cover all serdes objects?
     Set["PackableValue"],
     FrozenSet["PackableValue"],
     Enum,
@@ -710,14 +710,10 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
             if parameter.kind is Parameter.VAR_POSITIONAL:
                 check.failed("Can not use positional args capture on serdes object.")
             elif parameter.kind is Parameter.VAR_KEYWORD:
-                names.extend(
-                    check.not_none(
-                        self.kwargs_fields,
-                        "Must specify kwargs_fields when using kwarg capture in __new__.",
-                    )
-                )
-            else:
-                names.append(name)
+                if not self.kwargs_fields or parameter.name not in self.kwargs_fields:
+                    check.failed("Must specify kwargs_fields when using kwarg capture in __new__.")
+
+            names.append(name)
 
         return names
 

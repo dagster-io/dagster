@@ -74,6 +74,7 @@ from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataMapping,
     MetadataValue,
+    RawMetadataMapping,
     TextMetadataValue,
     normalize_metadata,
 )
@@ -158,7 +159,7 @@ class RepositorySnap(IHaveNew):
         job_refs: Optional[Sequence["JobRefSnap"]] = None,
         resources: Optional[Sequence["ResourceSnap"]] = None,
         asset_check_nodes: Optional[Sequence["AssetCheckNodeSnap"]] = None,
-        metadata: Optional[MetadataMapping] = None,
+        metadata: Optional[RawMetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
     ):
         return super().__new__(
@@ -172,7 +173,7 @@ class RepositorySnap(IHaveNew):
             job_refs=job_refs,
             resources=resources,
             asset_check_nodes=asset_check_nodes,
-            metadata=metadata or {},
+            metadata=normalize_metadata(metadata or {}, allow_invalid=True),
             utilized_env_vars=utilized_env_vars,
         )
 
@@ -593,7 +594,10 @@ class TargetSnap:
     op_selection: Optional[Sequence[str]]
 
 
-@whitelist_for_serdes(storage_name="ExternalSensorMetadata")
+@whitelist_for_serdes(
+    storage_name="ExternalSensorMetadata",
+    field_serializers={"standard_metadata": MetadataFieldSerializer},
+)
 @record
 class SensorMetadataSnap:
     """Stores sensor metadata which is available in the Dagster UI.
@@ -605,7 +609,7 @@ class SensorMetadataSnap:
     """
 
     asset_keys: Optional[Sequence[AssetKey]]
-    standard_metadata: Optional[Mapping[str, MetadataValue]] = None
+    standard_metadata: Optional[MetadataMapping] = None
 
 
 @whitelist_for_serdes(

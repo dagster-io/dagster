@@ -33,7 +33,7 @@ from dagster._utils.cached_method import cached_method
 
 
 def test_deserialize_value_ok():
-    unpacked_tuple = deserialize_value('{"foo": "bar"}', as_type=dict)
+    unpacked_tuple = deserialize_value(serialize_value({"foo": "bar"}))
     assert unpacked_tuple
     assert unpacked_tuple["foo"] == "bar"
 

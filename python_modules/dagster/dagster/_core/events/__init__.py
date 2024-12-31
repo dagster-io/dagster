@@ -1349,7 +1349,7 @@ class DagsterEvent(
         output_name: str,
         manager_key: str,
         message_override: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ) -> "DagsterEvent":
         message = f'Handled output "{output_name}" using IO manager "{manager_key}"'
         return DagsterEvent.from_step(
@@ -1371,7 +1371,7 @@ class DagsterEvent(
         upstream_output_name: Optional[str] = None,
         upstream_step_key: Optional[str] = None,
         message_override: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ) -> "DagsterEvent":
         message = f'Loaded input "{input_name}" using input manager "{manager_key}"'
         if upstream_output_name:
@@ -1649,7 +1649,7 @@ class ObjectStoreOperationResultData(
         cls,
         op: ObjectStoreOperationType,
         value_name: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         address: Optional[str] = None,
         version: Optional[str] = None,
         mapping_key: Optional[str] = None,
@@ -1819,7 +1819,7 @@ class HandledOutputData(
         cls,
         output_name: str,
         manager_key: str,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         return super(HandledOutputData, cls).__new__(
             cls,
@@ -1853,7 +1853,7 @@ class LoadedInputData(
         manager_key: str,
         upstream_output_name: Optional[str] = None,
         upstream_step_key: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         return super(LoadedInputData, cls).__new__(
             cls,

@@ -268,7 +268,7 @@ class CustomPointer(
         [
             ("reconstructor_pointer", ModuleCodePointer),
             ("reconstructable_args", Sequence[object]),
-            ("reconstructable_kwargs", Sequence[Sequence]),
+            ("reconstructable_kwargs", Sequence[Sequence[object]]),
         ],
     ),
     CodePointer,
@@ -277,7 +277,7 @@ class CustomPointer(
         cls,
         reconstructor_pointer: ModuleCodePointer,
         reconstructable_args: Sequence[object],
-        reconstructable_kwargs: Sequence[Sequence],
+        reconstructable_kwargs: Sequence[Sequence[object]],
     ):
         check.inst_param(reconstructor_pointer, "reconstructor_pointer", ModuleCodePointer)
         # These are lists rather than tuples to circumvent the tuple serdes machinery -- since these

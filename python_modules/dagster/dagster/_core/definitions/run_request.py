@@ -45,7 +45,6 @@ from dagster._utils.tags import normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.run_config import RunConfig
 
 
 @whitelist_for_serdes(old_storage_names={"JobType"})
@@ -121,7 +120,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     def __new__(
         cls,
         run_key: Optional[str] = None,
-        run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
         tags: Optional[Mapping[str, Any]] = None,
         job_name: Optional[str] = None,
         asset_selection: Optional[Sequence[AssetKey]] = None,

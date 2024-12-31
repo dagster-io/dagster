@@ -228,7 +228,7 @@ class ReconstructableJob(
         cls,
         repository: ReconstructableRepository,
         job_name: str,
-        op_selection: Optional[Iterable[str]] = None,
+        op_selection: Optional[AbstractSet[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet[AssetCheckKey]] = None,
     ):

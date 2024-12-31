@@ -66,7 +66,6 @@ from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
 
 RawMetadataValue = Union[
-    MetadataValue,
     TableSchema,
     AssetKey,
     os.PathLike,
@@ -257,13 +256,12 @@ class MetadataEntry(
                 old_arg="entry_data",
             ),
         )
-        value = normalize_metadata_value(value)
 
         return super(MetadataEntry, cls).__new__(
             cls,
             check.str_param(label, "label"),
             check.opt_str_param(description, "description"),
-            check.inst_param(value, "value", MetadataValue),
+            check.inst_param(normalize_metadata_value(value), "value", MetadataValue),
         )
 
     @property

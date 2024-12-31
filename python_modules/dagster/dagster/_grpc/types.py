@@ -20,7 +20,7 @@ from dagster._core.remote_representation.origin import (
     RemoteRepositoryOrigin,
 )
 from dagster._serdes import serialize_value, whitelist_for_serdes
-from dagster._serdes.serdes import SetToSequenceFieldSerializer
+from dagster._serdes.serdes import JsonSerializableValue, SetToSequenceFieldSerializer
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -340,7 +340,7 @@ class ListRepositoriesResponse(
         repository_code_pointer_dict: Optional[Mapping[str, CodePointer]] = None,
         entry_point: Optional[Sequence[str]] = None,
         container_image: Optional[str] = None,
-        container_context: Optional[Mapping] = None,
+        container_context: Optional[Mapping[str, JsonSerializableValue]] = None,
         dagster_library_versions: Optional[Mapping[str, str]] = None,
     ):
         return super(ListRepositoriesResponse, cls).__new__(
