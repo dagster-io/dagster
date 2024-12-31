@@ -21,7 +21,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, experimental_param, public
+from dagster._annotations import beta_param, deprecated_param, public
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
@@ -343,7 +343,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
         return [cast(DagsterEvent, record.event_log_entry.dagster_event) for record in records]
 
 
-@experimental_param(param="repository_def")
+@beta_param(param="repository_def")
 def build_run_status_sensor_context(
     sensor_name: str,
     dagster_event: DagsterEvent,
