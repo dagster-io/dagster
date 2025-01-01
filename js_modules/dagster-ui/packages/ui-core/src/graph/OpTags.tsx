@@ -169,7 +169,7 @@ import tableau from './kindtag-images/tool-tableau-color.svg';
 import teams from './kindtag-images/tool-teams-color.svg';
 import tecton from './kindtag-images/tool-tecton-color.svg';
 import tensorflow from './kindtag-images/tool-tensorflow-color.svg';
-import tetadata from './kindtag-images/tool-tetadata-color.svg';
+import teradata from './kindtag-images/tool-teradata-color.svg';
 import thoughtspot from './kindtag-images/tool-thoughtspot-color.svg';
 import trino from './kindtag-images/tool-trino-color.svg';
 import twilio from './kindtag-images/tool-twilio-color.svg';
@@ -219,7 +219,7 @@ export type KnownTagType =
   | 'spark'
   | 'duckdb'
   | 'tensorflow'
-  | 'tetadata'
+  | 'teradata'
   | 'pandas'
   | 'semanticmodel'
   | 'googlesheets'
@@ -470,8 +470,8 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: tensorflow,
     content: 'TensorFlow',
   },
-  tetadata: {
-    icon: tetadata,
+  teradata: {
+    icon: teradata,
     content: 'Teradata',
   },
   pandas: {
