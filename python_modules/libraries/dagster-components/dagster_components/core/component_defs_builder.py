@@ -5,7 +5,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Type
 
-from dagster._core.code_pointer import load_python_file
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
@@ -72,9 +71,9 @@ def component_type_from_yaml_decl(
             py_path = str(decl_node.path / f"{module_name}.py")
             module = load_module_from_path(module_name, py_path)
 
-            print("**************")
-            print(f"Using {module_name} at {py_path} found module: {module} ")
-            print("**************")
+            # print("**************")
+            # print(f"Using {module_name} at {py_path} found module: {module} ")
+            # print("**************")
 
             for _name, obj in inspect.getmembers(module, inspect.isclass):
                 assert isinstance(obj, Type)
