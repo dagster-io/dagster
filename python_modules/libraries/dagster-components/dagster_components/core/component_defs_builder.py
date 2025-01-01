@@ -5,6 +5,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Type
 
+from dagster._core.code_pointer import load_python_file
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
@@ -64,7 +65,16 @@ def component_type_from_yaml_decl(
         for py_file in decl_node.path.glob("*.py"):
             module_name = py_file.stem
 
-            module = load_module_from_path(module_name, str(decl_node.path / f"{module_name}.py"))
+            # module = load_python_file(
+            #     python_file=str(decl_node.path / f"{module_name}.py"),
+            #     working_directory=str(decl_node.path.parent),
+            # )
+            py_path = str(decl_node.path / f"{module_name}.py")
+            module = load_module_from_path(module_name, py_path)
+
+            print("**************")
+            print(f"Using {module_name} at {py_path} found module: {module} ")
+            print("**************")
 
             for _name, obj in inspect.getmembers(module, inspect.isclass):
                 assert isinstance(obj, Type)
