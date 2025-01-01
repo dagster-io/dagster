@@ -22,7 +22,7 @@ export type SingleConcurrencyKeyQuery = {
         stepKey: string;
         enqueuedTimestamp: number;
         assignedTimestamp: number | null;
-        priority: number | null;
+        priority: any | null;
       }>;
     };
   };
