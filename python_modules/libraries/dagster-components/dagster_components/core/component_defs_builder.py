@@ -64,7 +64,7 @@ def component_type_from_yaml_decl(
         for py_file in decl_node.path.glob("*.py"):
             module_name = py_file.stem
 
-            module = load_module_from_path(module_name, decl_node.path / f"{module_name}.py")
+            module = load_module_from_path(module_name, str(decl_node.path / f"{module_name}.py"))
 
             for _name, obj in inspect.getmembers(module, inspect.isclass):
                 assert isinstance(obj, Type)
@@ -87,6 +87,25 @@ def build_components_from_component_folder(
     component_folder = path_to_decl_node(path)
     assert isinstance(component_folder, ComponentFolder)
     return load_components_from_context(context.for_decl_node(component_folder))
+
+
+def build_components_from_component_path(
+    path: Path,
+    registry: ComponentTypeRegistry,
+    resources: Mapping[str, object],
+) -> Sequence[Component]:
+    """Build componetns object from a folder within the components hierarchy."""
+    decl_node = path_to_decl_node(path=path)
+    if not decl_node:
+        raise Exception(f"No component found at path {path}")
+
+    context = ComponentLoadContext(
+        resources=resources,
+        registry=registry,
+        decl_node=decl_node,
+        templated_value_resolver=TemplatedValueResolver.default(),
+    )
+    return load_components_from_context(context)
 
 
 def build_defs_from_component_path(

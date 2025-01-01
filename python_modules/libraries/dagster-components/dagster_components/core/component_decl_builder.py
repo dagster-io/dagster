@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, List, Mapping, Optional, Sequence, Union
 
 from dagster._record import record
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
@@ -8,9 +8,14 @@ from pydantic import BaseModel
 from dagster_components.core.component import ComponentDeclNode
 
 
+class RequiresModel(BaseModel):
+    env: Optional[List[str]] = None
+
+
 class ComponentFileModel(BaseModel):
     type: str
     params: Optional[Mapping[str, Any]] = None
+    requires: Optional[RequiresModel] = None
 
 
 @record
