@@ -89,22 +89,29 @@ def build_components_from_component_folder(
     return load_components_from_context(context.for_decl_node(component_folder))
 
 
-def build_components_from_component_path(
+def loading_context_for_component_path(
     path: Path,
     registry: ComponentTypeRegistry,
     resources: Mapping[str, object],
-) -> Sequence[Component]:
-    """Build componetns object from a folder within the components hierarchy."""
+) -> ComponentLoadContext:
     decl_node = path_to_decl_node(path=path)
     if not decl_node:
         raise Exception(f"No component found at path {path}")
 
-    context = ComponentLoadContext(
+    return ComponentLoadContext(
         resources=resources,
         registry=registry,
         decl_node=decl_node,
         templated_value_resolver=TemplatedValueResolver.default(),
     )
+
+
+def build_components_from_component_path(
+    path: Path,
+    registry: ComponentTypeRegistry,
+    resources: Mapping[str, object],
+) -> Sequence[Component]:
+    context = loading_context_for_component_path(path, registry, resources)
     return load_components_from_context(context)
 
 
