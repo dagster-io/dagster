@@ -789,7 +789,10 @@ class DagsterInstance(DynamicPartitionsStore):
         if not isinstance(self.run_coordinator, QueuedRunCoordinator):
             return None
 
-        return self.run_coordinator.get_run_queue_config()
+        run_coordinator_run_queue_config = self.run_coordinator.get_run_queue_config()
+        return run_coordinator_run_queue_config.with_concurrency_settings(
+            self.get_settings("concurrency")
+        )
 
     @property
     def run_launcher(self) -> "RunLauncher":
@@ -966,6 +969,11 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:
+        default_limit = self.get_settings("concurrency").get("pools", {}).get("default_limit")
+        if default_limit is not None:
+            return default_limit
+
+        # fallback to the old settings
         return self.get_settings("concurrency").get("default_op_concurrency_limit")
 
     # python logs
