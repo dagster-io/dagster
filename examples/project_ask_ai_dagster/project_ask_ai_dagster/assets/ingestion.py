@@ -1,9 +1,16 @@
 import dagster as dg
 from project_ask_ai_dagster.resources.github import GithubResource
 from project_ask_ai_dagster.resources.openai import RateLimitedOpenAIEmbeddingsResource
+from project_ask_ai_dagster.resources.scraper import scraper_resource
 
 START_TIME = "2023-01-01"
 daily_partition = dg.DailyPartitionsDefinition(start_date=START_TIME)
+
+url_partition = dg.DynamicPartitionsDefinition()
+
+def get_sitemap(scraper_resource) -> List[str]:
+    return scraper_resource.parse_sitemap()
+
 
 @dg.asset(
     group_name="ingestion",
@@ -39,4 +46,16 @@ def github_data(context: dg.AssetExecutionContext,
         }
     )
 
+dg.asset(
+    group_name="ingestion",
+    kinds={"webscraping","python"},
+    partitions_def=url_partition
+)
+def docs_scraping(context: dg.AssetExecutionContext):
 
+    return dg.MaterializeResult(
+        metadata={
+            "number_of_issues": len(issues),
+            "number_of_discussions": len(discussions),
+        }
+    )
