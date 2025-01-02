@@ -1,6 +1,18 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from dagster import (
     AssetSpec,
@@ -13,6 +25,7 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
+from dagster._utils.warnings import deprecation_warning
 from looker_sdk import init40
 from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
 from looker_sdk.sdk.api40.methods import Looker40SDK
@@ -107,20 +120,16 @@ class LookerResource(ConfigurableResource):
         from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 
         resource_key = "looker"
-        translator_cls = (
-            dagster_looker_translator.__class__
-            if dagster_looker_translator
-            else DagsterLookerApiTranslator
-        )
+        translator = dagster_looker_translator or DagsterLookerApiTranslator()
 
         pdts = build_looker_pdt_assets_definitions(
             resource_key=resource_key,
             request_start_pdt_builds=request_start_pdt_builds or [],
-            dagster_looker_translator=translator_cls,
+            dagster_looker_translator=translator,
         )
 
         return Definitions(
-            assets=[*pdts, *load_looker_asset_specs(self, translator_cls, looker_filter)],
+            assets=[*pdts, *load_looker_asset_specs(self, translator, looker_filter)],
             resources={resource_key: self},
         )
 
@@ -128,23 +137,36 @@ class LookerResource(ConfigurableResource):
 @experimental
 def load_looker_asset_specs(
     looker_resource: LookerResource,
-    dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
+    dagster_looker_translator: Optional[
+        Union[DagsterLookerApiTranslator, Type[DagsterLookerApiTranslator]]
+    ] = None,
     looker_filter: Optional[LookerFilter] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Looker structures.
 
     Args:
         looker_resource (LookerResource): The Looker resource to fetch assets from.
-        dagster_looker_translator (Type[DagsterLookerApiTranslator]): The translator to use
-            to convert Looker structures into AssetSpecs. Defaults to DagsterLookerApiTranslator.
+        dagster_looker_translator (Optional[Union[DagsterLookerApiTranslator, Type[DagsterLookerApiTranslator]]]):
+            The translator to use to convert Looker structures into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterLookerApiTranslator`.
 
     Returns:
         List[AssetSpec]: The set of AssetSpecs representing the Looker structures.
     """
+    if isinstance(dagster_looker_translator, type):
+        deprecation_warning(
+            subject="Support of `dagster_looker_translator` as a Type[DagsterLookerApiTranslator]",
+            breaking_version="1.10",
+            additional_warn_text=(
+                "Pass an instance of DagsterLookerApiTranslator or subclass to `dagster_looker_translator` instead."
+            ),
+        )
+        dagster_looker_translator = dagster_looker_translator()
+
     return check.is_list(
         LookerApiDefsLoader(
             looker_resource=looker_resource,
-            translator_cls=dagster_looker_translator,
+            translator=dagster_looker_translator or DagsterLookerApiTranslator(),
             looker_filter=looker_filter or LookerFilter(),
         )
         .build_defs()
@@ -165,7 +187,7 @@ def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) 
 @dataclass(frozen=True)
 class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     looker_resource: LookerResource
-    translator_cls: Type[DagsterLookerApiTranslator]
+    translator: DagsterLookerApiTranslator
     looker_filter: LookerFilter
 
     @property
@@ -178,8 +200,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
     def defs_from_state(self, state: Mapping[str, Any]) -> Definitions:
         looker_instance_data = LookerInstanceData.from_state(self.looker_resource.get_sdk(), state)
-        translator = self.translator_cls()
-        return self._build_defs_from_looker_instance_data(looker_instance_data, translator)
+        return self._build_defs_from_looker_instance_data(looker_instance_data, self.translator)
 
     def _build_defs_from_looker_instance_data(
         self,
