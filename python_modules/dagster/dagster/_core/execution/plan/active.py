@@ -338,15 +338,13 @@ class ActiveExecution:
             if run_scoped_concurrency_limits_counter:
                 run_scoped_concurrency_limits_counter.update_counters_with_launched_item(step)
 
-            if step.concurrency_group and self._instance_concurrency_context:
+            if step.pool and self._instance_concurrency_context:
                 try:
                     step_priority = int(step.tags.get(PRIORITY_TAG, 0))
                 except ValueError:
                     step_priority = 0
 
-                if not self._instance_concurrency_context.claim(
-                    step.concurrency_group, step.key, step_priority
-                ):
+                if not self._instance_concurrency_context.claim(step.pool, step.key, step_priority):
                     continue
 
             batch.append(step)
@@ -643,9 +641,9 @@ class ActiveExecution:
             ):
                 step = self.get_step_by_key(step_key)
                 step_context = plan_context.for_step(step)
-                concurrency_group = cast(str, step.concurrency_group)
+                pool = cast(str, step.pool)
                 self._messaged_concurrency_slots[step_key] = time.time()
                 is_initial_message = last_messaged_timestamp is None
                 yield DagsterEvent.step_concurrency_blocked(
-                    step_context, concurrency_group, initial=is_initial_message
+                    step_context, pool, initial=is_initial_message
                 )

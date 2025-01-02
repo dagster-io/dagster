@@ -80,7 +80,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the op. If set,
             this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
-        concurrency_group (Optional[str]): A string that identifies the concurrency limit group that governs
+        pool (Optional[str]): A string that identifies the concurrency limit group that governs
             this op's execution.
 
 
@@ -103,7 +103,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     _required_resource_keys: AbstractSet[str]
     _version: Optional[str]
     _retry_policy: Optional[RetryPolicy]
-    _concurrency_group: Optional[str]
+    _pool: Optional[str]
 
     def __init__(
         self,
@@ -118,7 +118,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
-        concurrency_group: Optional[str] = None,
+        pool: Optional[str] = None,
     ):
         from dagster._core.definitions.decorators.op_decorator import (
             DecoratedOpFunction,
@@ -163,8 +163,8 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
-        self._concurrency_group = concurrency_group
-        concurrency_group = _validate_concurrency_group(concurrency_group, tags)
+        self._pool = pool
+        pool = _validate_pool(pool, tags)
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
@@ -194,7 +194,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str],
         retry_policy: Optional[RetryPolicy],
         code_version: Optional[str],
-        concurrency_group: Optional[str],
+        pool: Optional[str],
     ) -> "OpDefinition":
         return OpDefinition(
             compute_fn=compute_fn,
@@ -208,7 +208,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             version=version,
             retry_policy=retry_policy,
             code_version=code_version,
-            concurrency_group=concurrency_group,
+            pool=pool,
         )
 
     @property
@@ -295,9 +295,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return super().with_retry_policy(retry_policy)
 
     @property
-    def concurrency_group(self) -> Optional[str]:
+    def pool(self) -> Optional[str]:
         """Optional[str]: The concurrency group for this op."""
-        return self._concurrency_group
+        return self._pool
 
     def is_from_decorator(self) -> bool:
         from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -385,7 +385,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             code_version=self._version,
             retry_policy=self.retry_policy,
             version=None,  # code_version replaces version
-            concurrency_group=self.concurrency_group,
+            pool=self.pool,
         )
 
     def copy_for_configured(
@@ -594,19 +594,19 @@ def _is_result_object_type(ttype):
     return ttype in (MaterializeResult, ObserveResult, AssetCheckResult)
 
 
-def _validate_concurrency_group(concurrency_group, tags):
+def _validate_pool(pool, tags):
     from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 
-    check.opt_str_param(concurrency_group, "concurrency_group")
+    check.opt_str_param(pool, "pool")
     tags = check.opt_mapping_param(tags, "tags")
     tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
-    if concurrency_group and tag_concurrency_key and concurrency_group != tag_concurrency_key:
+    if pool and tag_concurrency_key and pool != tag_concurrency_key:
         raise DagsterInvalidDefinitionError(
-            f'Concurrency group "{concurrency_group}" that conflicts with the concurrency key tag "{tag_concurrency_key}".'
+            f'Concurrency group "{pool}" that conflicts with the concurrency key tag "{tag_concurrency_key}".'
         )
 
-    if concurrency_group:
-        return concurrency_group
+    if pool:
+        return pool
 
     if tag_concurrency_key:
         return tag_concurrency_key
