@@ -120,7 +120,7 @@ import Experimental from '../../../partials/\_Experimental.md';
 
 <Experimental />
 
-import Preview from '../partials/\_Preview.md';
+import Preview from '../../../partials/\_Preview.md';
 
 <Preview />
 
