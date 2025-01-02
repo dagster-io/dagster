@@ -1,4 +1,5 @@
 import contextlib
+import json
 import os
 import posixpath
 import re
@@ -6,12 +7,26 @@ import subprocess
 import sys
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import click
 import jinja2
+from click.formatting import HelpFormatter
 from typing_extensions import TypeAlias
 
+from dagster_dg.error import DgError
 from dagster_dg.version import __version__ as dagster_version
 
 # There is some weirdness concerning the availabilty of hashlib.HASH between different Python
@@ -211,3 +226,119 @@ def hash_file_metadata(hasher: Hash, path: Union[str, Path]) -> None:
     hasher.update(str(path).encode())
     hasher.update(str(stat.st_mtime).encode())  # Last modified time
     hasher.update(str(stat.st_size).encode())  # File size
+
+
+T = TypeVar("T")
+
+
+def not_none(value: Optional[T]) -> T:
+    if value is None:
+        raise DgError("Expected non-none value.")
+    return value
+
+
+# ########################
+# ##### CUSTOM CLICK SUBCLASSES
+# ########################
+
+# Here we subclass click.Command and click.Group to customize the help output. We do this in order
+# to visually separate global from command-specific options. The form of the output can be seen in
+# dagster_dg_tests.test_custom_help_format.
+
+
+class DgClickHelpMixin:
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self._commands: List[str] = []
+
+    def format_help(self, context: click.Context, formatter: click.HelpFormatter):
+        """Customizes the help to include hierarchical usage."""
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+        self.format_usage(context, formatter)
+        self.format_help_text(context, formatter)
+        if isinstance(self, click.MultiCommand):
+            self.format_commands(context, formatter)
+        self.format_options(context, formatter)
+
+    def get_partitioned_opts(
+        self, ctx: click.Context
+    ) -> Tuple[Sequence[click.Parameter], Sequence[click.Parameter]]:
+        from dagster_dg.cli.global_options import GLOBAL_OPTIONS
+
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+
+        # Filter out arguments
+        opts = [p for p in self.get_params(ctx) if p.get_help_record(ctx) is not None]
+        command_opts = [opt for opt in opts if opt.name not in GLOBAL_OPTIONS]
+        global_opts = [opt for opt in self.get_params(ctx) if opt.name in GLOBAL_OPTIONS]
+        return command_opts, global_opts
+
+    def format_options(self, ctx: click.Context, formatter: HelpFormatter) -> None:
+        """Writes all the options into the formatter if they exist."""
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+
+        # Filter out arguments
+        command_opts, global_opts = self.get_partitioned_opts(ctx)
+
+        if command_opts:
+            records = [not_none(p.get_help_record(ctx)) for p in command_opts]
+            with formatter.section("Options"):
+                formatter.write_dl(records)
+
+        if global_opts:
+            with formatter.section("Global options"):
+                records = [not_none(p.get_help_record(ctx)) for p in global_opts]
+                formatter.write_dl(records)
+
+
+class DgClickCommand(DgClickHelpMixin, click.Command): ...
+
+
+class DgClickGroup(DgClickHelpMixin, click.Group): ...
+
+
+# ########################
+# ##### JSON SCHEMA
+# ########################
+
+_JSON_SCHEMA_TYPE_TO_CLICK_TYPE = {"string": str, "integer": int, "number": float, "boolean": bool}
+
+
+def json_schema_property_to_click_option(
+    key: str, field_info: Mapping[str, Any], required: bool
+) -> click.Option:
+    field_type = field_info.get("type", "string")
+    option_name = f"--{key.replace('_', '-')}"
+
+    # Handle object type fields as JSON strings
+    if field_type == "object":
+        option_type = str  # JSON string input
+        help_text = f"{key} (JSON string)"
+        callback = parse_json_option
+
+    # Handle other basic types
+    else:
+        option_type = _JSON_SCHEMA_TYPE_TO_CLICK_TYPE[field_type]
+        help_text = key
+        callback = None
+
+    return click.Option(
+        [option_name],
+        type=option_type,
+        required=required,
+        help=help_text,
+        callback=callback,
+    )
+
+
+def parse_json_option(context: click.Context, param: click.Option, value: str):
+    """Callback to parse JSON string options into Python objects."""
+    if value:
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            raise click.BadParameter(f"Invalid JSON string for '{param.name}'.")
+    return value

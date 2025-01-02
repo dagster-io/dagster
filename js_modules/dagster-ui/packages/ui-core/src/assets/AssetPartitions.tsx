@@ -94,10 +94,20 @@ export const AssetPartitions = ({
         .filter((s: AssetPartitionStatus) => DISPLAYED_STATUSES.includes(s)),
   });
 
-  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
-    queryKey: 'search',
-    defaults: {search: ''},
-  });
+  const [searchValues, setSearchValues] = useState<string[]>([]);
+  const updateSearchValue = (idx: number, value: string) => {
+    setSearchValues((prev) => {
+      const next = [...prev];
+
+      // add empty strings for missing indices
+      while (next.length <= idx) {
+        next.push('');
+      }
+
+      next[idx] = value;
+      return next;
+    });
+  };
 
   // Determine which axis we will show at the top of the page, if any.
   const timeDimensionIdx = selections.findIndex((s) => isTimeseriesDimension(s.dimension));
@@ -148,7 +158,7 @@ export const AssetPartitions = ({
     const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
 
     // Apply the search filter
-    const searchLower = searchValue.toLocaleLowerCase().trim();
+    const searchLower = searchValues?.[idx]?.toLocaleLowerCase().trim() || '';
     const filteredKeys = allKeys.filter((key) => key.toLowerCase().includes(searchLower));
 
     const getSelectionKeys = () =>
@@ -269,9 +279,10 @@ export const AssetPartitions = ({
                   <TextInput
                     fill
                     icon="search"
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
+                    value={searchValues[idx] || ''}
+                    onChange={(e) => updateSearchValue(idx, e.target.value)}
                     placeholder="Filter by name…"
+                    data-testId={testId(`search-${idx}`)}
                   />
                 </Box>
                 <div>

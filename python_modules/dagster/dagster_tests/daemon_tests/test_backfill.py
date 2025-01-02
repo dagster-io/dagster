@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import random
 import string
@@ -106,6 +107,7 @@ from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
 default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
+logger = logging.getLogger("dagster.test_auto_run_reexecution")
 
 
 DEFAULT_CHUNK_SIZE = 5
@@ -3339,7 +3341,9 @@ def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
     runs = instance.get_run_records()
     list(
         consume_new_runs_for_automatic_reexecution(
-            workspace_process_context=workspace_context, run_records=runs
+            workspace_process_context=workspace_context,
+            run_records=runs,
+            logger=logger,
         )
     )
     wait_for_all_runs_to_finish(instance, timeout=30)
@@ -3405,7 +3409,9 @@ def test_asset_backfill_fails_if_retries_fail(
     runs = instance.get_run_records()
     list(
         consume_new_runs_for_automatic_reexecution(
-            workspace_process_context=workspace_context, run_records=runs
+            workspace_process_context=workspace_context,
+            run_records=runs,
+            logger=logger,
         )
     )
     wait_for_all_runs_to_finish(instance, timeout=30)
@@ -3420,7 +3426,9 @@ def test_asset_backfill_fails_if_retries_fail(
     runs = instance.get_run_records()
     list(
         consume_new_runs_for_automatic_reexecution(
-            workspace_process_context=workspace_context, run_records=runs
+            workspace_process_context=workspace_context,
+            run_records=runs,
+            logger=logger,
         )
     )
     wait_for_all_runs_to_finish(instance, timeout=30)
@@ -3495,7 +3503,9 @@ def test_asset_backfill_retries_make_downstreams_runnable(
     runs = instance.get_run_records()
     list(
         consume_new_runs_for_automatic_reexecution(
-            workspace_process_context=workspace_context, run_records=runs
+            workspace_process_context=workspace_context,
+            run_records=runs,
+            logger=logger,
         )
     )
     wait_for_all_runs_to_finish(instance, timeout=30)

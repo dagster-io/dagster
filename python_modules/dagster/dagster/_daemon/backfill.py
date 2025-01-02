@@ -79,7 +79,7 @@ def execute_backfill_iteration_loop(
                 backfill_futures=backfill_futures,
             )
         except Exception:
-            error_info = DaemonErrorCapture.on_exception(
+            error_info = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=logger,
                 log_message="BackfillDaemon caught an error",
@@ -217,18 +217,18 @@ def execute_backfill_jobs(
                         e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
                     ):
                         try:
-                            raise Exception(
+                            raise DagsterUserCodeUnreachableError(
                                 "Unable to reach the code server. Backfill will resume once the code server is available."
                             ) from e
                         except:
-                            error_info = DaemonErrorCapture.on_exception(
+                            error_info = DaemonErrorCapture.process_exception(
                                 sys.exc_info(),
                                 logger=backfill_logger,
                                 log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
                             )
                             instance.update_backfill(backfill.with_error(error_info))
                     else:
-                        error_info = DaemonErrorCapture.on_exception(
+                        error_info = DaemonErrorCapture.process_exception(
                             sys.exc_info(),
                             logger=backfill_logger,
                             log_message=f"Backfill failed for {backfill.backfill_id} and will retry.",
@@ -239,7 +239,7 @@ def execute_backfill_jobs(
                             )
                         )
                 else:
-                    error_info = DaemonErrorCapture.on_exception(
+                    error_info = DaemonErrorCapture.process_exception(
                         sys.exc_info(),
                         logger=backfill_logger,
                         log_message=f"Backfill failed for {backfill.backfill_id}",

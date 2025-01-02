@@ -13,13 +13,6 @@ type Colors =
 
 type Underline = 'never' | 'always' | 'hover';
 
-type Props = Omit<React.HTMLProps<HTMLButtonElement>, 'color'> & {
-  color?: Colors;
-  disabled?: boolean;
-  underline?: Underline;
-  children?: React.ReactNode;
-};
-
 const fontColor = (color: Colors) => {
   if (typeof color === 'string') {
     return css`
@@ -56,9 +49,14 @@ const textDecoration = (underline: Underline) => {
   }
 };
 
-export const ButtonLink = styled(
-  ({color: _color, underline: _underline, type: _type, ...rest}: Props) => <button {...rest} />,
-)<Props>`
+interface Props extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'> {
+  color?: Colors;
+  underline?: Underline;
+}
+
+export const ButtonLink = styled(({color: _color, underline: _underline, ...rest}: Props) => (
+  <button {...rest} />
+))`
   background: transparent;
   border: 0;
   cursor: pointer;

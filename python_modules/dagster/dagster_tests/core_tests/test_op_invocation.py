@@ -1303,8 +1303,10 @@ def test_partition_range_asset_invocation():
 
     @asset(partitions_def=partitions_def)
     def foo(context: AssetExecutionContext):
-        keys = partitions_def.get_partition_keys_in_range(context.partition_key_range)
-        return {k: True for k in keys}
+        keys1 = partitions_def.get_partition_keys_in_range(context.partition_key_range)
+        keys2 = context.partition_keys
+        assert keys1 == keys2
+        return {k: True for k in keys1}
 
     context = build_asset_context(
         partition_key_range=PartitionKeyRange("2023-01-01", "2023-01-02"),

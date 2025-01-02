@@ -17,20 +17,24 @@ from unittest.mock import MagicMock, patch
 import pytest
 from dagster import (
     AssetCheckResult,
+    AssetDep,
     AssetIn,
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    AssetSpec,
     BackfillPolicy,
     DagsterInstance,
     DagsterRunStatus,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
     LastPartitionMapping,
+    MaterializeResult,
     Nothing,
     PartitionKeyRange,
     PartitionsDefinition,
     RunRequest,
+    StaticPartitionMapping,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
@@ -77,14 +81,14 @@ from dagster._time import create_datetime, get_current_datetime, get_current_tim
 from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.asset_graphs import (
+from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.asset_graphs import (
     multipartitioned_self_dependency,
     one_asset_self_dependency,
     root_assets_different_partitions_same_downstream,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
 )
-from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.scenarios.partition_scenarios import (
+from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.partition_scenarios import (
     hourly_to_daily_partitions,
     non_partitioned_after_partitioned,
     one_asset_one_partition,
@@ -95,9 +99,7 @@ from dagster_tests.definitions_tests.declarative_automation_tests.legacy_tests.s
     two_dynamic_assets,
     unpartitioned_after_dynamic_asset,
 )
-from dagster_tests.definitions_tests.declarative_automation_tests.scenario_utils.base_scenario import (
-    do_run,
-)
+from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import do_run
 
 
 class AssetBackfillScenario(NamedTuple):
@@ -562,7 +564,9 @@ def get_asset_graph(
     ) as get_builtin_partition_mapping_types:
         get_builtin_partition_mapping_types.return_value = tuple(
             assets_def.infer_partition_mapping(
-                dep_key, assets_defs_by_key[dep_key].partitions_def
+                next(iter(assets_def.keys)),
+                dep_key,
+                assets_defs_by_key[dep_key].specs_by_key[dep_key].partitions_def,
             ).__class__
             for assets in assets_by_repo_name.values()
             for assets_def in assets
@@ -1683,6 +1687,56 @@ def test_multi_asset_internal_deps_asset_backfill():
     assert AssetKeyPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
     assert AssetKeyPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
     assert AssetKeyPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
+
+
+def test_multi_asset_internal_deps_different_partitions_asset_backfill() -> None:
+    @multi_asset(
+        specs=[
+            AssetSpec(
+                "asset1", partitions_def=StaticPartitionsDefinition(["a", "b"]), skippable=True
+            ),
+            AssetSpec(
+                "asset2",
+                partitions_def=StaticPartitionsDefinition(["1"]),
+                deps=[
+                    AssetDep(
+                        "asset1",
+                        partition_mapping=StaticPartitionMapping({"a": {"1"}, "b": {"1"}}),
+                    )
+                ],
+                skippable=True,
+            ),
+        ],
+        can_subset=True,
+    )
+    def my_multi_asset(context):
+        for asset_key in context.selected_asset_keys:
+            yield MaterializeResult(asset_key=asset_key)
+
+    instance = DagsterInstance.ephemeral()
+    repo_dict = {"repo": [my_multi_asset]}
+    asset_graph = get_asset_graph(repo_dict)
+    current_time = create_datetime(2024, 1, 9, 0, 0, 0)
+    asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+        asset_graph_subset=AssetGraphSubset.all(
+            asset_graph, dynamic_partitions_store=MagicMock(), current_time=current_time
+        ),
+        backfill_start_timestamp=current_time.timestamp(),
+        dynamic_partitions_store=MagicMock(),
+    )
+    backfill_data_after_iter1 = _single_backfill_iteration(
+        "fake_id", asset_backfill_data, asset_graph, instance, repo_dict
+    )
+    after_iter1_requested_subset = backfill_data_after_iter1.requested_subset
+    assert AssetKeyPartitionKey(AssetKey("asset1"), "a") in after_iter1_requested_subset
+    assert AssetKeyPartitionKey(AssetKey("asset1"), "b") in after_iter1_requested_subset
+    assert AssetKeyPartitionKey(AssetKey("asset2"), "1") not in after_iter1_requested_subset
+
+    backfill_data_after_iter2 = _single_backfill_iteration(
+        "fake_id", backfill_data_after_iter1, asset_graph, instance, repo_dict
+    )
+    after_iter2_requested_subset = backfill_data_after_iter2.requested_subset
+    assert AssetKeyPartitionKey(AssetKey("asset2"), "1") in after_iter2_requested_subset
 
 
 def test_multi_asset_internal_and_external_deps_asset_backfill() -> None:

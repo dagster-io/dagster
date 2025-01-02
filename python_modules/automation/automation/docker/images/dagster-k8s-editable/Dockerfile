@@ -12,4 +12,5 @@ RUN python -m uv pip install \
     -e dagster-postgres \
     -e dagster-k8s \
     -e dagster-aws \
-    -e dagster-webserver
+    -e dagster-webserver \
+    grpcio==1.57.0 # https://github.com/grpc/grpc/issues/38327

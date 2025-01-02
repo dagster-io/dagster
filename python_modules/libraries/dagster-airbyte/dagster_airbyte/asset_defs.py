@@ -1,7 +1,6 @@
 import hashlib
 import inspect
 import os
-import re
 from abc import abstractmethod
 from functools import partial
 from itertools import chain
@@ -23,6 +22,7 @@ from typing import (
 
 import yaml
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AutoMaterializePolicy,
@@ -33,6 +33,7 @@ from dagster import (
     SourceAsset,
     _check as check,
 )
+from dagster._annotations import experimental
 from dagster._core.definitions import AssetsDefinition, multi_asset
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -45,9 +46,17 @@ from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidIn
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.merger import merge_dicts
 
-from dagster_airbyte.resources import AirbyteCloudResource, AirbyteResource, BaseAirbyteResource
+from dagster_airbyte.asset_decorator import airbyte_assets
+from dagster_airbyte.resources import (
+    AirbyteCloudResource,
+    AirbyteCloudWorkspace,
+    AirbyteResource,
+    BaseAirbyteResource,
+)
+from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
+    clean_name,
     generate_materializations,
     generate_table_schema,
     is_basic_normalization_operation,
@@ -460,11 +469,6 @@ def _get_normalization_tables_for_schema(
                     )
 
     return out
-
-
-def _clean_name(name: str) -> str:
-    """Cleans an input to be a valid Dagster asset name."""
-    return re.sub(r"[^a-z0-9]+", "_", name.lower())
 
 
 class AirbyteConnectionMetadata(
@@ -908,7 +912,7 @@ def load_assets_from_airbyte_instance(
     workspace_id: Optional[str] = None,
     key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     create_assets_for_normalization_tables: bool = True,
-    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = _clean_name,
+    connection_to_group_fn: Optional[Callable[[str], Optional[str]]] = clean_name,
     connection_meta_to_group_fn: Optional[
         Callable[[AirbyteConnectionMetadata], Optional[str]]
     ] = None,
@@ -1013,7 +1017,7 @@ def load_assets_from_airbyte_instance(
     check.invariant(
         not connection_meta_to_group_fn
         or not connection_to_group_fn
-        or connection_to_group_fn == _clean_name,
+        or connection_to_group_fn == clean_name,
         "Cannot specify both connection_meta_to_group_fn and connection_to_group_fn",
     )
 
@@ -1032,3 +1036,117 @@ def load_assets_from_airbyte_instance(
         connection_to_freshness_policy_fn=connection_to_freshness_policy_fn,
         connection_to_auto_materialize_policy_fn=connection_to_auto_materialize_policy_fn,
     )
+
+
+# -----------------------
+# Reworked assets factory
+# -----------------------
+
+
+@experimental
+def build_airbyte_assets_definitions(
+    *,
+    workspace: AirbyteCloudWorkspace,
+    dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
+) -> Sequence[AssetsDefinition]:
+    """The list of AssetsDefinition for all connections in the Airbyte workspace.
+
+    Args:
+        workspace (AirbyteCloudWorkspace): The Airbyte workspace to fetch assets from.
+        dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
+            to convert Airbyte content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterAirbyteTranslator`.
+
+    Returns:
+        List[AssetsDefinition]: The list of AssetsDefinition for all connections in the Airbyte workspace.
+
+    Examples:
+        Sync the tables of a Airbyte connection:
+
+        .. code-block:: python
+
+            from dagster_airbyte import AirbyteCloudWorkspace, build_airbyte_assets_definitions
+
+            import dagster as dg
+
+            airbyte_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+
+            airbyte_assets = build_airbyte_assets_definitions(workspace=workspace)
+
+            defs = dg.Definitions(
+                assets=airbyte_assets,
+                resources={"airbyte": airbyte_workspace},
+            )
+
+        Sync the tables of a Airbyte connection with a custom translator:
+
+        .. code-block:: python
+
+            from dagster_airbyte import (
+                DagsterAirbyteTranslator,
+                AirbyteConnectionTableProps,
+                AirbyteCloudWorkspace,
+                build_airbyte_assets_definitions
+            )
+
+            import dagster as dg
+
+            class CustomDagsterAirbyteTranslator(DagsterAirbyteTranslator):
+                def get_asset_spec(self, props: AirbyteConnectionTableProps) -> dg.AssetSpec:
+                    default_spec = super().get_asset_spec(props)
+                    return default_spec.merge_attributes(
+                        metadata={"custom": "metadata"},
+                    )
+
+            airbyte_workspace = AirbyteCloudWorkspace(
+                workspace_id=dg.EnvVar("AIRBYTE_CLOUD_WORKSPACE_ID"),
+                client_id=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_ID"),
+                client_secret=dg.EnvVar("AIRBYTE_CLOUD_CLIENT_SECRET"),
+            )
+
+
+            airbyte_assets = build_airbyte_assets_definitions(
+                workspace=workspace,
+                dagster_airbyte_translator=CustomDagsterAirbyteTranslator()
+            )
+
+            defs = dg.Definitions(
+                assets=airbyte_assets,
+                resources={"airbyte": airbyte_workspace},
+            )
+    """
+    dagster_airbyte_translator = dagster_airbyte_translator or DagsterAirbyteTranslator()
+
+    all_asset_specs = workspace.load_asset_specs(
+        dagster_airbyte_translator=dagster_airbyte_translator
+    )
+
+    connections = {
+        (
+            check.not_none(AirbyteMetadataSet.extract(spec.metadata).connection_id),
+            check.not_none(AirbyteMetadataSet.extract(spec.metadata).connection_name),
+        )
+        for spec in all_asset_specs
+    }
+
+    _asset_fns = []
+    for connection_id, connection_name in connections:
+
+        @airbyte_assets(
+            connection_id=connection_id,
+            workspace=workspace,
+            name=clean_name(connection_name),
+            group_name=clean_name(connection_name),
+            dagster_airbyte_translator=dagster_airbyte_translator,
+        )
+        def _asset_fn(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):
+            yield from airbyte.sync_and_poll(context=context)
+
+        _asset_fns.append(_asset_fn)
+
+    return _asset_fns

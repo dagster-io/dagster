@@ -105,9 +105,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const executionParamsList = useMemo(
     () =>
       sensorExecutionData && sensorSelector
-        ? buildExecutionParamsListSensor(sensorExecutionData, sensorSelector)
+        ? buildExecutionParamsListSensor(sensorExecutionData, sensorSelector, jobName)
         : [],
-    [sensorSelector, sensorExecutionData],
+    [sensorSelector, sensorExecutionData, jobName],
   );
 
   const submitTest = useCallback(async () => {

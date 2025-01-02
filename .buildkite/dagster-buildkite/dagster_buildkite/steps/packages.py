@@ -461,6 +461,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "core_tests",
             "daemon_sensor_tests",
             "daemon_tests",
+            "declarative_automation_tests",
             "definitions_tests",
             "general_tests",
             "general_tests_old_protobuf",

@@ -23,7 +23,7 @@ class TestEventLogConsumerDaemon(EventLogConsumerDaemon):
 
     @property
     def handle_updated_runs_fns(self):
-        def stash_run_records(_ctx, run_records):
+        def stash_run_records(_ctx, run_records, _logger):
             self.run_records = run_records
             yield
 

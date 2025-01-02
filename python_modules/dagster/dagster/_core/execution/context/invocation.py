@@ -508,6 +508,20 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         check.failed("Tried to access partition_key for a non-partitioned run")
 
     @property
+    def partition_keys(self) -> Sequence[str]:
+        key_range = self.partition_key_range
+        partitions_def = self.assets_def.partitions_def
+        if partitions_def is None:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_keys for a non-partitioned run"
+            )
+
+        return partitions_def.get_partition_keys_in_range(
+            key_range,
+            dynamic_partitions_store=self.instance,
+        )
+
+    @property
     def partition_key_range(self) -> PartitionKeyRange:
         """The range of partition keys for the current run.
 

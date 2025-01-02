@@ -12,7 +12,7 @@ from dagster import (
 from dagster._core.definitions.metadata import RawMetadataValue
 
 from dagster_dbt.cloud.types import DbtCloudOutput
-from dagster_dbt.utils import ASSET_RESOURCE_TYPES, dagster_name_fn, default_node_info_to_asset_key
+from dagster_dbt.utils import ASSET_RESOURCE_TYPES, default_node_info_to_asset_key
 
 
 def _resource_type(unique_id: str) -> str:
@@ -113,7 +113,7 @@ def result_to_events(
         if generate_asset_outputs:
             yield Output(
                 value=None,
-                output_name=dagster_name_fn(dbt_resource_props),
+                output_name=node_info_to_asset_key(dbt_resource_props).to_python_identifier(),
                 metadata=metadata,
             )
         else:

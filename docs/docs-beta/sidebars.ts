@@ -16,7 +16,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Tutorial',
       collapsed: false,
-      items: ['tutorial/tutorial-etl'],
+      items: ['tutorial/tutorial-etl', 'tutorial/multi-asset-integration'],
     },
     {
       type: 'category',

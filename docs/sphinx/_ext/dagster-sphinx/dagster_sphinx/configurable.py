@@ -124,10 +124,8 @@ class ConfigurableDocumenter(DataDocumenter):
     def can_document_member(
         cls, member: Any, _membername: str, _isattr: bool, _parent: Any
     ) -> bool:
-        return (
-            isinstance(member, ConfigurableDefinition)
-            or isinstance(member, type)
-            and issubclass(member, ConfigurableClass)
+        return isinstance(member, ConfigurableDefinition) or (
+            isinstance(member, type) and issubclass(member, ConfigurableClass)
         )
 
     def add_content(self, more_content) -> None:

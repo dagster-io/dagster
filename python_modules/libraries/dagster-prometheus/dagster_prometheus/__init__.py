@@ -5,4 +5,4 @@ from dagster_prometheus.version import __version__
 
 DagsterLibraryRegistry.register("dagster-prometheus", __version__)
 
-__all__ = ["prometheus_resource", "PrometheusResource"]
+__all__ = ["PrometheusResource", "prometheus_resource"]

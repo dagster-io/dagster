@@ -284,11 +284,15 @@ class AutoMaterializeLaunchContext:
                 exception_value, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
             ):
                 try:
-                    raise Exception(
+                    raise DagsterUserCodeUnreachableError(
                         "Unable to reach the code server. Automation condition evaluation will resume once the code server is available."
                     ) from exception_value
                 except:
-                    error_data = DaemonErrorCapture.on_exception(sys.exc_info())
+                    error_data = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=self.logger,
+                        log_message="Asset daemon tick caught an error",
+                    )
                     self.update_state(
                         TickStatus.FAILURE,
                         error=error_data,
@@ -296,7 +300,11 @@ class AutoMaterializeLaunchContext:
                         failure_count=self._tick.failure_count,
                     )
             else:
-                error_data = DaemonErrorCapture.on_exception(sys.exc_info())
+                error_data = DaemonErrorCapture.process_exception(
+                    sys.exc_info(),
+                    logger=self.logger,
+                    log_message="Asset daemon tick caught an error",
+                )
                 self.update_state(
                     TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
                 )
@@ -410,7 +418,7 @@ class AssetDaemon(DagsterDaemon):
                         debug_crash_flags={},
                     )
                 except Exception:
-                    error_info = DaemonErrorCapture.on_exception(
+                    error_info = DaemonErrorCapture.process_exception(
                         exc_info=sys.exc_info(),
                         logger=self._logger,
                         log_message="AssetDaemon caught an error",
@@ -852,7 +860,7 @@ class AssetDaemon(DagsterDaemon):
                     submit_threadpool_executor=submit_threadpool_executor,
                 )
         except Exception:
-            error_info = DaemonErrorCapture.on_exception(
+            error_info = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=self._logger,
                 log_message="Automation condition daemon caught an error",

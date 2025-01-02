@@ -270,7 +270,10 @@ def test_fs_io_manager_partitioned_no_partitions():
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ) -> UpstreamPartitionsResult:
-                return UpstreamPartitionsResult(upstream_partitions_def.empty_subset(), [])
+                return UpstreamPartitionsResult(
+                    partitions_subset=upstream_partitions_def.empty_subset(),
+                    required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
+                )
 
             def get_downstream_partitions_for_partitions(
                 self,

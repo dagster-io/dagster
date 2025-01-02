@@ -5,9 +5,10 @@ from typing import Any, Dict
 
 import click
 
-from dagster_components.core.component import ComponentMetadata, ComponentRegistry
+from dagster_components.core.component import ComponentTypeMetadata, ComponentTypeRegistry
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
+    find_enclosing_code_location_root_path,
     is_inside_code_location_project,
 )
 from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
@@ -31,14 +32,16 @@ def list_component_types_command(ctx: click.Context) -> None:
         )
         sys.exit(1)
 
-    context = CodeLocationProjectContext.from_path(
-        Path.cwd(),
-        ComponentRegistry.from_entry_point_discovery(builtin_component_lib=builtin_component_lib),
+    context = CodeLocationProjectContext.from_code_location_path(
+        find_enclosing_code_location_root_path(Path.cwd()),
+        ComponentTypeRegistry.from_entry_point_discovery(
+            builtin_component_lib=builtin_component_lib
+        ),
     )
     output: Dict[str, Any] = {}
     for key, component_type in context.list_component_types():
         package, name = key.rsplit(".", 1)
-        output[key] = ComponentMetadata(
+        output[key] = ComponentTypeMetadata(
             name=name,
             package=package,
             **component_type.get_metadata(),

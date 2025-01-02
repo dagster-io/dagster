@@ -71,6 +71,7 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
           runConfigYaml={selectedRequest.runConfigYaml}
           tags={selectedRequest.tags}
           isJob={isJob}
+          jobName={jobName}
           request={selectedRequest}
           repoAddress={repoAddress}
         />

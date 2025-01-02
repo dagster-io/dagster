@@ -22,6 +22,7 @@ from typing import (
     TypeVar,
 )
 
+import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
@@ -30,8 +31,7 @@ from dagster._utils import pushd, snakecase
 from pydantic import TypeAdapter
 from typing_extensions import Self
 
-from dagster_components.core.component_rendering import TemplatedValueResolver, preprocess_value
-from dagster_components.utils import ensure_dagster_components_tests_import
+from dagster_components.core.component_rendering import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
@@ -49,7 +49,14 @@ class Component(ABC):
     generate_params_schema: ClassVar = None
 
     @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None: ...
+    def get_rendering_scope(cls) -> Mapping[str, Any]:
+        return {}
+
+    @classmethod
+    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
+        from dagster_components.generate import generate_component_yaml
+
+        generate_component_yaml(request, {})
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
@@ -59,7 +66,7 @@ class Component(ABC):
     def load(cls, context: "ComponentLoadContext") -> Self: ...
 
     @classmethod
-    def get_metadata(cls) -> "ComponentInternalMetadata":
+    def get_metadata(cls) -> "ComponentTypeInternalMetadata":
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
@@ -87,14 +94,24 @@ def _clean_docstring(docstring: str) -> str:
         return f"{first_line}\n{rest}"
 
 
-class ComponentInternalMetadata(TypedDict):
+def _get_click_cli_help(command: click.Command) -> str:
+    with click.Context(command) as ctx:
+        formatter = click.formatting.HelpFormatter()
+        param_records = [
+            p.get_help_record(ctx) for p in command.get_params(ctx) if p.name != "help"
+        ]
+        formatter.write_dl([pr for pr in param_records if pr])
+        return formatter.getvalue()
+
+
+class ComponentTypeInternalMetadata(TypedDict):
     summary: Optional[str]
     description: Optional[str]
     generate_params_schema: Optional[Any]  # json schema
     component_params_schema: Optional[Any]  # json schema
 
 
-class ComponentMetadata(ComponentInternalMetadata):
+class ComponentTypeMetadata(ComponentTypeInternalMetadata):
     name: str
     package: str
 
@@ -108,41 +125,37 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 
 COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
 BUILTIN_COMPONENTS_ENTRY_POINT_BASE = "dagster_components"
-BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
+BUILTIN_MAIN_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
 BUILTIN_TEST_COMPONENT_ENTRY_POINT = ".".join([BUILTIN_COMPONENTS_ENTRY_POINT_BASE, "test"])
 
 
-class ComponentRegistry:
+class ComponentTypeRegistry:
     @classmethod
     def from_entry_point_discovery(
-        cls, builtin_component_lib: str = BUILTIN_PUBLISHED_COMPONENT_ENTRY_POINT
-    ) -> "ComponentRegistry":
-        """Discover components registered in the Python environment via the `dagster_components` entry point group.
+        cls, builtin_component_lib: str = BUILTIN_MAIN_COMPONENT_ENTRY_POINT
+    ) -> "ComponentTypeRegistry":
+        """Discover component types registered in the Python environment via the
+        `dagster_components` entry point group.
 
         `dagster-components` itself registers multiple component entry points. We call these
         "builtin" component libraries. The `dagster_components` entry point resolves to published
-        components and is loaded by default. Other entry points resolve to various sets of test
-        components. This method will only ever load one builtin component library.
+        component types and is loaded by default. Other entry points resolve to various sets of test
+        component types. This method will only ever load one builtin component library.
 
         Args:
-            builtin-component-lib (str): Specifies the builtin components library to load. Builtin
-            copmonents libraries are defined under entry points with names matching the pattern
-            `dagster_components*`. Only one builtin component library can be loaded at a time.
-            Defaults to `dagster_components`, the standard set of published components.
+            builtin-component-lib (str): Specifies the builtin components library to load. Built-in
+            component libraries are defined under entry points with names matching the pattern
+            `dagster_components*`. Only one built-in  component library can be loaded at a time.
+            Defaults to `dagster_components`, the standard set of published component types.
         """
-        components: Dict[str, Type[Component]] = {}
+        component_types: Dict[str, Type[Component]] = {}
         for entry_point in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP):
-            # Skip builtin entry points that are not the specified builtin component library.
+            # Skip built-in entry points that are not the specified builtin component library.
             if (
                 entry_point.name.startswith(BUILTIN_COMPONENTS_ENTRY_POINT_BASE)
                 and not entry_point.name == builtin_component_lib
             ):
                 continue
-            elif entry_point.name == BUILTIN_TEST_COMPONENT_ENTRY_POINT:
-                if builtin_component_lib:
-                    ensure_dagster_components_tests_import()
-                else:
-                    continue
 
             root_module = entry_point.load()
             if not isinstance(root_module, ModuleType):
@@ -150,42 +163,44 @@ class ComponentRegistry:
                     f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "
                     f"Value expected to be a module, got {root_module}."
                 )
-            for component in get_registered_components_in_module(root_module):
-                key = f"{entry_point.name}.{get_component_name(component)}"
-                components[key] = component
+            for component_type in get_registered_component_types_in_module(root_module):
+                key = f"{entry_point.name}.{get_component_type_name(component_type)}"
+                component_types[key] = component_type
 
-        return cls(components)
+        return cls(component_types)
 
-    def __init__(self, components: Dict[str, Type[Component]]):
-        self._components: Dict[str, Type[Component]] = copy.copy(components)
+    def __init__(self, component_types: Dict[str, Type[Component]]):
+        self._component_types: Dict[str, Type[Component]] = copy.copy(component_types)
 
     @staticmethod
-    def empty() -> "ComponentRegistry":
-        return ComponentRegistry({})
+    def empty() -> "ComponentTypeRegistry":
+        return ComponentTypeRegistry({})
 
-    def register(self, name: str, component: Type[Component]) -> None:
-        if name in self._components:
+    def register(self, name: str, component_type: Type[Component]) -> None:
+        if name in self._component_types:
             raise DagsterError(f"There is an existing component registered under {name}")
-        self._components[name] = component
+        self._component_types[name] = component_type
 
     def has(self, name: str) -> bool:
-        return name in self._components
+        return name in self._component_types
 
     def get(self, name: str) -> Type[Component]:
-        return self._components[name]
+        return self._component_types[name]
 
     def keys(self) -> Iterable[str]:
-        return self._components.keys()
+        return self._component_types.keys()
 
     def __repr__(self) -> str:
-        return f"<ComponentRegistry {list(self._components.keys())}>"
+        return f"<ComponentRegistry {list(self._component_types.keys())}>"
 
 
-def get_registered_components_in_module(module: ModuleType) -> Iterable[Type[Component]]:
-    from dagster._core.definitions.load_assets_from_modules import find_subclasses_in_module
+def get_registered_component_types_in_module(module: ModuleType) -> Iterable[Type[Component]]:
+    from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+        find_subclasses_in_module,
+    )
 
     for component in find_subclasses_in_module(module, (Component,)):
-        if is_registered_component(component):
+        if is_registered_component_type(component):
             yield component
 
 
@@ -195,7 +210,7 @@ T = TypeVar("T")
 @dataclass
 class ComponentLoadContext:
     resources: Mapping[str, object]
-    registry: ComponentRegistry
+    registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
     templated_value_resolver: TemplatedValueResolver
 
@@ -203,12 +218,12 @@ class ComponentLoadContext:
     def for_test(
         *,
         resources: Optional[Mapping[str, object]] = None,
-        registry: Optional[ComponentRegistry] = None,
+        registry: Optional[ComponentTypeRegistry] = None,
         decl_node: Optional[ComponentDeclNode] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             resources=resources or {},
-            registry=registry or ComponentRegistry.empty(),
+            registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
             templated_value_resolver=TemplatedValueResolver.default(),
         )
@@ -222,6 +237,12 @@ class ComponentLoadContext:
 
         return self.decl_node.path
 
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+        return dataclasses.replace(
+            self,
+            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
+        )
+
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
 
@@ -234,8 +255,8 @@ class ComponentLoadContext:
 
     def load_params(self, params_schema: Type[T]) -> T:
         with pushd(str(self.path)):
-            preprocessed_params = preprocess_value(
-                self.templated_value_resolver, self._raw_params(), params_schema
+            preprocessed_params = self.templated_value_resolver.render_params(
+                self._raw_params(), params_schema
             )
             return TypeAdapter(params_schema).validate_python(preprocessed_params)
 
@@ -243,11 +264,17 @@ class ComponentLoadContext:
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
 
 
-def component(
-    cls: Optional[Type[Component]] = None,
-    *,
-    name: Optional[str] = None,
-) -> Any:
+def component_type(cls: Optional[Type[Component]] = None, *, name: Optional[str] = None) -> Any:
+    """Decorator for registering a component type. You must annotate a component
+    type with this decorator in order for it to be inspectable and loaded by tools.
+
+    Args:
+        cls (Optional[Type[Component]]): The target of the decorator: the component class
+            to register. The class must inherit from Component.
+        name (Optional[str]): The name to register the component type under. If not
+            provided, the name will be the snake-cased version of the class name. The
+            name is used as a key in operations like scaffolding and loading.
+    """
     if cls is None:
 
         def wrapper(actual_cls: Type[Component]) -> Type[Component]:
@@ -267,13 +294,13 @@ def component(
         return cls
 
 
-def is_registered_component(cls: Type) -> bool:
+def is_registered_component_type(cls: Type) -> bool:
     return hasattr(cls, COMPONENT_REGISTRY_KEY_ATTR)
 
 
-def get_component_name(component_type: Type[Component]) -> str:
+def get_component_type_name(component_type: Type[Component]) -> str:
     check.param_invariant(
-        is_registered_component(component_type),
+        is_registered_component_type(component_type),
         "component_type",
         "Expected a registered component. Use @component to register a component.",
     )

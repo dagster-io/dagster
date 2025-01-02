@@ -727,10 +727,21 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 break
         return result
 
-    def get_partition_key_range_for_time_window(self, time_window: TimeWindow) -> PartitionKeyRange:
+    def get_partition_subset_in_time_window(
+        self, time_window: TimeWindow
+    ) -> "TimeWindowPartitionsSubset":
+        return TimeWindowPartitionsSubset(
+            partitions_def=self, num_partitions=None, included_time_windows=[time_window]
+        )
+
+    def get_partition_key_range_for_time_window(
+        self, time_window: TimeWindow, respect_bounds: bool = True
+    ) -> PartitionKeyRange:
         start_partition_key = self.get_partition_key_for_timestamp(time_window.start.timestamp())
         end_partition_key = self.get_partition_key_for_timestamp(
-            check.not_none(self.get_prev_partition_window(time_window.end)).start.timestamp()
+            check.not_none(
+                self.get_prev_partition_window(time_window.end, respect_bounds=respect_bounds)
+            ).start.timestamp()
         )
 
         return PartitionKeyRange(start_partition_key, end_partition_key)
@@ -958,9 +969,6 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
     @property
     def partitions_subset_class(self) -> Type["PartitionsSubset"]:
         return TimeWindowPartitionsSubset
-
-    def empty_subset(self) -> "PartitionsSubset":
-        return self.partitions_subset_class.empty_subset(self)
 
     def subset_with_all_partitions(
         self,
@@ -1772,10 +1780,6 @@ class TimeWindowPartitionsSubset(
         return self._asdict()["included_time_windows"]
 
     @property
-    def partitions_def(self) -> TimeWindowPartitionsDefinition:
-        return self._asdict()["partitions_def"]
-
-    @property
     def first_start(self) -> datetime:
         """The start datetime of the earliest partition in the subset."""
         if len(self.included_time_windows) == 0:
@@ -1912,11 +1916,14 @@ class TimeWindowPartitionsSubset(
         partitions_def: PartitionsDefinition,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+        respect_bounds: bool = True,
     ) -> Sequence[PartitionKeyRange]:
         return [
             cast(
                 TimeWindowPartitionsDefinition, self.partitions_def
-            ).get_partition_key_range_for_time_window(window.to_public_time_window())
+            ).get_partition_key_range_for_time_window(
+                window.to_public_time_window(), respect_bounds=respect_bounds
+            )
             for window in self.included_time_windows
         ]
 
@@ -2011,9 +2018,11 @@ class TimeWindowPartitionsSubset(
             for pk in self.partitions_def.get_partition_keys_in_time_window(time_window)
         ]
 
-    def with_partition_keys(self, partition_keys: Iterable[str]) -> "TimeWindowPartitionsSubset":
+    def with_partition_keys(
+        self, partition_keys: Iterable[str], validate: bool = True
+    ) -> "TimeWindowPartitionsSubset":
         result_windows, added_partitions = self._add_partitions_to_time_windows(
-            self.included_time_windows, list(partition_keys)
+            self.included_time_windows, list(partition_keys), validate=validate
         )
 
         return TimeWindowPartitionsSubset(
@@ -2022,8 +2031,11 @@ class TimeWindowPartitionsSubset(
             included_time_windows=result_windows,
         )
 
+    def empty_subset(self):
+        return self.partitions_def.empty_subset()
+
     @classmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
     ) -> "PartitionsSubset":
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
@@ -2046,7 +2058,7 @@ class TimeWindowPartitionsSubset(
         )
 
     def __repr__(self) -> str:
-        return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
+        return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def, respect_bounds=False)})"
 
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         other = _attempt_coerce_to_time_window_subset(other)
@@ -2504,7 +2516,9 @@ def _attempt_coerce_to_time_window_subset(subset: "PartitionsSubset") -> "Partit
             num_partitions=subset.num_partitions,
             included_time_windows=subset.included_time_windows,
         )
-    elif isinstance(subset, AllPartitionsSubset):
+    elif isinstance(subset, AllPartitionsSubset) and isinstance(
+        subset.partitions_def, TimeWindowPartitionsDefinition
+    ):
         return TimeWindowPartitionsSubset.from_all_partitions_subset(subset)
     else:
         return subset

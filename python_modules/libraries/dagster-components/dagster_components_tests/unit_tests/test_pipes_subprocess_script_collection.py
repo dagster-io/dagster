@@ -34,13 +34,13 @@ def test_python_params() -> None:
                     {
                         "path": "script_one.py",
                         "assets": [
-                            {"key": "a", "automation_condition": {"type": "eager"}},
+                            {
+                                "key": "a",
+                                "automation_condition": "{{ automation_condition.eager() }}",
+                            },
                             {
                                 "key": "b",
-                                "automation_condition": {
-                                    "type": "on_cron",
-                                    "params": {"cron_schedule": "@daily"},
-                                },
+                                "automation_condition": "{{ automation_condition.on_cron('@daily') }}",
                                 "deps": ["up1", "up2"],
                             },
                         ],

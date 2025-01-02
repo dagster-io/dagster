@@ -9,7 +9,7 @@ interface Props {
 
 export const AssetChecksTabs = ({activeTab, onChange}: Props) => {
   return (
-    <Tabs selectedTabId={activeTab} onChange={(tabId) => onChange(tabId as AssetChecksTabType)}>
+    <Tabs selectedTabId={activeTab} onChange={onChange}>
       <Tab id="overview" title="Overview" />
       <Tab id="execution-history" title="Execution history" />
     </Tabs>

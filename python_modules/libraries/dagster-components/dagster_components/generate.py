@@ -25,6 +25,7 @@ def generate_component_yaml(
         yaml.dump(
             component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
         )
+        f.writelines([""])
 
 
 def generate_component_instance(
@@ -32,7 +33,7 @@ def generate_component_instance(
     name: str,
     component_type: Type[Component],
     component_type_name: str,
-    generate_params: Any,
+    generate_params: Mapping[str, Any],
 ) -> None:
     component_instance_root_path = Path(os.path.join(root_path, name))
     click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")

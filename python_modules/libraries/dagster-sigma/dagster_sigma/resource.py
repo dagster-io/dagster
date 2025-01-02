@@ -63,6 +63,28 @@ class SigmaMaterializationStatus(str, enum.Enum):
     READY = "ready"
 
 
+def build_folder_path_err(folder: Any, idx: int, param_name: str):
+    return (
+        f"{param_name} at index {idx} is not a sequence: `{folder!r}`.\n"
+        "Paths should be specified as a list of folder names, starting from the root folder."
+    )
+
+
+def validate_folder_path_input(folder_input: Optional[Sequence[Sequence[str]]], param_name: str):
+    check.opt_sequence_param(folder_input, param_name, of_type=Sequence)
+    if folder_input:
+        for idx, folder in enumerate(folder_input):
+            check.invariant(
+                not isinstance(folder, str),
+                build_folder_path_err(folder, idx, param_name),
+            )
+            check.is_iterable(
+                folder,
+                of_type=str,
+                additional_message=build_folder_path_err(folder, idx, param_name),
+            )
+
+
 @record_custom
 class SigmaFilter(IHaveNew):
     """Filters the set of Sigma objects to fetch.
@@ -71,21 +93,30 @@ class SigmaFilter(IHaveNew):
         workbook_folders (Optional[Sequence[Sequence[str]]]): A list of folder paths to fetch workbooks from.
             Each folder path is a list of folder names, starting from the root folder. All workbooks
             contained in the specified folders will be fetched. If not provided, all workbooks will be fetched.
+        workbooks (Optional[Sequence[Sequence[str]]]): A list of fully qualified workbook paths to fetch.
+            Each workbook path is a list of folder names, starting from the root folder, and ending
+            with the workbook name. If not provided, all workbooks will be fetched.
         include_unused_datasets (bool): Whether to include datasets that are not used in any workbooks.
             Defaults to True.
     """
 
     workbook_folders: Optional[Sequence[Sequence[str]]] = None
+    workbooks: Optional[Sequence[Sequence[str]]] = None
     include_unused_datasets: bool = True
 
     def __new__(
         cls,
         workbook_folders: Optional[Sequence[Sequence[str]]] = None,
+        workbooks: Optional[Sequence[Sequence[str]]] = None,
         include_unused_datasets: bool = True,
     ):
+        validate_folder_path_input(workbook_folders, "workbook_folders")
+        validate_folder_path_input(workbooks, "workbooks")
+
         return super().__new__(
             cls,
             workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []]),
+            workbooks=tuple([tuple(workbook) for workbook in workbooks or []]),
             include_unused_datasets=include_unused_datasets,
         )
 
@@ -508,7 +539,9 @@ class SigmaOrganization(ConfigurableResource):
             f"workbooks/{workbook_id}/materialization-schedules"
         )
 
-    async def load_workbook_data(self, raw_workbook_data: Dict[str, Any]) -> SigmaWorkbook:
+    async def load_workbook_data(
+        self, raw_workbook_data: Dict[str, Any], fetch_lineage_data: bool
+    ) -> SigmaWorkbook:
         dataset_deps = set()
         direct_table_deps = set()
 
@@ -537,13 +570,17 @@ class SigmaOrganization(ConfigurableResource):
 
             return {"dependencies": {}}
 
-        lineages = await asyncio.gather(
-            *[
-                safe_fetch_lineage_for_element(
-                    raw_workbook_data["workbookId"], element["elementId"]
-                )
-                for element in elements
-            ]
+        lineages = (
+            await asyncio.gather(
+                *[
+                    safe_fetch_lineage_for_element(
+                        raw_workbook_data["workbookId"], element["elementId"]
+                    )
+                    for element in elements
+                ]
+            )
+            if fetch_lineage_data
+            else []
         )
         for lineage in lineages:
             for item in lineage["dependencies"].values():
@@ -569,14 +606,21 @@ class SigmaOrganization(ConfigurableResource):
     async def _fetch_workbooks_and_filter(self, sigma_filter: SigmaFilter) -> List[Dict[str, Any]]:
         raw_workbooks = await self._fetch_workbooks()
         workbooks_to_fetch = []
-        if sigma_filter.workbook_folders:
+        if sigma_filter.workbook_folders or sigma_filter.workbooks:
             workbook_filter_strings = [
-                "/".join(folder).lower() for folder in sigma_filter.workbook_folders
+                "/".join(folder).lower() for folder in sigma_filter.workbook_folders or []
             ]
+            workbook_strings = ["/".join(folder).lower() for folder in sigma_filter.workbooks or []]
             for workbook in raw_workbooks:
-                workbook_path = str(workbook["path"]).lower()
-                if any(
-                    workbook_path.startswith(folder_str) for folder_str in workbook_filter_strings
+                workbook_path_and_name = (
+                    f"{str(workbook['path']).lower()}/{workbook['name'].lower()}"
+                )
+                if (
+                    any(
+                        workbook_path_and_name.startswith(folder_str)
+                        for folder_str in workbook_filter_strings
+                    )
+                    or workbook_path_and_name in workbook_strings
                 ):
                     workbooks_to_fetch.append(workbook)
         else:
@@ -585,7 +629,7 @@ class SigmaOrganization(ConfigurableResource):
 
     @cached_method
     async def build_organization_data(
-        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool
+        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool, fetch_lineage_data: bool
     ) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
@@ -596,11 +640,18 @@ class SigmaOrganization(ConfigurableResource):
         workbooks_to_fetch = await self._fetch_workbooks_and_filter(_sigma_filter)
 
         workbooks: List[SigmaWorkbook] = await asyncio.gather(
-            *[self.load_workbook_data(workbook) for workbook in workbooks_to_fetch]
+            *[
+                self.load_workbook_data(workbook, fetch_lineage_data)
+                for workbook in workbooks_to_fetch
+            ]
         )
 
         datasets: List[SigmaDataset] = []
-        deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode(_sigma_filter)
+        deps_by_dataset_inode = (
+            await self._fetch_dataset_upstreams_by_inode(_sigma_filter)
+            if fetch_lineage_data
+            else {}
+        )
 
         columns_by_dataset_inode = (
             await self._fetch_dataset_columns_by_inode(_sigma_filter) if fetch_column_data else {}
@@ -621,7 +672,7 @@ class SigmaOrganization(ConfigurableResource):
                     SigmaDataset(
                         properties=dataset,
                         columns=columns_by_dataset_inode.get(inode, set()),
-                        inputs=deps_by_dataset_inode[inode],
+                        inputs=deps_by_dataset_inode.get(inode, set()),
                     )
                 )
 
@@ -673,6 +724,7 @@ def load_sigma_asset_specs(
     ] = DagsterSigmaTranslator,
     sigma_filter: Optional[SigmaFilter] = None,
     fetch_column_data: bool = True,
+    fetch_lineage_data: bool = True,
     snapshot_path: Optional[Union[str, Path]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
@@ -683,6 +735,7 @@ def load_sigma_asset_specs(
             to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
         sigma_filter (Optional[SigmaFilter]): Filters the set of Sigma objects to fetch.
         fetch_column_data (bool): Whether to fetch column data for datasets, which can be slow.
+        fetch_lineage_data (bool): Whether to fetch any lineage data for workbooks and datasets.
         snapshot_path (Optional[Union[str, Path]]): Path to a snapshot file to load Sigma data from,
             rather than fetching it from the Sigma API.
 
@@ -700,6 +753,7 @@ def load_sigma_asset_specs(
                 translator_cls=dagster_sigma_translator,
                 sigma_filter=sigma_filter,
                 fetch_column_data=fetch_column_data,
+                fetch_lineage_data=fetch_lineage_data,
                 snapshot=snapshot,
             )
             .build_defs()
@@ -728,6 +782,7 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
     snapshot: Optional[RepositoryLoadData]
     sigma_filter: Optional[SigmaFilter] = None
     fetch_column_data: bool = True
+    fetch_lineage_data: bool = True
 
     @property
     def defs_key(self) -> str:
@@ -739,7 +794,9 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
 
         return asyncio.run(
             self.organization.build_organization_data(
-                sigma_filter=self.sigma_filter, fetch_column_data=self.fetch_column_data
+                sigma_filter=self.sigma_filter,
+                fetch_column_data=self.fetch_column_data,
+                fetch_lineage_data=self.fetch_lineage_data,
             )
         )
 

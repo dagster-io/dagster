@@ -5,10 +5,9 @@ from typing import Any, Iterable, Mapping, Sequence
 
 import requests
 from airflow import DAG
-from airflow.utils.context import Context
 
 from dagster_airlift.constants import DAG_MAPPING_METADATA_KEY
-from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
+from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 
 class BaseProxyDAGToDagsterOperator(BaseDagsterAssetsOperator):

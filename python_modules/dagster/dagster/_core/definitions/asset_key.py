@@ -101,7 +101,7 @@ class AssetKey(IHaveNew):
         if suffix is not None:
             path.append(suffix)
 
-        return "__".join(path).replace("-", "_")
+        return "__".join(path).replace("-", "_").replace(".", "_")
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
@@ -255,6 +255,12 @@ class AssetCheckKey(NamedTuple):
 
     def to_db_string(self) -> str:
         return seven.json.dumps({"asset_key": self.asset_key.to_string(), "check_name": self.name})
+
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
+        return AssetCheckKey(self.asset_key.with_prefix(prefix), self.name)
+
+    def replace_asset_key(self, asset_key: AssetKey) -> "AssetCheckKey":
+        return AssetCheckKey(asset_key, self.name)
 
 
 EntityKey = Union[AssetKey, AssetCheckKey]

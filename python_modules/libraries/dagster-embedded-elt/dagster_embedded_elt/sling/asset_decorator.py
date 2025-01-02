@@ -74,7 +74,7 @@ def sling_assets(
         name (Optional[str]: The name of the op.
         partitions_def (Optional[PartitionsDefinition]): The partitions definition for this asset.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for this asset.
-        op_tags (Optional[Mapping[str, Any]]): The tags for this asset.
+        op_tags (Optional[Mapping[str, Any]]): The tags for the underlying op.
 
     Examples:
         Running a sync by providing a path to a Sling Replication config:
