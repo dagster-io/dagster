@@ -120,6 +120,19 @@ import Experimental from '../../../partials/\_Experimental.md';
 
 <Experimental />
 
+import Preview from '../../../partials/\_Preview.md';
+
+<Preview />
+
+import Beta from '../../../partials/\_Beta.md';
+
+<Beta />
+
+import Superseded from '../../../partials/\_Superseded.md';
+
+<Superseded />
+
+
 To link assets with their source code, you can attach a **code reference**. Code references are a type of metadata that allow you to easily view those assets' source code from the Dagster UI, both in local development and in production.
 
 :::tip
