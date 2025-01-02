@@ -54,7 +54,8 @@ def beta_warning(
         return
 
     warnings.warn(
-        f"{subject} is in beta stage - the feature is still being tested and may change."
+        f"{subject} is in beta. It may break in a future minor release, "
+        f"or have minor behavior changes between dot releases."
         + ((" " + additional_warn_text) if additional_warn_text else ""),
         category=BetaWarning,
         stacklevel=stacklevel,
