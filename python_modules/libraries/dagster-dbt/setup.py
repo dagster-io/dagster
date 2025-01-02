@@ -54,7 +54,7 @@ setup(
     ],
     extras_require={
         "test": [
-            "flaky",
+            "pytest-rerunfailures",
             "dbt-duckdb",
             "dagster-duckdb",
             "dagster-duckdb-pandas",
