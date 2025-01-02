@@ -34,10 +34,10 @@ jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
 jest.mock('shared/asset-selection/useAssetSelectionInput', () => {
   return {
-    useAssetSelectionInput: (assets: any) => {
+    useAssetSelectionInput: ({assets, assetsLoading}: {assets: any; assetsLoading?: boolean}) => {
       return {
         filterInput: <div />,
-        fetchResult: {loading: false},
+        fetchResult: {loading: assetsLoading},
         filtered: assets,
         assetSelection: '',
         setAssetSelection: () => {},
