@@ -233,15 +233,21 @@ def test_custom_asset_specs_legacy(
             ).merge_attributes(metadata={"custom": "metadata"})
 
     # Pass the translator type
-    all_assets = (
-        asset
-        for asset in Definitions(
-            assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)],
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Support of `dagster_looker_translator` as a Type\[DagsterLookerApiTranslator\]",
+    ):
+        all_assets = (
+            asset
+            for asset in Definitions(
+                assets=[
+                    *load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)
+                ],
+            )
+            .get_asset_graph()
+            .assets_defs
+            if not asset.is_auto_created_stub
         )
-        .get_asset_graph()
-        .assets_defs
-        if not asset.is_auto_created_stub
-    )
 
     for asset in all_assets:
         for metadata in asset.metadata_by_key.values():
