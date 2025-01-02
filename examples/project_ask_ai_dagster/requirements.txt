@@ -8,6 +8,7 @@ dagster
 dagster-webserver
 chromadb
 tenacity
-tqdm
 bs4
 lxml
+dagster-openai
+pinecone

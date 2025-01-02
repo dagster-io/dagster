@@ -1,11 +1,14 @@
 from typing import Any, Dict, List
-import gql
-from gql.transport.requests import RequestsHTTPTransport
 
 import dagster as dg
+import gql
+from gql.transport.requests import RequestsHTTPTransport
 from langchain_core.documents import Document
 
-from project_ask_ai_dagster.resources.github_gql_queries import GITHUB_DISCUSSIONS_QUERY, GITHUB_ISSUES_QUERY
+from project_ask_ai_dagster.resources.github_gql_queries import (
+    GITHUB_DISCUSSIONS_QUERY,
+    GITHUB_ISSUES_QUERY,
+)
 
 
 class GithubResource(dg.ConfigurableResource):
@@ -20,7 +23,7 @@ class GithubResource(dg.ConfigurableResource):
                 url="https://api.github.com/graphql",
                 headers={
                     "Authorization": f"Bearer {self.github_token}",
-                    "Accept": "application/vnd.github.v4.idl"
+                    "Accept": "application/vnd.github.v4.idl",
                 },
                 retries=3,
             ),
@@ -59,19 +62,18 @@ class GithubResource(dg.ConfigurableResource):
                 break
             cursor = search["pageInfo"]["endCursor"]
         return results
-    
+
     def _convert_discussions_to_documents(self, items: List[Dict[str, Any]]) -> List[Document]:
-        """
-        Convert GitHub discussions to LangChain documents.
-        
+        """Convert GitHub discussions to LangChain documents.
+
         This function transforms GitHub discussion data into LangChain Document objects,
         preserving the hierarchical structure of discussions including answers and comments.
         It's specifically designed to handle the Q&A format and category information
         that's unique to GitHub discussions.
-        
+
         Args:
             items: List of GitHub discussion items as dictionaries
-            
+
         Returns:
             List of LangChain Document objects formatted for vector storage
         """
@@ -90,72 +92,71 @@ class GithubResource(dg.ConfigurableResource):
                     "number": item.get("number"),
                     "category": item.get("category", {}).get("name"),
                     "is_answered": item.get("isAnswered", False),
-                    "upvote_count": item.get("upvoteCount", 0)
+                    "upvote_count": item.get("upvoteCount", 0),
                 }
-                
+
                 # Build content parts with structured sections
                 content_parts = [
                     f"Title: {item.get('title', '')}",
                     f"Category: {item.get('category', {}).get('name', 'Uncategorized')}",
-                    f"Question: {item.get('bodyText', '')}"
+                    f"Question: {item.get('bodyText', '')}",
                 ]
-                
+
                 # Add the accepted answer if present
                 if item.get("answer"):
                     content_parts.append(f"Accepted Answer: {item['answer'].get('bodyText', '')}")
-                
+
                 # Add any additional comments
                 if "comments" in item and "nodes" in item["comments"]:
                     for comment in item["comments"]["nodes"]:
                         if comment and "bodyText" in comment:
                             # Skip if this comment is the same as the accepted answer
-                            if (not item.get("answer") or 
-                                comment["bodyText"] != item["answer"].get("bodyText")):
+                            if not item.get("answer") or comment["bodyText"] != item["answer"].get(
+                                "bodyText"
+                            ):
                                 content_parts.append(f"Comment: {comment['bodyText']}")
-                
+
                 # Add labels if present
                 if "labels" in item and "nodes" in item["labels"]:
                     labels = [label["name"] for label in item["labels"]["nodes"]]
                     if labels:
                         content_parts.append(f"Labels: {', '.join(labels)}")
-                
+
                 # Create document with properly formatted content
-                doc = Document(
-                    page_content="\n\n".join(content_parts),
-                    metadata=metadata
-                )
+                doc = Document(page_content="\n\n".join(content_parts), metadata=metadata)
                 documents.append(doc)
-                
+
                 # Debug information for verification
-                log.info(f"Processed discussion #{item.get('number')}: "
-                    f"{item.get('title')} ({metadata['category']})")
-                
+                log.info(
+                    f"Processed discussion #{item.get('number')}: "
+                    f"{item.get('title')} ({metadata['category']})"
+                )
+
             except Exception as e:
                 print(f"Error processing discussion #{item.get('number', 'unknown')}:")
-                print(f"Error details: {str(e)}")
+                print(f"Error details: {e!s}")
                 continue
-        
+
         log.info(f"Successfully converted {len(documents)} discussions")
         return documents
 
     def _convert_issues_to_documents(self, items: List[Dict[str, Any]]) -> List[Document]:
-        """
-        Convert GitHub issues to LangChain documents.
-        
+        """Convert GitHub issues to LangChain documents.
+
         This function transforms GitHub issue data into LangChain Document objects,
         preserving issue-specific metadata and content structure including labels,
         state information, and comments.
-        
+
         Args:
             items: List of GitHub issue items as dictionaries
-            
+
         Returns:
             List of LangChain Document objects formatted for vector storage
         """
         documents = []
         log = dg.get_dagster_logger()
         log.info(f"Starting conversion of {len(items)} issues to documents")
-        
+
         for item in items:
             try:
                 # Extract issue-specific metadata
@@ -169,43 +170,42 @@ class GithubResource(dg.ConfigurableResource):
                     "state": item.get("state"),
                     "closed_at": item.get("closedAt"),
                     "state_reason": item.get("stateReason"),
-                    "reaction_count": item.get("reactions", {}).get("totalCount", 0)
+                    "reaction_count": item.get("reactions", {}).get("totalCount", 0),
                 }
-                
+
                 # Build content parts with issue structure
                 content_parts = [
                     f"Title: {item.get('title', '')}",
                     f"State: {item.get('state', '')}",
-                    f"Description: {item.get('bodyText', '')}"
+                    f"Description: {item.get('bodyText', '')}",
                 ]
-                
+
                 # Add labels if present
                 if "labels" in item and "nodes" in item["labels"]:
                     labels = [label["name"] for label in item["labels"]["nodes"]]
                     if labels:
                         content_parts.append(f"Labels: {', '.join(labels)}")
-                
+
                 # Add comments if present
                 if "comments" in item and "nodes" in item["comments"]:
                     for comment in item["comments"]["nodes"]:
                         if comment and "body" in comment:
                             content_parts.append(f"Comment: {comment['body']}")
-                
+
                 # Create document with properly formatted content
-                doc = Document(
-                    page_content="\n\n".join(content_parts),
-                    metadata=metadata
-                )
+                doc = Document(page_content="\n\n".join(content_parts), metadata=metadata)
                 documents.append(doc)
-                
+
                 # Debug information for verification
-                log.info(f"Processed issue #{item.get('number')}: {item.get('title')} ({metadata['state']})")
-                
+                log.info(
+                    f"Processed issue #{item.get('number')}: {item.get('title')} ({metadata['state']})"
+                )
+
             except Exception as e:
                 print(f"Error processing issue #{item.get('number', 'unknown')}:")
-                print(f"Error details: {str(e)}")
+                print(f"Error details: {e!s}")
                 continue
-        
+
         log.info(f"Successfully converted {len(documents)} issues")
         return documents
 
