@@ -3,7 +3,6 @@ import json
 import boto3
 import pytest
 from dagster import job, op
-from moto import mock_logs
 
 from dagster_aws.cloudwatch import cloudwatch_logger
 
@@ -26,8 +25,7 @@ def region():
 
 @pytest.fixture
 def cloudwatch_client(region):
-    with mock_logs():
-        yield boto3.client("logs", region_name=region)
+    yield boto3.client("logs", region_name=region)
 
 
 @pytest.fixture

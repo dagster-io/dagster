@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from typing import Any, Callable, ContextManager, Iterator, Mapping, Sequence
 
 import boto3
-import moto
 import pytest
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.instance import DagsterInstance
@@ -28,8 +27,7 @@ def ignore_dagster_warnings() -> Iterator[None]:
 
 @pytest.fixture
 def cloudwatch_client(region: str):
-    with moto.mock_logs():
-        yield boto3.client("logs", region_name=region)
+    yield boto3.client("logs", region_name=region)
 
 
 @pytest.fixture

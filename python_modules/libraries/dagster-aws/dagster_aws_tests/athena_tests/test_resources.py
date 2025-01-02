@@ -1,6 +1,5 @@
 import boto3
 import pytest
-from moto import mock_athena
 
 from dagster_aws.athena.resources import (
     AthenaError,
@@ -23,8 +22,7 @@ class TestAthenaClientResource(ResourceWithAthenaConfig):
 
 @pytest.fixture
 def mock_athena_client(mock_s3_resource):
-    with mock_athena():
-        yield boto3.client("athena", region_name="us-east-1")
+    yield boto3.client("athena", region_name="us-east-1")
 
 
 def test_execute_query(mock_athena_client):
