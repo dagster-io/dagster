@@ -388,6 +388,7 @@ mypy-boto3-emr==1.35.68
 mypy-boto3-emr-serverless==1.35.79
 mypy-boto3-glue==1.35.80
 mypy-boto3-logs==1.35.81
+mypy-boto3-stepfunctions==1.35.68
 mypy-boto3-s3==1.35.81
 mypy-extensions==1.0.0
 mypy-protobuf==3.6.0
