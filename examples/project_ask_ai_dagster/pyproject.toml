@@ -14,6 +14,7 @@ dependencies = [
     "langchain-chroma",
     "dagster",
     "dagster-webserver",
+    "dagster-openai",
     "chromadb",
     "tokenizers",
     "tenacity",
@@ -21,6 +22,7 @@ dependencies = [
     "bs4",
     "lxml",
     "openai",
+    "pinecone",
     ]
 
 [project.optional-dependencies]
