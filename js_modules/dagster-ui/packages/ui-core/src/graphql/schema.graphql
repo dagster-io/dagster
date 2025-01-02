@@ -634,6 +634,7 @@ type AssetNode {
   backfillPolicy: BackfillPolicy
   changedReasons: [ChangeReason!]!
   computeKind: String
+  pools: [String!]!
   configField: ConfigTypeField
   dataVersion(partition: String): String
   dataVersionByPartition(partitions: [String!]): [String]!
@@ -3191,6 +3192,7 @@ type SolidDefinition implements ISolidDefinition {
   assetNodes: [AssetNode!]!
   configField: ConfigTypeField
   requiredResources: [ResourceRequirement!]!
+  pool: String
 }
 
 type SolidHandle {
