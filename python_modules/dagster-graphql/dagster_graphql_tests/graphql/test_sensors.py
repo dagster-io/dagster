@@ -1653,9 +1653,9 @@ def test_asset_selection(graphql_context):
     assert result.data
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
 
-    assert (
-        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
-        == 'key:"fresh_diamond_bottom" or key:"asset_with_automation_condition" or key:"asset_with_custom_automation_condition"'
+    assert result.data["sensorOrError"]["assetSelection"]["assetSelectionString"] == (
+        '(key:"fresh_diamond_bottom" or key:"asset_with_automation_condition"'
+        ' or key:"asset_with_custom_automation_condition") and code_location:foo'
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [
         {"path": ["asset_with_automation_condition"]},
