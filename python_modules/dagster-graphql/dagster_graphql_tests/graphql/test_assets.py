@@ -842,6 +842,17 @@ query MaterializationsFromStepStatsQuery($runId: ID!) {
 }
 """
 
+GET_ASSET_CONCURRENCY_GROUP = """
+    query AssetNodeQuery($assetKey: AssetKeyInput!) {
+        assetNodeOrError(assetKey: $assetKey) {
+            ...on AssetNode {
+                id
+                pools
+            }
+        }
+    }
+"""
+
 
 def _create_run(
     graphql_context: WorkspaceRequestContext,
@@ -3573,3 +3584,17 @@ def test_2d_subset_backcompat():
             assert len(ranges[1]["secondaryDim"]["materializedPartitions"]) == 2
             assert set(ranges[1]["secondaryDim"]["materializedPartitions"]) == {"a", "c"}
             assert set(ranges[1]["secondaryDim"]["unmaterializedPartitions"]) == {"b", "d"}
+
+
+def test_concurrency_assets(graphql_context: WorkspaceRequestContext):
+    def _graphql_pool(asset_key):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_CONCURRENCY_GROUP,
+            variables={"assetKey": {"path": asset_key.path}},
+        )
+        return set(result.data["assetNodeOrError"]["pools"])
+
+    assert _graphql_pool(AssetKey(["concurrency_asset"])) == {"foo"}
+    assert _graphql_pool(AssetKey(["concurrency_graph_asset"])) == {"bar", "baz"}
+    assert _graphql_pool(AssetKey(["concurrency_multi_asset_1"])) == {"buzz"}

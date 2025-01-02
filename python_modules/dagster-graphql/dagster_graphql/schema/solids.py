@@ -458,6 +458,7 @@ class ISolidDefinitionMixin:
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     config_field = graphene.Field(GrapheneConfigTypeField)
     required_resources = non_null_list(GrapheneResourceRequirement)
+    pool = graphene.String()
 
     class Meta:
         interfaces = (GrapheneISolidDefinition,)
@@ -490,6 +491,9 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         return [
             GrapheneResourceRequirement(key) for key in self._solid_def_snap.required_resource_keys
         ]
+
+    def resolve_pool(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._solid_def_snap.pool
 
 
 class GrapheneSolidStepStatsUnavailableError(graphene.ObjectType):
