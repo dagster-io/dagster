@@ -3,6 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
 
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
@@ -26,9 +27,11 @@ from dagster._core.storage.dagster_run import (
     RunsFilter,
 )
 from dagster._core.storage.tags import BACKFILL_ID_TAG, USER_TAG
+from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
+from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
@@ -119,6 +122,8 @@ class PartitionBackfill(
         ],
     ),
 ):
+    """A backfill for a set of partitions."""
+
     def __new__(
         cls,
         backfill_id: str,
@@ -416,28 +421,59 @@ class PartitionBackfill(
             asset_backfill_data=(asset_backfill_data if not is_backcompat else None),
         )
 
+    @public
     @classmethod
     def from_asset_partitions(
         cls,
-        backfill_id: str,
         asset_graph: BaseAssetGraph,
-        partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
-        backfill_timestamp: float,
-        tags: Mapping[str, str],
+        # TODO(deepyaman): Expose `dagster_instance` instead for the public API.
         dynamic_partitions_store: DynamicPartitionsStore,
-        all_partitions: bool,
-        title: Optional[str],
-        description: Optional[str],
+        partition_names: Optional[Sequence[str]] = None,
+        all_partitions: bool = False,
+        backfill_id: Optional[str] = None,
+        backfill_timestamp: Optional[float] = None,
+        tags: Mapping[str, str] = {},
+        title: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> "PartitionBackfill":
-        """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
+        """Construct a ``PartitionBackfill`` given a list of partitions.
+
+        Either ``partition_names`` must not be ``None`` or ``all_partitions`` must be ``True`` but
+        not both.
+
+        If all the selected assets that have PartitionsDefinitions have the same partitioning, then
         the backfill will target the provided partition_names for all those assets.
 
         Otherwise, the backfill must consist of a partitioned "anchor" asset and a set of other
         assets that descend from it. In that case, the backfill will target the partition_names of
         the anchor asset, as well as all partitions of other selected assets that are downstream
         of those partitions of the anchor asset.
+
+        Args:
+            asset_graph (BaseAssetGraph): The asset graph for the backfill.
+            asset_selection (Optional[Sequence[AssetKey]]): List of asset keys to backfill.
+            dynamic_partitions_store (DynamicPartitionsStore): The dynamic partitions store.
+            partition_names (Optional[Sequence[str]]): List of partition names to backfill.
+            all_partitions (bool): Whether to backfill all partitions.
+            backfill_id (Optional[str]): The backfill ID. If not provided, a new backfill ID will be
+                randomly generated.
+            backfill_timestamp (Optional[float]): The time to start the backfill in seconds since
+                the `epoch <https://docs.python.org/3/library/time.html#epoch>`_ as a floating-point
+                number. If not provided, the current time will be used.
+            tags (Mapping[str, str]): The tags for the backfill.
+            title (Optional[str]): The title of the backfill.
+            description (Optional[str]): The description of the backfill.
+
+        Returns:
+            PartitionBackfill: The backfill.
         """
+        if backfill_id is None:
+            backfill_id = make_new_backfill_id()
+
+        if backfill_timestamp is None:
+            backfill_timestamp = get_current_timestamp()
+
         asset_backfill_data = AssetBackfillData.from_asset_partitions(
             asset_graph=asset_graph,
             partition_names=partition_names,
