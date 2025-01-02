@@ -590,8 +590,11 @@ class TickData(
         skip_reason (str): message for why the tick was skipped
         cursor (Optional[str]): Cursor output by this tick.
         origin_run_ids (List[str]): The runs originated from the schedule/sensor.
-        failure_count (int): The number of times this tick has failed. If the status is not
-            FAILED, this is the number of previous failures before it reached the current state.
+        failure_count (int): The number of times this particular tick has failed (to determine
+            whether the next tick should be a retry of that tick).
+            For example, for a schedule, this tracks the number of attempts we have made for a
+            particular scheduled execution time. The next tick will attempt to retry the most recent
+            tick if it failed and its failure count is less than the configured retry limit.
         dynamic_partitions_request_results (Sequence[DynamicPartitionsRequestResult]): The results
             of the dynamic partitions requests evaluated within the tick.
         end_timestamp (Optional[float]) Time that this tick finished.
@@ -602,11 +605,12 @@ class TickData(
         reserved_run_ids (Optional[Sequence[str]]): A list of run IDs to use for each of the
             run_requests. Used to ensure that if the tick fails partway through, we don't create
             any duplicate runs for the tick. Currently only used by AUTO_MATERIALIZE ticks.
-        consecutive_failure_count (Optional[int]): The number of times this sensor has failed
-            consecutively. Differs from failure_count in that it spans multiple ticks, whereas
-            failure_count measures the number of times that a particular tick should retry.  If the
-            status is not FAILED, this is the number of previous consecutive failures across
-            multiple ticks before it reached the current state.
+        consecutive_failure_count (Optional[int]): The number of times this instigator has failed
+            consecutively. Differs from failure_count in that it spans multiple executions, whereas
+            failure_count measures the number of times that a particular tick should retry. For
+            example, if a daily schedule fails on 3 consecutive days, failure_count tracks the
+            number of failures for each day, and consecutive_failure_count tracks the total
+            number of consecutive failures across all days.
     """
 
     def __new__(

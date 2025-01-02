@@ -142,6 +142,10 @@ class SensorLaunchContext(AbstractContextManager):
         ]
 
     def update_state(self, status: TickStatus, **kwargs: object):
+        if status in {TickStatus.SKIPPED, TickStatus.SUCCESS}:
+            kwargs["failure_count"] = 0
+            kwargs["consecutive_failure_count"] = 0
+
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
         cursor = cast(Optional[str], kwargs.get("cursor"))
         origin_run_id = cast(Optional[str], kwargs.get("origin_run_id"))

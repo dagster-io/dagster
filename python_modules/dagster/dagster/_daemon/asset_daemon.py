@@ -265,6 +265,10 @@ class AutoMaterializeLaunchContext:
         return self._tick
 
     def update_state(self, status: TickStatus, **kwargs: object):
+        if status in {TickStatus.SKIPPED, TickStatus.SUCCESS}:
+            kwargs["failure_count"] = 0
+            kwargs["consecutive_failure_count"] = 0
+
         self._tick = self._tick.with_status(status=status, **kwargs)
 
     def __enter__(self):

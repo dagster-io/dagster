@@ -106,6 +106,10 @@ class _ScheduleLaunchContext(AbstractContextManager):
         ]
 
     def update_state(self, status, error=None, **kwargs):
+        if status in {TickStatus.SKIPPED, TickStatus.SUCCESS}:
+            kwargs["failure_count"] = 0
+            kwargs["consecutive_failure_count"] = 0
+
         skip_reason = kwargs.get("skip_reason")
         if "skip_reason" in kwargs:
             del kwargs["skip_reason"]
@@ -655,11 +659,7 @@ def launch_scheduled_runs_for_schedule_iterator(
             check_for_debug_crash(schedule_debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(
-            remote_schedule,
-            tick,
-            instance,
-            logger,
-            tick_retention_settings,
+            remote_schedule, tick, instance, logger, tick_retention_settings
         ) as tick_context:
             try:
                 check_for_debug_crash(schedule_debug_crash_flags, "TICK_HELD")
