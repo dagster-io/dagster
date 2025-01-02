@@ -481,6 +481,7 @@ export type AssetNode = {
   partitionKeys: Array<Scalars['String']['output']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats: Maybe<PartitionStats>;
+  pools: Array<Scalars['String']['output']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   staleCauses: Array<StaleCause>;
@@ -5182,6 +5183,7 @@ export type SolidDefinition = ISolidDefinition & {
   metadata: Array<MetadataItemDefinition>;
   name: Scalars['String']['output'];
   outputDefinitions: Array<OutputDefinition>;
+  pool: Maybe<Scalars['String']['output']>;
   requiredResources: Array<ResourceRequirement>;
 };
 
@@ -6701,6 +6703,7 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('PartitionStats')
           ? ({} as PartitionStats)
           : buildPartitionStats({}, relationshipsToOmit),
+    pools: overrides && overrides.hasOwnProperty('pools') ? overrides.pools! : [],
     repository:
       overrides && overrides.hasOwnProperty('repository')
         ? overrides.repository!
@@ -14434,6 +14437,7 @@ export const buildSolidDefinition = (
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
         : [],
+    pool: overrides && overrides.hasOwnProperty('pool') ? overrides.pool! : 'voluptates',
     requiredResources:
       overrides && overrides.hasOwnProperty('requiredResources')
         ? overrides.requiredResources!
