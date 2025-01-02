@@ -116,7 +116,7 @@ Dagster+ provides rich visualization and navigation of column lineage in the Ass
 
 ## Linking assets with source code \{#source-code}
 
-import Experimental from '../partials/\_Experimental.md';
+import Experimental from '../../../partials/\_Experimental.md';
 
 <Experimental />
 
@@ -124,11 +124,11 @@ import Preview from '../partials/\_Preview.md';
 
 <Preview />
 
-import Beta from '../partials/\_Beta.md';
+import Beta from '../../../partials/\_Beta.md';
 
 <Beta />
 
-import Superseded from '../partials/\_Superseded.md';
+import Superseded from '../../../partials/\_Superseded.md';
 
 <Superseded />
 
