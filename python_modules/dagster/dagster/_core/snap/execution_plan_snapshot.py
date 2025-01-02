@@ -150,7 +150,7 @@ class ExecutionStepSnap(
             ("metadata_items", Sequence["ExecutionPlanMetadataItemSnap"]),
             ("tags", Optional[Mapping[str, str]]),
             ("step_handle", Optional[StepHandleUnion]),
-            ("concurrency_group", Optional[str]),
+            ("pool", Optional[str]),
         ],
     )
 ):
@@ -164,7 +164,7 @@ class ExecutionStepSnap(
         metadata_items: Sequence["ExecutionPlanMetadataItemSnap"],
         tags: Optional[Mapping[str, str]] = None,
         step_handle: Optional[StepHandleUnion] = None,
-        concurrency_group: Optional[str] = None,
+        pool: Optional[str] = None,
     ):
         return super().__new__(
             cls,
@@ -181,15 +181,15 @@ class ExecutionStepSnap(
             # stores the concurrency group arg as separate from the concurrency_key property since the
             # snapshot may have been generated before concurrency_key was added as a separate
             # argument
-            concurrency_group=check.opt_str_param(concurrency_group, "concurrency_group"),
+            pool=check.opt_str_param(pool, "pool"),
         )
 
     @property
     def concurrency_key(self):
-        # Separate property in case the snapshot was created before concurrency_group was added as
+        # Separate property in case the snapshot was created before pool was added as
         # a separate argument from tags
-        if self.concurrency_group:
-            return self.concurrency_group
+        if self.pool:
+            return self.pool
         if not self.tags:
             return None
         return self.tags.get(GLOBAL_CONCURRENCY_TAG)
@@ -326,7 +326,7 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
         ),
         tags=execution_step.tags,
         step_handle=execution_step.handle,
-        concurrency_group=execution_step.concurrency_group,
+        pool=execution_step.pool,
     )
 
 
