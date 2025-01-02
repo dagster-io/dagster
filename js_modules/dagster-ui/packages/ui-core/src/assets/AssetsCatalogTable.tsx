@@ -211,7 +211,10 @@ export const AssetsCatalogTable = ({
     kindFilter,
   } = useAssetCatalogFiltering({assets});
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
-    useAssetSelectionInput(partiallyFiltered, !assets);
+    useAssetSelectionInput({
+      assets: partiallyFiltered,
+      assetsLoading: !assets || filteredAssetsLoading,
+    });
 
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !loading);
 
