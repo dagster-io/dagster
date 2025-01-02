@@ -22,6 +22,7 @@ class SitemapScraper(dg.ConfigurableResource):
         return urls
 
     def scrape_page(self, url: str) -> Document:
+        log = dg.get_dagster_logger()
         try:
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
@@ -46,7 +47,7 @@ class SitemapScraper(dg.ConfigurableResource):
             return Document(page_content=text_content, metadata={"source": url, "title": title})
 
         except Exception as e:
-            print(f"Error scraping {url}: {e!s}")
+            log.error(f"Error scraping {url}: {e!s}")
             return None
 
 
