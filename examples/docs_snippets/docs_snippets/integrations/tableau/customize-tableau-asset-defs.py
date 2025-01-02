@@ -38,6 +38,6 @@ class MyCustomTableauTranslator(DagsterTableauTranslator):
 
 tableau_specs = load_tableau_asset_specs(
     tableau_workspace,
-    dagster_tableau_translator=MyCustomTableauTranslator,  # type: ignore
+    dagster_tableau_translator=MyCustomTableauTranslator,
 )
 defs = dg.Definitions(assets=[*tableau_specs], resources={"tableau": tableau_workspace})

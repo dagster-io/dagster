@@ -78,6 +78,21 @@ def cacheable_asset_defs_custom_translator():
     return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
 
 
+@lazy_definitions
+def cacheable_asset_defs_custom_translator_legacy():
+    class MyCoolTranslator(DagsterTableauTranslator):
+        def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
+            default_spec = super().get_asset_spec(data)
+            return default_spec.replace_attributes(key=default_spec.key.with_prefix("my_prefix"))
+
+    # Pass the translator type
+    tableau_specs = load_tableau_asset_specs(
+        workspace=resource, dagster_tableau_translator=MyCoolTranslator
+    )
+
+    return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
+
+
 def test_load_assets_workspace_data_refreshable_workbooks(
     sign_in: MagicMock,
     get_workbooks: MagicMock,
