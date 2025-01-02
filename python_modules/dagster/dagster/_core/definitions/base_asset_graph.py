@@ -144,6 +144,10 @@ class BaseAssetNode(BaseEntityNode[AssetKey]):
 
     @property
     @abstractmethod
+    def pools(self) -> Optional[Set[str]]: ...
+
+    @property
+    @abstractmethod
     def owners(self) -> Sequence[str]: ...
 
     @property
