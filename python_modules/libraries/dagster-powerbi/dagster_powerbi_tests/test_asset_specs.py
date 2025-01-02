@@ -119,11 +119,15 @@ def test_translator_custom_metadata_legacy(
         credentials=PowerBIToken(api_token=fake_token),
         workspace_id=workspace_id,
     )
-    all_asset_specs = load_powerbi_asset_specs(
-        workspace=resource,
-        dagster_powerbi_translator=MyCustomTranslator,
-        use_workspace_scan=False,
-    )
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Support of `dagster_powerbi_translator` as a Type\[DagsterPowerBITranslator\]",
+    ):
+        all_asset_specs = load_powerbi_asset_specs(
+            workspace=resource,
+            dagster_powerbi_translator=MyCustomTranslator,
+            use_workspace_scan=False,
+        )
     asset_spec = next(spec for spec in all_asset_specs)
 
     assert "custom" in asset_spec.metadata
