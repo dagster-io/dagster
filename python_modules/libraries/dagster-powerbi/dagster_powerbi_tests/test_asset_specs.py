@@ -111,6 +111,27 @@ def test_translator_custom_metadata(workspace_data_api_mocks: None, workspace_id
     assert "dagster/kind/powerbi" in asset_spec.tags
 
 
+def test_translator_custom_metadata_legacy(
+    workspace_data_api_mocks: None, workspace_id: str
+) -> None:
+    fake_token = uuid.uuid4().hex
+    resource = PowerBIWorkspace(
+        credentials=PowerBIToken(api_token=fake_token),
+        workspace_id=workspace_id,
+    )
+    all_asset_specs = load_powerbi_asset_specs(
+        workspace=resource,
+        dagster_powerbi_translator=MyCustomTranslator,
+        use_workspace_scan=False,
+    )
+    asset_spec = next(spec for spec in all_asset_specs)
+
+    assert "custom" in asset_spec.metadata
+    assert asset_spec.metadata["custom"] == "metadata"
+    assert asset_spec.key.path == ["prefix", "dashboard", "Sales_Returns_Sample_v201912"]
+    assert "dagster/kind/powerbi" in asset_spec.tags
+
+
 @lazy_definitions
 def state_derived_defs_two_workspaces() -> Definitions:
     resource = PowerBIWorkspace(
