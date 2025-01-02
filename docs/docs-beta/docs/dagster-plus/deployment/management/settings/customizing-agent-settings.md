@@ -69,9 +69,6 @@ compute_logs:
 
 ## Disabling compute logs
 
-<<<<<<< HEAD
-{/* NOTE this is a placeholder section so the Hybrid deployment index page has somewhere to link to */}
-=======
 You can disable forwarding compute logs to Dagster+ by configuring the `NoOpComputeLogManager` setting:
 
 ```yaml
@@ -136,4 +133,3 @@ compute_logs:
     show_url_only: true
     region: "us-west-1"
 ```
->>>>>>> master
