@@ -54,6 +54,24 @@ class RunQueueConfig(
             check.int_param(op_concurrency_slot_buffer, "op_concurrency_slot_buffer"),
         )
 
+    def with_concurrency_settings(
+        self, concurrency_settings: Mapping[str, Any]
+    ) -> "RunQueueConfig":
+        run_settings = concurrency_settings.get("runs", {})
+        pool_settings = concurrency_settings.get("pools", {})
+        return RunQueueConfig(
+            max_concurrent_runs=run_settings.get("max_concurrent_runs", self.max_concurrent_runs),
+            tag_concurrency_limits=run_settings.get(
+                "tag_concurrency_limits", self.tag_concurrency_limits
+            ),
+            max_user_code_failure_retries=self.max_user_code_failure_retries,
+            user_code_failure_retry_delay=self.user_code_failure_retry_delay,
+            should_block_op_concurrency_limited_runs=self.should_block_op_concurrency_limited_runs,
+            op_concurrency_slot_buffer=pool_settings.get(
+                "op_run_buffer", self.op_concurrency_slot_buffer
+            ),
+        )
+
 
 class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass):
     """Enqueues runs via the run storage, to be deqeueued by the Dagster Daemon process. Requires
