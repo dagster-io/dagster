@@ -10,18 +10,22 @@ last_update:
 Many AI applications are data applications. Organizations want to leverage existing LLMs rather than build their own. But in order to take advantage of all the models that exist, you need to supplement them with your own data to produce more accurate and contextually aware results. We will demonstrate how to use Dagster to extract data, generate embeddings, and store the results within a vector database ([Pinecone](https://www.pinecone.io/)) which we can then use to power AI models to craft far more detailed answers.
 
 ### Dagster Concepts
-- [resources]()
-- [run configurations]()
+
+- [resources](/todo)
+- [run configurations](/todo)
 
 ### Services
-- [DuckDB]()
-- [Pinecone]()
+
+- [DuckDB](/todo)
+- [Pinecone](/todo)
 
 ## Code
+
 ![Pinecone asset graph](/images/tutorials/pinecone/pinecone_dag.png)
 
 ### Setup
-All the code for this tutorial can be found at [project_dagster_pinecone]().
+
+All the code for this tutorial can be found at [project_dagster_pinecone](/todo).
 
 Install the project dependencies:
 ```
@@ -39,46 +43,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 We will be working with review data from Goodreads. These reviews exist as a collection of JSON files categorized by different genres. We will focus on just the files for graphic novels to limit the size of the files we will process. Within this domain, the files we will be working with are `goodreads_books_comics_graphic.json.gz` and `goodreads_reviews_comics_graphic.json.gz`. Since the data is normalized across these two files, we will want to combine information before feeding it into our vector database.
 
 One way to handle preprocessing of the data is with [DuckDB](https://duckdb.org/). DuckDB is an in-process database, similar to SQLite, optimized for analytical workloads. We will start by creating two Dagster assets to load in the data. Each will load one of the files and create a DuckDB table (`graphic_novels` and `reviews`):
-```python
-# asssets.py
-@dg.asset(
-    kinds={"duckdb"},
-    group_name="ingestion",
-    deps=[goodreads],
-)
-def graphic_novels(duckdb_resource: dg_duckdb.DuckDBResource):
-    url = "https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/goodreads/byGenre/goodreads_books_comics_graphic.json.gz"
-    query = f"""
-        create table if not exists graphic_novels as (
-          select *
-          from read_json(
-            '{url}',
-            ignore_errors = true
-          )
-        );
-    """
-    with duckdb_resource.get_connection() as conn:
-        conn.execute(query)
 
-@dg.asset(
-    kinds={"duckdb"},
-    group_name="ingestion",
-    deps=[goodreads],
-)
-def reviews(duckdb_resource: dg_duckdb.DuckDBResource):
-    url = "https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/goodreads/byGenre/goodreads_reviews_comics_graphic.json.gz"
-    query = f"""
-        create table if not exists reviews as (
-          select *
-          from read_json(
-            '{url}',
-            ignore_errors = true
-          )
-        );
-    """
-    with duckdb_resource.get_connection() as conn:
-        conn.execute(query)
-```
+<CodeExample
+  pathPrefix="tutorial_pinecone/tutorial_pinecone"
+  filePath="assets.py" 
+  lineStart="22"
+  lineEnd ="60"
+  />
 
 With our DuckDB tables created, we can now query them like any other SQL table. Our third asset will join and filter the data and then return a DataFrame (we will also `LIMIT` the results to 500):
 ```python

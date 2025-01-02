@@ -7,7 +7,9 @@ interface CodeExampleProps {
   title?: string;
   lineStart?: number;
   lineEnd?: number;
+  pathPrefix?: string;
 }
+
 
 /**
  * Removes content below the `if __name__` block for the given `lines`.
@@ -28,20 +30,18 @@ function filterNoqaComments(lines: string[]): string[] {
 
 const CodeExample: React.FC<CodeExampleProps> = ({
   filePath,
-  language,
   title,
   lineStart,
   lineEnd,
+  language = 'python',
+  pathPrefix = 'docs_beta_snippets/docs_beta_snippets',
   ...props
 }) => {
   const [content, setContent] = React.useState<string>('');
   const [error, setError] = React.useState<string | null>(null);
 
-  language = language || 'python';
-
   React.useEffect(() => {
-    // Adjust the import path to start from the docs directory
-    import(`!!raw-loader!/../../examples/docs_beta_snippets/docs_beta_snippets/${filePath}`)
+    import(`!!raw-loader!/../../examples/${pathPrefix}/${filePath}`)
       .then((module) => {
         var lines = module.default.split('\n');
 
