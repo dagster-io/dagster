@@ -18,7 +18,7 @@ looker_resource = LookerResource(
 class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
     def get_asset_spec(self, looker_structure: LookerStructureData) -> dg.AssetSpec:
         # We create the default asset spec using super()
-        default_spec = super().get_asset_spec(looker_structure)
+        default_spec = super().get_asset_spec(looker_structure)  # type: ignore
         # We customize the team owner tag for all assets,
         # and we customize the asset key prefix only for dashboards.
         return default_spec.replace_attributes(

@@ -8,7 +8,7 @@ from dagster_looker import LookerFilter
 from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
-    LookerStructureData,
+    LookerApiTranslatorStructureData,
     RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import LookerResource, load_looker_asset_specs
@@ -196,7 +196,7 @@ def test_custom_asset_specs(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
     class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
-        def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+        def get_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
             default_spec = super().get_asset_spec(looker_structure)
             return default_spec.replace_attributes(
                 key=default_spec.key.with_prefix("my_prefix"),

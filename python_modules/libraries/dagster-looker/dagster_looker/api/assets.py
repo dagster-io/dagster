@@ -5,6 +5,7 @@ from dagster._annotations import experimental
 
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
+    LookerApiTranslatorStructureData,
     LookerStructureData,
     LookerStructureType,
     LookmlView,
@@ -32,19 +33,22 @@ def build_looker_pdt_assets_definitions(
     Returns:
         AssetsDefinition: The AssetsDefinitions of the executable assets for the given the list of refreshable PDTs.
     """
-    translator = dagster_looker_translator(None)
+    translator = dagster_looker_translator()
     result = []
     for request_start_pdt_build in request_start_pdt_builds:
 
         @multi_asset(
             specs=[
                 translator.get_asset_spec(
-                    LookerStructureData(
-                        structure_type=LookerStructureType.VIEW,
-                        data=LookmlView(
-                            view_name=request_start_pdt_build.view_name,
-                            sql_table_name=None,
+                    LookerApiTranslatorStructureData(
+                        structure_data=LookerStructureData(
+                            structure_type=LookerStructureType.VIEW,
+                            data=LookmlView(
+                                view_name=request_start_pdt_build.view_name,
+                                sql_table_name=None,
+                            ),
                         ),
+                        instance_data=None,
                     )
                 )
             ],
