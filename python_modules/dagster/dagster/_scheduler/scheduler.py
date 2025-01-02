@@ -100,6 +100,10 @@ class _ScheduleLaunchContext(AbstractContextManager):
         return self._tick.tick_data.failure_count
 
     @property
+    def consecutive_failure_count(self) -> int:
+        return self._tick.tick_data.consecutive_failure_count or self._tick.tick_data.failure_count
+
+    @property
     def tick_id(self) -> str:
         return str(self._tick.tick_id)
 
@@ -630,6 +634,13 @@ def launch_scheduled_runs_for_schedule_iterator(
     for schedule_time in tick_times:
         schedule_timestamp = schedule_time.timestamp()
         schedule_time_str = schedule_time.strftime(default_date_format_string())
+
+        consecutive_failure_count = 0
+        if latest_tick and latest_tick.status in {TickStatus.FAILURE, TickStatus.STARTED}:
+            consecutive_failure_count = (
+                latest_tick.consecutive_failure_count or latest_tick.failure_count
+            )
+
         if latest_tick and latest_tick.timestamp == schedule_timestamp:
             tick = latest_tick
             if latest_tick.status == TickStatus.FAILURE:
@@ -647,13 +658,18 @@ def launch_scheduled_runs_for_schedule_iterator(
                     status=TickStatus.STARTED,
                     timestamp=schedule_timestamp,
                     selector_id=remote_schedule.selector_id,
+                    consecutive_failure_count=consecutive_failure_count,
                 )
             )
 
             check_for_debug_crash(schedule_debug_crash_flags, "TICK_CREATED")
 
         with _ScheduleLaunchContext(
-            remote_schedule, tick, instance, logger, tick_retention_settings
+            remote_schedule,
+            tick,
+            instance,
+            logger,
+            tick_retention_settings,
         ) as tick_context:
             try:
                 check_for_debug_crash(schedule_debug_crash_flags, "TICK_HELD")
@@ -688,6 +704,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                             # don't increment the failure count - retry forever until the server comes back up
                             # or the schedule is turned off
                             failure_count=tick_context.failure_count,
+                            consecutive_failure_count=tick_context.consecutive_failure_count + 1,
                         )
                         yield error_data
                 else:
@@ -700,6 +717,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                         TickStatus.FAILURE,
                         error=error_data,
                         failure_count=tick_context.failure_count + 1,
+                        consecutive_failure_count=tick_context.consecutive_failure_count + 1,
                     )
                     yield error_data
 
