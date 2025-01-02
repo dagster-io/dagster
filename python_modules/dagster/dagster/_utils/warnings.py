@@ -28,7 +28,7 @@ def preview_warning(
         return
 
     warnings.warn(
-        f"{subject} is in currently, with ongoing updates, and not yet optimized for production use. "
+        f"{subject} is currently in preview, with ongoing updates, and not yet optimized for production use. "
         f"This may break in future versions, even between dot releases."
         + ((" " + additional_warn_text) if additional_warn_text else ""),
         category=PreviewWarning,
