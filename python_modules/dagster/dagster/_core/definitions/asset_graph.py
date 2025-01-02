@@ -86,6 +86,16 @@ class AssetNode(BaseAssetNode):
         return self._spec.kinds or set()
 
     @property
+    def pools(self) -> Optional[set[str]]:
+        if not self.assets_def.computation:
+            return None
+        return set(
+            op_def.pool
+            for op_def in self.assets_def.computation.node_def.iterate_op_defs()
+            if op_def.pool
+        )
+
+    @property
     def owners(self) -> Sequence[str]:
         return self._spec.owners
 

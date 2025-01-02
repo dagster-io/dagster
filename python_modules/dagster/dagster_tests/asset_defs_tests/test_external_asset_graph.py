@@ -8,6 +8,7 @@ import pytest
 from dagster import (
     AssetIn,
     AssetKey,
+    AssetSpec,
     DagsterInstance,
     DailyPartitionsDefinition,
     Definitions,
@@ -16,6 +17,9 @@ from dagster import (
     StaticPartitionMapping,
     StaticPartitionsDefinition,
     asset,
+    graph_asset,
+    multi_asset,
+    op,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -364,3 +368,42 @@ def test_dup_node_detection(instance):
         _ = _make_context(
             instance, ["dup_observation_defs_a", "dup_observation_defs_b"]
         ).asset_graph
+
+
+@asset(pool="foo")
+def my_asset():
+    pass
+
+
+@op(pool="bar")
+def my_op():
+    pass
+
+
+@graph_asset
+def my_graph_asset():
+    return my_op()
+
+
+@multi_asset(
+    specs=[
+        AssetSpec("multi_asset_1"),
+        AssetSpec("multi_asset_2"),
+    ],
+    pool="baz",
+)
+def my_multi_asset():
+    pass
+
+
+concurrency_assets = Definitions(assets=[my_asset, my_graph_asset, my_multi_asset])
+
+
+def test_pool_snap(instance) -> None:
+    context = _make_context(instance, ["concurrency_assets"])
+    asset_graph = context.asset_graph
+    assert asset_graph
+    assert asset_graph.get(AssetKey("my_asset")).pools == {"foo"}
+    assert asset_graph.get(AssetKey("my_graph_asset")).pools == {"bar"}
+    assert asset_graph.get(AssetKey("multi_asset_1")).pools == {"baz"}
+    assert asset_graph.get(AssetKey("multi_asset_2")).pools == {"baz"}
