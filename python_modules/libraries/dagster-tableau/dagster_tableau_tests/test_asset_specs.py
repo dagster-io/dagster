@@ -264,9 +264,13 @@ def test_translator_custom_metadata_legacy(
         resource.build_client()
 
         # Pass the translator type
-        all_asset_specs = load_tableau_asset_specs(
-            workspace=resource, dagster_tableau_translator=MyCustomTranslator
-        )
+        with pytest.warns(
+            DeprecationWarning,
+            match=r"Support of `dagster_tableau_translator` as a Type\[DagsterTableauTranslator\]",
+        ):
+            all_asset_specs = load_tableau_asset_specs(
+                workspace=resource, dagster_tableau_translator=MyCustomTranslator
+            )
         asset_spec = next(spec for spec in all_asset_specs)
 
         assert "custom" in asset_spec.metadata
