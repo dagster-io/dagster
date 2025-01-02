@@ -43,7 +43,6 @@ class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
 
 power_bi_specs = load_powerbi_asset_specs(
     power_bi_workspace,
-    dagster_powerbi_translator=CustomDagsterPowerBITranslator,  # type: ignore
-)
+    dagster_powerbi_translator=CustomDagsterPowerBITranslator,
 
 defs = dg.Definitions(assets=[*power_bi_specs], resources={"power_bi": power_bi_workspace})
