@@ -269,6 +269,10 @@ class AssetGraphSubset(NamedTuple):
         )
 
     @classmethod
+    def empty(cls) -> "AssetGraphSubset":
+        return AssetGraphSubset({}, set())
+
+    @classmethod
     def from_entity_subsets(
         cls, entity_subsets: Iterable[EntitySubset[AssetKey]]
     ) -> "AssetGraphSubset":

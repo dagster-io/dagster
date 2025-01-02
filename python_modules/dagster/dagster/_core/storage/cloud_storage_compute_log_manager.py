@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import threading
 import time
 from abc import abstractmethod
@@ -19,6 +20,7 @@ from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
 )
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 SUBSCRIPTION_POLLING_INTERVAL = 5
 
@@ -87,6 +89,12 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
     def _on_capture_complete(self, log_key: Sequence[str]):
         self.upload_to_cloud_storage(log_key, ComputeIOType.STDOUT)
         self.upload_to_cloud_storage(log_key, ComputeIOType.STDERR)
+        try:
+            self.local_manager.delete_logs(log_key=log_key)
+        except Exception:
+            sys.stderr.write(
+                f"Exception deleting local logs after capture complete: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
+            )
 
     def is_capture_complete(self, log_key: Sequence[str]) -> bool:
         if self.local_manager.is_capture_complete(log_key):

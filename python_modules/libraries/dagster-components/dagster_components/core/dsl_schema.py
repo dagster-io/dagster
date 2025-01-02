@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
-from typing import Annotated, Any, Dict, Literal, Mapping, Optional, Sequence, Union
+from abc import ABC
+from typing import AbstractSet, Annotated, Any, Dict, Literal, Mapping, Optional, Sequence, Union
 
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition
@@ -11,48 +12,68 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
 
+from dagster_components.core.component_rendering import (
+    RenderedModel,
+    RenderingMetadata,
+    TemplatedValueResolver,
+)
+
 
 class OpSpecBaseModel(BaseModel):
     name: Optional[str] = None
     tags: Optional[Dict[str, str]] = None
 
 
-class AutomationConditionModel(BaseModel):
-    type: str
-    params: Mapping[str, Any] = {}
-
-    def to_automation_condition(self) -> AutomationCondition:
-        return getattr(AutomationCondition, self.type)(**self.params)
+class AssetAttributesModel(RenderedModel):
+    key: Optional[str] = None
+    deps: Sequence[str] = []
+    description: Optional[str] = None
+    metadata: Annotated[
+        Union[str, Mapping[str, Any]], RenderingMetadata(output_type=Mapping[str, Any])
+    ] = {}
+    group_name: Optional[str] = None
+    skippable: bool = False
+    code_version: Optional[str] = None
+    owners: Sequence[str] = []
+    tags: Annotated[
+        Union[str, Mapping[str, str]], RenderingMetadata(output_type=Mapping[str, str])
+    ] = {}
+    automation_condition: Annotated[
+        Optional[str], RenderingMetadata(output_type=Optional[AutomationCondition])
+    ] = None
 
 
 class AssetSpecProcessor(ABC, BaseModel):
     target: str = "*"
-    description: Optional[str] = None
-    metadata: Optional[Mapping[str, Any]] = None
-    group_name: Optional[str] = None
-    tags: Optional[Mapping[str, str]] = None
-    automation_condition: Optional[AutomationConditionModel] = None
+    attributes: AssetAttributesModel
 
-    def _attributes(self) -> Mapping[str, Any]:
-        return {
-            **self.model_dump(exclude={"target", "operation"}, exclude_unset=True),
-            **{
-                "automation_condition": self.automation_condition.to_automation_condition()
-                if self.automation_condition
-                else None
-            },
-        }
+    class Config:
+        arbitrary_types_allowed = True
 
-    @abstractmethod
-    def _apply_to_spec(self, spec: AssetSpec) -> AssetSpec: ...
+    def _apply_to_spec(self, spec: AssetSpec, attributes: Mapping[str, Any]) -> AssetSpec: ...
 
-    def apply(self, defs: Definitions) -> Definitions:
+    def apply_to_spec(
+        self,
+        spec: AssetSpec,
+        value_resolver: TemplatedValueResolver,
+        target_keys: AbstractSet[AssetKey],
+    ) -> AssetSpec:
+        if spec.key not in target_keys:
+            return spec
+
+        # add the original spec to the context and resolve values
+        return self._apply_to_spec(
+            spec, self.attributes.render_properties(value_resolver.with_context(asset=spec))
+        )
+
+    def apply(self, defs: Definitions, value_resolver: TemplatedValueResolver) -> Definitions:
         target_selection = AssetSelection.from_string(self.target, include_sources=True)
         target_keys = target_selection.resolve(defs.get_asset_graph())
 
         mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
         mapped_assets = map_asset_specs(
-            lambda spec: self._apply_to_spec(spec) if spec.key in target_keys else spec, mappable
+            lambda spec: self.apply_to_spec(spec, value_resolver, target_keys),
+            mappable,
         )
 
         assets = [
@@ -66,8 +87,7 @@ class MergeAttributes(AssetSpecProcessor):
     # default operation is "merge"
     operation: Literal["merge"] = "merge"
 
-    def _apply_to_spec(self, spec: AssetSpec) -> AssetSpec:
-        attributes = self._attributes()
+    def _apply_to_spec(self, spec: AssetSpec, attributes: Mapping[str, Any]) -> AssetSpec:
         mergeable_attributes = {"metadata", "tags"}
         merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
         replace_attributes = {k: v for k, v in attributes.items() if k not in mergeable_attributes}
@@ -78,13 +98,10 @@ class ReplaceAttributes(AssetSpecProcessor):
     # operation must be set explicitly
     operation: Literal["replace"]
 
-    def _apply_to_spec(self, spec: AssetSpec) -> AssetSpec:
-        return spec.replace_attributes(**self._attributes())
+    def _apply_to_spec(self, spec: AssetSpec, attributes: Mapping[str, Any]) -> AssetSpec:
+        return spec.replace_attributes(**attributes)
 
 
 AssetAttributes = Sequence[
-    Annotated[
-        Union[MergeAttributes, ReplaceAttributes],
-        Field(union_mode="left_to_right"),
-    ]
+    Annotated[Union[MergeAttributes, ReplaceAttributes], Field(union_mode="left_to_right")]
 ]

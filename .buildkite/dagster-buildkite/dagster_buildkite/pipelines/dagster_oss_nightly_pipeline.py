@@ -79,6 +79,7 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                     "TEST_AZURE_CLIENT_SECRET",
                     "TEST_AZURE_STORAGE_ACCOUNT_ID",
                     "TEST_AZURE_CONTAINER_ID",
+                    "TEST_AZURE_ACCESS_KEY",
                 ],
                 always_run_if=lambda: True,
             ),
