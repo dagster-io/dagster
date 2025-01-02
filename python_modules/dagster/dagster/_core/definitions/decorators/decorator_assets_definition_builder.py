@@ -256,7 +256,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     specs: Sequence[AssetSpec]
     upstream_asset_deps: Optional[Iterable[AssetDep]]
     execution_type: Optional[AssetExecutionType]
-    concurrency_group: Optional[str]
+    pool: Optional[str]
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
@@ -574,7 +574,7 @@ class DecoratorAssetsDefinitionBuilder:
             config_schema=self.args.config_schema,
             retry_policy=self.args.retry_policy,
             code_version=self.args.code_version,
-            concurrency_group=self.args.concurrency_group,
+            pool=self.args.pool,
         )(self.fn)
 
     def create_assets_definition(self) -> AssetsDefinition:

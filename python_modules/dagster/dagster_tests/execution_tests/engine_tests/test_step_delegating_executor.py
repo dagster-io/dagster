@@ -495,7 +495,7 @@ def test_dynamic_failure_retry(job_fn, config_fn):
     assert_expected_failure_behavior(job_fn, config_fn)
 
 
-@op(concurrency_group="foo")
+@op(pool="foo")
 def simple_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
