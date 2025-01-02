@@ -21,7 +21,7 @@ class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
     def get_report_spec(self, data: PowerBIContentData) -> dg.AssetSpec:
         return (
             super()
-            .get_report_spec(data)
+            .get_report_spec(data)  # type: ignore
             .replace_attributes(
                 group_name="reporting",
             )
@@ -33,7 +33,7 @@ class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
         ]
         return (
             super()
-            .get_semantic_model_spec(data)
+            .get_semantic_model_spec(data)  # type: ignore
             .replace_attributes(
                 group_name="reporting",
                 deps=upsteam_table_deps,

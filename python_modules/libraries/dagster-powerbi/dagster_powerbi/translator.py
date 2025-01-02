@@ -78,6 +78,24 @@ class PowerBIContentData:
     properties: Dict[str, Any]
 
 
+@record
+class PowerBITranslatorData:
+    """A record representing a piece of content in PowerBI and the PowerBI workspace data.
+    Includes the content's type and data as returned from the API.
+    """
+
+    content_data: "PowerBIContentData"
+    workspace_data: "PowerBIWorkspaceData"
+
+    @property
+    def content_type(self) -> PowerBIContentType:
+        return self.content_data.content_type
+
+    @property
+    def properties(self) -> Dict[str, Any]:
+        return self.content_data.properties
+
+
 @whitelist_for_serdes
 @record
 class PowerBIWorkspaceData:
@@ -155,14 +173,8 @@ class DagsterPowerBITranslator:
     Subclass this class to implement custom logic for each type of PowerBI content.
     """
 
-    def __init__(self, context: PowerBIWorkspaceData):
-        self._context = context
-
-    @property
-    def workspace_data(self) -> PowerBIWorkspaceData:
-        return self._context
-
-    def get_asset_spec(self, data: PowerBIContentData) -> AssetSpec:
+    def get_asset_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        data = check.inst(data, PowerBITranslatorData)
         if data.content_type == PowerBIContentType.DASHBOARD:
             return self.get_dashboard_spec(data)
         elif data.content_type == PowerBIContentType.REPORT:
@@ -178,21 +190,28 @@ class DagsterPowerBITranslator:
         breaking_version="1.10",
         additional_warn_text="Use `DagsterPowerBITranslator.get_asset_spec(...).key` instead",
     )
-    def get_dashboard_asset_key(self, data: PowerBIContentData) -> AssetKey:
+    def get_dashboard_asset_key(self, data: PowerBITranslatorData) -> AssetKey:
+        data = check.inst(data, PowerBITranslatorData)
         return self.get_dashboard_spec(data).key
 
-    def get_dashboard_spec(self, data: PowerBIContentData) -> AssetSpec:
+    def get_dashboard_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        data = check.inst(data, PowerBITranslatorData)
         dashboard_id = data.properties["id"]
         tile_report_ids = [
             tile["reportId"] for tile in data.properties["tiles"] if "reportId" in tile
         ]
         report_keys = [
-            self.get_report_spec(self.workspace_data.reports_by_id[report_id]).key
+            self.get_report_spec(
+                PowerBITranslatorData(
+                    content_data=data.workspace_data.reports_by_id[report_id],
+                    workspace_data=data.workspace_data,
+                )
+            ).key
             for report_id in tile_report_ids
         ]
         url = (
             data.properties.get("webUrl")
-            or f"https://app.powerbi.com/groups/{self.workspace_data.workspace_id}/dashboards/{dashboard_id}"
+            or f"https://app.powerbi.com/groups/{data.workspace_data.workspace_id}/dashboards/{dashboard_id}"
         )
 
         return AssetSpec(
@@ -212,19 +231,30 @@ class DagsterPowerBITranslator:
         breaking_version="1.10",
         additional_warn_text="Use `DagsterPowerBITranslator.get_asset_spec(...).key` instead",
     )
-    def get_report_asset_key(self, data: PowerBIContentData) -> AssetKey:
+    def get_report_asset_key(self, data: PowerBITranslatorData) -> AssetKey:
+        data = check.inst(data, PowerBITranslatorData)
         return self.get_report_spec(data).key
 
-    def get_report_spec(self, data: PowerBIContentData) -> AssetSpec:
+    def get_report_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        data = check.inst(data, PowerBITranslatorData)
         report_id = data.properties["id"]
         dataset_id = data.properties.get("datasetId")
         dataset_data = (
-            self.workspace_data.semantic_models_by_id.get(dataset_id) if dataset_id else None
+            data.workspace_data.semantic_models_by_id.get(dataset_id) if dataset_id else None
         )
-        dataset_key = self.get_semantic_model_spec(dataset_data).key if dataset_data else None
+        dataset_key = (
+            self.get_semantic_model_spec(
+                PowerBITranslatorData(
+                    content_data=dataset_data,
+                    workspace_data=data.workspace_data,
+                )
+            ).key
+            if dataset_data
+            else None
+        )
         url = (
             data.properties.get("webUrl")
-            or f"https://app.powerbi.com/groups/{self.workspace_data.workspace_id}/reports/{report_id}"
+            or f"https://app.powerbi.com/groups/{data.workspace_data.workspace_id}/reports/{report_id}"
         )
 
         owner = data.properties.get("createdBy")
@@ -242,19 +272,26 @@ class DagsterPowerBITranslator:
         breaking_version="1.10",
         additional_warn_text="Use `DagsterPowerBITranslator.get_asset_spec(...).key` instead",
     )
-    def get_semantic_model_asset_key(self, data: PowerBIContentData) -> AssetKey:
+    def get_semantic_model_asset_key(self, data: PowerBITranslatorData) -> AssetKey:
+        data = check.inst(data, PowerBITranslatorData)
         return self.get_semantic_model_spec(data).key
 
-    def get_semantic_model_spec(self, data: PowerBIContentData) -> AssetSpec:
+    def get_semantic_model_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        data = check.inst(data, PowerBITranslatorData)
         dataset_id = data.properties["id"]
         source_ids = data.properties.get("sources", [])
         source_keys = [
-            self.get_data_source_spec(self.workspace_data.data_sources_by_id[source_id]).key
+            self.get_data_source_spec(
+                PowerBITranslatorData(
+                    content_data=data.workspace_data.data_sources_by_id[source_id],
+                    workspace_data=data.workspace_data,
+                )
+            ).key
             for source_id in source_ids
         ]
         url = (
             data.properties.get("webUrl")
-            or f"https://app.powerbi.com/groups/{self.workspace_data.workspace_id}/datasets/{dataset_id}"
+            or f"https://app.powerbi.com/groups/{data.workspace_data.workspace_id}/datasets/{dataset_id}"
         )
 
         for table in data.properties.get("tables", []):
@@ -296,10 +333,12 @@ class DagsterPowerBITranslator:
         breaking_version="1.10",
         additional_warn_text="Use `DagsterPowerBITranslator.get_asset_spec(...).key` instead",
     )
-    def get_data_source_asset_key(self, data: PowerBIContentData) -> AssetKey:
+    def get_data_source_asset_key(self, data: PowerBITranslatorData) -> AssetKey:
+        data = check.inst(data, PowerBITranslatorData)
         return self.get_data_source_spec(data).key
 
-    def get_data_source_spec(self, data: PowerBIContentData) -> AssetSpec:
+    def get_data_source_spec(self, data: PowerBITranslatorData) -> AssetSpec:
+        data = check.inst(data, PowerBITranslatorData)
         connection_name = (
             data.properties["connectionDetails"].get("path")
             or data.properties["connectionDetails"].get("url")
