@@ -232,6 +232,7 @@ def test_custom_asset_specs_legacy(
                 key=default_spec.key.with_prefix("my_prefix"),
             ).merge_attributes(metadata={"custom": "metadata"})
 
+    # Pass the translator type
     all_assets = (
         asset
         for asset in Definitions(
