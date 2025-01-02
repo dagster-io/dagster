@@ -63,7 +63,7 @@ class GithubResource(dg.ConfigurableResource):
             cursor = search["pageInfo"]["endCursor"]
         return results
 
-    def _convert_discussions_to_documents(self, items: List[Dict[str, Any]]) -> List[Document]:
+    def convert_discussions_to_documents(self, items: List[Dict[str, Any]]) -> List[Document]:
         """Convert GitHub discussions to LangChain documents.
 
         This function transforms GitHub discussion data into LangChain Document objects,
@@ -133,14 +133,14 @@ class GithubResource(dg.ConfigurableResource):
                 )
 
             except Exception as e:
-                print(f"Error processing discussion #{item.get('number', 'unknown')}:")
-                print(f"Error details: {e!s}")
+                log.error(f"Error processing discussion #{item.get('number', 'unknown')}:")
+                log.error(f"Error details: {e!s}")
                 continue
 
         log.info(f"Successfully converted {len(documents)} discussions")
         return documents
 
-    def _convert_issues_to_documents(self, items: List[Dict[str, Any]]) -> List[Document]:
+    def convert_issues_to_documents(self, items: List[Dict[str, Any]]) -> List[Document]:
         """Convert GitHub issues to LangChain documents.
 
         This function transforms GitHub issue data into LangChain Document objects,
@@ -202,8 +202,8 @@ class GithubResource(dg.ConfigurableResource):
                 )
 
             except Exception as e:
-                print(f"Error processing issue #{item.get('number', 'unknown')}:")
-                print(f"Error details: {e!s}")
+                log.error(f"Error processing issue #{item.get('number', 'unknown')}:")
+                log.error(f"Error details: {e!s}")
                 continue
 
         log.info(f"Successfully converted {len(documents)} issues")

@@ -1,8 +1,10 @@
+from typing import Optional
+
 import dagster as dg
 from langchain_openai import OpenAIEmbeddings
 from pinecone import Pinecone, ServerlessSpec
 from pydantic import Field, PrivateAttr
-from typing import Optional
+
 
 class PineconeResource(dg.ConfigurableResource):
     pinecone_api_key: str = Field(description="Pinecone API key")
@@ -25,7 +27,7 @@ class PineconeResource(dg.ConfigurableResource):
                 spec=ServerlessSpec(cloud="aws", region="us-east-1"),
             )
 
-    def get_index(self, index_name: str, namespace: str = Optional[T]):
+    def get_index(self, index_name: str, namespace: Optional[str] = None):
         index = self._pinecone.Index(index_name)
         if namespace:
             return index, {"namespace": namespace}
