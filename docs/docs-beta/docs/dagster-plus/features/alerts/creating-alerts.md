@@ -106,6 +106,8 @@ By default, these alerts will target all assets in the deployment, but they can 
 
 If desired, select a **target** from the dropdown menu to scope this alert to a specific asset or group.
 
+**Note:** If using a RetryPolicy, alert will only be sent after all retries complete.
+
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
