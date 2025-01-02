@@ -15,16 +15,6 @@ if TYPE_CHECKING:
     from mypy_boto3_stepfunctions import SFNClient
 
 
-class SFNController(Thread):
-    def __init__(self, sfn_arn, stub_launch_context):
-        super().__init__(daemon=True)
-        self.sfn_launcher = SFNLauncher.from_config_value(None, {"sfn_arn": sfn_arn})
-        self._stub_launch_context = stub_launch_context
-
-    def run(self):
-        self.sfn_launcher.launch_run(self._stub_launch_context)
-
-
 @mock_stepfunctions
 def test_launch_run(stub_launch_context):
     sfn_client: "SFNClient" = boto3.client("stepfunctions")
