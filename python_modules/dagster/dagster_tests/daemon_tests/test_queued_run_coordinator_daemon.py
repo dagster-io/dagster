@@ -1186,7 +1186,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                 "block_op_concurrency_limited_runs": {
                     "enabled": True,
                 },
-                "concurrency_group_granularity": "run",
+                "pool_granularity": "run",
             },
         ],
     )

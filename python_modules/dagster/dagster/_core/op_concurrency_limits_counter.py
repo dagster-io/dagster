@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Mapping, Optional, Sequence, Set
 
 from dagster._core.instance import DagsterInstance
-from dagster._core.run_coordinator.queued_run_coordinator import ConcurrencyGranularity
+from dagster._core.run_coordinator.queued_run_coordinator import PoolGranularity
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -58,14 +58,14 @@ class GlobalOpConcurrencyLimitsCounter:
         runs: Sequence[DagsterRun],
         in_progress_run_records: Sequence[RunRecord],
         slot_count_offset: int = 0,
-        concurrency_group_granularity: ConcurrencyGranularity = ConcurrencyGranularity.OP,
+        pool_granularity: PoolGranularity = PoolGranularity.OP,
     ):
         self._root_concurrency_keys_by_run = {}
         self._concurrency_info_by_key: Dict[str, "ConcurrencyKeyInfo"] = {}
         self._launched_concurrency_key_counts = defaultdict(int)
         self._in_progress_concurrency_key_counts = defaultdict(int)
         self._slot_count_offset = slot_count_offset
-        self._concurrency_group_granularity = concurrency_group_granularity
+        self._pool_granularity = pool_granularity
         self._in_progress_run_ids: Set[str] = set(
             [record.dagster_run.run_id for record in in_progress_run_records]
         )
@@ -91,7 +91,7 @@ class GlobalOpConcurrencyLimitsCounter:
                 # if using op granularity, consider only the root keys
                 run_concurrency_keys = (
                     run.run_op_concurrency.root_key_counts.keys()
-                    if self._concurrency_group_granularity == ConcurrencyGranularity.OP
+                    if self._pool_granularity == PoolGranularity.OP
                     else run.run_op_concurrency.all_keys or []
                 )
                 all_concurrency_keys.update(run_concurrency_keys)
@@ -115,7 +115,7 @@ class GlobalOpConcurrencyLimitsCounter:
         if status not in IN_PROGRESS_RUN_STATUSES:
             return False
 
-        if self._concurrency_group_granularity == ConcurrencyGranularity.RUN:
+        if self._pool_granularity == PoolGranularity.RUN:
             return True
 
         if status == DagsterRunStatus.STARTING:
@@ -132,11 +132,11 @@ class GlobalOpConcurrencyLimitsCounter:
         if not run.run_op_concurrency:
             return {}
 
-        if self._concurrency_group_granularity == ConcurrencyGranularity.OP:
+        if self._pool_granularity == PoolGranularity.OP:
             return {**run.run_op_concurrency.root_key_counts}
 
         else:
-            assert self._concurrency_group_granularity == ConcurrencyGranularity.RUN
+            assert self._pool_granularity == PoolGranularity.RUN
             return {concurrency_key: 1 for concurrency_key in run.run_op_concurrency.all_keys or []}
 
     def _process_in_progress_runs(self, in_progress_records: Sequence[RunRecord]):
@@ -154,14 +154,14 @@ class GlobalOpConcurrencyLimitsCounter:
             return False
 
         if (
-            self._concurrency_group_granularity == ConcurrencyGranularity.OP
+            self._pool_granularity == PoolGranularity.OP
             and run.run_op_concurrency.has_unconstrained_root_nodes
         ):
             # if the granularity is at the op level and there exists a root node that is not
             # concurrency blocked, we should dequeue.
             return False
 
-        if self._concurrency_group_granularity == ConcurrencyGranularity.OP:
+        if self._pool_granularity == PoolGranularity.OP:
             # we just need to check all of the root concurrency keys, instead of all the concurrency keys
             # in the run
             for concurrency_key in run.run_op_concurrency.root_key_counts.keys():
@@ -189,7 +189,7 @@ class GlobalOpConcurrencyLimitsCounter:
             return True
 
         else:
-            assert self._concurrency_group_granularity == ConcurrencyGranularity.RUN
+            assert self._pool_granularity == PoolGranularity.RUN
 
             # if the granularity is at the run level, we should check if any of the concurrency
             # keys are blocked
@@ -228,7 +228,7 @@ class GlobalOpConcurrencyLimitsCounter:
                 continue
 
             log_info[concurrency_key] = {
-                "granularity": self._concurrency_group_granularity.value,
+                "granularity": self._pool_granularity.value,
                 "slot_count": concurrency_info.slot_count,
                 "pending_step_count": len(concurrency_info.pending_steps),
                 "pending_step_run_ids": list(
