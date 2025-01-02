@@ -299,6 +299,9 @@ class AutoMaterializeLaunchContext:
                         error=error_data,
                         # don't increment the failure count - retry until the server is available again
                         failure_count=self._tick.failure_count,
+                        consecutive_failure_count=(
+                            (self._tick.consecutive_failure_count or self._tick.failure_count) + 1
+                        ),
                     )
             else:
                 error_data = DaemonErrorCapture.process_exception(
@@ -307,7 +310,12 @@ class AutoMaterializeLaunchContext:
                     log_message="Asset daemon tick caught an error",
                 )
                 self.update_state(
-                    TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
+                    TickStatus.FAILURE,
+                    error=error_data,
+                    failure_count=self._tick.failure_count + 1,
+                    consecutive_failure_count=(
+                        (self._tick.consecutive_failure_count or self._tick.failure_count) + 1
+                    ),
                 )
 
         check.invariant(
@@ -765,10 +773,16 @@ class AssetDaemon(DagsterDaemon):
             # Determine if the most recent tick requires retrying
             retry_tick: Optional[InstigatorTick] = None
             override_evaluation_id: Optional[int] = None
+            consecutive_failure_count: int = 0
             if latest_tick:
                 can_resume = (
                     get_current_timestamp() - latest_tick.timestamp
                 ) <= MAX_TIME_TO_RESUME_TICK_SECONDS
+
+                if latest_tick.status in {TickStatus.FAILURE, TickStatus.STARTED}:
+                    consecutive_failure_count = (
+                        latest_tick.consecutive_failure_count or latest_tick.failure_count
+                    )
 
                 # the evaluation ids not matching indicates that the tick failed or crashed before
                 # the cursor could be written, so no new runs could have been launched and it's
@@ -834,6 +848,7 @@ class AssetDaemon(DagsterDaemon):
                         status=TickStatus.STARTED,
                         timestamp=evaluation_time.timestamp(),
                         selector_id=instigator_selector_id,
+                        consecutive_failure_count=consecutive_failure_count,
                         # we only set the auto_materialize_evaluation_id if it is not equal to the
                         # current tick id
                         auto_materialize_evaluation_id=override_evaluation_id,

@@ -187,6 +187,7 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             # each tick is considered a brand new retry since it happened before the cursor
             # was written
             assert ticks[0].tick_data.failure_count == 1
+            assert ticks[0].tick_data.consecutive_failure_count == trial_num + 1
 
             assert f"Oops {trial_num}" in str(ticks[0].tick_data.error)
 
@@ -219,8 +220,34 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
     assert ticks[0].tick_data.end_timestamp == test_time.timestamp()  # pyright: ignore[reportAttributeAccessIssue]
     assert ticks[0].automation_condition_evaluation_id == 1  # finally finishes
 
+    assert ticks[0].tick_data.failure_count == 0
+    assert (
+        ticks[0].tick_data.consecutive_failure_count == 3
+    )  # because it failed three times before succeeding
+
     runs = instance.get_runs()
     assert len(runs) == 5
+
+    test_time = test_time + datetime.timedelta(seconds=45)
+    with freeze_time(test_time):  # pyright: ignore[reportArgumentType]
+        # Next successful tick recovers
+        error_asset_scenario.do_daemon_scenario(
+            instance,
+            scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
+            debug_crash_flags={},
+        )
+
+    ticks = instance.get_ticks(
+        origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+        selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+    )
+
+    assert len(ticks) == 5
+    assert ticks[0].status == TickStatus.SKIPPED
+    assert ticks[0].timestamp == test_time.timestamp()  # pyright: ignore[reportAttributeAccessIssue]
+
+    assert ticks[0].tick_data.failure_count == 0
+    assert ticks[0].tick_data.consecutive_failure_count == 0  # consecutive_failure_count resets
 
 
 @pytest.mark.parametrize(
@@ -267,6 +294,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
 
         # failure count does not increase since it was a user code error
         assert ticks[0].tick_data.failure_count == 0
+        assert ticks[0].tick_data.consecutive_failure_count == 1
 
         assert "WHERE IS THE CODE" in str(ticks[0].tick_data.error)
         assert (
