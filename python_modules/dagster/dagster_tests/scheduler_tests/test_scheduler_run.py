@@ -652,8 +652,13 @@ def validate_tick(
     expected_error: Optional[str] = None,
     expected_failure_count: int = 0,
     expected_skip_reason: Optional[str] = None,
+    expected_consecutive_failure_count=None,
 ) -> None:
     tick_data = tick.tick_data
+
+    if expected_consecutive_failure_count is None:
+        expected_consecutive_failure_count = expected_failure_count
+
     assert tick_data.instigator_origin_id == remote_schedule.get_remote_origin_id()
     assert tick_data.instigator_name == remote_schedule.name
     assert tick_data.timestamp == expected_datetime.timestamp()
@@ -665,6 +670,7 @@ def validate_tick(
         assert expected_error in str(tick_data.error)
     assert tick_data.failure_count == expected_failure_count
     assert tick_data.skip_reason == expected_skip_reason
+    assert tick_data.consecutive_failure_count == expected_consecutive_failure_count
 
 
 def validate_run_exists(
@@ -1750,6 +1756,7 @@ class TestSchedulerRun:
                 [],
                 "DagsterInvalidConfigError",
                 expected_failure_count=1,
+                expected_consecutive_failure_count=1,
             )
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
@@ -1768,6 +1775,7 @@ class TestSchedulerRun:
                 [],
                 "DagsterInvalidConfigError",
                 expected_failure_count=1,
+                expected_consecutive_failure_count=2,
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1856,6 +1864,7 @@ class TestSchedulerRun:
                 [],
                 "Missing required config entry",
                 expected_failure_count=1,
+                expected_consecutive_failure_count=4,
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2175,6 +2184,12 @@ class TestSchedulerRun:
             assert len(bad_ticks) == 1
 
             assert bad_ticks[0].status == TickStatus.FAILURE
+            assert (
+                bad_ticks[0].tick_data.consecutive_failure_count == 1
+            )  # since there was a failure before we succeeded
+            assert (
+                bad_ticks[0].tick_data.failure_count == 1
+            )  # since there was a failure before we succeeded
 
             assert (
                 "Error occurred during the execution of should_execute for schedule bad_should_execute_on_odd_days_schedule"
@@ -2234,12 +2249,25 @@ class TestSchedulerRun:
                 new_now,
                 TickStatus.SUCCESS,
                 [bad_schedule_runs[0].run_id],
+                expected_consecutive_failure_count=1,  # since there was a failure before we succeeded
             )
 
             unloadable_ticks = scheduler_instance.get_ticks(
                 unloadable_origin.get_id(), "fake_selector"
             )
             assert len(unloadable_ticks) == 0
+
+        freeze_datetime = (
+            freeze_datetime + relativedelta(days=2)
+        )  # 2 days to ensure its an odd day so the next tick will pass too and the consecutive failure count will recover
+        with freeze_time(freeze_datetime):
+            new_now = get_current_datetime()
+            evaluate_schedules(workspace_context, executor, new_now)
+            bad_ticks = scheduler_instance.get_ticks(bad_origin.get_id(), bad_schedule.selector_id)
+            assert len(bad_ticks) == 3
+            assert bad_ticks[0].status == TickStatus.SUCCESS
+            assert bad_ticks[0].tick_data.failure_count == 0
+            assert bad_ticks[0].consecutive_failure_count == 0
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_run_scheduled_on_time_boundary(

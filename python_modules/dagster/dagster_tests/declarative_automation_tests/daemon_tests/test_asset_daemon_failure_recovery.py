@@ -338,6 +338,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
             # failure count only increases if the cursor was written - otherwise
             # each tick is considered a brand new retry
             assert ticks[0].tick_data.failure_count == trial_num + 1
+            assert ticks[0].tick_data.consecutive_failure_count == trial_num + 2
 
             assert f"Oops {trial_num}" in str(ticks[0].tick_data.error)
 
@@ -376,6 +377,7 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         assert "Oops new tick" in str(ticks[0].tick_data.error)
 
         assert ticks[0].tick_data.failure_count == 1  # starts over
+        assert ticks[0].tick_data.consecutive_failure_count == 5  # does not start over
 
         # Cursor has moved on
         moved_on_cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
@@ -400,6 +402,31 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
     assert ticks[0].timestamp == test_time.timestamp()
     assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
     assert ticks[0].automation_condition_evaluation_id == 5  # finishes
+    assert ticks[0].tick_data.failure_count == 1  # failure count before successful tick
+    assert (
+        ticks[0].tick_data.consecutive_failure_count == 5
+    )  # consecutive failure count before successful tick
+
+    test_time = test_time + datetime.timedelta(seconds=45)
+    with freeze_time(test_time):
+        # Next successful tick recovers
+        error_asset_scenario.do_daemon_scenario(
+            instance,
+            scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
+            debug_crash_flags={},
+        )
+
+    ticks = instance.get_ticks(
+        origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+        selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+    )
+
+    assert len(ticks) == 7
+    assert ticks[0].status != TickStatus.FAILURE
+    assert ticks[0].timestamp == test_time.timestamp()
+    assert ticks[0].tick_data.end_timestamp == test_time.timestamp()
+    assert ticks[0].tick_data.failure_count == 0  # resets
+    assert ticks[0].tick_data.consecutive_failure_count == 0  # resets
 
 
 spawn_ctx = multiprocessing.get_context("spawn")
