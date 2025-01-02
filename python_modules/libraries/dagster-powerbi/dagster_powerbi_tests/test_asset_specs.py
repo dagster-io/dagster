@@ -123,6 +123,7 @@ def test_translator_custom_metadata_legacy(
         DeprecationWarning,
         match=r"Support of `dagster_powerbi_translator` as a Type\[DagsterPowerBITranslator\]",
     ):
+        # Pass the translator type
         all_asset_specs = load_powerbi_asset_specs(
             workspace=resource,
             dagster_powerbi_translator=MyCustomTranslator,
