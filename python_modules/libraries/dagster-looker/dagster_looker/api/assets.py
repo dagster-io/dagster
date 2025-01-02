@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, cast, Union, Type
+from typing import Optional, Sequence, Type, Union, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
 from dagster._annotations import experimental
