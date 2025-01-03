@@ -19,7 +19,7 @@ sigma_organization = SigmaOrganization(
 class MyCustomSigmaTranslator(DagsterSigmaTranslator):
     def get_asset_spec(self, data: SigmaWorkbook) -> dg.AssetSpec:
         # We create the default asset spec using super()
-        default_spec = super().get_asset_spec(data)
+        default_spec = super().get_asset_spec(data)  # type: ignore
         # we customize the team owner tag for all Sigma assets
         return default_spec.replace_attributes(owners=["team:my_team"])
 
