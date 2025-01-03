@@ -442,6 +442,18 @@ const Preview = () => {
 };
 
 ////////////////////////
+//  Beta BADGE  //
+////////////////////////
+
+const Beta = () => {
+  return (
+      <div className="beta-tag">
+        <span className="hidden">(</span>Beta<span className="hidden">)</span>
+      </div>
+  );
+};
+
+////////////////////////
 //  DEPRECATED BADGE  //
 ////////////////////////
 
@@ -879,6 +891,7 @@ export default {
   Deprecated,
   Superseded,
   Preview,
+  Beta,
   Legacy,
   Icons,
   ReferenceTable,

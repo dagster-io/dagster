@@ -108,6 +108,10 @@ dt > a.reference.internal {
   @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-gray-300 text-gray-900
 }
 
+.beta-tag {
+  @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-gray-300 text-gray-900
+}
+
 .deprecated-tag {
   @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-gray-300 text-gray-900
 }
