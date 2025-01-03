@@ -15,7 +15,7 @@ class CapnProtoEnumRenderer(NamedTuple):
     name: str
     members: dict[str, int]
 
-    def render(self, indent: str = "  ") -> Generator[str]:
+    def render(self, indent: str = "  ") -> Generator[str, None, None]:
         yield f"enum {self.name} {{"
         for member, value in self.members.items():
             yield f"  @{value} {member},"
@@ -27,7 +27,7 @@ class CapnProtoFieldRenderer(NamedTuple):
     idx: int
     type_: str
 
-    def render(self, indent: str = "  ") -> Generator[str]:
+    def render(self, indent: str = "  ") -> Generator[str, None, None]:
         yield f"  @{self.idx} {self.name}: {self.type_};"
 
 
@@ -35,7 +35,7 @@ class CapnProtoUnionRenderer(NamedTuple):
     name: Optional[str]
     fields: List[CapnProtoFieldRenderer]
 
-    def render(self, indent: str = "  ") -> Generator[str]:
+    def render(self, indent: str = "  ") -> Generator[str, None, None]:
         name = self.name or ""
         yield f"union {name} {{"
         for field in self.fields:
@@ -47,7 +47,7 @@ class CapnProtoStructRenderer(NamedTuple):
     name: str
     fields: List[Union[CapnProtoFieldRenderer, CapnProtoUnionRenderer]]
 
-    def render(self, indent: str = "  ") -> Generator[str]:
+    def render(self, indent: str = "  ") -> Generator[str, None, None]:
         yield f"struct {self.name} {{"
         for field in self.fields:
             yield from field.render(indent)
@@ -74,7 +74,7 @@ class CapnProtoCompiler:
     the existing schema while creating the new version.
     """
 
-    async def visit(self, message: CapnProtoMessageMetadata):
+    async def compile(self, message: CapnProtoMessageMetadata):
         if message.is_enum:
             async for part in self.compile_enum(message):
                 yield part

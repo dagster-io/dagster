@@ -35,6 +35,7 @@ from dagster._serialization.capnproto.types import (
     CapnProtoMessageMetadata,
     CapnProtoPointerType,
     CapnProtoPrimitiveType,
+    CapnProtoRecursiveType,
     CapnProtoStructMetadata,
     CapnProtoUnionMetadata,
 )
@@ -98,7 +99,7 @@ class CapnProtoScribe(BaseScribe[CapnProtoMessageMetadata]):
                 type_.__forward_arg__ == "self",
                 "ForwardRef should only be used for recursive types",
             )
-            return TRULY_ANYTHING
+            return CapnProtoRecursiveType.SELF
         elif type_ is type:
             check.failed("Type type should not be used in serialization")
         elif type_ is _empty:

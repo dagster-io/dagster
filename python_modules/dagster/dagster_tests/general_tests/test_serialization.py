@@ -4,9 +4,10 @@ from collections.abc import Mapping
 from typing import ForwardRef, Union
 
 import pytest
-from dagster._serdes.serdes import _WHITELIST_MAP, JsonSerializableValue, PackableValue
+from dagster._serdes.serdes import _WHITELIST_MAP
 from dagster._serialization.base.types import normalize_type
-from dagster._serialization.capnproto.scribe import TRULY_ANYTHING, CapnProtoScribe
+from dagster._serialization.capnproto.scribe import CapnProtoScribe
+from dagster._serialization.capnproto.compile import CapnProtoCompiler
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ def _find_serializer_for_type(type_name: str):
 
 
 @pytest.mark.asyncio
-async def test_generate_protobuf_from_class():
+async def test_compile_all():
     scribe = CapnProtoScribe()
     scribe_tasks = [
         *(
@@ -43,6 +44,15 @@ async def test_generate_protobuf_from_class():
                 print(f"{type_} blocking:")
                 for waiter in willcall.waiting:
                     print("  " + waiter)
+        raise
+
+    compiler = CapnProtoCompiler()
+    
+    for type_, willcall in scribe.get_will_call():
+        async for part in compiler.compile_message(willcall.future.result()):
+            for line in part.render():
+                print(line)
+        
 
 
 @pytest.mark.asyncio
