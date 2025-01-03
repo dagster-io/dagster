@@ -25,7 +25,12 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import ExecuteExternalJobArgs, open_server_process, wait_for_grpc_server
+from dagster._grpc.server import (
+    ExecuteExternalJobArgs,
+    GrpcServerCommand,
+    open_server_process,
+    wait_for_grpc_server,
+)
 from dagster._grpc.types import (
     JobSubsetSnapshotArgs,
     ListRepositoriesResponse,
@@ -106,7 +111,11 @@ def test_python_environment_args():
         process = None
         try:
             process = open_server_process(
-                instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
+                server_command=GrpcServerCommand.API_GRPC,
+                instance_ref=instance.get_ref(),
+                port=port,
+                socket=None,
+                loadable_target_origin=loadable_target_origin,
             )
             assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]  # pyright: ignore[reportIndexIssue]
         finally:
@@ -130,8 +139,9 @@ def test_env_var_port_collision():
             # env var that would cause a collision with port if we are not careful
             with environ({"DAGSTER_GRPC_SOCKET": str(socket)}):
                 process = open_server_process(
-                    instance.get_ref(),
-                    port,
+                    instance_ref=instance.get_ref(),
+                    port=port,
+                    server_command=GrpcServerCommand.API_GRPC,
                     socket=None,
                     loadable_target_origin=loadable_target_origin,
                 )
@@ -146,7 +156,8 @@ def test_env_var_port_collision():
             # env var that would cause a collision with socket if we are not careful
             with environ({"DAGSTER_GRPC_PORT": str(port)}):
                 process = open_server_process(
-                    instance.get_ref(),
+                    instance_ref=instance.get_ref(),
+                    server_command=GrpcServerCommand.API_GRPC,
                     port=None,
                     socket=socket,
                     loadable_target_origin=loadable_target_origin,
@@ -168,7 +179,11 @@ def test_empty_executable_args():
     with instance_for_test() as instance:
         try:
             process = open_server_process(
-                instance.get_ref(), port, socket=None, loadable_target_origin=loadable_target_origin
+                instance_ref=instance.get_ref(),
+                port=port,
+                server_command=GrpcServerCommand.API_GRPC,
+                socket=None,
+                loadable_target_origin=loadable_target_origin,
             )
             assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]  # pyright: ignore[reportIndexIssue]
 
