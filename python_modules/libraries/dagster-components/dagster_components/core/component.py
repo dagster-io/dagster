@@ -27,28 +27,19 @@ import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._record import record
 from dagster._utils import pushd, snakecase
 from pydantic import TypeAdapter
 from typing_extensions import Self
 
+from dagster_components.core.component_generator import (
+    ComponentGenerateRequest,
+    ComponentGenerator,
+    ComponentGeneratorUnavailableReason,
+)
 from dagster_components.core.component_rendering import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
-
-
-@record
-class ComponentGenerateRequest:
-    component_type_name: str
-    component_instance_root_path: Path
-
-
-class ComponentGenerator:
-    generator_params: ClassVar = None
-
-    @abstractmethod
-    def generate_files(self, request: ComponentGenerateRequest, params: Any) -> None: ...
 
 
 # This calls the legacy classmethod `generate_files` on the component type. Will be removed
@@ -59,11 +50,6 @@ class ComponentGeneratorAdapter(ComponentGenerator):
 
     def generate_files(self, request, params):
         return self.component_type.generate_files(request, params)
-
-
-@dataclass
-class ComponentGeneratorUnavailableReason:
-    message: str
 
 
 class Component(ABC):
@@ -84,6 +70,7 @@ class Component(ABC):
 
     @classmethod
     def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
+        # This will be deleted once all components are converted to the new ComponentGenerator API
         from dagster_components.generate import generate_component_yaml
 
         generate_component_yaml(request, {})
