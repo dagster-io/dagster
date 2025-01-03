@@ -27,6 +27,14 @@ export const Preview = () => {
   );
 };
 
+export const Beta = () => {
+  return (
+    <div className="beta-tag">
+      <span className="hidden">(</span>Beta<span className="hidden">)</span>
+    </div>
+  );
+};
+
 export const Deprecated = () => {
   return (
     <div className="deprecated-tag">
