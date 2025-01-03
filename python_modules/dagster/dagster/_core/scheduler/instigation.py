@@ -387,6 +387,18 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.timestamp
 
     @property
+    def scheduled_execution_time(self) -> float:
+        check.invariant(
+            self.instigator_type == InstigatorType.SCHEDULE,
+            "Scheduled execution time is only available for schedule ticks",
+        )
+        if self.tick_data.scheduled_execution_time is not None:
+            return self.tick_data.scheduled_execution_time
+
+        # Ticks from before the scheduled_execution_time field was being written
+        return self.tick_data.timestamp
+
+    @property
     def end_timestamp(self) -> Optional[float]:
         return self.tick_data.end_timestamp
 
@@ -551,6 +563,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         "instigator_name": "job_name",
         "instigator_type": "job_type",
     },
+    skip_when_none_fields={"scheduled_execution_time"},
 )
 class TickData(
     NamedTuple(
@@ -579,6 +592,7 @@ class TickData(
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
             ("consecutive_failure_count", int),
+            ("scheduled_execution_time", Optional[float]),
         ],
     )
 ):
@@ -617,6 +631,9 @@ class TickData(
             failure_count measures the number of times that a particular tick should retry.  If the
             status is not FAILED, this is the number of previous consecutive failures across
             multiple ticks before it reached the current state.
+        scheduled_execution_time (Optional[float]): For schedule ticks, the time at which this tick
+            was scheduled to execute. Can differ from the time at which the schedule execution
+            actually took place.
     """
 
     def __new__(
@@ -643,6 +660,7 @@ class TickData(
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
         consecutive_failure_count: Optional[int] = None,
+        scheduled_execution_time: Optional[float] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -674,7 +692,21 @@ class TickData(
             consecutive_failure_count=check.opt_int_param(
                 consecutive_failure_count, "consecutive_failure_count", 0
             ),
+            scheduled_execution_time=check.opt_float_param(
+                scheduled_execution_time, "scheduled_execution_time"
+            ),
         )
+
+    def get_scheduled_execution_time(self) -> float:
+        check.invariant(
+            self.instigator_type == InstigatorType.SCHEDULE,
+            "Scheduled execution time is only available for schedule ticks",
+        )
+        if self.scheduled_execution_time is not None:
+            return self.scheduled_execution_time
+
+        # Old ticks from before the scheduled_execution_time field
+        return self.timestamp
 
     def with_status(
         self,
