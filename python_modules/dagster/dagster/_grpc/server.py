@@ -11,6 +11,7 @@ import uuid
 import warnings
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
+from enum import Enum
 from functools import update_wrapper
 from threading import Event as ThreadingEventType
 from time import sleep
@@ -1343,10 +1344,24 @@ def wait_for_grpc_server(
         sleep(0.1)
 
 
+class GrpcServerCommand(Enum):
+    API_GRPC = "api_grpc"
+    CODE_SERVER_START = "code_server_start"
+
+    @property
+    def server_command(self) -> Sequence[str]:
+        return (
+            ["api", "grpc", "--lazy-load-user-code"]
+            if self == GrpcServerCommand.API_GRPC
+            else ["code-server", "start"]
+        )
+
+
 def open_server_process(
     instance_ref: Optional[InstanceRef],
     port: Optional[int],
     socket: Optional[str],
+    server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
     location_name: Optional[str] = None,
     loadable_target_origin: Optional[LoadableTargetOrigin] = None,
     max_workers: Optional[int] = None,
@@ -1369,10 +1384,10 @@ def open_server_process(
 
     executable_path = loadable_target_origin.executable_path if loadable_target_origin else None
 
+    entrypoint = get_python_environment_entry_point(executable_path or sys.executable)
     subprocess_args = [
-        *get_python_environment_entry_point(executable_path or sys.executable),
-        *["api", "grpc"],
-        *["--lazy-load-user-code"],
+        *entrypoint,
+        *server_command.server_command,
         *(["--port", str(port)] if port else []),
         *(["--socket", socket] if socket else []),
         *(["-n", str(max_workers)] if max_workers else []),
@@ -1454,6 +1469,7 @@ class GrpcServerProcess:
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
+        server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
         location_name: Optional[str] = None,
         loadable_target_origin: Optional[LoadableTargetOrigin] = None,
         force_port: bool = False,
@@ -1520,6 +1536,7 @@ class GrpcServerProcess:
             server_process = open_server_process(
                 instance_ref=instance_ref,
                 location_name=location_name,
+                server_command=server_command,
                 port=None,
                 socket=self.socket,
                 loadable_target_origin=loadable_target_origin,
