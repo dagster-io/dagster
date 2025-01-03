@@ -17,7 +17,6 @@ from dagster._core.test_utils import instance_for_test
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.test import create_test_pipeline_execution_context
 from dagster_pyspark import DataFrame, pyspark_resource
-from moto import mock_emr
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
@@ -116,7 +115,6 @@ def test_local():
     assert result.success
 
 
-@mock_emr
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events")
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
 @pytest.mark.skipif(sys.version_info >= (3, 11), reason="no pyspark support on 3.11")

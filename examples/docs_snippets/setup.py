@@ -49,7 +49,7 @@ setup(
             # "'NoneType' object has no attribute 'canvas'" errors in the tests that involve
             # Jupyter notebooks
             "matplotlib-inline<=0.1.3",
-            "moto<5.0",
+            "dagster-aws[test]",
             "numpy",
             "pandas",
             "pandera",

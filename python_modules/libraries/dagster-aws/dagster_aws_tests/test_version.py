@@ -1,9 +1,5 @@
 import os
 
-import boto3
-import pytest
-from botocore.exceptions import ClientError
-
 from dagster_aws.version import __version__
 
 
@@ -12,9 +8,7 @@ def test_version():
 
 
 # Make sure unit tests never connect to real AWS
+# https://github.com/getmoto/moto/pull/6807
 def test_fake_aws_credentials():
-    assert os.environ["AWS_ACCESS_KEY_ID"] == "test"
-    assert os.environ["AWS_SECRET_ACCESS_KEY"] == "test"
-
-    with pytest.raises(ClientError):
-        boto3.client("s3").list_buckets()
+    assert os.environ["AWS_ACCESS_KEY_ID"] == "FOOBARKEY"
+    assert os.environ["AWS_SECRET_ACCESS_KEY"] == "FOOBARSECRET"
