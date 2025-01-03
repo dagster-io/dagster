@@ -13,10 +13,13 @@ export const useAssetSelectionInput = <
     key: {path: Array<string>};
     definition?: FilterableAssetDefinition | null;
   },
->(
-  assets: T[],
-  assetsLoading?: boolean,
-) => {
+>({
+  assets,
+  assetsLoading,
+}: {
+  assets: T[];
+  assetsLoading?: boolean;
+}) => {
   const [assetSelection, setAssetSelection] = useAssetSelectionState();
 
   const {graphQueryItems, loading, filtered} = useAssetSelectionFiltering({
@@ -35,7 +38,7 @@ export const useAssetSelectionInput = <
     />
   );
 
-  if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     filterInput = (
       <AssetSelectionInput
         value={assetSelection}

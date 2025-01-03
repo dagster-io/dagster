@@ -9,19 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Type, Union
 
 import aiohttp
 import dagster._check as check
@@ -38,6 +26,7 @@ from dagster._record import IHaveNew, record_custom
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
+from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
@@ -45,10 +34,12 @@ from dagster_sigma.cli import SIGMA_RECON_DATA_PREFIX, SNAPSHOT_ENV_VAR_NAME
 from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
+    SigmaDatasetTranslatorData,
     SigmaOrganizationData,
     SigmaTable,
     SigmaWorkbook,
     SigmaWorkbookMetadataSet,
+    SigmaWorkbookTranslatorData,
     _inode_from_url,
 )
 
@@ -719,9 +710,9 @@ class SigmaOrganization(ConfigurableResource):
 @experimental
 def load_sigma_asset_specs(
     organization: SigmaOrganization,
-    dagster_sigma_translator: Callable[
-        [SigmaOrganizationData], DagsterSigmaTranslator
-    ] = DagsterSigmaTranslator,
+    dagster_sigma_translator: Optional[
+        Union[DagsterSigmaTranslator, Type[DagsterSigmaTranslator]]
+    ] = None,
     sigma_filter: Optional[SigmaFilter] = None,
     fetch_column_data: bool = True,
     fetch_lineage_data: bool = True,
@@ -731,8 +722,9 @@ def load_sigma_asset_specs(
 
     Args:
         organization (SigmaOrganization): The Sigma organization to fetch assets from.
-        dagster_sigma_translator (Callable[[SigmaOrganizationData], DagsterSigmaTranslator]): The translator to use
-            to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
+        dagster_sigma_translator (Optional[Union[DagsterSigmaTranslator, Type[DagsterSigmaTranslatorr]]]):
+            The translator to use to convert Sigma content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterSigmaTranslator`.
         sigma_filter (Optional[SigmaFilter]): Filters the set of Sigma objects to fetch.
         fetch_column_data (bool): Whether to fetch column data for datasets, which can be slow.
         fetch_lineage_data (bool): Whether to fetch any lineage data for workbooks and datasets.
@@ -742,6 +734,16 @@ def load_sigma_asset_specs(
     Returns:
         List[AssetSpec]: The set of assets representing the Sigma content in the organization.
     """
+    if isinstance(dagster_sigma_translator, type):
+        deprecation_warning(
+            subject="Support of `dagster_sigma_translator` as a Type[DagsterSigmaTranslator]",
+            breaking_version="1.10",
+            additional_warn_text=(
+                "Pass an instance of DagsterSigmaTranslator or subclass to `dagster_sigma_translator` instead."
+            ),
+        )
+        dagster_sigma_translator = dagster_sigma_translator()
+
     snapshot = None
     if snapshot_path and not os.getenv(SNAPSHOT_ENV_VAR_NAME):
         snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
@@ -750,7 +752,7 @@ def load_sigma_asset_specs(
         return check.is_list(
             SigmaOrganizationDefsLoader(
                 organization=initialized_organization,
-                translator_cls=dagster_sigma_translator,
+                translator=dagster_sigma_translator or DagsterSigmaTranslator(),
                 sigma_filter=sigma_filter,
                 fetch_column_data=fetch_column_data,
                 fetch_lineage_data=fetch_lineage_data,
@@ -763,7 +765,8 @@ def load_sigma_asset_specs(
 
 
 def _get_translator_spec_assert_keys_match(
-    translator: DagsterSigmaTranslator, data: Union[SigmaDataset, SigmaWorkbook]
+    translator: DagsterSigmaTranslator,
+    data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData],
 ) -> AssetSpec:
     key = translator.get_asset_key(data)
     spec = translator.get_asset_spec(data)
@@ -778,7 +781,7 @@ def _get_translator_spec_assert_keys_match(
 @dataclass
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
-    translator_cls: Callable[[SigmaOrganizationData], DagsterSigmaTranslator]
+    translator: DagsterSigmaTranslator
     snapshot: Optional[RepositoryLoadData]
     sigma_filter: Optional[SigmaFilter] = None
     fetch_column_data: bool = True
@@ -801,9 +804,16 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
         )
 
     def defs_from_state(self, state: SigmaOrganizationData) -> Definitions:
-        translator = self.translator_cls(state)
+        translator_data_workbooks = [
+            SigmaWorkbookTranslatorData(workbook=workbook, organization_data=state)
+            for workbook in state.workbooks
+        ]
+        translator_data_datasets = [
+            SigmaDatasetTranslatorData(dataset=dataset, organization_data=state)
+            for dataset in state.datasets
+        ]
         asset_specs = [
-            _get_translator_spec_assert_keys_match(translator, obj)
-            for obj in [*state.workbooks, *state.datasets]
+            _get_translator_spec_assert_keys_match(self.translator, obj)
+            for obj in [*translator_data_workbooks, *translator_data_datasets]
         ]
         return Definitions(assets=asset_specs)

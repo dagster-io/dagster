@@ -1,5 +1,6 @@
 ---
-title: "Deploy to Amazon Web Services"
+title: Deploying to Amazon Web Services
+sidebar_label: "Amazon Web Services"
 unlisted: true
 sidebar_position: 500
 ---

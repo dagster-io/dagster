@@ -47,7 +47,7 @@ export const parseRunSelectionQuery = (
 
 export const filterRunSelectionByQuery = weakMapMemoize(
   (all_runs: RunGraphQueryItem[], query: string): RunSelectionQueryResult => {
-    if (featureEnabled(FeatureFlag.flagRunSelectionSyntax)) {
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
       const result = parseRunSelectionQuery(all_runs, query);
       if (result instanceof Error) {
         // fall back to old behavior

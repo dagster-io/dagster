@@ -1,18 +1,17 @@
 ---
 title: "workspace.yaml reference"
+sidebar_position: 200
 ---
 
-# Workspace file reference
-
 :::info
-    This reference is only applicable to Dagster OSS. For Dagster Cloud see [the Dagster Cloud Code Locations guide](/dagster-plus/deployment/code-locations)
+    This reference is only applicable to Dagster OSS. For Dagster Cloud see [the Dagster Cloud Code Locations documentation](/dagster-plus/deployment/code-locations)
 :::
 
 The `workspace.yaml` file is used to configure code locations in Dagster. It tells Dagster where to find your code and how to load it.
 
 ## Location of workspace.yaml
 
-Dagster command-line tools (like dagster dev, dagster-webserver, or dagster-daemon run) look for workspace files in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments
+Dagster command-line tools (like `dagster dev`, `dagster-webserver`, or `dagster-daemon run`) look for workspace files in the current directory when invoked. This allows you to launch from that directory without the need for command line arguments
 
 To load the workspace.yaml file from a different folder, use the -w argument:
 

@@ -7,14 +7,14 @@ Welcome to Dagster Components.
 
 Dagster Components is a new way to structure your Dagster projects. It aims to provide:
 
-- An opinionated project layout that supports ongoing scaffolding from “Hello world” to the most advanced projects
+- An opinionated project layout that supports ongoing scaffolding from "Hello world" to the most advanced projects
 - A class-based interface for dynamically constructing definitions
 - A toolkit to build YAML DSL frontends for components so that components can be constructed in a low-code fashion.
 - A format for components to provide their own scaffolding, in order to organize and reference integration-specific artifacts files.
 
 ## Project Setup
 
-First let's install the `dg` command line tool. This lives in the published Python package `dagster-dg`. `dg` is designed to be globally installed and has no dependency on `dagster` itself. We will use the tool feature of Python package manager `uv` to install a globally available `dg`. `dg` will also be use `uv` internally to manage the python enviroment associated with your project.
+First let's install the `dg` command line tool. This lives in the published Python package `dagster-dg`. `dg` is designed to be globally installed and has no dependency on `dagster` itself. We will use the tool feature of Python package manager `uv` to install a globally available `dg`. `dg` will also be use `uv` internally to manage the Python environment associated with your project.
 
 ```bash
 brew install uv && uv tool install -e -e $DAGSTER_GIT_REPO_DIR/python_modules/libraries/dagster-dg/
@@ -67,7 +67,7 @@ You can see that we have a basic project structure with a few non-standard files
 
 ## Hello Platform
 
-We are going to set up a data platform using sling to ingest data, dbt to process the data, and python to do AI.
+We are going to set up a data platform using sling to ingest data, dbt to process the data, and Python to do AI.
 
 ### Ingest
 
@@ -80,7 +80,7 @@ dagster_components.pipes_subprocess_script_collection
     Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient.
 ```
 
-This is because the basic `dagster-components` package is lightweight and doesn't include copmonents for specific tools. We can get access to a `sling` component by installing the `sling` extra:
+This is because the basic `dagster-components` package is lightweight and doesn't include components for specific tools. We can get access to a `sling` component by installing the `sling` extra:
 
 ```bash
 uv add 'dagster-components[sling]' dagster-embedded-elt
@@ -137,7 +137,7 @@ params: {}
 
 The `replication.yaml` file is a sling-specific file.
 
-We want to replicate data on the public internet into duckdb:
+We want to replicate data on the public internet into DuckDB:
 
 ```bash
 uv run sling conns set DUCKDB type=duckdb instance=/tmp/jaffle_platform.duckdb
@@ -151,7 +151,7 @@ uv run sling conns test DUCKDB
 4:55PM INF success!
 ```
 
-Now let's download a file locally (sling doesn’t support reading from the public internet):
+Now let's download a file locally (sling doesn't support reading from the public internet):
 
 ```bash
 curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&

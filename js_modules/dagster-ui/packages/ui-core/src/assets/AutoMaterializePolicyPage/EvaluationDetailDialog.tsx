@@ -10,10 +10,13 @@ import {
 } from '@dagster-io/ui-components';
 import {ReactNode, useState} from 'react';
 
-import {GET_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
+import {GET_SLIM_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {PartitionTagSelector} from './PartitionTagSelector';
 import {QueryfulEvaluationDetailTable} from './QueryfulEvaluationDetailTable';
-import {GetEvaluationsQuery, GetEvaluationsQueryVariables} from './types/GetEvaluationsQuery.types';
+import {
+  GetSlimEvaluationsQuery,
+  GetSlimEvaluationsQueryVariables,
+} from './types/GetEvaluationsQuery.types';
 import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
 import {useQuery} from '../../apollo-client';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
@@ -21,18 +24,26 @@ import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
 interface Props {
   isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
+  onClose: () => void;
   assetKeyPath: string[];
+  assetCheckName?: string;
   evaluationID: string;
 }
 
-export const EvaluationDetailDialog = ({isOpen, setIsOpen, evaluationID, assetKeyPath}: Props) => {
+export const EvaluationDetailDialog = ({
+  isOpen,
+  onClose,
+  evaluationID,
+  assetKeyPath,
+  assetCheckName,
+}: Props) => {
   return (
-    <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} style={EvaluationDetailDialogStyle}>
+    <Dialog isOpen={isOpen} onClose={onClose} style={EvaluationDetailDialogStyle}>
       <EvaluationDetailDialogContents
         evaluationID={evaluationID}
         assetKeyPath={assetKeyPath}
-        setIsOpen={setIsOpen}
+        assetCheckName={assetCheckName}
+        onClose={onClose}
       />
     </Dialog>
   );
@@ -41,17 +52,26 @@ export const EvaluationDetailDialog = ({isOpen, setIsOpen, evaluationID, assetKe
 interface ContentProps {
   evaluationID: string;
   assetKeyPath: string[];
-  setIsOpen: (isOpen: boolean) => void;
+  assetCheckName?: string;
+  onClose: () => void;
 }
 
-const EvaluationDetailDialogContents = ({evaluationID, assetKeyPath, setIsOpen}: ContentProps) => {
+const EvaluationDetailDialogContents = ({
+  evaluationID,
+  assetKeyPath,
+  assetCheckName,
+  onClose,
+}: ContentProps) => {
   const [selectedPartition, setSelectedPartition] = useState<string | null>(null);
 
-  const {data, loading} = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
-    GET_EVALUATIONS_QUERY,
+  const {data, loading} = useQuery<GetSlimEvaluationsQuery, GetSlimEvaluationsQueryVariables>(
+    GET_SLIM_EVALUATIONS_QUERY,
     {
       variables: {
-        assetKey: {path: assetKeyPath},
+        assetKey: assetCheckName ? null : {path: assetKeyPath},
+        assetCheckKey: assetCheckName
+          ? {assetKey: {path: assetKeyPath}, name: assetCheckName}
+          : null,
         cursor: `${BigInt(evaluationID) + 1n}`,
         limit: 2,
       },
@@ -70,7 +90,7 @@ const EvaluationDetailDialogContents = ({evaluationID, assetKeyPath, setIsOpen}:
             <SpinnerWithText label="Loading evaluation details..." />
           </Box>
         }
-        onDone={() => setIsOpen(false)}
+        onDone={onClose}
       />
     );
   }
@@ -90,12 +110,12 @@ const EvaluationDetailDialogContents = ({evaluationID, assetKeyPath, setIsOpen}:
             />
           </Box>
         }
-        onDone={() => setIsOpen(false)}
+        onDone={onClose}
       />
     );
   }
 
-  const evaluation = record?.records[0];
+  const evaluation = record?.records.find((r) => r.evaluationId === evaluationID);
 
   if (!evaluation) {
     return (
@@ -114,7 +134,7 @@ const EvaluationDetailDialogContents = ({evaluationID, assetKeyPath, setIsOpen}:
             />
           </Box>
         }
-        onDone={() => setIsOpen(false)}
+        onDone={onClose}
       />
     );
   }
@@ -135,7 +155,7 @@ const EvaluationDetailDialogContents = ({evaluationID, assetKeyPath, setIsOpen}:
               </div>
             }
           />
-          {allPartitions.length > 0 ? (
+          {allPartitions.length > 0 && evaluation.isLegacy ? (
             <Box padding={{vertical: 12, right: 20}} flex={{justifyContent: 'flex-end'}}>
               <PartitionTagSelector
                 allPartitions={allPartitions}
@@ -154,7 +174,7 @@ const EvaluationDetailDialogContents = ({evaluationID, assetKeyPath, setIsOpen}:
           setSelectedPartition={setSelectedPartition}
         />
       }
-      onDone={() => setIsOpen(false)}
+      onDone={onClose}
     />
   );
 };

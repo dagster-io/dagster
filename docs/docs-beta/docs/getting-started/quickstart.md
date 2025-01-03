@@ -1,11 +1,9 @@
 ---
-title: "Dagster quickstart"
+title: Build your first Dagster project
 description: Learn how to quickly get up and running with Dagster
 sidebar_position: 30
 sidebar_label: "Quickstart"
 ---
-
-# Build your first Dagster project
 
 Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline that:
 
@@ -153,5 +151,5 @@ id,name,age,city,age_group
 
 Congratulations! You've just built and run your first pipeline with Dagster. Next, you can:
 
-- Continue with the [ETL pipeline tutorial](/tutorial/etl-tutorial-introduction) to learn how to build a more complex ETL pipeline
+- Continue with the [ETL pipeline tutorial](/tutorial/01-etl-tutorial-introduction) to learn how to build a more complex ETL pipeline
 - Learn how to [Think in assets](/guides/build/assets-concepts/index.md)

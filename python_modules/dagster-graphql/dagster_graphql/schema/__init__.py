@@ -6,7 +6,6 @@ from dagster_graphql.schema.roots.subscription import GrapheneSubscription
 
 
 def types():
-    from dagster_graphql.schema.asset_key import GrapheneAssetKey
     from dagster_graphql.schema.backfill import (
         GrapheneLaunchBackfillResult,
         GrapheneLaunchBackfillSuccess,
@@ -14,6 +13,7 @@ def types():
     from dagster_graphql.schema.config_type_or_error import GrapheneConfigTypeOrError
     from dagster_graphql.schema.config_types import types as config_types
     from dagster_graphql.schema.dagster_types import types as dagster_types_types
+    from dagster_graphql.schema.entity_key import GrapheneAssetKey
     from dagster_graphql.schema.errors import types as errors_types
     from dagster_graphql.schema.execution import types as execution_types
     from dagster_graphql.schema.external import types as external_types

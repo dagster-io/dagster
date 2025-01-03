@@ -414,7 +414,7 @@ const GanttChartInner = React.memo((props: GanttChartInnerProps) => {
           </WebsocketWarning>
         ) : null}
         <FilterInputsBackgroundBox flex={{direction: 'row', alignItems: 'center', gap: 12}}>
-          {featureEnabled(FeatureFlag.flagRunSelectionSyntax) ? (
+          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
             <GanttChartSelectionInput
               items={props.graph}
               value={props.selection.query}

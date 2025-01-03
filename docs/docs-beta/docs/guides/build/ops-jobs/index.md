@@ -1,9 +1,8 @@
 ---
-unlisted: true
+title: Ops and jobs
 sidebar_position: 50
+unlisted: true
 ---
-
-# Ops and jobs
 
 import DocCardList from '@theme/DocCardList';
 

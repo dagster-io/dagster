@@ -189,7 +189,7 @@ const RunWithData = ({
   onSetLogsFilter,
   onSetSelectionQuery,
 }: RunWithDataProps) => {
-  const newRunSelectionSyntax = featureEnabled(FeatureFlag.flagRunSelectionSyntax);
+  const newRunSelectionSyntax = featureEnabled(FeatureFlag.flagSelectionSyntax);
 
   const [queryLogType, setQueryLogType] = useQueryPersistedState<string>({
     queryKey: 'logType',

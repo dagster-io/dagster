@@ -4,7 +4,7 @@ import re
 import time
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, Mapping, Optional, Sequence, Type
+from typing import Any, Dict, Mapping, Optional, Sequence, Type, Union
 from urllib.parse import urlencode
 
 import requests
@@ -21,6 +21,7 @@ from dagster._core.definitions.events import Failure
 from dagster._time import get_current_timestamp
 from dagster._utils.cached_method import cached_method
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 
 from dagster_powerbi.translator import (
@@ -28,6 +29,7 @@ from dagster_powerbi.translator import (
     PowerBIContentData,
     PowerBIContentType,
     PowerBITagSet,
+    PowerBITranslatorData,
     PowerBIWorkspaceData,
 )
 
@@ -384,7 +386,7 @@ class PowerBIWorkspace(ConfigurableResource):
                 if PowerBITagSet.extract(spec.tags).asset_type == "semantic_model"
                 else spec
                 for spec in load_powerbi_asset_specs(
-                    self, dagster_powerbi_translator, use_workspace_scan=False
+                    self, dagster_powerbi_translator(), use_workspace_scan=False
                 )
             ],
             resources={resource_key: self},
@@ -394,24 +396,39 @@ class PowerBIWorkspace(ConfigurableResource):
 @experimental
 def load_powerbi_asset_specs(
     workspace: PowerBIWorkspace,
-    dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
+    dagster_powerbi_translator: Optional[
+        Union[DagsterPowerBITranslator, Type[DagsterPowerBITranslator]]
+    ] = None,
     use_workspace_scan: bool = True,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Power BI content in the workspace.
 
     Args:
         workspace (PowerBIWorkspace): The Power BI workspace to load assets from.
+        dagster_powerbi_translator (Optional[Union[DagsterPowerBITranslator, Type[DagsterPowerBITranslator]]]):
+            The translator to use to convert Power BI content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterPowerBITranslator`.
         use_workspace_scan (bool): Whether to scan the entire workspace using admin APIs
             at once to get all content. Defaults to True.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Power BI content in the workspace.
     """
+    if isinstance(dagster_powerbi_translator, type):
+        deprecation_warning(
+            subject="Support of `dagster_powerbi_translator` as a Type[DagsterPowerBITranslator]",
+            breaking_version="1.10",
+            additional_warn_text=(
+                "Pass an instance of DagsterPowerBITranslator or subclass to `dagster_powerbi_translator` instead."
+            ),
+        )
+        dagster_powerbi_translator = dagster_powerbi_translator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
             PowerBIWorkspaceDefsLoader(
                 workspace=initialized_workspace,
-                translator_cls=dagster_powerbi_translator,
+                translator=dagster_powerbi_translator or DagsterPowerBITranslator(),
                 use_workspace_scan=use_workspace_scan,
             )
             .build_defs()
@@ -423,7 +440,7 @@ def load_powerbi_asset_specs(
 @dataclass
 class PowerBIWorkspaceDefsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceData]):
     workspace: PowerBIWorkspace
-    translator_cls: Type[DagsterPowerBITranslator]
+    translator: DagsterPowerBITranslator
     use_workspace_scan: bool
 
     @property
@@ -437,15 +454,19 @@ class PowerBIWorkspaceDefsLoader(StateBackedDefinitionsLoader[PowerBIWorkspaceDa
             )
 
     def defs_from_state(self, state: PowerBIWorkspaceData) -> Definitions:
-        translator = self.translator_cls(context=state)
-
         all_external_data = [
             *state.dashboards_by_id.values(),
             *state.reports_by_id.values(),
             *state.semantic_models_by_id.values(),
         ]
         all_external_asset_specs = [
-            translator.get_asset_spec(content) for content in all_external_data
+            self.translator.get_asset_spec(
+                PowerBITranslatorData(
+                    content_data=content,
+                    workspace_data=state,
+                )
+            )
+            for content in all_external_data
         ]
 
         return Definitions(assets=[*all_external_asset_specs])
