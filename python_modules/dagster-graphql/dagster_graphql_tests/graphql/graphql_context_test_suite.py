@@ -267,6 +267,35 @@ class InstanceManagers:
 
         return MarkedManager(_sqlite_asset_instance, [Marks.asset_aware_instance])
 
+    @staticmethod
+    def default_concurrency_sqlite_instance():
+        @contextmanager
+        def _sqlite_with_default_concurrency_instance():
+            with tempfile.TemporaryDirectory() as temp_dir:
+                with instance_for_test(
+                    temp_dir=temp_dir,
+                    overrides={
+                        "scheduler": {
+                            "module": "dagster.utils.test",
+                            "class": "FilesystemTestScheduler",
+                            "config": {"base_dir": temp_dir},
+                        },
+                        "run_coordinator": {
+                            "module": "dagster._core.run_coordinator.queued_run_coordinator",
+                            "class": "QueuedRunCoordinator",
+                        },
+                        "concurrency": {
+                            "default_op_concurrency_limit": 1,
+                        },
+                    },
+                ) as instance:
+                    yield instance
+
+        return MarkedManager(
+            _sqlite_with_default_concurrency_instance,
+            [Marks.sqlite_instance, Marks.queued_run_coordinator],
+        )
+
 
 class EnvironmentManagers:
     @staticmethod
@@ -554,6 +583,16 @@ class GraphQLContextVariant:
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.code_server_cli_grpc(target, location_name),
             test_id="sqlite_with_default_run_launcher_code_server_cli_env",
+        )
+
+    @staticmethod
+    def sqlite_with_default_concurrency_managed_grpc_env(
+        target=None, location_name="test_location"
+    ):
+        return GraphQLContextVariant(
+            InstanceManagers.default_concurrency_sqlite_instance(),
+            EnvironmentManagers.managed_grpc(target, location_name),
+            test_id="sqlite_with_default_concurrency_managed_grpc_env",
         )
 
     @staticmethod

@@ -2687,6 +2687,18 @@ class SqlEventLogStorage(EventLogStorage):
                 .where(ConcurrencySlotsTable.c.concurrency_key == concurrency_key)
             )
             slot_rows = db_fetch_mappings(conn, slot_query)
+            slot_count = len([slot_row for slot_row in slot_rows if not slot_row["deleted"]])
+
+            if self.has_concurrency_limits_table:
+                limit_row = conn.execute(
+                    db_select([ConcurrencyLimitsTable.c.limit]).where(
+                        ConcurrencyLimitsTable.c.concurrency_key == concurrency_key
+                    )
+                ).fetchone()
+                configured_limit = cast(int, limit_row[0]) if limit_row else None
+            else:
+                configured_limit = slot_count
+
             pending_query = (
                 db_select(
                     [
@@ -2702,9 +2714,16 @@ class SqlEventLogStorage(EventLogStorage):
             )
             pending_rows = db_fetch_mappings(conn, pending_query)
 
+            if (
+                configured_limit is None
+                and self.has_instance
+                and self._instance.global_op_concurrency_default_limit
+            ):
+                configured_limit = self._instance.global_op_concurrency_default_limit
+
             return ConcurrencyKeyInfo(
                 concurrency_key=concurrency_key,
-                slot_count=len([slot_row for slot_row in slot_rows if not slot_row["deleted"]]),
+                slot_count=slot_count,
                 claimed_slots=[
                     ClaimedSlotInfo(run_id=slot_row["run_id"], step_key=slot_row["step_key"])
                     for slot_row in slot_rows
@@ -2722,6 +2741,7 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                     for row in pending_rows
                 ],
+                configured_limit=configured_limit,
             )
 
     def get_concurrency_run_ids(self) -> Set[str]:

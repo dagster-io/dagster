@@ -2496,6 +2496,7 @@ type ConcurrencyKeyInfo {
   pendingStepRunIds: [String!]!
   assignedStepCount: Int!
   assignedStepRunIds: [String!]!
+  configuredLimit: Int
 }
 
 type ClaimedConcurrencySlot {

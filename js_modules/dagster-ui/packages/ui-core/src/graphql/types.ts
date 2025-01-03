@@ -844,6 +844,7 @@ export type ConcurrencyKeyInfo = {
   assignedStepRunIds: Array<Scalars['String']['output']>;
   claimedSlots: Array<ClaimedConcurrencySlot>;
   concurrencyKey: Scalars['String']['output'];
+  configuredLimit: Maybe<Scalars['Int']['output']>;
   pendingStepCount: Scalars['Int']['output'];
   pendingStepRunIds: Array<Scalars['String']['output']>;
   pendingSteps: Array<PendingConcurrencyStep>;
@@ -7319,6 +7320,8 @@ export const buildConcurrencyKeyInfo = (
       overrides && overrides.hasOwnProperty('claimedSlots') ? overrides.claimedSlots! : [],
     concurrencyKey:
       overrides && overrides.hasOwnProperty('concurrencyKey') ? overrides.concurrencyKey! : 'quasi',
+    configuredLimit:
+      overrides && overrides.hasOwnProperty('configuredLimit') ? overrides.configuredLimit! : 9480,
     pendingStepCount:
       overrides && overrides.hasOwnProperty('pendingStepCount') ? overrides.pendingStepCount! : 370,
     pendingStepRunIds:
