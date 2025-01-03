@@ -90,6 +90,58 @@ class SigmaTable:
         return self.properties["path"].split("/")[1:] + [self.properties["name"]]
 
 
+@record
+class SigmaWorkbookTranslatorData:
+    """A record representing a Sigma workbook and the Sigma organization data."""
+
+    workbook: "SigmaWorkbook"
+    organization_data: "SigmaOrganizationData"
+
+    @property
+    def properties(self) -> Dict[str, Any]:
+        return self.workbook.properties
+
+    @property
+    def lineage(self) -> List[Dict[str, Any]]:
+        return self.workbook.lineage
+
+    @property
+    def datasets(self) -> AbstractSet[str]:
+        return self.workbook.datasets
+
+    @property
+    def direct_table_deps(self) -> AbstractSet[str]:
+        return self.workbook.direct_table_deps
+
+    @property
+    def owner_email(self) -> Optional[str]:
+        return self.workbook.owner_email
+
+    @property
+    def materialization_schedules(self) -> Optional[List[Dict[str, Any]]]:
+        return self.workbook.materialization_schedules
+
+
+@record
+class SigmaDatasetTranslatorData:
+    """A record representing a Sigma dataset and the Sigma organization data."""
+
+    dataset: "SigmaDataset"
+    organization_data: "SigmaOrganizationData"
+
+    @property
+    def properties(self) -> Dict[str, Any]:
+        return self.dataset.properties
+
+    @property
+    def columns(self) -> AbstractSet[str]:
+        return self.dataset.columns
+
+    @property
+    def inputs(self) -> AbstractSet[str]:
+        return self.dataset.inputs
+
+
 @whitelist_for_serdes
 @record
 class SigmaOrganizationData:
@@ -111,24 +163,21 @@ class DagsterSigmaTranslator:
     Subclass this class to provide custom translation logic.
     """
 
-    def __init__(self, context: SigmaOrganizationData):
-        self._context = context
-
-    @property
-    def organization_data(self) -> SigmaOrganizationData:
-        return self._context
-
     @deprecated(
         breaking_version="1.10",
         additional_warn_text="Use `DagsterSigmaTranslator.get_asset_spec(...).key` instead",
     )
-    def get_asset_key(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetKey:
+    def get_asset_key(
+        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+    ) -> AssetKey:
         """Get the AssetKey for a Sigma object, such as a workbook or dataset."""
         return self.get_asset_spec(data).key
 
-    def get_asset_spec(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetSpec:
+    def get_asset_spec(
+        self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+    ) -> AssetSpec:
         """Get the AssetSpec for a Sigma object, such as a workbook or dataset."""
-        if isinstance(data, SigmaWorkbook):
+        if isinstance(data, SigmaWorkbookTranslatorData):
             metadata = {
                 **SigmaWorkbookMetadataSet(
                     web_url=MetadataValue.url(data.properties["url"]),
@@ -148,9 +197,12 @@ class DagsterSigmaTranslator:
                     ),
                 ),
             }
-            datasets = [self._context.get_datasets_by_inode()[inode] for inode in data.datasets]
+            datasets = [
+                data.organization_data.get_datasets_by_inode()[inode] for inode in data.datasets
+            ]
             tables = [
-                self._context.get_tables_by_inode()[inode] for inode in data.direct_table_deps
+                data.organization_data.get_tables_by_inode()[inode]
+                for inode in data.direct_table_deps
             ]
 
             return AssetSpec(
@@ -158,7 +210,14 @@ class DagsterSigmaTranslator:
                 metadata=metadata,
                 kinds={"sigma", "workbook"},
                 deps={
-                    *[self.get_asset_key(dataset) for dataset in datasets],
+                    *[
+                        self.get_asset_key(
+                            SigmaDatasetTranslatorData(
+                                dataset=dataset, organization_data=data.organization_data
+                            )
+                        )
+                        for dataset in datasets
+                    ],
                     *[
                         asset_key_from_table_name(".".join(table.get_table_path()).lower())
                         for table in tables
@@ -166,7 +225,7 @@ class DagsterSigmaTranslator:
                 },
                 owners=[data.owner_email] if data.owner_email else None,
             )
-        elif isinstance(data, SigmaDataset):
+        elif isinstance(data, SigmaDatasetTranslatorData):
             metadata = {
                 "dagster_sigma/web_url": MetadataValue.url(data.properties["url"]),
                 "dagster_sigma/created_at": MetadataValue.timestamp(
