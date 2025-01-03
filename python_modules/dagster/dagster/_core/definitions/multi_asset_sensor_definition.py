@@ -788,7 +788,16 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 will not fetch this event again. If None is provided, the cursor for the AssetKey
                 will not be updated.
         """
-        self._cursor_advance_state_mutation.add_advanced_records(materialization_records_by_key)
+        from dagster._core.storage.event_log.base import EventLogRecord
+
+        self._cursor_advance_state_mutation.add_advanced_records(
+            check.mapping_param(
+                materialization_records_by_key,
+                "materialization_records_by_key",
+                key_type=AssetKey,
+                value_type=(type(None), EventLogRecord),
+            )
+        )
         self._cursor_updated = True
 
     @public
