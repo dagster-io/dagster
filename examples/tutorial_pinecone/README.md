@@ -1,1 +1,0 @@
-## Dagster × Pinecone Demo
