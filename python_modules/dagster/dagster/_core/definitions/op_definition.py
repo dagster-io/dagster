@@ -80,8 +80,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the op. If set,
             this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
-        pool (Optional[str]): A string that identifies the concurrency limit group that governs
-            this op's execution.
+        pool (Optional[str]): A string that identifies the pool that governs this op's execution.
 
 
     Examples:
@@ -602,7 +601,7 @@ def _validate_pool(pool, tags):
     tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
     if pool and tag_concurrency_key and pool != tag_concurrency_key:
         raise DagsterInvalidDefinitionError(
-            f'Concurrency group "{pool}" that conflicts with the concurrency key tag "{tag_concurrency_key}".'
+            f'Pool "{pool}" conflicts with the concurrency key tag "{tag_concurrency_key}".'
         )
 
     if pool:
