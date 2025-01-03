@@ -28,5 +28,6 @@ with environ({"SIGMA_CLIENT_ID": fake_client_id, "SIGMA_CLIENT_SECRET": fake_cli
         client_secret=EnvVar("SIGMA_CLIENT_SECRET"),
     )
 
-    sigma_specs = load_sigma_asset_specs(resource, dagster_sigma_translator=MyCoolTranslator())
+    # Pass the translator type
+    sigma_specs = load_sigma_asset_specs(resource, dagster_sigma_translator=MyCoolTranslator)
     defs = Definitions(assets=[*sigma_specs], jobs=[define_asset_job("all_asset_job")])
