@@ -641,22 +641,30 @@ def launch_scheduled_runs_for_schedule_iterator(
                 latest_tick.consecutive_failure_count or latest_tick.failure_count
             )
 
-        if latest_tick and latest_tick.scheduled_execution_time == schedule_timestamp:
+        if (
+            latest_tick
+            and latest_tick.scheduled_execution_time == schedule_timestamp
+            and latest_tick.status == TickStatus.STARTED
+        ):
             tick = latest_tick
-            if latest_tick.status == TickStatus.FAILURE:
-                logger.info(f"Retrying previously failed schedule execution at {schedule_time_str}")
-            else:
-                logger.info(
-                    f"Resuming previously interrupted schedule execution at {schedule_time_str}"
-                )
+            logger.info(
+                f"Resuming previously interrupted schedule execution at {schedule_time_str}"
+            )
         else:
+            if (
+                latest_tick
+                and latest_tick.status == TickStatus.FAILURE
+                and latest_tick.scheduled_execution_time == schedule_timestamp
+            ):
+                logger.info(f"Retrying failed schedule execution at {schedule_time_str}")
+
             tick = instance.create_tick(
                 TickData(
                     instigator_origin_id=instigator_origin_id,
                     instigator_name=schedule_name,
                     instigator_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,
-                    timestamp=schedule_timestamp,
+                    timestamp=now_timestamp,
                     selector_id=remote_schedule.selector_id,
                     consecutive_failure_count=consecutive_failure_count,
                     scheduled_execution_time=schedule_timestamp,

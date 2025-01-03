@@ -662,7 +662,7 @@ def validate_tick(
     assert tick_data.instigator_origin_id == remote_schedule.get_remote_origin_id()
     assert tick_data.instigator_name == remote_schedule.name
     assert tick_data.scheduled_execution_time == expected_datetime.timestamp()
-    assert tick_data.timestamp == expected_datetime.timestamp()
+    assert tick_data.timestamp >= expected_datetime.timestamp()
     assert tick_data.status == expected_status
     assert len(tick_data.run_ids) == len(expected_run_ids) and set(tick_data.run_ids) == set(
         expected_run_ids
