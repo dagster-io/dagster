@@ -118,6 +118,38 @@
           }),
         }),
         dict({
+          'id': 'test_location.test_repo.["concurrency_asset"]',
+          'key': dict({
+            'path': list([
+              'concurrency_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["concurrency_graph_asset"]',
+          'key': dict({
+            'path': list([
+              'concurrency_graph_asset',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["concurrency_multi_asset_1"]',
+          'key': dict({
+            'path': list([
+              'concurrency_multi_asset_1',
+            ]),
+          }),
+        }),
+        dict({
+          'id': 'test_location.test_repo.["concurrency_multi_asset_2"]',
+          'key': dict({
+            'path': list([
+              'concurrency_multi_asset_2',
+            ]),
+          }),
+        }),
+        dict({
           'id': 'test_location.test_repo.["diamond_source"]',
           'key': dict({
             'path': list([
@@ -648,6 +680,26 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test_location.test_repo.["check_in_op_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["concurrency_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["concurrency_graph_asset"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["concurrency_multi_asset_1"]',
+      }),
+      dict({
+        'freshnessInfo': None,
+        'freshnessPolicy': None,
+        'id': 'test_location.test_repo.["concurrency_multi_asset_2"]',
       }),
       dict({
         'freshnessInfo': None,
