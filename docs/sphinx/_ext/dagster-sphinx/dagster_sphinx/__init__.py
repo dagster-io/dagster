@@ -2,6 +2,7 @@ from typing import List, Tuple, Type, TypeVar  # noqa: F401, UP035
 
 import docutils.nodes as nodes
 from dagster._annotations import (
+    get_beta_info,
     get_deprecated_info,
     get_deprecated_params,
     get_experimental_info,
@@ -10,6 +11,7 @@ from dagster._annotations import (
     get_superseded_info,
     has_deprecated_params,
     has_experimental_params,
+    is_beta,
     is_deprecated,
     is_experimental,
     is_preview,
@@ -130,6 +132,9 @@ def process_docstring(
 
     if is_preview(obj):
         inject_object_flag(obj, get_preview_info(obj), lines)
+
+    if is_beta(obj):
+        inject_object_flag(obj, get_beta_info(obj), lines)
 
     if has_deprecated_params(obj):
         params = get_deprecated_params(obj)
