@@ -105,4 +105,4 @@ To materialize your assets:
 
 ## Next steps
 
-- Continue this tutorial with your with your [asset dependencies](/tutorial/create-and-materialize-a-downstream-asset)
+- Continue this tutorial with your with your [asset dependencies](create-and-materialize-a-downstream-asset)

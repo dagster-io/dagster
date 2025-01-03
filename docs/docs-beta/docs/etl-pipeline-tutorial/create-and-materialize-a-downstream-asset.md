@@ -42,4 +42,4 @@ Your Definitions object should now look like this:
 
 ## Next steps
 
-- Continue this tutorial with [create and materialize a partitioned asset](/tutorial/ensuring-data-quality-with-asset-checks)
+- Continue this tutorial with [create and materialize a partitioned asset](ensure-data-quality-with-asset-checks)

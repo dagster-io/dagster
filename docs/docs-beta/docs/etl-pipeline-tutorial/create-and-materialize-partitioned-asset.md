@@ -176,4 +176,4 @@ To materialize these assets :
 
 ## Next Steps
 
-Now that we have the main assets in our ETL pipeline, its time to add [automation to our pipeline](/tutorial/automating-your-pipeline)
+Now that we have the main assets in our ETL pipeline, its time to add [automation to our pipeline](automate-your-pipeline)

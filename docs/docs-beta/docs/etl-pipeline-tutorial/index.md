@@ -135,4 +135,4 @@ followed by a bash code snippet for `dagster dev`
 
 ## Next steps
 
-- Continue this tutorial by [creating and materializing assets](/tutorial/create-and-materialize-assets)
+- Continue this tutorial by [creating and materializing assets](create-and-materialize-assets)

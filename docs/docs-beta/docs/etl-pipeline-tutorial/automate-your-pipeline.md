@@ -53,4 +53,4 @@ Additionally if you navigate to the runs tab you will see that materializations 
 
 ## Next steps
 
-- Continue this tutorial with adding a [sensor based asset](/tutorial/creating-a-sensor-asset)
+- Continue this tutorial with adding a [sensor based asset](create-a-sensor-asset)
