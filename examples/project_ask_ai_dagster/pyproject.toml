@@ -1,0 +1,44 @@
+[project]
+name = "project_ask_ai_dagster"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "langchain",
+    "langchain-core",
+    "gql",
+    "python-dotenv",
+    "langchain-community",
+    "langchain-openai",
+    "langchain-chroma",
+    "dagster",
+    "dagster-webserver",
+    "dagster-openai",
+    "dagster_duckdb",
+    "chromadb",
+    "tokenizers",
+    "tenacity",
+    "tqdm",
+    "bs4",
+    "lxml",
+    "openai",
+    "pinecone",
+    ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dagster]
+module_name = "project_ask_ai_dagster.definitions"
+project_name = "project_ask_ai_dagster"
+
+[tool.setuptools.packages.find]
+exclude=["project_ask_ai_dagster_tests"]

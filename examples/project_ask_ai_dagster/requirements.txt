@@ -1,0 +1,13 @@
+langchain
+langchain-core
+gql
+python-dotenv
+langchain-community
+langchain-openai
+dagster
+dagster-webserver
+tenacity
+bs4
+lxml
+dagster-openai
+pinecone

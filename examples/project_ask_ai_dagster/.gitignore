@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+test.py
+github_knowledge_base/
+.vscode/
+*.sqlite3
+data/*
