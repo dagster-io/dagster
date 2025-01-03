@@ -11,6 +11,7 @@ from dagster_dg.context import (
     DgContext,
     is_inside_code_location_directory,
 )
+from dagster_dg.docs import markdown_for_component_type, render_markdown_in_browser
 from dagster_dg.generate import generate_component_type
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 
@@ -49,6 +50,41 @@ def component_type_generate_command(name: str, **global_options: object) -> None
         sys.exit(1)
 
     generate_component_type(context, name)
+
+
+# ########################
+# ##### DOCS
+# ########################
+
+
+@component_type_group.command(name="docs", cls=DgClickCommand)
+@click.argument("component_type", type=str)
+@dg_global_options
+def component_type_docs_command(
+    component_type: str,
+    **global_options: object,
+) -> None:
+    """Get detailed information on a registered Dagster component type."""
+    dg_context = DgContext.from_cli_global_options(global_options)
+
+    if not is_inside_code_location_directory(Path.cwd()):
+        click.echo(
+            click.style(
+                "This command must be run inside a Dagster code location directory.", fg="red"
+            )
+        )
+        sys.exit(1)
+
+    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
+    if not context.has_component_type(component_type):
+        click.echo(
+            click.style(f"No component type `{component_type}` could be resolved.", fg="red")
+        )
+        sys.exit(1)
+
+    component_type_metadata = context.get_component_type(component_type)
+
+    render_markdown_in_browser(markdown_for_component_type(component_type_metadata))
 
 
 # ########################
