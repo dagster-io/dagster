@@ -26,6 +26,7 @@ export type TickHistoryQuery = {
           status: Types.InstigationTickStatus;
           timestamp: number;
           endTimestamp: number | null;
+          scheduledExecutionTimestamp: number | null;
           cursor: string | null;
           instigationType: Types.InstigationType;
           skipReason: string | null;
@@ -67,4 +68,4 @@ export type TickHistoryQuery = {
       };
 };
 
-export const TickHistoryQueryVersion = 'c7a49ebf0ce969829effc3c7234a7aada77643e14674507b4f75dd4b9aaaf538';
+export const TickHistoryQueryVersion = 'cdb1e9156d778ce3cfd0c99dc9f71f0d88d85d69ce706f75eb9dbb995cfda845';

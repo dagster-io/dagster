@@ -31,6 +31,7 @@ export type SingleScheduleQuery = {
             id: string;
             status: Types.InstigationTickStatus;
             timestamp: number;
+            scheduledExecutionTimestamp: number | null;
             skipReason: string | null;
             runIds: Array<string>;
             runKeys: Array<string>;
@@ -61,4 +62,4 @@ export type SingleScheduleQuery = {
     | {__typename: 'ScheduleNotFoundError'};
 };
 
-export const SingleScheduleQueryVersion = '508a47e32ce04ba5be52c66cd592b74147bf98ec85b9f5d0e4db45172bd9a897';
+export const SingleScheduleQueryVersion = 'ef0e8c00eefc3221abb5166f82120c116d73b64676647631f3b27def9a8841fb';

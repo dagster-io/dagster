@@ -112,6 +112,7 @@ export const HISTORY_TICK_FRAGMENT = gql`
     status
     timestamp
     endTimestamp
+    scheduledExecutionTimestamp
     cursor
     instigationType
     skipReason

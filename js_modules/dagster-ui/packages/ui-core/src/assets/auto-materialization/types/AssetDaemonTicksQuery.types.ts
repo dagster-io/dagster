@@ -7,6 +7,7 @@ export type AssetDaemonTickFragment = {
   id: string;
   timestamp: number;
   endTimestamp: number | null;
+  scheduledExecutionTimestamp: number | null;
   status: Types.InstigationTickStatus;
   instigationType: Types.InstigationType;
   requestedAssetMaterializationCount: number;
@@ -46,6 +47,7 @@ export type AssetDaemonTicksQuery = {
     id: string;
     timestamp: number;
     endTimestamp: number | null;
+    scheduledExecutionTimestamp: number | null;
     status: Types.InstigationTickStatus;
     instigationType: Types.InstigationType;
     requestedAssetMaterializationCount: number;
@@ -69,4 +71,4 @@ export type AssetDaemonTicksQuery = {
   }>;
 };
 
-export const AssetDaemonTicksQueryVersion = '399ac77e660d40eba32c2ab06db2a2936a71e660d93ec108364eec1fdfc16788';
+export const AssetDaemonTicksQueryVersion = '1b3e0f84886b09b5f43c9218be7e657836366f67a54b122dbfc15d5f92c8037d';

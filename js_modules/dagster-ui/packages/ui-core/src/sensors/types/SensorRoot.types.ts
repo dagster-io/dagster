@@ -60,6 +60,7 @@ export type SensorRootQuery = {
             cursor: string | null;
             status: Types.InstigationTickStatus;
             timestamp: number;
+            scheduledExecutionTimestamp: number | null;
             skipReason: string | null;
             runIds: Array<string>;
             runKeys: Array<string>;
@@ -182,6 +183,6 @@ export type SensorAssetSelectionQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SensorRootQueryVersion = 'fd32c8557a75c273133137c289091357635f3be0af17b9a57b052087f8e9d023';
+export const SensorRootQueryVersion = '27c7648c8884014177196de821669ba8c9a92b2527212c612bf1f4cd0c1fdd97';
 
 export const SensorAssetSelectionQueryVersion = '188cd7bab57cb2a04cf4941133f43327d91cf9edef01018d3635cacf6e36582d';
