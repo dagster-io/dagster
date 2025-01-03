@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import AbstractSet, Any, Iterable, Mapping, Optional, Type
+from typing import TYPE_CHECKING, AbstractSet, Any, Iterable, Mapping, Optional, Type
 
 from typing_extensions import TypeVar
 
@@ -11,10 +11,14 @@ from dagster._core.definitions.metadata.metadata_value import (
     TableColumnConstraints as TableColumnConstraints,
     TableColumnLineage,
     TableSchema,
+    TableSchemaMetadataValue,
 )
 from dagster._model import DagsterModel
 from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.typing_api import flatten_unions
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.metadata import RawMetadataMapping
 
 # Python types that have a MetadataValue types that directly wraps them
 DIRECTLY_WRAPPED_METADATA_TYPES = {
@@ -197,6 +201,14 @@ class TableMetadataSet(NamespacedMetadataSet):
         return {"relation_identifier": "table_name"}
 
 
+METADATA_KEY_PREFIX = f"{TableMetadataSet.namespace()}/"
+COLUMN_SCHEMA_METADATA_KEY = f"{METADATA_KEY_PREFIX}column_schema"
+TABLE_NAME_METADATA_KEY = f"{METADATA_KEY_PREFIX}table_name"
+ROW_COUNT_METADATA_KEY = f"{METADATA_KEY_PREFIX}row_count"
+PARTITION_ROW_COUNT_METADATA_KEY = f"{METADATA_KEY_PREFIX}partition_row_count"
+COLUMN_LINEAGE_METADATA_KEY = f"{METADATA_KEY_PREFIX}column_lineage"
+
+
 class UriMetadataSet(NamespacedMetadataSet):
     """Metadata entry which supplies a URI address for an asset.
     For example, the S3 address of a file or bucket.
@@ -210,3 +222,41 @@ class UriMetadataSet(NamespacedMetadataSet):
     @classmethod
     def namespace(cls) -> str:
         return "dagster"
+
+
+def validate_metadata_values(metadata: "RawMetadataMapping") -> None:
+    if metadata.get(COLUMN_SCHEMA_METADATA_KEY):
+        value = metadata[COLUMN_SCHEMA_METADATA_KEY]
+        check.invariant(
+            isinstance(value, TableSchema) or isinstance(value, TableSchemaMetadataValue),
+            f"Value for metadata key '{COLUMN_SCHEMA_METADATA_KEY}' must be a TableSchema "
+            f"or TableSchemaMetadataValue, received {type(value).__name__}",
+        )
+    if metadata.get(TABLE_NAME_METADATA_KEY):
+        value = metadata[TABLE_NAME_METADATA_KEY]
+        check.invariant(
+            isinstance(value, str),
+            f"Value for metadata key '{TABLE_NAME_METADATA_KEY}' must be a string, received "
+            f"{type(value).__name__}",
+        )
+    if metadata.get(ROW_COUNT_METADATA_KEY):
+        value = metadata[ROW_COUNT_METADATA_KEY]
+        check.invariant(
+            isinstance(value, int),
+            f"Value for metadata key '{ROW_COUNT_METADATA_KEY}' must be an int, received "
+            f"{type(value).__name__}",
+        )
+    if metadata.get(PARTITION_ROW_COUNT_METADATA_KEY):
+        value = metadata[PARTITION_ROW_COUNT_METADATA_KEY]
+        check.invariant(
+            isinstance(value, int),
+            f"Value for metadata key '{PARTITION_ROW_COUNT_METADATA_KEY}' must be an int, received "
+            f"{type(value).__name__}",
+        )
+    if metadata.get(COLUMN_LINEAGE_METADATA_KEY):
+        value = metadata[COLUMN_LINEAGE_METADATA_KEY]
+        check.invariant(
+            isinstance(value, TableColumnLineage),
+            f"Value for metadata key '{COLUMN_LINEAGE_METADATA_KEY}' must be a TableColumnLineage, "
+            f"received {type(value).__name__}",
+        )

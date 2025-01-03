@@ -1,5 +1,13 @@
 import pytest
-from dagster import AssetKey, AssetMaterialization, TableColumn, TableSchema
+from dagster import (
+    AssetKey,
+    AssetMaterialization,
+    Definitions,
+    MaterializeResult,
+    TableColumn,
+    TableSchema,
+    asset,
+)
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
@@ -122,3 +130,27 @@ def test_column_lineage() -> None:
     materialization = AssetMaterialization(asset_key="foo", metadata=splat_table_metadata)
     extracted_table_metadata = TableMetadataSet.extract(materialization.metadata)
     assert extracted_table_metadata.column_lineage == expected_column_lineage
+
+
+def test_error_on_invalid_reserved_metadata_value():
+    with pytest.raises(
+        CheckError, match="Value for metadata key 'dagster/column_schema' must be a TableSchema"
+    ):
+
+        @asset(
+            metadata={
+                "dagster/column_schema": "invalid",
+            }
+        )
+        def foo():
+            pass
+
+    @asset()
+    def bar():
+        yield MaterializeResult(metadata={"dagster/column_schema": "invalid"})
+
+    defs = Definitions(assets=[bar])
+    with pytest.raises(
+        CheckError, match="Value for metadata key 'dagster/column_schema' must be a TableSchema"
+    ):
+        defs.get_implicit_global_asset_job_def().execute_in_process()
