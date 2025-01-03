@@ -414,6 +414,7 @@ def infer_schema_from_config_class(
 
     check.param_invariant(
         safe_is_subclass(model_cls, Config),
+        "model_cls",
         "Config type annotation must inherit from dagster.Config",
     )
 

@@ -999,3 +999,41 @@ def test_aliases() -> None:
     d = {"test": "test"}
     result = echo_job.execute_in_process(resources={"my_resource": ConfigWithAlias(alias_name=d)})
     assert result.output_for_node("echo_config") == d
+
+
+def test_nested_config_with_defaults() -> None:
+    class NestedConfig(Config):
+        a: str
+        b: int
+
+    class ConfigClassToConvert(Config):
+        nested: NestedConfig = Field(default=NestedConfig(a="a", b=1))
+        an_int: int = 2
+
+    fields = ConfigClassToConvert.to_fields_dict()
+
+    assert isinstance(fields, dict)
+    assert set(fields.keys()) == {
+        "nested",
+        "an_int",
+    }
+    assert fields["nested"].default_value == {"a": "a", "b": 1}
+    assert fields["an_int"].default_value == 2
+
+    class NestedConfigWithDefaults(Config):
+        a: str = "a"
+        b: int = 1
+
+    class ConfigClassToConvert(Config):
+        nested: NestedConfigWithDefaults
+        an_int: int = 2
+
+    fields = ConfigClassToConvert.to_fields_dict()
+
+    assert isinstance(fields, dict)
+    assert set(fields.keys()) == {
+        "nested",
+        "an_int",
+    }
+    assert fields["nested"].default_value == {"a": "a", "b": 1}
+    assert fields["an_int"].default_value == 2
