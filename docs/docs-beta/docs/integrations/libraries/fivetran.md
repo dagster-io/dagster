@@ -76,6 +76,16 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 You can pass an instance of the custom <PyObject module="dagster_fivetran" object="DagsterFivetranTranslator" /> to the <PyObject module="dagster_fivetran" method="fivetran_assets" /> decorator or the <PyObject module="dagster_fivetran" method="build_fivetran_assets_definitions" /> factory.
 
+### Fetching column-level metadata for Fivetran assets
+
+Dagster allows you to emit column-level metadata, like [column schema](/guides/build/create-asset-pipelines/metadata#column-schema) and [column lineage](/guides/build/create-asset-pipelines/metadata#column-lineage), as [materialization metadata](/guides/build/create-asset-pipelines/metadata#runtime-metadata).
+
+With this metadata, you can view documentation in Dagster for all columns in your Fivetran connector tables.
+
+To enable this feature, call <PyObject object="fetch_column_metadata" module="dagster_fivetran.fivetran_event_iterator.FivetranEventIterator" displayText="fetch_column_metadata()" /> on the <PyObject object="FivetranEventIterator" module="dagster_fivetran.fivetran_event_iterator" /> returned by the `sync_and_poll()` call on the <PyObject module="dagster_fivetran" object="FivetranWorkspace" /> resource.
+
+<CodeExample filePath="integrations/fivetran/fetch_column_metadata_fivetran_assets.py" language="python" />
+
 ### Load Fivetran assets from multiple workspaces
 
 Definitions from multiple Fivetran workspaces can be combined by instantiating multiple <PyObject module="dagster_fivetran" object="FivetranWorkspace" /> resources and merging their specs. This lets you view all your Fivetran assets in a single asset graph:

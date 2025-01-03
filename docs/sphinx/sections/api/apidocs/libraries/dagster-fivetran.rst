@@ -19,6 +19,8 @@ Assets (Fivetran API)
 
 .. autofunction:: build_fivetran_assets_definitions
 
+.. autoclass:: dagster_fivetran.fivetran_event_iterator.FivetranEventIterator
+
 
 Legacy
 ======
