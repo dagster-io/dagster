@@ -12,7 +12,9 @@ from dagster_sigma.resource import (
 from dagster_sigma.translator import (
     DagsterSigmaTranslator as DagsterSigmaTranslator,
     SigmaDataset as SigmaDataset,
+    SigmaDatasetTranslatorData as SigmaDatasetTranslatorData,
     SigmaWorkbook as SigmaWorkbook,
+    SigmaWorkbookTranslatorData as SigmaWorkbookTranslatorData,
 )
 from dagster_sigma.version import __version__
 
