@@ -5,7 +5,6 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Optional
 
-import click
 from dagster._utils import snakecase
 from pydantic import BaseModel
 
@@ -13,7 +12,7 @@ from dagster_components.core.component import (
     Component,
     ComponentGenerateRequest,
     ComponentLoadContext,
-    component,
+    component_type,
 )
 from dagster_components.generate import generate_custom_component_yaml
 
@@ -25,12 +24,12 @@ def custom_component_template():
     from dagster import Definitions
     from pydantic import BaseModel
 
-    from dagster_components import ComponentLoadContext, component
+    from dagster_components import ComponentLoadContext, component_type
     from dagster_components.lib.custom_component import CustomComponent
 
     class ClassNamePlaceholderComponentSchema(BaseModel): ...
 
-    @component(name="component_type_name_placeholder")
+    @component_type(name="component_type_name_placeholder")
     class ClassNamePlaceholderComponent(CustomComponent):
         params_schema = ClassNamePlaceholderComponentSchema
 
@@ -51,14 +50,8 @@ COMPONENT_TYPE_NAME_PLACEHOLDER = "component_type_name_placeholder"
 class GenerateCustomComponentParams(BaseModel):
     class_name: str
 
-    @staticmethod
-    @click.command
-    @click.option("--class-name", "- ", type=click.STRING)
-    def cli(class_name: str) -> "GenerateCustomComponentParams":
-        return GenerateCustomComponentParams(class_name=class_name)
 
-
-@component(name="custom")
+@component_type(name="custom")
 class CustomComponent(Component):
     """Component base class for generating a custom component local to the component instance."""
 
