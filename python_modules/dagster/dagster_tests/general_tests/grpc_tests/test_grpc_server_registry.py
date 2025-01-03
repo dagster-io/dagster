@@ -14,7 +14,7 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.server import GrpcServerCommand, GrpcServerProcess
 
 
 @job
@@ -63,6 +63,7 @@ def test_error_repo_in_registry(instance):
         ),
     )
     with GrpcServerRegistry(
+        server_command=GrpcServerCommand.API_GRPC,
         instance_ref=instance.get_ref(),
         heartbeat_ttl=10,
         startup_timeout=5,
@@ -98,7 +99,10 @@ def test_error_repo_in_registry(instance):
                 pass
 
 
-def test_server_registry(instance):
+@pytest.mark.parametrize(
+    "server_command", [GrpcServerCommand.API_GRPC, GrpcServerCommand.CODE_SERVER_START]
+)
+def test_server_registry(instance, server_command: GrpcServerCommand):
     origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -108,6 +112,7 @@ def test_server_registry(instance):
     )
 
     with GrpcServerRegistry(
+        server_command=server_command,
         instance_ref=instance.get_ref(),
         heartbeat_ttl=10,
         startup_timeout=5,
@@ -147,7 +152,10 @@ def _registry_thread(origin, registry, endpoint, event):
         event.set()
 
 
-def test_registry_multithreading(instance):
+@pytest.mark.parametrize(
+    "server_command", [GrpcServerCommand.API_GRPC, GrpcServerCommand.CODE_SERVER_START]
+)
+def test_registry_multithreading(instance, server_command: GrpcServerCommand):
     origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -157,6 +165,7 @@ def test_registry_multithreading(instance):
     )
 
     with GrpcServerRegistry(
+        server_command=server_command,
         instance_ref=instance.get_ref(),
         heartbeat_ttl=600,
         startup_timeout=30,
@@ -190,6 +199,7 @@ class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(self, instance):
         self.mocked_loadable_target_origin = None
         super().__init__(
+            server_command=GrpcServerCommand.API_GRPC,
             instance_ref=instance.get_ref(),
             heartbeat_ttl=600,
             startup_timeout=30,
@@ -249,6 +259,7 @@ def test_failure_on_open_server_process(instance):
         mock_open_server_process.side_effect = Exception("OOPS")
         with pytest.raises(Exception, match="OOPS"):
             with GrpcServerProcess(
+                server_command=GrpcServerCommand.API_GRPC,
                 instance_ref=instance.get_ref(),
                 loadable_target_origin=loadable_target_origin,
             ):

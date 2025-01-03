@@ -13,6 +13,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import api_pb2
 from dagster._grpc.__generated__.api_pb2_grpc import DagsterApiServicer
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
+from dagster._grpc.server import GrpcServerCommand
 from dagster._grpc.types import (
     CancelExecutionRequest,
     CancelExecutionResult,
@@ -76,6 +77,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         self._grpc_server_registry = self._exit_stack.enter_context(
             GrpcServerRegistry(
                 instance_ref=self._instance_ref,
+                server_command=GrpcServerCommand.API_GRPC,
                 heartbeat_ttl=30,
                 startup_timeout=startup_timeout,
                 log_level=self._log_level,
@@ -196,6 +198,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             if self._shutdown_once_executions_finish_event.is_set():
                 if self._grpc_server_registry.are_all_servers_shut_down():
                     self._server_termination_event.set()
+                    self._grpc_server_registry.shutdown_all_processes()
 
     def _get_grpc_client(self):
         return self._client
@@ -216,6 +219,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
             if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
                 self._shutdown_once_executions_finish_event.set()
+                self._grpc_server_registry.shutdown_all_processes()
 
     def _streaming_query(
         self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT
