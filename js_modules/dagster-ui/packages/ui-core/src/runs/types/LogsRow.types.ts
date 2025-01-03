@@ -1484,6 +1484,10 @@ export type LogsRowStructuredFragment_LogsCapturedEvent = {
   externalUrl: string | null;
   externalStdoutUrl: string | null;
   externalStderrUrl: string | null;
+  stdoutUriOrPath: string | null;
+  stderrUriOrPath: string | null;
+  stdoutShellCmd: string | null;
+  stderrShellCmd: string | null;
 };
 
 export type LogsRowStructuredFragment_MaterializationEvent = {

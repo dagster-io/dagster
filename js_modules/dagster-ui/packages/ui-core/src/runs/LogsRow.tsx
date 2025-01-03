@@ -197,6 +197,10 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       externalUrl
       externalStdoutUrl
       externalStderrUrl
+      stdoutUriOrPath
+      stderrUriOrPath
+      stdoutShellCmd
+      stderrShellCmd
     }
     ... on AssetCheckEvaluationEvent {
       evaluation {

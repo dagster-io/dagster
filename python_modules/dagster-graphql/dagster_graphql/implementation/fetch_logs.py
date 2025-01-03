@@ -17,4 +17,6 @@ def get_captured_log_metadata(
         stdoutLocation=metadata.stdout_location,
         stderrDownloadUrl=metadata.stderr_download_url,
         stderrLocation=metadata.stderr_location,
+        stdoutShellCmd=metadata.stdout_shell_cmd,
+        stderrShellCmd=metadata.stderr_shell_cmd,
     )
