@@ -79,7 +79,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     const requestId = ++currentRequestRef.current;
     buildGraphData({
       nodes: queryItems,
-      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+      flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -172,7 +172,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       opsQuery,
       kinds,
       hideEdgesToNodesOutsideQuery,
-      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+      flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {

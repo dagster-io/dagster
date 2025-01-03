@@ -151,6 +151,10 @@ export const ASSET_CHECK_TABLE_FRAGMENT = gql`
     name
     description
     canExecuteIndividually
+    automationCondition {
+      label
+      expandedLabel
+    }
     ...ExecuteChecksButtonCheckFragment
     executionForLatestMaterialization {
       ...AssetCheckExecutionFragment

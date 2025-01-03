@@ -754,7 +754,7 @@ const AssetGraphExplorerWithData = ({
                   )}
                   <div>{filterButton}</div>
                   <GraphQueryInputFlexWrap>
-                    {featureEnabled(FeatureFlag.flagAssetSelectionSyntax) ? (
+                    {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
                       <AssetSelectionInput
                         assets={graphQueryItems}
                         value={explorerPath.opsQuery}

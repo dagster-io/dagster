@@ -17,10 +17,6 @@ export const useVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
   {
-    key: 'Debug console logging',
-    flagType: FeatureFlag.flagDebugConsoleLogging,
-  },
-  {
     key: 'Revert to legacy Runs page',
     flagType: FeatureFlag.flagLegacyRunsPage,
     label: (

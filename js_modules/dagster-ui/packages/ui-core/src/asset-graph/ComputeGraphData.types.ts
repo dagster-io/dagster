@@ -3,7 +3,7 @@ import {AssetGraphFetchScope, AssetGraphQueryItem} from './useAssetGraphData';
 
 type BaseType = {
   id: number;
-  flagAssetSelectionSyntax?: boolean;
+  flagSelectionSyntax?: boolean;
 };
 
 export type ComputeGraphDataMessageType = BaseType & {

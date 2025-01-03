@@ -110,7 +110,7 @@ class LookerStructureData:
 @record
 class LookerApiTranslatorStructureData:
     """A record representing a structure in Looker and the Looker instance data.
-    Includes the content's type and data as returned from the API.
+    Includes the structure's type and data as returned from the API.
     """
 
     structure_data: "LookerStructureData"

@@ -11,8 +11,8 @@ type WorkerMessageData = ComputeGraphDataMessageType | BuildGraphDataMessageType
 self.addEventListener('message', async (event: MessageEvent & {data: WorkerMessageData}) => {
   const data: WorkerMessageData = event.data;
 
-  if (data.flagAssetSelectionSyntax) {
-    setFeatureFlags({[FeatureFlag.flagAssetSelectionSyntax]: true});
+  if (data.flagSelectionSyntax) {
+    setFeatureFlags({[FeatureFlag.flagSelectionSyntax]: true});
   }
 
   if (data.type === 'computeGraphData') {

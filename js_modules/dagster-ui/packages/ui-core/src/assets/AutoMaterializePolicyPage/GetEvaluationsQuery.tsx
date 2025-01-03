@@ -55,7 +55,7 @@ const NEW_EVALUATION_NODE_FRAGMENT = gql`
   }
 `;
 
-const AssetConditionEvaluationRecordFragment = gql`
+export const ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT = gql`
   fragment AssetConditionEvaluationRecordFragment on AssetConditionEvaluationRecord {
     id
     evaluationId
@@ -88,7 +88,12 @@ const AssetConditionEvaluationRecordFragment = gql`
 `;
 
 export const GET_EVALUATIONS_QUERY = gql`
-  query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+  query GetEvaluationsQuery(
+    $assetKey: AssetKeyInput!
+    $assetCheckKey: AssetCheckHandleInput
+    $limit: Int!
+    $cursor: String
+  ) {
     assetNodeOrError(assetKey: $assetKey) {
       __typename
       ... on AssetNode {
@@ -103,7 +108,12 @@ export const GET_EVALUATIONS_QUERY = gql`
       }
     }
 
-    assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+    assetConditionEvaluationRecordsOrError(
+      assetKey: $assetKey
+      assetCheckKey: $assetCheckKey
+      limit: $limit
+      cursor: $cursor
+    ) {
       ... on AssetConditionEvaluationRecords {
         records {
           id
@@ -115,7 +125,36 @@ export const GET_EVALUATIONS_QUERY = gql`
       }
     }
   }
-  ${AssetConditionEvaluationRecordFragment}
+
+  ${ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT}
+`;
+
+export const GET_SLIM_EVALUATIONS_QUERY = gql`
+  query GetSlimEvaluationsQuery(
+    $assetKey: AssetKeyInput
+    $assetCheckKey: AssetCheckHandleInput
+    $limit: Int!
+    $cursor: String
+  ) {
+    assetConditionEvaluationRecordsOrError(
+      assetKey: $assetKey
+      assetCheckKey: $assetCheckKey
+      limit: $limit
+      cursor: $cursor
+    ) {
+      ... on AssetConditionEvaluationRecords {
+        records {
+          id
+          ...AssetConditionEvaluationRecordFragment
+        }
+      }
+      ... on AutoMaterializeAssetEvaluationNeedsMigrationError {
+        message
+      }
+    }
+  }
+
+  ${ASSET_CONDITION_EVALUATION_RECORD_FRAGMENT}
 `;
 
 export const GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY = gql`

@@ -9,6 +9,7 @@ import {
   Mono,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
+import {Link} from 'react-router-dom';
 
 import {AssetKey} from '../types';
 import {EvaluationDetailDialog} from './EvaluationDetailDialog';
@@ -20,11 +21,12 @@ import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 
 interface Props {
   assetKey: AssetKey;
+  assetCheckName?: string;
   isPartitioned: boolean;
   evaluation: AssetConditionEvaluationRecordFragment;
 }
 
-export const EvaluationListRow = ({evaluation, assetKey, isPartitioned}: Props) => {
+export const EvaluationListRow = ({evaluation, assetKey, assetCheckName, isPartitioned}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -52,9 +54,10 @@ export const EvaluationListRow = ({evaluation, assetKey, isPartitioned}: Props) 
       </tr>
       <EvaluationDetailDialog
         isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        evaluationID={evaluation.id}
+        onClose={() => setIsOpen(false)}
+        evaluationID={evaluation.evaluationId}
         assetKeyPath={assetKey.path}
+        assetCheckName={assetCheckName}
       />
     </>
   );
@@ -67,16 +70,28 @@ interface EvaluationRunInfoProps {
 
 const EvaluationRunInfo = ({runIds, timestamp}: EvaluationRunInfoProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const firstRun = runIds[0];
 
-  if (runIds.length === 0) {
+  if (!firstRun) {
     return <span style={{color: Colors.textDisabled()}}>None</span>;
   }
 
   if (runIds.length === 1) {
+    const truncated = firstRun.slice(0, 8);
+
+    // This looks like a backfill ID. Link there.
+    if (truncated === firstRun) {
+      return (
+        <Link to={`/runs/b/${firstRun}`}>
+          <Mono>{firstRun}</Mono>
+        </Link>
+      );
+    }
+
     return (
-      <Box flex={{direction: 'row', gap: 4}}>
-        <Mono>{runIds[0]}</Mono>
-      </Box>
+      <Link to={`/runs/${firstRun}`}>
+        <Mono>{truncated}</Mono>
+      </Link>
     );
   }
 
