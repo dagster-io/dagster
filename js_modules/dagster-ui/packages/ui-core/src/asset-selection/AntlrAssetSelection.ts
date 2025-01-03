@@ -68,7 +68,7 @@ export const parseAssetSelectionQuery = (
 
 export const filterAssetSelectionByQuery = weakMapMemoize(
   (all_assets: AssetGraphQueryItem[], query: string): AssetSelectionQueryResult => {
-    if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
       const result = parseAssetSelectionQuery(all_assets, query);
       if (result instanceof Error) {
         // fall back to old behavior

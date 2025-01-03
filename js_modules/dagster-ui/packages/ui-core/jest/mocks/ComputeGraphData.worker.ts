@@ -22,8 +22,8 @@ export default class MockWorker {
   // mock expects data: { } instead of e: { data: { } }
   async postMessage(data: ComputeGraphDataWorkerMessageType) {
     if (data.type === 'computeGraphData') {
-      if (data.flagAssetSelectionSyntax) {
-        setFeatureFlagsInternal({flagAssetSelectionSyntax: true});
+      if (data.flagSelectionSyntax) {
+        setFeatureFlagsInternal({flagSelectionSyntax: true});
       }
       const state = await computeGraphData(data);
       this.onmessage.forEach((onmessage) => onmessage({data: {...state, id: data.id}}));
