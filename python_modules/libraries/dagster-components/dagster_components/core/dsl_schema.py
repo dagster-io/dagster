@@ -24,6 +24,25 @@ class OpSpecBaseModel(BaseModel):
     tags: Optional[Dict[str, str]] = None
 
 
+# class AssetModelBase(RenderedModel):
+#     deps: Sequence[str] = []
+#     description: Optional[str] = None
+#     metadata: Annotated[
+#         Union[str, Mapping[str, Any]], RenderingMetadata(output_type=Mapping[str, Any])
+#     ] = {}
+#     group_name: Optional[str] = None
+#     skippable: bool = False
+#     code_version: Optional[str] = None
+#     owners: Sequence[str] = []
+#     tags: Annotated[
+#         Union[str, Mapping[str, str]], RenderingMetadata(output_type=Mapping[str, str])
+#     ] = {}
+#     automation_condition: Annotated[
+#         Optional[str], RenderingMetadata(output_type=Optional[AutomationCondition])
+#     ] = None
+
+
+# TODO share common base class with AssetSpecModel
 class AssetAttributesModel(RenderedModel):
     key: Optional[str] = None
     deps: Sequence[str] = []
@@ -41,6 +60,29 @@ class AssetAttributesModel(RenderedModel):
     automation_condition: Annotated[
         Optional[str], RenderingMetadata(output_type=Optional[AutomationCondition])
     ] = None
+
+
+class AssetSpecModel(RenderedModel):
+    key: str
+    deps: Sequence[str] = []
+    description: Optional[str] = None
+    metadata: Annotated[
+        Union[str, Mapping[str, Any]], RenderingMetadata(output_type=Mapping[str, Any])
+    ] = {}
+    group_name: Optional[str] = None
+    skippable: bool = False
+    code_version: Optional[str] = None
+    owners: Sequence[str] = []
+    tags: Annotated[
+        Union[str, Mapping[str, str]], RenderingMetadata(output_type=Mapping[str, str])
+    ] = {}
+    automation_condition: Annotated[
+        Optional[str], RenderingMetadata(output_type=Optional[AutomationCondition])
+    ] = None
+
+    def render_spec(self, value_resolver: TemplatedValueResolver) -> AssetSpec:
+        attributes = self.render_properties(value_resolver)
+        return AssetSpec(**attributes)
 
 
 class AssetSpecProcessor(ABC, BaseModel):
