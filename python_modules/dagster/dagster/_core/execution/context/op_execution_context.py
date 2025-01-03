@@ -291,17 +291,20 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 # running a backfill of the 2023-08-21 through 2023-08-25 partitions of this asset will log:
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
-        key_range = self.partition_key_range
         partitions_def = self._step_execution_context.run_partitions_def
         if partitions_def is None:
             raise DagsterInvariantViolationError(
                 "Cannot access partition_keys for a non-partitioned run"
             )
+        if self.has_partition_key_range:
+            key_range = self.partition_key_range
 
-        return partitions_def.get_partition_keys_in_range(
-            key_range,
-            dynamic_partitions_store=self.instance,
-        )
+            return partitions_def.get_partition_keys_in_range(
+                key_range,
+                dynamic_partitions_store=self.instance,
+            )
+        else:
+            return list(self._step_execution_context.partition_key_set)
 
     @deprecated(breaking_version="2.0", additional_warn_text="Use `partition_key_range` instead.")
     @public
