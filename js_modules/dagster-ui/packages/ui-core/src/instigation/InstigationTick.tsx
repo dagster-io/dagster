@@ -92,6 +92,7 @@ export const TICK_TAG_FRAGMENT = gql`
     id
     status
     timestamp
+    scheduledExecutionTimestamp
     skipReason
     runIds
     runKeys

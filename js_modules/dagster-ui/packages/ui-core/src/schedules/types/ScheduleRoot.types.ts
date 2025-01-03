@@ -63,6 +63,7 @@ export type ScheduleRootQuery = {
             cursor: string | null;
             status: Types.InstigationTickStatus;
             timestamp: number;
+            scheduledExecutionTimestamp: number | null;
             skipReason: string | null;
             runIds: Array<string>;
             runKeys: Array<string>;
@@ -163,6 +164,6 @@ export type PreviousRunsForScheduleQuery = {
       };
 };
 
-export const ScheduleRootQueryVersion = 'b54dfb64f816baa5c52c4676dcbd3808477130cab5237a5b96b988ec002adafc';
+export const ScheduleRootQueryVersion = '7538f62ceb36defd988fde627f0680e155398c194970595d076c1775f08fe55b';
 
 export const PreviousRunsForScheduleQueryVersion = '0ffc329d3c65a2f7a29553bd3a72f8e8adb4b3a10944221b4a3c68335fad1d31';

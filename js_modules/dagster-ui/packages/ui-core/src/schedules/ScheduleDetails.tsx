@@ -80,7 +80,7 @@ export const ScheduleDetails = (props: {
               {latestTick ? (
                 <Group direction="row" spacing={8} alignItems="center">
                   <TimestampDisplay
-                    timestamp={latestTick.timestamp}
+                    timestamp={latestTick.scheduledExecutionTimestamp ?? latestTick.timestamp}
                     timezone={executionTimezone}
                     timeFormat={TIME_FORMAT}
                   />

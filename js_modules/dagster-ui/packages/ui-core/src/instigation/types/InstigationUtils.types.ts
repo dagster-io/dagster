@@ -35,6 +35,7 @@ export type InstigationStateFragment = {
     cursor: string | null;
     status: Types.InstigationTickStatus;
     timestamp: number;
+    scheduledExecutionTimestamp: number | null;
     skipReason: string | null;
     runIds: Array<string>;
     runKeys: Array<string>;
@@ -66,6 +67,7 @@ export type HistoryTickFragment = {
   status: Types.InstigationTickStatus;
   timestamp: number;
   endTimestamp: number | null;
+  scheduledExecutionTimestamp: number | null;
   cursor: string | null;
   instigationType: Types.InstigationType;
   skipReason: string | null;
