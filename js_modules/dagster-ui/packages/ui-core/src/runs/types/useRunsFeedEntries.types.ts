@@ -35,6 +35,7 @@ export type RunsFeedRootQuery = {
               hasResumePermission: boolean;
               isAssetBackfill: boolean;
               numCancelable: number;
+              numPartitions: number | null;
               runStatus: Types.RunStatus;
               creationTime: number;
               startTime: number | null;
@@ -98,4 +99,4 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = 'ea4f2297073d32b2be0b82c42ea13a8f8cdd7b163dda0153b5633bfc7de5a7fd';
+export const RunsFeedRootQueryVersion = '5aac6e9b29b52642fec8a45ca86d183a0d7b2d4e092c27a107f37bf5ec4fdfc4';

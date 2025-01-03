@@ -34,6 +34,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 export const RunsFeedRow = ({
   entry,
   onAddTag,
+  onShowPartitions,
   checked,
   onToggleChecked,
   refetch,
@@ -41,6 +42,7 @@ export const RunsFeedRow = ({
 }: {
   entry: RunsFeedTableEntryFragment;
   refetch: () => void;
+  onShowPartitions: () => void;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
@@ -148,7 +150,12 @@ export const RunsFeedRow = ({
             useTags={true}
           />
         ) : (
-          <BackfillTarget backfill={entry} repoAddress={null} useTags={true} />
+          <BackfillTarget
+            backfill={entry}
+            repoAddress={null}
+            useTags={true}
+            onShowPartitions={onShowPartitions}
+          />
         )}
       </RowCell>
       <RowCell>

@@ -8,7 +8,7 @@ import {
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useEffect, useMemo, useRef} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableEmptyState} from './RunTableEmptyState';
@@ -24,6 +24,7 @@ import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RunsFeedView, RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {BackfillPartitionsRequestedDialog} from '../instance/backfill/BackfillPartitionsRequestedDialog';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
@@ -44,6 +45,9 @@ interface RunsFeedTableProps {
   scroll?: boolean;
 }
 
+// Potentially other modals in the future
+type RunsFeedModalState = {type: 'partitions'; backfillId: string};
+
 export const RunsFeedTable = ({
   entries,
   loading,
@@ -61,6 +65,7 @@ export const RunsFeedTable = ({
 
   const entryIds = useMemo(() => entries.map((e) => e.id), [entries]);
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
+  const [modal, setModal] = useState<null | RunsFeedModalState>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: entries.length,
@@ -180,6 +185,10 @@ export const RunsFeedTable = ({
 
     return (
       <div style={{overflow: 'hidden'}}>
+        <BackfillPartitionsRequestedDialog
+          backfillId={modal?.type === 'partitions' ? modal.backfillId : undefined}
+          onClose={() => setModal(null)}
+        />
         <IndeterminateLoadingBar $loading={loading} />
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
           {header}
@@ -202,6 +211,7 @@ export const RunsFeedTable = ({
                       entry={entry}
                       checked={checkedIds.has(entry.id)}
                       onToggleChecked={onToggleFactory(entry.id)}
+                      onShowPartitions={() => setModal({type: 'partitions', backfillId: entry.id})}
                       refetch={refetch}
                       onAddTag={onAddTag}
                       hideTags={hideTags}
