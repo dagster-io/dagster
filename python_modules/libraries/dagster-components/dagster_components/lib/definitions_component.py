@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from typing import Any, Optional
 
@@ -5,7 +6,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
 )
-from dagster._seven import import_uncached_module_from_path
+from dagster._seven import import_module_from_path
 from dagster._utils import pushd
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -44,7 +45,24 @@ class DefinitionsComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         with pushd(str(context.path)):
-            module = import_uncached_module_from_path("definitions", str(self.definitions_path))
+            # Inserting the current directory path into the path
+            # get absolute paths to work
+            here = context.path.absolute()
+            if here not in sys.path:
+                sys.path.insert(0, str(here))
+
+            # This only way to get package-style relative imports to work
+            # is to name the module directory_name.module_name and then
+            # have __init__.py in the directory_name directory and then
+            # insert that directory into the path
+            here = context.path.parent.absolute()
+            if here not in sys.path:
+                sys.path.insert(0, str(here))
+
+            abs_definitions_path = (context.path / self.definitions_path).absolute()
+            module_name = f"{abs_definitions_path.parent.name}.{abs_definitions_path.stem}"
+
+            module = import_module_from_path(module_name, str(self.definitions_path))
 
         return load_definitions_from_module(module)
 

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Generator
 import pytest
 from dagster import AssetKey
 from dagster._utils.env import environ
-from dagster_components.core.component_decl_builder import ComponentFileModel
+from dagster_components.core.component_decl_builder import ComponentFileModel, ComponentKey
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
@@ -25,6 +25,7 @@ STUB_LOCATION_PATH = (
     Path(__file__).parent.parent / "code_locations" / "templated_custom_keys_dbt_project_location"
 )
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
+COMPONENT_INSTANCE_KEY = ComponentKey(parts=["jaffle_shop_dbt"])
 
 JAFFLE_SHOP_KEYS = {
     AssetKey("customers"),
@@ -72,6 +73,7 @@ def test_python_params_node_rename(dbt_path: Path) -> None:
                 },
             },
         ),
+        key=COMPONENT_INSTANCE_KEY,
     )
     component = DbtProjectComponent.load(
         context=script_load_context(decl_node),
@@ -91,6 +93,7 @@ def test_python_params_group(dbt_path: Path) -> None:
                 },
             },
         ),
+        key=COMPONENT_INSTANCE_KEY,
     )
     comp = DbtProjectComponent.load(context=script_load_context(decl_node))
     assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
@@ -130,6 +133,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
                     },
                 },
             ),
+            key=COMPONENT_INSTANCE_KEY,
         )
         comp = DbtProjectComponent.load(context=script_load_context(decl_node))
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
@@ -151,6 +155,7 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
                     },
                 },
             ),
+            key=COMPONENT_INSTANCE_KEY,
         )
         comp = DbtProjectComponent.load(context=script_load_context(decl_node))
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS_WITH_PREFIX
