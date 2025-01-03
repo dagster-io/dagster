@@ -1,5 +1,5 @@
 ---
-title: Create an event-driven pipeline
+title: Create a sensor asset
 description: Use sensors to create event driven pipelines
 last_update:
   author: Alex Noonan
