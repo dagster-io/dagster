@@ -262,6 +262,14 @@ class DuckDbClient(DbClient):
         except duckdb.CatalogException:
             # table doesn't exist yet, so ignore the error
             pass
+        except duckdb.BinderException as ex:
+            if "Can only delete from base table" not in str(
+                ex
+            ) and "Contents of view were altered" not in str(ex):
+                raise ex
+
+            # it's a view, so ignore the error
+            pass
 
     @staticmethod
     def ensure_schema_exists(context: OutputContext, table_slice: TableSlice, connection) -> None:
