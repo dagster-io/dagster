@@ -76,7 +76,7 @@ from dagster._core.workspace.workspace import (
     WorkspaceSnapshot,
     location_status_from_location_entry,
 )
-from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG
+from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._time import get_current_timestamp
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -657,6 +657,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             self._grpc_server_registry = self._stack.enter_context(
                 GrpcServerRegistry(
                     instance_ref=self._instance.get_ref(),
+                    server_command=GrpcServerCommand.API_GRPC,
                     heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
                     startup_timeout=instance.code_server_process_startup_timeout,
                     log_level=code_server_log_level,
