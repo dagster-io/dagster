@@ -11,6 +11,32 @@ T = TypeVar("T")
 _warnings_on = ContextVar("_warnings_on", default=True)
 
 # ########################
+# ##### PREVIEW
+# ########################
+
+
+class PreviewWarning(Warning):
+    pass
+
+
+def preview_warning(
+    subject: str,
+    additional_warn_text: Optional[str] = None,
+    stacklevel: int = 3,
+):
+    if not _warnings_on.get():
+        return
+
+    warnings.warn(
+        f"{subject} is currently in preview, and may have breaking changes in patch version releases. "
+        f"This feature is not considered ready for production use."
+        + ((" " + additional_warn_text) if additional_warn_text else ""),
+        category=PreviewWarning,
+        stacklevel=stacklevel,
+    )
+
+
+# ########################
 # ##### SUPERSEDED
 # ########################
 
