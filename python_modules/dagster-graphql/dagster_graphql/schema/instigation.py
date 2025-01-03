@@ -252,6 +252,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
     autoMaterializeAssetEvaluationId = graphene.Field(graphene.ID)
     instigationType = graphene.NonNull(GrapheneInstigationType)
+    scheduledExecutionTimestamp = graphene.Field(graphene.Float)
 
     class Meta:
         name = "InstigationTick"
@@ -279,6 +280,13 @@ class GrapheneInstigationTick(graphene.ObjectType):
 
     def resolve_tickId(self, _: ResolveInfo) -> str:
         return str(self._tick.tick_id)
+
+    def resolve_scheduledExecutionTimestamp(self, _: ResolveInfo) -> Optional[float]:
+        return (
+            self._tick.scheduled_execution_time
+            if self._tick.instigator_type == InstigatorType.SCHEDULE
+            else None
+        )
 
     def resolve_runs(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
