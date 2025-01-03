@@ -1,6 +1,7 @@
 import hashlib
 
 import dagster as dg
+from dagster_openai import OpenAIResource
 
 from project_ask_ai_dagster.resources.github import GithubResource
 from project_ask_ai_dagster.resources.pinecone import PineconeResource
@@ -10,6 +11,7 @@ START_TIME = "2023-01-01"
 daily_partition = dg.WeeklyPartitionsDefinition(start_date=START_TIME)
 
 
+# TODO chunk these up int multiple assets
 @dg.asset(
     group_name="ingestion",
     kinds={"github", "Pinecone", "openai"},
@@ -20,6 +22,7 @@ def github_issues(
     context: dg.AssetExecutionContext,
     github: GithubResource,
     pinecone: PineconeResource,
+    openai: OpenAIResource,
 ) -> dg.MaterializeResult:
     start, end = context.partition_time_window
     context.log.info(f"Finding issues from {start} to {end}")
@@ -34,18 +37,19 @@ def github_issues(
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
 
-    # Get embeddings and upsert to Pinecone
+    # TODO update embedding to use openai resource
     texts = [doc.page_content for doc in issue_docs]
-    embeddings = pinecone.embed_texts(texts)
-
+    # embeddings = pinecone.embed_texts(texts)
+    with openai.get_client(context) as client:
+        embeddings = [
+            item.embedding
+            for item in client.embeddings.create(model="text-embedding-3-small", input=texts).data
+        ]
     # Prepare metadata
-    metadatas = []
-    for doc in issue_docs:
-        meta = {}
-        for k, v in doc.metadata.items():
-            if isinstance(v, (str, int, float, bool)):
-                meta[k] = v
-        metadatas.append(meta)
+    metadatas = [
+        {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
+        for doc in issue_docs
+    ]
 
     # Upsert to Pinecone with namespace
     index.upsert(
@@ -64,6 +68,7 @@ def github_issues(
     )
 
 
+# TODO chunk these up int multiple assets
 @dg.asset(
     group_name="ingestion",
     kinds={"github", "Pinecone", "openai"},
@@ -74,6 +79,7 @@ def github_discussions(
     context: dg.AssetExecutionContext,
     github: GithubResource,
     pinecone: PineconeResource,
+    openai: OpenAIResource,
 ) -> dg.MaterializeResult:
     start, end = context.partition_time_window
     context.log.info(f"Finding issues from {start} to {end}")
@@ -88,27 +94,30 @@ def github_discussions(
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
 
-    # Get embeddings and upsert to Pinecone
+    # TODO update embedding to use openai resource
     texts = [doc.page_content for doc in discussion_docs]
-    embeddings = pinecone.embed_texts(texts)
+    # embeddings = pinecone.embed_texts(texts)
+    with openai.get_client(context) as client:
+        embeddings = [
+            item.embedding
+            for item in client.embeddings.create(model="text-embedding-3-small", input=texts).data
+        ]
 
     # Prepare metadata
-    metadatas = []
-    for doc in discussion_docs:
-        meta = {}
-        for k, v in doc.metadata.items():
-            if isinstance(v, (str, int, float, bool)):
-                meta[k] = v
-        metadatas.append(meta)
+    metadatas = [
+        {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
+        for doc in discussion_docs
+    ]
 
     # Upsert to Pinecone with namespace
+    # Upsert with corrected embeddings
     index.upsert(
         vectors=zip(
-            [str(i) for i in range(len(texts))],  # IDs
+            [str(i) for i in range(len(texts))],
             embeddings,
             metadatas,
         ),
-        **namespace_kwargs,  # Include namespace parameters
+        **namespace_kwargs,
     )
 
     return dg.MaterializeResult(
@@ -133,7 +142,10 @@ doc_site_partition_def = dg.StaticPartitionsDefinition(
     ),  # weekly on monday at midnight
 )
 def docs_scrape(
-    context: dg.AssetExecutionContext, pinecone: PineconeResource, scraper: SitemapScraper
+    context: dg.AssetExecutionContext,
+    pinecone: PineconeResource,
+    scraper: SitemapScraper,
+    openai: OpenAIResource,
 ) -> dg.MaterializeResult:
     url = context.partition_key
 
@@ -142,8 +154,16 @@ def docs_scrape(
     # Create index if doesn't exist
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-docs")
+    # TODO update embedding to use openai resource
 
-    embedding = pinecone.embed_texts([document.page_content])[0]  # Single embedding
+    # embedding = pinecone.embed_texts([document.page_content])[0]  # Single embedding
+    with openai.get_client(context) as client:
+        embedding = (
+            client.embeddings.create(model="text-embedding-3-small", input=document.page_content)
+            .data[0]
+            .embedding
+        )
+
     meta = {k: v for k, v in document.metadata.items() if isinstance(v, (str, int, float, bool))}
 
     # Use namespace_kwargs in the upsert call

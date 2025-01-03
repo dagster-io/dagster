@@ -15,6 +15,7 @@ dependencies = [
     "dagster",
     "dagster-webserver",
     "dagster-openai",
+    "dagster_duckdb",
     "chromadb",
     "tokenizers",
     "tenacity",

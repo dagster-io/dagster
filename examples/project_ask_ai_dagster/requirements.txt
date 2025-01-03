@@ -6,7 +6,6 @@ langchain-community
 langchain-openai
 dagster
 dagster-webserver
-chromadb
 tenacity
 bs4
 lxml
