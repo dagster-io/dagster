@@ -493,7 +493,6 @@ class TestRunsFeedWithSharedSetup(ExecutingGraphQLContextTestMatrix):
         assert not result.data["runsFeedOrError"]["hasMore"]
 
 
-
 class TestRunsFeedUniqueSetups(ExecutingGraphQLContextTestMatrix):
     """Tests for the runs feed that need special ordering of runs and backfills. Split these
     out from the tests that can use a consistent setup because fetching the graphql_context per
