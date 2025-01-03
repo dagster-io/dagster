@@ -1,6 +1,6 @@
 import graphene
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.table import (
     GrapheneTable,
     GrapheneTableColumnLineageEntry,

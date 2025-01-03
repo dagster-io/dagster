@@ -11,8 +11,8 @@ from dagster._core.remote_representation.external_data import (
     ResourceValueSnap,
 )
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
