@@ -20,11 +20,11 @@ export const Experimental = () => {
 };
 
 export const Preview = () => {
-    return (
-        <div className="preview-tag">
-            <span className="hidden">(</span>Preview<span className="hidden">)</span>
-        </div>
-    );
+  return (
+    <div className="preview-tag">
+      <span className="hidden">(</span>Preview<span className="hidden">)</span>
+    </div>
+  );
 };
 
 export const Deprecated = () => {
