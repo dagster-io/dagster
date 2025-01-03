@@ -15,6 +15,8 @@ Utilities
 
 .. autoclass:: ExperimentalWarning
 
+.. autoclass:: dagster._utils.warnings.PreviewWarning
+
 .. autofunction:: make_email_on_run_failure_sensor
 
 .. currentmodule:: dagster._utils.forked_pdb
