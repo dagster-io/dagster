@@ -1,5 +1,5 @@
 from enum import Enum, EnumMeta
-from typing import Any, List, NamedTuple, Optional, Type, Union
+from typing import Any, Awaitable, List, NamedTuple, Optional, Type, Union
 
 from dagster._serdes.serdes import Serializer
 
@@ -11,6 +11,8 @@ CapnProtoFieldType = Union[
     "CapnProtoUnionMetadata",
     "CapnProtoStructMetadata",
     "CapnProtoCollectionType",
+    "CapnProtoRecursiveType",
+    Awaitable["CapnProtoFieldType"],
 ]
 
 
@@ -67,14 +69,21 @@ class CapnProtoPrimitiveType(str, Enum, metaclass=CapnProtoPrimitiveTypeMeta):
     def __str__(self):
         return self.value
 
-
 # These are "provided" types either by capnproto (List, Anypointer) or by Dagster (Map, Set, FrozenSet)
 class CapnProtoPointerType(str, Enum):
     ANY_POINTER = "AnyPointer"
     LIST = "List"
+
     MAP = "Map"
     SET = "Set"
     FROZENSET = "FrozenSet"
+
+    def __str__(self):
+        return self.value
+    
+# Just a sentinel value for recursive types
+class CapnProtoRecursiveType(str, Enum):
+    SELF = "Self"
 
     def __str__(self):
         return self.value

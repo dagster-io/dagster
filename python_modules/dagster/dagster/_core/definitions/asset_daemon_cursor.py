@@ -23,18 +23,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.serialized_objects import (
         AutomationConditionCursor,
         AutomationConditionEvaluationState,
-        AutomationConditionNodeSnapshot,
     )
-
-
-@whitelist_for_serdes(storage_name="AssetConditionCursorExtras")
-class AutomationConditionCursorExtras(NamedTuple):
-    """Represents additional state that may be optionally saved by an AutomationCondition between
-    evaluations.
-    """
-
-    condition_snapshot: "AutomationConditionNodeSnapshot"
-    extras: Mapping[str, PackableValue]
 
 
 class ObserveRequestTimestampSerializer(FieldSerializer):

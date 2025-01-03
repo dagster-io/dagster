@@ -5,26 +5,23 @@ from asyncio import Future
 from contextlib import asynccontextmanager
 from enum import Enum
 from typing import (
-    Annotated,
     Any,
     AsyncGenerator,
     Dict,
-    ForwardRef,
     Generic,
+    Iterable,
     List,
     NamedTuple,
+    Tuple,
     Type,
     TypeVar,
     Union,
     cast,
-    get_args,
-    get_origin,
     get_type_hints,
 )
 
 import pydantic
 
-import dagster._check as check
 from dagster._config.snap import ConfigEnumValueSnap
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -34,6 +31,7 @@ from dagster._core.definitions.metadata import RawMetadataValue
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.run_config import RunConfig
 from dagster._core.events import EventSpecificData
+from dagster._core.execution.context.input import KeyRangeNoPartitionsDefPartitionsSubset
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 from dagster._model.pydantic_compat_layer import model_fields
 from dagster._record import IHaveNew, get_record_annotations, has_generated_new
@@ -44,6 +42,7 @@ from dagster._serdes.serdes import (
     ObjectSerializer,
     PackableValue,
 )
+from dagster._serialization.base.types import assert_is_type
 from dagster._utils import is_named_tuple_subclass
 
 logger = logging.getLogger(__name__)
@@ -69,55 +68,11 @@ ALL_REFERENCED_TYPES = {
     "DataclassInstance": object,
 }
 
-
-def is_type(obj: Any) -> bool:
-    return (
-        # Normie types
-        isinstance(obj, type)
-        or
-        # Covers Union, Optional, and Literal
-        get_origin(obj) is not None
-        or
-        # Covers ForwardRef
-        isinstance(obj, ForwardRef)
-        or
-        # Covers TypeVar
-        isinstance(obj, TypeVar)
-    )
-
-
-def assert_is_type(obj: Any) -> Type[Any]:
-    if not is_type(obj):
-        check.failed(f"Expected type got {obj} which is {type(obj)}")
-    return obj
-
-
-def unwrap_type(type_: Type[Any]) -> Type[Any]:
-    # Resolve TypeVars
-    if isinstance(type_, TypeVar):
-        bounds = type_.__constraints__
-        if not bounds:
-            # REVIEW: this is probably too ambiguous and worth raising
-            return type(Any)
-        return unwrap_type(bounds[0])
-
-    # Filter out NoneTypes because all fields are optional in capnproto
-    if get_origin(type_) is Union and type(None) in get_args(type_):
-        non_none_types = {t for t in get_args(type_) if t is not type(None)}
-        if len(non_none_types) == 1:
-            return unwrap_type(next(iter(non_none_types)))
-        else:
-            return unwrap_type(Union[tuple(non_none_types)])  # type: ignore no idea what it's talking about
-
-    # Remove metadata from Annotated types
-    if get_origin(type_) is Annotated:
-        return unwrap_type(get_args(type_)[0])
-
-    # Resolve ForwardRefs (do this after everything else because ForwardRefs can be in Optionals)
-    if isinstance(type_, ForwardRef):
-        return unwrap_type(type_._evaluate(ALL_REFERENCED_TYPES, locals(), set()))  # type: ignore # noqa: SLF001
-
-    return type_
+# REVIEW: these anomalies that are worth fixing, classes that are technically allowed in
+# serdes objects, but aren't actually serializable themselves.
+BANISHED_FROM_SERDES = {
+    KeyRangeNoPartitionsDefPartitionsSubset,
+}
 
 
 TTypeMetadata = TypeVar("TTypeMetadata")
@@ -170,6 +125,9 @@ class BaseScribe(Generic[TTypeMetadata], ABC):
                 raise Exception(f"Unsupported serializer type {serializer.klass}")
         except Exception:
             logger.exception(f"Error scribing {serializer.klass}")
+
+    def get_will_call(self) -> Iterable[Tuple[Type[Any], ScribeWillCall[TTypeMetadata]]]:
+        return self._scribed_types.items()
 
     def _insert_scribed_type(self, type_: Type[Any], scribed_type: TTypeMetadata) -> None:
         if type_ not in self._scribed_types:
