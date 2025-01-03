@@ -1313,6 +1313,10 @@ def test_launch_failure(
                 "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
+            "run_coordinator": {
+                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                "class": "ImmediatelyLaunchRunCoordinator",
+            },
         },
     ) as scheduler_instance:
         schedule = remote_repo.get_schedule("simple_schedule")

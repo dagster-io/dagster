@@ -1432,6 +1432,10 @@ def test_launch_failure(caplog, executor, workspace_context, remote_repo):
                 "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
+            "run_coordinator": {
+                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                "class": "ImmediatelyLaunchRunCoordinator",
+            },
         },
     ) as instance:
         with freeze_time(freeze_datetime):

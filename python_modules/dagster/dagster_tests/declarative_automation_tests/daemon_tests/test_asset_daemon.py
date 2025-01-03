@@ -86,6 +86,10 @@ def get_daemon_instance(
                 "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
             },
+            "run_coordinator": {
+                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                "class": "ImmediatelyLaunchRunCoordinator",
+            },
             **(extra_overrides or {}),
         }
     ) as instance:
