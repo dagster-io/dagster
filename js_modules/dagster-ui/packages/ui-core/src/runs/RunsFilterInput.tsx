@@ -124,7 +124,7 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
 export function runsPathWithFilters(
   filterTokens: RunFilterToken[],
   basePath: string = '/runs',
-  view: RunsFeedView = RunsFeedView.ROOTS,
+  view?: RunsFeedView,
 ) {
   return `${basePath}?${qs.stringify(
     {q: tokensAsStringArray(filterTokens), view},

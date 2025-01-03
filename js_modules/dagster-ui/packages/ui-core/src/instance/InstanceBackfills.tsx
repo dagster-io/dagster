@@ -68,7 +68,7 @@ export const InstanceBackfills = () => {
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {loading, data} = queryResult;
   const [didDismissBackfillPageAlert, setDidDismissBackfillPageAlert] =
-    useStateWithStorage<boolean>('new_backfill_location_alert', (json) => !!json);
+    useStateWithStorage<boolean>('new_backfill_location_alert_final', (json) => !!json);
 
   interface AlertProps {
     setDidDismissBackfillPageAlert: (didDismissBackfillPageAlert: boolean) => void;
@@ -85,9 +85,9 @@ export const InstanceBackfills = () => {
               <span>Backfills are moving:</span>
               <span style={{fontWeight: 'normal'}}>
                 {' '}
-                We&apos;re incorporating backfills into the <Link to="/runs/">Runs</Link> page to
-                unify the UI and provide one page to see all of your executions. The Backfills page
-                will be removed in a future release.{' '}
+                We&apos;re moving backfills to the <Link to="/runs?view=BACKFILLS">Runs</Link> page
+                to provide a unified view of executions. The Backfills page will be removed in a
+                future release.{' '}
                 <a
                   href="https://github.com/dagster-io/dagster/discussions/24898"
                   target="_blank"

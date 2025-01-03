@@ -39,7 +39,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, view: RunsFeedView) => 
       variables: {
         queuedFilter: {...filter, statuses: Array.from(queuedStatuses)},
         inProgressFilter: {...filter, statuses: Array.from(inProgressStatuses)},
-        view,
+        view: RunsFeedView.RUNS,
       },
     },
   );
@@ -62,7 +62,6 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, view: RunsFeedView) => 
   useDocumentTitle(getDocumentTitle(selectedTab));
 
   const urlForStatus = (statuses: RunStatus[], nextView?: RunsFeedView) => {
-    nextView ||= view === RunsFeedView.RUNS ? RunsFeedView.RUNS : RunsFeedView.ROOTS;
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
     return runsPathWithFilters([...statusTokens, ...tokensMinusStatus], '/runs', nextView);

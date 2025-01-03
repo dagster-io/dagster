@@ -24,6 +24,7 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {RunsFeedView} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 import {Loading} from '../ui/Loading';
 
 const filters: RunFilterTokenType[] = [
@@ -48,7 +49,7 @@ export const RunsFeedRoot = () => {
   });
 
   const currentTab = useSelectedRunsFeedTab(filterTokens, view);
-  const staticStatusTags = currentTab !== 'all';
+  const currentTabSpecifiesStatuses = !['all', 'backfills'].includes(currentTab);
 
   const [statusTokens, nonStatusTokens] = partition(
     filterTokens,
@@ -57,13 +58,13 @@ export const RunsFeedRoot = () => {
 
   const setFilterTokensWithStatus = useCallback(
     (tokens: RunFilterToken[]) => {
-      if (staticStatusTags) {
+      if (currentTabSpecifiesStatuses) {
         setFilterTokens([...statusTokens, ...tokens]);
       } else {
         setFilterTokens(tokens);
       }
     },
-    [setFilterTokens, staticStatusTags, statusTokens],
+    [setFilterTokens, currentTabSpecifiesStatuses, statusTokens],
   );
 
   const onAddTag = useCallback(
@@ -77,11 +78,11 @@ export const RunsFeedRoot = () => {
   );
 
   const mutableTokens = useMemo(() => {
-    if (staticStatusTags) {
+    if (currentTabSpecifiesStatuses) {
       return filterTokens.filter((token) => token.token !== 'status');
     }
     return filterTokens;
-  }, [filterTokens, staticStatusTags]);
+  }, [filterTokens, currentTabSpecifiesStatuses]);
 
   const {button, activeFiltersJsx} = useRunsFilterInput({
     tokens: mutableTokens,
@@ -108,20 +109,31 @@ export const RunsFeedRoot = () => {
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       {button}
 
-      <Checkbox
-        label={<span>Show runs within backfills</span>}
-        checked={currentTab === 'queued' || view === RunsFeedView.RUNS}
-        disabled={currentTab === 'queued' || currentTab === 'backfills'}
-        onChange={() => {
-          setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
-        }}
-      />
+      {['all', 'failed'].includes(currentTab) && (
+        <Checkbox
+          label={<span>Show runs within backfills</span>}
+          checked={view === RunsFeedView.RUNS}
+          onChange={() => {
+            setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
+          }}
+        />
+      )}
     </Box>
   );
 
-  const belowActionBarComponents = activeFiltersJsx.length ? (
+  let belowActionBarComponents = activeFiltersJsx.length ? (
     <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>{activeFiltersJsx}</Box>
   ) : null;
+
+  const isDaemonHealthy = useIsBackfillDaemonHealthy();
+  if (!isDaemonHealthy && currentTab === 'backfills') {
+    belowActionBarComponents = (
+      <Box flex={{direction: 'column', gap: 8}}>
+        {belowActionBarComponents}
+        <DaemonNotRunningAlert />
+      </Box>
+    );
+  }
 
   function content() {
     if (currentTab === 'scheduled') {
