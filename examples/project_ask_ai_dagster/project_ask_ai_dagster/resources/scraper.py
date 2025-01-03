@@ -28,6 +28,7 @@ class SitemapScraper(dg.ConfigurableResource):
             response.raise_for_status()
 
             soup = BeautifulSoup(response.text, "html.parser")
+            log.info(f"scraped page: {url}")
 
             for element in soup(["script", "style", "nav", "footer", "header"]):
                 element.decompose()
@@ -47,7 +48,7 @@ class SitemapScraper(dg.ConfigurableResource):
             return Document(page_content=text_content, metadata={"source": url, "title": title})
 
         except Exception as e:
-            log.error(f"Error scraping {url}: {e!s}")
+            log.info(f"Error scraping {url}: {e!s}")
             return None
 
 

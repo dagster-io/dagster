@@ -1,7 +1,11 @@
 import dagster as dg
 from dagster_openai import OpenAIResource
 
-from project_ask_ai_dagster.assets.ingestion import docs_scrape, github_discussions, github_issues
+from project_ask_ai_dagster.assets.ingestion import (
+    docs_embedding,
+    github_discussions_embeddings,
+    github_issues_embeddings,
+)
 from project_ask_ai_dagster.resources.pinecone import PineconeResource
 
 
@@ -10,17 +14,10 @@ class AskAI(dg.Config):
 
 
 @dg.asset(
-    deps=[github_discussions, github_issues, docs_scrape],
+    deps=[github_issues_embeddings, github_discussions_embeddings, docs_embedding],
     kinds={"Pinecone", "OpenAI"},
     group_name="retrieval",
-)
-def query(
-    context: dg.AssetExecutionContext,
-    config: AskAI,
-    pinecone: PineconeResource,
-    openai: OpenAIResource,
-) -> dg.MaterializeResult:
-    """A Retrieval-Augmented Generation (RAG) asset that answers Dagster-related questions using embedded documentation and GitHub content.
+    description="""A Retrieval-Augmented Generation (RAG) asset that answers Dagster-related questions using embedded documentation and GitHub content.
 
     Takes a user question, converts it to an embedding vector, searches across Pinecone indexes of Dagster docs and GitHub content, and uses GPT-4 to generate an answer based on the retrieved context. Returns the answer along with source metadata.
 
@@ -35,7 +32,14 @@ def query(
         - The original question
         - AI-generated answer
         - Source contexts used (with URLs and relevance scores)
-    """
+    """,
+)
+def query(
+    context: dg.AssetExecutionContext,
+    config: AskAI,
+    pinecone: PineconeResource,
+    openai: OpenAIResource,
+) -> dg.MaterializeResult:
     with openai.get_client(context) as client:
         question_embedding = (
             client.embeddings.create(model="text-embedding-3-small", input=config.question)

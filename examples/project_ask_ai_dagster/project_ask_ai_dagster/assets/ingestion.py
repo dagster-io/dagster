@@ -1,29 +1,48 @@
 import hashlib
+import time
+from typing import List
 
 import dagster as dg
 from dagster_openai import OpenAIResource
+from langchain_core.documents import Document
 
 from project_ask_ai_dagster.resources.github import GithubResource
 from project_ask_ai_dagster.resources.pinecone import PineconeResource
-from project_ask_ai_dagster.resources.scraper import SitemapScraper, scraper_resource
+from project_ask_ai_dagster.resources.scraper import SitemapScraper
 
 START_TIME = "2023-01-01"
-daily_partition = dg.WeeklyPartitionsDefinition(start_date=START_TIME)
+weekly_partition = dg.WeeklyPartitionsDefinition(start_date=START_TIME)
 
 
-# TODO chunk these up int multiple assets
 @dg.asset(
     group_name="ingestion",
-    kinds={"github", "Pinecone", "openai"},
-    partitions_def=daily_partition,
-    automation_condition=dg.AutomationCondition.on_cron("@daily"),
+    kinds={"Github"},
+    partitions_def=weekly_partition,
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
+    description="""
+   Ingests raw GitHub issues data from the Dagster repository on a weekly basis.
+   
+   This asset fetches GitHub issues, including:
+   - Issue title and body
+   - Comments and discussion threads
+   - Issue metadata (status, labels, assignees)
+   - Creation and update timestamps
+   
+   Technical Details:
+       - Runs weekly (Mondays at midnight)
+       - Processes issues in weekly partitions
+       - Converts issues to Document format for embedding
+       - Preserves all issue metadata for search context
+       
+   Returns:
+       List[Document]: Collection of Document objects containing issue content 
+       and associated metadata for each weekly partition
+   """,
 )
-def github_issues(
+def github_issues_raw(
     context: dg.AssetExecutionContext,
     github: GithubResource,
-    pinecone: PineconeResource,
-    openai: OpenAIResource,
-) -> dg.MaterializeResult:
+) -> List[Document]:
     start, end = context.partition_time_window
     context.log.info(f"Finding issues from {start} to {end}")
 
@@ -32,14 +51,52 @@ def github_issues(
     )
 
     issue_docs = github.convert_issues_to_documents(issues)
+    return issue_docs
 
+
+@dg.asset(
+    group_name="embeddings",
+    kinds={"Github", "OpenAI", "Pinecone"},
+    partitions_def=weekly_partition,
+    automation_condition=dg.AutomationCondition.eager(),
+    description="""
+   Creates and stores vector embeddings for GitHub issues in Pinecone.
+   
+   This asset processes weekly batches of GitHub issues by:
+   1. Converting issue content to OpenAI embeddings
+   2. Storing embeddings and metadata in Pinecone vector database
+   3. Using namespace 'dagster-github' for unified GitHub content storage
+   
+   Dependencies:
+       - github_issues_raw: Raw issue documents from weekly partition
+       
+   Technical Details:
+       - Uses OpenAI's text-embedding-3-small model
+       - Embedding dimension: 1536
+       - Stores in Pinecone index: 'dagster-knowledge'
+       - Preserves metadata like issue status, labels, and timestamps
+       - Processes issues in weekly batches
+       
+   Vector Storage:
+       - Each vector contains issue content embedding and metadata
+       - Uses auto-generated sequential IDs
+       - Stored in 'dagster-github' namespace for consolidated search
+       
+   Returns:
+       MaterializeResult with metadata about number of issues processed
+   """,
+)
+def github_issues_embeddings(
+    context: dg.AssetExecutionContext,
+    openai: OpenAIResource,
+    pinecone: PineconeResource,
+    github_issues_raw: List[Document],
+) -> dg.MaterializeResult:
     # Create index if doesn't exist
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
 
-    # TODO update embedding to use openai resource
-    texts = [doc.page_content for doc in issue_docs]
-    # embeddings = pinecone.embed_texts(texts)
+    texts = [doc.page_content for doc in github_issues_raw]
     with openai.get_client(context) as client:
         embeddings = [
             item.embedding
@@ -48,7 +105,7 @@ def github_issues(
     # Prepare metadata
     metadatas = [
         {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
-        for doc in issue_docs
+        for doc in github_issues_raw
     ]
 
     # Upsert to Pinecone with namespace
@@ -63,24 +120,37 @@ def github_issues(
 
     return dg.MaterializeResult(
         metadata={
-            "number_of_discussions": len(issues),
+            "number_of_discussions": len(github_issues_raw),
         }
     )
 
 
-# TODO chunk these up int multiple assets
 @dg.asset(
     group_name="ingestion",
-    kinds={"github", "Pinecone", "openai"},
-    partitions_def=daily_partition,
-    automation_condition=dg.AutomationCondition.on_cron("@daily"),
+    kinds={"Github"},
+    partitions_def=weekly_partition,
+    automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
+    description="""
+   Retrieves GitHub discussions within a date range and converts them to Document objects.
+   
+   This asset runs weekly to fetch discussions from the Dagster GitHub repository.
+   It converts each discussion into a Document object containing the discussion content
+   and metadata like title, URL, and creation date.
+   
+   Returns:
+       List[Document]: List of Document objects containing discussion content and metadata
+       
+   Schedule:
+       Runs weekly on Monday at midnight (0 0 * *1)
+       
+   Partitioning:
+       Uses weekly partitions to process discussions by date range
+   """,
 )
-def github_discussions(
+def github_discussions_raw(
     context: dg.AssetExecutionContext,
     github: GithubResource,
-    pinecone: PineconeResource,
-    openai: OpenAIResource,
-) -> dg.MaterializeResult:
+) -> List[Document]:
     start, end = context.partition_time_window
     context.log.info(f"Finding issues from {start} to {end}")
 
@@ -89,14 +159,49 @@ def github_discussions(
     )
 
     discussion_docs = github.convert_discussions_to_documents(discussions)
+    return discussion_docs
 
+
+@dg.asset(
+    group_name="embeddings",
+    kinds={"Github", "OpenAI", "Pinecone"},
+    partitions_def=weekly_partition,
+    automation_condition=dg.AutomationCondition.eager(),
+    description="""
+   Creates vector embeddings from GitHub discussions and stores them in Pinecone.
+   
+   This asset processes GitHub discussions by:
+   1. Converting discussion text into OpenAI embeddings
+   2. Storing embeddings and metadata in Pinecone vector database
+   3. Using namespace 'dagster-github' for discussions content
+   
+   Dependencies:
+       - github_discussions_raw: Raw discussion documents to embed
+       
+   Technical Details:
+       - Uses OpenAI's text-embedding-3-small model
+       - Embeddings dimension: 1536
+       - Stores in Pinecone index: 'dagster-knowledge'
+       - Includes metadata like title, URL, and creation date
+       
+   Partitioning:
+       Uses weekly partitions to process discussions in batches
+       
+   Returns:
+       MaterializeResult with metadata about number of discussions processed
+   """,
+)
+def github_discussions_embeddings(
+    context: dg.AssetExecutionContext,
+    openai: OpenAIResource,
+    pinecone: PineconeResource,
+    github_discussions_raw: List[Document],
+) -> dg.MaterializeResult:
     # Create index if doesn't exist
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
 
-    # TODO update embedding to use openai resource
-    texts = [doc.page_content for doc in discussion_docs]
-    # embeddings = pinecone.embed_texts(texts)
+    texts = [doc.page_content for doc in github_discussions_raw]
     with openai.get_client(context) as client:
         embeddings = [
             item.embedding
@@ -106,11 +211,10 @@ def github_discussions(
     # Prepare metadata
     metadatas = [
         {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
-        for doc in discussion_docs
+        for doc in github_discussions_raw
     ]
 
     # Upsert to Pinecone with namespace
-    # Upsert with corrected embeddings
     index.upsert(
         vectors=zip(
             [str(i) for i in range(len(texts))],
@@ -122,55 +226,141 @@ def github_discussions(
 
     return dg.MaterializeResult(
         metadata={
-            "number_of_discussions": len(discussions),
+            "number_of_discussions": len(github_discussions_raw),
         }
     )
 
 
-doc_site_partition_def = dg.StaticPartitionsDefinition(
-    partition_keys=scraper_resource.parse_sitemap()
-)
-
-
 # Webscraping asset
 @dg.asset(
-    partitions_def=doc_site_partition_def,
     group_name="ingestion",
-    kinds={"webscraping", "Pinecone", "openai"},
+    kinds={"Webscraping"},
+    io_manager_key="document_io_manager",
     automation_condition=dg.AutomationCondition.on_cron(
         "0 0 * * 1"
     ),  # weekly on monday at midnight
+    description="""
+   Scrapes documentation pages from Dagster's documentation site and converts them to Documents.
+   
+   This asset:
+   1. Fetches URLs from the Dagster documentation sitemap
+   2. Processes the first 4 URLs as a sample set
+   3. Converts each page into a Document object with cleaned content
+   4. Implements rate limiting (0.5s delay between requests)
+   
+   Technical Details:
+       - Uses BeautifulSoup for HTML parsing
+       - Removes boilerplate elements (scripts, styles, nav, etc.)
+       - Preserves main content and article sections
+       - Includes metadata like page title and source URL
+       
+   Rate Limiting:
+       - 0.5 second delay between requests to avoid server overload
+       - Processes pages sequentially
+       
+   Schedule:
+       Runs weekly on Monday at midnight (0 0 * *1)
+   
+   Returns:
+       List[Document]: Collection of processed Document objects containing
+       page content and metadata
+       
+   Output Metadata:
+       - Number of pages scraped
+   """,
 )
-def docs_scrape(
+def docs_scrape_raw(
+    context: dg.AssetExecutionContext,
+    scraper: SitemapScraper,
+) -> List[Document]:
+    urls = scraper.parse_sitemap()[0:4]
+    documents = []
+    # Scrape each URL
+    for i, url in enumerate(urls, 1):
+        doc = scraper.scrape_page(url)
+        if doc:
+            documents.append(doc)
+        # Add delay between requests
+        time.sleep(0.5)
+
+    context.add_output_metadata({"pages scraped": len(urls)})
+
+    return documents
+
+
+@dg.asset(
+    group_name="embeddings",
+    kinds={"Webscraping", "Pinecone", "OpenAI"},
+    automation_condition=dg.AutomationCondition.eager(),
+    io_manager_key="document_io_manager",
+    description="""
+   Creates vector embeddings from scraped documentation pages and stores them in Pinecone.
+   
+   This asset processes scraped documentation by:
+   1. Converting document content into OpenAI embeddings
+   2. Processing and cleaning document metadata
+   3. Creating unique document IDs using MD5 hashes of URLs
+   4. Storing embeddings and metadata in Pinecone vector database
+   
+   Dependencies:
+       - docs_scrape_raw: Raw documentation pages to embed
+       
+   Technical Details:
+       - Uses OpenAI's text-embedding-3-small model
+       - Embeddings dimension: 1536
+       - Stores in Pinecone index: 'dagster-knowledge'
+       - Uses 'dagster-docs' namespace
+       - Generates MD5 hash IDs from source URLs
+       
+   Storage Details:
+       - Each vector contains:
+           - Document embedding
+           - Cleaned metadata (strings, ints, floats, bools only)
+           - Unique ID based on URL
+       - Stored in batch operations for efficiency
+       
+   Returns:
+       MaterializeResult containing:
+       - Number of documents embedded
+       - Embedding dimension size
+       - List of processed URLs
+   """,
+)
+def docs_embedding(
     context: dg.AssetExecutionContext,
     pinecone: PineconeResource,
-    scraper: SitemapScraper,
     openai: OpenAIResource,
+    docs_scrape_raw: List[Document],
 ) -> dg.MaterializeResult:
-    url = context.partition_key
-
-    document = scraper.scrape_page(url)
-
-    # Create index if doesn't exist
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-docs")
-    # TODO update embedding to use openai resource
 
-    # embedding = pinecone.embed_texts([document.page_content])[0]  # Single embedding
+    # Get embeddings for all documents
     with openai.get_client(context) as client:
-        embedding = (
-            client.embeddings.create(model="text-embedding-3-small", input=document.page_content)
-            .data[0]
-            .embedding
-        )
+        texts = [doc.page_content for doc in docs_scrape_raw]
+        embeddings_response = client.embeddings.create(model="text-embedding-3-small", input=texts)
+        embeddings = [item.embedding for item in embeddings_response.data]
 
-    meta = {k: v for k, v in document.metadata.items() if isinstance(v, (str, int, float, bool))}
+    # Prepare metadata for each document
+    metadatas = []
+    doc_ids = []
 
-    # Use namespace_kwargs in the upsert call
-    doc_id = hashlib.md5(url.encode()).hexdigest()
+    for doc in docs_scrape_raw:
+        # Clean metadata
+        meta = {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
+        metadatas.append(meta)
 
-    index.upsert(vectors=[(doc_id, embedding, meta)], **namespace_kwargs)
+        # Create unique ID for each document
+        doc_id = hashlib.md5(doc.metadata["source"].encode()).hexdigest()
+        doc_ids.append(doc_id)
+
+    # Batch upsert to Pinecone
+    index.upsert(vectors=zip(doc_ids, embeddings, metadatas), **namespace_kwargs)
 
     return dg.MaterializeResult(
-        metadata={"Page Scraped": url, "Page Title": document.metadata["title"]}
+        metadata={
+            "documents_embedded": len(docs_scrape_raw),
+            "embedding_dimension": len(embeddings[0]) if embeddings else 0,
+            "urls_processed": [doc.metadata["source"] for doc in docs_scrape_raw],
+        }
     )
