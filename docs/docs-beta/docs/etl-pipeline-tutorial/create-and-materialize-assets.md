@@ -3,6 +3,7 @@ title: Create and materialize assets
 description: Load project data and create and materialize assets
 last_update:
   author: Alex Noonan
+sidebar_position: 20
 ---
 
 

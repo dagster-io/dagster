@@ -1,8 +1,9 @@
 ---
-title: Refactoring the Project
+title: Refactor the project
 description: Refactor the completed project into a structure that is more organized and scalable. 
 last_update:
   author: Alex Noonan
+sidebar_position: 80
 ---
 
 Many engineers generally leave something alone once its working as expected. But the first time you do something is rarely the best implementation of a use case and all projects benefit from incremental improvements.

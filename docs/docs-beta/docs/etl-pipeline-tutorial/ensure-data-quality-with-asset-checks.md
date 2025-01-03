@@ -1,8 +1,9 @@
 ---
-title: Ensuring data quality with asset checks
+title: Ensure data quality with asset checks
 description: Ensure assets are correct with asset checks
 last_update:
   author: Alex Noonan
+sidebar_position: 40
 ---
 
 Data Quality is critical in data pipelines. Much like in a factory producing cars, inspecting parts after they complete certain steps ensures that defects are caught before the car is completely assembled. 

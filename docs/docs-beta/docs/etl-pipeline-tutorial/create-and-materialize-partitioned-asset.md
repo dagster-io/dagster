@@ -4,6 +4,7 @@ description: Partitioning Assets by datetime and categories
 last_update:
   date: 2024-11-25
   author: Alex Noonan
+sidebar_position: 50
 ---
 
 [Partitions](/guides/build/create-a-pipeline/partitioning) are a core abstraction in Dagster, they are how you manage large datasets, process incremental updates, and improve pipeline performance. In Dagster you can partition assets the following ways:

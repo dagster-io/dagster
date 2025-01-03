@@ -1,8 +1,9 @@
 ---
-title: Event Driven Assets
+title: Create an event-driven pipeline
 description: Use sensors to create event driven pipelines
 last_update:
   author: Alex Noonan
+sidebar_position: 70
 ---
 
 [Sensors](/guides/automate/sensors) in Dagster are a powerful tool for automating workflows based on external events or conditions. They allow you to trigger jobs when specific criteria are met, making them essential for event-driven automation. 
