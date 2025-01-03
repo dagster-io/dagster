@@ -55,6 +55,10 @@ data:
       {{- else if eq $runCoordinatorType "CustomRunCoordinator" }}
         {{- include "dagsterYaml.runCoordinator.custom" . | indent 6 -}}
       {{- end }}
+    {{- else if (.Values.dagsterDaemon.enabled) }}
+    run_coordinator:
+      module: dagster._core.run_coordinator.immediately_launch_run_coordinator
+      class: ImmediatelyLaunchRunCoordinator
     {{- end }}
 
     {{- $computeLogManagerType := .Values.computeLogManager.type }}

@@ -10,7 +10,14 @@ from dagster_graphql.test.utils import (
 
 
 def test_execute_hammer_through_webserver():
-    with instance_for_test() as instance:
+    with instance_for_test(
+        overrides={
+            "run_coordinator": {
+                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                "class": "ImmediatelyLaunchRunCoordinator",
+            },
+        }
+    ) as instance:
         with get_workspace_process_context_from_kwargs(
             instance,
             version="",
