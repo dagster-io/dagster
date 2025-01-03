@@ -167,7 +167,9 @@ class GrapheneExecutionStepRestartEvent(graphene.ObjectType):
 
 
 class GrapheneExecutionStepUpForRetryEvent(graphene.ObjectType):
-    secondsToWait = graphene.Field(graphene.Int)
+    secondsToWait = graphene.Field(
+        graphene.Int
+    )  # Guess nobody would be waiting for more than 2.1 billion seconds/68 years
 
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneErrorEvent)
@@ -309,7 +311,7 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
     externalUrl = graphene.String()
     externalStdoutUrl = graphene.String()
     externalStderrUrl = graphene.String()
-    pid = graphene.Int()
+    pid = graphene.Int()  # pids don't go into the billions
     # legacy name for compute log file key... required for back-compat reasons, but has been
     # renamed to fileKey for newer versions of the Dagster UI
     logKey = graphene.NonNull(graphene.String)
