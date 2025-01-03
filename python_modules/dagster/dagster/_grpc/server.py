@@ -121,6 +121,10 @@ _METRICS_LOCK = threading.Lock()
 METRICS_RETRIEVAL_FUNCTIONS = set()
 
 
+def get_auto_restart_code_server_interval() -> int:
+    return int(os.getenv("DAGSTER_CODE_SERVER_AUTO_RESTART_INTERVAL", "30"))
+
+
 class GrpcApiMetrics(TypedDict):
     current_request_count: Optional[int]
 
@@ -1324,6 +1328,7 @@ def wait_for_grpc_server(
 
     while True:
         try:
+            logging.getLogger(__name__).info("Attempting to ping gRPC server")
             client.ping("")
             return
         except DagsterUserCodeUnreachableError:
@@ -1431,6 +1436,9 @@ def open_server_process(
     )
 
     try:
+        logging.getLogger(__name__).info(
+            f"Waiting for gRPC server to start on {'port' if port else 'socket'} {port or socket}"
+        )
         wait_for_grpc_server(
             server_process,
             client,
@@ -1455,6 +1463,7 @@ def _open_server_process_on_dynamic_port(
     port = None
     while server_process is None and retries < max_retries:
         port = find_free_port()
+        logging.getLogger(__name__).info(f"Attempting to start server process on port {port}")
         try:
             server_process = open_server_process(port=port, socket=None, **kwargs)
         except CouldNotBindGrpcServerToAddress:
@@ -1511,47 +1520,82 @@ class GrpcServerProcess:
             "If set to None, the server will use the gRPC default.",
         )
 
-        if seven.IS_WINDOWS or force_port:
+        self._server_command = server_command
+        self._force_port = force_port
+        self._instance_ref = instance_ref
+        self._location_name = location_name
+        self._max_retries = max_retries
+        self._max_workers = max_workers
+        self._loadable_target_origin = loadable_target_origin
+        self._heartbeat_timeout = heartbeat_timeout
+        self._fixed_server_id = fixed_server_id
+        self._startup_timeout = startup_timeout
+        self._cwd = cwd
+        self._log_level = log_level
+        self._env = env
+        self._inject_env_vars_from_instance = inject_env_vars_from_instance
+        self._container_image = container_image
+        self._container_context = container_context
+        self._additional_timeout_msg = additional_timeout_msg
+        self.socket = None
+        self.port = None
+        self.start_server_process()
+
+        self._wait_on_exit = wait_on_exit
+
+        # In the case of the `dagster code-server start` entrypoint, the proxy server will not automatically restart if it crashes. Thus, we need to implement a mechanism to automatically restart the server if it crashes.
+        self.__auto_restart_thread = None
+        self.__shutdown_event = threading.Event()
+        if server_command == GrpcServerCommand.CODE_SERVER_START:
+            self.__auto_restart_thread = threading.Thread(
+                target=self.auto_restart_thread, daemon=True
+            )
+            self.__auto_restart_thread.start()
+
+    def start_server_process(self):
+        if (seven.IS_WINDOWS or self._force_port) and self.port is None:
+            logging.getLogger(__name__).info("Attempting to start server process on dynamic port")
             server_process, self.port = _open_server_process_on_dynamic_port(
-                instance_ref=instance_ref,
-                location_name=location_name,
-                max_retries=max_retries,
-                loadable_target_origin=loadable_target_origin,
-                max_workers=max_workers,
-                heartbeat=heartbeat,
-                heartbeat_timeout=heartbeat_timeout,
-                fixed_server_id=fixed_server_id,
-                startup_timeout=startup_timeout,
-                cwd=cwd,
-                log_level=log_level,
-                env=env,
-                inject_env_vars_from_instance=inject_env_vars_from_instance,
-                container_image=container_image,
-                container_context=container_context,
-                additional_timeout_msg=additional_timeout_msg,
+                instance_ref=self._instance_ref,
+                location_name=self._location_name,
+                max_retries=self._max_retries,
+                loadable_target_origin=self._loadable_target_origin,
+                max_workers=self._max_workers,
+                heartbeat=self._heartbeat,
+                heartbeat_timeout=self._heartbeat_timeout,
+                fixed_server_id=self._fixed_server_id,
+                startup_timeout=self._startup_timeout,
+                cwd=self._cwd,
+                log_level=self._log_level,
+                env=self._env,
+                inject_env_vars_from_instance=self._inject_env_vars_from_instance,
+                container_image=self._container_image,
+                container_context=self._container_context,
+                additional_timeout_msg=self._additional_timeout_msg,
             )
         else:
-            self.socket = safe_tempfile_path_unmanaged()
+            if self.socket is None:
+                self.socket = safe_tempfile_path_unmanaged()
 
             server_process = open_server_process(
-                instance_ref=instance_ref,
-                location_name=location_name,
-                server_command=server_command,
-                port=None,
+                instance_ref=self._instance_ref,
+                location_name=self._location_name,
+                server_command=self._server_command,
+                port=self.port,
                 socket=self.socket,
-                loadable_target_origin=loadable_target_origin,
-                max_workers=max_workers,
-                heartbeat=heartbeat,
-                heartbeat_timeout=heartbeat_timeout,
-                fixed_server_id=fixed_server_id,
-                startup_timeout=startup_timeout,
-                cwd=cwd,
-                log_level=log_level,
-                env=env,
-                inject_env_vars_from_instance=inject_env_vars_from_instance,
-                container_image=container_image,
-                container_context=container_context,
-                additional_timeout_msg=additional_timeout_msg,
+                loadable_target_origin=self._loadable_target_origin,
+                max_workers=self._max_workers,
+                heartbeat=self._heartbeat,
+                heartbeat_timeout=self._heartbeat_timeout,
+                fixed_server_id=self._fixed_server_id,
+                startup_timeout=self._startup_timeout,
+                cwd=self._cwd,
+                log_level=self._log_level,
+                env=self._env,
+                inject_env_vars_from_instance=self._inject_env_vars_from_instance,
+                container_image=self._container_image,
+                container_context=self._container_context,
+                additional_timeout_msg=self._additional_timeout_msg,
             )
 
         if server_process is None:
@@ -1559,7 +1603,16 @@ class GrpcServerProcess:
         else:
             self._server_process = server_process
 
-        self._wait_on_exit = wait_on_exit
+    def auto_restart_thread(self):
+        while True:
+            time.sleep(get_auto_restart_code_server_interval())
+            if self.__shutdown_event.is_set():
+                break
+            if self._server_process and self._server_process.poll() is not None:
+                logging.getLogger(__name__).warning(
+                    f"Code server process has exited with code {self._server_process.poll()}. Restarting the code server process."
+                )
+                self.start_server_process()
 
     @property
     def server_process(self):
@@ -1584,6 +1637,9 @@ class GrpcServerProcess:
             self.wait()
 
     def shutdown_server(self):
+        self.__shutdown_event.set()
+        if self.__auto_restart_thread:
+            self.__auto_restart_thread.join()
         if self._server_process and not self._shutdown:
             self._shutdown = True
             if self.server_process.poll() is None:
