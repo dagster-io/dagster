@@ -38,7 +38,7 @@ export const useAssetSelectionInput = <
     />
   );
 
-  if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     filterInput = (
       <AssetSelectionInput
         value={assetSelection}
