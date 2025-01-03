@@ -83,6 +83,12 @@ const config: Config = {
           position: 'left',
         },
         {
+          label: 'Tutorials',
+          type: 'doc',
+          docId: 'tutorials/index',
+          position: 'left'
+        },
+        {
           label: 'Integrations',
           type: 'doc',
           docId: 'integrations/libraries/index',
