@@ -7,18 +7,41 @@ from project_ask_ai_dagster.resources.pinecone import PineconeResource
 
 class AskAI(dg.Config):
     question: str
-    top_k: int
 
 
-@dg.asset(deps=[github_discussions, github_issues, docs_scrape], kinds={"Pinecone", "OpenAI"})
+@dg.asset(
+    deps=[github_discussions, github_issues, docs_scrape],
+    kinds={"Pinecone", "OpenAI"},
+    group_name="retrieval",
+)
 def query(
     context: dg.AssetExecutionContext,
     config: AskAI,
     pinecone: PineconeResource,
     openai: OpenAIResource,
 ) -> dg.MaterializeResult:
-    # Get embeddings for the question
-    question_embedding = pinecone.embed_texts([config.question])[0]
+    """A Retrieval-Augmented Generation (RAG) asset that answers Dagster-related questions using embedded documentation and GitHub content.
+
+    Takes a user question, converts it to an embedding vector, searches across Pinecone indexes of Dagster docs and GitHub content, and uses GPT-4 to generate an answer based on the retrieved context. Returns the answer along with source metadata.
+
+    Args:
+    context: Dagster execution context
+    config: Contains the user's question
+    pinecone: Client for vector similarity search
+    openai: Client for embeddings and LLM completion
+
+    Returns:
+    MaterializeResult containing:
+        - The original question
+        - AI-generated answer
+        - Source contexts used (with URLs and relevance scores)
+    """
+    with openai.get_client(context) as client:
+        question_embedding = (
+            client.embeddings.create(model="text-embedding-3-small", input=config.question)
+            .data[0]
+            .embedding
+        )
 
     results = []
     for namespace in ["dagster-github", "dagster-docs"]:
@@ -29,7 +52,7 @@ def query(
         results.extend(search_results.matches)
 
     results.sort(key=lambda x: x.score, reverse=True)
-    results = results[: config.top_k]
+    results = results[:3]
 
     if not search_results.matches:
         return dg.MaterializeResult(
@@ -56,10 +79,13 @@ def query(
         )
 
     # Create prompt with context
-    prompt_template = """Use the following pieces of context to answer the question at the end.
+    prompt_template = """
+    You are a experienced data engineer and Dagster expert.  
+
+    Use the following pieces of context to answer the question at the end.
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
     
-    Context: {context}
+    Context: {full_context}
     
     Question: {question}
     
@@ -67,7 +93,7 @@ def query(
     """
 
     formatted_prompt = prompt_template.format(
-        context="\n\n".join(contexts), question=config.question
+        full_context="\n\n".join(contexts), question=config.question
     )
 
     # Get response from OpenAI
