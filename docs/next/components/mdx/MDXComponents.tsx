@@ -430,6 +430,18 @@ const Experimental = () => {
 };
 
 ////////////////////////
+//  Preview BADGE  //
+////////////////////////
+
+const Preview = () => {
+  return (
+      <div className="preview-tag">
+        <span className="hidden">(</span>Preview<span className="hidden">)</span>
+      </div>
+  );
+};
+
+////////////////////////
 //  DEPRECATED BADGE  //
 ////////////////////////
 
@@ -866,6 +878,7 @@ export default {
   Experimental,
   Deprecated,
   Superseded,
+  Preview,
   Legacy,
   Icons,
   ReferenceTable,
