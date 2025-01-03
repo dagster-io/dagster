@@ -475,6 +475,7 @@ from dagster._core.execution.api import (
     ReexecutionOptions as ReexecutionOptions,
     execute_job as execute_job,
 )
+from dagster._core.execution.backfill import PartitionBackfill as PartitionBackfill
 from dagster._core.execution.build_resources import build_resources as build_resources
 from dagster._core.execution.context.compute import (
     AssetCheckExecutionContext as AssetCheckExecutionContext,

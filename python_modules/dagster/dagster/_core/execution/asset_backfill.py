@@ -32,7 +32,6 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph, RemoteWorkspaceAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
@@ -48,7 +47,6 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.event_api import AssetRecordsFilter
-from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import NOT_FINISHED_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -59,13 +57,20 @@ from dagster._core.storage.tags import (
     WILL_RETRY_TAG,
 )
 from dagster._core.utils import make_new_run_id, toposort
-from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.remote_asset_graph import (
+        RemoteAssetGraph,
+        RemoteWorkspaceAssetGraph,
+    )
     from dagster._core.execution.backfill import PartitionBackfill
+    from dagster._core.workspace.context import (
+        BaseWorkspaceRequestContext,
+        IWorkspaceProcessContext,
+    )
 
 
 def get_asset_backfill_run_chunk_size():
@@ -186,7 +191,7 @@ class AssetBackfillData(NamedTuple):
     def with_run_requests_submitted(
         self,
         run_requests: Sequence[RunRequest],
-        asset_graph: RemoteAssetGraph,
+        asset_graph: "RemoteAssetGraph",
         instance_queryer: CachingInstanceQueryer,
     ) -> "AssetBackfillData":
         requested_partitions = get_requested_asset_partitions_from_run_requests(
@@ -617,7 +622,7 @@ class AssetBackfillData(NamedTuple):
 
 
 def create_asset_backfill_data_from_asset_partitions(
-    asset_graph: RemoteAssetGraph,
+    asset_graph: "RemoteAssetGraph",
     asset_selection: Sequence[AssetKey],
     partition_names: Sequence[str],
     dynamic_partitions_store: DynamicPartitionsStore,
@@ -634,7 +639,7 @@ def create_asset_backfill_data_from_asset_partitions(
 
 
 def _get_unloadable_location_names(
-    context: BaseWorkspaceRequestContext, logger: logging.Logger
+    context: "BaseWorkspaceRequestContext", logger: logging.Logger
 ) -> Sequence[str]:
     location_entries_by_name = {
         location_entry.origin.location_name: location_entry
@@ -661,7 +666,7 @@ class AssetBackfillIterationResult(NamedTuple):
 
 def get_requested_asset_partitions_from_run_requests(
     run_requests: Sequence[RunRequest],
-    asset_graph: RemoteAssetGraph,
+    asset_graph: "RemoteAssetGraph",
     instance_queryer: CachingInstanceQueryer,
 ) -> AbstractSet[AssetKeyPartitionKey]:
     requested_partitions = set()
@@ -705,7 +710,7 @@ def _write_updated_backfill_data(
     instance: DagsterInstance,
     backfill_id: str,
     updated_backfill_data: AssetBackfillData,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: "RemoteAssetGraph",
     updated_run_requests: Sequence[RunRequest],
     updated_reserved_run_ids: Sequence[str],
 ):
@@ -724,15 +729,16 @@ def _write_updated_backfill_data(
 
 def _submit_runs_and_update_backfill_in_chunks(
     instance: DagsterInstance,
-    workspace_process_context: IWorkspaceProcessContext,
+    workspace_process_context: "IWorkspaceProcessContext",
     backfill_id: str,
     asset_backfill_iteration_result: AssetBackfillIterationResult,
-    asset_graph: RemoteWorkspaceAssetGraph,
+    asset_graph: "RemoteWorkspaceAssetGraph",
     logger: logging.Logger,
     run_tags: Mapping[str, str],
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[None]:
     from dagster._core.execution.backfill import BulkActionStatus
+    from dagster._core.execution.submit_asset_runs import submit_asset_run
 
     run_requests = asset_backfill_iteration_result.run_requests
 
@@ -876,9 +882,9 @@ def _check_target_partitions_subset_is_valid(
 
 
 def _check_validity_and_deserialize_asset_backfill_data(
-    workspace_context: BaseWorkspaceRequestContext,
+    workspace_context: "BaseWorkspaceRequestContext",
     backfill: "PartitionBackfill",
-    asset_graph: RemoteWorkspaceAssetGraph,
+    asset_graph: "RemoteWorkspaceAssetGraph",
     instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
 ) -> Optional[AssetBackfillData]:
@@ -989,7 +995,7 @@ def backfill_is_complete(
 def execute_asset_backfill_iteration(
     backfill: "PartitionBackfill",
     logger: logging.Logger,
-    workspace_process_context: IWorkspaceProcessContext,
+    workspace_process_context: "IWorkspaceProcessContext",
     instance: DagsterInstance,
 ) -> Iterable[None]:
     """Runs an iteration of the backfill, including submitting runs and updating the backfill object
@@ -1227,7 +1233,7 @@ def get_canceling_asset_backfill_iteration_data(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
     instance_queryer: CachingInstanceQueryer,
-    asset_graph: RemoteWorkspaceAssetGraph,
+    asset_graph: "RemoteWorkspaceAssetGraph",
     backfill_start_timestamp: float,
 ) -> Iterable[Optional[AssetBackfillData]]:
     """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
@@ -1279,7 +1285,7 @@ def get_canceling_asset_backfill_iteration_data(
 def get_asset_backfill_iteration_materialized_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteWorkspaceAssetGraph,
+    asset_graph: "RemoteWorkspaceAssetGraph",
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[Optional[AssetGraphSubset]]:
     """Returns the partitions that have been materialized by the backfill.
@@ -1328,7 +1334,7 @@ def get_asset_backfill_iteration_materialized_partitions(
 def _get_failed_and_downstream_asset_partitions(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteWorkspaceAssetGraph,
+    asset_graph: "RemoteWorkspaceAssetGraph",
     instance_queryer: CachingInstanceQueryer,
     backfill_start_timestamp: float,
     materialized_subset: AssetGraphSubset,
@@ -1402,7 +1408,7 @@ def _asset_graph_subset_to_str(
 def execute_asset_backfill_iteration_inner(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
-    asset_graph: RemoteWorkspaceAssetGraph,
+    asset_graph: "RemoteWorkspaceAssetGraph",
     instance_queryer: CachingInstanceQueryer,
     backfill_start_timestamp: float,
     logger: logging.Logger,
@@ -1565,7 +1571,7 @@ def can_run_with_parent(
     parent: AssetKeyPartitionKey,
     candidate: AssetKeyPartitionKey,
     candidates_unit: Iterable[AssetKeyPartitionKey],
-    asset_graph: RemoteWorkspaceAssetGraph,
+    asset_graph: "RemoteWorkspaceAssetGraph",
     target_subset: AssetGraphSubset,
     asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
 ) -> Tuple[bool, str]:
@@ -1660,7 +1666,7 @@ def can_run_with_parent(
 
 
 def should_backfill_atomic_asset_partitions_unit(
-    asset_graph: RemoteWorkspaceAssetGraph,
+    asset_graph: "RemoteWorkspaceAssetGraph",
     candidates_unit: Iterable[AssetKeyPartitionKey],
     asset_partitions_to_request: AbstractSet[AssetKeyPartitionKey],
     target_subset: AssetGraphSubset,
@@ -1735,7 +1741,7 @@ def should_backfill_atomic_asset_partitions_unit(
 def _get_failed_asset_partitions(
     instance_queryer: CachingInstanceQueryer,
     backfill_id: str,
-    asset_graph: RemoteAssetGraph,
+    asset_graph: "RemoteAssetGraph",
     materialized_subset: AssetGraphSubset,
 ) -> Sequence[AssetKeyPartitionKey]:
     """Returns asset partitions that materializations were requested for as part of the backfill, but were

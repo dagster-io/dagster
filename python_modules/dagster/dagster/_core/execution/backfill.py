@@ -3,6 +3,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
 
 from dagster import _check as check
+from dagster._annotations import public
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
@@ -18,21 +19,22 @@ from dagster._core.execution.asset_backfill import (
 )
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.remote_representation.external_data import job_name_for_partition_set_snap_name
-from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
     NOT_FINISHED_STATUSES,
     RunsFilter,
 )
 from dagster._core.storage.tags import BACKFILL_ID_TAG, USER_TAG
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.utils import make_new_backfill_id
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
+from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
+    from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 MAX_RUNS_CANCELED_PER_ITERATION = 50
 
@@ -106,7 +108,7 @@ class PartitionBackfill(
             ("title", Optional[str]),
             ("description", Optional[str]),
             # fields that are only used by job backfills
-            ("partition_set_origin", Optional[RemotePartitionSetOrigin]),
+            ("partition_set_origin", Optional["RemotePartitionSetOrigin"]),
             ("partition_names", Optional[Sequence[str]]),
             ("last_submitted_partition_name", Optional[str]),
             ("reexecution_steps", Optional[Sequence[str]]),
@@ -119,6 +121,8 @@ class PartitionBackfill(
         ],
     ),
 ):
+    """A backfill for a set of partitions."""
+
     def __new__(
         cls,
         backfill_id: str,
@@ -130,7 +134,7 @@ class PartitionBackfill(
         asset_selection: Optional[Sequence[AssetKey]] = None,
         title: Optional[str] = None,
         description: Optional[str] = None,
-        partition_set_origin: Optional[RemotePartitionSetOrigin] = None,
+        partition_set_origin: Optional["RemotePartitionSetOrigin"] = None,
         partition_names: Optional[Sequence[str]] = None,
         last_submitted_partition_name: Optional[str] = None,
         reexecution_steps: Optional[Sequence[str]] = None,
@@ -140,6 +144,8 @@ class PartitionBackfill(
         submitting_run_requests: Optional[Sequence[RunRequest]] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
     ):
+        from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+
         check.invariant(
             not (asset_selection and reexecution_steps),
             "Can't supply both an asset_selection and reexecution_steps to a PartitionBackfill.",
@@ -231,6 +237,11 @@ class PartitionBackfill(
     def job_name(self) -> Optional[str]:
         if self.is_asset_backfill:
             return None
+
+        from dagster._core.remote_representation.external_data import (
+            job_name_for_partition_set_snap_name,
+        )
+
         return (
             job_name_for_partition_set_snap_name(self.partition_set_name)
             if self.partition_set_name
@@ -247,7 +258,7 @@ class PartitionBackfill(
             return self.tags.get(USER_TAG)
         return None
 
-    def is_valid_serialization(self, workspace: BaseWorkspaceRequestContext) -> bool:
+    def is_valid_serialization(self, workspace: "BaseWorkspaceRequestContext") -> bool:
         if self.is_asset_backfill:
             if self.serialized_asset_backfill_data:
                 return AssetBackfillData.is_valid_serialization(
@@ -260,7 +271,7 @@ class PartitionBackfill(
             return True
 
     def get_backfill_status_per_asset_key(
-        self, workspace: BaseWorkspaceRequestContext
+        self, workspace: "BaseWorkspaceRequestContext"
     ) -> Sequence[Union[PartitionedAssetBackfillStatus, UnpartitionedAssetBackfillStatus]]:
         """Returns a sequence of backfill statuses for each targeted asset key in the asset graph,
         in topological order.
@@ -280,7 +291,7 @@ class PartitionBackfill(
             return []
 
     def get_target_partitions_subset(
-        self, workspace: BaseWorkspaceRequestContext, asset_key: AssetKey
+        self, workspace: "BaseWorkspaceRequestContext", asset_key: AssetKey
     ) -> Optional[PartitionsSubset]:
         if not self.is_valid_serialization(workspace):
             return None
@@ -297,7 +308,7 @@ class PartitionBackfill(
             return None
 
     def get_target_root_partitions_subset(
-        self, workspace: BaseWorkspaceRequestContext
+        self, workspace: "BaseWorkspaceRequestContext"
     ) -> Optional[PartitionsSubset]:
         if not self.is_valid_serialization(workspace):
             return None
@@ -313,7 +324,7 @@ class PartitionBackfill(
         else:
             return None
 
-    def get_num_partitions(self, workspace: BaseWorkspaceRequestContext) -> Optional[int]:
+    def get_num_partitions(self, workspace: "BaseWorkspaceRequestContext") -> Optional[int]:
         if not self.is_valid_serialization(workspace):
             return 0
 
@@ -332,7 +343,7 @@ class PartitionBackfill(
             return len(self.partition_names)
 
     def get_partition_names(
-        self, workspace: BaseWorkspaceRequestContext
+        self, workspace: "BaseWorkspaceRequestContext"
     ) -> Optional[Sequence[str]]:
         if not self.is_valid_serialization(workspace):
             return []
@@ -416,28 +427,59 @@ class PartitionBackfill(
             asset_backfill_data=(asset_backfill_data if not is_backcompat else None),
         )
 
+    @public
     @classmethod
     def from_asset_partitions(
         cls,
-        backfill_id: str,
         asset_graph: BaseAssetGraph,
-        partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
-        backfill_timestamp: float,
-        tags: Mapping[str, str],
+        # TODO(deepyaman): Expose `dagster_instance` instead for the public API.
         dynamic_partitions_store: DynamicPartitionsStore,
-        all_partitions: bool,
-        title: Optional[str],
-        description: Optional[str],
+        partition_names: Optional[Sequence[str]] = None,
+        all_partitions: bool = False,
+        backfill_id: Optional[str] = None,
+        backfill_timestamp: Optional[float] = None,
+        tags: Mapping[str, str] = {},
+        title: Optional[str] = None,
+        description: Optional[str] = None,
     ) -> "PartitionBackfill":
-        """If all the selected assets that have PartitionsDefinitions have the same partitioning, then
+        """Construct a ``PartitionBackfill`` given a list of partitions.
+
+        Either ``partition_names`` must not be ``None`` or ``all_partitions`` must be ``True`` but
+        not both.
+
+        If all the selected assets that have PartitionsDefinitions have the same partitioning, then
         the backfill will target the provided partition_names for all those assets.
 
         Otherwise, the backfill must consist of a partitioned "anchor" asset and a set of other
         assets that descend from it. In that case, the backfill will target the partition_names of
         the anchor asset, as well as all partitions of other selected assets that are downstream
         of those partitions of the anchor asset.
+
+        Args:
+            asset_graph (BaseAssetGraph): The asset graph for the backfill.
+            asset_selection (Optional[Sequence[AssetKey]]): List of asset keys to backfill.
+            dynamic_partitions_store (DynamicPartitionsStore): The dynamic partitions store.
+            partition_names (Optional[Sequence[str]]): List of partition names to backfill.
+            all_partitions (bool): Whether to backfill all partitions.
+            backfill_id (Optional[str]): The backfill ID. If not provided, a new backfill ID will be
+                randomly generated.
+            backfill_timestamp (Optional[float]): The time to start the backfill in seconds since
+                the `epoch <https://docs.python.org/3/library/time.html#epoch>`_ as a floating-point
+                number. If not provided, the current time will be used.
+            tags (Mapping[str, str]): The tags for the backfill.
+            title (Optional[str]): The title of the backfill.
+            description (Optional[str]): The description of the backfill.
+
+        Returns:
+            PartitionBackfill: The backfill.
         """
+        if backfill_id is None:
+            backfill_id = make_new_backfill_id()
+
+        if backfill_timestamp is None:
+            backfill_timestamp = get_current_timestamp()
+
         asset_backfill_data = AssetBackfillData.from_asset_partitions(
             asset_graph=asset_graph,
             partition_names=partition_names,

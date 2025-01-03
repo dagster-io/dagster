@@ -3155,7 +3155,13 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_backfill(self, backfill_id: str) -> Optional["PartitionBackfill"]:
         return self._run_storage.get_backfill(backfill_id)
 
+    @public
     def add_backfill(self, partition_backfill: "PartitionBackfill") -> None:
+        """Create a set of partition backfill runs.
+
+        Args:
+            partition_backfill (PartitionBackfill): The backfill to add to the instance run storage.
+        """
         self._run_storage.add_backfill(partition_backfill)
 
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
