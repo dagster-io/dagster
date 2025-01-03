@@ -23,6 +23,12 @@ The "experimental" marker allows us to offer new APIs to users and rapidly itera
 
 Experimental APIs may change or disappear within any release, but we try to avoid breaking them within minor releases if they have been around for a long time.
 
+### Preview APIs
+
+The "preview" marker allows us to offer APIs in early testing phase to users and rapidly iterate based on their feedback. Preview APIs are marked as such in the [API reference](/\_apidocs) and usually raise an <PyObject object="PreviewWarning" module="dagster._utils.warnings" /> when used.
+
+Experimental APIs may change or disappear within any release and are not considered ready for production use.
+
 ### Superseded APIs
 
 The "superseded" marker indicates that we recommend avoiding an API, usually because there's a preferred option that should be used instead.
