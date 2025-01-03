@@ -35,6 +35,7 @@ export type SingleSensorQuery = {
             id: string;
             status: Types.InstigationTickStatus;
             timestamp: number;
+            scheduledExecutionTimestamp: number | null;
             skipReason: string | null;
             runIds: Array<string>;
             runKeys: Array<string>;
@@ -69,4 +70,4 @@ export type SingleSensorQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const SingleSensorQueryVersion = 'dbda5ba47d4ba10f8c527c9a7cd45fba0811276441a17a8ac6f173ed588f025b';
+export const SingleSensorQueryVersion = 'fb5337cbdc8a7c8be954409c56482ea3bcd6937ec999af4c15e0d92e8ac52c92';

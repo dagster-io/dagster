@@ -37,6 +37,7 @@ export type AssetSensorTicksQuery = {
             id: string;
             timestamp: number;
             endTimestamp: number | null;
+            scheduledExecutionTimestamp: number | null;
             status: Types.InstigationTickStatus;
             instigationType: Types.InstigationType;
             requestedAssetMaterializationCount: number;
@@ -64,4 +65,4 @@ export type AssetSensorTicksQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const AssetSensorTicksQueryVersion = 'ee952c7c0076a23f9d5940ad472a6b580989c0d241dc598dbefa5bf3734673d0';
+export const AssetSensorTicksQueryVersion = '4c7806dd7f960d99cb22da990948bbf2b8ef0ea50200a525bfe89e7290c73f54';
