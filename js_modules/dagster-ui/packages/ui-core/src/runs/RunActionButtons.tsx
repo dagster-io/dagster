@@ -188,7 +188,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
       }
-      const selectionAndDownstreamQuery = featureEnabled(FeatureFlag.flagRunSelectionSyntax)
+      const selectionAndDownstreamQuery = featureEnabled(FeatureFlag.flagAssetSelectionSyntax)
         ? selection.keys.map((k) => `name:"${k}"*`).join(' or ')
         : selection.keys.map((k) => `${k}*`).join(',');
 

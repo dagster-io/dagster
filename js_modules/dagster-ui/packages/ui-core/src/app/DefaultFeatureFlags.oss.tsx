@@ -8,9 +8,6 @@ export const DEFAULT_FEATURE_FLAG_VALUES: Partial<Record<FeatureFlag, boolean>> 
   [FeatureFlag.flagAssetSelectionSyntax]: new URLSearchParams(global?.location?.search ?? '').has(
     'new-asset-selection-syntax',
   ),
-  [FeatureFlag.flagRunSelectionSyntax]: new URLSearchParams(global?.location?.search ?? '').has(
-    'new-run-selection-syntax',
-  ),
 
   // Flags for tests
   [FeatureFlag.__TestFlagDefaultTrue]: true,
