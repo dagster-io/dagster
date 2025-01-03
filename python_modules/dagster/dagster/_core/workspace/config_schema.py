@@ -11,6 +11,7 @@ from dagster._config import (
     StringSource,
     process_config,
 )
+from dagster._config.field_utils import Permissive
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.merger import merge_dicts
 
@@ -87,6 +88,7 @@ WORKSPACE_CONFIG_SCHEMA = {
                             "port": Field(IntSource, is_required=False),
                             "location_name": Field(StringSource, is_required=False),
                             "ssl": Field(bool, is_required=False),
+                            "additional_metadata": Field(Permissive(), is_required=False),
                         },
                     },
                 )

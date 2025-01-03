@@ -240,8 +240,12 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def Ping(self, request, context):
         return self._query("Ping", request, context)
 
-    def GetServerId(self, request, context):
-        return self._fixed_server_id or self._query("GetServerId", request, context)
+    def GetServerId(self, request, context) -> api_pb2.GetServerIdReply:
+        return (
+            api_pb2.GetServerIdReply(server_id=self._fixed_server_id)
+            if self._fixed_server_id
+            else self._query("GetServerId", request, context)
+        )
 
     def GetCurrentImage(self, request, context):
         return self._query("GetCurrentImage", request, context)
