@@ -27,6 +27,8 @@ ASSET_PARTITION_RANGE_START_TAG = f"{SYSTEM_TAG_PREFIX}asset_partition_range_sta
 
 ASSET_PARTITION_RANGE_END_TAG = f"{SYSTEM_TAG_PREFIX}asset_partition_range_end"
 
+ASSET_PARTITIONS_TAG = f"{SYSTEM_TAG_PREFIX}asset_partitions"
+
 PARTITION_SET_TAG = f"{SYSTEM_TAG_PREFIX}partition_set"
 
 PARENT_RUN_ID_TAG = f"{SYSTEM_TAG_PREFIX}parent_run_id"

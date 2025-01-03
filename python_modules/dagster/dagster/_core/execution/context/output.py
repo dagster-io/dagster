@@ -496,10 +496,13 @@ class OutputContext:
                 "For more details: https://github.com/dagster-io/dagster/issues/7900"
             )
 
-        return self.asset_partitions_def.get_partition_keys_in_range(
-            self.step_context.asset_partition_key_range_for_output(self.name),
-            dynamic_partitions_store=self.step_context.instance,
-        )
+        if self.step_context.has_partition_key_range:
+            return self.asset_partitions_def.get_partition_keys_in_range(
+                self.step_context.asset_partition_key_range_for_output(self.name),
+                dynamic_partitions_store=self.step_context.instance,
+            )
+        else:
+            return list(self.step_context.partition_key_set)
 
     @public
     @property

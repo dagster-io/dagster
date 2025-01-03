@@ -66,6 +66,7 @@ from dagster._core.storage.io_manager import IOManager
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
+    ASSET_PARTITIONS_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     PARTITION_NAME_TAG,
 )
@@ -383,6 +384,7 @@ class PlanExecutionContext(IPlanContext):
                 tags.get(ASSET_PARTITION_RANGE_START_TAG)
                 and tags.get(ASSET_PARTITION_RANGE_END_TAG)
             )
+            or (tags.get(ASSET_PARTITIONS_TAG))
         )
 
     @property
@@ -392,6 +394,10 @@ class PlanExecutionContext(IPlanContext):
     @property
     def has_partition_key_range(self) -> bool:
         return ASSET_PARTITION_RANGE_START_TAG in self._plan_data.dagster_run.tags
+
+    @property
+    def has_partition_key_set(self) -> bool:
+        return ASSET_PARTITIONS_TAG in self._plan_data.dagster_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
@@ -984,7 +990,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return get_multipartition_key_from_tags(tags)
         elif PARTITION_NAME_TAG in tags:
             return tags[PARTITION_NAME_TAG]
-        else:
+        elif ASSET_PARTITION_RANGE_START_TAG in tags and ASSET_PARTITION_RANGE_END_TAG in tags:
             range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
             range_end = tags[ASSET_PARTITION_RANGE_END_TAG]
 
@@ -999,6 +1005,14 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                         cast(str, range_start)
                     )
                 return cast(str, range_start)
+        else:
+            partition_keys = tags[ASSET_PARTITIONS_TAG].split(",")
+            if len(partition_keys) > 1:
+                raise DagsterInvariantViolationError(
+                    "Cannot access partition_key for a partitioned run with multiple partitions."
+                    " Call partition_keys instead."
+                )
+            return next(iter(partition_keys))
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
@@ -1019,7 +1033,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         elif PARTITION_NAME_TAG in tags:
             partition_key = tags[PARTITION_NAME_TAG]
             return PartitionKeyRange(partition_key, partition_key)
-        else:
+        elif ASSET_PARTITION_RANGE_START_TAG in tags and ASSET_PARTITION_RANGE_END_TAG in tags:
             partition_key_range_start = tags[ASSET_PARTITION_RANGE_START_TAG]
             if partition_key_range_start is not None:
                 if isinstance(self.run_partitions_def, MultiPartitionsDefinition):
@@ -1032,6 +1046,20 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                         ),
                     )
             return PartitionKeyRange(partition_key_range_start, tags[ASSET_PARTITION_RANGE_END_TAG])
+        else:
+            raise Exception(
+                "Cannot access single partition key range for run with non-contiguous partitions"
+            )
+
+    @property
+    def partition_key_set(self) -> AbstractSet[str]:
+        if not self.has_partition_key_set:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_key_set for a run where a partition key set was not specified."
+            )
+
+        tags = self._plan_data.dagster_run.tags
+        return set(tags[ASSET_PARTITIONS_TAG].split(","))
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.job_def.asset_layer
