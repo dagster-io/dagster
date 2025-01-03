@@ -560,14 +560,14 @@ def launch_scheduled_runs_for_schedule_iterator(
             # Scheduler was interrupted while performing this tick, re-do it
             start_timestamp_utc = max(
                 start_timestamp_utc,
-                latest_tick.timestamp,
+                latest_tick.scheduled_execution_time,
                 instigator_data.last_iteration_timestamp or 0.0,
                 in_memory_last_iteration_timestamp or 0.0,
             )
         else:
             start_timestamp_utc = max(
                 start_timestamp_utc,
-                latest_tick.timestamp + 1,
+                latest_tick.scheduled_execution_time + 1,
                 instigator_data.last_iteration_timestamp or 0.0,
                 in_memory_last_iteration_timestamp or 0.0,
             )
@@ -641,7 +641,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                 latest_tick.consecutive_failure_count or latest_tick.failure_count
             )
 
-        if latest_tick and latest_tick.timestamp == schedule_timestamp:
+        if latest_tick and latest_tick.scheduled_execution_time == schedule_timestamp:
             tick = latest_tick
             if latest_tick.status == TickStatus.FAILURE:
                 logger.info(f"Retrying previously failed schedule execution at {schedule_time_str}")
@@ -659,6 +659,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                     timestamp=schedule_timestamp,
                     selector_id=remote_schedule.selector_id,
                     consecutive_failure_count=consecutive_failure_count,
+                    scheduled_execution_time=schedule_timestamp,
                 )
             )
 

@@ -2621,6 +2621,7 @@ type InstigationTick {
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
   autoMaterializeAssetEvaluationId: ID
   instigationType: InstigationType!
+  scheduledExecutionTimestamp: Float
 }
 
 type InstigationEventConnection {
