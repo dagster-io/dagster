@@ -423,6 +423,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.failure_count
 
     @property
+    def consecutive_failure_count(self) -> int:
+        return self.tick_data.consecutive_failure_count
+
+    @property
     def log_key(self) -> Optional[List[str]]:
         return self.tick_data.log_key
 
@@ -574,6 +578,7 @@ class TickData(
             ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
+            ("consecutive_failure_count", int),
         ],
     )
 ):
@@ -607,6 +612,11 @@ class TickData(
         reserved_run_ids (Optional[Sequence[str]]): A list of run IDs to use for each of the
             run_requests. Used to ensure that if the tick fails partway through, we don't create
             any duplicate runs for the tick. Currently only used by AUTO_MATERIALIZE ticks.
+        consecutive_failure_count (Optional[int]): The number of times this sensor has failed
+            consecutively. Differs from failure_count in that it spans multiple ticks, whereas
+            failure_count measures the number of times that a particular tick should retry.  If the
+            status is not FAILED, this is the number of previous consecutive failures across
+            multiple ticks before it reached the current state.
     """
 
     def __new__(
@@ -632,6 +642,7 @@ class TickData(
         run_requests: Optional[Sequence[RunRequest]] = None,
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
+        consecutive_failure_count: Optional[int] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -660,6 +671,9 @@ class TickData(
             run_requests=check.opt_sequence_param(run_requests, "run_requests"),
             auto_materialize_evaluation_id=auto_materialize_evaluation_id,
             reserved_run_ids=check.opt_sequence_param(reserved_run_ids, "reserved_run_ids"),
+            consecutive_failure_count=check.opt_int_param(
+                consecutive_failure_count, "consecutive_failure_count", 0
+            ),
         )
 
     def with_status(
@@ -713,16 +727,6 @@ class TickData(
                     "run_requests": run_requests,
                     "reserved_run_ids": reserved_run_ids,
                     "cursor": cursor,
-                },
-            )
-        )
-
-    def with_failure_count(self, failure_count: int) -> "TickData":
-        return TickData(
-            **merge_dicts(
-                self._asdict(),
-                {
-                    "failure_count": failure_count,
                 },
             )
         )

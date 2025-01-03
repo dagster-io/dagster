@@ -1351,6 +1351,8 @@ def test_error_sensor(caplog, executor, instance, workspace_context, remote_repo
             [],
             "Error occurred during the execution of evaluation_fn for sensor error_sensor",
         )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 1
 
         assert (
             "Error occurred during the execution of evaluation_fn for sensor error_sensor"
@@ -1362,6 +1364,24 @@ def test_error_sensor(caplog, executor, instance, workspace_context, remote_repo
         assert state.instigator_data.sensor_type == SensorType.STANDARD
         assert state.instigator_data.cursor is None
         assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [],
+            "Error occurred during the execution of evaluation_fn for sensor error_sensor",
+        )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 2
 
 
 def test_wrong_config_sensor(caplog, executor, instance, workspace_context, remote_repo):
