@@ -9,19 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Type, Union
 
 import aiohttp
 import dagster._check as check
