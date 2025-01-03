@@ -636,7 +636,7 @@ class InProcessCodeLocation(CodeLocation):
         return get_partition_set_execution_param_data(
             self._get_repo_def(repository_handle.repository_name),
             partition_set_name=partition_set_name,
-            partition_names=partition_names,
+            partition_names=set(partition_names),
             instance_ref=instance.get_ref(),
         )
 

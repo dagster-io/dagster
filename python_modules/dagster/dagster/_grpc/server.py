@@ -691,7 +691,7 @@ class DagsterApiServer(DagsterApiServicer):
                 get_partition_set_execution_param_data(
                     self._get_repo_for_origin(args.repository_origin),
                     partition_set_name=args.partition_set_name,
-                    partition_names=args.partition_names,
+                    partition_names=set(args.partition_names),
                     instance_ref=instance_ref,
                 )
             )

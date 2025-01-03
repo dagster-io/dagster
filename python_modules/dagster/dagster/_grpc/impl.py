@@ -525,7 +525,7 @@ def get_external_execution_plan_snapshot(
 def get_partition_set_execution_param_data(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
-    partition_names: Sequence[str],
+    partition_names: AbstractSet[str],
     instance_ref: Optional[InstanceRef] = None,
 ) -> Union[PartitionSetExecutionParamSnap, PartitionExecutionErrorSnap]:
     (
