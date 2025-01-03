@@ -1,9 +1,7 @@
 import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
-import {featureEnabled} from './Flags';
 import {timeByParts} from './timeByParts';
 
 function twoDigit(v: number) {
@@ -233,12 +231,6 @@ export function weakmapMemoize<T extends object, R>(
 
 export function assertUnreachable(value: never): never {
   throw new Error(`Didn't expect to get here with value: ${JSON.stringify(value)}`);
-}
-
-export function debugLog(...args: any[]) {
-  if (featureEnabled(FeatureFlag.flagDebugConsoleLogging)) {
-    console.log(...args);
-  }
 }
 
 export function colorHash(str: string) {
