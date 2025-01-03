@@ -178,7 +178,7 @@ class ExecutionStepSnap(
             ),
             tags=check.opt_nullable_mapping_param(tags, "tags", key_type=str, value_type=str),
             step_handle=check.opt_inst_param(step_handle, "step_handle", StepHandleTypes),
-            # stores the concurrency group arg as separate from the concurrency_key property since the
+            # stores the pool arg as separate from the concurrency_key property since the
             # snapshot may have been generated before concurrency_key was added as a separate
             # argument
             pool=check.opt_str_param(pool, "pool"),
