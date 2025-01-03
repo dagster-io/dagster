@@ -4,7 +4,7 @@ from typing import Any, Optional, Sequence
 
 from dagster import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_embedded_elt.sling.resources import AssetExecutionContext
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from pydantic import BaseModel
 from typing_extensions import Self
 

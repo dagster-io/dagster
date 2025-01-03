@@ -1,5 +1,5 @@
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster_embedded_elt.sling.resources import AssetExecutionContext
 
 from dagster_components.core.component import component_type
 from dagster_components.lib.native_step_component import NativeStepComponent
