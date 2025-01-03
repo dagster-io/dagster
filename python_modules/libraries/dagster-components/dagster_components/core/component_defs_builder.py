@@ -64,7 +64,16 @@ def component_type_from_yaml_decl(
         for py_file in decl_node.path.glob("*.py"):
             module_name = py_file.stem
 
-            module = load_module_from_path(module_name, decl_node.path / f"{module_name}.py")
+            # module = load_python_file(
+            #     python_file=str(decl_node.path / f"{module_name}.py"),
+            #     working_directory=str(decl_node.path.parent),
+            # )
+            py_path = str(decl_node.path / f"{module_name}.py")
+            module = load_module_from_path(module_name, py_path)
+
+            # print("**************")
+            # print(f"Using {module_name} at {py_path} found module: {module} ")
+            # print("**************")
 
             for _name, obj in inspect.getmembers(module, inspect.isclass):
                 assert isinstance(obj, Type)
@@ -87,6 +96,32 @@ def build_components_from_component_folder(
     component_folder = path_to_decl_node(path)
     assert isinstance(component_folder, ComponentFolder)
     return load_components_from_context(context.for_decl_node(component_folder))
+
+
+def loading_context_for_component_path(
+    path: Path,
+    registry: ComponentTypeRegistry,
+    resources: Mapping[str, object],
+) -> ComponentLoadContext:
+    decl_node = path_to_decl_node(path=path)
+    if not decl_node:
+        raise Exception(f"No component found at path {path}")
+
+    return ComponentLoadContext(
+        resources=resources,
+        registry=registry,
+        decl_node=decl_node,
+        templated_value_resolver=TemplatedValueResolver.default(),
+    )
+
+
+def build_components_from_component_path(
+    path: Path,
+    registry: ComponentTypeRegistry,
+    resources: Mapping[str, object],
+) -> Sequence[Component]:
+    context = loading_context_for_component_path(path, registry, resources)
+    return load_components_from_context(context)
 
 
 def build_defs_from_component_path(

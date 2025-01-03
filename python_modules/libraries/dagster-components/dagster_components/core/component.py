@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import (
+    TYPE_CHECKING,
     Any,
     ClassVar,
     Dict,
@@ -32,6 +33,9 @@ from pydantic import TypeAdapter
 from typing_extensions import Self
 
 from dagster_components.core.component_rendering import TemplatedValueResolver
+
+if TYPE_CHECKING:
+    from dagster_components.core.component_decl_builder import ComponentFileModel
 
 
 class ComponentDeclNode: ...
@@ -259,6 +263,14 @@ class ComponentLoadContext:
                 self._raw_params(), params_schema
             )
             return TypeAdapter(params_schema).validate_python(preprocessed_params)
+
+    @property
+    def component_file_model(self) -> "ComponentFileModel":
+        from dagster_components.core.component_decl_builder import YamlComponentDecl
+
+        if not isinstance(self.decl_node, YamlComponentDecl):
+            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
+        return self.decl_node.component_file_model
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"

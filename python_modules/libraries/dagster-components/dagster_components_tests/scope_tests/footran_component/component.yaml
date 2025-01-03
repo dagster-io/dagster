@@ -1,0 +1,9 @@
+type: .footran
+
+requires:
+  env:
+    - FOOTRAN_API_KEY
+    - FOOTRAN_API_SECRET
+
+params: 
+  target_address: some_address
