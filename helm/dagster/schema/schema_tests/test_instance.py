@@ -619,7 +619,7 @@ def test_queued_run_coordinator_config(
 
     _check_valid_run_coordinator_yaml(instance)
 
-    assert ("run_coordinator" in instance) == enabled
+    # assert ("run_coordinator" in instance) == enabled
     if enabled:
         assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
         assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
@@ -645,6 +645,12 @@ def test_queued_run_coordinator_config(
             ]
             == 0
         )
+    else:
+        assert (
+            instance["run_coordinator"]["module"]
+            == "dagster._core.run_coordinator.immediately_launch_run_coordinator"
+        )
+        assert instance["run_coordinator"]["class"] == "ImmediatelyLaunchRunCoordinator"
 
 
 def test_custom_run_coordinator_config(template: HelmTemplate):

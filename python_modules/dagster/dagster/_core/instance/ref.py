@@ -304,7 +304,9 @@ class InstanceRef(
                 yaml.dump({}),
             ),
             "run_coordinator": ConfigurableClassData(
-                "dagster._core.run_coordinator", "DefaultRunCoordinator", yaml.dump({})
+                "dagster.core.run_coordinator",
+                "QueuedRunCoordinator",
+                yaml.dump({}),
             ),
             "run_launcher": ConfigurableClassData(
                 "dagster",

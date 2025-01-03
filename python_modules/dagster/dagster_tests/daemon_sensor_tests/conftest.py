@@ -38,7 +38,11 @@ def submit_executor(request):
 def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
     with instance_for_test(
         overrides={
-            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
+            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"},
+            "run_coordinator": {
+                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                "class": "ImmediatelyLaunchRunCoordinator",
+            },
         }
     ) as instance:
         yield instance

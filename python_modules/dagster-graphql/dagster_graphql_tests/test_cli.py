@@ -19,10 +19,14 @@ def dagster_cli_runner():
         with instance_for_test(
             temp_dir=dagster_home_temp,
             overrides={
+                "run_coordinator": {
+                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                    "class": "ImmediatelyLaunchRunCoordinator",
+                },
                 "run_launcher": {
                     "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                     "class": "SyncInMemoryRunLauncher",
-                }
+                },
             },
         ):
             yield CliRunner(env={"DAGSTER_HOME": dagster_home_temp})
@@ -68,10 +72,14 @@ def test_async_resolver():
         with instance_for_test(
             temp_dir=dagster_home_temp,
             overrides={
+                "run_coordinator": {
+                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                    "class": "ImmediatelyLaunchRunCoordinator",
+                },
                 "run_launcher": {
                     "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                     "class": "SyncInMemoryRunLauncher",
-                }
+                },
             },
         ) as instance:
             result = my_job.execute_in_process(instance=instance)
@@ -328,10 +336,14 @@ def test_logs_in_start_execution_predefined():
         with instance_for_test(
             temp_dir=temp_dir,
             overrides={
+                "run_coordinator": {
+                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                    "class": "ImmediatelyLaunchRunCoordinator",
+                },
                 "run_launcher": {
                     "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                     "class": "SyncInMemoryRunLauncher",
-                }
+                },
             },
         ) as instance:
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})

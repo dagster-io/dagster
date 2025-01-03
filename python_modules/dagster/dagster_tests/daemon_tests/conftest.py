@@ -29,6 +29,10 @@ def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
                     "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                     "class": "SyncInMemoryRunLauncher",
                 },
+                "run_coordinator": {
+                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
+                    "class": "ImmediatelyLaunchRunCoordinator",
+                },
                 "event_log_storage": {
                     "module": "dagster._core.storage.event_log",
                     "class": "ConsolidatedSqliteEventLogStorage",
