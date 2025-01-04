@@ -20,27 +20,36 @@ from typing import (
     Type,
     TypedDict,
     TypeVar,
+    Union,
 )
 
 import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._record import record
 from dagster._utils import pushd, snakecase
 from pydantic import TypeAdapter
 from typing_extensions import Self
 
+from dagster_components.core.component_generator import (
+    ComponentGenerateRequest,
+    ComponentGenerator,
+    ComponentGeneratorUnavailableReason,
+)
 from dagster_components.core.component_rendering import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
 
 
-@record
-class ComponentGenerateRequest:
-    component_type_name: str
-    component_instance_root_path: Path
+# This calls the legacy classmethod `generate_files` on the component type. Will be removed
+# once conversion to the new API is complete.
+class ComponentGeneratorAdapter(ComponentGenerator):
+    def __init__(self, comonent_type: Type["Component"]):
+        self.component_type = comonent_type
+
+    def generate_files(self, request, params):
+        return self.component_type.generate_files(request, params)
 
 
 class Component(ABC):
@@ -49,14 +58,26 @@ class Component(ABC):
     generate_params_schema: ClassVar = None
 
     @classmethod
-    def get_rendering_scope(cls) -> Mapping[str, Any]:
-        return {}
+    def get_generator(cls) -> Union[ComponentGenerator, ComponentGeneratorUnavailableReason]:
+        """Subclasses should implement this method to override scaffolding behavior. If this component
+        is not meant to be scaffoled it returns a ComponetnGeneratorUnavailableReason with a message
+        This can be determined at runtime based on the environment or configuration. For example,
+        if generators are optionally installed as extras (for example to avoid heavy dependencies in production),
+        this method should return a ComponentGeneratorUnavailableReason with a message explaining
+        how to install the necessary extras.
+        """
+        return ComponentGeneratorAdapter(cls)
 
     @classmethod
     def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
+        # This will be deleted once all components are converted to the new ComponentGenerator API
         from dagster_components.generate import generate_component_yaml
 
         generate_component_yaml(request, {})
+
+    @classmethod
+    def get_rendering_scope(cls) -> Mapping[str, Any]:
+        return {}
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
