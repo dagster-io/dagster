@@ -53,7 +53,15 @@ function processModule({
   contentCache[path] = {content: lines.join('\n')};
 }
 
-const CodeExample: React.FC<CodeExampleProps> = ({
+const CodeExample: React.FC<CodeExampleProps> = ({...props}) => {
+  return (
+    <Suspense>
+      <CodeExampleInner {...props} />
+    </Suspense>
+  );
+};
+
+const CodeExampleInner: React.FC<CodeExampleProps> = ({
   filePath,
   title,
   lineStart,
