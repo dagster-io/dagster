@@ -403,7 +403,7 @@ class SlingResource(ConfigurableResource):
             for stream in stream_definitions:
                 asset_key = dagster_sling_translator.get_asset_key(stream)
 
-                object_key = stream.get("config", {}).get("object")
+                object_key = (stream.get("config") or {}).get("object")
                 destination_stream_name = object_key or stream["name"]
                 table_name = None
                 if destination_name and destination_stream_name:
