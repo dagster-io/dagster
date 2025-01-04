@@ -2,7 +2,6 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import click
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -14,6 +13,7 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext, component_type
 from dagster_components.core.component import ComponentGenerateRequest
 from dagster_components.core.component_decl_builder import YamlComponentDecl
+from dagster_components.core.component_generator import ComponentGenerator
 from dagster_components.generate import generate_component_yaml
 
 if TYPE_CHECKING:
@@ -25,12 +25,17 @@ class SimplePipesScriptAssetParams(BaseModel):
     asset_key: str
     filename: str
 
-    @staticmethod
-    @click.command
-    @click.option("--asset-key", type=str)
-    @click.option("--filename", type=str)
-    def cli(asset_key: str, filename: str) -> "SimplePipesScriptAssetParams":
-        return SimplePipesScriptAssetParams(asset_key=asset_key, filename=filename)
+
+class SimplePipesScriptAssetGenerator(ComponentGenerator):
+    generator_params = SimplePipesScriptAssetParams
+
+    def generate_files(
+        self, request: ComponentGenerateRequest, params: SimplePipesScriptAssetParams
+    ) -> None:
+        generate_component_yaml(request, params.model_dump())
+        Path(request.component_instance_root_path, params.filename).write_text(
+            _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
+        )
 
 
 _SCRIPT_TEMPLATE = """
@@ -50,17 +55,11 @@ class SimplePipesScriptAsset(Component):
     Because it is a pipes asset, no value is returned.
     """
 
-    generate_params_schema = SimplePipesScriptAssetParams
     params_schema = SimplePipesScriptAssetParams
 
     @classmethod
-    def generate_files(
-        cls, request: ComponentGenerateRequest, params: SimplePipesScriptAssetParams
-    ) -> None:
-        generate_component_yaml(request, params.model_dump())
-        Path(request.component_instance_root_path, params.filename).write_text(
-            _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
-        )
+    def get_generator(cls) -> ComponentGenerator:
+        return SimplePipesScriptAssetGenerator()
 
     @classmethod
     def from_decl_node(

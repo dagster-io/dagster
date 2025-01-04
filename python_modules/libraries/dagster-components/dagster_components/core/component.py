@@ -91,11 +91,16 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
+        generator = cls.get_generator()
+
+        if isinstance(generator, ComponentGeneratorUnavailableReason):
+            raise DagsterError(f"Component {cls.__name__} is not scaffoldable: {generator.message}")
+
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "generate_params_schema": cls.generate_params_schema.schema()
-            if cls.generate_params_schema
+            "generate_params_schema": generator.generator_params.schema()
+            if generator.generator_params
             else None,
             "component_params_schema": cls.params_schema.schema() if cls.params_schema else None,
         }
