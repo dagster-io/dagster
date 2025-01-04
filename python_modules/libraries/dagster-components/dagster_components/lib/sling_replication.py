@@ -12,7 +12,11 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import ComponentGenerateRequest, component_type
+from dagster_components.core.component import (
+    ComponentGenerateRequest,
+    ComponentGenerator,
+    component_type,
+)
 from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 
@@ -21,6 +25,17 @@ class SlingReplicationParams(BaseModel):
     sling: Optional[SlingResource] = None
     op: Optional[OpSpecBaseModel] = None
     asset_attributes: Optional[AssetAttributes] = None
+
+
+class SlingReplicationComponentGenerator(ComponentGenerator):
+    def generate_files(self, request: ComponentGenerateRequest, params: Any) -> None:
+        generate_component_yaml(request, params)
+        replication_path = Path(os.getcwd()) / "replication.yaml"
+        with open(replication_path, "w") as f:
+            yaml.dump(
+                {"source": {}, "target": {}, "streams": {}},
+                f,
+            )
 
 
 @component_type(name="sling_replication")
@@ -38,6 +53,10 @@ class SlingReplicationComponent(Component):
         self.resource = resource
         self.op_spec = op_spec
         self.asset_processors = asset_processors
+
+    @classmethod
+    def get_generator(cls) -> SlingReplicationComponentGenerator:
+        return SlingReplicationComponentGenerator()
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
@@ -62,16 +81,6 @@ class SlingReplicationComponent(Component):
         for transform in self.asset_processors:
             defs = transform.apply(defs, context.templated_value_resolver)
         return defs
-
-    @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
-        generate_component_yaml(request, params)
-        replication_path = Path(os.getcwd()) / "replication.yaml"
-        with open(replication_path, "w") as f:
-            yaml.dump(
-                {"source": {}, "target": {}, "streams": {}},
-                f,
-            )
 
     def execute(
         self, context: AssetExecutionContext, sling: SlingResource
