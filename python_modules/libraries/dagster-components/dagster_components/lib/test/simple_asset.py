@@ -29,7 +29,8 @@ class SimpleAsset(Component):
 
     params_schema = SimpleAssetParams
 
-    def get_generator(self) -> ComponentGenerator:
+    @classmethod
+    def get_generator(cls) -> ComponentGenerator:
         return DefaultComponentGenerator()
 
     @classmethod
