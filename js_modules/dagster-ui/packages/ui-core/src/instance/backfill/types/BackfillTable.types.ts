@@ -22,13 +22,13 @@ export type BackfillTableFragment = {
   status: Types.BulkActionStatus;
   isAssetBackfill: boolean;
   isValidSerialization: boolean;
-  partitionNames: Array<string> | null;
   numPartitions: number | null;
   timestamp: number;
   partitionSetName: string | null;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
   numCancelable: number;
+  partitionNames: Array<string> | null;
   partitionSet: {
     __typename: 'PartitionSet';
     id: string;

@@ -6,7 +6,7 @@ export type RunsFeedRootQueryVariables = Types.Exact<{
   limit: Types.Scalars['Int']['input'];
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
   filter?: Types.InputMaybe<Types.RunsFilter>;
-  includeRunsFromBackfills: Types.Scalars['Boolean']['input'];
+  view: Types.RunsFeedView;
 }>;
 
 export type RunsFeedRootQuery = {
@@ -35,6 +35,7 @@ export type RunsFeedRootQuery = {
               hasResumePermission: boolean;
               isAssetBackfill: boolean;
               numCancelable: number;
+              numPartitions: number | null;
               runStatus: Types.RunStatus;
               creationTime: number;
               startTime: number | null;
@@ -98,4 +99,4 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = 'ef8eb6ca144d661c6bcd409ed878551851f15dd1c0aa8c03ee9c68c1c4c301d1';
+export const RunsFeedRootQueryVersion = '5aac6e9b29b52642fec8a45ca86d183a0d7b2d4e092c27a107f37bf5ec4fdfc4';

@@ -9,6 +9,7 @@ export type RunsFeedTableEntryFragment_PartitionBackfill = {
   hasResumePermission: boolean;
   isAssetBackfill: boolean;
   numCancelable: number;
+  numPartitions: number | null;
   id: string;
   runStatus: Types.RunStatus;
   creationTime: number;

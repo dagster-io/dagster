@@ -22,13 +22,13 @@ export type JobBackfillsQuery = {
           status: Types.BulkActionStatus;
           isAssetBackfill: boolean;
           isValidSerialization: boolean;
-          partitionNames: Array<string> | null;
           numPartitions: number | null;
           timestamp: number;
           partitionSetName: string | null;
           hasCancelPermission: boolean;
           hasResumePermission: boolean;
           numCancelable: number;
+          partitionNames: Array<string> | null;
           partitionSet: {
             __typename: 'PartitionSet';
             id: string;
@@ -60,4 +60,4 @@ export type JobBackfillsQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const JobBackfillsQueryVersion = '520e31190a97fd72e51daf0e8f9a6f718afaa30ce223fb6f767f8d56c08716cd';
+export const JobBackfillsQueryVersion = '508c116ec0413d5c5785307e026413123a4e177d9855aa4506f597885359fcd8';

@@ -19,8 +19,7 @@ export const BackfillTable = ({
   refetch: () => void;
   showBackfillTarget?: boolean;
 }) => {
-  const [partitionsRequestedBackfill, setPartitionsRequestedBackfill] =
-    useState<BackfillTableFragment>();
+  const [partitionsRequestedBackfill, setPartitionsRequestedBackfill] = useState<string>();
 
   return (
     <>
@@ -51,7 +50,7 @@ export const BackfillTable = ({
       </Table>
 
       <BackfillPartitionsRequestedDialog
-        backfill={partitionsRequestedBackfill}
+        backfillId={partitionsRequestedBackfill}
         onClose={() => setPartitionsRequestedBackfill(undefined)}
       />
     </>
@@ -78,7 +77,6 @@ export const BACKFILL_TABLE_FRAGMENT = gql`
     status
     isAssetBackfill
     isValidSerialization
-    partitionNames
     numPartitions
     timestamp
     partitionSetName
