@@ -6,8 +6,8 @@ import click
 import yaml
 from dagster._utils import mkdir_p
 
-from dagster_components.core.component import (
-    Component,
+from dagster_components.core.component import Component
+from dagster_components.core.component_generator import (
     ComponentGenerateRequest,
     ComponentGeneratorUnavailableReason,
 )
