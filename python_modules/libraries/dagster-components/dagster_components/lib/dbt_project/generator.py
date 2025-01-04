@@ -6,7 +6,7 @@ import dagster._check as check
 from dbt.cli.main import dbtRunner
 from pydantic import BaseModel, Field
 
-from dagster_components.core.component import ComponentGenerateRequest, ComponentGenerator
+from dagster_components.core.component_generator import ComponentGenerateRequest, ComponentGenerator
 from dagster_components.generate import generate_component_yaml
 
 
