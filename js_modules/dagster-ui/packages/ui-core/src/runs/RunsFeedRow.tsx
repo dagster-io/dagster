@@ -18,6 +18,7 @@ import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
 import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
 import {DagsterTag} from './RunTag';
+import {RunTags} from './RunTags';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
 import {getBackfillPath} from './RunsFeedUtils';
@@ -86,6 +87,9 @@ export const RunsFeedRow = ({
     __typename: 'Run',
   };
 
+  const partitionTag =
+    entry.__typename === 'Run' ? entry.tags.find((t) => t.key === DagsterTag.Partition) : null;
+
   return (
     <RowGrid
       border="bottom"
@@ -124,6 +128,7 @@ export const RunsFeedRow = ({
               isHovered={isHovered}
               onAddTag={onAddTag}
               hideTags={hideTags}
+              hidePartition
             />
 
             {entry.runStatus === RunStatus.QUEUED ? (
@@ -148,6 +153,11 @@ export const RunsFeedRow = ({
             run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
             repoAddress={repoAddress}
             useTags={true}
+            extraTags={
+              partitionTag
+                ? [<RunTags key="partition" tags={[partitionTag]} onAddTag={onAddTag} />]
+                : []
+            }
           />
         ) : (
           <BackfillTarget
