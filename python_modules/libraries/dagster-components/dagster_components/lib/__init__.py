@@ -13,7 +13,7 @@ if _has_dagster_embedded_elt:
         SlingReplicationComponent as SlingReplicationComponent,
     )
 
-from dagster_components.lib.definitions_component import (
+from dagster_components.lib.definitions_component.component import (
     DefinitionsComponent as DefinitionsComponent,
 )
 from dagster_components.lib.pipes_subprocess_script_collection import (
