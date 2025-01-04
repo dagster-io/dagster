@@ -1,26 +1,17 @@
-import os
-from pathlib import Path
 from typing import Any, Iterator, Mapping, Optional, Sequence
 
-import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from dbt.cli.main import dbtRunner
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import (
-    ComponentGenerateRequest,
-    ComponentGenerator,
-    TemplatedValueResolver,
-    component_type,
-)
+from dagster_components.core.component import TemplatedValueResolver, component_type
 from dagster_components.core.component_rendering import RenderedModel
 from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
-from dagster_components.generate import generate_component_yaml
+from dagster_components.lib.dbt_project.generator import DbtProjectComponentGenerator
 
 
 class DbtNodeTranslatorParams(RenderedModel):
@@ -33,11 +24,6 @@ class DbtProjectParams(BaseModel):
     op: Optional[OpSpecBaseModel] = None
     translator: Optional[DbtNodeTranslatorParams] = None
     asset_attributes: Optional[AssetAttributes] = None
-
-
-class DbtGenerateParams(BaseModel):
-    init: bool = Field(default=False)
-    project_path: Optional[str] = None
 
 
 class DbtProjectComponentTranslator(DagsterDbtTranslator):
@@ -69,35 +55,9 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
         )
 
 
-class DbtProjectComponentGenerator(ComponentGenerator):
-    generator_params = DbtGenerateParams
-
-    def generate_files(self, request: ComponentGenerateRequest, params: DbtGenerateParams) -> None:
-        cwd = os.getcwd()
-        if params.project_path:
-            # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to
-            # make sure the path is right.
-            relative_path = os.path.join(
-                "../../../", os.path.relpath(params.project_path, start=cwd)
-            )
-        elif params.init:
-            dbtRunner().invoke(["init"])
-            subpaths = [
-                path for path in Path(cwd).iterdir() if path.is_dir() and path.name != "logs"
-            ]
-            check.invariant(len(subpaths) == 1, "Expected exactly one subpath to be created.")
-            # this path should be relative to this directory
-            relative_path = subpaths[0].name
-        else:
-            relative_path = None
-
-        generate_component_yaml(request, {"dbt": {"project_dir": relative_path}})
-
-
 @component_type(name="dbt_project")
 class DbtProjectComponent(Component):
     params_schema = DbtProjectParams
-    generate_params_schema = DbtGenerateParams
 
     def __init__(
         self,
@@ -112,7 +72,7 @@ class DbtProjectComponent(Component):
         self.asset_processors = asset_processors
 
     @classmethod
-    def get_generator(cls):
+    def get_generator(cls) -> "DbtProjectComponentGenerator":
         return DbtProjectComponentGenerator()
 
     @classmethod
