@@ -29,7 +29,7 @@ class SimplePipesScriptAssetParams(BaseModel):
 class SimplePipesScriptAssetGenerator(ComponentGenerator):
     generator_params = SimplePipesScriptAssetParams
 
-    def generate(
+    def generate_files(
         self, request: ComponentGenerateRequest, params: SimplePipesScriptAssetParams
     ) -> None:
         generate_component_yaml(request, params.model_dump())
@@ -57,7 +57,8 @@ class SimplePipesScriptAsset(Component):
 
     params_schema = SimplePipesScriptAssetParams
 
-    def get_generator(self) -> ComponentGenerator:
+    @classmethod
+    def get_generator(cls) -> ComponentGenerator:
         return SimplePipesScriptAssetGenerator()
 
     @classmethod
