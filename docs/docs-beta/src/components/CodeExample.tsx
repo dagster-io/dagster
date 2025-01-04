@@ -1,5 +1,3 @@
-// src/components/CodeExample.jsx
-
 import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
