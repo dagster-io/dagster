@@ -148,8 +148,13 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
     }
   });
 
-  React.useEffect(() => {
-    window.requestAnimationFrame(evaluate);
+  // This should technically be a useEffect with a requestAnimationFrame,
+  // but React Virtualizer doesn't use that combo. Kicking out to the next animation frame
+  // causes the row height calculation to run first. If the row is already sized when we
+  // run this size-to-fit logic, we modify the height of the row and the virtualizer
+  // calculation has to run a second time. Doing that x many rows results in visible jank.
+  React.useLayoutEffect(() => {
+    evaluate();
   }, [evaluate]);
 
   return {containerRef, moreLabelRef};
