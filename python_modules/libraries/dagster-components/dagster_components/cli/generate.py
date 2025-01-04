@@ -11,7 +11,10 @@ from dagster_components.core.deployment import (
     find_enclosing_code_location_root_path,
     is_inside_code_location_project,
 )
-from dagster_components.generate import generate_component_instance
+from dagster_components.generate import (
+    ComponentGeneratorUnavailableReason,
+    generate_component_instance,
+)
 from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
@@ -54,8 +57,18 @@ def generate_component_command(
 
     component_type_cls = context.get_component_type(component_type)
     if json_params:
-        generate_params_schema = component_type_cls.generate_params_schema
-        generate_params = TypeAdapter(generate_params_schema).validate_json(json_params)
+        # TODO: when conversion to generator is complete, remove this block
+        if component_type_cls.generate_params_schema:
+            generate_params = TypeAdapter(component_type_cls.generate_params_schema).validate_json(
+                json_params
+            )
+        else:
+            generator = component_type_cls.get_generator()
+            if isinstance(generator, ComponentGeneratorUnavailableReason):
+                raise Exception(
+                    f"Component type {component_type} does not have a generator. Reason: {generator.message}."
+                )
+            generate_params = TypeAdapter(generator.generator_params).validate_json(json_params)
     else:
         generate_params = {}
 
