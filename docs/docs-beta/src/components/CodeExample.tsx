@@ -103,9 +103,11 @@ const CodeExampleInner: React.FC<CodeExampleProps> = ({
   }
 
   return (
-    <CodeBlock language={language} title={title} {...props}>
-      {content || 'Loading...'}
-    </CodeBlock>
+    <div suppressHydrationWarning>
+      <CodeBlock language={language} title={title} {...props}>
+        {content || 'Loading...'}
+      </CodeBlock>
+    </div>
   );
 };
 
