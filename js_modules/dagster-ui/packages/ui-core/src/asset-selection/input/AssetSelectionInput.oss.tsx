@@ -92,6 +92,7 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
   return (
     <WrapperDiv>
       <SelectionAutoCompleteInput
+        id="asset-selection-input"
         nameBase="key"
         attributesMap={attributesMap}
         placeholder={placeholderTextForItems('Type an asset subset…', assets)}
