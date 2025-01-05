@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
 interface CodeExampleProps {
@@ -9,7 +9,6 @@ interface CodeExampleProps {
   lineEnd?: number;
   pathPrefix?: string;
 }
-
 
 /**
  * Removes content below the `if __name__` block for the given `lines`.
@@ -28,7 +27,39 @@ function filterNoqaComments(lines: string[]): string[] {
   });
 }
 
-const CodeExample: React.FC<CodeExampleProps> = ({
+const contentCache: Record<string, {content?: string; error?: string | null}> = {};
+
+function processModule({
+  module,
+  lineStart,
+  lineEnd,
+  path,
+}: {
+  path: string;
+  lineEnd?: number;
+  lineStart?: number;
+  module: any;
+}) {
+  var lines = module.default.split('\n');
+
+  const sliceStart = lineStart && lineStart > 0 ? lineStart : 0;
+  const sliceEnd = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
+  lines = lines.slice(sliceStart, sliceEnd);
+
+  lines = filterNoqaComments(lines);
+  lines = trimMainBlock(lines);
+  contentCache[path] = {content: lines.join('\n')};
+}
+
+const CodeExample: React.FC<CodeExampleProps> = ({...props}) => {
+  return (
+    <Suspense>
+      <CodeExampleInner {...props} />
+    </Suspense>
+  );
+};
+
+const CodeExampleInner: React.FC<CodeExampleProps> = ({
   filePath,
   title,
   lineStart,
@@ -37,31 +68,35 @@ const CodeExample: React.FC<CodeExampleProps> = ({
   pathPrefix = 'docs_beta_snippets/docs_beta_snippets',
   ...props
 }) => {
-  const [content, setContent] = React.useState<string>('');
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    import(`!!raw-loader!/../../examples/${pathPrefix}/${filePath}`)
+  const path = pathPrefix + '/' + filePath;
+  const isServer = typeof window === 'undefined';
+  if (isServer) {
+    /**
+     * Note: Remove the try/catch to cause a hard error on build once all of the bad code examples are cleaned up.
+     */
+    try {
+      const module = require(`!!raw-loader!/../../examples/${path}`);
+      processModule({module, lineStart, lineEnd, path});
+    } catch (e) {
+      console.error(e);
+      contentCache[path] = {error: e.toString()};
+    }
+  }
+  if (!contentCache[path]) {
+    /**
+     * We only reach this path on the client.
+     * Throw a promise to suspend in order to avoid un-rendering the codeblock that we SSR'd
+     */
+    throw import(`!!raw-loader!/../../examples/${path}`)
       .then((module) => {
-        var lines = module.default.split('\n');
-
-        const sliceStart = lineStart && lineStart > 0 ? lineStart : 0;
-        const sliceEnd = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
-        lines = lines.slice(sliceStart, sliceEnd);
-
-        lines = filterNoqaComments(lines);
-        lines = trimMainBlock(lines);
-
-        setContent(lines.join('\n'));
-        setError(null);
+        processModule({module, lineStart, lineEnd, path});
       })
-      .catch((error) => {
-        console.error(`Error loading file: ${filePath}`, error);
-        setError(
-          `Failed to load file: ${filePath}. Please check if the file exists and the path is correct.`,
-        );
+      .catch((e) => {
+        contentCache[filePath] = {error: e.toString()};
       });
-  }, [filePath]);
+  }
+
+  const {content, error} = contentCache[path];
 
   if (error) {
     return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;
