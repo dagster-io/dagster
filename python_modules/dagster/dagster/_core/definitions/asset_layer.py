@@ -40,7 +40,7 @@ class AssetLayer(NamedTuple):
     @staticmethod
     def from_graph_and_assets_node_mapping(
         graph_def: GraphDefinition,
-        assets_defs_by_outer_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+        assets_defs_by_outer_node_name: Mapping[str, "AssetsDefinition"],
         asset_graph: "AssetGraph",
     ) -> "AssetLayer":
         """Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
@@ -62,7 +62,8 @@ class AssetLayer(NamedTuple):
         outer_node_names_by_asset_key: Dict[AssetKey, str] = {}
         assets_defs_by_op_handle: Dict[NodeHandle, "AssetsDefinition"] = {}
 
-        for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
+        for node_name, assets_def in assets_defs_by_outer_node_name.items():
+            node_handle = NodeHandle(node_name, parent=None)
             computation = check.not_none(assets_def.computation)
             full_node_def = computation.full_node_def
             for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
