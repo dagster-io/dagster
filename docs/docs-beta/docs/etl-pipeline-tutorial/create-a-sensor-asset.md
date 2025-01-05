@@ -69,4 +69,4 @@ sensors include the following elements:
 
 Now that we have our complete project, the next step is to refactor the project into more a more manageable structure so we can add to it as needed. 
 
-Finish the tutorial with [refactoring the project](refactor-the-project)
+Finish the tutorial by [refactoring your project](refactor-your-project)
