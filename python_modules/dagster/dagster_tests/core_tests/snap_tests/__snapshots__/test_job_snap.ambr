@@ -1173,6 +1173,7 @@
               "name": "result"
             }
           ],
+          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -1200,6 +1201,7 @@
               "name": "result"
             }
           ],
+          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -1210,7 +1212,7 @@
   '''
 # ---
 # name: test_basic_dep_fan_out.1
-  '9376013e33a3e52fed33f38d78bdfa32c05fac25'
+  'e061a27410eaba2c87df3adcd2b9f0fa85d81902'
 # ---
 # name: test_basic_fan_in
   '''
@@ -2371,6 +2373,7 @@
               "name": "result"
             }
           ],
+          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -2405,6 +2408,7 @@
               "name": "result"
             }
           ],
+          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -2415,7 +2419,7 @@
   '''
 # ---
 # name: test_basic_fan_in.1
-  '90ef3d60327e171213dc830e6c582d1e714bd10e'
+  'ca4f5d95b481a2514dd9b1165ec6582478264b1f'
 # ---
 # name: test_deserialize_node_def_snaps_multi_type_config
   '''
@@ -3560,6 +3564,7 @@
               "name": "result"
             }
           ],
+          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -3570,7 +3575,7 @@
   '''
 # ---
 # name: test_empty_job_snap_props.1
-  '2be758e018ad9a646ff3f425bcd0100b6f7c9db5'
+  '2e1a9c7bcca1fbd5675ae312810b00213b71f5c5'
 # ---
 # name: test_empty_job_snap_snapshot
   '''
@@ -4679,6 +4684,7 @@
               "name": "result"
             }
           ],
+          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -5795,6 +5801,7 @@
               "name": "result"
             }
           ],
+          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -5807,7 +5814,7 @@
   '''
 # ---
 # name: test_job_snap_all_props.1
-  '5365f964888a995ab736b47025f9bcce9da3a57b'
+  '0db77de4cfb28cfe1d213e9385eab27d87f8b495'
 # ---
 # name: test_multi_type_config_array_dict_fields[Permissive]
   '''
@@ -7171,6 +7178,7 @@
               "name": "result"
             }
           ],
+          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -7181,5 +7189,5 @@
   '''
 # ---
 # name: test_two_invocations_deps_snap.1
-  'f86a9e94c60e91934153cb384caacfeee9976853'
+  '781698a4c8d4a870837133c4d9f108b410e834f1'
 # ---

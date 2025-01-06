@@ -176,8 +176,8 @@ class GraphDefSnap:
 
 
 @whitelist_for_serdes(storage_name="SolidDefSnap")
-@record
-class OpDefSnap:
+@record_custom
+class OpDefSnap(IHaveNew):
     name: str
     input_def_snaps: Sequence[InputDefSnap]
     output_def_snaps: Sequence[OutputDefSnap]
@@ -186,6 +186,29 @@ class OpDefSnap:
     required_resource_keys: Sequence[str]
     config_field_snap: Optional[ConfigFieldSnap]
     pool: Optional[str]
+
+    def __new__(
+        cls,
+        name: str,
+        input_def_snaps: Sequence[InputDefSnap],
+        output_def_snaps: Sequence[OutputDefSnap],
+        description: Optional[str],
+        tags: Mapping[str, str],
+        required_resource_keys: Sequence[str],
+        config_field_snap: Optional[ConfigFieldSnap],
+        pool: Optional[str] = None,
+    ):
+        return super().__new__(
+            cls,
+            name=name,
+            input_def_snaps=input_def_snaps,
+            output_def_snaps=output_def_snaps,
+            description=description,
+            tags=tags,
+            required_resource_keys=required_resource_keys,
+            config_field_snap=config_field_snap,
+            pool=pool,
+        )
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
