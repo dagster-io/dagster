@@ -60,7 +60,7 @@ def github_issues_raw(
     kinds={"Github", "OpenAI", "Pinecone"},
     partitions_def=weekly_partition,
     io_manager_key="document_io_manager",
-    ins={"github_issues_raw":dg.AssetIn(partition_mapping=dg.IdentityPartitionMapping())},
+    ins={"github_issues_raw": dg.AssetIn(partition_mapping=dg.IdentityPartitionMapping())},
     automation_condition=dg.AutomationCondition.eager(),
     description="""
    Creates and stores vector embeddings for GitHub issues in Pinecone.
@@ -171,7 +171,7 @@ def github_discussions_raw(
     kinds={"Github", "OpenAI", "Pinecone"},
     partitions_def=weekly_partition,
     io_manager_key="document_io_manager",
-    ins={"github_discussions_raw":dg.AssetIn(partition_mapping=dg.IdentityPartitionMapping())},
+    ins={"github_discussions_raw": dg.AssetIn(partition_mapping=dg.IdentityPartitionMapping())},
     automation_condition=dg.AutomationCondition.eager(),
     description="""
    Creates vector embeddings from GitHub discussions and stores them in Pinecone.
