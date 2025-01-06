@@ -7,7 +7,7 @@ from dagster import (
     MaterializeResult,
     _check as check,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster._core.definitions.metadata.table import (
     TableColumn,
