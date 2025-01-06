@@ -1,7 +1,6 @@
 langchain
 langchain-core
 gql
-python-dotenv
 langchain-community
 langchain-openai
 dagster

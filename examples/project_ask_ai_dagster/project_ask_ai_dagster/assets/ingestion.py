@@ -18,6 +18,7 @@ weekly_partition = dg.WeeklyPartitionsDefinition(start_date=START_TIME)
     group_name="ingestion",
     kinds={"Github"},
     partitions_def=weekly_partition,
+    io_manager_key="document_io_manager",
     automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
     description="""
    Ingests raw GitHub issues data from the Dagster repository on a weekly basis.
@@ -58,6 +59,8 @@ def github_issues_raw(
     group_name="embeddings",
     kinds={"Github", "OpenAI", "Pinecone"},
     partitions_def=weekly_partition,
+    io_manager_key="document_io_manager",
+    ins={"github_issues_raw":dg.AssetIn(partition_mapping=dg.IdentityPartitionMapping())},
     automation_condition=dg.AutomationCondition.eager(),
     description="""
    Creates and stores vector embeddings for GitHub issues in Pinecone.
@@ -120,7 +123,7 @@ def github_issues_embeddings(
 
     return dg.MaterializeResult(
         metadata={
-            "number_of_discussions": len(github_issues_raw),
+            "number_of_issues": len(github_issues_raw),
         }
     )
 
@@ -129,6 +132,7 @@ def github_issues_embeddings(
     group_name="ingestion",
     kinds={"Github"},
     partitions_def=weekly_partition,
+    io_manager_key="document_io_manager",
     automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
     description="""
    Retrieves GitHub discussions within a date range and converts them to Document objects.
@@ -152,7 +156,7 @@ def github_discussions_raw(
     github: GithubResource,
 ) -> List[Document]:
     start, end = context.partition_time_window
-    context.log.info(f"Finding issues from {start} to {end}")
+    context.log.info(f"Finding discussions from {start} to {end}")
 
     discussions = github.get_discussions(
         start_date=start.strftime("%Y-%m-%d"), end_date=end.strftime("%Y-%m-%d")
@@ -166,6 +170,8 @@ def github_discussions_raw(
     group_name="embeddings",
     kinds={"Github", "OpenAI", "Pinecone"},
     partitions_def=weekly_partition,
+    io_manager_key="document_io_manager",
+    ins={"github_discussions_raw":dg.AssetIn(partition_mapping=dg.IdentityPartitionMapping())},
     automation_condition=dg.AutomationCondition.eager(),
     description="""
    Creates vector embeddings from GitHub discussions and stores them in Pinecone.

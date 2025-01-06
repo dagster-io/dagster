@@ -5,6 +5,7 @@ import dagster as dg
 import requests
 from bs4 import BeautifulSoup
 from langchain_core.documents import Document
+from typing import Optional
 
 
 class SitemapScraper(dg.ConfigurableResource):
@@ -21,7 +22,7 @@ class SitemapScraper(dg.ConfigurableResource):
         urls = list(set(loc.text.strip() for loc in soup.find_all("loc") if loc.text.strip()))
         return urls
 
-    def scrape_page(self, url: str) -> Document:
+    def scrape_page(self, url: str) -> Optional[Document]:
         log = dg.get_dagster_logger()
         try:
             response = requests.get(url, headers=self.headers)
@@ -52,4 +53,4 @@ class SitemapScraper(dg.ConfigurableResource):
             return None
 
 
-scraper_resource = SitemapScraper(sitemap_url=os.getenv("DOCS_SITEMAP"))
+scraper_resource = SitemapScraper(sitemap_url=dg.EnvVar("DOCS_SITEMAP"))
