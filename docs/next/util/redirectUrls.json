@@ -481,7 +481,7 @@
   },
   {
     "source": "/deployment/guides/airflow",
-    "destination": "/integrations/airflow",
+    "destination": "/integrations/airlift",
     "statusCode": 302
   },
   {
@@ -741,7 +741,7 @@
   },
   {
     "source": "/_apidocs/libraries/dagster-airflow",
-    "destination": "/integrations/airflow",
+    "destination": "/integrations/airlift",
     "statusCode": 302
   },
   {

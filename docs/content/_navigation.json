@@ -1027,10 +1027,6 @@
         ]
       },
       {
-        "title": "Airflow",
-        "path": "/integrations/airflow"
-      },
-      {
         "title": "Databricks",
         "path": "/concepts/dagster-pipes/databricks"
       },
@@ -1339,20 +1335,6 @@
         "isNotDynamic": true
       },
       {
-        "title": "Migrating to Dagster",
-        "path": "/guides/migrations",
-        "children": [
-          {
-            "title": "Learning Dagster from Airflow",
-            "path": "/integrations/airflow/from-airflow-to-dagster"
-          },
-          {
-            "title": "Migrating from Airflow",
-            "path": "/guides/migrations/migrating-airflow-to-dagster"
-          }
-        ]
-      },
-      {
         "title": "Best practices",
         "children": [
           {
@@ -1537,7 +1519,7 @@
             "path": "/_apidocs/libraries/dagster-pipes"
           },
           {
-            "title": "Airlift (dagster-airlift)",
+            "title": "Airflow (dagster-airlift)",
             "path": "/_apidocs/libraries/dagster-airlift"
           },
           {
