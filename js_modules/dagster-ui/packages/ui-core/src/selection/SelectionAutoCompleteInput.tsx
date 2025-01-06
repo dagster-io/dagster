@@ -196,6 +196,7 @@ const GlobalHintStyles = createGlobalStyle`
       font-size: 14px;
       padding: 6px 8px 6px 12px;
       color: ${Colors.textDefault()};
+      &:hover,
       &.CodeMirror-hint-active {
         background-color: ${Colors.backgroundBlue()};
         color: ${Colors.textDefault()};
@@ -205,6 +206,10 @@ const GlobalHintStyles = createGlobalStyle`
 `;
 
 function showHint(instance: Editor, hint: HintFunction) {
+  if (document.body.querySelector('.CodeMirror-hints')) {
+    // Hints already visible
+    return;
+  }
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       if (instance.getWrapperElement().contains(document.activeElement)) {
@@ -213,6 +218,7 @@ function showHint(instance: Editor, hint: HintFunction) {
           completeSingle: false,
           moveOnOverlap: true,
           updateOnCursorActivity: true,
+          completeOnSingleClick: true,
         });
       }
     });
