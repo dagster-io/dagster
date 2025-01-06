@@ -11,6 +11,7 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     _check as check,
 )
+from dagster._annotations import superseded
 from dagster._core.definitions.graph_definition import create_adjacency_lists
 from dagster._utils.schedules import is_valid_cron_schedule
 
@@ -95,6 +96,11 @@ def _build_asset_dependencies(
     return (output_mappings, keys_by_output_name, internal_asset_deps)
 
 
+@superseded(
+    additional_warn_text=(
+        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+    )
+)
 def load_assets_from_airflow_dag(
     dag: DAG,
     task_ids_by_asset_key: Mapping[AssetKey, AbstractSet[str]] = {},

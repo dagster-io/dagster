@@ -15,6 +15,7 @@ from dagster import (
     ResourceDefinition,
     _check as check,
 )
+from dagster._annotations import superseded
 
 from dagster_airflow.resources.airflow_db import AirflowDatabase
 from dagster_airflow.utils import (
@@ -68,6 +69,11 @@ class AirflowEphemeralDatabase(AirflowDatabase):
         )
 
 
+@superseded(
+    additional_warn_text=(
+        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+    )
+)
 def make_ephemeral_airflow_db_resource(
     connections: list[Connection] = [], dag_run_config: Optional[dict] = None
 ) -> ResourceDefinition:

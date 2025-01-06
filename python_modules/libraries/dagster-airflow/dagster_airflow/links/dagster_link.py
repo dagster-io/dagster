@@ -1,8 +1,14 @@
 from airflow.models import BaseOperatorLink, TaskInstance
+from dagster._annotations import superseded
 
 LINK_FMT = "https://dagster.cloud/{organization_id}/{deployment_name}/runs/{run_id}"
 
 
+@superseded(
+    additional_warn_text=(
+        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+    )
+)
 class DagsterLink(BaseOperatorLink):
     name = "Dagster Cloud"  # type: ignore  # (airflow 1 compat)
 
