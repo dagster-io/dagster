@@ -1,9 +1,21 @@
 from enum import Enum, EnumMeta
-from typing import Any, Awaitable, List, NamedTuple, Optional, Type, Union
+from typing import Any, Generic, List, NamedTuple, Optional, Type, TypeVar, Union
 
 from dagster._serdes.serdes import Serializer
+from dagster._serialization.base.scribe import ScribeCoatCheckTicket
 
 # type alias for all possible types of a field
+UnfinishedCapnProtoFieldType = Union[
+    "CapnProtoPrimitiveType",
+    "CapnProtoPointerType",
+    "CapnProtoMessageMetadata",
+    "CapnProtoUnionMetadata",
+    "CapnProtoStructMetadata",
+    "CapnProtoCollectionType",
+    "CapnProtoRecursiveType",
+    ScribeCoatCheckTicket,
+]
+
 CapnProtoFieldType = Union[
     "CapnProtoPrimitiveType",
     "CapnProtoPointerType",
@@ -12,32 +24,33 @@ CapnProtoFieldType = Union[
     "CapnProtoStructMetadata",
     "CapnProtoCollectionType",
     "CapnProtoRecursiveType",
-    Awaitable["CapnProtoFieldType"],
 ]
 
+TFieldType = TypeVar("TFieldType")
 
-class CapnProtoCollectionType(NamedTuple):
+
+class CapnProtoCollectionType(Generic[TFieldType], NamedTuple):
     collection_base_type: str
-    generic_arg: CapnProtoFieldType
+    generic_arg: TFieldType
 
 
-class CapnProtoFieldMetadata(NamedTuple):
+class CapnProtoFieldMetadata(Generic[TFieldType], NamedTuple):
     name: str
-    type_: CapnProtoFieldType
+    type_: TFieldType
 
 
-class CapnProtoUnionMetadata(NamedTuple):
-    fields: List[CapnProtoFieldType]
+class CapnProtoUnionMetadata(Generic[TFieldType], NamedTuple):
+    fields: List[TFieldType]
 
 
-class CapnProtoStructMetadata(NamedTuple):
-    fields: List[CapnProtoFieldType]
+class CapnProtoStructMetadata(Generic[TFieldType], NamedTuple):
+    fields: List[TFieldType]
 
 
 # Messages are root-level (in the schema tree) objects
-class CapnProtoMessageMetadata(NamedTuple):
+class CapnProtoMessageMetadata(Generic[TFieldType], NamedTuple):
     serializer: Serializer
-    fields: List[CapnProtoFieldMetadata]
+    fields: List[CapnProtoFieldMetadata[TFieldType]]
     # HACK: just a hack to fit enums into the design, not great but could be easily broken out into another class
     is_enum: bool = False
 
@@ -69,6 +82,7 @@ class CapnProtoPrimitiveType(str, Enum, metaclass=CapnProtoPrimitiveTypeMeta):
     def __str__(self):
         return self.value
 
+
 # These are "provided" types either by capnproto (List, Anypointer) or by Dagster (Map, Set, FrozenSet)
 class CapnProtoPointerType(str, Enum):
     ANY_POINTER = "AnyPointer"
@@ -80,7 +94,8 @@ class CapnProtoPointerType(str, Enum):
 
     def __str__(self):
         return self.value
-    
+
+
 # Just a sentinel value for recursive types
 class CapnProtoRecursiveType(str, Enum):
     SELF = "Self"

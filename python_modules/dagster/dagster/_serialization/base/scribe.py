@@ -78,9 +78,13 @@ BANISHED_FROM_SERDES = {
 TTypeMetadata = TypeVar("TTypeMetadata")
 
 
-class ScribeWillCall(Generic[TTypeMetadata], NamedTuple):
+class ScribeCoatCheck(Generic[TTypeMetadata], NamedTuple):
     future: Future[TTypeMetadata]
     waiting: List[str]
+
+
+class ScribeCoatCheckTicket(NamedTuple):
+    type_: str
 
 
 class BaseScribe(Generic[TTypeMetadata], ABC):
@@ -95,7 +99,7 @@ class BaseScribe(Generic[TTypeMetadata], ABC):
     been resolved or not.
     """
 
-    _scribed_types: Dict[Type[Any], ScribeWillCall[TTypeMetadata]] = dict()
+    _scribed_types: Dict[str, ScribeCoatCheck[TTypeMetadata]] = dict()
 
     @abstractmethod
     async def visit_message(self, serializer: ObjectSerializer[Any]) -> TTypeMetadata:
@@ -107,6 +111,10 @@ class BaseScribe(Generic[TTypeMetadata], ABC):
 
     @abstractmethod
     async def visit_enum(self, serializer: EnumSerializer[Enum]) -> TTypeMetadata:
+        pass
+
+    @abstractmethod
+    async def finalize(self) -> Iterable[Tuple[Type[Any], ScribeCoatCheck[TTypeMetadata]]]:
         pass
 
     async def from_serializer(self, serializer: Union[ObjectSerializer[Any], EnumSerializer[Enum]]):
@@ -126,24 +134,25 @@ class BaseScribe(Generic[TTypeMetadata], ABC):
         except Exception:
             logger.exception(f"Error scribing {serializer.klass}")
 
-    def get_will_call(self) -> Iterable[Tuple[Type[Any], ScribeWillCall[TTypeMetadata]]]:
-        return self._scribed_types.items()
+    def _type_key(self, type_: Type[Any]) -> str:
+        return f"{type_.__module__}.{type_.__name__}"
 
     def _insert_scribed_type(self, type_: Type[Any], scribed_type: TTypeMetadata) -> None:
         if type_ not in self._scribed_types:
-            self._scribed_types[type_] = ScribeWillCall(Future(), [])
+            self._scribed_types[self._type_key(type_)] = ScribeCoatCheck(Future(), [])
 
         # REVIEW: some enums appear to be double inserted into the whitelist
-        if not self._scribed_types[type_].future.done():
-            self._scribed_types[type_].future.set_result(scribed_type)
+        if not self._scribed_types[self._type_key(type_)].future.done():
+            self._scribed_types[self._type_key(type_)].future.set_result(scribed_type)
 
-    async def _get_expected_scribed_type(self, type_: Type[Any], waiting: str) -> TTypeMetadata:
-        if type_ not in self._scribed_types:
-            self._scribed_types[type_] = ScribeWillCall(Future(), [waiting])
+    def _get_expected_scribed_type(self, type_: Type[Any], waiting: str) -> ScribeCoatCheckTicket:
+        type_key = self._type_key(type_)
+        if type_key not in self._scribed_types:
+            self._scribed_types[type_key] = ScribeCoatCheck(Future(), [waiting])
         else:
-            self._scribed_types[type_].waiting.append(waiting)
+            self._scribed_types[type_key].waiting.append(waiting)
 
-        return await self._scribed_types[type_].future
+        return ScribeCoatCheckTicket(type_key)
 
     @asynccontextmanager
     async def _new_enum(

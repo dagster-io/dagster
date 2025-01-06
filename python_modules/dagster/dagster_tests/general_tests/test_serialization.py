@@ -1,13 +1,13 @@
 import logging
-from asyncio import TimeoutError, gather, wait_for
+from asyncio import TimeoutError, gather, shield, wait_for
 from collections.abc import Mapping
 from typing import ForwardRef, Union
 
 import pytest
 from dagster._serdes.serdes import _WHITELIST_MAP
 from dagster._serialization.base.types import normalize_type
-from dagster._serialization.capnproto.scribe import CapnProtoScribe
 from dagster._serialization.capnproto.compile import CapnProtoCompiler
+from dagster._serialization.capnproto.scribe import CapnProtoScribe
 
 logger = logging.getLogger(__name__)
 
@@ -28,31 +28,22 @@ async def test_compile_all():
     scribe_tasks = [
         *(
             scribe.from_serializer(serializer)
-            for serializer in _WHITELIST_MAP.object_serializers.values()
+            for serializer in _WHITELIST_MAP.enum_serializers.values()
         ),
         *(
             scribe.from_serializer(serializer)
-            for serializer in _WHITELIST_MAP.enum_serializers.values()
+            for serializer in _WHITELIST_MAP.object_serializers.values()
         ),
     ]
 
-    try:
-        await wait_for(gather(*scribe_tasks), timeout=10)
-    except TimeoutError:
-        for type_, willcall in scribe.get_will_call():
-            if willcall.future.cancelled():
-                print(f"{type_} blocking:")
-                for waiter in willcall.waiting:
-                    print("  " + waiter)
-        raise
+    await shield(wait_for(gather(*scribe_tasks), timeout=10))
 
     compiler = CapnProtoCompiler()
-    
-    for type_, willcall in scribe.get_will_call():
-        async for part in compiler.compile_message(willcall.future.result()):
-            for line in part.render():
-                print(line)
-        
+    async for type_, metadata in scribe.finalize():
+        renderer = await compiler.compile(metadata)
+        for line in renderer.render(""):
+            print(line)
+            pass
 
 
 @pytest.mark.asyncio
@@ -60,16 +51,29 @@ async def test_circular_types():
     scribe = CapnProtoScribe()
     await scribe.from_serializer(_find_serializer_for_type("DefaultSensorStatus"))
     await scribe.from_serializer(_find_serializer_for_type("SensorType"))
+    await scribe.from_serializer(_find_serializer_for_type("AllSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("AllAssetCheckSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("AssetChecksForAssetKeysSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("AssetCheckKeysSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("SubtractAssetSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("GroupsAssetSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("TagAssetSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("OwnerAssetSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("CodeLocationAssetSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("KeysAssetSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("KeyPrefixesAssetSelection"))
+    await scribe.from_serializer(_find_serializer_for_type("KeySubstringAssetSelection"))
+    for type_name, result in scribe._scribed_types.items():
+        print(f"Type: {type_name}")
+        print(result)
     try:
         await wait_for(scribe.from_serializer(_find_serializer_for_type("SensorSnap")), timeout=10)  # type: ignore
     except TimeoutError:
         pass
 
-    for type_, willcall in scribe.get_will_call():
-        if willcall.future.cancelled():
-            print(f"{type_} blocking:")
-            for waiter in willcall.waiting:
-                print("  " + waiter)
+    for type_name, result in scribe._scribed_types.items():
+        print(f"Type: {type_name}")
+        print(result)
 
 
 @pytest.mark.asyncio
