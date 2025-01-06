@@ -80,7 +80,6 @@ class DltEventIterator(Iterator[T]):
         return self
 
     @public
-    @experimental
     def fetch_row_count(self) -> "DltEventIterator":
         """Fetches row count metadata for each resource loaded by dlt.
 
