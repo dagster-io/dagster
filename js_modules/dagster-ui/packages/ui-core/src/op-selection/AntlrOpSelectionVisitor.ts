@@ -19,19 +19,19 @@ import {
 import {OpSelectionVisitor} from './generated/OpSelectionVisitor';
 import {getTraversalDepth, getValue} from '../asset-selection/AntlrAssetSelectionVisitor';
 
-export class AntlrOpSelectionVisitor
-  extends AbstractParseTreeVisitor<Set<GraphQueryItem>>
-  implements OpSelectionVisitor<Set<GraphQueryItem>>
+export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
+  extends AbstractParseTreeVisitor<Set<T>>
+  implements OpSelectionVisitor<Set<T>>
 {
-  all_ops: Set<GraphQueryItem>;
-  focus_ops: Set<GraphQueryItem>;
-  traverser: GraphTraverser<GraphQueryItem>;
+  all_ops: Set<T>;
+  focus_ops: Set<T>;
+  traverser: GraphTraverser<T>;
 
   protected defaultResult() {
-    return new Set<GraphQueryItem>();
+    return new Set<T>();
   }
 
-  constructor(all_ops: GraphQueryItem[]) {
+  constructor(all_ops: T[]) {
     super();
     this.all_ops = new Set(all_ops);
     this.focus_ops = new Set();

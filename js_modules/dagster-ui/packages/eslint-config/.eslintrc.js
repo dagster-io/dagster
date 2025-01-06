@@ -1,8 +1,7 @@
 module.exports = {
   extends: './index.js',
-  overrides: {
-    rules: {
-      '@typescript-eslint/no-var-requires': 'off',
-    },
+  rules: {
+    '@typescript-eslint/no-require-imports': 'off',
+    '@typescript-eslint/no-var-requires': 'off',
   },
 };

@@ -23,6 +23,7 @@ import {
   FunctionNameContext,
   IncompleteAndExpressionContext,
   IncompleteAttributeExpressionMissingKeyContext,
+  IncompleteAttributeExpressionMissingSecondValueContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompleteExprContext,
   IncompleteExpressionContext,
@@ -277,6 +278,16 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    */
   visitIncompleteAttributeExpressionMissingValue?: (
     ctx: IncompleteAttributeExpressionMissingValueContext,
+  ) => Result;
+
+  /**
+   * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingSecondValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompleteAttributeExpressionMissingSecondValue?: (
+    ctx: IncompleteAttributeExpressionMissingSecondValueContext,
   ) => Result;
 
   /**

@@ -1,45 +1,37 @@
 import {useMemo} from 'react';
 import styled from 'styled-components';
 
-import {RunGraphQueryItem} from './toGraphQueryItems';
-import {NO_STATE} from '../run-selection/AntlrRunSelectionVisitor';
-import {RunSelectionLexer} from '../run-selection/generated/RunSelectionLexer';
-import {RunSelectionParser} from '../run-selection/generated/RunSelectionParser';
+import {GraphQueryItem} from '../app/GraphQueryImpl';
+import {OpSelectionLexer} from '../op-selection/generated/OpSelectionLexer';
+import {OpSelectionParser} from '../op-selection/generated/OpSelectionParser';
 import {InputDiv, SelectionAutoCompleteInput} from '../selection/SelectionAutoCompleteInput';
 import {createSelectionLinter} from '../selection/createSelectionLinter';
 import {weakMapMemoize} from '../util/weakMapMemoize';
 
-export const GanttChartSelectionInput = ({
+export const OpGraphSelectionInput = ({
   items,
   value,
   onChange,
 }: {
-  items: RunGraphQueryItem[];
+  items: GraphQueryItem[];
   value: string;
   onChange: (value: string) => void;
 }) => {
   const attributesMap = useMemo(() => {
-    const statuses = new Set<string>();
     const names = new Set<string>();
-
     items.forEach((item) => {
-      if (item.metadata?.state) {
-        statuses.add(item.metadata.state);
-      } else {
-        statuses.add(NO_STATE);
-      }
       names.add(item.name);
     });
-    return {name: Array.from(names), status: Array.from(statuses)};
+    return {name: Array.from(names)};
   }, [items]);
 
   return (
     <Wrapper>
       <SelectionAutoCompleteInput
-        id="run-gantt-chart"
+        id="op-graph"
         nameBase="name"
         attributesMap={attributesMap}
-        placeholder="Type a step subset"
+        placeholder="Type an op subset"
         functions={FUNCTIONS}
         linter={getLinter()}
         value={value}
@@ -50,7 +42,7 @@ export const GanttChartSelectionInput = ({
 };
 
 const getLinter = weakMapMemoize(() =>
-  createSelectionLinter({Lexer: RunSelectionLexer, Parser: RunSelectionParser}),
+  createSelectionLinter({Lexer: OpSelectionLexer, Parser: OpSelectionParser}),
 );
 
 const FUNCTIONS = ['sinks', 'roots'];
