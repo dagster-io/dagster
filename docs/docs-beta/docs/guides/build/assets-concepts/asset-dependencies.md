@@ -91,7 +91,7 @@ Consider this example:
 
 This example downloads a zip file from Google Drive, unzips it, and loads the data into a Pandas DataFrame. It relies on each asset running on the same file system to perform these operations.
 
-The assets are modeled as tasks, rather than as data assets. For more information on the difference between tasks and data assets, check out the [assets guide](/guides/build/create-asset-pipelines/assets-concepts/).
+The assets are modeled as tasks, rather than as data assets. For more information on the difference between tasks and data assets, check out the [assets guide](/guides/build/assets-concepts/).
 
 In this refactor, the `download_files`, `unzip_files`, and `load_data` assets are combined into a single asset, `my_dataset`. This asset downloads the files, unzips them, and loads the data into a data warehouse.
 

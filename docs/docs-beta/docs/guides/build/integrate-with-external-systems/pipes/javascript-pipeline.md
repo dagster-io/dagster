@@ -10,7 +10,7 @@ This guide covers how to run JavaScript with Dagster using Pipes, however, the s
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
+- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
 - A basic understanding of JavaScript and Node.js
 
 To run the examples, you'll need to install:

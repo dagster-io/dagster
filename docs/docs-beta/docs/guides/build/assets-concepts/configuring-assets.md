@@ -44,5 +44,5 @@ This will open the Launchpad, where you can scaffold the config, customize its v
 
 ## Next steps
 
-- Learn more about Dagster [assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
+- Learn more about Dagster [assets](/guides/build/assets-concepts/index.mdx
 - Connect to external [APIs](/guides/build/connect-to-external-systems/apis) and [databases](/guides/build/connect-to-external-systems/databases) with resources
