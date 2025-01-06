@@ -30,15 +30,15 @@ function filterNoqaComments(lines: string[]): string[] {
 const contentCache: Record<string, {content?: string; error?: string | null}> = {};
 
 function processModule({
+  cacheKey,
   module,
   lineStart,
   lineEnd,
-  path,
 }: {
-  path: string;
-  lineEnd?: number;
-  lineStart?: number;
+  cacheKey: string;
   module: any;
+  lineStart?: number;
+  lineEnd?: number;
 }) {
   var lines = module.default.split('\n');
 
@@ -48,7 +48,39 @@ function processModule({
 
   lines = filterNoqaComments(lines);
   lines = trimMainBlock(lines);
-  contentCache[path] = {content: lines.join('\n')};
+  contentCache[cacheKey] = {content: lines.join('\n')};
+}
+
+function loadModule(cacheKey: string, path: string, lineStart: number, lineEnd: number) {
+  const isServer = typeof window === 'undefined';
+  if (isServer) {
+    /**
+     * Note: Remove the try/catch to cause a hard error on build once all of the bad code examples are cleaned up.
+     */
+    try {
+      const module = require(`!!raw-loader!/../../examples/${path}`);
+      processModule({cacheKey, module, lineStart, lineEnd});
+    } catch (e) {
+      console.error(e);
+      contentCache[cacheKey] = {error: e.toString()};
+    }
+  }
+
+  if (!contentCache[cacheKey]) {
+    /**
+     * We only reach this path on the client.
+     * Throw a promise to suspend in order to avoid un-rendering the codeblock that we SSR'd
+     */
+    throw import(`!!raw-loader!/../../examples/${path}`)
+      .then((module) => {
+        processModule({cacheKey, module, lineStart, lineEnd});
+      })
+      .catch((e) => {
+        contentCache[cacheKey] = {error: e.toString()};
+      });
+  }
+
+  return contentCache[cacheKey];
 }
 
 const CodeExample: React.FC<CodeExampleProps> = ({...props}) => {
@@ -59,51 +91,27 @@ const CodeExample: React.FC<CodeExampleProps> = ({...props}) => {
   );
 };
 
-const CodeExampleInner: React.FC<CodeExampleProps> = ({
-  filePath,
-  title,
-  lineStart,
-  lineEnd,
-  language = 'python',
-  pathPrefix = 'docs_beta_snippets/docs_beta_snippets',
-  ...props
-}) => {
-  const path = pathPrefix + '/' + filePath;
-  const isServer = typeof window === 'undefined';
-  if (isServer) {
-    /**
-     * Note: Remove the try/catch to cause a hard error on build once all of the bad code examples are cleaned up.
-     */
-    try {
-      const module = require(`!!raw-loader!/../../examples/${path}`);
-      processModule({module, lineStart, lineEnd, path});
-    } catch (e) {
-      console.error(e);
-      contentCache[path] = {error: e.toString()};
-    }
-  }
-  if (!contentCache[path]) {
-    /**
-     * We only reach this path on the client.
-     * Throw a promise to suspend in order to avoid un-rendering the codeblock that we SSR'd
-     */
-    throw import(`!!raw-loader!/../../examples/${path}`)
-      .then((module) => {
-        processModule({module, lineStart, lineEnd, path});
-      })
-      .catch((e) => {
-        contentCache[filePath] = {error: e.toString()};
-      });
-  }
+const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
+  const {
+    filePath,
+    title,
+    lineStart,
+    lineEnd,
+    language = 'python',
+    pathPrefix = 'docs_beta_snippets/docs_beta_snippets',
+    ...extraProps
+  } = props;
 
-  const {content, error} = contentCache[path];
+  const path = pathPrefix + '/' + filePath;
+  const cacheKey = JSON.stringify(props);
+  const {content, error} = loadModule(cacheKey, path, lineStart, lineEnd);
 
   if (error) {
     return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;
   }
 
   return (
-    <CodeBlock language={language} title={title} {...props}>
+    <CodeBlock language={language} title={title} {...extraProps}>
       {content || 'Loading...'}
     </CodeBlock>
   );
