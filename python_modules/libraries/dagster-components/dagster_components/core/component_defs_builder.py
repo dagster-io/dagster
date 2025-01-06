@@ -135,7 +135,7 @@ def build_component_defs(
     code_location_root: Path,
     resources: Optional[Mapping[str, object]] = None,
     registry: Optional["ComponentTypeRegistry"] = None,
-    components_folder: Optional[Path] = None,
+    components_path: Optional[Path] = None,
 ) -> "Definitions":
     """Build a Definitions object for all the component instances in a given code location.
 
@@ -148,7 +148,7 @@ def build_component_defs(
     context = CodeLocationProjectContext.from_code_location_path(
         code_location_root,
         registry or ComponentTypeRegistry.from_entry_point_discovery(),
-        components_folder=components_folder,
+        components_path=components_path,
     )
 
     all_defs: List[Definitions] = []

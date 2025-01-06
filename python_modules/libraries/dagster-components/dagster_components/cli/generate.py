@@ -67,7 +67,7 @@ def generate_component_command(
         generate_params = {}
 
     generate_component_instance(
-        context.component_instances_root_path,
+        context.components_path,
         component_name,
         component_type_cls,
         component_type,
