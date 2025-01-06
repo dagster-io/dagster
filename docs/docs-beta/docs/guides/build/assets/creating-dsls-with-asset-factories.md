@@ -1,6 +1,6 @@
 ---
 title: 'Creating domain-specific languages with asset factories'
-sidebar_position: 300
+sidebar_position: 700
 sidebar_label: 'Asset factories'
 ---
 

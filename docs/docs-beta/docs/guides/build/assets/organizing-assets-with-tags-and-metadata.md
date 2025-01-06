@@ -1,8 +1,6 @@
 ---
-title: 'Adding tags and metadata to assets'
-description: 'Learn how to add tags and metadata to assets to improve observability in Dagster'
-sidebar_position: 200
-sidebar_label: 'Add metadata'
+title: "Organizing assets with tags and metadata"
+sidebar_position: 300
 ---
 
 Assets feature prominently in the Dagster UI. Attaching information to assets allows you to understand where they're stored, what they contain, and how they should be organized.
@@ -14,13 +12,9 @@ Using metadata in Dagster, you can:
 - Attach rich, complex information such as a Markdown description, a table schema, or a time series
 - Link assets with their source code
 
-<details>
-  <summary>Prerequisites</summary>
+:::note
 
-To follow the steps in this guide, you'll need:
-
-- Familiarity with [Assets](/guides/build/create-asset-pipelines/data-assets)
-</details>
+This article assumes familiarity with [assets](index.md).
 
 ## Adding owners to assets \{#owners}
 
@@ -147,7 +141,7 @@ Dagster can automatically attach code references to assets during local developm
 
 ### Customizing code references \{#custom-references}
 
-If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/assets-concepts/asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
+If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/assets/asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
 
 <CodeExample filePath="guides/data-modeling/metadata/custom-local-references.py" language="python" />
 
@@ -171,3 +165,4 @@ If you aren't using Dagster+, you can annotate your assets with code references 
 
 </TabItem>
 </Tabs>
+

@@ -1,7 +1,6 @@
 ---
-title: Partition and backfill data
+title: Organize your projects
 sidebar_position: 40
-unlisted: true
 ---
 
 import DocCardList from '@theme/DocCardList';

@@ -18,7 +18,7 @@ Dagster is often used to orchestrate the ingestion of data into a data warehouse
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets-concepts/index.mdx
+- Familiarity with [Assets](/guides/build/assets/index.mdx
 </details>
 
 ## How Dagster supports data ingestion

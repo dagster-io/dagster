@@ -1,8 +1,7 @@
 ---
 title: Partitioning assets
 description: Learn how to partition your data in Dagster.
-sidebar_label: Partition data
-sidebar_position: 300
+sidebar_position: 100
 ---
 
 In Dagster, partitioning is a powerful technique for managing large datasets, improving pipeline performance, and enabling incremental processing. This guide will help you understand how to implement data partitioning in your Dagster projects.

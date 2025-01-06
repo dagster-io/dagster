@@ -1,7 +1,7 @@
 ---
-title: Configuring assets
+title: Configuring assets in the UI
 sidebar_label: Asset runs
-sidebar_position: 100
+sidebar_position: 600
 ---
 
 The Dagster UI is commonly used to manually materialize assets, backfill historical data, debug a production issue, or some other one-off task.
@@ -44,5 +44,5 @@ This will open the Launchpad, where you can scaffold the config, customize its v
 
 ## Next steps
 
-- Learn more about Dagster [assets](/guides/build/assets-concepts/index.mdx
+- Learn more about Dagster [assets](/guides/build/assets/index.mdx
 - Connect to external [APIs](/guides/build/connect-to-external-systems/apis) and [databases](/guides/build/connect-to-external-systems/databases) with resources

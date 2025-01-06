@@ -1,8 +1,9 @@
 ---
-title: "Assets concepts"
-sidebar_position: 20
+title: Create assets
+sidebar_position: 10
 ---
 
+{/* TODO: Add conceptual information about assets here. */}
 
 ## Assets and ops
 

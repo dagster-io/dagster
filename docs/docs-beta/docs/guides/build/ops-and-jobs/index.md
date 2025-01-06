@@ -1,6 +1,6 @@
 ---
-title: "Build pipelines"
-sidebar_class_name: hidden
+title: Ops and jobs
+sidebar_position: 50
 ---
 
 import DocCardList from '@theme/DocCardList';

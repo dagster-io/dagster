@@ -1,6 +1,5 @@
 ---
 title: 'Defining data assets with decorators'
-sidebar_label: 'Create Assets'
 sidebar_position: 100
 ---
 
@@ -72,5 +71,5 @@ flowchart LR
 ## Next steps
 
 - Enrich Dagster's built-in data catalog with [asset metadata](/guides/build/create-asset-pipelines/metadata)
-- Learn to create [dependencies between assets](/guides/build/assets-concepts/asset-dependencies)
-- Learn to use a [factory pattern](/guides/build/assets-concepts/asset-factories) to create multiple, similar assets
+- Learn to create [dependencies between assets](/guides/build/assets/asset-dependencies)
+- Learn to use a [factory pattern](/guides/build/assets/asset-factories) to create multiple, similar assets
