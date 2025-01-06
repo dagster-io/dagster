@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from dagster import AssetKey, Config, In, Nothing, Out, Output, op
+from dagster._annotations import superseded
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
@@ -55,6 +56,12 @@ class SyncConfig(Config):
         ),
     ),
     tags={COMPUTE_KIND_TAG: "fivetran"},
+)
+@superseded(
+    additional_warn_text=(
+        "Fivetran ops are no longer best practice. "
+        "Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead."
+    ),
 )
 def fivetran_sync_op(config: SyncConfig, fivetran: FivetranResource) -> Any:
     """Executes a Fivetran sync for a given ``connector_id``, and polls until that sync
@@ -124,6 +131,12 @@ class FivetranResyncConfig(SyncConfig):
         ),
     ),
     tags={COMPUTE_KIND_TAG: "fivetran"},
+)
+@superseded(
+    additional_warn_text=(
+        "Fivetran ops are no longer best practice. "
+        "Use `FivetranWorkspace` resource and `@fivetran_asset` decorator instead."
+    ),
 )
 def fivetran_resync_op(
     config: FivetranResyncConfig,
