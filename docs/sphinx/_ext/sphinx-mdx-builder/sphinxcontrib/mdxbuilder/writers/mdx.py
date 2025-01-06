@@ -576,8 +576,10 @@ class MdxTranslator(SphinxTranslator):
             self.end_state(wrap=False)
 
     def visit_reference(self, node: Element) -> None:
-        if len(node.children) == 1 and isinstance(node.children[0], nodes.literal):
-            # For references containing only a literal, use the literal text
+        if len(node.children) == 1 and isinstance(
+            node.children[0], (nodes.literal, addnodes.literal_emphasis)
+        ):
+            # For references containing only a literal or literal_emphasis, use the literal text
             ref_text = node.children[0].astext()
             if "refuri" in node:
                 self.reference_uri = node["refuri"]
@@ -586,7 +588,11 @@ class MdxTranslator(SphinxTranslator):
             else:
                 self.messages.append('References must have "refuri" or "refid" attribute.')
                 raise nodes.SkipNode
-            self.add_text(f"[`{ref_text}`]({self.reference_uri})")
+            # Use _emphasis for literal_emphasis nodes
+            if isinstance(node.children[0], addnodes.literal_emphasis):
+                self.add_text(f"[*{ref_text}*]({self.reference_uri})")
+            else:
+                self.add_text(f"[`{ref_text}`]({self.reference_uri})")
             raise nodes.SkipNode
         else:
             # Handle regular references
