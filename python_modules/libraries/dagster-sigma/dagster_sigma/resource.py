@@ -17,7 +17,7 @@ import dagster._check as check
 import requests
 from aiohttp.client_exceptions import ClientResponseError
 from dagster import ConfigurableResource
-from dagster._annotations import deprecated, beta, public
+from dagster._annotations import beta, deprecated, public
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
