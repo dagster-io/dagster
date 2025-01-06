@@ -28,6 +28,7 @@ export const OpGraphSelectionInput = ({
   return (
     <Wrapper>
       <SelectionAutoCompleteInput
+        id="op-graph"
         nameBase="name"
         attributesMap={attributesMap}
         placeholder="Type an op subset"
