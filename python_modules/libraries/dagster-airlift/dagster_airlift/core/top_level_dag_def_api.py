@@ -7,6 +7,7 @@ from dagster import (
     Definitions,
     _check as check,
 )
+from dagster._annotations import beta
 
 from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_task_mapping
 
@@ -63,6 +64,7 @@ def assets_def_with_af_metadata(
     )
 
 
+@beta
 def assets_with_task_mappings(
     dag_id: str, task_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]]
 ) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
@@ -109,6 +111,7 @@ def assets_with_task_mappings(
     return assets_list
 
 
+@beta
 def assets_with_dag_mappings(
     dag_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]],
 ) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
@@ -156,6 +159,7 @@ def assets_with_dag_mappings(
     return assets_list
 
 
+@beta
 def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
     """Construct a Dagster :py:class:`Definitions` object with definitions
     associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
@@ -186,6 +190,7 @@ def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
     return Definitions.merge(*defs_to_merge)
 
 
+@beta
 def task_defs(task_id, defs: Definitions) -> TaskDefs:
     """Associate a set of definitions with a particular task in Airflow that is being tracked
     by Airlift tooling.

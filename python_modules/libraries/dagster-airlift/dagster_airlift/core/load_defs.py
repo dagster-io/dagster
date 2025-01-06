@@ -8,9 +8,9 @@ from dagster import (
     Definitions,
     _check as check,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
-from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.core.airflow_defs_data import MappedAsset
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -64,7 +64,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
         )
 
 
-@suppress_dagster_warnings
+@beta
 def build_defs_from_airflow_instance(
     *,
     airflow_instance: AirflowInstance,
@@ -350,6 +350,7 @@ def enrich_airflow_mapped_assets(
     return list(_apply_airflow_data_to_specs(mapped_assets, serialized_data))
 
 
+@beta
 def load_airflow_dag_asset_specs(
     airflow_instance: AirflowInstance,
     mapped_assets: Optional[Sequence[MappedAsset]] = None,
