@@ -47,6 +47,12 @@ class DbtCloudRunOpConfig(Config):
     )
 
 
+@superseded(
+    additional_warn_text=(
+        "The dbt Cloud APIs of the `dagster-dbt` library are no longer best practice. "
+        "Use `dagster-dlift` instead."
+    )
+)
 @op(
     required_resource_keys={"dbt_cloud"},
     ins={"start_after": In(Nothing)},
