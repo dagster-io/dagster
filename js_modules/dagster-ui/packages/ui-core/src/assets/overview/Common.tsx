@@ -38,12 +38,10 @@ export const SectionEmptyState = ({
   title,
   description,
   learnMoreLink,
-  interaction,
 }: {
   title: string;
   description: string;
-  learnMoreLink?: string;
-  interaction?: React.ReactNode;
+  learnMoreLink: string;
 }) => (
   <Box
     padding={24}
@@ -52,13 +50,10 @@ export const SectionEmptyState = ({
   >
     <Subtitle2>{title}</Subtitle2>
     <Body2>{description}</Body2>
-    <Box flex={{direction: 'row', gap: 8}}>
-      {learnMoreLink ? (
-        <a href={learnMoreLink} target="_blank" rel="noreferrer">
-          Learn more
-        </a>
-      ) : undefined}
-      {interaction}
-    </Box>
+    {learnMoreLink ? (
+      <a href={learnMoreLink} target="_blank" rel="noreferrer">
+        Learn more
+      </a>
+    ) : undefined}
   </Box>
 );
