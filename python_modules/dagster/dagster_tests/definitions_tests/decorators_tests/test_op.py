@@ -3,6 +3,7 @@ import time
 from functools import partial
 from typing import Any, Dict, Generator, List, Tuple
 
+import dagster as dg
 import pytest
 from dagster import (
     AssetMaterialization,
@@ -1673,3 +1674,26 @@ def test_colliding_args():
     ):
         bar_2 = partial(bar, x=1)
         bar_2(1)
+
+
+def test_bare_asset_check_result() -> None:
+    """Document behavior when a bare asset check result is yielded from an op."""
+
+    @dg.op
+    def the_op():
+        return dg.AssetCheckResult(
+            asset_key="asset_key",
+            check_name="my_check",
+            metadata={"foo": "bar"},
+            passed=True,
+        )
+
+    # test direct invocation - direction invocation allows this through erroneously.
+    result = the_op()
+    assert isinstance(result, dg.AssetCheckResult)
+
+    # test execution - we correctly raise an error here
+    with pytest.raises(
+        dg.DagsterInvariantViolationError, match="Received unexpected AssetCheckResult."
+    ):
+        execute_op_in_graph(the_op)
