@@ -7,7 +7,6 @@ interface CodeExampleProps {
   title?: string;
   lineStart?: number;
   lineEnd?: number;
-  pathPrefix?: string;
 }
 
 /**
@@ -92,17 +91,9 @@ const CodeExample: React.FC<CodeExampleProps> = ({...props}) => {
 };
 
 const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
-  const {
-    filePath,
-    title,
-    lineStart,
-    lineEnd,
-    language = 'python',
-    pathPrefix = 'docs_beta_snippets/docs_beta_snippets',
-    ...extraProps
-  } = props;
+  const {filePath, title, lineStart, lineEnd, language = 'python', ...extraProps} = props;
 
-  const path = pathPrefix + '/' + filePath;
+  const path = 'docs_beta_snippets/docs_beta_snippets/' + filePath;
   const cacheKey = JSON.stringify(props);
   const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd);
 
