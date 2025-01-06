@@ -55,8 +55,8 @@ class DbtCloudRunOpConfig(Config):
 )
 @superseded(
     additional_warn_text=(
-            "The dbt Cloud APIs of the `dagster-dbt` library are no longer best practice. "
-            "Use `dagster-dlift` instead."
+        "The dbt Cloud APIs of the `dagster-dbt` library are no longer best practice. "
+        "Use `dagster-dlift` instead."
     )
 )
 def dbt_cloud_run_op(context, config: DbtCloudRunOpConfig):
