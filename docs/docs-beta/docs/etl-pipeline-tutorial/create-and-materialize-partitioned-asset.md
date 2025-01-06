@@ -25,7 +25,8 @@ Dagster natively supports partitioning assets by datetime groups. We want to cre
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="152" lineEnd="153"/>
 
-Partition data are accessed within an asset by context. We want to create an asset that does this calculation for a given month from the partition and deletes any previous value for that month. Copy the following asset under the `monthly_partition` we just created.
+Partition data are accessed within an asset by context. We want to create an asset that does this calculation for a given month from the partition
+ and deletes any previous value for that month. Copy the following asset under the `monthly_partition` we just created.
 
   ```python
   @dg.asset(
