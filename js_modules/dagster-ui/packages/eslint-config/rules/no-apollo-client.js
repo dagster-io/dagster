@@ -1,5 +1,6 @@
-const {findRelativeImportPath} = require('../util/findRelativeImportPath');
 const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
+
+const {findRelativeImportPath} = require('../util/findRelativeImportPath');
 const createRule = ESLintUtils.RuleCreator((name) => name);
 
 module.exports = createRule({

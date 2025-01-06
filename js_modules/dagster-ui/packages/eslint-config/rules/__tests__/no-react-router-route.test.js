@@ -1,9 +1,7 @@
 /* eslint-disable */
-const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
+const {RuleTester} = require('@typescript-eslint/rule-tester');
 
-const ruleTester = new ESLintUtils.RuleTester({
-  parser: '@typescript-eslint/parser',
-});
+const ruleTester = new RuleTester();
 
 const rule = require('../no-react-router-route');
 
@@ -26,7 +24,7 @@ import {Redirect, Switch} from 'react-router-dom';
       `,
       errors: [
         {
-          type: AST_NODE_TYPES.ImportDeclaration,
+          type: 'ImportDeclaration',
           messageId: 'useDagsterRoute',
         },
       ],
