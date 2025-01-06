@@ -36,6 +36,7 @@ export const GanttChartSelectionInput = ({
   return (
     <Wrapper>
       <SelectionAutoCompleteInput
+        id="run-gantt-chart"
         nameBase="name"
         attributesMap={attributesMap}
         placeholder="Type a step subset"

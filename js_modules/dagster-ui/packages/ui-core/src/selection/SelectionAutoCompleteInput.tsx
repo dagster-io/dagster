@@ -1,13 +1,15 @@
 import {Colors, Icon} from '@dagster-io/ui-components';
 import CodeMirror, {Editor, HintFunction} from 'codemirror';
 import {Linter} from 'codemirror/addon/lint/lint';
-import {useLayoutEffect, useMemo, useRef} from 'react';
+import debounce from 'lodash/debounce';
+import {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
 import {
   SelectionAutoCompleteInputCSS,
   applyStaticSyntaxHighlighting,
 } from './SelectionAutoCompleteHighlighter';
+import {useTrackEvent} from '../app/analytics';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {createSelectionHint} from '../selection/SelectionAutoComplete';
 
@@ -19,6 +21,7 @@ import 'codemirror/addon/lint/lint.css';
 import 'codemirror/addon/display/placeholder';
 
 type SelectionAutoCompleteInputProps<T extends Record<string, string[]>, N extends keyof T> = {
+  id: string; // Used for logging
   nameBase: N;
   attributesMap: T;
   placeholder: string;
@@ -29,6 +32,7 @@ type SelectionAutoCompleteInputProps<T extends Record<string, string[]>, N exten
 };
 
 export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N extends keyof T>({
+  id,
   value,
   nameBase,
   placeholder,
@@ -37,6 +41,31 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
   linter,
   attributesMap,
 }: SelectionAutoCompleteInputProps<T, N>) => {
+  const trackEvent = useTrackEvent();
+
+  const trackSelection = useMemo(() => {
+    return debounce((selection: string) => {
+      const selectionLowerCase = selection.toLowerCase();
+      const hasBooleanLogic =
+        selectionLowerCase.includes(' or ') ||
+        selectionLowerCase.includes(' and ') ||
+        selectionLowerCase.includes(' not ') ||
+        selectionLowerCase.startsWith('not ');
+      trackEvent(`${id}-selection-query`, {
+        selection,
+        booleanLogic: hasBooleanLogic,
+      });
+    }, 5000);
+  }, [trackEvent, id]);
+
+  const onSelectionChange = useCallback(
+    (selection: string) => {
+      onChange(selection);
+      trackSelection(selection);
+    },
+    [onChange, trackSelection],
+  );
+
   const editorRef = useRef<HTMLDivElement>(null);
   const cmInstance = useRef<CodeMirror.Editor | null>(null);
 
@@ -88,7 +117,7 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
           clearTimeout(setValueTimeoutRef.current);
         }
         setValueTimeoutRef.current = setTimeout(() => {
-          onChange(newValue);
+          onSelectionChange(newValue);
         }, 2000);
 
         if (change.origin === 'complete' && change.text[0]?.endsWith('()')) {
@@ -113,7 +142,7 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
 
       cmInstance.current.on('blur', () => {
         if (currentPendingValueRef.current !== currentValueRef.current) {
-          onChange(currentPendingValueRef.current);
+          onSelectionChange(currentPendingValueRef.current);
         }
       });
 
