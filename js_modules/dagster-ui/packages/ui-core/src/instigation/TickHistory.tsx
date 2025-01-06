@@ -453,7 +453,7 @@ function TickRow({
     <tr>
       <td>
         <TimestampDisplay
-          timestamp={tick.timestamp}
+          timestamp={tick.scheduledExecutionTimestamp ?? tick.timestamp}
           timeFormat={{showTimezone: false, showSeconds: true}}
         />
       </td>

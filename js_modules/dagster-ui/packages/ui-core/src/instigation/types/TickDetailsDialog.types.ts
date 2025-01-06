@@ -22,6 +22,7 @@ export type SelectedTickQuery = {
           status: Types.InstigationTickStatus;
           timestamp: number;
           endTimestamp: number | null;
+          scheduledExecutionTimestamp: number | null;
           cursor: string | null;
           instigationType: Types.InstigationType;
           skipReason: string | null;
@@ -59,4 +60,4 @@ export type SelectedTickQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const SelectedTickQueryVersion = '10c228399d8224b30ce4520d24f0c6f675a534abc7cbe268b0c8cc870b3f0e90';
+export const SelectedTickQueryVersion = '86f106c68a53db3ee9f4d5e4a8e08e4bcd79af90d135c5c61390058bb019350b';

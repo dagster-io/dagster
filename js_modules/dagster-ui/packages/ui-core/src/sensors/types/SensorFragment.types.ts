@@ -43,6 +43,7 @@ export type SensorFragment = {
       cursor: string | null;
       status: Types.InstigationTickStatus;
       timestamp: number;
+      scheduledExecutionTimestamp: number | null;
       skipReason: string | null;
       runIds: Array<string>;
       runKeys: Array<string>;

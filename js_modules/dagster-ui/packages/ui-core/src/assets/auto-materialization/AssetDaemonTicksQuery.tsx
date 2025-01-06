@@ -6,6 +6,7 @@ export const ASSET_DAEMON_TICK_FRAGMENT = gql`
     id
     timestamp
     endTimestamp
+    scheduledExecutionTimestamp
     status
     instigationType
     error {

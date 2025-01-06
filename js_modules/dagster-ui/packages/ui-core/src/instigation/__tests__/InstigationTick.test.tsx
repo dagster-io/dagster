@@ -11,6 +11,7 @@ describe('TickTag', () => {
     id: 'foobar',
     status: InstigationTickStatus.SUCCESS,
     timestamp: Date.now(),
+    scheduledExecutionTimestamp: Date.now(),
     skipReason: 'lol skipped',
     runIds: [],
     runKeys: [],

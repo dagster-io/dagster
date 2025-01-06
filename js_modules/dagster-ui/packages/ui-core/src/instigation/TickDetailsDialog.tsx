@@ -133,7 +133,7 @@ const TickDetailsDialogImpl = ({tickId, tickResultType, instigationSelector}: In
           <>
             <span>Tick for {instigationSelector.name}: </span>
             <TimestampDisplay
-              timestamp={tick.timestamp}
+              timestamp={tick.scheduledExecutionTimestamp ?? tick.timestamp}
               timeFormat={{showTimezone: false, showSeconds: true}}
             />
           </>
@@ -242,7 +242,10 @@ export function TickDetailSummary({
           <Subtitle2>Timestamp</Subtitle2>
           <div>
             {tick ? (
-              <Timestamp timestamp={{unix: tick.timestamp}} timeFormat={{showTimezone: true}} />
+              <Timestamp
+                timestamp={{unix: tick.scheduledExecutionTimestamp ?? tick.timestamp}}
+                timeFormat={{showTimezone: true}}
+              />
             ) : (
               '–'
             )}
