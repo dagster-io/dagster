@@ -576,15 +576,29 @@ class MdxTranslator(SphinxTranslator):
             self.end_state(wrap=False)
 
     def visit_reference(self, node: Element) -> None:
-        ref_text = node.astext()
-        if "refuri" in node:
-            self.reference_uri = node["refuri"]
-        elif "refid" in node:
-            self.reference_uri = f"#{node['refid']}"
-        else:
-            self.messages.append('References must have "refuri" or "refid" attribute.')
+        if len(node.children) == 1 and isinstance(node.children[0], nodes.literal):
+            # For references containing only a literal, use the literal text
+            ref_text = node.children[0].astext()
+            if "refuri" in node:
+                self.reference_uri = node["refuri"]
+            elif "refid" in node:
+                self.reference_uri = f"#{node['refid']}"
+            else:
+                self.messages.append('References must have "refuri" or "refid" attribute.')
+                raise nodes.SkipNode
+            self.add_text(f"[`{ref_text}`]({self.reference_uri})")
             raise nodes.SkipNode
-        self.add_text(f"[{ref_text}]({self.reference_uri})")
+        else:
+            # Handle regular references
+            ref_text = node.astext()
+            if "refuri" in node:
+                self.reference_uri = node["refuri"]
+            elif "refid" in node:
+                self.reference_uri = f"#{node['refid']}"
+            else:
+                self.messages.append('References must have "refuri" or "refid" attribute.')
+                raise nodes.SkipNode
+            self.add_text(f"[{ref_text}]({self.reference_uri})")
 
     def depart_reference(self, node: Element) -> None:
         self.reference_uri = ""
@@ -803,7 +817,6 @@ class MdxTranslator(SphinxTranslator):
 
     def visit_transition(self, node: Element) -> None:
         self.new_state(0)
-        self.add_text("-----")
 
     def depart_transition(self, node: Element) -> None:
         self.end_state(wrap=False)
