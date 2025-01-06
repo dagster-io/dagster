@@ -51,7 +51,7 @@ function processModule({
   contentCache[cacheKey] = {content: lines.join('\n')};
 }
 
-function loadModule(cacheKey: string, path: string, lineStart: number, lineEnd: number) {
+function useLoadModule(cacheKey: string, path: string, lineStart: number, lineEnd: number) {
   const isServer = typeof window === 'undefined';
   if (isServer) {
     /**
@@ -104,7 +104,7 @@ const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
 
   const path = pathPrefix + '/' + filePath;
   const cacheKey = JSON.stringify(props);
-  const {content, error} = loadModule(cacheKey, path, lineStart, lineEnd);
+  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd);
 
   if (error) {
     return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;
