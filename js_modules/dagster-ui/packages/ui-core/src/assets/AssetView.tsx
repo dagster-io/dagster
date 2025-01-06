@@ -49,26 +49,15 @@ import {StaleReasonsTag} from '../assets/Stale';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 
 interface Props {
   assetKey: AssetKey;
   headerBreadcrumbs: BreadcrumbProps[];
   writeAssetVisit?: (assetKey: AssetKey) => void;
   currentPath: string[];
-  renderExtraSidebarEntries?: (
-    repoAddress: {name: string; location: string},
-    assetNode: AssetNodeDefinitionFragment,
-  ) => React.ReactNode;
 }
 
-export const AssetView = ({
-  assetKey,
-  headerBreadcrumbs,
-  writeAssetVisit,
-  currentPath,
-  renderExtraSidebarEntries,
-}: Props) => {
+export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
@@ -135,7 +124,6 @@ export const AssetView = ({
         downstream={downstream}
         liveData={liveData}
         dependsOnSelf={node ? nodeDependsOnSelf(node) : false}
-        renderExtraSidebarEntries={renderExtraSidebarEntries}
       />
     );
   };
