@@ -16,7 +16,7 @@ weekly_partition = dg.WeeklyPartitionsDefinition(start_date=START_TIME)
 
 @dg.asset(
     group_name="ingestion",
-    kinds={"Github"},
+    kinds={"github"},
     partitions_def=weekly_partition,
     io_manager_key="document_io_manager",
     automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
@@ -57,11 +57,11 @@ def github_issues_raw(
 
 @dg.asset(
     group_name="embeddings",
-    kinds={"Github", "OpenAI", "Pinecone"},
+    kinds={"github", "openai", "pinecone"},
     partitions_def=weekly_partition,
     io_manager_key="document_io_manager",
     ins={"github_issues_raw": dg.AssetIn(partition_mapping=dg.IdentityPartitionMapping())},
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.any_deps_updated(),
     description="""
    Creates and stores vector embeddings for GitHub issues in Pinecone.
    
@@ -130,7 +130,7 @@ def github_issues_embeddings(
 
 @dg.asset(
     group_name="ingestion",
-    kinds={"Github"},
+    kinds={"github"},
     partitions_def=weekly_partition,
     io_manager_key="document_io_manager",
     automation_condition=dg.AutomationCondition.on_cron("0 0 * * 1"),
@@ -168,11 +168,11 @@ def github_discussions_raw(
 
 @dg.asset(
     group_name="embeddings",
-    kinds={"Github", "OpenAI", "Pinecone"},
+    kinds={"github", "openai", "pinecone"},
     partitions_def=weekly_partition,
     io_manager_key="document_io_manager",
     ins={"github_discussions_raw": dg.AssetIn(partition_mapping=dg.IdentityPartitionMapping())},
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.any_deps_updated(),
     description="""
    Creates vector embeddings from GitHub discussions and stores them in Pinecone.
    
@@ -203,16 +203,27 @@ def github_discussions_embeddings(
     pinecone: PineconeResource,
     github_discussions_raw: List[Document],
 ) -> dg.MaterializeResult:
+    BATCH_SIZE = 20
+
     # Create index if doesn't exist
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-github")
 
-    texts = [doc.page_content for doc in github_discussions_raw]
+    all_texts = [doc.page_content for doc in github_discussions_raw]
+    all_embeddings = []
+
     with openai.get_client(context) as client:
-        embeddings = [
-            item.embedding
-            for item in client.embeddings.create(model="text-embedding-3-small", input=texts).data
-        ]
+        # Process in batches
+        for i in range(0, len(all_texts), BATCH_SIZE):
+            batch_texts = all_texts[i : i + BATCH_SIZE]
+            batch_embeddings = [
+                item.embedding
+                for item in client.embeddings.create(
+                    model="text-embedding-3-small", input=batch_texts
+                ).data
+            ]
+            all_embeddings.extend(batch_embeddings)
+            time.sleep(1)
 
     # Prepare metadata
     metadatas = [
@@ -223,8 +234,8 @@ def github_discussions_embeddings(
     # Upsert to Pinecone with namespace
     index.upsert(
         vectors=zip(
-            [str(i) for i in range(len(texts))],
-            embeddings,
+            [str(i) for i in range(len(all_texts))],
+            all_embeddings,
             metadatas,
         ),
         **namespace_kwargs,
@@ -240,7 +251,7 @@ def github_discussions_embeddings(
 # Webscraping asset
 @dg.asset(
     group_name="ingestion",
-    kinds={"Webscraping"},
+    kinds={"webscraping"},
     io_manager_key="document_io_manager",
     automation_condition=dg.AutomationCondition.on_cron(
         "0 0 * * 1"
@@ -296,7 +307,7 @@ def docs_scrape_raw(
 
 @dg.asset(
     group_name="embeddings",
-    kinds={"Webscraping", "Pinecone", "OpenAI"},
+    kinds={"webscraping", "pinecone", "openai"},
     automation_condition=dg.AutomationCondition.eager(),
     io_manager_key="document_io_manager",
     description="""
