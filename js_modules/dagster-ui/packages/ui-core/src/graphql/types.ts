@@ -2002,6 +2002,7 @@ export type InstigationTick = {
   runIds: Array<Scalars['String']['output']>;
   runKeys: Array<Scalars['String']['output']>;
   runs: Array<Run>;
+  scheduledExecutionTimestamp: Maybe<Scalars['Float']['output']>;
   skipReason: Maybe<Scalars['String']['output']>;
   status: InstigationTickStatus;
   tickId: Scalars['ID']['output'];
@@ -9148,6 +9149,10 @@ export const buildInstigationTick = (
     runIds: overrides && overrides.hasOwnProperty('runIds') ? overrides.runIds! : [],
     runKeys: overrides && overrides.hasOwnProperty('runKeys') ? overrides.runKeys! : [],
     runs: overrides && overrides.hasOwnProperty('runs') ? overrides.runs! : [],
+    scheduledExecutionTimestamp:
+      overrides && overrides.hasOwnProperty('scheduledExecutionTimestamp')
+        ? overrides.scheduledExecutionTimestamp!
+        : 9.95,
     skipReason:
       overrides && overrides.hasOwnProperty('skipReason') ? overrides.skipReason! : 'maxime',
     status:
