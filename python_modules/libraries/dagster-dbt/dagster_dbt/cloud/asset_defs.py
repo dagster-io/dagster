@@ -18,7 +18,7 @@ from dagster import (
     multi_asset,
     with_resources,
 )
-from dagster._annotations import experimental, experimental_param
+from dagster._annotations import experimental_param, superseded
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -530,7 +530,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         return _assets
 
 
-@experimental
+@superseded(
+    additional_warn_text=(
+        "The dbt Cloud APIs of the `dagster-dbt` library are no longer best practice. "
+        "Use `dagster-dlift` instead."
+    )
+)
 @experimental_param(param="partitions_def")
 @experimental_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(

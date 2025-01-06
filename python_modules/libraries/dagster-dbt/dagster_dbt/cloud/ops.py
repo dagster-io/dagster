@@ -1,6 +1,7 @@
 from typing import Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
+from dagster._annotations import superseded
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
@@ -46,6 +47,12 @@ class DbtCloudRunOpConfig(Config):
     )
 
 
+@superseded(
+    additional_warn_text=(
+        "The dbt Cloud APIs of the `dagster-dbt` library are no longer best practice. "
+        "Use `dagster-dlift` instead."
+    )
+)
 @op(
     required_resource_keys={"dbt_cloud"},
     ins={"start_after": In(Nothing)},

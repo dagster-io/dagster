@@ -3,9 +3,16 @@ from datetime import datetime
 from typing import Any, Optional
 
 import dagster._check as check
+from dagster._annotations import superseded
 from dagster._vendored.dateutil.parser import isoparse
 
 
+@superseded(
+    additional_warn_text=(
+        "The dbt Cloud APIs of the `dagster-dbt` library are no longer best practice. "
+        "Use `dagster-dlift` instead."
+    )
+)
 class DbtCloudOutput:
     """The results of executing a dbt Cloud job, along with additional metadata produced from the
     job run.
