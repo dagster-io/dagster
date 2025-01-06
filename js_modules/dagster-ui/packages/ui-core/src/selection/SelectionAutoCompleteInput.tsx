@@ -3,6 +3,7 @@ import CodeMirror, {Editor, HintFunction} from 'codemirror';
 import {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
 import {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
+import ReactDOM from 'react-dom';
 import styled, {createGlobalStyle, css} from 'styled-components';
 
 import {
@@ -79,6 +80,14 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     }, [nameBase, attributesMap, functions]),
   );
 
+  const hintContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const _showHint = useCallback(() => {
+    if (hintContainerRef.current && cmInstance.current) {
+      showHint(cmInstance.current, hintRef.current, hintContainerRef.current);
+    }
+  }, [hintRef]);
+
   useLayoutEffect(() => {
     if (editorRef.current && !cmInstance.current) {
       cmInstance.current = CodeMirror(editorRef.current, {
@@ -101,6 +110,15 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         },
       });
 
+      function scheduleUpdateValue(newValue: string) {
+        if (setValueTimeoutRef.current) {
+          clearTimeout(setValueTimeoutRef.current);
+        }
+        setValueTimeoutRef.current = setTimeout(() => {
+          onSelectionChange(newValue);
+        }, 2000);
+      }
+
       cmInstance.current.setSize('100%', 20);
 
       // Enforce single line by preventing newlines
@@ -113,34 +131,41 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
       cmInstance.current.on('change', (instance: Editor, change) => {
         const newValue = instance.getValue().replace(/\s+/g, ' ');
         currentPendingValueRef.current = newValue;
-        if (setValueTimeoutRef.current) {
-          clearTimeout(setValueTimeoutRef.current);
-        }
-        setValueTimeoutRef.current = setTimeout(() => {
-          onSelectionChange(newValue);
-        }, 2000);
+        scheduleUpdateValue(newValue);
 
         if (change.origin === 'complete' && change.text[0]?.endsWith('()')) {
           // Set cursor inside the right parenthesis
           const cursor = instance.getCursor();
           instance.setCursor({...cursor, ch: cursor.ch - 1});
         }
+        requestAnimationFrame(() => {
+          _showHint();
+        });
       });
 
-      cmInstance.current.on('inputRead', (instance: Editor) => {
-        showHint(instance, hintRef.current);
+      cmInstance.current.on('inputRead', (_instance: Editor) => {
+        _showHint();
       });
 
-      cmInstance.current.on('focus', (instance: Editor) => {
-        showHint(instance, hintRef.current);
+      cmInstance.current.on('focus', (_instance: Editor) => {
+        _showHint();
       });
 
       cmInstance.current.on('cursorActivity', (instance: Editor) => {
         applyStaticSyntaxHighlighting(instance);
-        showHint(instance, hintRef.current);
+        _showHint();
       });
 
       cmInstance.current.on('blur', () => {
+        const current = document.activeElement;
+        const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
+        if (
+          editorRef.current?.contains(current) ||
+          hintContainerRef.current?.contains(current) ||
+          hintsVisible
+        ) {
+          return;
+        }
         if (currentPendingValueRef.current !== currentValueRef.current) {
           onSelectionChange(currentPendingValueRef.current);
         }
@@ -174,9 +199,9 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
       const cursor = instance.getCursor();
       instance.setValue(noNewLineValue);
       instance.setCursor(cursor);
-      showHint(instance, hintRef.current);
+      _showHint();
     }
-  }, [hintRef, value]);
+  }, [_showHint, hintRef, value]);
 
   return (
     <>
@@ -191,6 +216,7 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         <Icon name="op_selector" />
         <div ref={editorRef} />
       </InputDiv>
+      {ReactDOM.createPortal(<div ref={hintContainerRef} />, document.body)}
     </>
   );
 };
@@ -225,6 +251,7 @@ const GlobalHintStyles = createGlobalStyle`
       font-size: 14px;
       padding: 6px 8px 6px 12px;
       color: ${Colors.textDefault()};
+      &:hover,
       &.CodeMirror-hint-active {
         background-color: ${Colors.backgroundBlue()};
         color: ${Colors.textDefault()};
@@ -233,7 +260,11 @@ const GlobalHintStyles = createGlobalStyle`
   }
 `;
 
-function showHint(instance: Editor, hint: HintFunction) {
+function showHint(instance: Editor, hint: HintFunction, container: HTMLDivElement) {
+  if (container.querySelector('.CodeMirror-hints')) {
+    // Hints already visible
+    return;
+  }
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       if (instance.getWrapperElement().contains(document.activeElement)) {
@@ -242,6 +273,8 @@ function showHint(instance: Editor, hint: HintFunction) {
           completeSingle: false,
           moveOnOverlap: true,
           updateOnCursorActivity: true,
+          completeOnSingleClick: true,
+          container,
         });
       }
     });
