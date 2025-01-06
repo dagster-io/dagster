@@ -13,7 +13,7 @@ In the first step of the tutorial, you created your Dagster project with the raw
 - Build software-defined assets
 - Materialize your assets
 
-## 1. Create a Definitions object
+## 1. Create a definitions object
 
 In Dagster, the [Definitions API docs](/todo) object is where you define and organize various components within your project, such as assets and resources.
 
@@ -64,7 +64,7 @@ To create this asset, open the `definitions.py `file and copy the following code
 
 ### Sales reps asset
 
-The code for the sales reps asset is similar to the product asset code. In the `definitions.py` file, add the following code below the product asset code:
+The code for the sales reps asset is similar to the product asset code. In the `definitions.py` file, copy the following code below the product asset code:
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="35" lineEnd="61"/>
 
@@ -74,7 +74,7 @@ To add the sales data asset, copy the following code into your `definitions.py` 
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="62" lineEnd="87"/>
 
-## 4. Add assets to the Definitions object
+## 4. Add assets to the definitions object
 
 Now to pull these assets into our Definitions object. Adding them to the Definitions object makes them available to the Dagster project. Add them to the empty list in the assets parameter.
 
@@ -105,4 +105,4 @@ To materialize your assets:
 
 ## Next steps
 
-- Continue this tutorial with your with your [asset dependencies](create-and-materialize-a-downstream-asset)
+- Continue this tutorial with your [asset dependencies](create-and-materialize-a-downstream-asset)

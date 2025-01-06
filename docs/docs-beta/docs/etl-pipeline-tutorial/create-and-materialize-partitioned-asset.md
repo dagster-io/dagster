@@ -1,5 +1,5 @@
 ---
-title: Create and Materialize Partitioned Assets
+title: Create and materialize partitioned assets
 description: Partitioning Assets by datetime and categories
 last_update:
   date: 2024-11-25
@@ -7,25 +7,25 @@ last_update:
 sidebar_position: 50
 ---
 
-[Partitions](/guides/build/create-asset-pipelines/partitioning) are a core abstraction in Dagster, they are how you manage large datasets, process incremental updates, and improve pipeline performance. In Dagster you can partition assets the following ways:
+[Partitions](/guides/build/create-asset-pipelines/partitioning) are a core abstraction in Dagster, that allow you to manage large datasets, process incremental updates, and improve pipeline performance. You can partition assets the following ways:
 
-1. Time-based: Split data by time periods (e.g., daily, monthly)
-2. Category-based: Divide by known categories (e.g., country, product type)
-3. Two-dimensional: Combine two partition types (e.g., country + date)
-4. Dynamic: Create partitions based on runtime conditions
+- Time-based: Split data by time periods (e.g., daily, monthly)
+- Category-based: Divide by known categories (e.g., country, product type)
+- Two-dimensional: Combine two partition types (e.g., country + date)
+- Dynamic: Create partitions based on runtime conditions
 
-In this step you will:
+In this step, you will:
 
-- Create an asset that is partitioned by month
-- Create an asset that is partitioned by defined categories
+- Create a time-based asset partitioned by month
+- Create a category-based asset partitioned by product category
 
-## 1. Create a time based partitioned asset
+## 1. Create a time-based partitioned asset
 
-Partitioning by datetime groups is supported in Dagster natively. We want to create an asset that calculates the monthly performance for each sales rep. To create the monthly partition copy the following code below the `missing_dimension_check` asset check.
+Dagster natively supports partitioning assets by datetime groups. We want to create an asset that calculates the monthly performance for each sales rep. To create the monthly partition copy the following code below the `missing_dimension_check` asset check.
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="152" lineEnd="153"/>
 
-Partition data are accessed within an asset by context. We want to create an asset that does this calculation for a given month from the partition and deletes any previous value for that month. Paste the following asset under the `monthly_partition` we just created
+Partition data are accessed within an asset by context. We want to create an asset that does this calculation for a given month from the partition and deletes any previous value for that month. Copy the following asset under the `monthly_partition` we just created.
 
   ```python
   @dg.asset(
@@ -82,15 +82,15 @@ Partition data are accessed within an asset by context. We want to create an ass
       )
   ```
 
-## 2. Create a statically partitioned asset
+## 2. Create a category-based partitioned asset
 
-Using known defined partitions is a simple way to break up your dataset when you know the different groups you want to subset it by. In our pipeline we want to create a an asset that is the performance of each product category. 
+Using known defined partitions is a simple way to break up your dataset when you know the different groups you want to subset it by. In our pipeline, we want to create an asset that represents the performance of each product category.
 
-1. To create the static defined partition for the product category paste this code beneath the `monthly_sales_performance` asset:
+1. To create the statically-defined partition for the product category, copy this code beneath the `monthly_sales_performance` asset:
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="211" lineEnd="214"/>
 
-2. Now that the partition has been defined we can use that in an asset that calculates the product category performance. 
+2. Now that the partition has been defined, we can use that in an asset that calculates the product category performance:
 
 ```python
 @dg.asset(
@@ -148,9 +148,9 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
 
 ## 4. Materialize partitioned assets
 
-Now that we have our partitioned assets lets add them to our definitions object. 
+Now that we have our partitioned assets, let's add them to our Definitions object:
 
-Your definitions object should look like this:
+Your Definitions object should look like this:
 
 ```python
 defs = dg.Definitions(
@@ -166,14 +166,14 @@ defs = dg.Definitions(
 )
 ```
 
-To materialize these assets :
+To materialize these assets:
 1. Navigate to the assets page.
 2. Reload definitions.
-3. Select the `monthly_performance` asset then Materialize selected.
-4. Ensure all partitions are selected, then launch backfill. 
-5. Select the `product_performance` asset then Materialize selected. 
-6. Ensure all partitions are selected, then launch backfill.
+3. Select the `monthly_performance` asset, then **Materialize selected**.
+4. Ensure all partitions are selected, then launch a backfill. 
+5. Select the `product_performance` asset, then **Materialize selected**. 
+6. Ensure all partitions are selected, then launch a backfill.
 
-## Next Steps
+## Next steps
 
 Now that we have the main assets in our ETL pipeline, its time to add [automation to our pipeline](automate-your-pipeline)

@@ -10,14 +10,14 @@ There are several ways to automate pipelines and assets [in Dagster](/guides/aut
 
 In this step you will:
 
-- Add automation to assets to run when upstream assets are materialized
-- Create a schedule to run a set of assets on a cron schedule
+- Add automation to assets to run when upstream assets are materialized.
+- Create a schedule to run a set of assets on a cron schedule.
 
-## 1. Automating asset materialization 
+## 1. Automate asset materialization 
 
-Ideally, the reporting assets created in the last step should refresh whenever the upstream data is updated. This can be done simply using [declarative automation](/guides/automate/declarative-automation) and adding an automation condition to the asset definition.
+Ideally, the reporting assets created in the last step should refresh whenever the upstream data is updated. Dagster's [declarative automation](/guides/automate/declarative-automation) framework allows you do this by adding an automation condition to the asset definition.
 
-Update the `monthly_sales_performance` asset to have the automation condition in the decorator:
+Update the `monthly_sales_performance` asset to add the automation condition to the decorator:
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="155" lineEnd="209"/>
 
@@ -25,29 +25,29 @@ Do the same thing for `product_performance`:
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="216" lineEnd="267"/>
 
-## 2. Scheduled Jobs
+## 2. Scheduled jobs
 
-CRON based schedules are common in data orchestration. For our pipeline, assume updated csv's get dropped into a file location every week at a specified time by an external process. We want to have a job that runs the pipeline and materialize the asset. Since we already defined the performance assets to materialize using the eager condition, When the upstream data is updated the entire pipeline will refresh. 
+Cron-based schedules are common in data orchestration. For our pipeline, assume that updated CSVs are uploaded to a file location at a specific time every week by an external process.
 
 Copy the following code underneath the `product performance` asset:
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="268" lineEnd="273"/>
 
-## 3. Running the entire pipeline
+## 3. Enable and test automations
 
-With automation in Dagster the final step is to turn on the automations in the UI. 
+The final step is to enable the automations in the UI.
 
 To accomplish this:
 1. Navigate to the Automation page.
-2. Select all the automations. 
+2. Select all automations. 
 3. Using actions, start all automations. 
-4. Select the `analysis_update_job`
-5. Test Schedule and evaluate for any time in the drop down. 
-6. Open in Launchpad
+4. Select the `analysis_update_job`.
+5. Test the schedule and evaluate for any time in the dropdown menu. 
+6. Open in Launchpad.
 
 The job is now executing. 
 
-Additionally if you navigate to the runs tab you will see that materializations for `monthly_sales_performance` and `product_performance` have ran as well. 
+Additionally, if you navigate to the Runs tab, you should see that materializations for `monthly_sales_performance` and `product_performance` have run as well. 
 
    ![2048 resolution](/images/tutorial/etl-tutorial/automation-final.png)
 

@@ -19,14 +19,13 @@ In this tutorial, you'll build an ETL pipeline with Dagster that:
 ## You will learn to:
 
 - Set up a Dagster project with the recommended project structure
-- Create Assets with metadata
-- Connect Dagster to external systems with Resources
-- Build dependencies between assets
-- Run a pipeline by materializing assets
-- Add schedules, sensors, and partitions to your assets
-- Refactor project when it becomes more complex
-
-## Prerequisites
+- Create and materialize assets
+- Create and materialize dependant assets
+- Ensure data quality with asset checks
+- Create and materialize partitioned assets
+- Automate the pipeline
+- Create and materialize a sensor asset
+- Refactor your project when it becomes more complex
 
 <details>
   <summary>Prerequisites</summary>
@@ -104,7 +103,7 @@ dagster-etl-tutorial/
 Dagster has several example projects you can install depending on your use case. To see the full list, run `dagster project list-examples`. For more information on the `dagster project` command, see the [API documentation](https://docs-preview.dagster.io/api/cli#dagster-project).
 ::: 
 
-### Dagster Project Structure
+### Dagster project structure
 
 #### dagster-etl-tutorial root directory
 

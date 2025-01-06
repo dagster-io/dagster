@@ -13,19 +13,17 @@ Now that we have the raw data loaded into DuckDB, we need to create a [downstrea
 
 ## 1. Creating a downstream asset
 
-Now that we have all of our raw data loaded into DuckDB our next step is to merge it together in a view composed of data from all three source tables.
+Now that we have all of our raw data loaded into DuckDB, our next step is to merge it together in a view composed of data from all three source tables.
 
-To accomplish this in SQL we will bring in our `sales_data` table and then left join on `sales_reps` and `products` on their respective id columns. Additionally, we will keep this view concise and only have relevant columns for analysis.
+To accomplish this in SQL, we will bring in our `sales_data` table and then left join on `sales_reps` and `products` on their respective id columns. Additionally, we will keep this view concise and only have relevant columns for analysis.
 
-As you can see here this asset looks a lot like our previous ones with a few small changes. We put this asset into a different group. To make this asset dependent on the raw tables we add the asset keys the `deps` parameter in the asset definition.
+As you can see, the new `joined_data` asset looks a lot like our previous ones, with a few small changes. We put this asset into a different group. To make this asset dependent on the raw tables, we add the asset keys to the `deps` parameter in the asset definition.
 
 <CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="89" lineEnd="132"/>
 
-## 2. Materialize the Asset
+## 2. Materialize the asset
 
-1. We need to add the Asset we just made to the Definitions object.
-
-Your Definitions object should now look like this:
+1. Add the joined_data asset to the Definitions object
 
   ```python
   defs = dg.Definitions(
@@ -38,8 +36,8 @@ Your Definitions object should now look like this:
   )
   ```
 
-2. In the Dagster UI, reload definitions and materialize the `joined_data` asset
+2. In the Dagster UI, reload definitions and materialize the `joined_data` asset.
 
 ## Next steps
 
-- Continue this tutorial with [create and materialize a partitioned asset](ensure-data-quality-with-asset-checks)
+- Continue this tutorial with by [creating and materializing a partitioned asset](ensure-data-quality-with-asset-checks).

@@ -6,16 +6,16 @@ last_update:
 sidebar_position: 80
 ---
 
-Many engineers generally leave something alone once its working as expected. But the first time you do something is rarely the best implementation of a use case and all projects benefit from incremental improvements.
+Many engineers generally leave something alone once it's working as expected. But the first time you do something is rarely the best implementation of a use case and all projects benefit from incremental improvements.
 
 ## Splitting up project structure
 
-Right now the project is contained within one definitions file. This has gotten kinda unwieldy and if we were to add more to the project it would only get more disorganized. So we're going to create separate files for all the different Dagster core concepts: 
+Currently, your project is contained in one definitions file. However, this file has gotten fairly complex, and adding to it would only increase its complexity. To fix that, we will create separate files for each core Dagster concept:
 
 - Assets
-- schedules
-- sensors
-- partitions
+- Schedules
+- Sensors
+- Partitions
 
 The final project structure should look like this:
 ```
@@ -55,25 +55,22 @@ The sensors file will have the job and sensor for the `adhoc_request` asset.
 
 <CodeExample filePath="guides/tutorials/etl_tutorial_completed/etl_tutorial/sensors.py" language="python" lineStart="1" lineEnd="47"/>
 
-## Adjusting definitions object
+## Refactoring the Definitions object
 
-Now that we have separate files we need to adjust how the different elements are adding to definitions since they are in separate files 
+Now that we have separate files, we need to adjust how the different elements are added to the Definitions object.
 
-1. Imports
+:::note
+The Dagster project runs from the root directory, so whenever you reference files in your project, you need to use the root as the starting point.
+Additionally, Dagster has functions to load all assets and asset checks from a module (load_assets_from_modules and load_asset_checks_from_modules, respectively).
+:::
 
-The Dagster project runs from the root directory so whenever you are doing file references you need to have that as the starting point. 
-
-Additionally, Dagster has functions to load all the assets `load_assets_from_modules` and asset checks `load_asset_checks_from_modules` from a module. 
-
-2. Definitions
-
-To bring our project together copy the following code into your `definitions.py` file:
+To bring your project together, copy the following code into your `definitions.py` file:
 
 <CodeExample filePath="guides/tutorials/etl_tutorial_completed/etl_tutorial/definitions.py" language="python" lineStart="1" lineEnd="19"/>
 
-## Quick Validation
+## Quick validation
 
-If you want to validate that your definitions file loads and validates you can run the `dagster definitions validate` in the same directory that you would run `dagster dev`. This command is useful for CI/CD pipelines and allows you to check that your project loads correctly without starting the webserver. 
+To validate that your definitions file loads and validates, you can run `dagster definitions validate` in the same directory that you would run `dagster dev`. This command is useful for CI/CD pipelines and allows you to check that your project loads correctly without starting the web server. 
 
 ## Thats it!
 
