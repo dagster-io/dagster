@@ -47,17 +47,17 @@ class DbtCloudRunOpConfig(Config):
     )
 
 
-@superseded(
-    additional_warn_text=(
-        "The dbt Cloud APIs of the `dagster-dbt` library are no longer best practice. "
-        "Use `dagster-dlift` instead."
-    )
-)
 @op(
     required_resource_keys={"dbt_cloud"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtCloudOutput, description="Parsed output from running the dbt Cloud job."),
     tags={COMPUTE_KIND_TAG: "dbt_cloud"},
+)
+@superseded(
+    additional_warn_text=(
+            "The dbt Cloud APIs of the `dagster-dbt` library are no longer best practice. "
+            "Use `dagster-dlift` instead."
+    )
 )
 def dbt_cloud_run_op(context, config: DbtCloudRunOpConfig):
     """Initiates a run for a dbt Cloud job, then polls until the run completes. If the job
