@@ -41,7 +41,7 @@ class GrapheneRunsFeedCount(graphene.ObjectType):
     class Meta:
         name = "RunsFeedCount"
 
-    count = graphene.NonNull(graphene.Int)
+    count = graphene.NonNull(graphene.Int)  # Won't be billions on a single account
 
 
 class GrapheneRunsFeedCountOrError(graphene.Union):

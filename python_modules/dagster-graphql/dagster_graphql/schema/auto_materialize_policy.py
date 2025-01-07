@@ -33,7 +33,9 @@ class GrapheneAutoMaterializeRule(graphene.ObjectType):
 
 class GrapheneAutoMaterializePolicy(graphene.ObjectType):
     policyType = graphene.NonNull(graphene.Enum.from_enum(AutoMaterializePolicyType))
-    maxMaterializationsPerMinute = graphene.Int()
+    maxMaterializationsPerMinute = (
+        graphene.Int()
+    )  # I assume you have other problems if you need a BigInt limit here
     rules = non_null_list(GrapheneAutoMaterializeRule)
 
     class Meta:

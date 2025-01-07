@@ -187,10 +187,12 @@ class GrapheneAssetPartitionStatuses(graphene.Union):
 
 
 class GraphenePartitionStats(graphene.ObjectType):
-    numMaterialized = graphene.NonNull(graphene.Int)
-    numPartitions = graphene.NonNull(graphene.Int)
-    numFailed = graphene.NonNull(graphene.Int)
-    numMaterializing = graphene.NonNull(graphene.Int)
+    numMaterialized = graphene.NonNull(
+        graphene.Int
+    )  # Unless this is over time, I'm not sure how you could get into the BigInt range
+    numPartitions = graphene.NonNull(graphene.Int)  # Same as above
+    numFailed = graphene.NonNull(graphene.Int)  # Same as above
+    numMaterializing = graphene.NonNull(graphene.Int)  # Same as above
 
     class Meta:
         name = "PartitionStats"
@@ -202,7 +204,7 @@ class GrapheneAsset(graphene.ObjectType):
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneMaterializationEvent),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
-        partitionInLast=graphene.Int(),
+        partitionInLast=graphene.Int(),  # I assume num partitions can't really be so high to require BigInt
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
@@ -210,7 +212,7 @@ class GrapheneAsset(graphene.ObjectType):
     assetObservations = graphene.Field(
         non_null_list(GrapheneObservationEvent),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
-        partitionInLast=graphene.Int(),
+        partitionInLast=graphene.Int(),  # Same as above
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
@@ -920,7 +922,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     partitionKeysOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionKeys),
         cursor=graphene.String(),
-        limit=graphene.Int(),
+        limit=graphene.Int(),  # Can't see how partition keys could be so numerous to require BigInt
         reverse=graphene.Boolean(),
         selected_asset_keys=graphene.Argument(
             graphene.List(graphene.NonNull(GrapheneAssetKeyInput))

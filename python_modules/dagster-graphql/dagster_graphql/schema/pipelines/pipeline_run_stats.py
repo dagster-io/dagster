@@ -8,10 +8,12 @@ from dagster_graphql.schema.errors import GraphenePythonError
 class GraphenePipelineRunStatsSnapshot(graphene.Interface):
     id = graphene.NonNull(graphene.String)
     runId = graphene.NonNull(graphene.String)
-    stepsSucceeded = graphene.NonNull(graphene.Int)
-    stepsFailed = graphene.NonNull(graphene.Int)
-    materializations = graphene.NonNull(graphene.Int)
-    expectations = graphene.NonNull(graphene.Int)
+    stepsSucceeded = graphene.NonNull(
+        graphene.Int
+    )  # Can you really have a pipeline with so many steps that you need a BigInt?
+    stepsFailed = graphene.NonNull(graphene.Int)  # Same
+    materializations = graphene.NonNull(graphene.Int)  # Same
+    expectations = graphene.NonNull(graphene.Int)  # Same
     enqueuedTime = graphene.Field(graphene.Float)
     launchTime = graphene.Field(graphene.Float)
     startTime = graphene.Field(graphene.Float)
@@ -24,10 +26,10 @@ class GraphenePipelineRunStatsSnapshot(graphene.Interface):
 class GrapheneRunStatsSnapshot(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     runId = graphene.NonNull(graphene.String)
-    stepsSucceeded = graphene.NonNull(graphene.Int)
-    stepsFailed = graphene.NonNull(graphene.Int)
-    materializations = graphene.NonNull(graphene.Int)
-    expectations = graphene.NonNull(graphene.Int)
+    stepsSucceeded = graphene.NonNull(graphene.Int)  # Same
+    stepsFailed = graphene.NonNull(graphene.Int)  # Same
+    materializations = graphene.NonNull(graphene.Int)  # Same
+    expectations = graphene.NonNull(graphene.Int)  # Same
     enqueuedTime = graphene.Field(graphene.Float)
     launchTime = graphene.Field(graphene.Float)
     startTime = graphene.Field(graphene.Float)
