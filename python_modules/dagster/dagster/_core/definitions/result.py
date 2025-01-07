@@ -6,6 +6,7 @@ from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.metadata.metadata_set import validate_metadata_values
 
 
 class AssetResult(
@@ -35,14 +36,19 @@ class AssetResult(
 
         asset_key = AssetKey.from_coercible(asset_key) if asset_key else None
 
+        metadata = check.opt_nullable_mapping_param(
+            metadata,
+            "metadata",
+            key_type=str,
+        )
+
+        if metadata:
+            validate_metadata_values(metadata)
+
         return super().__new__(
             cls,
             asset_key=asset_key,
-            metadata=check.opt_nullable_mapping_param(
-                metadata,
-                "metadata",
-                key_type=str,
-            ),
+            metadata=metadata,
             check_results=check.opt_sequence_param(
                 check_results, "check_results", of_type=AssetCheckResult
             ),
