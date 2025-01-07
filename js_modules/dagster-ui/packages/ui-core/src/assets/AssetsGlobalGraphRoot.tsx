@@ -53,7 +53,7 @@ export const AssetsGlobalGraphRoot = () => {
 
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
-      hideEdgesToNodesOutsideQuery: false,
+      hideEdgesToNodesOutsideQuery: true,
     };
     return options;
   }, []);
