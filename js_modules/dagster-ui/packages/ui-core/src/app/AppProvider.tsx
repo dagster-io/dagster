@@ -3,7 +3,6 @@ import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition, isMutationOperation} from '@apollo/client/utilities';
 import {CustomTooltipProvider} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useContext} from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
@@ -217,9 +216,4 @@ export const AppProvider = (props: AppProviderProps) => {
       </WebSocketProvider>
     </AppContext.Provider>
   );
-};
-
-export const usePrefixedCacheKey = (key: string) => {
-  const {localCacheIdPrefix} = useContext(AppContext);
-  return `${localCacheIdPrefix}/${key}`;
 };
