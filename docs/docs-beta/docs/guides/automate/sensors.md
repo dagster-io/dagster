@@ -3,16 +3,16 @@ title: Create event-based pipelines with sensors
 sidebar_position: 30
 ---
 
-Sensors enable you to take action in response to events that happen both internally or at external systems. They check for events at regular intervals, either performing an action or explaining why it was skipped.
+Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems. They check for events at regular intervals and either perform an action or provide an explanation for why the action was skipped.
 
-Example of events can be:
+Examples of events include:
 - a run completes in Dagster
 - a run fails in Dagster
 - a job materializes a specific asset 
 - a file appears in an s3 bucket
 - an external system is down
 
-Example of actions are:
+Examples of actions include:
 - launching a run
 - sending a Slack message
 - inserting a row into a database
