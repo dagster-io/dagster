@@ -11,7 +11,7 @@ Now that we have the raw data loaded into DuckDB, we need to create a [downstrea
 - Create a downstream asset
 - Materialize that asset
 
-## 1. Creating a downstream asset
+## 1. Create a downstream asset
 
 Now that we have all of our raw data loaded into DuckDB, our next step is to merge it together in a view composed of data from all three source tables.
 
