@@ -37,15 +37,15 @@ GITHUB_TOKEN=[Instructions](https://docs.github.com/en/authentication/keeping-yo
 
 The ingestion pipeline handles:
 
-* Document loading
-* Text splitting
-* Embedding generation
-* Vector storage in Pinecone
+- Document loading
+- Text splitting
+- Embedding generation
+- Vector storage in Pinecone
 
 ## Retrieval Pipeline
 
 The retrieval pipeline manages:
 
-* Query embedding
-* Semantic search in Pinecone
-* Response generation with OpenAI
+- Query embedding
+- Semantic search in Pinecone
+- Response generation with OpenAI
