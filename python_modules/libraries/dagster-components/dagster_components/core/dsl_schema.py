@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from dagster_components.core.component_rendering import (
     RenderedModel,
     RenderingMetadata,
-    TemplatedValueResolver,
+    TemplatedValueRenderer,
 )
 
 
@@ -62,7 +62,7 @@ class AssetSpecProcessor(ABC, BaseModel):
     def apply_to_spec(
         self,
         spec: AssetSpec,
-        value_resolver: TemplatedValueResolver,
+        value_renderer: TemplatedValueRenderer,
         target_keys: AbstractSet[AssetKey],
     ) -> AssetSpec:
         if spec.key not in target_keys:
@@ -70,16 +70,16 @@ class AssetSpecProcessor(ABC, BaseModel):
 
         # add the original spec to the context and resolve values
         return self._apply_to_spec(
-            spec, self.attributes.render_properties(value_resolver.with_context(asset=spec))
+            spec, self.attributes.render_properties(value_renderer.with_context(asset=spec))
         )
 
-    def apply(self, defs: Definitions, value_resolver: TemplatedValueResolver) -> Definitions:
+    def apply(self, defs: Definitions, value_renderer: TemplatedValueRenderer) -> Definitions:
         target_selection = AssetSelection.from_string(self.target, include_sources=True)
         target_keys = target_selection.resolve(defs.get_asset_graph())
 
         mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
         mapped_assets = map_asset_specs(
-            lambda spec: self.apply_to_spec(spec, value_resolver, target_keys),
+            lambda spec: self.apply_to_spec(spec, value_renderer, target_keys),
             mappable,
         )
 
