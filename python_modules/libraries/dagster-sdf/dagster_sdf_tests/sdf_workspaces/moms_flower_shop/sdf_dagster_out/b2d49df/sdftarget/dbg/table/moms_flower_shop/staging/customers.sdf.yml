@@ -1,0 +1,99 @@
+table:
+  name: moms_flower_shop.staging.customers
+  dialect: trino
+  materialization: view
+  purpose: model
+  dependencies:
+  - moms_flower_shop.raw.raw_addresses
+  - moms_flower_shop.raw.raw_customers
+  - moms_flower_shop.staging.app_installs_v2
+  columns:
+  - name: customer_id
+    description: A unique identifier of a mom's floewr shop customer
+    datatype: bigint
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_customers.id
+  - name: first_name
+    description: The first name of the customer
+    datatype: varchar
+    classifiers:
+    - PII.name
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_customers.first_name
+  - name: last_name
+    description: The last name of the customer
+    datatype: varchar
+    classifiers:
+    - PII.name
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_customers.last_name
+  - name: full_name
+    datatype: varchar
+    classifiers:
+    - PII.name
+    lineage:
+      modify:
+      - moms_flower_shop.raw.raw_customers.first_name
+      - moms_flower_shop.raw.raw_customers.last_name
+  - name: email
+    description: The email of the customer
+    datatype: varchar
+    classifiers:
+    - PII.email
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_customers.email
+  - name: gender
+    description: The gender of the customer
+    datatype: varchar
+    classifiers:
+    - PII.gender
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_customers.gender
+  - name: campaign_id
+    datatype: bigint
+    lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs_v2.campaign_id
+  - name: campaign_name
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs_v2.campaign_name
+  - name: campaign_type
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs_v2.campaign_type
+  - name: address_id
+    description: The address_id of the address associated with the customer
+    datatype: bigint
+    classifiers:
+    - PII.address
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_customers.address_id
+  - name: full_address
+    description: The full address associated with the address_id
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_addresses.full_address
+  - name: state
+    description: The address US state associated with the address_id
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_addresses.state
+  lineage:
+    scan:
+    - moms_flower_shop.raw.raw_addresses.address_id
+    - moms_flower_shop.raw.raw_customers.address_id
+    - moms_flower_shop.raw.raw_customers.id
+    - moms_flower_shop.staging.app_installs_v2.customer_id
+  source-locations:
+  - path: models/staging/customers.sql

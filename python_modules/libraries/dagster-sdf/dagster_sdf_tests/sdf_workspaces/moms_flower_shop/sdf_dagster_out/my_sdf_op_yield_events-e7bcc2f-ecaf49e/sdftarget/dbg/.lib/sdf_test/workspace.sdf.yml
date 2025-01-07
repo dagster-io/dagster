@@ -1,0 +1,8 @@
+workspace:
+  name: sdf_test
+  edition: "1.3"
+  description: >
+    Standard testing library for SDF data tests.
+    Check our docs for [data testing](https://docs.sdf.com/guide/data-quality/tests).
+  includes:
+    - path: macros

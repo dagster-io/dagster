@@ -1,0 +1,76 @@
+{
+  "contents": {
+    "credentials": "99914b932bd37a50b983c5e7c90ae93b",
+    "env_vars": "d751713988987e9331980363e24189ce",
+    "cli_vars": "99914b932bd37a50b983c5e7c90ae93b"
+  },
+  "prelude": [
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_test/sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_test/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:38:08.206499608Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_utils/sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_utils/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:38:08.207295569Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_mat/sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_mat/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:38:08.206064773Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_test/macros/test.jinja",
+      "mtime": "2025-02-04T22:38:08.206389816Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_utils/macros/date_spine.jinja",
+      "mtime": "2025-02-04T22:38:08.206790901Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_utils/macros/generate_date_values.jinja",
+      "mtime": "2025-02-04T22:38:08.206911943Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_utils/macros/group_by.jinja",
+      "mtime": "2025-02-04T22:38:08.207206027Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_utils/macros/generate_integer_values.jinja",
+      "mtime": "2025-02-04T22:38:08.207028026Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_utils/macros/generate_surrogate_key.jinja",
+      "mtime": "2025-02-04T22:38:08.207121318Z"
+    },
+    {
+      "file": "sdf_dagster_out/01e683c/sdftarget/dbg/.lib/sdf_mat/macros/materialize.jinja",
+      "mtime": "2025-02-04T22:38:08.205974231Z"
+    }
+  ],
+  "deps": [
+    {
+      "target": "lineage.pub.depend_on_upstream__tn__",
+      "deps": []
+    }
+  ],
+  "source_files": {
+    "values": {
+      "lineage.pub.depend_on_upstream__tn__": [
+        {
+          "file": "models/depend_on_upstream.sql",
+          "mtime": "2024-09-24T15:37:53.739004197Z"
+        }
+      ]
+    }
+  },
+  "incomplete_source_files": {
+    "values": []
+  },
+  "target_status": {
+    "values": {
+      "lineage.pub.depend_on_upstream__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      }
+    }
+  }
+}

@@ -1,0 +1,84 @@
+table:
+  name: moms_flower_shop.staging.inapp_events
+  dialect: trino
+  materialization: view
+  purpose: model
+  dependencies:
+  - moms_flower_shop.raw.raw_inapp_events
+  depended-on-by:
+  - moms_flower_shop.staging.app_installs
+  - moms_flower_shop.staging.app_installs_v2
+  columns:
+  - name: event_id
+    description: A unique identifier of an in-app event within mom's flower shop's mobile app
+    datatype: bigint
+    classifiers:
+    - EVENT.inapp
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_inapp_events.event_id
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs.event_id
+      - moms_flower_shop.staging.app_installs_v2.event_id
+  - name: customer_id
+    description: The identifier of the customer that performed the event
+    datatype: bigint
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_inapp_events.customer_id
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs.customer_id
+      - moms_flower_shop.staging.app_installs_v2.customer_id
+  - name: event_time
+    datatype: timestamp
+    lineage:
+      modify:
+      - moms_flower_shop.raw.raw_inapp_events.event_time
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs.install_time
+      - moms_flower_shop.staging.app_installs_v2.install_time
+  - name: event_name
+    description: The name of the in-app events. Supported events - install, add_to_cart, go_to_checkout, place_order
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_inapp_events.event_name
+  - name: event_value
+    description: |
+      Any numeric value associated with the event.  For example, upon placing an order, the event value would be the total order amount in USD.
+    datatype: double
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_inapp_events.event_value
+  - name: additional_details
+    description: |
+      A JSON containing additional details about the order.  For exmaple, upon placing an order, the additional details will contain a delivery ID and other order information.
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_inapp_events.additional_details
+  - name: platform
+    description: iOS or Android
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_inapp_events.platform
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs.platform
+      - moms_flower_shop.staging.app_installs_v2.platform
+  - name: campaign_id
+    description: The identifier of a marketing campaign that is associated with the install of mom's flower shop mobile app.
+    datatype: double
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_inapp_events.campaign_id
+  tests:
+  - expect: unique_columns(["event_id"])
+    severity: error
+  source-locations:
+  - path: metadata/staging/inapp_events.sdf.yml
+  - path: models/staging/inapp_events.sql

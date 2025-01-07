@@ -1,0 +1,164 @@
+{
+  "contents": {
+    "cli_vars": "99914b932bd37a50b983c5e7c90ae93b",
+    "credentials": "99914b932bd37a50b983c5e7c90ae93b",
+    "env_vars": "d751713988987e9331980363e24189ce"
+  },
+  "prelude": [
+    {
+      "file": "workspace.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.738432203Z"
+    },
+    {
+      "file": "failing_metadata/middle.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.737849709Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_test/sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_test/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:18:55.247889467Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_utils/sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_utils/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:18:55.248592178Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_mat/sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_mat/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:18:55.247506008Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_test/macros/test.jinja",
+      "mtime": "2025-02-04T22:18:55.247803800Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_utils/macros/date_spine.jinja",
+      "mtime": "2025-02-04T22:18:55.248152676Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_utils/macros/generate_date_values.jinja",
+      "mtime": "2025-02-04T22:18:55.248231093Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_utils/macros/group_by.jinja",
+      "mtime": "2025-02-04T22:18:55.248475969Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_utils/macros/generate_integer_values.jinja",
+      "mtime": "2025-02-04T22:18:55.248310552Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_utils/macros/generate_surrogate_key.jinja",
+      "mtime": "2025-02-04T22:18:55.248390511Z"
+    },
+    {
+      "file": "sdf_dagster_out/550872c/sdftarget/failing_tests/.lib/sdf_mat/macros/materialize.jinja",
+      "mtime": "2025-02-04T22:18:55.247420716Z"
+    }
+  ],
+  "deps": [
+    {
+      "target": "lineage.pub.source__tn__",
+      "deps": []
+    },
+    {
+      "target": "lineage.pub.middle__tn__",
+      "deps": [
+        "lineage.pub.source__tn__"
+      ]
+    },
+    {
+      "target": "lineage.pub.knis__tn__",
+      "deps": [
+        "lineage.pub.middle__tn__"
+      ]
+    },
+    {
+      "target": "lineage.pub.sink__tn__",
+      "deps": [
+        "lineage.pub.middle__tn__"
+      ]
+    },
+    {
+      "target": "lineage.pub.test_middle__tn__",
+      "deps": [
+        "lineage.pub.middle__tn__"
+      ]
+    }
+  ],
+  "source_files": {
+    "values": {
+      "lineage.pub.middle__tn__": [
+        {
+          "file": "failing_metadata/middle.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.737849709Z"
+        },
+        {
+          "file": "models/middle.sql",
+          "mtime": "2024-09-24T15:37:53.738058290Z"
+        }
+      ],
+      "lineage.pub.knis__tn__": [
+        {
+          "file": "models/knis.sql",
+          "mtime": "2024-09-24T15:37:53.737973208Z"
+        }
+      ],
+      "lineage.pub.sink__tn__": [
+        {
+          "file": "models/sink.sql",
+          "mtime": "2024-09-24T15:37:53.738131664Z"
+        }
+      ],
+      "lineage.pub.test_middle__tn__": [
+        {
+          "file": "failing_metadata/middle.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.737849709Z"
+        },
+        {
+          "file": "models/middle.sql",
+          "mtime": "2024-09-24T15:37:53.738058290Z"
+        },
+        {
+          "file": "sdftarget/failing_tests/tests/lineage/pub/test_middle.sql",
+          "mtime": "2025-02-04T22:18:55.822068285Z"
+        }
+      ],
+      "lineage.pub.source__tn__": [
+        {
+          "file": "models/source.sql",
+          "mtime": "2024-09-24T15:37:53.738210997Z"
+        },
+        {
+          "file": "workspace.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.738432203Z"
+        }
+      ]
+    }
+  },
+  "incomplete_source_files": {
+    "values": []
+  },
+  "target_status": {
+    "values": {
+      "lineage.pub.knis__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "lineage.pub.source__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "lineage.pub.test_middle__tn__": {
+        "purpose": "test",
+        "status": "failed"
+      },
+      "lineage.pub.sink__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "lineage.pub.middle__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      }
+    }
+  }
+}

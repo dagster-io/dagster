@@ -1,0 +1,407 @@
+{
+  "contents": {
+    "env_vars": "d751713988987e9331980363e24189ce",
+    "cli_vars": "99914b932bd37a50b983c5e7c90ae93b",
+    "credentials": "99914b932bd37a50b983c5e7c90ae93b"
+  },
+  "prelude": [
+    {
+      "file": "workspace.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.746001378Z"
+    },
+    {
+      "file": "metadata/raw/raw_inapp_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740417308Z"
+    },
+    {
+      "file": "metadata/raw/raw_customers.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740335934Z"
+    },
+    {
+      "file": "metadata/analytics/agg_installs_and_campaigns.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.739989479Z"
+    },
+    {
+      "file": "metadata/raw/raw_addresses.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740222394Z"
+    },
+    {
+      "file": "metadata/staging/inapp_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740741055Z"
+    },
+    {
+      "file": "metadata/analytics/dim_marketing_campaigns.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740076728Z"
+    },
+    {
+      "file": "metadata/staging/app_installs.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740653389Z"
+    },
+    {
+      "file": "metadata/raw/raw_marketing_campaign_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740513099Z"
+    },
+    {
+      "file": "metadata/raw/raw_inapp_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740417308Z"
+    },
+    {
+      "file": "metadata/raw/raw_customers.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740335934Z"
+    },
+    {
+      "file": "metadata/analytics/agg_installs_and_campaigns.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.739989479Z"
+    },
+    {
+      "file": "metadata/raw/raw_addresses.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740222394Z"
+    },
+    {
+      "file": "metadata/staging/inapp_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740741055Z"
+    },
+    {
+      "file": "metadata/analytics/dim_marketing_campaigns.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740076728Z"
+    },
+    {
+      "file": "metadata/staging/app_installs.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740653389Z"
+    },
+    {
+      "file": "metadata/raw/raw_marketing_campaign_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740513099Z"
+    },
+    {
+      "file": "classifications/column_classifiers.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.739736273Z"
+    },
+    {
+      "file": "classifications/table_classifiers.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.739813897Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_test/sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_test/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:38:13.526818785Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_utils/sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_utils/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:38:13.527480120Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_mat/sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_mat/workspace.sdf.yml",
+      "mtime": "2025-02-04T22:38:13.526383283Z"
+    },
+    {
+      "file": "metadata/raw/raw_inapp_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740417308Z"
+    },
+    {
+      "file": "metadata/raw/raw_customers.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740335934Z"
+    },
+    {
+      "file": "metadata/analytics/agg_installs_and_campaigns.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.739989479Z"
+    },
+    {
+      "file": "metadata/raw/raw_addresses.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740222394Z"
+    },
+    {
+      "file": "metadata/staging/inapp_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740741055Z"
+    },
+    {
+      "file": "metadata/analytics/dim_marketing_campaigns.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740076728Z"
+    },
+    {
+      "file": "metadata/staging/app_installs.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740653389Z"
+    },
+    {
+      "file": "metadata/raw/raw_marketing_campaign_events.sdf.yml",
+      "mtime": "2024-09-24T15:37:53.740513099Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_test/macros/test.jinja",
+      "mtime": "2025-02-04T22:38:13.526714076Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_utils/macros/date_spine.jinja",
+      "mtime": "2025-02-04T22:38:13.527081285Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_utils/macros/generate_date_values.jinja",
+      "mtime": "2025-02-04T22:38:13.527161077Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_utils/macros/group_by.jinja",
+      "mtime": "2025-02-04T22:38:13.527398828Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_utils/macros/generate_integer_values.jinja",
+      "mtime": "2025-02-04T22:38:13.527241661Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_utils/macros/generate_surrogate_key.jinja",
+      "mtime": "2025-02-04T22:38:13.527323453Z"
+    },
+    {
+      "file": "sdf_dagster_out/5bdb2f6/sdftarget/dbg/.lib/sdf_mat/macros/materialize.jinja",
+      "mtime": "2025-02-04T22:38:13.526288950Z"
+    }
+  ],
+  "deps": [
+    {
+      "target": "moms_flower_shop.raw.raw_inapp_events__tn__",
+      "deps": []
+    },
+    {
+      "target": "moms_flower_shop.raw.raw_marketing_campaign_events__tn__",
+      "deps": []
+    },
+    {
+      "target": "moms_flower_shop.staging.inapp_events__tn__",
+      "deps": [
+        "moms_flower_shop.raw.raw_inapp_events__tn__"
+      ]
+    },
+    {
+      "target": "moms_flower_shop.staging.app_installs_v2__tn__",
+      "deps": [
+        "moms_flower_shop.raw.raw_marketing_campaign_events__tn__",
+        "moms_flower_shop.staging.inapp_events__tn__"
+      ]
+    },
+    {
+      "target": "moms_flower_shop.analytics.agg_installs_and_campaigns__tn__",
+      "deps": [
+        "moms_flower_shop.staging.app_installs_v2__tn__"
+      ]
+    },
+    {
+      "target": "moms_flower_shop.staging.marketing_campaigns__tn__",
+      "deps": [
+        "moms_flower_shop.raw.raw_marketing_campaign_events__tn__"
+      ]
+    },
+    {
+      "target": "moms_flower_shop.staging.stg_installs_per_campaign__tn__",
+      "deps": [
+        "moms_flower_shop.staging.app_installs_v2__tn__"
+      ]
+    },
+    {
+      "target": "moms_flower_shop.analytics.dim_marketing_campaigns__tn__",
+      "deps": [
+        "moms_flower_shop.staging.marketing_campaigns__tn__",
+        "moms_flower_shop.staging.stg_installs_per_campaign__tn__"
+      ]
+    },
+    {
+      "target": "moms_flower_shop.raw.raw_addresses__tn__",
+      "deps": []
+    },
+    {
+      "target": "moms_flower_shop.raw.raw_customers__tn__",
+      "deps": []
+    },
+    {
+      "target": "moms_flower_shop.staging.app_installs__tn__",
+      "deps": [
+        "moms_flower_shop.raw.raw_marketing_campaign_events__tn__",
+        "moms_flower_shop.staging.inapp_events__tn__"
+      ]
+    },
+    {
+      "target": "moms_flower_shop.staging.customers__tn__",
+      "deps": [
+        "moms_flower_shop.raw.raw_addresses__tn__",
+        "moms_flower_shop.raw.raw_customers__tn__",
+        "moms_flower_shop.staging.app_installs_v2__tn__"
+      ]
+    }
+  ],
+  "source_files": {
+    "values": {
+      "moms_flower_shop.staging.stg_installs_per_campaign__tn__": [
+        {
+          "file": "models/staging/stg_installs_per_campaign.sql",
+          "mtime": "2024-09-24T15:37:53.741923168Z"
+        }
+      ],
+      "moms_flower_shop.staging.customers__tn__": [
+        {
+          "file": "models/staging/customers.sql",
+          "mtime": "2024-09-24T15:37:53.741679712Z"
+        }
+      ],
+      "moms_flower_shop.analytics.agg_installs_and_campaigns__tn__": [
+        {
+          "file": "metadata/analytics/agg_installs_and_campaigns.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.739989479Z"
+        },
+        {
+          "file": "models/analytics/agg_installs_and_campaigns.sql",
+          "mtime": "2024-09-24T15:37:53.740929136Z"
+        }
+      ],
+      "moms_flower_shop.staging.app_installs__tn__": [
+        {
+          "file": "metadata/staging/app_installs.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.740653389Z"
+        },
+        {
+          "file": "models/staging/app_installs.sql",
+          "mtime": "2024-09-24T15:37:53.741509006Z"
+        }
+      ],
+      "moms_flower_shop.raw.raw_marketing_campaign_events__tn__": [
+        {
+          "file": "metadata/raw/raw_marketing_campaign_events.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.740513099Z"
+        },
+        {
+          "file": "models/raw/raw_marketing_campaign_events.sql",
+          "mtime": "2024-09-24T15:37:53.741376799Z"
+        },
+        {
+          "file": "seeds/parquet/marketing_campaign_events.parquet",
+          "mtime": "2024-09-24T15:37:53.745889504Z"
+        }
+      ],
+      "moms_flower_shop.staging.marketing_campaigns__tn__": [
+        {
+          "file": "models/staging/marketing_campaigns.sql",
+          "mtime": "2024-09-24T15:37:53.741841669Z"
+        }
+      ],
+      "moms_flower_shop.raw.raw_addresses__tn__": [
+        {
+          "file": "metadata/raw/raw_addresses.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.740222394Z"
+        },
+        {
+          "file": "models/raw/raw_addresses.sql",
+          "mtime": "2024-09-24T15:37:53.741137676Z"
+        },
+        {
+          "file": "seeds/parquet/addresses.parquet",
+          "mtime": "2024-09-24T15:37:53.742543746Z"
+        }
+      ],
+      "moms_flower_shop.staging.inapp_events__tn__": [
+        {
+          "file": "metadata/staging/inapp_events.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.740741055Z"
+        },
+        {
+          "file": "models/staging/inapp_events.sql",
+          "mtime": "2024-09-24T15:37:53.741760462Z"
+        }
+      ],
+      "moms_flower_shop.raw.raw_customers__tn__": [
+        {
+          "file": "metadata/raw/raw_customers.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.740335934Z"
+        },
+        {
+          "file": "models/raw/raw_customers.sql",
+          "mtime": "2024-09-24T15:37:53.741216925Z"
+        },
+        {
+          "file": "seeds/parquet/customers.parquet",
+          "mtime": "2024-09-24T15:37:53.742978783Z"
+        }
+      ],
+      "moms_flower_shop.raw.raw_inapp_events__tn__": [
+        {
+          "file": "metadata/raw/raw_inapp_events.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.740417308Z"
+        },
+        {
+          "file": "models/raw/raw_inapp_events.sql",
+          "mtime": "2024-09-24T15:37:53.741297841Z"
+        },
+        {
+          "file": "seeds/parquet/inapp_events.parquet",
+          "mtime": "2024-09-24T15:37:53.745631048Z"
+        }
+      ],
+      "moms_flower_shop.staging.app_installs_v2__tn__": [
+        {
+          "file": "models/staging/app_installs_v2.sql",
+          "mtime": "2024-09-24T15:37:53.741597630Z"
+        }
+      ],
+      "moms_flower_shop.analytics.dim_marketing_campaigns__tn__": [
+        {
+          "file": "metadata/analytics/dim_marketing_campaigns.sdf.yml",
+          "mtime": "2024-09-24T15:37:53.740076728Z"
+        },
+        {
+          "file": "models/analytics/dim_marketing_campaigns.sql",
+          "mtime": "2024-09-24T15:37:53.741020552Z"
+        }
+      ]
+    }
+  },
+  "incomplete_source_files": {
+    "values": []
+  },
+  "target_status": {
+    "values": {
+      "moms_flower_shop.raw.raw_inapp_events__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.staging.app_installs__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.staging.inapp_events__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.analytics.agg_installs_and_campaigns__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.staging.app_installs_v2__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.staging.marketing_campaigns__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.raw.raw_customers__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.staging.customers__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.raw.raw_addresses__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.staging.stg_installs_per_campaign__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.analytics.dim_marketing_campaigns__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      },
+      "moms_flower_shop.raw.raw_marketing_campaign_events__tn__": {
+        "purpose": "model",
+        "status": "succeeded"
+      }
+    }
+  }
+}

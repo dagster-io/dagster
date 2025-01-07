@@ -1,0 +1,67 @@
+table:
+  name: moms_flower_shop.raw.raw_customers
+  description: |
+    All relevant information related to customers known to mom's flower shop.  This information comes from the user input into the mobile app.
+  dialect: trino
+  materialization: external-table
+  purpose: model
+  depended-on-by:
+  - moms_flower_shop.staging.customers
+  columns:
+  - name: id
+    description: A unique identifier of a mom's floewr shop customer
+    datatype: bigint
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.customers.customer_id
+  - name: first_name
+    description: The first name of the customer
+    datatype: varchar
+    classifiers:
+    - PII.name
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.customers.first_name
+      modify:
+      - moms_flower_shop.staging.customers.full_name
+  - name: last_name
+    description: The last name of the customer
+    datatype: varchar
+    classifiers:
+    - PII.name
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.customers.last_name
+      modify:
+      - moms_flower_shop.staging.customers.full_name
+  - name: email
+    description: The email of the customer
+    datatype: varchar
+    classifiers:
+    - PII.email
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.customers.email
+  - name: gender
+    description: The gender of the customer
+    datatype: varchar
+    classifiers:
+    - PII.gender
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.customers.gender
+  - name: address_id
+    description: The address_id of the address associated with the customer
+    datatype: bigint
+    classifiers:
+    - PII.address
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.customers.address_id
+  classifiers:
+  - RETENTION.d7
+  location: seeds/parquet/customers.parquet
+  file-format: parquet
+  source-locations:
+  - path: metadata/raw/raw_customers.sdf.yml
+  - path: models/raw/raw_customers.sql

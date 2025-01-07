@@ -1,0 +1,73 @@
+table:
+  name: moms_flower_shop.staging.marketing_campaigns
+  dialect: trino
+  materialization: view
+  purpose: model
+  dependencies:
+  - moms_flower_shop.raw.raw_marketing_campaign_events
+  depended-on-by:
+  - moms_flower_shop.analytics.dim_marketing_campaigns
+  columns:
+  - name: campaign_id
+    description: The identifier of the campaign that is associated with the event
+    datatype: bigint
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.campaign_id
+    forward-lineage:
+      copy:
+      - moms_flower_shop.analytics.dim_marketing_campaigns.campaign_id
+  - name: campaign_name
+    description: The campaign name associated with the campaign_id
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.campaign_name
+    forward-lineage:
+      copy:
+      - moms_flower_shop.analytics.dim_marketing_campaigns.campaign_name
+  - name: campaign_type
+    datatype: varchar
+    lineage:
+      modify:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.c_name
+  - name: start_time
+    datatype: timestamp
+    lineage:
+      modify:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.event_time
+  - name: end_time
+    datatype: timestamp
+    lineage:
+      modify:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.event_time
+  - name: campaign_duration
+    datatype: bigint
+    lineage:
+      modify:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.event_time
+    forward-lineage:
+      modify:
+      - moms_flower_shop.analytics.dim_marketing_campaigns.install_duration_ratio
+  - name: total_campaign_spent
+    datatype: double
+    lineage:
+      modify:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.cost
+    forward-lineage:
+      modify:
+      - moms_flower_shop.analytics.dim_marketing_campaigns.avg_customer_acquisition_cost
+  - name: event_ids
+    datatype: array<bigint>
+    classifiers:
+    - EVENT.marketing
+    lineage:
+      modify:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.event_id
+  lineage:
+    scan:
+    - moms_flower_shop.raw.raw_marketing_campaign_events.c_name
+    - moms_flower_shop.raw.raw_marketing_campaign_events.campaign_id
+    - moms_flower_shop.raw.raw_marketing_campaign_events.campaign_name
+  source-locations:
+  - path: models/staging/marketing_campaigns.sql

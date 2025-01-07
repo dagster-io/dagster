@@ -1,0 +1,72 @@
+table:
+  name: moms_flower_shop.raw.raw_marketing_campaign_events
+  description: |
+    An hourly table logging marketing campaigns. If a campaign is running that hour, it will be logged in the table.  If no campaigns are running for a certain houe, no campaigns will be logged.
+  dialect: trino
+  materialization: external-table
+  purpose: model
+  depended-on-by:
+  - moms_flower_shop.staging.app_installs
+  - moms_flower_shop.staging.app_installs_v2
+  - moms_flower_shop.staging.marketing_campaigns
+  columns:
+  - name: event_id
+    description: A unique identifier of the marketing campaign event
+    datatype: bigint
+    classifiers:
+    - EVENT.marketing
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs.event_id
+      modify:
+      - moms_flower_shop.staging.marketing_campaigns.event_ids
+  - name: event_time
+    description: A unixtime of the marketing event logging time (logged hourly)
+    datatype: bigint
+    forward-lineage:
+      modify:
+      - moms_flower_shop.staging.marketing_campaigns.campaign_duration
+      - moms_flower_shop.staging.marketing_campaigns.end_time
+      - moms_flower_shop.staging.marketing_campaigns.start_time
+  - name: campaign_id
+    description: The identifier of the campaign that is associated with the event
+    datatype: bigint
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs.campaign_id
+      - moms_flower_shop.staging.app_installs_v2.campaign_id
+      - moms_flower_shop.staging.marketing_campaigns.campaign_id
+  - name: campaign_name
+    description: The campaign name associated with the campaign_id
+    datatype: varchar
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs.campaign_name
+      - moms_flower_shop.staging.app_installs_v2.campaign_name
+      - moms_flower_shop.staging.marketing_campaigns.campaign_name
+  - name: c_name
+    description: |
+      A substring of the campaign name contain the campaign type.  Supported types - instagram_ads, friends_referrals, facebook_ads, google_search
+    datatype: varchar
+    forward-lineage:
+      copy:
+      - moms_flower_shop.staging.app_installs.campaign_type
+      - moms_flower_shop.staging.app_installs_v2.campaign_type
+      modify:
+      - moms_flower_shop.staging.marketing_campaigns.campaign_type
+  - name: priority
+    description: Internal priority - do not use
+    datatype: bigint
+  - name: cost
+    description: The cost of running the campaign for the hour
+    datatype: double
+    forward-lineage:
+      modify:
+      - moms_flower_shop.staging.marketing_campaigns.total_campaign_spent
+  classifiers:
+  - RETENTION.d7
+  location: seeds/parquet/marketing_campaign_events.parquet
+  file-format: parquet
+  source-locations:
+  - path: metadata/raw/raw_marketing_campaign_events.sdf.yml
+  - path: models/raw/raw_marketing_campaign_events.sql

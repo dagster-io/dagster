@@ -1,0 +1,20 @@
+table:
+  name: QUOTED_TABLES.PUB."2020_table_b"
+  dialect: snowflake
+  materialization: table
+  purpose: model
+  dependencies:
+  - QUOTED_TABLES.PUB."2020_table_a"
+  columns:
+  - name: ID
+    datatype: decimal(1, 0) not null
+    lineage:
+      copy:
+      - QUOTED_TABLES.PUB."2020_table_a".ID
+  - name: EVENT_TIME
+    datatype: varchar not null
+    lineage:
+      copy:
+      - QUOTED_TABLES.PUB."2020_table_a".EVENT_TIME
+  source-locations:
+  - path: models/2020_table_b.sql

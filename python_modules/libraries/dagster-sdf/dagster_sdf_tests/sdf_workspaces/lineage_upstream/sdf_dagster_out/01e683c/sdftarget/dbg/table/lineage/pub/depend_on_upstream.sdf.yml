@@ -1,0 +1,15 @@
+table:
+  name: lineage.pub.depend_on_upstream
+  dialect: trino
+  materialization: view
+  purpose: model
+  columns:
+  - name: id
+    datatype: integer not null
+  - name: name
+    datatype: varchar not null
+  source-locations:
+  - path: dagster/dagster-asset-keys.sdf.yml
+  - path: models/depend_on_upstream.sql
+  meta:
+    dagster-depends-on-asset-key: build_upstream_depend_on

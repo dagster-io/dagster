@@ -1,0 +1,65 @@
+table:
+  name: moms_flower_shop.staging.app_installs
+  description: |
+    This table is a staging table which adds campaign information to app install events
+  dialect: trino
+  materialization: view
+  purpose: model
+  dependencies:
+  - moms_flower_shop.raw.raw_marketing_campaign_events
+  - moms_flower_shop.staging.inapp_events
+  columns:
+  - name: event_id
+    description: A unique identifier of the marketing campaign event
+    datatype: bigint
+    classifiers:
+    - EVENT.inapp
+    - EVENT.marketing
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.event_id
+      - moms_flower_shop.staging.inapp_events.event_id
+  - name: customer_id
+    datatype: bigint
+    lineage:
+      copy:
+      - moms_flower_shop.staging.inapp_events.customer_id
+  - name: install_time
+    datatype: timestamp
+    lineage:
+      copy:
+      - moms_flower_shop.staging.inapp_events.event_time
+  - name: platform
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.staging.inapp_events.platform
+  - name: campaign_id
+    description: The identifier of the campaign that is associated with the event
+    datatype: bigint
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.campaign_id
+  - name: campaign_name
+    description: The campaign name associated with the campaign_id
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.campaign_name
+  - name: campaign_type
+    description: |
+      A substring of the campaign name contain the campaign type.  Supported types - instagram_ads, friends_referrals, facebook_ads, google_search
+    datatype: varchar
+    lineage:
+      copy:
+      - moms_flower_shop.raw.raw_marketing_campaign_events.c_name
+  classifiers:
+  - TABLE_STATUS.deprecated
+  lineage:
+    scan:
+    - moms_flower_shop.raw.raw_marketing_campaign_events.event_id
+    - moms_flower_shop.staging.inapp_events.event_id
+    - moms_flower_shop.staging.inapp_events.event_name
+  source-locations:
+  - path: metadata/staging/app_installs.sdf.yml
+  - path: models/staging/app_installs.sql

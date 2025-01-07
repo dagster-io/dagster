@@ -1,0 +1,360 @@
+{%- macro gen_table(table_name, query) -%}
+    create or replace table {{ table_name }} as ({{ query }});{{ "\n" }}
+{{ gen_comments(table_name) }}
+{%- endmacro -%}
+
+{%- macro gen_temporary_table(table_name, query) -%}
+    create or replace temporary table {{ table_name }} as ({{ query }});{{ "\n" }}
+{{ gen_comments(table_name) }}
+{%- endmacro -%}
+
+{%- macro gen_external_table(table_name, query) -%}
+    create or replace external table {{ table_name }} as ({{ query }});{{ "\n" }}
+{{ gen_comments(table_name) }}
+{%- endmacro -%}
+
+{%- macro gen_view(table_name, query) -%}
+    create or replace view {{ table_name }} as ({{ query }});{{ "\n" }}
+{{ gen_comments(table_name) }}
+{%- endmacro -%}
+
+{%- macro gen_materialized_view(table_name, query) -%}
+    create or replace materialized view {{ table_name }} as ({{ query }});{{ "\n" }}
+{{ gen_comments(table_name) }}
+{%- endmacro -%}
+
+{%- macro gen_transient_table(table_name, query) -%}
+    create or replace transient table {{ table_name }} as ({{ query }});{{ "\n" }}
+{{ gen_comments(table_name) }}
+{%- endmacro -%}
+
+{%- macro gen_comments(table_name) -%}
+    {%- set table = get_table(table_name) -%}
+    {%- set description = table[0] -%}
+    {%- if description is not none and description != "" -%}
+        {%- set materialization = builtin.materialization -%}
+        {%- if materialization == "view" -%}
+        comment if exists on view {{ table_name }} IS '{{ description }}';{{ "\n" }}
+        {%- else -%}
+        comment if exists on table {{ table_name }} IS '{{ description }}';{{ "\n" }}
+        {%- endif -%}
+    {%- endif -%}
+    {%- if materialization != "view" -%}
+        {{ gen_column_comments(table_name) }}
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro gen_column_comments(table_name) -%}
+    {%- set columns = get_columns(table_name, []) -%}
+    {%- for column in columns -%}
+        {%- set column_name = column[0] -%}
+        {%- set comment = column[2] -%}
+        {%- if comment is not none and comment != "" -%}
+            comment if exists on column {{ table_name }}.{{ column_name }} IS '{{ comment }}';{{ "\n" }}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endmacro -%}
+
+{%- macro strip_quotes(s) -%}
+    {%- set stripped = s -%}
+    {%- if stripped[0] == '"' and stripped[-1] == '"' -%}
+        {%- set stripped = stripped[1:-1] -%}
+    {%- endif -%}
+    {{ stripped }}
+{%- endmacro -%}
+
+{%- macro gen_alter_statements(table_name, removed, added, modified) -%}
+    {%- if builtin.on_schema_change == "fail" and removed|length > 0 -%}
+        {%- set removed_cols = removed | join(', ') -%}
+        {{ raise_error("Found unexpectedly removed columns with on_schema_change set to 'fail': " + removed_cols) }}
+    {%- endif -%}
+    {%- if builtin.on_schema_change == "fail" and added|length > 0 -%}
+        {%- set removed_cols = removed | join(', ') -%}
+        {{ raise_error("Found unexpectedly added columns with on_schema_change set to 'fail': " + added_cols) }}
+    {%- endif -%}
+    {%- if builtin.on_schema_change == "sync" -%}
+        {%- for id in removed -%}
+            alter table {{ table_name }} drop column {{ id }};{{ "\n" }}
+        {%- endfor -%}
+    {%- endif -%}
+    {%- if builtin.on_schema_change == "append" or builtin.on_schema_change == "sync" -%}
+        {%- for (id, ty) in added -%}
+            alter table {{ table_name }} add column {{ id }} {{ ty }};{{ "\n" }}
+        {%- endfor -%}
+    {%- endif -%}
+    {%- for (id, ty) in modified -%}
+        alter table {{ table_name }} alter {{ id }} set data type {{ ty }};{{ "\n" }}
+    {%- endfor -%}
+{%- endmacro -%}
+
+{%- macro process_schema_evolution(table_name) -%}
+    {%- if builtin.is_incremental_mode or builtin.is_snapshot_mode -%}
+        {%- set old_col_ty_pairs = get_columns(table_name, []) -%}
+        {%- set new_col_ty_pairs = builtin.inferred_columns_and_types -%}
+        {%- set (removed, added, modified) = 
+            compare_columns(old_col_ty_pairs, new_col_ty_pairs, builtin.dialect) -%}
+        {{ gen_alter_statements(table_name, removed, added, modified) }}
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro gen_incremental_table_append(table_name, query) -%}
+    {{ process_schema_evolution(table_name) }}
+    {%- set new_col_ty_pairs = builtin.inferred_columns_and_types -%}
+    {%- set new_cols = new_col_ty_pairs|map(attribute='0') -%}
+    {%- set insert_cols = new_cols|join(', ') -%}
+    insert into {{ table_name }} ({{ insert_cols }}) {{ query }}
+{%- endmacro -%}
+
+{%- macro gen_incremental_table_merge(table_name, query) -%}
+    {%- set id = builtin.incremental_unique_key -%}
+    {%- set update_cols = builtin.incremental_merge_update_columns -%}
+    {%- set exclude_cols = builtin.incremental_merge_exclude_columns -%}
+    {%- set new_col_ty_pairs = builtin.inferred_columns_and_types -%}
+    {%- set new_cols = new_col_ty_pairs|map(attribute='0') -%}
+    {%- set ns = namespace(cols_to_update = [], assignments = [], before_dict = {}) -%}
+    {%- if update_cols == [] -%}
+        {%- set ns.cols_to_update = [] -%}
+        {%- for col in new_cols -%}
+            {%- if col not in exclude_cols and strip_quotes(col) | lower not in exclude_cols | map('lower') -%}
+                {%- set ns.cols_to_update = ns.cols_to_update + [col] -%}
+            {%- endif -%}
+        {%- endfor -%}
+    {%- else -%}
+        {%- set ns.cols_to_update = update_cols -%}
+    {%- endif -%}
+    {%- for col in ns.cols_to_update -%}
+        {%- set ns.assignments = ns.assignments + ["SDF_DEST." + col + " = SDF_SRC." + col] -%}
+    {%- endfor -%}
+    {%- set assignments_str = ns.assignments|join(', ') -%}
+    {%- set insert_cols = new_cols|join(', ') -%}
+    {{ process_schema_evolution(table_name) }}
+    merge into {{ table_name }} as SDF_DEST
+        using ({{ query }}) as SDF_SRC
+        on (SDF_SRC.{{id}} = SDF_DEST.{{ id }})
+        when matched then update set {{ assignments_str }}
+        when not matched then insert ({{ insert_cols }})
+        values ({{ insert_cols }})
+{%- endmacro -%}
+
+{%- macro gen_incremental_table_delete_insert(table_name, query) -%}
+    {%- set id = builtin.incremental_unique_key -%}
+    {%- set new_col_ty_pairs = builtin.inferred_columns_and_types -%}
+    {%- set new_cols = new_col_ty_pairs|map(attribute='0') -%}
+    {%- set new_cols_str = new_cols|join(', ') -%}
+    {{ process_schema_evolution(table_name) }}
+    delete from {{ table_name }}
+    where ({{ id }}) in ( select ({{ id }}) from ({{ query }}));
+    insert into {{ table_name }} ({{ new_cols_str }}) (
+        select {{ new_cols_str }} from ({{ query }})
+    );
+{%- endmacro -%}
+
+{%- macro gen_incremental_table(table_name, query) -%}
+    {%- if builtin.incremental_strategy == "append" -%}
+        {{ gen_incremental_table_append(table_name, query) }}
+    {%- elif builtin.incremental_strategy == "merge" -%}
+        {{ gen_incremental_table_merge(table_name, query) }}
+    {%- elif builtin.incremental_strategy == "delete+insert" -%}
+        {{ gen_incremental_table_delete_insert(table_name, query) }}
+    {%- endif -%}
+{{ gen_comments(table_name) }}
+{%- endmacro -%}
+
+{%- macro gen_snapshot_ts_exp() -%}
+    {%- if builtin.snapshot_strategy == "timestamp" -%}
+        {{ builtin.snapshot_updated_at }}
+    {%- else -%}
+        to_timestamp_ntz(convert_timezone('UTC', current_timestamp()))
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro gen_snapshot_insert_update_filter_term(col) -%}
+    snapshotted_data.{{col}} != source_data.{{col}} or
+    (snapshotted_data.{{col}} is null and source_data.{{col}} is not null) or
+    (snapshotted_data.{{col}} is not null and source_data.{{col}} is null)
+{%- endmacro -%}
+
+{%- macro gen_snapshot_insert_update_filter_terms(cols) -%}
+    {%- set ns = namespace(terms = []) -%}
+    {%- for col in cols -%}
+        {%- set filter_term = gen_snapshot_insert_update_filter_term(col) -%}
+        {%- set ns.terms = ns.terms + [filter_term] -%}
+    {%- endfor -%}
+    {%- set all_terms = ns.terms|join(' or ') -%}
+    ({{ all_terms }})
+{%- endmacro -%}
+
+{%- macro gen_snapshot_insert_update_filter() -%}
+    {%- if builtin.snapshot_strategy == "timestamp" -%}
+        (snapshotted_data.sdf_valid_from < source_data.{{ builtin.snapshot_updated_at }})
+    {%- elif builtin.snapshot_check_cols == "all" -%}
+        {%- set new_col_ty_pairs = builtin.inferred_columns_and_types -%}
+        {%- set cols = new_col_ty_pairs|map(attribute='0') -%}
+        {{ gen_snapshot_insert_update_filter_terms(cols) }}
+    {%- else -%}
+        {%- set cols = builtin.snapshot_check_cols -%}
+        {{ gen_snapshot_insert_update_filter_terms(cols) }}
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro gen_snapshot_table_init(table_name, query) -%}
+    {%- set id = builtin.snapshot_unique_key -%}
+    {%- set ts_exp = gen_snapshot_ts_exp() -%}
+    create or replace transient table {{ table_name }} as (
+        select *,
+            md5(coalesce(cast({{ id }} as varchar), '')
+            || '|' || coalesce(cast({{ ts_exp }} as varchar ), '')
+            ) as sdf_hash,
+            {{ ts_exp }} as sdf_updated_at,
+            {{ ts_exp }} as sdf_valid_from,
+            nullif({{ ts_exp }}, {{ ts_exp }}) as sdf_valid_to
+        from ( {{ query }})
+    )
+{%- endmacro -%}
+
+{%- macro gen_snapshots_snapshotted_data_subquery(table_name, unique_key) -%}
+    snapshotted_data as (
+        select *, {{ unique_key }} as sdf_unique_key
+        from {{ table_name }}
+        where sdf_valid_to is null
+    )
+{%- endmacro -%}
+
+{%- macro gen_snapshots_insertions_source_data_subquery(unique_key, updated_at_exp) -%}
+    insertions_source_data as (
+        select
+            *,
+            {{ unique_key }} as sdf_unique_key,
+            {{ updated_at_exp }} as sdf_updated_at,
+            {{ updated_at_exp }} as sdf_valid_from,
+            nullif({{ updated_at_exp }}, {{ updated_at_exp }}) as sdf_valid_to,
+            md5(coalesce(cast({{ unique_key }} as varchar ), '')
+                || '|' || coalesce(cast({{ updated_at_exp }} as varchar ), '')
+            ) as sdf_hash
+        from snapshot_query
+    )
+{%- endmacro -%}
+
+{%- macro gen_snapshots_updates_source_data_subquery(unique_key, updated_at_exp) -%}
+    updates_source_data as (
+        select
+            *,
+            {{ unique_key }} as sdf_unique_key,
+            {{ updated_at_exp }} as sdf_updated_at,
+            {{ updated_at_exp }} as sdf_valid_from,
+            {{ updated_at_exp }} as sdf_valid_to
+        from snapshot_query
+    )
+{%- endmacro -%}
+
+{%- macro gen_snapshots_insertions_subquery(filter) -%}
+    insertions as (
+        select
+            'insert' as sdf_change_type,
+            source_data.*
+        from insertions_source_data as source_data
+        left outer join snapshotted_data on snapshotted_data.sdf_unique_key = source_data.sdf_unique_key
+        where snapshotted_data.sdf_unique_key is null
+           or (
+                snapshotted_data.sdf_unique_key is not null
+            and {{ filter }}
+        )
+    )
+{%- endmacro -%}
+
+{%- macro gen_snapshots_updates_subquery(filter) -%}
+    updates as (
+        select
+            'update' as sdf_change_type,
+            source_data.*,
+            snapshotted_data.sdf_hash
+        from updates_source_data as source_data
+        join snapshotted_data on snapshotted_data.sdf_unique_key = source_data.sdf_unique_key
+        where {{ filter }}
+    )
+{%- endmacro -%}
+
+
+{%- macro gen_snapshot_table_next(table_name, query) -%}
+    {%- set unique_key = builtin.snapshot_unique_key -%}
+    {%- set updated_at_exp = gen_snapshot_ts_exp() -%}
+    {%- set insert_update_filter = gen_snapshot_insert_update_filter() -%}
+    {%- set new_col_ty_pairs = builtin.inferred_columns_and_types -%}
+    {%- set new_cols = new_col_ty_pairs|map(attribute='0') -%}
+    {%- set all_cols = new_cols + ['"SDF_UPDATED_AT"', '"SDF_VALID_FROM"', '"SDF_VALID_TO"', '"SDF_HASH"'] -%}
+    {%- set all_cols_str = all_cols|join(', ') -%}
+    {{ process_schema_evolution(table_name) }}
+    merge into {{ table_name }} as SDF_DEST
+        using (
+            with snapshot_query as ({{ query }}),
+                {{ gen_snapshots_snapshotted_data_subquery(table_name, unique_key) }},
+                {{ gen_snapshots_insertions_source_data_subquery(unique_key, updated_at_exp) }},
+                {{ gen_snapshots_updates_source_data_subquery(unique_key, updated_at_exp) }},
+                {{ gen_snapshots_insertions_subquery(insert_update_filter) }},
+                {{ gen_snapshots_updates_subquery(insert_update_filter) }}
+            select * from insertions
+            union all
+            select * from updates
+        ) as SDF_SRC
+    on SDF_SRC.sdf_hash = SDF_DEST.sdf_hash
+    
+    when matched
+     and SDF_DEST.sdf_valid_to is null
+     and SDF_SRC.sdf_change_type in ('update', 'delete')
+        then update
+        set sdf_valid_to = SDF_SRC.sdf_valid_to
+
+    when not matched
+     and SDF_SRC.sdf_change_type = 'insert'
+        then insert ({{ all_cols_str }})
+        values ({{ all_cols_str }})
+{%- endmacro -%}
+
+{%- macro gen_snapshot_table(table_name, query) -%}
+    {%- if builtin.is_snapshot_mode -%}
+        {{ gen_snapshot_table_next(table_name, query) }}
+    {%- else -%}
+        {{ gen_snapshot_table_init(table_name, query) }}
+    {%- endif -%}
+{%- endmacro -%}
+
+{%- macro select(table_name, query) -%}
+    {%- if builtin.materialization == "table" or (builtin.materialization == "incremental-table" and not builtin.is_incremental_mode) -%}
+        {{ gen_table(table_name, query) }}
+    {%- elif builtin.materialization == "temporary-table" -%}
+        {{ gen_temporary_table(table_name, query) }}
+    {%- elif builtin.materialization == "external-table" -%}
+        {{ gen_external_table(table_name, query) }}
+    {%- elif builtin.materialization == "view" -%}
+        {{ gen_view(table_name, query) }}
+    {%- elif builtin.materialization == "materialized-view" -%}
+        {{ gen_materialized_view(table_name, query) }}
+    {%- elif builtin.materialization == "incremental-table" -%}
+        {# In Snowflake, incremental tables might be managed with Streams or Tasks, but for simplicity, treated as a regular table here #}
+        {{ gen_incremental_table(table_name, query) }}
+    {%- elif builtin.materialization == "snapshot-table" -%}
+        {{ gen_snapshot_table(table_name, query) }}
+    {%- elif builtin.materialization == "recursive-table" -%}
+        {# Snowflake doesn't have a specific 'recursive table' concept; adjust as needed #}
+        {{ gen_table(table_name, query) }}
+    {%- elif builtin.materialization == "transient-table" -%}
+        {{ gen_transient_table(table_name, query) }}
+    {%- endif -%}
+{%- endmacro -%}
+
+{# no changes to other statement kinds, rexcpt all names are remapped #}
+{%- macro create_external_table(table_name, query) -%}
+    {{ query }};
+{%- endmacro -%}
+
+{%- macro create_table(table_name, query) -%}
+    {{ query }};
+{%- endmacro -%}
+
+{%- macro create_table_as(table_name, query) -%}
+    {{ query }};
+{%- endmacro -%}
+
+{%- macro insert_into(table_name, query) -%}
+    {{ query }}
+{%- endmacro -%}

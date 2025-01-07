@@ -1,0 +1,7 @@
+workspace:
+  name: sdf_utils
+  edition: "1.3"
+  description: >
+    Official utilities library for SDF.
+  includes:
+    - path: macros
