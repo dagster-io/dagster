@@ -1,7 +1,7 @@
 ---
 title: Defining dependencies between partitioned assets
 description: Learn how to define dependencies between partitioned and unpartitioned assets in Dagster.
-sidebar_label: Partition dependencies
+sidebar_label: Partitioning dependencies
 sidebar_position: 200
 ---
 
