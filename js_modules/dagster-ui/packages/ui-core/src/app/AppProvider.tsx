@@ -131,7 +131,7 @@ export const AppProvider = (props: AppProviderProps) => {
         return wait;
       },
     });
-  }, []);
+  }, [idempotentMutations]);
 
   const apolloClient = React.useMemo(() => {
     // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
