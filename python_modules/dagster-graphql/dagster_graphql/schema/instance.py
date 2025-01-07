@@ -114,9 +114,7 @@ class GraphenePendingConcurrencyStep(graphene.ObjectType):
     stepKey = graphene.NonNull(graphene.String)
     enqueuedTimestamp = graphene.NonNull(graphene.Float)
     assignedTimestamp = graphene.Float()
-    priority = (
-        graphene.BigInt()
-    )  # Maybe somebody will spam hold down the 9 key on their keyboard ¯\_(ツ)_/¯
+    priority = graphene.BigInt()
 
     class Meta:
         name = "PendingConcurrencyStep"
@@ -135,18 +133,14 @@ class GraphenePendingConcurrencyStep(graphene.ObjectType):
 
 class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
     concurrencyKey = graphene.NonNull(graphene.String)
-    slotCount = graphene.NonNull(
-        graphene.Int
-    )  # I'm guessing lots of other things will go wrong if you have such massive slot counts that you need BigInt
+    slotCount = graphene.NonNull(graphene.Int)
     claimedSlots = non_null_list(GrapheneClaimedConcurrencySlot)
     pendingSteps = non_null_list(GraphenePendingConcurrencyStep)
-    activeSlotCount = graphene.NonNull(graphene.Int)  # Same
+    activeSlotCount = graphene.NonNull(graphene.Int)
     activeRunIds = non_null_list(graphene.String)
-    pendingStepCount = graphene.NonNull(
-        graphene.Int
-    )  # Again, if you have so many pending steps that you need BigInt, you have bigger problems
+    pendingStepCount = graphene.NonNull(graphene.Int)
     pendingStepRunIds = non_null_list(graphene.String)
-    assignedStepCount = graphene.NonNull(graphene.Int)  # Same
+    assignedStepCount = graphene.NonNull(graphene.Int)
     assignedStepRunIds = non_null_list(graphene.String)
 
     class Meta:
@@ -201,9 +195,7 @@ class GrapheneConcurrencyKeyInfo(graphene.ObjectType):
 
 
 class GrapheneRunQueueConfig(graphene.ObjectType):
-    maxConcurrentRuns = graphene.NonNull(
-        graphene.Int
-    )  # I'm guessing you won't have so many concurrent runs that you need BigInt (without causing other issues)
+    maxConcurrentRuns = graphene.NonNull(graphene.Int)
     tagConcurrencyLimitsYaml = graphene.String()
     isOpConcurrencyAware = graphene.Boolean()
 
@@ -243,8 +235,8 @@ class GrapheneInstance(graphene.ObjectType):
     hasInfo = graphene.NonNull(graphene.Boolean)
     autoMaterializePaused = graphene.NonNull(graphene.Boolean)
     supportsConcurrencyLimits = graphene.NonNull(graphene.Boolean)
-    minConcurrencyLimitValue = graphene.NonNull(graphene.Int)  # Same as above
-    maxConcurrencyLimitValue = graphene.NonNull(graphene.Int)  # Same
+    minConcurrencyLimitValue = graphene.NonNull(graphene.Int)
+    maxConcurrencyLimitValue = graphene.NonNull(graphene.Int)
     concurrencyLimits = non_null_list(GrapheneConcurrencyKeyInfo)
     concurrencyLimit = graphene.Field(
         graphene.NonNull(GrapheneConcurrencyKeyInfo),

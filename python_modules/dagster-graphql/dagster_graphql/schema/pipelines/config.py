@@ -26,7 +26,7 @@ from dagster_graphql.schema.util import non_null_list
 
 
 class GrapheneEvaluationStackListItemEntry(graphene.ObjectType):
-    list_index = graphene.NonNull(graphene.Int)  # Hard to imagine list index in billions
+    list_index = graphene.NonNull(graphene.Int)
 
     class Meta:
         name = "EvaluationStackListItemEntry"

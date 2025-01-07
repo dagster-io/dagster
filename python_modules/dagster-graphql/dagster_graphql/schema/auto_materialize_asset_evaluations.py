@@ -211,9 +211,9 @@ def create_graphene_auto_materialize_rules_with_rule_evaluations(
 class GrapheneAutoMaterializeAssetEvaluationRecord(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     evaluationId = graphene.NonNull(graphene.ID)
-    numRequested = graphene.NonNull(graphene.Int)  # Makes no sense to have a BigInt quantity
-    numSkipped = graphene.NonNull(graphene.Int)  # Same
-    numDiscarded = graphene.NonNull(graphene.Int)  # Same
+    numRequested = graphene.NonNull(graphene.Int)
+    numSkipped = graphene.NonNull(graphene.Int)
+    numDiscarded = graphene.NonNull(graphene.Int)
     rulesWithRuleEvaluations = non_null_list(GrapheneAutoMaterializeRuleWithRuleEvaluations)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)

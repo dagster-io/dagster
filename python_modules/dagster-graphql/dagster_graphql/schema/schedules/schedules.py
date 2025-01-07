@@ -47,16 +47,13 @@ class GrapheneSchedule(graphene.ObjectType):
         until=graphene.Float(),
     )
     futureTick = graphene.NonNull(
-        GrapheneDryRunInstigationTick,
-        tick_timestamp=graphene.NonNull(
-            graphene.Int
-        ),  # I'm assuming a timestamp can't require BigInt
+        GrapheneDryRunInstigationTick, tick_timestamp=graphene.NonNull(graphene.Int)
     )
     potentialTickTimestamps = graphene.NonNull(
         graphene.List(graphene.NonNull(graphene.Float)),
         start_timestamp=graphene.Float(),
-        upper_limit=graphene.Int(),  # Same assumption as above
-        lower_limit=graphene.Int(),  # Same assumption as above
+        upper_limit=graphene.Int(),
+        lower_limit=graphene.Int(),
     )
     assetSelection = graphene.Field(GrapheneAssetSelection)
     tags = non_null_list(GrapheneDefinitionTag)

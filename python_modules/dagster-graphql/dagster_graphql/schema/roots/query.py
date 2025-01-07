@@ -618,8 +618,8 @@ class GrapheneQuery(graphene.ObjectType):
 
     autoMaterializeTicks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
-        dayRange=graphene.Int(),  # I assume days can't be in the BigInt range
-        dayOffset=graphene.Int(),  # Same
+        dayRange=graphene.Int(),
+        dayOffset=graphene.Int(),
         limit=graphene.Int(),
         cursor=graphene.String(),
         statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),

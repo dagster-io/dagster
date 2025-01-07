@@ -103,7 +103,7 @@ class GrapheneLaunchRunReexecutionResult(graphene.Union):
 
 class GraphenePipelineRuns(graphene.Interface):
     results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
-    count = graphene.Int()  # Won't be billions on a single account
+    count = graphene.Int()
 
     class Meta:
         name = "PipelineRuns"
@@ -111,7 +111,7 @@ class GraphenePipelineRuns(graphene.Interface):
 
 class GrapheneRuns(graphene.ObjectType):
     results = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
-    count = graphene.Int()  # Won't be billions on a single account
+    count = graphene.Int()
 
     class Meta:
         interfaces = (GraphenePipelineRuns,)

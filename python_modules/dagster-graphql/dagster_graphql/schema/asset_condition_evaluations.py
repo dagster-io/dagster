@@ -83,8 +83,8 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
-    numTrue = graphene.NonNull(graphene.Int)  # Can't have BigInt number of conditions
-    numCandidates = graphene.Field(graphene.Int)  # Same
+    numTrue = graphene.NonNull(graphene.Int)
+    numCandidates = graphene.Field(graphene.Int)
 
     childUniqueIds = non_null_list(graphene.String)
 
@@ -217,8 +217,8 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
 
-    numTrue = graphene.NonNull(graphene.Int)  # Same
-    numCandidates = graphene.Field(graphene.Int)  # Same
+    numTrue = graphene.NonNull(graphene.Int)
+    numCandidates = graphene.Field(graphene.Int)
 
     isPartitioned = graphene.NonNull(graphene.Boolean)
 
@@ -254,7 +254,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
 
     assetKey = graphene.Field(GrapheneAssetKey)
     entityKey = graphene.NonNull(GrapheneEntityKey)
-    numRequested = graphene.NonNull(graphene.Int)  # Same
+    numRequested = graphene.NonNull(graphene.Int)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)

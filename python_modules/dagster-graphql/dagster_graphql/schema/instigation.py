@@ -248,9 +248,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     dynamicPartitionsRequestResults = non_null_list(GrapheneDynamicPartitionsRequestResult)
     endTimestamp = graphene.Field(graphene.Float)
     requestedAssetKeys = non_null_list(GrapheneAssetKey)
-    requestedAssetMaterializationCount = graphene.NonNull(
-        graphene.Int
-    )  # Can't see why this could go into BigInt range, unless it's cumulative?
+    requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
     autoMaterializeAssetEvaluationId = graphene.Field(graphene.ID)
     instigationType = graphene.NonNull(GrapheneInstigationType)
@@ -540,15 +538,15 @@ class GrapheneInstigationState(graphene.ObjectType):
         non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun"),
         limit=graphene.Int(),
     )
-    runsCount = graphene.NonNull(graphene.Int)  # Shouldn't go into billions on a single account
+    runsCount = graphene.NonNull(graphene.Int)
     tick = graphene.Field(
         graphene.NonNull(GrapheneInstigationTick),
         tickId=graphene.NonNull(graphene.ID),
     )
     ticks = graphene.Field(
         non_null_list(GrapheneInstigationTick),
-        dayRange=graphene.Int(),  # Days can't go into BigInt range
-        dayOffset=graphene.Int(),  # Same
+        dayRange=graphene.Int(),
+        dayOffset=graphene.Int(),
         limit=graphene.Int(),
         cursor=graphene.String(),
         statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
@@ -556,9 +554,7 @@ class GrapheneInstigationState(graphene.ObjectType):
         afterTimestamp=graphene.Float(),
     )
     nextTick = graphene.Field(GrapheneDryRunInstigationTick)
-    runningCount = graphene.NonNull(
-        graphene.Int
-    )  # remove with cron scheduler  # Shouldn't go into billions on a single account
+    runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
 
     hasStartPermission = graphene.NonNull(graphene.Boolean)
     hasStopPermission = graphene.NonNull(graphene.Boolean)

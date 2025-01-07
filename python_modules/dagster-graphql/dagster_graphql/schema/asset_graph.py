@@ -283,8 +283,8 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionKeys = non_null_list(graphene.String)
     partitionKeysByDimension = graphene.Field(
         non_null_list(GrapheneDimensionPartitionKeys),
-        startIdx=graphene.Int(),  # Used to select a range of time partitions; shouldn't go into billions
-        endIdx=graphene.Int(),  # Same
+        startIdx=graphene.Int(),
+        endIdx=graphene.Int(),
     )
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
