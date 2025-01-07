@@ -1093,55 +1093,80 @@ def _submit_run_requests(
         instance, remote_sensor, [request for _, request in resolved_run_ids_with_requests]
     )
 
-    def submit_run_request(
-        run_id_with_run_request: Tuple[str, RunRequest],
-    ) -> SubmitRunRequestResult:
-        run_id, run_request = run_id_with_run_request
-        if run_request.requires_backfill_daemon():
-            return _submit_backfill_request(run_id, run_request, instance)
-        else:
-            return _submit_run_request(
-                run_id,
-                run_request,
-                workspace_process_context,
-                remote_sensor,
-                existing_runs_by_key,
-                context.logger,
-                sensor_debug_crash_flags,
-            )
+    def submit_run_request_batch(
+        run_id_with_run_request_batch: Sequence[Tuple[str, RunRequest]],
+    ) -> Optional[Sequence[SubmitRunRequestResult]]:
+        # check if the sensor is still enabled:
+        all_sensor_states = {
+            sensor_state.selector_id: sensor_state
+            for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
+        }
+        if not remote_sensor.get_current_instigator_state(
+            all_sensor_states.get(remote_sensor.selector_id)
+        ).is_running:
+            return
+
+        # if so then submit the run requests
+        results = []
+        for run_id, run_request in run_id_with_run_request_batch:
+            if run_request.requires_backfill_daemon():
+                results.append(_submit_backfill_request(run_id, run_request, instance))
+            else:
+                results.append(
+                    _submit_run_request(
+                        run_id,
+                        run_request,
+                        workspace_process_context,
+                        remote_sensor,
+                        existing_runs_by_key,
+                        context.logger,
+                        sensor_debug_crash_flags,
+                    )
+                )
+        return results
+
+    batch_size = 25
+
+    batches = []
+    for i in range(0, len(resolved_run_ids_with_requests), batch_size):
+        # TODO - double check the math here
+        batches.append(resolved_run_ids_with_requests[i : i + batch_size])
 
     if submit_threadpool_executor:
-        gen_run_request_results = submit_threadpool_executor.map(
-            submit_run_request, resolved_run_ids_with_requests
-        )
+        gen_run_request_results = submit_threadpool_executor.map(submit_run_request_batch, batches)
     else:
-        gen_run_request_results = map(submit_run_request, resolved_run_ids_with_requests)
+        gen_run_request_results = map(submit_run_request_batch, batches)
 
     skipped_runs: List[SkippedSensorRun] = []
     evaluations_by_key = {
         evaluation.key: evaluation for evaluation in automation_condition_evaluations
     }
     updated_evaluation_keys = set()
-    for run_request_result in gen_run_request_results:
-        yield run_request_result.error_info
+    for run_request_results in gen_run_request_results:
+        if run_request_results is None:
+            # sensor is no longer running
+            # TODO - cleanup work
+            break  # maybe return
+        for run_request_result in run_request_results:
+            yield run_request_result.error_info
 
-        run = run_request_result.run
+            run = run_request_result.run
 
-        if isinstance(run, SkippedSensorRun):
-            skipped_runs.append(run)
-            context.add_run_info(run_id=None, run_key=run_request_result.run_key)
-        elif isinstance(run, BackfillSubmission):
-            context.add_run_info(run_id=run.backfill_id)
-        else:
-            context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
-            entity_keys = [*(run.asset_selection or []), *(run.asset_check_selection or [])]
-            for key in entity_keys:
-                if key in evaluations_by_key:
-                    evaluation = evaluations_by_key[key]
-                    evaluations_by_key[key] = dataclasses.replace(
-                        evaluation, run_ids=evaluation.run_ids | {run.run_id}
-                    )
-                    updated_evaluation_keys.add(key)
+            if isinstance(run, SkippedSensorRun):
+                skipped_runs.append(run)
+                context.add_run_info(run_id=None, run_key=run_request_result.run_key)
+            elif isinstance(run, BackfillSubmission):
+                context.add_run_info(run_id=run.backfill_id)
+            else:
+                context.add_run_info(run_id=run.run_id, run_key=run_request_result.run_key)
+                entity_keys = [*(run.asset_selection or []), *(run.asset_check_selection or [])]
+                for key in entity_keys:
+                    if key in evaluations_by_key:
+                        evaluation = evaluations_by_key[key]
+                        evaluations_by_key[key] = dataclasses.replace(
+                            evaluation, run_ids=evaluation.run_ids | {run.run_id}
+                        )
+                        updated_evaluation_keys.add(key)
 
     if (
         updated_evaluation_keys
