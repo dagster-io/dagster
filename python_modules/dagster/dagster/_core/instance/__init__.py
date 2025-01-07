@@ -3164,53 +3164,37 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         *,
         asset_graph: "BaseAssetGraph",
-        asset_selection: Optional[Sequence[AssetKey]] = None,
-        partitions_by_assets: Optional[Mapping[AssetKey, Optional[AbstractSet[str]]]] = None,
+        asset_selection: Sequence[AssetKey],
         partition_names: Optional[Sequence[str]] = None,
-        tags: Mapping[str, str] = {},
         all_partitions: bool = False,
+        tags: Mapping[str, str] = {},
         title: Optional[str] = None,
         description: Optional[str] = None,
     ) -> str:
         """Launch a set of partition backfill runs.
 
-        Either partition_names must not be None or all_partitions must be True but not both.
+        Either ``partition_names`` must not be ``None`` or ``all_partitions`` must be ``True`` but
+        not both.
 
         Args:
             asset_graph (BaseAssetGraph): The asset graph for the backfill.
-            asset_selection (Optional[Sequence[AssetKey]]): List of asset keys to backfill.
-            partitions_by_assets (Optional[Mapping[AssetKey, Optional[AbstractSet[str]]]]): Set of
-                partitions for each asset key to backfill.
-            partition_names (Optional[Sequence[str]]): List of partition names to backfill. Only
-                valid if `asset_selection` is provided.
+            asset_selection (Sequence[AssetKey]): List of asset keys to backfill.
+            partition_names (Optional[Sequence[str]]): List of partition names to backfill.
+            all_partitions (bool): Whether to backfill all partitions.
+            tags (Mapping[str, str]): The tags for the backfill.
+            title (Optional[str]): The title of the backfill.
+            description (Optional[str]): The description of the backfill.
 
         Returns:
             str: The ID of the backfill.
         """
-        # TODO(deepyaman): Abstract logic shared with `dagster-graphql`.
-        from dagster._core.definitions.partition import (
-            CachingDynamicPartitionsLoader,
-            DefaultPartitionsSubset,
-        )
-        from dagster._core.definitions.selector import (
-            PartitionRangeSelector,
-            PartitionsByAssetSelector,
-            PartitionsSelector,
-        )
+        from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
         from dagster._core.execution.backfill import PartitionBackfill
 
         backfill_id = make_new_backfill_id()
         backfill_timestamp = get_current_timestamp()
         backfill_datetime = datetime_from_timestamp(backfill_timestamp)
         dynamic_partitions_store = CachingDynamicPartitionsLoader(self)
-
-        if (
-            asset_selection is not None or partition_names is not None or all_partitions
-        ) and partitions_by_assets is not None:
-            raise DagsterInvariantViolationError(
-                "partitions_by_assets cannot be used together with asset_selection or"
-                " partition_names or if all_partitions is True"
-            )
 
         check_valid_title(title)
 
@@ -3224,34 +3208,6 @@ class DagsterInstance(DynamicPartitionsStore):
                 tags=tags,
                 dynamic_partitions_store=dynamic_partitions_store,
                 all_partitions=all_partitions,
-                title=title,
-                description=description,
-            )
-        elif partitions_by_assets is not None:
-            partitions_by_asset_selectors = []
-            for asset_key, subset in partitions_by_assets.items():
-                partitions_def = asset_graph.get(asset_key).partitions_def
-                partitions_subset = DefaultPartitionsSubset(subset)
-                partition_key_ranges = partitions_subset.get_partition_key_ranges(
-                    partitions_def, dynamic_partitions_store=dynamic_partitions_store
-                )
-                partitions_selector = PartitionsSelector(
-                    ranges=[
-                        PartitionRangeSelector(partition_key_range.start, partition_key_range.end)
-                        for partition_key_range in partition_key_ranges
-                    ]
-                )
-                partitions_by_asset_selectors.append(
-                    PartitionsByAssetSelector(asset_key=asset_key, partitions=partitions_selector)
-                )
-
-            backfill = PartitionBackfill.from_partitions_by_assets(
-                backfill_id=backfill_id,
-                asset_graph=asset_graph,
-                partitions_by_assets=partitions_by_asset_selectors,
-                backfill_timestamp=backfill_timestamp,
-                tags=tags,
-                dynamic_partitions_store=dynamic_partitions_store,
                 title=title,
                 description=description,
             )

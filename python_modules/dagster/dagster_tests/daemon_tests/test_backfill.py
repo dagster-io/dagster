@@ -2491,40 +2491,6 @@ def test_asset_backfill_with_single_run_backfill_policy(
     assert instance.get_runs()[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == partitions[-1]
 
 
-def test_asset_backfill_with_single_run_backfill_policy_using_python_api(
-    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
-):
-    partitions = ["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04", "2023-01-05"]
-    asset_graph = workspace_context.create_request_context().asset_graph
-
-    backfill_id = instance.launch_backfill(
-        asset_graph=asset_graph,
-        partitions_by_assets={asset_with_single_run_backfill_policy.key: set(partitions)},
-        tags={},
-        title=None,
-        description=None,
-    )
-
-    assert instance.get_runs_count() == 0
-    backfill = instance.get_backfill(backfill_id)
-    assert backfill
-    assert backfill.status == BulkActionStatus.REQUESTED
-    assert backfill.asset_selection == [asset_with_single_run_backfill_policy.key]
-
-    assert all(
-        not error
-        for error in list(
-            execute_backfill_iteration(
-                workspace_context, get_default_daemon_logger("BackfillDaemon")
-            )
-        )
-    )
-
-    assert instance.get_runs_count() == 1
-    assert instance.get_runs()[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == partitions[0]
-    assert instance.get_runs()[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == partitions[-1]
-
-
 def test_asset_backfill_from_asset_graph_subset_with_single_run_backfill_policy(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
