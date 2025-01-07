@@ -12,7 +12,6 @@ import {v4 as uuidv4} from 'uuid';
 import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
-import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
 import {GlobalStyleProvider} from './GlobalStyleProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {createOperationQueryStringApolloLink} from './OperationQueryStringApolloLink';
@@ -195,10 +194,7 @@ export const AppProvider = (props: AppProviderProps) => {
                           <CustomConfirmationProvider>
                             <AnalyticsContext.Provider value={analytics}>
                               <InstancePageContext.Provider value={instancePageValue}>
-                                <LayoutProvider>
-                                  <DagsterPlusLaunchPromotion />
-                                  {props.children}
-                                </LayoutProvider>
+                                <LayoutProvider>{props.children}</LayoutProvider>
                               </InstancePageContext.Provider>
                             </AnalyticsContext.Provider>
                           </CustomConfirmationProvider>
