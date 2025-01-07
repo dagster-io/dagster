@@ -1,5 +1,5 @@
 ---
-title: "Automate jobs with schedules"
+title: "Cron-based schedules"
 sidebar_position: 10
 ---
 

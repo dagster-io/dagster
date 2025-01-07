@@ -1,5 +1,5 @@
 ---
-title: Create assets
+title: Assets
 sidebar_position: 10
 ---
 

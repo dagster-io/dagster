@@ -1,5 +1,5 @@
 ---
-title: Integrate with external systems
+title: Resources and external systems
 sidebar_position: 20
 ---
 

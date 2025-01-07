@@ -1,5 +1,5 @@
 ---
-title: Partition and backfill data
+title: Partitions and backfills
 sidebar_position: 30
 ---
 

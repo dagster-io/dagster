@@ -1,5 +1,5 @@
 ---
-title: Organize your projects
+title: Projects and components
 sidebar_position: 40
 ---
 
