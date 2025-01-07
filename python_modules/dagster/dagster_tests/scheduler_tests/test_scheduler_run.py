@@ -646,13 +646,14 @@ def logger():
 def validate_tick(
     tick: InstigatorTick,
     remote_schedule: RemoteSchedule,
-    expected_datetime: datetime.datetime,
+    expected_scheduled_execution_time: datetime.datetime,
     expected_status: TickStatus,
     expected_run_ids: Sequence[str],
     expected_error: Optional[str] = None,
     expected_failure_count: int = 0,
     expected_skip_reason: Optional[str] = None,
     expected_consecutive_failure_count=None,
+    expected_timestamp: Optional[float] = None,
 ) -> None:
     tick_data = tick.tick_data
 
@@ -661,8 +662,11 @@ def validate_tick(
 
     assert tick_data.instigator_origin_id == remote_schedule.get_remote_origin_id()
     assert tick_data.instigator_name == remote_schedule.name
-    assert tick_data.scheduled_execution_time == expected_datetime.timestamp()
-    assert tick_data.timestamp == expected_datetime.timestamp()
+    assert tick_data.scheduled_execution_time == expected_scheduled_execution_time.timestamp()
+    assert tick_data.timestamp == (
+        expected_timestamp or expected_scheduled_execution_time.timestamp()
+    )
+
     assert tick_data.status == expected_status
     assert len(tick_data.run_ids) == len(expected_run_ids) and set(tick_data.run_ids) == set(
         expected_run_ids
@@ -1033,6 +1037,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in instance.get_runs()],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             wait_for_all_runs_to_start(instance)
@@ -1491,6 +1496,7 @@ class TestSchedulerRun:
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             wait_for_all_runs_to_start(scheduler_instance)
@@ -1697,6 +1703,7 @@ class TestSchedulerRun:
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
+                expected_timestamp=initial_datetime.timestamp(),
             )
 
             wait_for_all_runs_to_start(scheduler_instance)
@@ -1789,7 +1796,11 @@ class TestSchedulerRun:
     ):
         schedule = remote_repo.get_schedule("wrong_config_schedule")
         schedule_origin = schedule.get_remote_origin()
-        freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+        scheduled_execution_time = create_datetime(
+            year=2019, month=2, day=27, hour=0, minute=0, second=0
+        )
+        freeze_datetime = scheduled_execution_time
+
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(schedule)
 
@@ -1804,32 +1815,44 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 schedule,
-                freeze_datetime,
+                scheduled_execution_time,
                 TickStatus.FAILURE,
                 [],
                 "Missing required config entry",
                 expected_failure_count=1,
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
-            evaluate_schedules(
-                workspace_context, executor, get_current_datetime(), max_tick_retries=2
-            )
+        freeze_datetime = freeze_datetime + relativedelta(minutes=1)
+        with freeze_time(freeze_datetime):
             evaluate_schedules(
                 workspace_context, executor, get_current_datetime(), max_tick_retries=2
             )
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
-            assert len(ticks) == 1
+            assert len(ticks) == 2
+
+        freeze_datetime = freeze_datetime + relativedelta(minutes=1)
+        with freeze_time(freeze_datetime):
+            evaluate_schedules(
+                workspace_context, executor, get_current_datetime(), max_tick_retries=2
+            )
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+
+            assert len(ticks) == 3
 
             validate_tick(
                 ticks[0],
                 schedule,
-                freeze_datetime,
+                scheduled_execution_time,
                 TickStatus.FAILURE,
                 [],
                 "Missing required config entry",
                 expected_failure_count=3,
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             evaluate_schedules(
@@ -1837,17 +1860,7 @@ class TestSchedulerRun:
             )
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
-            assert len(ticks) == 1
-
-            validate_tick(
-                ticks[0],
-                schedule,
-                freeze_datetime,
-                TickStatus.FAILURE,
-                [],
-                "Missing required config entry",
-                expected_failure_count=3,
-            )
+            assert len(ticks) == 3  # no new ticks since we have run out of retries
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
@@ -1855,17 +1868,18 @@ class TestSchedulerRun:
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
-            assert len(ticks) == 2
+            assert len(ticks) == 4
 
             validate_tick(
                 ticks[0],
                 schedule,
-                freeze_datetime,
+                scheduled_execution_time + relativedelta(days=1),
                 TickStatus.FAILURE,
                 [],
                 "Missing required config entry",
                 expected_failure_count=1,
                 expected_consecutive_failure_count=4,
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -1917,8 +1931,11 @@ class TestSchedulerRun:
                 [],
                 f"Error occurred during the evaluation of schedule {schedule_name}",
                 expected_failure_count=1,
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
+        freeze_datetime = freeze_datetime + relativedelta(minutes=1)
+        with freeze_time(freeze_datetime):
             new_iteration_times = evaluate_schedules(
                 workspace_context,
                 executor,
@@ -1939,7 +1956,7 @@ class TestSchedulerRun:
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
-            assert len(ticks) == 1
+            assert len(ticks) == 2
 
             validate_tick(
                 ticks[0],
@@ -1948,6 +1965,7 @@ class TestSchedulerRun:
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
                 expected_failure_count=1,
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
@@ -1959,7 +1977,7 @@ class TestSchedulerRun:
 
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
-            assert len(ticks) == 2
+            assert len(ticks) == 3
 
             validate_tick(
                 ticks[0],
@@ -1968,6 +1986,7 @@ class TestSchedulerRun:
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
                 expected_failure_count=0,
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2511,6 +2530,7 @@ class TestSchedulerRun:
                 create_datetime(year=2019, month=2, day=28),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             validate_run_started(
@@ -2536,6 +2556,7 @@ class TestSchedulerRun:
                 create_datetime(year=2019, month=3, day=1),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             validate_run_started(
@@ -2560,6 +2581,7 @@ class TestSchedulerRun:
                 create_datetime(year=2019, month=3, day=1, hour=12),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             validate_run_started(
@@ -2618,6 +2640,7 @@ class TestSchedulerRun:
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in runs],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             wait_for_all_runs_to_start(scheduler_instance)
@@ -2686,6 +2709,7 @@ class TestSchedulerRun:
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in runs],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             wait_for_all_runs_to_start(scheduler_instance)
@@ -2872,6 +2896,7 @@ class TestSchedulerRun:
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             wait_for_all_runs_to_start(scheduler_instance)
@@ -2999,6 +3024,7 @@ class TestSchedulerRun:
                 expected_datetime,
                 TickStatus.SUCCESS,
                 [run.run_id for run in scheduler_instance.get_runs()],
+                expected_timestamp=freeze_datetime.timestamp(),
             )
 
             wait_for_all_runs_to_start(scheduler_instance)

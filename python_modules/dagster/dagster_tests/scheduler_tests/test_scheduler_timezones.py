@@ -66,6 +66,7 @@ def test_non_utc_timezone_run(
             expected_datetime,
             TickStatus.SUCCESS,
             [run.run_id for run in instance.get_runs()],
+            expected_timestamp=freeze_datetime.timestamp(),
         )
 
         wait_for_all_runs_to_start(instance)
@@ -138,6 +139,7 @@ def test_differing_timezones(
             expected_datetime,
             TickStatus.SUCCESS,
             [run.run_id for run in instance.get_runs()],
+            expected_timestamp=freeze_datetime.timestamp(),
         )
 
         ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
@@ -172,6 +174,7 @@ def test_differing_timezones(
             expected_datetime,
             TickStatus.SUCCESS,
             [next(iter(instance.get_runs())).run_id],
+            expected_timestamp=freeze_datetime.timestamp(),
         )
 
         wait_for_all_runs_to_start(instance)
@@ -238,6 +241,7 @@ def test_different_days_in_different_timezones(
             expected_datetime,
             TickStatus.SUCCESS,
             [next(iter(instance.get_runs())).run_id],
+            expected_timestamp=freeze_datetime.timestamp(),
         )
 
         wait_for_all_runs_to_start(instance)
@@ -270,9 +274,12 @@ def test_hourly_dst_spring_forward(
 
     schedule = remote_repo.get_schedule("hourly_central_time_schedule")
     schedule_origin = schedule.get_remote_origin()
+    tick_timestamps = []
+
     with freeze_time(freeze_datetime):
         instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
@@ -281,12 +288,14 @@ def test_hourly_dst_spring_forward(
     freeze_datetime = add_absolute_time(freeze_datetime, hours=1)
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
     # DST has now happened, 2 hours later it is 4AM CST
     # Should be 3 runs: 1AM CST, 3AM CST, 4AM CST
     freeze_datetime = add_absolute_time(freeze_datetime, hours=1)
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
         wait_for_all_runs_to_start(instance)
 
@@ -313,6 +322,7 @@ def test_hourly_dst_spring_forward(
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
+                expected_timestamp=tick_timestamps[-(i + 1)],
             )
 
             validate_run_started(
@@ -343,9 +353,12 @@ def test_hourly_dst_fall_back(
 
     schedule = remote_repo.get_schedule("hourly_central_time_schedule")
     schedule_origin = schedule.get_remote_origin()
+    tick_timestamps = []
+
     with freeze_time(freeze_datetime):
         instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
         assert instance.get_runs_count() == 0  # 0 because we're on the half-hour
         ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
@@ -355,6 +368,7 @@ def test_hourly_dst_fall_back(
         freeze_datetime = add_absolute_time(freeze_datetime, hours=1)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
+            tick_timestamps.append(freeze_datetime.timestamp())
 
     # DST has now happened, 4 hours later it is 3:30AM CST
     # Should be 4 runs: 1AM CDT, 2AM CDT, 2AM CST, 3AM CST
@@ -362,6 +376,7 @@ def test_hourly_dst_fall_back(
 
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
         wait_for_all_runs_to_start(instance)
 
@@ -395,6 +410,7 @@ def test_hourly_dst_fall_back(
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
+                expected_timestamp=tick_timestamps[-(i + 1)],
             )
 
             validate_run_started(
@@ -425,9 +441,12 @@ def test_daily_dst_spring_forward(
 
     schedule = remote_repo.get_schedule("daily_central_time_schedule")
     schedule_origin = schedule.get_remote_origin()
+    tick_timestamps = []
+
     with freeze_time(freeze_datetime):
         instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
@@ -436,10 +455,12 @@ def test_daily_dst_spring_forward(
     freeze_datetime = freeze_datetime + relativedelta(days=1)
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
     freeze_datetime = freeze_datetime + relativedelta(days=1)
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
         wait_for_all_runs_to_start(instance)
 
@@ -462,6 +483,7 @@ def test_daily_dst_spring_forward(
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
+                expected_timestamp=tick_timestamps[-(i + 1)],
             )
 
             validate_run_started(
@@ -489,13 +511,14 @@ def test_daily_dst_fall_back(
     freeze_datetime = datetime.datetime(
         2019, 11, 3, 0, 0, 0, tzinfo=get_timezone("US/Central")
     ).astimezone(get_timezone("US/Pacific"))
+    tick_timestamps = []
 
     with freeze_time(freeze_datetime):
         schedule = remote_repo.get_schedule("daily_central_time_schedule")
         schedule_origin = schedule.get_remote_origin()
         instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
-
+        tick_timestamps.append(freeze_datetime.timestamp())
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 1
@@ -503,11 +526,12 @@ def test_daily_dst_fall_back(
     freeze_datetime = freeze_datetime + relativedelta(days=1)
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
+        tick_timestamps.append(freeze_datetime.timestamp())
 
     freeze_datetime = freeze_datetime + relativedelta(days=1)
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
-
+        tick_timestamps.append(freeze_datetime.timestamp())
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 3
@@ -529,6 +553,7 @@ def test_daily_dst_fall_back(
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
+                expected_timestamp=tick_timestamps[-(i + 1)],
             )
 
             validate_run_started(
@@ -557,13 +582,13 @@ def test_execute_during_dst_transition_spring_forward(
     freeze_datetime = datetime.datetime(
         2019, 3, 9, 0, 0, 0, tzinfo=get_timezone("US/Central")
     ).astimezone(get_timezone("US/Pacific"))
-
+    tick_timestamps = []
     with freeze_time(freeze_datetime):
         schedule = remote_repo.get_schedule("daily_dst_transition_schedule_skipped_time")
         schedule_origin = schedule.get_remote_origin()
         instance.start_schedule(schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime())
-
+        tick_timestamps.append(freeze_datetime.timestamp())
         assert instance.get_runs_count() == 0  # 0 because we're one the half hour
         ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
@@ -572,11 +597,11 @@ def test_execute_during_dst_transition_spring_forward(
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
-
+            tick_timestamps.append(freeze_datetime.timestamp())
     freeze_datetime = freeze_datetime + relativedelta(days=1)
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
-
+        tick_timestamps.append(freeze_datetime.timestamp())
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 5
@@ -608,6 +633,7 @@ def test_execute_during_dst_transition_spring_forward(
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
+                expected_timestamp=tick_timestamps[-(i + 1)],
             )
 
             validate_run_started(
@@ -646,19 +672,24 @@ def test_execute_during_dst_transition_fall_back(
         ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
         assert len(ticks) == 0
 
-    for _ in range(2):
+    tick_timestamps = []
+    for i in range(2):
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime())
+            tick_timestamps.append(freeze_datetime.timestamp())
 
     freeze_datetime = freeze_datetime + relativedelta(days=1)
     with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime())
 
+        tick_timestamps.append(freeze_datetime.timestamp())
+
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 3
         ticks = instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+
         assert len(ticks) == 3
 
         expected_datetimes_utc = [
@@ -674,6 +705,7 @@ def test_execute_during_dst_transition_fall_back(
                 expected_datetimes_utc[i],
                 TickStatus.SUCCESS,
                 [instance.get_runs()[i].run_id],
+                expected_timestamp=tick_timestamps[-(i + 1)],
             )
 
             validate_run_started(
