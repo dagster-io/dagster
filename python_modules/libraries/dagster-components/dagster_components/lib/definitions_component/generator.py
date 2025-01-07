@@ -14,7 +14,9 @@ class DefinitionsGenerateParams(BaseModel):
 
 
 class DefinitionsComponentGenerator(ComponentGenerator):
-    generator_params = DefinitionsGenerateParams
+    @classmethod
+    def get_params_schema_type(cls):
+        return DefinitionsGenerateParams
 
     def generate_files(
         self, request: ComponentGenerateRequest, params: DefinitionsGenerateParams

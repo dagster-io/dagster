@@ -66,8 +66,6 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
 
 @component_type(name="dbt_project")
 class DbtProjectComponent(Component):
-    params_schema = DbtProjectParams
-
     def __init__(
         self,
         dbt_resource: DbtCliResource,
@@ -85,8 +83,12 @@ class DbtProjectComponent(Component):
         return DbtProjectComponentGenerator()
 
     @classmethod
+    def get_component_schema_type(cls):
+        return DbtProjectParams
+
+    @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
-        loaded_params = context.load_params(cls.params_schema)
+        loaded_params = context.load_params(cls.get_component_schema_type())
 
         return cls(
             dbt_resource=loaded_params.dbt,

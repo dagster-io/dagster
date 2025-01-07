@@ -23,16 +23,18 @@ class DefinitionsComponent(Component):
     def __init__(self, definitions_path: Path):
         self.definitions_path = definitions_path
 
-    params_schema = DefinitionsParamSchema
-
     @classmethod
     def get_generator(cls) -> DefinitionsComponentGenerator:
         return DefinitionsComponentGenerator()
 
     @classmethod
+    def get_component_schema_type(cls):
+        return DefinitionsParamSchema
+
+    @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
         # all paths should be resolved relative to the directory we're in
-        loaded_params = context.load_params(cls.params_schema)
+        loaded_params = context.load_params(cls.get_component_schema_type())
 
         return cls(definitions_path=Path(loaded_params.definitions_path or "definitions.py"))
 

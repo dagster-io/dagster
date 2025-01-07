@@ -16,7 +16,9 @@ class DbtGenerateParams(BaseModel):
 
 
 class DbtProjectComponentGenerator(ComponentGenerator):
-    generator_params = DbtGenerateParams
+    @classmethod
+    def get_params_schema_type(cls) -> Optional[type[BaseModel]]:
+        return DbtGenerateParams
 
     def generate_files(self, request: ComponentGenerateRequest, params: DbtGenerateParams) -> None:
         cwd = os.getcwd()

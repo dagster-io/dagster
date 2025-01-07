@@ -62,7 +62,7 @@ def generate_component_command(
             raise Exception(
                 f"Component type {component_type} does not have a generator. Reason: {generator.message}."
             )
-        generate_params = TypeAdapter(generator.generator_params).validate_json(json_params)
+        generate_params = TypeAdapter(generator.get_params_schema_type()).validate_json(json_params)
     else:
         generate_params = {}
 
