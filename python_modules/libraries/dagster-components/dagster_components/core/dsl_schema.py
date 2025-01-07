@@ -24,8 +24,15 @@ class OpSpecBaseModel(BaseModel):
     tags: Optional[Dict[str, str]] = None
 
 
+def _post_process_key(rendered: Optional[str]) -> Optional[AssetKey]:
+    return AssetKey.from_user_string(rendered) if rendered else None
+
+
 class AssetAttributesModel(RenderedModel):
-    key: Optional[str] = None
+    key: Annotated[
+        Optional[str],
+        RenderingMetadata(output_type=AssetKey, post_process=_post_process_key),
+    ] = None
     deps: Sequence[str] = []
     description: Optional[str] = None
     metadata: Annotated[
