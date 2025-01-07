@@ -16,7 +16,7 @@ This guide covers how to write unit tests for assets and ops with a variety of d
 To follow the steps in this guide, you'll need familiarity with:
 
 - [Assets](/guides/build/assets/index.mdx
-- [Ops and Jobs](/guides/build/ops-jobs)
+- [Ops and Jobs](/guides/build/ops-and-jobs)
 </details>
 
 ## Before you start
@@ -107,5 +107,5 @@ If an asset or op has multiple parameters, it's recommended to use keyword argum
 ## Next steps
 
 - Learn more about assets in [Understanding Assets](/guides/build/assets/index.mdx
-- Learn more about ops in [Understanding Ops](/guides/build/ops-jobs)
-- Learn more about resources in [Resources](/guides/build/connect-to-external-systems/resources)
+- Learn more about ops in [Understanding Ops](/guides/build/ops-and-jobs)
+- Learn more about resources in [Resources](/guides/build/external-resources-and-systems/connect/resources)

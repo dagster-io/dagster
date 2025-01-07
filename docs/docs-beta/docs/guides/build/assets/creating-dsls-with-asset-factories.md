@@ -19,8 +19,8 @@ The asset factory pattern can solve both of these problems.
 To follow the steps in this guide, you'll need:
 
 - Familiarity with:
-  - [Assets](/guides/build/create-asset-pipelines/data-assets)
-  - [Resources](/guides/build/connect-to-external-systems/resources)
+  - [Assets](/guides/build/assets/defining-data-assets)
+  - [Resources](/guides/build/external-resources-and-systems/connect/resources)
   - SQL, YAML and Amazon Web Services (AWS) S3
   - [Pydantic](https://docs.pydantic.dev/latest/) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/)
 - A Python virtual environment with the following dependencies installed:

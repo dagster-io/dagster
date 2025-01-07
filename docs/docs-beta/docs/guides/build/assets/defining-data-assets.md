@@ -70,6 +70,6 @@ flowchart LR
 
 ## Next steps
 
-- Enrich Dagster's built-in data catalog with [asset metadata](/guides/build/create-asset-pipelines/metadata)
-- Learn to create [dependencies between assets](/guides/build/assets/asset-dependencies)
-- Learn to use a [factory pattern](/guides/build/assets/asset-factories) to create multiple, similar assets
+- Enrich Dagster's built-in data catalog with [asset metadata](/guides/build/assets/organizing-assets-with-tags-and-metadata)
+- Learn to create [dependencies between assets](/guides/build/assets/defining-dependencies-with-asset-factories)
+- Learn to use a [factory pattern](/guides/build/assets/creating-dsls-with-asset-factories) to create multiple, similar assets

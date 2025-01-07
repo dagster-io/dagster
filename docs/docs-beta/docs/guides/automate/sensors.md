@@ -15,7 +15,7 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 To follow the steps in this guide, you'll need:
 
 - Familiarity with [Assets](/guides/build/assets/index.mdx
-- Familiarity with [Ops and Jobs](/guides/build/ops-jobs)
+- Familiarity with [Ops and Jobs](/guides/build/ops-and-jobs)
 </details>
 
 ## Basic sensor

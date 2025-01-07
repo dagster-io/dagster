@@ -14,15 +14,10 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets,
 
 ---
 
-<details>
-<summary>Prerequisites</summary>
+:::note
 
-To follow the steps in this guide, you'll need:
+This article assumes familiarity with [assets](/guides/build/assets/) and [partitions](/guides/build/partitions-and-backfills)
 
-- Familiarity with [Assets](/guides/build/create-asset-pipelines/data-assets)
-- Familiarity with [Partitions](/guides/build/create-asset-pipelines/partitioning)
-
-</details>
 
 ## Dependencies between different time-based partitions \{#different-time-dependencies}
 
@@ -76,7 +71,3 @@ Combining time-based and static partitions allows you to analyze data across bot
 ## Integrating Dagster partitions with external systems: incremental models and dbt
 
 {/* TODO */}
-
-## Next steps
-
-- Go deeper into [Understanding Partitioning](#)

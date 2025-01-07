@@ -12,7 +12,7 @@ You often want to control the number of concurrent runs for a Dagster job, a spe
 <summary>Prerequisites</summary>
 
 - Familiarity with [Assets](/guides/build/assets/index.mdx
-- Familiarity with [Jobs and Ops](/guides/build/ops-jobs)
+- Familiarity with [Jobs and Ops](/guides/build/ops-and-jobs)
 </details>
 
 

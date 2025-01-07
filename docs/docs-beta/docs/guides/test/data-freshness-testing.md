@@ -18,8 +18,8 @@ Freshness checks can also communicate SLAs for their data freshness. For example
 
 To follow the steps in this guide, you'll need familiarity with:
 
-- [Assets](/guides/build/create-asset-pipelines/data-assets)
-- [External assets](/guides/build/create-asset-pipelines/external-assets)
+- [Assets](/guides/build/assets/defining-data-assets)
+- [External assets](/guides/build/assets/representing-external-data-with-external-assets)
 - [Asset checks](/guides/test/asset-checks)
 
 </details>
@@ -45,7 +45,7 @@ The example below defines a freshness check on an asset that fails if the asset'
 
 ## External asset freshness \{#external-assets}
 
-[External assets](/guides/build/create-asset-pipelines/external-assets) are assets orchestrated by systems other than Dagster.
+[External assets](/guides/build/assets/representing-external-data-with-external-assets) are assets orchestrated by systems other than Dagster.
 
 To run freshness checks on external assets, the checks need to know when the external assets were last updated. Emitting these update timestamps as values for the `dagster/last_updated_timestamp` observation metadata key allows Dagster to calculate whether the asset is overdue.
 
