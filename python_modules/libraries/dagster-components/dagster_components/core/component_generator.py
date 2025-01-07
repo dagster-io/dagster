@@ -22,3 +22,11 @@ class ComponentGenerator:
 @dataclass
 class ComponentGeneratorUnavailableReason:
     message: str
+
+
+class DefaultComponentGenerator(ComponentGenerator):
+    def generate_files(self, request: ComponentGenerateRequest, params: Any) -> None:
+        # This will be deleted once all components are converted to the new ComponentGenerator API
+        from dagster_components.generate import generate_component_yaml
+
+        generate_component_yaml(request, params.model_dump() if params else {})
