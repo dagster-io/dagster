@@ -35,7 +35,7 @@ def key_from_str(key_str):
     return result
 
 
-@deprecated(breaking_version="1.11.0")
+@deprecated(breaking_version="0.26")
 class SSHResource(ConfigurableResource):
     """Resource for ssh remote execution using Paramiko.
 
@@ -242,7 +242,7 @@ class SSHResource(ConfigurableResource):
         return local_filepath
 
 
-@deprecated(breaking_version="1.11.0")
+@deprecated(breaking_version="0.26")
 @dagster_maintained_resource
 @resource(
     config_schema={
