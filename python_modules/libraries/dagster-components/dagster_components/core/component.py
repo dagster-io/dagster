@@ -32,9 +32,9 @@ from pydantic import TypeAdapter
 from typing_extensions import Self
 
 from dagster_components.core.component_generator import (
-    ComponentGenerateRequest,
     ComponentGenerator,
     ComponentGeneratorUnavailableReason,
+    DefaultComponentGenerator,
 )
 from dagster_components.core.component_rendering import TemplatedValueResolver
 
@@ -42,20 +42,9 @@ from dagster_components.core.component_rendering import TemplatedValueResolver
 class ComponentDeclNode: ...
 
 
-# This calls the legacy classmethod `generate_files` on the component type. Will be removed
-# once conversion to the new API is complete.
-class ComponentGeneratorAdapter(ComponentGenerator):
-    def __init__(self, comonent_type: Type["Component"]):
-        self.component_type = comonent_type
-
-    def generate_files(self, request, params):
-        return self.component_type.generate_files(request, params)
-
-
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
     params_schema: ClassVar = None
-    generate_params_schema: ClassVar = None
 
     @classmethod
     def get_generator(cls) -> Union[ComponentGenerator, ComponentGeneratorUnavailableReason]:
@@ -66,14 +55,7 @@ class Component(ABC):
         this method should return a ComponentGeneratorUnavailableReason with a message explaining
         how to install the necessary extras.
         """
-        return ComponentGeneratorAdapter(cls)
-
-    @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
-        # This will be deleted once all components are converted to the new ComponentGenerator API
-        from dagster_components.generate import generate_component_yaml
-
-        generate_component_yaml(request, {})
+        return DefaultComponentGenerator()
 
     @classmethod
     def get_rendering_scope(cls) -> Mapping[str, Any]:

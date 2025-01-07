@@ -11,12 +11,8 @@ from dagster_embedded_elt.sling.resources import AssetExecutionContext
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import (
-    ComponentGenerateRequest,
-    ComponentGenerator,
-    component_type,
-)
+from dagster_components.core.component import Component, ComponentLoadContext, component_type
+from dagster_components.core.component_generator import ComponentGenerateRequest, ComponentGenerator
 from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
 from dagster_components.generate import generate_component_yaml
 

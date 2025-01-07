@@ -11,9 +11,8 @@ from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.core.component import ComponentGenerateRequest
 from dagster_components.core.component_decl_builder import YamlComponentDecl
-from dagster_components.core.component_generator import ComponentGenerator
+from dagster_components.core.component_generator import ComponentGenerateRequest, ComponentGenerator
 from dagster_components.generate import generate_component_yaml
 
 if TYPE_CHECKING:

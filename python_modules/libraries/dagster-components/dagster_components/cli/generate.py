@@ -57,18 +57,12 @@ def generate_component_command(
 
     component_type_cls = context.get_component_type(component_type)
     if json_params:
-        # TODO: when conversion to generator is complete, remove this block
-        if component_type_cls.generate_params_schema:
-            generate_params = TypeAdapter(component_type_cls.generate_params_schema).validate_json(
-                json_params
+        generator = component_type_cls.get_generator()
+        if isinstance(generator, ComponentGeneratorUnavailableReason):
+            raise Exception(
+                f"Component type {component_type} does not have a generator. Reason: {generator.message}."
             )
-        else:
-            generator = component_type_cls.get_generator()
-            if isinstance(generator, ComponentGeneratorUnavailableReason):
-                raise Exception(
-                    f"Component type {component_type} does not have a generator. Reason: {generator.message}."
-                )
-            generate_params = TypeAdapter(generator.generator_params).validate_json(json_params)
+        generate_params = TypeAdapter(generator.generator_params).validate_json(json_params)
     else:
         generate_params = {}
 
