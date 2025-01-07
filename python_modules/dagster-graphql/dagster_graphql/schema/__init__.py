@@ -27,7 +27,6 @@ def types():
     from dagster_graphql.schema.instigation import types as instigation_types
     from dagster_graphql.schema.logs import types as log_types
     from dagster_graphql.schema.metadata import types as metadata_types
-    from dagster_graphql.schema.paging import GrapheneCursor
     from dagster_graphql.schema.partition_sets import types as partition_sets_types
     from dagster_graphql.schema.pipelines import types as pipelines_types
     from dagster_graphql.schema.repository_origin import (
@@ -64,7 +63,6 @@ def types():
         + [GrapheneDaemonHealth, GrapheneDaemonStatus, GrapheneInstance, GrapheneRunLauncher]
         + instigation_types
         + metadata_types()
-        + [GrapheneCursor]
         + partition_sets_types
         + [GrapheneRepositoryOrigin, GrapheneRepositoryMetadata]
         + [GrapheneRunConfigSchema, GrapheneRunConfigSchemaOrError]

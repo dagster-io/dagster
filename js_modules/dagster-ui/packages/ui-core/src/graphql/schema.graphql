@@ -2799,8 +2799,6 @@ type TimestampMetadataEntry implements MetadataEntry {
   timestamp: Float!
 }
 
-scalar Cursor
-
 type Partition {
   name: String!
   partitionSetName: String!
