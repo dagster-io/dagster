@@ -1,6 +1,6 @@
 import graphene
 
 
-class GrapheneCursor(graphene.BigInt, graphene.Scalar):
+class GrapheneCursor(graphene.Int, graphene.Scalar):
     class Meta:
         name = "Cursor"
