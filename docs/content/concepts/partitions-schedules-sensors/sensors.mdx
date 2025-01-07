@@ -5,11 +5,21 @@ description: Sensors allow you to instigate runs based on any external state cha
 
 # Sensors
 
-Sensors are definitions in Dagster that allow you to instigate runs based on some external state change. For example, you can:
+Sensors are definitions in Dagster that allow you to take action in response to events that happen both internally or at external systems.
 
-- Launch a run whenever a file appears in an s3 bucket
-- Launch a run whenever another job materializes a specific asset
-- Launch a run whenever an external system is down
+Example of events can be:
+
+- a run completes in Dagster
+- a run fails in Dagster
+- a job materializes a specific asset
+- a file appears in an s3 bucket
+- an external system is down
+
+Example of actions are:
+
+- launching a run
+- sending a Slack message
+- inserting a row into a database
 
 A sensor defines an evaluation function that returns either:
 
