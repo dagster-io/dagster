@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
-    Callable,
     Generic,
     Mapping,
     NamedTuple,
@@ -10,17 +10,18 @@ from typing import (
     Sequence,
     Set,
     TypeVar,
-    Union,
 )
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import RemoteRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
 
 @whitelist_for_serdes
@@ -102,36 +103,16 @@ class AssetGraphDiffer:
     we will consider every asset New.
     """
 
-    _branch_asset_graph: Optional["RemoteAssetGraph"]
-    _branch_asset_graph_load_fn: Optional[Callable[[], "RemoteAssetGraph"]]
+    _branch_asset_graph: "RemoteAssetGraph"
     _base_asset_graph: Optional["RemoteAssetGraph"]
-    _base_asset_graph_load_fn: Optional[Callable[[], "RemoteAssetGraph"]]
 
     def __init__(
         self,
-        branch_asset_graph: Union["RemoteAssetGraph", Callable[[], "RemoteAssetGraph"]],
-        base_asset_graph: Optional[
-            Union["RemoteAssetGraph", Callable[[], "RemoteAssetGraph"]]
-        ] = None,
+        branch_asset_graph: "RemoteAssetGraph",
+        base_asset_graph: Optional["RemoteAssetGraph"] = None,
     ):
-        if base_asset_graph is None:
-            # if base_asset_graph is None, then the asset graph in the branch deployment does not exist
-            # in the base deployment
-            self._base_asset_graph = None
-            self._base_asset_graph_load_fn = None
-        elif isinstance(base_asset_graph, RemoteAssetGraph):
-            self._base_asset_graph = base_asset_graph
-            self._base_asset_graph_load_fn = None
-        else:
-            self._base_asset_graph = None
-            self._base_asset_graph_load_fn = base_asset_graph
-
-        if isinstance(branch_asset_graph, RemoteAssetGraph):
-            self._branch_asset_graph = branch_asset_graph
-            self._branch_asset_graph_load_fn = None
-        else:
-            self._branch_asset_graph = None
-            self._branch_asset_graph_load_fn = branch_asset_graph
+        self._branch_asset_graph = branch_asset_graph
+        self._base_asset_graph = base_asset_graph
 
     @classmethod
     def from_remote_repositories(
@@ -165,8 +146,8 @@ class AssetGraphDiffer:
             base_workspace, code_location_name, repository_name
         )
         return AssetGraphDiffer(
-            branch_asset_graph=lambda: branch_repo.asset_graph,
-            base_asset_graph=(lambda: base_repo.asset_graph) if base_repo is not None else None,
+            branch_asset_graph=branch_repo.asset_graph,
+            base_asset_graph=base_repo.asset_graph if base_repo is not None else None,
         )
 
     def _compare_base_and_branch_assets(
@@ -286,12 +267,8 @@ class AssetGraphDiffer:
 
     @property
     def branch_asset_graph(self) -> "RemoteAssetGraph":
-        if self._branch_asset_graph is None:
-            self._branch_asset_graph = check.not_none(self._branch_asset_graph_load_fn)()
         return self._branch_asset_graph
 
     @property
     def base_asset_graph(self) -> Optional["RemoteAssetGraph"]:
-        if self._base_asset_graph is None and self._base_asset_graph_load_fn is not None:
-            self._base_asset_graph = self._base_asset_graph_load_fn()
         return self._base_asset_graph

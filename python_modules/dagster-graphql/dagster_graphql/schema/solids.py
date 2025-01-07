@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions import NodeHandle
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.historical import HistoricalJob
@@ -446,20 +445,10 @@ class ISolidDefinitionMixin:
                     )
                 )
             ]
-            differ = None
-            base_deployment_context = graphene_info.context.get_base_deployment_context()
-            if base_deployment_context:
-                differ = AssetGraphDiffer.from_remote_repositories(
-                    code_location_name=self._represented_pipeline.handle.location_name,
-                    repository_name=self._represented_pipeline.handle.repository_name,
-                    branch_workspace=graphene_info.context,
-                    base_workspace=base_deployment_context,
-                )
 
             return [
                 GrapheneAssetNode(
                     remote_node=remote_node,
-                    asset_graph_differ=differ,
                 )
                 for remote_node in remote_nodes
             ]
