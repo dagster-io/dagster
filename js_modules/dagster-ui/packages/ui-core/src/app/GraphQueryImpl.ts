@@ -93,7 +93,7 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
 
   const traverser = new GraphTraverser<T>(items);
   const results = new Set<T>();
-  const clauses = query.split(/(,| AND | and | )/g);
+  const clauses = query.toLowerCase().split(/(,| AND | and | )/g);
   const focus = new Set<T>();
 
   for (const clause of clauses) {
@@ -104,13 +104,14 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
     const [, parentsClause = '', itemName = '', descendentsClause = ''] = parts;
 
     const itemsMatching = items.filter((s) => {
+      const name = s.name.toLowerCase();
       if (isPlannedDynamicStep(itemName.replace(/\"/g, ''))) {
         // When unresolved dynamic step (i.e ends with `[?]`) is selected, match all dynamic steps
-        return s.name.startsWith(dynamicKeyWithoutIndex(itemName.replace(/\"/g, '')));
+        return name.startsWith(dynamicKeyWithoutIndex(itemName.replace(/\"/g, '')));
       } else {
         return /\".*\"/.test(itemName)
-          ? s.name === itemName.replace(/\"/g, '')
-          : s.name.includes(itemName);
+          ? name === itemName.replace(/\"/g, '')
+          : name.includes(itemName);
       }
     });
 
