@@ -1,7 +1,7 @@
 ---
 title: Passing data between assets
 description: Learn how to pass data between assets in Dagster
-sidebar_position: 400
+sidebar_position: 300
 ---
 
 In Dagster, assets are the building blocks of your data pipeline and it's common to want to pass data between them. This guide will help you understand how to pass data between assets.
@@ -14,15 +14,22 @@ There are three ways of passing data between assets:
 
 This guide walks through all three methods.
 
+:::note
+
+This article assumes familiarity with [assets](/guides/build/assets/defining-data-assets) and[resources](/guides/build/external-resources-and-systems/connect/resources)
+
+:::
+
 ---
 
 <details>
   <summary>Prerequisites</summary>
 
-To follow the steps in this guide, you'll need:
+To run the code in this article, you'll need to create and activate a Python virtual environment and install the following dependencies:
 
-- A basic understanding of Dagster concepts such as assets and resources
-- Dagster and the `dagster-duckdb-pandas` package installed
+   ```bash
+   pip install dagster dagster-duckdb-pandas
+   ```
 </details>
 
 ---

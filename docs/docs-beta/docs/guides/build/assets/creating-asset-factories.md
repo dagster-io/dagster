@@ -1,7 +1,6 @@
 ---
-title: 'Creating domain-specific languages with asset factories'
-sidebar_position: 700
-sidebar_label: 'Asset factories'
+title: Creating asset factories
+sidebar_position: 800
 ---
 
 Often in data engineering, you'll find yourself needing to create a large number of similar assets. For example:
@@ -13,17 +12,20 @@ It's also possible you're serving stakeholders who aren't familiar with Python o
 
 The asset factory pattern can solve both of these problems.
 
+:::note
+
+This article assumes familiarity with:
+  - [Assets](/guides/build/assets/defining-data-assets)
+  - [Resources](/guides/build/external-resources-and-systems/connect/resources)
+  - SQL, YAML, and Amazon Web Services (AWS) S3
+  - [Pydantic](https://docs.pydantic.dev/latest/) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/)
+
+:::
+
 <details>
   <summary>Prerequisites</summary>
 
-To follow the steps in this guide, you'll need:
-
-- Familiarity with:
-  - [Assets](/guides/build/assets/defining-data-assets)
-  - [Resources](/guides/build/external-resources-and-systems/connect/resources)
-  - SQL, YAML and Amazon Web Services (AWS) S3
-  - [Pydantic](https://docs.pydantic.dev/latest/) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/)
-- A Python virtual environment with the following dependencies installed:
+To run the code in this article, you'll need to create and activate a Python virtual environment and install the following dependencies:
 
    ```bash
    pip install dagster dagster-aws duckdb pyyaml pydantic

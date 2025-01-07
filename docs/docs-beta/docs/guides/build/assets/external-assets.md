@@ -1,7 +1,6 @@
 ---
-title: Representing external data sources with external assets
+title: External assets
 sidebar_position: 500
-sidebar_label: 'External data sources'
 ---
 
 One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization, even if those assets are orchestrated by systems other than Dagster.
@@ -16,14 +15,11 @@ For example, external assets could be:
 - A CSV file delivered daily by SFTP from a partner
 - A table in a data warehouse populated by another orchestrator
 
-<details>
-  <summary>Prerequisites</summary>
+:::note
 
-To follow the steps in this guide, you'll need:
+This article assumes familiarity with [assets](/guides/build/assets/defining-data-assets) and [sensors](/guides/automate/sensors).
 
-- Familiarity with [Assets](/guides/build/assets/defining-data-assets)
-- Familiarity with [Sensors](/guides/automate/sensors)
-</details>
+:::
 
 ## Defining external assets
 

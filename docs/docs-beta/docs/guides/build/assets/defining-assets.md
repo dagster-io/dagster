@@ -1,18 +1,14 @@
 ---
-title: 'Defining data assets with decorators'
+title: 'Defining assets'
 sidebar_position: 100
 ---
 
-The most common way to create a data asset in Dagster is by annotating a function with an asset decorator. The function computes the contents of the asset, such as a database table or file.
-
-Dagster supports several ways of creating assets, but this guide will focus on using Python decorators to define data assets.
+The most common way to create a data asset in Dagster is by annotating a Python function with an asset decorator. The function computes the contents of the asset, such as a database table or file.
 
 <details>
   <summary>Prerequisites</summary>
 
-To follow the steps in this guide, you'll need:
-
-- To have Dagster installed. Refer to the [Installation](/getting-started/installation) guide for more information.
+To run the code in this article, you'll need to install Dagster. For more information, see the [Installation guide](/getting-started/installation).
 
 </details>
 

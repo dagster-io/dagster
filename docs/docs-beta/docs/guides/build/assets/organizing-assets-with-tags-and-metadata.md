@@ -1,6 +1,6 @@
 ---
 title: "Organizing assets with tags and metadata"
-sidebar_position: 300
+sidebar_position: 400
 ---
 
 Assets feature prominently in the Dagster UI. Attaching information to assets allows you to understand where they're stored, what they contain, and how they should be organized.
@@ -15,6 +15,8 @@ Using metadata in Dagster, you can:
 :::note
 
 This article assumes familiarity with [assets](index.md).
+
+:::
 
 ## Adding owners to assets \{#owners}
 

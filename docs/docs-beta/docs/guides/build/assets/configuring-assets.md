@@ -1,6 +1,5 @@
 ---
 title: Configuring assets in the UI
-sidebar_label: Asset runs
 sidebar_position: 600
 ---
 
@@ -8,15 +7,12 @@ The Dagster UI is commonly used to manually materialize assets, backfill histori
 
 You'll often want to be able to adjust parameters when materializing assets, which can be accomplished with Dagster's asset configuration system.
 
-<details>
-  <summary>Prerequisites</summary>
+:::note
 
-To follow the steps in this guide, you'll need familiarity with:
+This article assume familiarity with [assets](/guides/build/assets/defining-data-assets) and [Pydantic](https://docs.pydantic.dev/latest/).
 
-- [Assets](/guides/build/assets/defining-data-assets)
-- [Pydantic](https://docs.pydantic.dev/latest/)
+:::
 
-</details>
 
 ## Making assets configurable
 
