@@ -7,6 +7,7 @@ import requests
 from dagster import ConfigurableResource, resource
 from dagster._annotations import public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._annotations import deprecated
 from pydantic import Field
 
 GET_REPO_ID_QUERY = """
@@ -101,6 +102,7 @@ def to_seconds(dt: datetime) -> float:
     return (dt - datetime(1970, 1, 1)).total_seconds()
 
 
+@deprecated(breaking_version="1.11.0")
 class GithubClient:
     """A client for interacting with the GitHub API.
 
@@ -438,6 +440,7 @@ class GithubClient:
         return pull_request
 
 
+@deprecated(breaking_version="1.11.0")
 class GithubResource(ConfigurableResource):
     """A resource configuration class for GitHub integration.
 
@@ -504,6 +507,7 @@ class GithubResource(ConfigurableResource):
         )
 
 
+@deprecated(breaking_version="1.11.0")
 @dagster_maintained_resource
 @resource(
     config_schema=GithubResource.to_config_schema(),
