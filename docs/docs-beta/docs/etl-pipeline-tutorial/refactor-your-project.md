@@ -47,7 +47,7 @@ Assets make up a majority of our project and this will be our largest file.
 
 The schedules file will only contain the `weekly_update_schedule`.
 
-<CodeExample filePath="guides/tutorials/etl_tutorial_completed/etl_tutorial/schedules.py" language="python" lineStart="1" lineEnd="8"/>
+<CodeExample filePath="guides/tutorials/etl_tutorial_completed/etl_tutorial/schedules.py" language="python" />
 
 ### Sensors
 
