@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 30
 ---
 
-Now that we have the raw data loaded into DuckDB, we need to create a [downstream asset](/guides/build/create-asset-pipelines/assets-concepts/asset-dependencies) that combines the upstream assets together. In this step, you will:
+Now that we have the raw data loaded into DuckDB, we need to create a downstream asset that combines the upstream assets together. In this step, you will:
 
 - Create a downstream asset
 - Materialize that asset
