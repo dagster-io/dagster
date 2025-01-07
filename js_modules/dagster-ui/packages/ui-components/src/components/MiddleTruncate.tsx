@@ -19,7 +19,7 @@ interface Props {
  *
  * When the DOM element resizes, the measurement and calculation steps will occur again.
  */
-export const MiddleTruncate = ({text, showTitle = true}: Props) => {
+export const MiddleTruncate = React.memo(({text, showTitle = true}: Props) => {
   // An element that renders the full text into the container, for the purpose of
   // measuring the maximum available/necessary width for our truncated string.
   const measure = React.useRef<HTMLDivElement>(null);
@@ -60,7 +60,7 @@ export const MiddleTruncate = ({text, showTitle = true}: Props) => {
       <MeasureWidth ref={measure}>{text}</MeasureWidth>
     </Container>
   );
-};
+});
 
 // An invisible target element that contains the full, no-wrapped text. This is used
 // to measure the maximum available width for our truncated string.
