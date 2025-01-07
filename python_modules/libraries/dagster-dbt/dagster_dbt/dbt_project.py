@@ -122,7 +122,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         from dagster_dbt.core.resource import DbtCliResource
 
         (
-            DbtCliResource(project_dir=project)
+            DbtCliResource(project_dir=project, profiles_dir=os.getenv("DBT_PROFILES_DIR"))
             .cli(
                 self._generate_cli_args,
                 target_path=project.target_path,
