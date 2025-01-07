@@ -1,11 +1,4 @@
-import {
-  Box,
-  ButtonLink,
-  Checkbox,
-  Tag,
-  TokenizingFieldValue,
-  tokenToString,
-} from '@dagster-io/ui-components';
+import {Box, ButtonLink, Tag, TokenizingFieldValue, tokenToString} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -19,7 +12,6 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {RunsFeedView, RunsFilter} from '../graphql/types';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {RunsFeedError} from '../runs/RunsFeedError';
@@ -66,11 +58,6 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
     ].filter(Boolean) as TokenizingFieldValue[];
   }, [isJob, pipelineName, snapshotId]);
 
-  const [view, setView] = useQueryPersistedState<RunsFeedView>({
-    queryKey: 'view',
-    defaults: {view: RunsFeedView.ROOTS},
-  });
-
   const runsFilter: RunsFilter = useMemo(() => {
     const allTokens = [...filterTokens, ...permanentTokens];
     if (repoAddress) {
@@ -96,7 +83,7 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
   const {entries, paginationProps, queryResult} = useRunsFeedEntries({
     filter: runsFilter,
     skip: false,
-    view,
+    view: RunsFeedView.RUNS,
   });
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
@@ -115,13 +102,6 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
       padding={{right: 16}}
     >
       {button}
-      <Checkbox
-        label={<span>Show runs within backfills</span>}
-        checked={view === RunsFeedView.RUNS}
-        onChange={() => {
-          setView(view === RunsFeedView.RUNS ? RunsFeedView.ROOTS : RunsFeedView.RUNS);
-        }}
-      />
       <div style={{flex: 1}} />
       <QueryRefreshCountdown refreshState={refreshState} />
     </Box>
