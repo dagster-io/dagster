@@ -1,0 +1,61 @@
+# this docker compose file creates a mini Spark cluster with 1 master and 2 workers to simulate a distributed environment
+
+volumes:
+    spark-logs:
+    spark-data:
+    minio-data:
+    dagster_home:
+
+networks:
+    spark:
+
+services:
+    minio:
+        image: bitnami/minio
+        ports:
+            - "9000:9000"
+            - "9001:9001"
+        environment:
+            MINIO_ROOT_USER: minio
+            MINIO_ROOT_PASSWORD: minio123
+            MINIO_DEFAULT_BUCKETS: "dagster-pipes:public"
+        volumes:
+            - minio-data:/data
+        networks:
+            - spark
+
+    dagster-dev:
+        develop:
+            watch:
+                - action: sync
+                  path: .
+                  target: /src
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command:
+            - "dagster"
+            - "dev"
+            - "-f"
+            - "/src/dagster_code.py"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "3000"
+        ports:
+            - "3000:3000"
+        volumes:
+            - spark-logs:/spark/logs
+            - spark-data:/spark/data
+            - dagster_home:/dagster_home
+        environment:
+            AWS_ACCESS_KEY_ID: minio
+            AWS_SECRET_ACCESS_KEY: minio123
+            AWS_ENDPOINT_URL: http://minio:9000
+            DAGSTER_PIPES_BUCKET: dagster-pipes
+
+        depends_on:
+            - minio
+
+        networks:
+            - spark
