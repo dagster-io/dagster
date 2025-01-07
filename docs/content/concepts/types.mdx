@@ -27,7 +27,7 @@ The type system:
 
 - Happens at op execution time - each type defines a `type_check_fn` that knows how to check whether values match what it expects. When a type is specified for a op's input, then the type check occurs immediately before the op is executed. When a type is specified for a op's output, then the type check occurs immediately after the op is executed.
 
-- Is complimentary to the [PEP 484](https://www.python.org/dev/peps/pep-0484/) Python type system. PEP 484 annotations enable static checks that verify variables and return values match particular Python types, while the Dagster type system enables runtime checks that include arbitrary validation logic.
+- Is complementary to the [PEP 484](https://www.python.org/dev/peps/pep-0484/) Python type system. PEP 484 annotations enable static checks that verify variables and return values match particular Python types, while the Dagster type system enables runtime checks that include arbitrary validation logic.
 
 ### DagsterTypes vs Python Types (mypy type-checking)
 
