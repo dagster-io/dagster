@@ -12,18 +12,12 @@ from typing import (
     TypeVar,
 )
 
-import dagster._check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.selector import RepositorySelector
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import (
-        RemoteRepositoryAssetNode,
-        RemoteWorkspaceAssetGraph,
-    )
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
 
 @whitelist_for_serdes
@@ -93,51 +87,16 @@ class AssetGraphDiffer:
     we will consider every asset New.
     """
 
-    _repo_selector: "RepositorySelector"
-    _branch_asset_graph: "RemoteWorkspaceAssetGraph"
-    _base_asset_graph: "RemoteWorkspaceAssetGraph"
+    _branch_asset_graph: "RemoteAssetGraph"
+    _base_asset_graph: Optional["RemoteAssetGraph"]
 
     def __init__(
         self,
-        repo_selector: RepositorySelector,
-        branch_asset_graph: "RemoteWorkspaceAssetGraph",
-        base_asset_graph: "RemoteWorkspaceAssetGraph",
+        branch_asset_graph: "RemoteAssetGraph",
+        base_asset_graph: Optional["RemoteAssetGraph"],
     ):
-        self._repo_selector = repo_selector
         self._branch_asset_graph = branch_asset_graph
         self._base_asset_graph = base_asset_graph
-
-    @classmethod
-    def from_remote_repositories(
-        cls,
-        code_location_name: str,
-        repository_name: str,
-        branch_workspace: BaseWorkspaceRequestContext,
-        base_workspace: BaseWorkspaceRequestContext,
-    ) -> "AssetGraphDiffer":
-        """Constructs an AssetGraphDiffer for a particular repository in a code location for two
-        deployment workspaces, the base deployment and the branch deployment.
-
-        """
-        check.inst_param(branch_workspace, "branch_workspace", BaseWorkspaceRequestContext)
-        check.inst_param(base_workspace, "base_workspace", BaseWorkspaceRequestContext)
-
-        return AssetGraphDiffer(
-            repo_selector=RepositorySelector(
-                location_name=code_location_name,
-                repository_name=repository_name,
-            ),
-            branch_asset_graph=branch_workspace.asset_graph,
-            base_asset_graph=base_workspace.asset_graph,
-        )
-
-    def _get_repo_scoped_asset_node(
-        self, asset_graph: "RemoteWorkspaceAssetGraph", asset_key: "AssetKey"
-    ) -> Optional["RemoteRepositoryAssetNode"]:
-        if not asset_graph.has(asset_key):
-            return None
-        workspace_asset_node = asset_graph.get(asset_key)
-        return workspace_asset_node.get_repo_scoped_node(self._repo_selector)
 
     def _compare_base_and_branch_assets(
         self, asset_key: "AssetKey", include_diff: bool = False
@@ -145,20 +104,21 @@ class AssetGraphDiffer:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
         """
-        if self._base_asset_graph is None:
+        if not self._base_asset_graph or not self._base_asset_graph.has(asset_key):
             # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
             return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
 
-        base_asset = self._get_repo_scoped_asset_node(self._base_asset_graph, asset_key)
-
-        if not base_asset:
-            return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
-
-        branch_asset = self._get_repo_scoped_asset_node(self._branch_asset_graph, asset_key)
-
-        if not branch_asset:
+        if not self._branch_asset_graph.has(asset_key):
             return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.REMOVED})
+
+        base_asset = self._base_asset_graph.get(asset_key).resolve_to_singular_repo_scoped_node()
+
+        # This may not detect the case where an asset is moved from one repository or code location
+        # to another as a change.
+        branch_asset = self._branch_asset_graph.get(
+            asset_key
+        ).resolve_to_singular_repo_scoped_node()
 
         change_types: Set[AssetDefinitionChangeType] = set()
         code_version_diff: Optional[ValueDiff] = None

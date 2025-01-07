@@ -393,11 +393,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         if base_deployment_context is None:
             return None
 
-        self._asset_graph_differ = AssetGraphDiffer.from_remote_repositories(
-            code_location_name=self._repository_selector.location_name,
-            repository_name=self._repository_selector.repository_name,
-            branch_workspace=graphene_info.context,
-            base_workspace=base_deployment_context,
+        self._asset_graph_differ = AssetGraphDiffer(
+            branch_asset_graph=graphene_info.context.asset_graph,
+            base_asset_graph=base_deployment_context.asset_graph,
         )
         return self._asset_graph_differ
 

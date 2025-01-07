@@ -14,9 +14,6 @@ from dagster._core.definitions.asset_graph_differ import (
     ValueDiff,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.repository_definition.valid_definitions import (
-    SINGLETON_REPOSITORY_NAME,
-)
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -109,11 +106,9 @@ def get_asset_graph_differ(
         instance, {code_location: "base_asset_graph" for code_location in base_code_locations}
     )
 
-    return AssetGraphDiffer.from_remote_repositories(
-        code_location_name=code_location_to_diff,
-        repository_name=SINGLETON_REPOSITORY_NAME,
-        branch_workspace=branch_workspace_ctx,
-        base_workspace=base_workspace_ctx,
+    return AssetGraphDiffer(
+        branch_asset_graph=branch_workspace_ctx.asset_graph,
+        base_asset_graph=base_workspace_ctx.asset_graph,
     )
 
 

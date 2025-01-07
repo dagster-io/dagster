@@ -49,7 +49,6 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.selector import RepositorySelector
     from dagster._core.remote_representation.external_data import AssetCheckNodeSnap, AssetNodeSnap
 
 
@@ -312,19 +311,6 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         return self._materializable_node_snap.backfill_policy if self.is_materializable else None
-
-    def get_repo_scoped_node(
-        self,
-        repo_selector: "RepositorySelector",
-    ) -> Optional[RemoteRepositoryAssetNode]:
-        return next(
-            (
-                info.asset_node
-                for info in self.repo_scoped_asset_infos
-                if info.asset_node.repository_handle.to_selector() == repo_selector
-            ),
-            None,
-        )
 
     ##### REMOTE-SPECIFIC INTERFACE
     @cached_method
