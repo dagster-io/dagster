@@ -8,21 +8,20 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import TemplatedValueResolver, component_type
-from dagster_components.core.component_rendering import RenderedModel
-from dagster_components.core.dsl_schema import AssetAttributes, AssetSpecProcessor, OpSpecBaseModel
+from dagster_components.core.component import TemplatedValueRenderer, component_type
+from dagster_components.core.dsl_schema import (
+    AssetAttributes,
+    AssetAttributesModel,
+    AssetSpecProcessor,
+    OpSpecBaseModel,
+)
 from dagster_components.lib.dbt_project.generator import DbtProjectComponentGenerator
-
-
-class DbtNodeTranslatorParams(RenderedModel):
-    key: Optional[str] = None
-    group: Optional[str] = None
 
 
 class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
-    translator: Optional[DbtNodeTranslatorParams] = None
+    translator: Optional[AssetAttributesModel] = None
     asset_attributes: Optional[AssetAttributes] = None
 
 
@@ -30,28 +29,37 @@ class DbtProjectComponentTranslator(DagsterDbtTranslator):
     def __init__(
         self,
         *,
-        value_resolver: TemplatedValueResolver,
-        translator_params: Optional[DbtNodeTranslatorParams] = None,
+        params: Optional[AssetAttributesModel],
+        value_renderer: TemplatedValueRenderer,
     ):
-        self.value_resolver = value_resolver
-        self.translator_params = translator_params
+        self.params = params or AssetAttributesModel()
+        self.value_renderer = value_renderer
 
-    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        if not self.translator_params or not self.translator_params.key:
-            return super().get_asset_key(dbt_resource_props)
-
-        return AssetKey.from_user_string(
-            self.value_resolver.with_context(node=dbt_resource_props).render_obj(
-                self.translator_params.key
-            )
+    def _get_rendered_attribute(
+        self, attribute: str, dbt_resource_props: Mapping[str, Any], default_method
+    ) -> Any:
+        renderer = self.value_renderer.with_context(node=dbt_resource_props)
+        rendered_attribute = self.params.render_properties(renderer).get(attribute)
+        return (
+            rendered_attribute
+            if rendered_attribute is not None
+            else default_method(dbt_resource_props)
         )
 
-    def get_group_name(self, dbt_resource_props) -> Optional[str]:
-        if not self.translator_params or not self.translator_params.group:
-            return super().get_group_name(dbt_resource_props)
+    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
+        return self._get_rendered_attribute("key", dbt_resource_props, super().get_asset_key)
 
-        return self.value_resolver.with_context(node=dbt_resource_props).render_obj(
-            self.translator_params.group
+    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+        return self._get_rendered_attribute(
+            "group_name", dbt_resource_props, super().get_group_name
+        )
+
+    def get_tags(self, dbt_resource_props):
+        return self._get_rendered_attribute("tags", dbt_resource_props, super().get_tags)
+
+    def get_automation_condition(self, dbt_resource_props):
+        return self._get_rendered_attribute(
+            "automation_condition", dbt_resource_props, super().get_automation_condition
         )
 
 
@@ -83,8 +91,8 @@ class DbtProjectComponent(Component):
             dbt_resource=loaded_params.dbt,
             op_spec=loaded_params.op,
             dbt_translator=DbtProjectComponentTranslator(
-                translator_params=loaded_params.translator,
-                value_resolver=context.templated_value_resolver,
+                params=loaded_params.translator,
+                value_renderer=context.templated_value_renderer,
             ),
             asset_processors=loaded_params.asset_attributes or [],
         )
@@ -105,7 +113,7 @@ class DbtProjectComponent(Component):
 
         defs = Definitions(assets=[_fn])
         for transform in self.asset_processors:
-            defs = transform.apply(defs, context.templated_value_resolver)
+            defs = transform.apply(defs, context.templated_value_renderer)
         return defs
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:

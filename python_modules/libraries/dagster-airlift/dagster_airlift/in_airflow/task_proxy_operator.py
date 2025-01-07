@@ -151,7 +151,8 @@ def matched_dag_id_task_id(asset_node: Mapping[str, Any], dag_id: str, task_id: 
         if entry["__typename"] == "JsonMetadataEntry"
     }
 
-    if mapping_entry := json_metadata_entries.get(TASK_MAPPING_METADATA_KEY):
+    mapping_entry = json_metadata_entries.get(TASK_MAPPING_METADATA_KEY)
+    if mapping_entry:
         task_handle_dict_list = json.loads(mapping_entry)
         for task_handle_dict in task_handle_dict_list:
             if task_handle_dict["dag_id"] == dag_id and task_handle_dict["task_id"] == task_id:

@@ -37,6 +37,7 @@ AVAILABLE_EXAMPLES = [
     "feature_graph_backed_assets",
     "getting_started_etl_tutorial",
     "project_analytics",
+    "project_ask_ai_dagster",
     "project_atproto_dashboard",
     "project_dagster_modal_pipes",
     "project_dagster_university_start",
