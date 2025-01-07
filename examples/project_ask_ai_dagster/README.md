@@ -27,9 +27,9 @@ This project implements a support bot using Retrieval-Augmented Generation (RAG)
 
 ## Environment variables
 
-For the pipeline to be able to pull releases information from Github, you'll need inform it of your Github credentials, via environment variables:
+For the pipeline to be able to pull issues and discussions from GitHub, you'll need set your GitHub credentials, and to store data in Pinecone, you will need to set your API key. This is done through environment variables:
 OPENAI_API_KEY=[Instructions](https://platform.openai.com/docs/quickstart)
-DOCS_SITEMAP=This is left as an excersize to the reader
+DOCS_SITEMAP=[Docs Sitemap](https://docs.dagster.io/sitemap.xml)
 PINECONE_API_KEY=[Instructions](https://docs.pinecone.io/guides/get-started/quickstart)
 GITHUB_TOKEN=[Instructions](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
 
@@ -37,15 +37,15 @@ GITHUB_TOKEN=[Instructions](https://docs.github.com/en/authentication/keeping-yo
 
 The ingestion pipeline handles:
 
-Document loading
-Text splitting
-Embedding generation
-Vector storage in Pinecone
+* Document loading
+* Text splitting
+* Embedding generation
+* Vector storage in Pinecone
 
 ## Retrieval Pipeline
 
 The retrieval pipeline manages:
 
-Query embedding
-Semantic search in Pinecone
-Response generation with OpenAI
+* Query embedding
+* Semantic search in Pinecone
+* Response generation with OpenAI

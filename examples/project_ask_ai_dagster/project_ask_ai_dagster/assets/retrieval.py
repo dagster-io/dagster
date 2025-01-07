@@ -15,7 +15,7 @@ class AskAI(dg.Config):
 
 @dg.asset(
     deps=[github_issues_embeddings, github_discussions_embeddings, docs_embedding],
-    kinds={"Pinecone", "OpenAI"},
+    kinds={"pinecone", "openai"},
     group_name="retrieval",
     description="""A Retrieval-Augmented Generation (RAG) asset that answers Dagster-related questions using embedded documentation and GitHub content.
 

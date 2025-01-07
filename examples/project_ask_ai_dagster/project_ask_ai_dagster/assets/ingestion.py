@@ -51,8 +51,7 @@ def github_issues_raw(
         start_date=start.strftime("%Y-%m-%d"), end_date=end.strftime("%Y-%m-%d")
     )
 
-    issue_docs = github.convert_issues_to_documents(issues)
-    return issue_docs
+    return github.convert_issues_to_documents(issues)
 
 
 @dg.asset(
@@ -105,7 +104,7 @@ def github_issues_embeddings(
             for item in client.embeddings.create(model="text-embedding-3-small", input=texts).data
         ]
     # Prepare metadata
-    metadatas = [
+    metadata = [
         {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
         for doc in github_issues_raw
     ]
@@ -115,7 +114,7 @@ def github_issues_embeddings(
         vectors=zip(
             [str(i) for i in range(len(texts))],  # IDs
             embeddings,
-            metadatas,
+            metadata,
         ),
         **namespace_kwargs,  # Include namespace parameters
     )
@@ -161,8 +160,7 @@ def github_discussions_raw(
         start_date=start.strftime("%Y-%m-%d"), end_date=end.strftime("%Y-%m-%d")
     )
 
-    discussion_docs = github.convert_discussions_to_documents(discussions)
-    return discussion_docs
+    return github.convert_discussions_to_documents(discussions)
 
 
 @dg.asset(
@@ -224,7 +222,7 @@ def github_discussions_embeddings(
             time.sleep(1)
 
     # Prepare metadata
-    metadatas = [
+    metadata = [
         {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
         for doc in github_discussions_raw
     ]
@@ -234,7 +232,7 @@ def github_discussions_embeddings(
         vectors=zip(
             [str(i) for i in range(len(all_texts))],
             all_embeddings,
-            metadatas,
+            metadata,
         ),
         **namespace_kwargs,
     )
