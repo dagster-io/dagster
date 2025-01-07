@@ -215,4 +215,5 @@ def test_resources(
             expected_datetime,
             TickStatus.SUCCESS,
             expected_run_ids=[run.run_id],
+            expected_timestamp=freeze_datetime.timestamp(),
         )

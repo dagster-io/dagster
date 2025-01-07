@@ -635,7 +635,8 @@ def launch_scheduled_runs_for_schedule_iterator(
         schedule_timestamp = schedule_time.timestamp()
         schedule_time_str = schedule_time.strftime(default_date_format_string())
 
-        consecutive_failure_count = 0
+        failure_count = 0  # how many times this particular scheduled execution time has failed
+        consecutive_failure_count = 0  # how many consecutive ticks have failed
         if latest_tick and latest_tick.status in {TickStatus.FAILURE, TickStatus.STARTED}:
             consecutive_failure_count = (
                 latest_tick.consecutive_failure_count or latest_tick.failure_count
@@ -656,7 +657,10 @@ def launch_scheduled_runs_for_schedule_iterator(
                 and latest_tick.status == TickStatus.FAILURE
                 and latest_tick.scheduled_execution_time == schedule_timestamp
             ):
-                logger.info(f"Retrying failed schedule execution at {schedule_time_str}")
+                failure_count = latest_tick.failure_count
+                logger.info(
+                    f"Retrying failed schedule execution at {schedule_time_str} with failure count {failure_count}"
+                )
 
             tick = instance.create_tick(
                 TickData(
@@ -667,6 +671,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                     timestamp=now_timestamp,
                     selector_id=remote_schedule.selector_id,
                     consecutive_failure_count=consecutive_failure_count,
+                    failure_count=failure_count,
                     scheduled_execution_time=schedule_timestamp,
                 )
             )
