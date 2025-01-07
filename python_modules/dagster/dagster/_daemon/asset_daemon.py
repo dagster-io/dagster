@@ -785,6 +785,8 @@ class AssetDaemon(DagsterDaemon):
                 # or crashed partway through execution and needs to be resumed
                 # Don't resume very old ticks though in case the daemon crashed for a long time and
                 # then restarted
+
+                # TODO - add check here if the interrupted bool was set? don't retry if the tick was manually iterrupted
                 if can_resume and previous_cursor_written:
                     if latest_tick.status == TickStatus.STARTED:
                         self._logger.warn(
@@ -1015,6 +1017,7 @@ class AssetDaemon(DagsterDaemon):
             reserved_run_ids=reserved_run_ids,
             debug_crash_flags=debug_crash_flags,
             submit_threadpool_executor=submit_threadpool_executor,
+            remote_sensor=sensor,
         )
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
@@ -1098,12 +1101,48 @@ class AssetDaemon(DagsterDaemon):
         reserved_run_ids: Sequence[str],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
+        remote_sensor: Optional[RemoteSensor],
     ):
         updated_evaluation_keys = set()
         run_request_execution_data_cache = {}
 
         check.invariant(len(run_requests) == len(reserved_run_ids))
-        to_submit = zip(range(len(run_requests)), reserved_run_ids, run_requests)
+        to_submit = list(
+            zip(range(len(run_requests)), reserved_run_ids, run_requests)
+        )  # TODO see if i can do the batched iteration on an iterable....
+
+        def submit_run_request_batch(
+            run_id_with_run_request_batch: Sequence[Tuple[int, str, RunRequest]],
+        ) -> Optional[Sequence[Tuple[str, AbstractSet[EntityKey]]]]:
+            # check if the sensor is still enabled:
+            if remote_sensor:
+                all_sensor_states = {
+                    sensor_state.selector_id: sensor_state
+                    for sensor_state in instance.all_instigator_state(
+                        instigator_type=InstigatorType.SENSOR
+                    )
+                }
+                if not remote_sensor.get_current_instigator_state(
+                    all_sensor_states.get(remote_sensor.selector_id)
+                ).is_running:
+                    return
+
+            # if so then submit the run requests
+            results = []
+            for i, run_id, run_request in run_id_with_run_request_batch:
+                results.append(
+                    self._submit_run_request(
+                        i=i,
+                        instance=instance,
+                        run_request=run_request,
+                        reserved_run_id=run_id,
+                        evaluation_id=evaluation_id,
+                        run_request_execution_data_cache=run_request_execution_data_cache,
+                        workspace_process_context=workspace_process_context,
+                        debug_crash_flags=debug_crash_flags,
+                    )
+                )
+            return results
 
         def submit_run_request(
             run_id_with_run_request: Tuple[int, str, RunRequest],
@@ -1120,14 +1159,30 @@ class AssetDaemon(DagsterDaemon):
                 debug_crash_flags=debug_crash_flags,
             )
 
-        if submit_threadpool_executor:
-            gen_run_request_results = submit_threadpool_executor.map(submit_run_request, to_submit)
-        else:
-            gen_run_request_results = map(submit_run_request, to_submit)
+        batch_size = 25
 
-        for submitted_run_id, entity_keys in gen_run_request_results:
+        batches = []
+        for i in range(0, len(to_submit), batch_size):
+            # TODO - double check the math here
+            batches.append(to_submit[i : i + batch_size])
+
+        if submit_threadpool_executor:
+            gen_run_request_results = submit_threadpool_executor.map(
+                submit_run_request_batch, batches
+            )
+        else:
+            gen_run_request_results = map(submit_run_request_batch, batches)
+
+        for run_request_result in gen_run_request_results:
+            if run_request_result is None:
+                # sensor is no longer running
+                # TODO - cleanup work
+                break  # maybe return
+
             # heartbeat after each submitted run
             yield
+
+            submitted_run_id, entity_keys = run_request_result
 
             tick_context.add_run_info(run_id=submitted_run_id)
 
@@ -1152,6 +1207,7 @@ class AssetDaemon(DagsterDaemon):
 
         check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
 
+        # TODO - need to make sure not to update the tick state if the iteration is interrupted
         tick_context.update_state(
             TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
         )
