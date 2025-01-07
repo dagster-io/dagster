@@ -116,6 +116,7 @@ class AutomationConditionSensorDefinition(SensorDefinition):
                 sensors=[
                     dg.AutomationConditionSensorDefinition(
                         name="automation_condition_sensor",
+                        target=dg.AssetSelection.all(),
                         default_status=dg.DefaultSensorStatus.RUNNING,
                     ),
                 ]
