@@ -235,7 +235,8 @@ class BaseDagsterAssetsOperator(BaseOperator, ABC):
     def wait_for_run_to_complete(
         self, session: requests.Session, dagster_url: str, run_id: str
     ) -> DagsterRunResult:
-        while response := self.get_dagster_run_obj(session, dagster_url, run_id):
+        while True:
+            response = self.get_dagster_run_obj(session, dagster_url, run_id)
             status = response["status"]
             if status in ["SUCCESS", "FAILURE", "CANCELED"]:
                 break
