@@ -143,7 +143,7 @@ Dagster can automatically attach code references to assets during local developm
 
 ### Customizing code references \{#custom-references}
 
-If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/assets/creating-dsls-with-asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
+If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/assets/creating-asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
 
 <CodeExample filePath="guides/data-modeling/metadata/custom-local-references.py" language="python" />
 

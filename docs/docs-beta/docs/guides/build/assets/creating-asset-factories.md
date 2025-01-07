@@ -15,7 +15,7 @@ The asset factory pattern can solve both of these problems.
 :::note
 
 This article assumes familiarity with:
-  - [Assets](/guides/build/assets/defining-data-assets)
+  - [Assets](/guides/build/assets/defining-assets)
   - [Resources](/guides/build/external-resources-and-systems/connect/resources)
   - SQL, YAML, and Amazon Web Services (AWS) S3
   - [Pydantic](https://docs.pydantic.dev/latest/) and [Jinja2](https://jinja.palletsprojects.com/en/3.1.x/)

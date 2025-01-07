@@ -16,7 +16,7 @@ This guide walks through all three methods.
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/defining-data-assets) and[resources](/guides/build/external-resources-and-systems/connect/resources)
+This article assumes familiarity with [assets](/guides/build/assets/defining-assets) and[resources](/guides/build/external-resources-and-systems/connect/resources)
 
 :::
 

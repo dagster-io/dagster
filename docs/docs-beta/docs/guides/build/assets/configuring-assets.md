@@ -9,7 +9,7 @@ You'll often want to be able to adjust parameters when materializing assets, whi
 
 :::note
 
-This article assume familiarity with [assets](/guides/build/assets/defining-data-assets) and [Pydantic](https://docs.pydantic.dev/latest/).
+This article assume familiarity with [assets](/guides/build/assets/defining-assets) and [Pydantic](https://docs.pydantic.dev/latest/).
 
 :::
 

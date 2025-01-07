@@ -70,4 +70,4 @@ If you encounter any issues during the installation process:
 ## Next steps
 
 - Get up and running with your first Dagster project in the [Quickstart](/getting-started/quickstart)
-- Learn to [create data assets in Dagster](/guides/build/assets/defining-data-assets)
+- Learn to [create data assets in Dagster](/guides/build/assets/defining-assets)

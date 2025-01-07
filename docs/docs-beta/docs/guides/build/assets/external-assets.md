@@ -17,7 +17,7 @@ For example, external assets could be:
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/defining-data-assets) and [sensors](/guides/automate/sensors).
+This article assumes familiarity with [assets](/guides/build/assets/defining-assets) and [sensors](/guides/automate/sensors).
 
 :::
 
