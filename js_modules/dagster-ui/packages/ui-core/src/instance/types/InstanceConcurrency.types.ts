@@ -8,7 +8,7 @@ export type ConcurrencyStepFragment = {
   stepKey: string;
   enqueuedTimestamp: number;
   assignedTimestamp: number | null;
-  priority: any | null;
+  priority: number | null;
 };
 
 export type ConcurrencyLimitFragment = {
@@ -22,7 +22,7 @@ export type ConcurrencyLimitFragment = {
     stepKey: string;
     enqueuedTimestamp: number;
     assignedTimestamp: number | null;
-    priority: any | null;
+    priority: number | null;
   }>;
 };
 
@@ -96,7 +96,7 @@ export type ConcurrencyKeyDetailsQuery = {
         stepKey: string;
         enqueuedTimestamp: number;
         assignedTimestamp: number | null;
-        priority: any | null;
+        priority: number | null;
       }>;
     };
   };

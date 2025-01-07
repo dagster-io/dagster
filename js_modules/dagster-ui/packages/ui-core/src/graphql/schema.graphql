@@ -931,12 +931,10 @@ type AssetCheckEvaluation {
 }
 
 type AssetCheckEvaluationTargetMaterializationData {
-  storageId: BigInt!
+  storageId: ID!
   runId: String!
   timestamp: Float!
 }
-
-scalar BigInt
 
 enum AssetCheckSeverity {
   WARN
@@ -2510,7 +2508,7 @@ type PendingConcurrencyStep {
   stepKey: String!
   enqueuedTimestamp: Float!
   assignedTimestamp: Float
-  priority: BigInt
+  priority: Int
 }
 
 type RunLauncher {

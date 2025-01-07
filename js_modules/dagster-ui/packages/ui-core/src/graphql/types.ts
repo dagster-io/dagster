@@ -16,7 +16,6 @@ export type Scalars = {
   Boolean: {input: boolean; output: boolean};
   Int: {input: number; output: number};
   Float: {input: number; output: number};
-  BigInt: {input: any; output: any};
   Cursor: {input: any; output: any};
   GenericScalar: {input: any; output: any};
   RunConfigData: {input: any; output: any};
@@ -224,7 +223,7 @@ export type AssetCheckEvaluationPlannedEvent = MessageEvent &
 export type AssetCheckEvaluationTargetMaterializationData = {
   __typename: 'AssetCheckEvaluationTargetMaterializationData';
   runId: Scalars['String']['output'];
-  storageId: Scalars['BigInt']['output'];
+  storageId: Scalars['ID']['output'];
   timestamp: Scalars['Float']['output'];
 };
 
@@ -3376,7 +3375,7 @@ export type PendingConcurrencyStep = {
   __typename: 'PendingConcurrencyStep';
   assignedTimestamp: Maybe<Scalars['Float']['output']>;
   enqueuedTimestamp: Scalars['Float']['output'];
-  priority: Maybe<Scalars['BigInt']['output']>;
+  priority: Maybe<Scalars['Int']['output']>;
   runId: Scalars['String']['output'];
   stepKey: Scalars['String']['output'];
 };
@@ -6135,7 +6134,9 @@ export const buildAssetCheckEvaluationTargetMaterializationData = (
     __typename: 'AssetCheckEvaluationTargetMaterializationData',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'exercitationem',
     storageId:
-      overrides && overrides.hasOwnProperty('storageId') ? overrides.storageId! : 'voluptas',
+      overrides && overrides.hasOwnProperty('storageId')
+        ? overrides.storageId!
+        : '48345232-8586-483c-9958-ca65cb4208cd',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 3.87,
   };
 };
@@ -11489,7 +11490,7 @@ export const buildPendingConcurrencyStep = (
       overrides && overrides.hasOwnProperty('enqueuedTimestamp')
         ? overrides.enqueuedTimestamp!
         : 1.74,
-    priority: overrides && overrides.hasOwnProperty('priority') ? overrides.priority! : 'rerum',
+    priority: overrides && overrides.hasOwnProperty('priority') ? overrides.priority! : 8863,
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'facere',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'fuga',
   };
