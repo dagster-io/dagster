@@ -931,7 +931,7 @@ type AssetCheckEvaluation {
 }
 
 type AssetCheckEvaluationTargetMaterializationData {
-  storageId: Int!
+  storageId: ID!
   runId: String!
   timestamp: Float!
 }
