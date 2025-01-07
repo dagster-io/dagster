@@ -2,6 +2,7 @@ import {Box, Checkbox, Colors, tokenToString} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
 import {useCallback, useMemo} from 'react';
 
+import {useQuery} from '../apollo-client';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
 import {RunsFeedTable} from './RunsFeedTable';
@@ -13,7 +14,7 @@ import {
   useQueryPersistedRunFilters,
   useRunsFilterInput,
 } from './RunsFilterInput';
-import {ScheduledRunList} from './ScheduledRunListRoot';
+import {SCHEDULED_RUNS_LIST_QUERY, ScheduledRunList} from './ScheduledRunListRoot';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {
   FIFTEEN_SECONDS,
@@ -26,6 +27,10 @@ import {RunsFeedView} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlert, useIsBackfillDaemonHealthy} from '../partitions/BackfillMessaging';
 import {Loading} from '../ui/Loading';
+import {
+  ScheduledRunsListQuery,
+  ScheduledRunsListQueryVariables,
+} from './types/ScheduledRunListRoot.types';
 
 const filters: RunFilterTokenType[] = [
   'tag',
@@ -43,6 +48,11 @@ export const RunsFeedRoot = () => {
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
+  const [statusTokens, nonStatusTokens] = useMemo(
+    () => partition(filterTokens, (token) => token.token === 'status'),
+    [filterTokens],
+  );
+
   const [view, setView] = useQueryPersistedState<RunsFeedView>({
     queryKey: 'view',
     defaults: {view: RunsFeedView.ROOTS},
@@ -50,11 +60,6 @@ export const RunsFeedRoot = () => {
 
   const currentTab = useSelectedRunsFeedTab(filterTokens, view);
   const currentTabSpecifiesStatuses = !['all', 'backfills'].includes(currentTab);
-
-  const [statusTokens, nonStatusTokens] = partition(
-    filterTokens,
-    (token) => token.token === 'status',
-  );
 
   const setFilterTokensWithStatus = useCallback(
     (tokens: RunFilterToken[]) => {
@@ -90,15 +95,25 @@ export const RunsFeedRoot = () => {
     enabledFilters: filters,
   });
 
-  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(filter, view);
+  const {tabs, queryResult: runQueryResult} = useRunsFeedTabs(currentTab, filter);
+  const isScheduled = currentTab === 'scheduled';
+  const isShowingViewOption = ['all', 'failed'].includes(currentTab);
 
-  const {entries, paginationProps, queryResult, scheduledQueryResult} = useRunsFeedEntries(
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries({
+    view: isShowingViewOption || currentTab === 'backfills' ? view : RunsFeedView.RUNS,
+    skip: isScheduled,
     filter,
-    currentTab,
-    view,
+  });
+
+  const scheduledQueryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
+    SCHEDULED_RUNS_LIST_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+      skip: !isScheduled,
+    },
   );
   const refreshState = useQueryRefreshAtInterval(
-    currentTab === 'scheduled' ? scheduledQueryResult : queryResult,
+    isScheduled ? scheduledQueryResult : queryResult,
     FIFTEEN_SECONDS,
   );
   const countRefreshState = useQueryRefreshAtInterval(runQueryResult, FIFTEEN_SECONDS);
@@ -108,8 +123,7 @@ export const RunsFeedRoot = () => {
   const actionBarComponents = (
     <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
       {button}
-
-      {['all', 'failed'].includes(currentTab) && (
+      {isShowingViewOption && (
         <Checkbox
           label={<span>Show runs within backfills</span>}
           checked={view === RunsFeedView.RUNS}
@@ -139,9 +153,7 @@ export const RunsFeedRoot = () => {
     if (currentTab === 'scheduled') {
       return (
         <Loading queryResult={scheduledQueryResult} allowStaleData>
-          {(result) => {
-            return <ScheduledRunList result={result} />;
-          }}
+          {(result) => <ScheduledRunList result={result} />}
         </Loading>
       );
     }

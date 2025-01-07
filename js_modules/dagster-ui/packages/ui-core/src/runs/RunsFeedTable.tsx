@@ -250,11 +250,11 @@ export const RunsFeedTableWithFilters = ({
   RunsFeedTableProps,
   'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags' | 'scroll'
 >) => {
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries({
+    view: includeRunsFromBackfills ? RunsFeedView.RUNS : RunsFeedView.ROOTS,
+    skip: false,
     filter,
-    'all',
-    includeRunsFromBackfills ? RunsFeedView.RUNS : RunsFeedView.ROOTS,
-  );
+  });
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   function content() {

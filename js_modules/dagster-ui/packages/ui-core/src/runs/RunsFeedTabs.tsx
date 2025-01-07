@@ -13,7 +13,9 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {AnchorButton} from '../ui/AnchorButton';
 import {TabLink} from '../ui/TabLink';
 
-const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) => {
+type SelectedTab = ReturnType<typeof useSelectedRunsFeedTab>;
+
+const getDocumentTitle = (selected: SelectedTab) => {
   switch (selected) {
     case 'all':
       return 'Runs | All';
@@ -32,7 +34,7 @@ const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsFeedTab>) =
   }
 };
 
-export const useRunsFeedTabs = (filter: RunsFilter = {}, view: RunsFeedView) => {
+export const useRunsFeedTabs = (selectedTab: SelectedTab, filter: RunsFilter = {}) => {
   const queryResult = useQuery<RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables>(
     RUN_FEED_TABS_COUNT_QUERY,
     {
@@ -57,7 +59,6 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, view: RunsFeedView) => 
   }, [countData]);
 
   const [filterTokens] = useQueryPersistedRunFilters();
-  const selectedTab = useSelectedRunsFeedTab(filterTokens, view);
 
   useDocumentTitle(getDocumentTitle(selectedTab));
 
@@ -82,11 +83,7 @@ export const useRunsFeedTabs = (filter: RunsFilter = {}, view: RunsFeedView) => 
         to={urlForStatus(Array.from(inProgressStatuses))}
       />
       <TabLink id="failed" title="Failed" to={urlForStatus(Array.from(failedStatuses))} />
-      <TabLink
-        id="scheduled"
-        title="Scheduled"
-        to={`/runs/scheduled?${view === RunsFeedView.RUNS ? 'view=RUNS' : ''}`}
-      />
+      <TabLink id="scheduled" title="Scheduled" to="/runs/scheduled" />
     </Tabs>
   );
 

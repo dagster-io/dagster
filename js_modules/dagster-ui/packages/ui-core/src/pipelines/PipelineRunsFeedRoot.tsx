@@ -93,7 +93,11 @@ export const PipelineRunsFeedRoot = (props: {repoAddress?: RepoAddress}) => {
     [filterTokens, setFilterTokens],
   );
 
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(runsFilter, 'all', view);
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries({
+    filter: runsFilter,
+    skip: false,
+    view,
+  });
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
