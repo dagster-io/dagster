@@ -5,9 +5,8 @@ from typing import Any, Optional
 import jwt
 import requests
 from dagster import ConfigurableResource, resource
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._annotations import deprecated
 from pydantic import Field
 
 GET_REPO_ID_QUERY = """
