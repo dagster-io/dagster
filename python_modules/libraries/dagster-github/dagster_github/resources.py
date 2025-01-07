@@ -101,7 +101,7 @@ def to_seconds(dt: datetime) -> float:
     return (dt - datetime(1970, 1, 1)).total_seconds()
 
 
-@deprecated(breaking_version="0.26")
+@deprecated(breaking_version="0.27")
 class GithubClient:
     """A client for interacting with the GitHub API.
 
@@ -439,7 +439,7 @@ class GithubClient:
         return pull_request
 
 
-@deprecated(breaking_version="0.26")
+@deprecated(breaking_version="0.27")
 class GithubResource(ConfigurableResource):
     """A resource configuration class for GitHub integration.
 
@@ -506,7 +506,7 @@ class GithubResource(ConfigurableResource):
         )
 
 
-@deprecated(breaking_version="0.26")
+@deprecated(breaking_version="0.27")
 @dagster_maintained_resource
 @resource(
     config_schema=GithubResource.to_config_schema(),
