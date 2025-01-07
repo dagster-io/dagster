@@ -11,9 +11,8 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import TemplatedValueRenderer, component_type
 from dagster_components.core.dsl_schema import (
-    AssetAttributes,
     AssetAttributesModel,
-    AssetSpecProcessor,
+    AssetSpecTransform,
     OpSpecBaseModel,
 )
 from dagster_components.lib.dbt_project.generator import DbtProjectComponentGenerator
@@ -23,7 +22,7 @@ class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
     translator: Optional[AssetAttributesModel] = None
-    asset_attributes: Optional[AssetAttributes] = None
+    transforms: Optional[Sequence[AssetSpecTransform]] = None
 
 
 class DbtProjectComponentTranslator(DagsterDbtTranslator):
@@ -71,12 +70,12 @@ class DbtProjectComponent(Component):
         dbt_resource: DbtCliResource,
         op_spec: Optional[OpSpecBaseModel],
         dbt_translator: Optional[DagsterDbtTranslator],
-        asset_processors: Sequence[AssetSpecProcessor],
+        transforms: Sequence[AssetSpecTransform],
     ):
         self.dbt_resource = dbt_resource
         self.op_spec = op_spec
         self.dbt_translator = dbt_translator
-        self.asset_processors = asset_processors
+        self.transforms = transforms
 
     @classmethod
     def get_generator(cls) -> "DbtProjectComponentGenerator":
@@ -97,7 +96,7 @@ class DbtProjectComponent(Component):
                 params=loaded_params.translator,
                 value_renderer=context.templated_value_renderer,
             ),
-            asset_processors=loaded_params.asset_attributes or [],
+            transforms=loaded_params.transforms or [],
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -115,7 +114,7 @@ class DbtProjectComponent(Component):
             yield from self.execute(context=context, dbt=self.dbt_resource)
 
         defs = Definitions(assets=[_fn])
-        for transform in self.asset_processors:
+        for transform in self.transforms:
             defs = transform.apply(defs, context.templated_value_renderer)
         return defs
 
