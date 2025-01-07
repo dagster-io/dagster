@@ -14,14 +14,16 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.events import AssetKey
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.remote_representation import RemoteRepository
+from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.remote_asset_graph import (
+        RemoteRepositoryAssetNode,
+        RemoteWorkspaceAssetGraph,
+    )
 
 
 @whitelist_for_serdes
@@ -83,18 +85,6 @@ class AssetDefinitionDiffDetails:
     metadata: Optional[DictDiff[str]] = None
 
 
-def _get_remote_repo_from_context(
-    context: BaseWorkspaceRequestContext, code_location_name: str, repository_name: str
-) -> Optional[RemoteRepository]:
-    """Returns the ExternalRepository specified by the code location name and repository name
-    for the provided workspace context. If the repository doesn't exist, return None.
-    """
-    if context.has_code_location(code_location_name):
-        cl = context.get_code_location(code_location_name)
-        if cl.has_repository(repository_name):
-            return cl.get_repository(repository_name)
-
-
 class AssetGraphDiffer:
     """Given two asset graphs, base_asset_graph and branch_asset_graph, we can compute how the
     assets in branch_asset_graph have changed with respect to base_asset_graph. The ChangeReason
@@ -103,14 +93,17 @@ class AssetGraphDiffer:
     we will consider every asset New.
     """
 
-    _branch_asset_graph: "RemoteAssetGraph"
-    _base_asset_graph: Optional["RemoteAssetGraph"]
+    _repo_selector: "RepositorySelector"
+    _branch_asset_graph: "RemoteWorkspaceAssetGraph"
+    _base_asset_graph: "RemoteWorkspaceAssetGraph"
 
     def __init__(
         self,
-        branch_asset_graph: "RemoteAssetGraph",
-        base_asset_graph: Optional["RemoteAssetGraph"] = None,
+        repo_selector: RepositorySelector,
+        branch_asset_graph: "RemoteWorkspaceAssetGraph",
+        base_asset_graph: "RemoteWorkspaceAssetGraph",
     ):
+        self._repo_selector = repo_selector
         self._branch_asset_graph = branch_asset_graph
         self._base_asset_graph = base_asset_graph
 
@@ -125,30 +118,26 @@ class AssetGraphDiffer:
         """Constructs an AssetGraphDiffer for a particular repository in a code location for two
         deployment workspaces, the base deployment and the branch deployment.
 
-        We cannot make RemoteAssetGraphs directly from the workspaces because if multiple code locations
-        use the same asset key, those asset keys will override each other in the dictionaries the RemoteAssetGraph
-        creates (see from_repository_handles_and_asset_node_snaps in RemoteAssetGraph). We need to ensure
-        that we are comparing assets in the same code location and repository, so we need to make the
-        RemoteAssetGraph from an ExternalRepository to ensure that there are no duplicate asset keys
-        that could override each other.
         """
         check.inst_param(branch_workspace, "branch_workspace", BaseWorkspaceRequestContext)
         check.inst_param(base_workspace, "base_workspace", BaseWorkspaceRequestContext)
 
-        branch_repo = _get_remote_repo_from_context(
-            branch_workspace, code_location_name, repository_name
-        )
-        if branch_repo is None:
-            raise DagsterInvariantViolationError(
-                f"Repository {repository_name} does not exist in code location {code_location_name} for the branch deployment."
-            )
-        base_repo = _get_remote_repo_from_context(
-            base_workspace, code_location_name, repository_name
-        )
         return AssetGraphDiffer(
-            branch_asset_graph=branch_repo.asset_graph,
-            base_asset_graph=base_repo.asset_graph if base_repo is not None else None,
+            repo_selector=RepositorySelector(
+                location_name=code_location_name,
+                repository_name=repository_name,
+            ),
+            branch_asset_graph=branch_workspace.asset_graph,
+            base_asset_graph=base_workspace.asset_graph,
         )
+
+    def _get_repo_scoped_asset_node(
+        self, asset_graph: "RemoteWorkspaceAssetGraph", asset_key: "AssetKey"
+    ) -> Optional["RemoteRepositoryAssetNode"]:
+        if not asset_graph.has(asset_key):
+            return None
+        workspace_asset_node = asset_graph.get(asset_key)
+        return workspace_asset_node.get_repo_scoped_node(self._repo_selector)
 
     def _compare_base_and_branch_assets(
         self, asset_key: "AssetKey", include_diff: bool = False
@@ -156,19 +145,20 @@ class AssetGraphDiffer:
         """Computes the diff between a branch deployment asset and the
         corresponding base deployment asset.
         """
-        if self.base_asset_graph is None:
+        if self._base_asset_graph is None:
             # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
             return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
 
-        if not self.base_asset_graph.has(asset_key):
+        base_asset = self._get_repo_scoped_asset_node(self._base_asset_graph, asset_key)
+
+        if not base_asset:
             return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.NEW})
 
-        if not self.branch_asset_graph.has(asset_key):
-            return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.REMOVED})
+        branch_asset = self._get_repo_scoped_asset_node(self._branch_asset_graph, asset_key)
 
-        branch_asset = self.branch_asset_graph.get(asset_key)
-        base_asset = self.base_asset_graph.get(asset_key)
+        if not branch_asset:
+            return AssetDefinitionDiffDetails(change_types={AssetDefinitionChangeType.REMOVED})
 
         change_types: Set[AssetDefinitionChangeType] = set()
         code_version_diff: Optional[ValueDiff] = None
@@ -196,15 +186,15 @@ class AssetGraphDiffer:
         else:
             # if the set of upstream dependencies is different, then we don't need to check if the partition mappings
             # for dependencies have changed since ChangeReason.DEPENDENCIES is already in the list of changes
-            for upstream_asset in branch_asset.parent_keys:
-                if self.branch_asset_graph.get_partition_mapping(
-                    asset_key, upstream_asset
-                ) != self.base_asset_graph.get_partition_mapping(asset_key, upstream_asset):
+            for upstream_asset_key in branch_asset.parent_keys:
+                if branch_asset.partition_mappings.get(
+                    upstream_asset_key
+                ) != base_asset.partition_mappings.get(upstream_asset_key):
                     change_types.add(AssetDefinitionChangeType.DEPENDENCIES)
                     if include_diff:
                         dependencies_diff = DictDiff(
                             added_keys=set(),
-                            changed_keys={upstream_asset},
+                            changed_keys={upstream_asset_key},
                             removed_keys=set(),
                         )
                     break
@@ -264,11 +254,3 @@ class AssetGraphDiffer:
     def get_changes_for_asset_with_diff(self, asset_key: "AssetKey") -> AssetDefinitionDiffDetails:
         """Returns list of AssetDefinitionDiff for asset_key as compared to the base deployment."""
         return self._compare_base_and_branch_assets(asset_key, include_diff=True)
-
-    @property
-    def branch_asset_graph(self) -> "RemoteAssetGraph":
-        return self._branch_asset_graph
-
-    @property
-    def base_asset_graph(self) -> Optional["RemoteAssetGraph"]:
-        return self._base_asset_graph

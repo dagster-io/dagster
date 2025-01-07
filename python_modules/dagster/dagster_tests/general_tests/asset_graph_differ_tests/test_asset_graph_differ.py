@@ -46,7 +46,7 @@ def _make_location_entry(scenario_name: str, definitions_file: str, instance: Da
         container_image=None,
         entry_point=None,
         container_context=None,
-        location_name=None,
+        location_name=scenario_name,
     )
 
     code_location = origin.create_location(instance)
