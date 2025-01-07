@@ -148,7 +148,7 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
     }
   });
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     window.requestAnimationFrame(evaluate);
   }, [evaluate]);
 
