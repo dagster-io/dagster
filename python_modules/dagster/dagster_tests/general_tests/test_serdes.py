@@ -1,10 +1,11 @@
 import dataclasses
+from io import BytesIO
 import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union
-
+from typing import AbstractSet, Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
+import msgpack
 import dagster._check as check
 import pydantic
 import pytest
@@ -20,7 +21,10 @@ from dagster._serdes.serdes import (
     SetToSequenceFieldSerializer,
     UnpackContext,
     WhitelistMap,
+    _root,
+    _transform_for_serialization,
     _whitelist_for_serdes,
+    _wrap_object,
     deserialize_value,
     get_prefix_for_a_serialized,
     get_storage_name,
@@ -28,6 +32,7 @@ from dagster._serdes.serdes import (
     serialize_value,
     unpack_value,
 )
+from dagster._serdes.msgpack import serialize_value_with_msgpack, deserialize_value_with_msgpack, deserialize_values_with_msgpack
 from dagster._serdes.utils import hash_str
 from dagster._utils.cached_method import cached_method
 
@@ -86,7 +91,6 @@ def test_descent_path():
     ):
         deserialize_value(ser, whitelist_map=blank_map)
 
-
 def test_forward_compat_serdes_new_field_with_default() -> None:
     test_map = WhitelistMap.create()
 
@@ -103,7 +107,7 @@ def test_forward_compat_serdes_new_field_with_default() -> None:
         return Quux("zip", "zow")
 
     orig = get_orig_obj()
-    serialized = serialize_value(orig, whitelist_map=test_map)
+    serialized = serialize_value_with_msgpack(orig, whitelist_map=test_map)
 
     test_map = WhitelistMap.create()
 
@@ -116,7 +120,7 @@ def test_forward_compat_serdes_new_field_with_default() -> None:
     serializer_v2 = test_map.object_serializers["Quux"]
     assert serializer_v2.klass is Quux
 
-    deserialized = deserialize_value(serialized, as_type=Quux, whitelist_map=test_map)
+    deserialized = deserialize_value_with_msgpack(serialized, as_type=Quux, whitelist_map=test_map)
 
     assert deserialized != orig
     assert deserialized.foo == orig.foo
@@ -449,6 +453,21 @@ def test_named_tuple() -> None:
     assert serialized.startswith(get_prefix_for_a_serialized(Foo, whitelist_map=test_map))
     deserialized = deserialize_value(serialized, whitelist_map=test_map)
     assert deserialized == val
+
+def test_deserialize_empty_set_msgpack():
+    assert set() == deserialize_value_with_msgpack(serialize_value_with_msgpack(set()))
+    assert frozenset() == deserialize_value_with_msgpack(serialize_value_with_msgpack(frozenset()))
+
+def test_named_tuple_msg_pack() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Foo(NamedTuple):
+        color: str
+
+    val = Foo("red")
+    serialized = serialize_value_with_msgpack(val, whitelist_map=test_map)
+    assert val == deserialize_value_with_msgpack(serialized, whitelist_map=test_map)
 
 
 # Ensures it is possible to simultaneously have a class Foo and a separate class that serializes to
