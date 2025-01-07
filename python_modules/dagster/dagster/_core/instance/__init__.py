@@ -3159,8 +3159,10 @@ class DagsterInstance(DynamicPartitionsStore):
         self._run_storage.update_backfill(partition_backfill)
 
     @public
+    @experimental
     def launch_backfill(
         self,
+        *,
         asset_graph: "BaseAssetGraph",
         asset_selection: Optional[Sequence[AssetKey]] = None,
         partitions_by_assets: Optional[Mapping[AssetKey, Optional[AbstractSet[str]]]] = None,
@@ -3381,8 +3383,8 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return result
 
-    @experimental
     @public
+    @experimental
     def report_runless_asset_event(
         self,
         asset_event: Union["AssetMaterialization", "AssetObservation", "AssetCheckEvaluation"],
