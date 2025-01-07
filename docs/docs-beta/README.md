@@ -27,11 +27,14 @@ For formatting guidelines, see the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 ## Installation
 
-The site uses [yarn](https://yarnpkg.com/) for package management.
+The site uses [yarn](https://yarnpkg.com/) for package management. Do not install yarn using `npm`.
+The latest instructions for installing yarn can be found [here](https://yarnpkg.com/getting-started/install).
 
-To install dependencies:
+This is a recommended setup:
 
 ```
+brew upgrade node
+corepack enable
 yarn install
 ```
 
