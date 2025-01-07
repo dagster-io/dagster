@@ -8,9 +8,11 @@ from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.core.component import ComponentGenerateRequest
 from dagster_components.core.component_decl_builder import YamlComponentDecl
-from dagster_components.generate import generate_component_yaml
+from dagster_components.core.component_generator import (
+    ComponentGenerator,
+    DefaultComponentGenerator,
+)
 
 if TYPE_CHECKING:
     from dagster_components.core.component import ComponentDeclNode
@@ -28,8 +30,8 @@ class SimpleAsset(Component):
     params_schema = SimpleAssetParams
 
     @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: SimpleAssetParams) -> None:
-        generate_component_yaml(request, params.model_dump())
+    def get_generator(cls) -> ComponentGenerator:
+        return DefaultComponentGenerator()
 
     @classmethod
     def from_decl_node(
