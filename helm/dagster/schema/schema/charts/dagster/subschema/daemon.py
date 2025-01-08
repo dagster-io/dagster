@@ -5,11 +5,7 @@ from pydantic import ConfigDict
 
 from schema.charts.dagster.subschema.config import IntSource
 from schema.charts.utils import kubernetes
-from schema.charts.utils.utils import (
-    BaseModel,
-    ConfigurableClass,
-    create_json_schema_conditionals,
-)
+from schema.charts.utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
 
 
 class RunCoordinatorType(str, Enum):
