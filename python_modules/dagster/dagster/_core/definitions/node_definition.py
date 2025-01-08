@@ -232,3 +232,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     def get_op_output_handles(
         self, parent: Optional["NodeHandle"]
     ) -> AbstractSet["NodeOutputHandle"]: ...
+
+    @property
+    @abstractmethod
+    def pools(self) -> set[str]: ...

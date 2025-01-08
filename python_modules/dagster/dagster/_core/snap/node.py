@@ -159,6 +159,7 @@ class GraphDefSnap:
     dep_structure_snapshot: DependencyStructureSnapshot
     input_mapping_snaps: Sequence[InputMappingSnap]
     output_mapping_snaps: Sequence[OutputMappingSnap]
+    pools: set[str]
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -281,6 +282,7 @@ def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
         dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(graph_def),
         input_mapping_snaps=list(map(build_input_mapping_snap, graph_def.input_mappings)),
         output_mapping_snaps=list(map(build_output_mapping_snap, graph_def.output_mappings)),
+        pools=graph_def.pools,
     )
 
 

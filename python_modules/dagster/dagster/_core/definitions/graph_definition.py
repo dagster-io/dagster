@@ -808,6 +808,13 @@ class GraphDefinition(NodeDefinition):
         """The tags associated with the graph."""
         return super().tags
 
+    @property
+    def pools(self) -> set[str]:
+        pools = set()
+        for node_def in self.node_defs:
+            pools.update(node_def.pools)
+        return pools
+
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
         """Aliases the graph with a new name.
