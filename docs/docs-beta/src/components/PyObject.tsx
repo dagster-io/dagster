@@ -40,12 +40,16 @@ export const PyObject: React.FunctionComponent<{
     textValue += '.' + method;
   }
 
-  // As we don't have access to the searchContext like we did in the Next.js version of docs, we
-  // will instead require the user to explicitly define the `.rst` location of the module / object
-  // via the `section` prop.
+  // Libraries are in a sub-folder, and the `href` will need to be structured slightly differently
   //
-  // For example: /api/python-api/assets#dagster.MaterializeResult
-  const href = `/api/python-api/${section}#${module}.${object}`;
+  //     /api/python-api/assets#dagster.asset
+  //     /api/python-api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeConnection
+  //
+  let href = `/api/python-api/${section}#${module}.${object}`;
+  if (section === 'libraries') {
+    const _package = module.replace('_', '-');
+    href = `/api/python-api/libraries/${_package}#${module}.${object}`;
+  }
 
   return (
     <Link href={href}>
