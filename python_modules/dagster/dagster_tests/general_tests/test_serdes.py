@@ -5,6 +5,8 @@ import string
 from collections import namedtuple
 from enum import Enum
 from typing import AbstractSet, Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.events import AssetMaterialization
 import msgpack
 import dagster._check as check
 import pydantic
@@ -458,7 +460,7 @@ def test_deserialize_empty_set_msgpack():
     assert set() == deserialize_value_with_msgpack(serialize_value_with_msgpack(set()))
     assert frozenset() == deserialize_value_with_msgpack(serialize_value_with_msgpack(frozenset()))
 
-def test_named_tuple_msg_pack() -> None:
+def test_named_tuple_msgpack() -> None:
     test_map = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=test_map)
@@ -468,6 +470,13 @@ def test_named_tuple_msg_pack() -> None:
     val = Foo("red")
     serialized = serialize_value_with_msgpack(val, whitelist_map=test_map)
     assert val == deserialize_value_with_msgpack(serialized, whitelist_map=test_map)
+
+
+def test_event_log_msgpack() -> None:
+    materialization = AssetMaterialization(AssetKey("a"))
+    serialized = serialize_value_with_msgpack(materialization)
+    print(serialized)
+    assert materialization == deserialize_value_with_msgpack(serialized)
 
 
 # Ensures it is possible to simultaneously have a class Foo and a separate class that serializes to
