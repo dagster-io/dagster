@@ -389,6 +389,7 @@ class GrapheneRun(graphene.ObjectType):
     hasDeletePermission = graphene.NonNull(graphene.Boolean)
     hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
     rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
+    allConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
 
@@ -621,6 +622,12 @@ class GrapheneRun(graphene.ObjectType):
             return True
 
         return False
+
+    def resolve_allConcurrencyKeys(self, graphene_info: ResolveInfo):
+        if not self.dagster_run.run_op_concurrency:
+            return None
+
+        return list(self.dagster_run.run_op_concurrency.all_pools)
 
     def resolve_rootConcurrencyKeys(self, graphene_info: ResolveInfo):
         if not self.dagster_run.run_op_concurrency:
