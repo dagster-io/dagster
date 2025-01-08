@@ -319,13 +319,15 @@ class AssetRecordsFilter(
             before_cursor = (
                 before_cursor_storage_id
                 if before_cursor_storage_id
-                else int(self.before_storage_id)
+                else (int(self.before_storage_id) if self.before_storage_id else None)
             )
         if self.after_storage_id and after_cursor_storage_id:
             after_cursor = max(int(self.after_storage_id), after_cursor_storage_id)
         else:
             after_cursor = (
-                after_cursor_storage_id if after_cursor_storage_id else int(self.after_storage_id)
+                after_cursor_storage_id
+                if after_cursor_storage_id
+                else (int(self.after_storage_id) if self.after_storage_id else None)
             )
 
         return EventRecordsFilter(
@@ -415,13 +417,15 @@ class RunStatusChangeRecordsFilter(
             before_cursor = (
                 before_cursor_storage_id
                 if before_cursor_storage_id
-                else int(self.before_storage_id)
+                else (int(self.before_storage_id) if self.before_storage_id else None)
             )
         if self.after_storage_id and after_cursor_storage_id:
             after_cursor = max(int(self.after_storage_id), after_cursor_storage_id)
         else:
             after_cursor = (
-                after_cursor_storage_id if after_cursor_storage_id else int(self.after_storage_id)
+                after_cursor_storage_id
+                if after_cursor_storage_id
+                else (int(self.after_storage_id) if self.after_storage_id else None)
             )
 
         return EventRecordsFilter(
