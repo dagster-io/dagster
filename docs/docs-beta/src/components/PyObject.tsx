@@ -47,7 +47,7 @@ export const PyObject: React.FunctionComponent<{
   //
   let href = `/api/python-api/${section}#${module}.${object}`;
   if (section === 'libraries') {
-    const _package = module.replace('_', '-');
+    const _package = module.replace(/_/g, '-');
     href = `/api/python-api/libraries/${_package}#${module}.${object}`;
   }
 
