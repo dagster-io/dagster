@@ -241,7 +241,6 @@ class GrapheneAssetNode(graphene.ObjectType):
     backfillPolicy = graphene.Field(GrapheneBackfillPolicy)
     changedReasons = graphene.Field(non_null_list(GrapheneAssetChangedReason))
     computeKind = graphene.String()
-    pools = non_null_list(graphene.String)
     configField = graphene.Field(GrapheneConfigTypeField)
     dataVersion = graphene.Field(graphene.String(), partition=graphene.String())
     dataVersionByPartition = graphene.Field(
@@ -288,6 +287,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         startIdx=graphene.Int(),
         endIdx=graphene.Int(),
     )
+    pools = non_null_list(graphene.String)
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
     staleStatus = graphene.Field(GrapheneAssetStaleStatus, partition=graphene.String())
@@ -680,9 +680,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             get_config_type=_get_config_type,
             field_snap=node_def_snap.config_field_snap,
         )
-
-    def resolve_pools(self, _graphene_info: ResolveInfo) -> Sequence[str]:
-        return sorted([pool for pool in self._asset_node_snap.pools or set()])
 
     def resolve_computeKind(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._asset_node_snap.compute_kind
@@ -1218,6 +1215,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         if partitions_snap:
             return GraphenePartitionDefinition(partitions_snap)
         return None
+
+    def resolve_pools(self, _graphene_info: ResolveInfo) -> Sequence[str]:
+        return sorted([pool for pool in self._asset_node_snap.pools or set()])
 
     def resolve_repository(self, graphene_info: ResolveInfo) -> "GrapheneRepository":
         return external.GrapheneRepository(self._repository_handle)

@@ -634,7 +634,6 @@ type AssetNode {
   backfillPolicy: BackfillPolicy
   changedReasons: [ChangeReason!]!
   computeKind: String
-  pools: [String!]!
   configField: ConfigTypeField
   dataVersion(partition: String): String
   dataVersionByPartition(partitions: [String!]): [String]!
@@ -671,6 +670,7 @@ type AssetNode {
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
+  pools: [String!]!
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   staleStatus(partition: String): StaleStatus
@@ -3105,6 +3105,7 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
   id: ID!
   solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
@@ -3140,6 +3141,7 @@ interface ISolidDefinition {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
 }
 
 type Output {
@@ -3190,6 +3192,7 @@ type SolidDefinition implements ISolidDefinition {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
   configField: ConfigTypeField
   requiredResources: [ResourceRequirement!]!
   pool: String
