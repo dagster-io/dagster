@@ -374,7 +374,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 try:
                     event_record = deserialize_value(json_str, EventLogEntry)
                     event_records.append(
-                        EventLogRecord(storage_id=row_id, event_log_entry=event_record)
+                        EventLogRecord(storage_id=int(row_id), event_log_entry=event_record)
                     )
                     if limit and len(event_records) >= limit:
                         break

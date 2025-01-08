@@ -296,7 +296,7 @@ class SqlEventLogStorage(EventLogStorage):
                 {
                     "last_materialization": serialize_value(
                         EventLogRecord(
-                            storage_id=event_id,
+                            storage_id=int(event_id),
                             event_log_entry=event,
                         )
                     ),
@@ -541,7 +541,7 @@ class SqlEventLogStorage(EventLogStorage):
             ) in results:
                 records.append(
                     EventLogRecord(
-                        storage_id=record_id,
+                        storage_id=int(record_id),
                         event_log_entry=deserialize_value(json_str, EventLogEntry),
                     )
                 )
@@ -1010,7 +1010,7 @@ class SqlEventLogStorage(EventLogStorage):
                     continue
 
                 event_records.append(
-                    EventLogRecord(storage_id=row_id, event_log_entry=event_record)
+                    EventLogRecord(storage_id=int(row_id), event_log_entry=event_record)
                 )
             except seven.JSONDecodeError:
                 logging.warning("Could not parse event record id `%s`.", row_id)
