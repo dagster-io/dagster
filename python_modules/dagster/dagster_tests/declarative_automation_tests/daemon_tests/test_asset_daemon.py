@@ -73,6 +73,11 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state im
     ScenarioSpec,
     get_code_location_origin,
 )
+from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
+    hour_partition_key,
+    hourly_to_daily,
+    time_partitions_start_str,
+)
 
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
     hour_partition_key,

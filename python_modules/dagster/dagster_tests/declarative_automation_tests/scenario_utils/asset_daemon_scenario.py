@@ -1,8 +1,11 @@
+from unittest import mock
 import dataclasses
 import itertools
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Callable, NamedTuple, Optional, Sequence, Tuple, Type, cast
+
+from dagster._core.utils import InheritContextThreadPoolExecutor
 
 import dagster._check as check
 from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
@@ -53,6 +56,7 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state im
     ScenarioState,
     get_code_location_origin,
 )
+from time import sleep
 
 
 class AssetRuleEvaluationSpec(NamedTuple):
@@ -176,6 +180,7 @@ class AssetDaemonScenarioState(ScenarioState):
 
     def _evaluate_tick_daemon(
         self,
+        stop_mid_iteration: bool
     ) -> Tuple[
         Sequence[RunRequest],
         AssetDaemonCursor,
@@ -199,23 +204,38 @@ class AssetDaemonScenarioState(ScenarioState):
                 # start sensor if it hasn't started already
                 self.instance.start_sensor(sensor)
 
-            amp_tick_futures = {}
+            def _stop_sensor():
+                sleep(1)
+                if sensor and stop_mid_iteration:
+                    self.instance.stop_sensor(sensor.get_remote_origin_id(), sensor.selector_id, sensor)
 
-            list(
-                AssetDaemon(  # noqa: SLF001
-                    settings=self.instance.get_auto_materialize_settings(),
-                    pre_sensor_interval_seconds=42,
-                )._run_iteration_impl(
-                    workspace_context,
-                    threadpool_executor=self.threadpool_executor,
-                    amp_tick_futures=amp_tick_futures,
-                    debug_crash_flags={},
-                    submit_threadpool_executor=None,
-                    poll_interval=0, # check if the sensor was stopped after every run is submitted
+            def _run_daemon():
+                amp_tick_futures = {}
+
+                list(
+                    AssetDaemon(  # noqa: SLF001
+                        settings=self.instance.get_auto_materialize_settings(),
+                        pre_sensor_interval_seconds=42,
+                    )._run_iteration_impl(
+                        workspace_context,
+                        threadpool_executor=self.threadpool_executor,
+                        amp_tick_futures=amp_tick_futures,
+                        debug_crash_flags={},
+                        submit_threadpool_executor=None,
+                        poll_interval=0 # check the status of the sensor after every run submission
+                    )
                 )
-            )
 
-            wait_for_futures(amp_tick_futures)
+                wait_for_futures(amp_tick_futures)
+
+            test_futures = {}
+            sensor_controller_threadpool = InheritContextThreadPoolExecutor(
+                max_workers=2,
+                thread_name_prefix="unit_test_worker",
+            )
+            test_futures["daemon"] = sensor_controller_threadpool.submit(_run_daemon)
+            test_futures["stop"] = sensor_controller_threadpool.submit(_stop_sensor)
+            wait_for_futures(test_futures)
 
             if sensor:
                 auto_materialize_instigator_state = check.not_none(
@@ -263,15 +283,15 @@ class AssetDaemonScenarioState(ScenarioState):
             ]
             return new_run_requests, new_cursor, new_evaluations
 
-    def evaluate_tick_daemon(self):
+    def evaluate_tick_daemon(self, stop_mid_iteration: bool = False):
         with freeze_time(self.current_time):
-            run_requests, cursor, _ = self._evaluate_tick_daemon()
+            run_requests, cursor, _ = self._evaluate_tick_daemon(stop_mid_iteration=stop_mid_iteration)
         new_state = self.with_serialized_cursor(serialize_value(cursor)).with_current_time_advanced(
             seconds=1
         )
         return new_state, run_requests
 
-    def evaluate_tick(self, label: Optional[str] = None) -> "AssetDaemonScenarioState":
+    def evaluate_tick(self, label: Optional[str] = None, stop_mid_iteration: bool = False) -> "AssetDaemonScenarioState":
         self.logger.critical("********************************")
         self.logger.critical(f"EVALUATING TICK {label or self.tick_index}")
         self.logger.critical("********************************")
@@ -282,7 +302,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     new_run_requests,
                     new_cursor,
                     new_evaluations,
-                ) = self._evaluate_tick_daemon()
+                ) = self._evaluate_tick_daemon(stop_mid_iteration=stop_mid_iteration)
             else:
                 new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_fast()
 
