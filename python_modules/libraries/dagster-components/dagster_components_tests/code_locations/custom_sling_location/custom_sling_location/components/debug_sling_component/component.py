@@ -2,7 +2,9 @@ from typing import Iterator
 
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_components import component_type
-from dagster_components.lib.sling_replication_collection import SlingReplicationCollectionComponent
+from dagster_components.lib.sling_replication_collection.component import (
+    SlingReplicationCollectionComponent,
+)
 from dagster_embedded_elt.sling import SlingResource
 
 

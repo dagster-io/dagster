@@ -22,7 +22,7 @@ import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.os
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
-import {BackfillPreviewModal} from './BackfillPreviewModal';
+import {BackfillPreviewDialog} from './BackfillPreviewDialog';
 import {
   LaunchAssetsChoosePartitionsTarget,
   executionParamsForAssetJob,
@@ -575,7 +575,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         )}
       </div>
 
-      <BackfillPreviewModal
+      <BackfillPreviewDialog
         assets={assets}
         keysFiltered={keysFiltered}
         isOpen={previewOpen}

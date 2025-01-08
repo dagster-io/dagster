@@ -6,8 +6,8 @@ import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {useObserveAction} from './useObserveAction';
-import {useReportEventsModal} from './useReportEventsModal';
-import {useWipeModal} from './useWipeModal';
+import {useReportEventsDialog} from './useReportEventsDialog';
+import {useWipeDialog} from './useWipeDialog';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {AssetKeyInput} from '../graphql/types';
@@ -45,12 +45,12 @@ export const AssetActionMenu = (props: Props) => {
     onRefresh,
   );
 
-  const wipe = useWipeModal(
+  const wipe = useWipeDialog(
     repoAddress && definition ? {repository: definition.repository, assetKey: {path}} : null,
     onRefresh,
   );
 
-  const reportEvents = useReportEventsModal(
+  const reportEvents = useReportEventsDialog(
     repoAddress
       ? {
           assetKey: {path},

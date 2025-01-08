@@ -1132,8 +1132,12 @@
       },
       {
         "title": "Fivetran",
-        "path": "/integrations/fivetran/fivetran",
+        "path": "/integrations/fivetran",
         "children": [
+          {
+            "title": "Fivetran",
+            "path": "/integrations/fivetran/fivetran"
+          },
           {
             "title": "Fivetran (Legacy)",
             "path": "/integrations/fivetran/fivetran-legacy"

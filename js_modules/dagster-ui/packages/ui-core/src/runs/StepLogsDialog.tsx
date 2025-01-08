@@ -76,7 +76,7 @@ export const StepLogsDialog = ({
           {(logs) => (
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
-                <StepLogsModalContent
+                <StepLogsDialogContent
                   runId={runId}
                   metadata={metadata}
                   stepKeys={stepKeys}
@@ -100,7 +100,7 @@ export const StepLogsDialog = ({
   );
 };
 
-export const StepLogsModalContent = ({
+export const StepLogsDialogContent = ({
   runId,
   stepKeys,
   metadata,

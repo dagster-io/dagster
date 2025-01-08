@@ -93,7 +93,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
       });
   }, [options.loading, queryItems]);
 
-  return fullAssetGraphData;
+  return {fullAssetGraphData, loading: fetchResult.loading || options.loading};
 }
 
 export type GraphDataState = {
