@@ -25,7 +25,7 @@ For example, you want to allow your team to change the lookback time window for 
 ## Specifying config using the Dagster UI
 
 :::note
-Run configurations reference an `op` which is the underlying compute associated with an asset. Refer to the [Ops vs Assets](/guides/build/ops-and-jobs/ops-vs-assets) guide for more information.
+Run configurations reference an `op` which is the underlying compute associated with an asset.
 :::
 
 When launching a run using the Launchpad in the UI, you can provide a run config file as YAML or JSON that overrides the default configuration for your asset.

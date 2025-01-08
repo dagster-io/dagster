@@ -1,6 +1,6 @@
 ---
 title: Creating asset factories
-sidebar_position: 800
+sidebar_position: 700
 ---
 
 Often in data engineering, you'll find yourself needing to create a large number of similar assets. For example:

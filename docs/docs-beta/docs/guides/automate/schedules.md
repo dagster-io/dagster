@@ -10,8 +10,8 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets/index.mdx
-- Familiarity with [Ops and Jobs](/guides/build/ops-and-jobs/)
+- Familiarity with [assets](/guides/build/assets/)
+- Familiarity with [jobs](/guides/build/assets/asset-jobs/)
 </details>
 
 ## Basic schedule

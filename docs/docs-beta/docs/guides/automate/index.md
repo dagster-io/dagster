@@ -12,7 +12,7 @@ Automation is key to building reliable, efficient data pipelines. This guide pro
 Before continuing, you should be familiar with:
 
 - [Asset definitions](/guides/build/assets/index.mdx
-- [Jobs](/guides/build/ops-and-jobs)
+- [Jobs](/guides/build/assets/asset-jobs)
 
 </details>
 
@@ -47,7 +47,7 @@ Use this table to help guide your decision:
 ## Schedules
 
 Schedules allow you to run jobs at specified times, like "every Monday at 9 AM" or "daily at midnight."
-A schedule combines a selection of assets, known as a [Job](/guides/build/ops-and-jobs), and a [cron expression](https://en.wikipedia.org/wiki/Cron)
+A schedule combines a selection of assets, known as a [job](/guides/build/assets/asset-jobs), and a [cron expression](https://en.wikipedia.org/wiki/Cron)
 to define when the job should be run.
 
 To make creating cron expressions easier, you can use an online tool like [Crontab Guru](https://crontab.guru/).
@@ -67,7 +67,7 @@ Sensors allow you to trigger runs based on events or conditions that you define,
 
 You must provide a function that the sensor will use to determine if it should trigger a run.
 
-Like schedules, sensors operate on a selection of assets, known as [Jobs](/guides/build/ops-and-jobs) and can either start a pipeline through a Run or log a reason for not starting a pipeline using a SkipReason.
+Like schedules, sensors operate on a selection of assets, known as a [job](/guides/build/assets/asset-jobs) and can either start a pipeline through a Run or log a reason for not starting a pipeline using a SkipReason.
 
 ### When to use sensors
 
