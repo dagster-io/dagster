@@ -38,6 +38,7 @@ interface RunsFeedTableProps {
   refetch: () => void;
   actionBarComponents?: React.ReactNode;
   belowActionBarComponents?: React.ReactNode;
+  terminateAllRunsButton?: React.ReactNode;
   paginationProps: CursorPaginationProps;
   filter?: RunsFilter;
   emptyState?: () => React.ReactNode;
@@ -52,6 +53,7 @@ export const RunsFeedTable = ({
   refetch,
   actionBarComponents,
   belowActionBarComponents,
+  terminateAllRunsButton,
   paginationProps,
   filter,
   emptyState,
@@ -121,6 +123,7 @@ export const RunsFeedTable = ({
               paginationProps.reset();
             }}
           />
+          {terminateAllRunsButton}
           <RunBulkActionsMenu
             clearSelection={() => onToggleAll(false)}
             selected={selectedRuns}
