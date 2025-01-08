@@ -36,7 +36,7 @@ class AssetCheckEvaluationTargetMaterializationData(
     NamedTuple(
         "_AssetCheckEvaluationTargetMaterializationData",
         [
-            ("storage_id", str),
+            ("storage_id", int),
             ("run_id", str),
             ("timestamp", float),
         ],
@@ -44,10 +44,10 @@ class AssetCheckEvaluationTargetMaterializationData(
 ):
     """A pointer to the latest materialization at execution time of an asset check."""
 
-    def __new__(cls, storage_id: str, run_id: str, timestamp: float):
+    def __new__(cls, storage_id: int, run_id: str, timestamp: float):
         return super(AssetCheckEvaluationTargetMaterializationData, cls).__new__(
             cls,
-            storage_id=check.str_param(storage_id, "storage_id"),
+            storage_id=check.int_param(storage_id, "storage_id"),
             run_id=check.str_param(run_id, "run_id"),
             timestamp=check.float_param(timestamp, "timestamp"),
         )
