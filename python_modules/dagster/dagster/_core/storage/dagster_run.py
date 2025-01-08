@@ -695,7 +695,7 @@ class RunRecord(
 
     def __new__(
         cls,
-        storage_id: Union[int, str],
+        storage_id: int,
         dagster_run: DagsterRun,
         create_timestamp: datetime,
         update_timestamp: datetime,

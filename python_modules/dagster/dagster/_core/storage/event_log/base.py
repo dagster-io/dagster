@@ -85,7 +85,7 @@ class AssetEntry(
         asset_details: Optional[AssetDetails] = None,
         cached_status: Optional["AssetStatusCacheValue"] = None,
         last_observation_record: Optional[EventLogRecord] = None,
-        last_planned_materialization_storage_id: Optional[Union[int, str]] = None,
+        last_planned_materialization_storage_id: Optional[int] = None,
         last_planned_materialization_run_id: Optional[str] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
