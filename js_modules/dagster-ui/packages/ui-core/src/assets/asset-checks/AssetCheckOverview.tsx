@@ -16,7 +16,7 @@ import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {
   AssetCheckEvaluationTargetMaterializationFragment,
   AssetCheckExecutionFragment,
-} from './types/AssetCheckDetailModal.types';
+} from './types/AssetCheckDetailDialog.types';
 import {AssetCheckTableFragment} from './types/VirtualizedAssetCheckTable.types';
 import {Timestamp} from '../../app/time/Timestamp';
 import {MetadataEntries} from '../../metadata/MetadataEntry';

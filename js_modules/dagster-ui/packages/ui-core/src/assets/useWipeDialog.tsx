@@ -6,7 +6,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {AssetKeyInput} from '../graphql/types';
 
-export function useWipeModal(
+export function useWipeDialog(
   opts: {assetKey: AssetKeyInput; repository: {location: {name: string}}} | null,
   refresh?: () => void,
 ) {
