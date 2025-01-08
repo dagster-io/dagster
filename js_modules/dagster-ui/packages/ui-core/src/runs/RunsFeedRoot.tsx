@@ -159,6 +159,7 @@ export const RunsFeedRoot = () => {
         </Loading>
       );
     }
+
     if (error) {
       return <RunsFeedError error={error} />;
     }
