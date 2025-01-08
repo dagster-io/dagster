@@ -324,7 +324,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         remote_node: RemoteAssetNode,
         stale_status_loader: Optional[StaleStatusLoader] = None,
         dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader] = None,
-        asset_graph_differ: Optional[AssetGraphDiffer] = None,
     ):
         from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
@@ -343,11 +342,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._dynamic_partitions_loader = check.opt_inst_param(
             dynamic_partitions_loader, "dynamic_partitions_loader", CachingDynamicPartitionsLoader
         )
-        self._asset_graph_differ = check.opt_inst_param(
-            asset_graph_differ, "asset_graph_differ", AssetGraphDiffer
-        )
         self._remote_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
+        self._asset_graph_differ = None  # lazily loaded
 
         super().__init__(
             id=get_unique_asset_id(
@@ -387,8 +384,21 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return loader
 
-    @property
-    def asset_graph_differ(self) -> Optional[AssetGraphDiffer]:
+    def _get_asset_graph_differ(self, graphene_info: ResolveInfo) -> Optional[AssetGraphDiffer]:
+        if self._asset_graph_differ is not None:
+            return self._asset_graph_differ
+
+        base_deployment_context = graphene_info.context.get_base_deployment_context()
+
+        if base_deployment_context is None:
+            return None
+
+        self._asset_graph_differ = AssetGraphDiffer.from_remote_repositories(
+            code_location_name=self._repository_selector.location_name,
+            repository_name=self._repository_selector.repository_name,
+            branch_workspace=graphene_info.context,
+            base_workspace=base_deployment_context,
+        )
         return self._asset_graph_differ
 
     def _job_selector(self) -> Optional[JobSelector]:
@@ -677,10 +687,11 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_changedReasons(
         self, graphene_info: ResolveInfo
     ) -> Sequence[Any]:  # Sequence[GrapheneAssetChangedReason]
-        if self.asset_graph_differ is None:
+        asset_graph_differ = self._get_asset_graph_differ(graphene_info)
+        if asset_graph_differ is None:
             # asset_graph_differ is None when not in a branch deployment
             return []
-        return self.asset_graph_differ.get_changes_for_asset(self._asset_node_snap.asset_key)
+        return asset_graph_differ.get_changes_for_asset(self._asset_node_snap.asset_key)
 
     def resolve_staleStatus(
         self, graphene_info: ResolveInfo, partition: Optional[str] = None
