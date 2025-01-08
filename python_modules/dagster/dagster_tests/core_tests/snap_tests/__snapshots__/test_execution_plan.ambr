@@ -310,7 +310,7 @@
       },
       "step_output_versions": []
     },
-    "pipeline_snapshot_id": "3057df527127ce93bc08075d3dc3149b5054065a",
+    "pipeline_snapshot_id": "b57cc7e00dc45fd4927a082265100e665a21f23d",
     "snapshot_version": 1,
     "step_keys_to_execute": [
       "comp_1.return_one",

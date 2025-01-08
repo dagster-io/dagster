@@ -35,7 +35,7 @@ from dagster._core.errors import (
 )
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
-from dagster._utils.warnings import normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param, preview_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
@@ -297,6 +297,11 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def pool(self) -> Optional[str]:
         """Optional[str]: The concurrency group for this op."""
         return self._pool
+
+    @property
+    def pools(self) -> set[str]:
+        """Optional[str]: The concurrency group for this op."""
+        return {self._pool} if self._pool else set()
 
     def is_from_decorator(self) -> bool:
         from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -605,6 +610,7 @@ def _validate_pool(pool, tags):
         )
 
     if pool:
+        preview_warning("Pools")
         return pool
 
     if tag_concurrency_key:

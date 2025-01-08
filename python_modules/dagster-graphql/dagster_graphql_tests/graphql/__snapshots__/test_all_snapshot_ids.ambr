@@ -2571,6 +2571,9 @@
               "mapped_solid_name": "never_runs_op"
             }
           ],
+          "pools": {
+            "__set__": []
+          },
           "tags": {}
         }
       ],
@@ -33745,6 +33748,9 @@
           "name": "simple_graph",
           "output_def_snaps": [],
           "output_mapping_snaps": [],
+          "pools": {
+            "__set__": []
+          },
           "tags": {}
         }
       ],
@@ -33784,7 +33790,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[17]
-  '2f4a7e8dac16272a9e008a61e766b43bd473eb7e'
+  'cfb767a61be6a485474582ec75fc6834cd314c08'
 # ---
 # name: test_all_snapshot_ids[18]
   '''
@@ -34920,6 +34926,9 @@
               "mapped_solid_name": "adder_2"
             }
           ],
+          "pools": {
+            "__set__": []
+          },
           "tags": {}
         },
         {
@@ -35002,6 +35011,9 @@
               "mapped_solid_name": "adder_2"
             }
           ],
+          "pools": {
+            "__set__": []
+          },
           "tags": {}
         },
         {
@@ -35084,6 +35096,9 @@
               "mapped_solid_name": "div_2"
             }
           ],
+          "pools": {
+            "__set__": []
+          },
           "tags": {}
         }
       ],
@@ -35165,10 +35180,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[19]
-  'f726acb538de96f43dfa0335f7bc79d1b52394c1'
+  'b336066bf8dc411b162f9869dd08da0b18057896'
 # ---
 # name: test_all_snapshot_ids[1]
-  '6c2e7891d74bdc0ff647f100a13f4a630081c2ba'
+  'fb54440831226acbda6ad87d0d7599c4f3424168'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
@@ -54872,6 +54887,9 @@
               "mapped_solid_name": "never_runs_op"
             }
           ],
+          "pools": {
+            "__set__": []
+          },
           "tags": {}
         }
       ],
@@ -55018,7 +55036,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[51]
-  '709d40d76a7309b11219cb331842fb349e161eb0'
+  '200c1bc946100875b19e0c6b7f26fbb9edab070b'
 # ---
 # name: test_all_snapshot_ids[52]
   '''
@@ -80111,6 +80129,9 @@
               "mapped_solid_name": "plus_one"
             }
           ],
+          "pools": {
+            "__set__": []
+          },
           "tags": {}
         }
       ],
@@ -80254,7 +80275,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[99]
-  'cf140114fda778cc12c11ba13f7e26cd0fbccb3c'
+  '1959e3612cf7d53844928fff25df04128d1b15ff'
 # ---
 # name: test_all_snapshot_ids[9]
   'cf67ad5622d23845499daf2adba4a11f6b23f9eb'
