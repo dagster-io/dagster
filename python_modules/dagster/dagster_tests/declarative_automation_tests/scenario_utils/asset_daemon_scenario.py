@@ -1,9 +1,12 @@
+from unittest import mock
 import dataclasses
 import itertools
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Callable, NamedTuple, Optional, cast
+
+from dagster._core.utils import InheritContextThreadPoolExecutor
 
 import dagster._check as check
 from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
@@ -54,6 +57,7 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state im
     ScenarioState,
     get_code_location_origin,
 )
+from time import sleep
 
 
 class AssetRuleEvaluationSpec(NamedTuple):
@@ -177,6 +181,7 @@ class AssetDaemonScenarioState(ScenarioState):
 
     def _evaluate_tick_daemon(
         self,
+        stop_mid_iteration: bool
     ) -> tuple[
         Sequence[RunRequest],
         AssetDaemonCursor,
@@ -200,23 +205,38 @@ class AssetDaemonScenarioState(ScenarioState):
                 # start sensor if it hasn't started already
                 self.instance.start_sensor(sensor)
 
-            amp_tick_futures = {}
+            def _stop_sensor():
+                self.logger.critical("Stopping sensor")
+                if sensor and stop_mid_iteration:
+                    self.instance.stop_sensor(sensor.get_remote_origin_id(), sensor.selector_id, sensor)
 
-            list(
-                AssetDaemon(  # noqa: SLF001
-                    settings=self.instance.get_auto_materialize_settings(),
-                    pre_sensor_interval_seconds=42,
-                )._run_iteration_impl(
-                    workspace_context,
-                    threadpool_executor=self.threadpool_executor,
-                    amp_tick_futures=amp_tick_futures,
-                    debug_crash_flags={},
-                    submit_threadpool_executor=None,
-                    poll_interval=0, # check if the sensor was stopped after every run is submitted
+            def _run_daemon():
+                amp_tick_futures = {}
+
+                list(
+                    AssetDaemon(  # noqa: SLF001
+                        settings=self.instance.get_auto_materialize_settings(),
+                        pre_sensor_interval_seconds=42,
+                    )._run_iteration_impl(
+                        workspace_context,
+                        threadpool_executor=self.threadpool_executor,
+                        amp_tick_futures=amp_tick_futures,
+                        debug_crash_flags={},
+                        submit_threadpool_executor=None,
+                        poll_interval=0 # check the status of the sensor after every run submission
+                    )
                 )
-            )
 
-            wait_for_futures(amp_tick_futures)
+                wait_for_futures(amp_tick_futures)
+
+            test_futures = {}
+            sensor_controller_threadpool = InheritContextThreadPoolExecutor(
+                max_workers=2,
+                thread_name_prefix="unit_test_worker",
+            )
+            test_futures["daemon"] = sensor_controller_threadpool.submit(_run_daemon)
+            test_futures["stop"] = sensor_controller_threadpool.submit(_stop_sensor)
+            wait_for_futures(test_futures)
 
             if sensor:
                 auto_materialize_instigator_state = check.not_none(
@@ -264,15 +284,15 @@ class AssetDaemonScenarioState(ScenarioState):
             ]
             return new_run_requests, new_cursor, new_evaluations
 
-    def evaluate_tick_daemon(self):
+    def evaluate_tick_daemon(self, stop_mid_iteration: bool = False):
         with freeze_time(self.current_time):
-            run_requests, cursor, _ = self._evaluate_tick_daemon()
+            run_requests, cursor, _ = self._evaluate_tick_daemon(stop_mid_iteration=stop_mid_iteration)
         new_state = self.with_serialized_cursor(serialize_value(cursor)).with_current_time_advanced(
             seconds=1
         )
         return new_state, run_requests
 
-    def evaluate_tick(self, label: Optional[str] = None) -> "AssetDaemonScenarioState":
+    def evaluate_tick(self, label: Optional[str] = None, stop_mid_iteration: bool = False) -> "AssetDaemonScenarioState":
         self.logger.critical("********************************")
         self.logger.critical(f"EVALUATING TICK {label or self.tick_index}")
         self.logger.critical("********************************")
@@ -283,7 +303,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     new_run_requests,
                     new_cursor,
                     new_evaluations,
-                ) = self._evaluate_tick_daemon()
+                ) = self._evaluate_tick_daemon(stop_mid_iteration=stop_mid_iteration)
             else:
                 new_run_requests, new_cursor, new_evaluations = self._evaluate_tick_fast()
 
@@ -351,32 +371,79 @@ class AssetDaemonScenarioState(ScenarioState):
             asset_partition.asset_key for asset_partition in expected_requested_asset_partitions
         }
 
+    def _assert_run_requets_lists_equal(self, actual: Sequence[RunRequest], expected: Sequence[RunRequest]):
+        def sort_run_request_key_fn(run_request) -> tuple[AssetKey, Optional[str]]:
+            return (min(run_request.asset_selection), run_request.partition_key)
+
+        sorted_actual_run_requests = sorted(actual, key=sort_run_request_key_fn)
+        sorted_expected_run_requests = sorted(expected, key=sort_run_request_key_fn)
+
+        try:
+            assert len(sorted_actual_run_requests) == len(sorted_expected_run_requests)
+            for arr, err in zip(sorted_actual_run_requests, sorted_expected_run_requests):
+                assert set(arr.asset_selection or []) == set(err.asset_selection or [])
+                assert arr.partition_key == err.partition_key
+        except:
+            self._log_assertion_error(sorted_expected_run_requests, sorted_actual_run_requests)
+            raise
+
+        return sorted_expected_run_requests
+
     def assert_requested_runs(
         self, *expected_run_requests: RunRequest
     ) -> "AssetDaemonScenarioState":
         """Asserts that the set of runs requested by the previously-evaluated tick is identical to
         the set of runs specified in the expected_run_requests argument.
         """
-
-        def sort_run_request_key_fn(run_request) -> tuple[AssetKey, Optional[str]]:
-            return (min(run_request.asset_selection), run_request.partition_key)
-
-        sorted_run_requests = sorted(self.run_requests, key=sort_run_request_key_fn)
-        sorted_expected_run_requests = sorted(expected_run_requests, key=sort_run_request_key_fn)
-
-        try:
-            assert len(sorted_run_requests) == len(sorted_expected_run_requests)
-            for arr, err in zip(sorted_run_requests, sorted_expected_run_requests):
-                assert set(arr.asset_selection or []) == set(err.asset_selection or [])
-                assert arr.partition_key == err.partition_key
-        except:
-            self._log_assertion_error(sorted_expected_run_requests, sorted_run_requests)
-            raise
+        sorted_expected_run_requests = self._assert_run_requets_lists_equal(self.run_requests, expected_run_requests)
 
         if self.is_daemon:
             self._assert_requested_runs_daemon(sorted_expected_run_requests)
 
         return self
+
+    def assert_requested_runs_for_stopped_iteration(self, num_expected_submissions: int, *expected_run_requests: RunRequest) -> "AssetDaemonScenarioState":
+        """For ticks that are manually stopped during submitting runs, confirm that the number of runs submitted
+        before the tick was interrupted is as expected. Also confirm that the requests the tick would have submitted
+        as as expected.
+        """
+        assert len(self.run_requests) == num_expected_submissions
+        # assert that the iteration was actually stopped before all runs were submitted
+        assert len(self.run_requests) < len(expected_run_requests)
+
+        if self.is_daemon:
+            sensor_origin = self.get_sensor_origin()
+            if sensor_origin:
+                origin_id = sensor_origin.get_id()
+                selector_id = sensor_origin.get_selector().get_id()
+            else:
+                origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
+                selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
+
+            latest_tick = sorted(
+                self.instance.get_ticks(
+                    origin_id=origin_id,
+                    selector_id=selector_id,
+                ),
+                key=lambda tick: tick.tick_id,
+            )[-1]
+            # since the tick was stopped before all runs were submitted, the tick should be in skipped state
+            assert latest_tick.status == TickStatus.SKIPPED
+
+            if latest_tick.tick_data.reserved_run_ids:
+                assert len(latest_tick.tick_data.reserved_run_ids) == len(expected_run_requests)
+
+            if latest_tick.tick_data.run_requests:
+                self._assert_run_requets_lists_equal(latest_tick.tick_data.run_requests, expected_run_requests)
+            else:
+                if len(expected_run_requests) > 0:
+                    self._log_assertion_error(expected_run_requests, [])
+                    raise AssertionError("Expected run requests not found in tick data")
+
+
+        return self
+
+
 
     def _assert_evaluation_daemon(
         self, key: AssetKey, actual_evaluation: AutomationConditionEvaluation
