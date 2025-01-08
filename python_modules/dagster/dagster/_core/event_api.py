@@ -254,7 +254,7 @@ class AssetRecordsFilter(
             ("after_timestamp", PublicAttr[Optional[float]]),
             ("before_timestamp", PublicAttr[Optional[float]]),
             ("after_storage_id", PublicAttr[Optional[str]]),
-            ("before_storage_id", PublicAttr[Optional[int]]),
+            ("before_storage_id", PublicAttr[Optional[str]]),
             ("storage_ids", PublicAttr[Optional[Sequence[int]]]),
         ],
     )
@@ -270,9 +270,9 @@ class AssetRecordsFilter(
             events with timestamp greater than the provided value are returned.
         before_timestamp (Optional[float]): Filter parameter such that only event records for
             events with timestamp less than the provided value are returned.
-        after_storage_id (Optional[Union[int, str]]): Filter parameter such that only event records for
+        after_storage_id (Optional[str]): Filter parameter such that only event records for
             events with storage_id greater than the provided value are returned.
-        before_storage_id (Optional[Union[int, str]]): Filter parameter such that only event records for
+        before_storage_id (Optional[str]): Filter parameter such that only event records for
             events with storage_id less than the provided value are returned.
         storage_ids (Optional[Sequence[Union[int, str]]]): Filter parameter such that only event records for
             the given storage ids are returned.
@@ -287,7 +287,7 @@ class AssetRecordsFilter(
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
         after_storage_id: Optional[str] = None,
-        before_storage_id: Optional[Union[int, str]] = None,
+        before_storage_id: Optional[str] = None,
         storage_ids: Optional[Sequence[Union[int, str]]] = None,
     ):
         return super(AssetRecordsFilter, cls).__new__(
@@ -299,9 +299,7 @@ class AssetRecordsFilter(
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
             after_storage_id=check.opt_str_param(after_storage_id, "after_storage_id"),
-            before_storage_id=check.opt_int_param(
-                int(before_storage_id) if before_storage_id else None, "before_storage_id"
-            ),
+            before_storage_id=check.opt_str_param(before_storage_id, "before_storage_id"),
             storage_ids=check.opt_nullable_sequence_param(
                 [int(storage_id) for storage_id in storage_ids] if storage_ids else storage_ids,
                 "storage_ids",
@@ -316,10 +314,12 @@ class AssetRecordsFilter(
             cursor, ascending
         )
         if self.before_storage_id and before_cursor_storage_id:
-            before_cursor = min(self.before_storage_id, before_cursor_storage_id)
+            before_cursor = min(int(self.before_storage_id), before_cursor_storage_id)
         else:
             before_cursor = (
-                before_cursor_storage_id if before_cursor_storage_id else self.before_storage_id
+                before_cursor_storage_id
+                if before_cursor_storage_id
+                else int(self.before_storage_id)
             )
         if self.after_storage_id and after_cursor_storage_id:
             after_cursor = max(int(self.after_storage_id), after_cursor_storage_id)
@@ -353,7 +353,7 @@ class RunStatusChangeRecordsFilter(
             ("after_timestamp", PublicAttr[Optional[float]]),
             ("before_timestamp", PublicAttr[Optional[float]]),
             ("after_storage_id", PublicAttr[Optional[str]]),
-            ("before_storage_id", PublicAttr[Optional[int]]),
+            ("before_storage_id", PublicAttr[Optional[str]]),
             ("storage_ids", PublicAttr[Optional[Sequence[int]]]),
             ("job_names", Optional[Sequence[str]]),
         ],
@@ -369,7 +369,7 @@ class RunStatusChangeRecordsFilter(
             events with timestamp less than the provided value are returned.
         after_storage_id (Optional[str]): Filter parameter such that only event records for
             events with storage_id greater than the provided value are returned.
-        before_storage_id (Optional[Union[int, str]]): Filter parameter such that only event records for
+        before_storage_id (Optional[str]): Filter parameter such that only event records for
             events with storage_id less than the provided value are returned.
         storage_ids (Optional[Sequence[Union[int, str]]]): Filter parameter such that only event records for
             the given storage ids are returned.
@@ -381,7 +381,7 @@ class RunStatusChangeRecordsFilter(
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
         after_storage_id: Optional[str] = None,
-        before_storage_id: Optional[Union[int, str]] = None,
+        before_storage_id: Optional[str] = None,
         storage_ids: Optional[Sequence[Union[int, str]]] = None,
         job_names: Optional[Sequence[str]] = None,
     ):
@@ -394,10 +394,7 @@ class RunStatusChangeRecordsFilter(
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
             after_storage_id=check.opt_str_param(after_storage_id, "after_storage_id"),
-            before_storage_id=check.opt_int_param(
-                int(before_storage_id) if before_storage_id else before_storage_id,
-                "before_storage_id",
-            ),
+            before_storage_id=check.opt_int_param(before_storage_id, "before_storage_id"),
             storage_ids=check.opt_nullable_sequence_param(
                 [int(storage_id) for storage_id in storage_ids] if storage_ids else storage_ids,
                 "storage_ids",
@@ -413,10 +410,12 @@ class RunStatusChangeRecordsFilter(
             cursor, ascending
         )
         if self.before_storage_id and before_cursor_storage_id:
-            before_cursor = min(self.before_storage_id, before_cursor_storage_id)
+            before_cursor = min(int(self.before_storage_id), before_cursor_storage_id)
         else:
             before_cursor = (
-                before_cursor_storage_id if before_cursor_storage_id else self.before_storage_id
+                before_cursor_storage_id
+                if before_cursor_storage_id
+                else int(self.before_storage_id)
             )
         if self.after_storage_id and after_cursor_storage_id:
             after_cursor = max(int(self.after_storage_id), after_cursor_storage_id)
