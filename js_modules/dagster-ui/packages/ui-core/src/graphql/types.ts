@@ -824,6 +824,7 @@ export type CompositeSolidDefinition = ISolidDefinition &
     name: Scalars['String']['output'];
     outputDefinitions: Array<OutputDefinition>;
     outputMappings: Array<OutputMapping>;
+    pools: Array<Scalars['String']['output']>;
     solidHandle: Maybe<SolidHandle>;
     solidHandles: Array<SolidHandle>;
     solids: Array<Solid>;
@@ -1839,6 +1840,7 @@ export type ISolidDefinition = {
   metadata: Array<MetadataItemDefinition>;
   name: Scalars['String']['output'];
   outputDefinitions: Array<OutputDefinition>;
+  pools: Array<Scalars['String']['output']>;
 };
 
 export type Input = {
@@ -5194,6 +5196,7 @@ export type SolidDefinition = ISolidDefinition & {
   name: Scalars['String']['output'];
   outputDefinitions: Array<OutputDefinition>;
   pool: Maybe<Scalars['String']['output']>;
+  pools: Array<Scalars['String']['output']>;
   requiredResources: Array<ResourceRequirement>;
 };
 
@@ -7308,6 +7311,7 @@ export const buildCompositeSolidDefinition = (
         : [],
     outputMappings:
       overrides && overrides.hasOwnProperty('outputMappings') ? overrides.outputMappings! : [],
+    pools: overrides && overrides.hasOwnProperty('pools') ? overrides.pools! : [],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
@@ -8828,6 +8832,7 @@ export const buildISolidDefinition = (
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
         : [],
+    pools: overrides && overrides.hasOwnProperty('pools') ? overrides.pools! : [],
   };
 };
 
@@ -14463,6 +14468,7 @@ export const buildSolidDefinition = (
         ? overrides.outputDefinitions!
         : [],
     pool: overrides && overrides.hasOwnProperty('pool') ? overrides.pool! : 'voluptates',
+    pools: overrides && overrides.hasOwnProperty('pools') ? overrides.pools! : [],
     requiredResources:
       overrides && overrides.hasOwnProperty('requiredResources')
         ? overrides.requiredResources!
