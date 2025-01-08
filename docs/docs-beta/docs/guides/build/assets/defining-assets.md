@@ -5,12 +5,20 @@ sidebar_position: 100
 
 The most common way to create a data asset in Dagster is by annotating a Python function with an asset decorator. The function computes the contents of the asset, such as a database table or file.
 
+An asset definition includes the following:
+
+* An `AssetKey`, which is a handle for referring to the asset.
+* A set of upstream asset keys, which refer to assets that the contents of the asset definition are derived from.
+* A Python function, which is responsible for computing the contents of the asset from its upstream dependencies and storing the results.
+
 <details>
   <summary>Prerequisites</summary>
 
 To run the code in this article, you'll need to install Dagster. For more information, see the [Installation guide](/getting-started/installation).
 
 </details>
+
+## Asset decorators
 
 Dagster has four types of asset decorators:
 
