@@ -235,8 +235,8 @@ class EventRecordsFilter(
         cursor_obj = EventLogCursor.parse(cursor)
         if not cursor_obj.is_id_cursor():
             check.failed(f"Invalid cursor for fetching event records: {cursor}")
-        after_cursor = cursor_obj.storage_id() if ascending else None
-        before_cursor = cursor_obj.storage_id() if not ascending else None
+        after_cursor = int(cursor_obj.storage_id()) if ascending else None
+        before_cursor = int(cursor_obj.storage_id()) if not ascending else None
         return before_cursor, after_cursor
 
     @property
