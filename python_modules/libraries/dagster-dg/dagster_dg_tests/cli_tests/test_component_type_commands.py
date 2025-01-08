@@ -83,6 +83,21 @@ def test_component_type_generate_fails_components_lib_package_does_not_exist() -
 
 
 # ########################
+# ##### DOCS
+# ########################
+
+
+def test_component_type_docs_success():
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+        result = runner.invoke(
+            "component-type",
+            "docs",
+            "dagster_components.test.complex_schema_asset",
+        )
+        assert_runner_result(result)
+
+
+# ########################
 # ##### INFO
 # ########################
 
@@ -281,6 +296,8 @@ def test_component_type_info_multiple_flags_fails() -> None:
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
     dagster_components.test.all_metadata_empty_asset
+    dagster_components.test.complex_schema_asset
+        An asset that has a complex params schema.
     dagster_components.test.simple_asset
         A simple asset that returns a constant string value.
     dagster_components.test.simple_pipes_script_asset
