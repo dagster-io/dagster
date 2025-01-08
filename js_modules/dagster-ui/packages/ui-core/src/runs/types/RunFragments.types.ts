@@ -7,6 +7,7 @@ export type RunFragment = {
   id: string;
   runConfigYaml: string;
   canTerminate: boolean;
+  allConcurrencyKeys: Array<string> | null;
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
   hasDeletePermission: boolean;
@@ -3140,6 +3141,7 @@ export type RunPageFragment = {
   parentPipelineSnapshotId: string | null;
   runConfigYaml: string;
   canTerminate: boolean;
+  allConcurrencyKeys: Array<string> | null;
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
   hasDeletePermission: boolean;
