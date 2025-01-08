@@ -127,6 +127,15 @@ two_assets_in_sequence_fan_out_partitions = two_assets_in_sequence.with_asset_pr
 )
 dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
 
+two_distinct_partitions_graphs = two_disconnected_graphs.with_asset_properties(
+    keys=["A"], partitions_def=hourly_partitions_def
+).with_asset_properties(
+    keys=["B"], partitions_def=hourly_partitions_def
+).with_asset_properties(
+    keys=["C"], partitions_def=daily_partitions_def
+).with_asset_properties(
+    keys=["D"], partitions_def=daily_partitions_def
+)
 
 ###########
 # UTILITIES
