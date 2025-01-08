@@ -16,7 +16,9 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets,
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/) and [partitions](/guides/build/partitions-and-backfills)
+This article assumes familiarity with [assets](/guides/build/assets/) and [partitions](/guides/build/partitions-and-backfills).
+
+:::
 
 
 ## Dependencies between different time-based partitions \{#different-time-dependencies}

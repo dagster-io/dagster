@@ -5,14 +5,18 @@ sidebar_position: 600
 
 When building a data pipeline, you'll likely need to connect to several external APIs, each with its own specific configuration and behavior. This guide demonstrates how to standardize your API connections and customize their configuration using Dagster resources.
 
+:::note
+
+This guide assumes familiarity with [assets](/guides/build/assets/) and [resources](/guides/build/external-resources-and-systems/connect/resources).
+
+:::
+
+
+
 <details>
   <summary>Prerequisites</summary>
 
-To follow the steps in this guide, you'll need:
-
-- Familiarity with [Assets](/guides/build/assets/index.mdx
-- Familiarity with [Resources](/guides/build/external-resources-and-systems/connect/resources)
-- To install the `requests` library:
+To run the example code in this article, you will need to install the `requests` library:
     ```bash
     pip install requests
     ```

@@ -7,14 +7,16 @@ When building a data pipeline, you may need to extract data from or load data in
 
 This guide demonstrates how to standardize database connections and customize their configuration using Dagster resources.
 
+:::note
+
+This guide assumes familiarity with [assets](/guides/build/assets/).
+
+:::
+
 <details>
   <summary>Prerequisites</summary>
 
-To follow the steps in this guide, you'll need:
-
-- Familiarity with [Assets](/guides/build/assets/defining-assets)
-
-To run the examples in this guide, you'll need:
+To run the example code in this article, you'll need:
 
 - Connection information for a Snowflake database
 - To install the following:

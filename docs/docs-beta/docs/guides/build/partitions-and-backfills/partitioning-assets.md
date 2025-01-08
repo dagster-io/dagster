@@ -13,14 +13,11 @@ There are several ways to partition your data in Dagster:
 - [Two-dimensional partitioning](#two-dimensional-partitions), for partitioning data along two different axes simultaneously
 - [Dynamic partitioning](#dynamic-partitions), for creating partitions based on runtime information
 
-<details>
-  <summary>Prerequisites</summary>
+:::note
 
-To follow the steps in this guide, you'll need:
+This article assumes familiarity with [assets](/guides/build/assets/).
 
-- Familiarity with [Assets](/guides/build/assets/defining-assets)
-
-</details>
+:::
 
 ## Time-based partitions \{#time-based}
 
