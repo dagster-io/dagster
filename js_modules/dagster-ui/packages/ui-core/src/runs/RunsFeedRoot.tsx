@@ -2,6 +2,7 @@ import {Box, Checkbox, Colors, tokenToString} from '@dagster-io/ui-components';
 import partition from 'lodash/partition';
 import {useCallback, useMemo} from 'react';
 
+import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunsFeedError} from './RunsFeedError';
 import {RunsFeedTable} from './RunsFeedTable';
@@ -14,6 +15,7 @@ import {
   useRunsFilterInput,
 } from './RunsFilterInput';
 import {ScheduledRunList} from './ScheduledRunListRoot';
+import {TerminateAllRunsButton} from './TerminateAllRunsButton';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {
   FIFTEEN_SECONDS,
@@ -158,6 +160,29 @@ export const RunsFeedRoot = () => {
         belowActionBarComponents={belowActionBarComponents}
         paginationProps={paginationProps}
         filter={filter}
+        terminateAllRunsButton={
+          currentTab === 'queued' ? (
+            <TerminateAllRunsButton
+              refetch={combinedRefreshState.refetch}
+              filter={{...filter, statuses: Array.from(queuedStatuses)}}
+              disabled={
+                runQueryResult.data?.queuedCount.__typename === 'RunsFeedCount'
+                  ? runQueryResult.data?.queuedCount.count === 0
+                  : true
+              }
+            />
+          ) : currentTab === 'in-progress' ? (
+            <TerminateAllRunsButton
+              refetch={combinedRefreshState.refetch}
+              filter={{...filter, statuses: Array.from(inProgressStatuses)}}
+              disabled={
+                runQueryResult.data?.inProgressCount.__typename === 'RunsFeedCount'
+                  ? runQueryResult.data?.inProgressCount.count === 0
+                  : true
+              }
+            />
+          ) : undefined
+        }
       />
     );
   }
