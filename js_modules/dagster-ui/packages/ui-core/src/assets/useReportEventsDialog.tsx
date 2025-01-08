@@ -24,7 +24,7 @@ import {
   ReportEventMutationVariables,
   ReportEventPartitionDefinitionQuery,
   ReportEventPartitionDefinitionQueryVariables,
-} from './types/useReportEventsModal.types';
+} from './types/useReportEventsDialog.types';
 import {usePartitionDimensionSelections} from './usePartitionDimensionSelections';
 import {keyCountInSelections, usePartitionHealthData} from './usePartitionHealthData';
 import {gql, useMutation, useQuery} from '../apollo-client';
@@ -45,7 +45,7 @@ type Asset = {
   hasReportRunlessAssetEventPermission: boolean;
 };
 
-export function useReportEventsModal(asset: Asset | null, onEventReported?: () => void) {
+export function useReportEventsDialog(asset: Asset | null, onEventReported?: () => void) {
   const [isOpen, setIsOpen] = useState(false);
   const hasReportRunlessAssetEventPermission = asset?.hasReportRunlessAssetEventPermission;
 

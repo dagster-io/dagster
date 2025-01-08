@@ -10,7 +10,7 @@ import {gql, useQuery} from '../apollo-client';
 import {
   BackfillPreviewQuery,
   BackfillPreviewQueryVariables,
-} from './types/BackfillPreviewModal.types';
+} from './types/BackfillPreviewDialog.types';
 import {
   BackfillPolicyForLaunchAssetFragment,
   PartitionDefinitionForLaunchAssetFragment,
@@ -20,7 +20,7 @@ import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisp
 import {testId} from '../testing/testId';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
-interface BackfillPreviewModalProps {
+interface BackfillPreviewDialogProps {
   isOpen: boolean;
   assets: {
     assetKey: AssetKey;
@@ -32,12 +32,12 @@ interface BackfillPreviewModalProps {
 }
 const TEMPLATE_COLUMNS = '1fr 1fr 1fr 1fr';
 
-export const BackfillPreviewModal = ({
+export const BackfillPreviewDialog = ({
   isOpen,
   setOpen,
   assets,
   keysFiltered,
-}: BackfillPreviewModalProps) => {
+}: BackfillPreviewDialogProps) => {
   const assetKeys = useMemo(() => assets.map(asAssetKeyInput), [assets]);
   const parentRef = useRef<HTMLDivElement | null>(null);
 

@@ -136,7 +136,7 @@ export const MetadataEntry = ({
       return expandSmallValues && jsonString.length < 1000 ? (
         <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(jsonString)}</div>
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           copyContent={() => jsonString}
           content={() => (
@@ -152,7 +152,7 @@ export const MetadataEntry = ({
           )}
         >
           [Show JSON]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
 
     case 'UrlMetadataEntry':
@@ -172,7 +172,7 @@ export const MetadataEntry = ({
       return expandSmallValues && entry.mdStr.length < 1000 ? (
         <Markdown>{entry.mdStr}</Markdown>
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           copyContent={() => entry.mdStr}
           content={() => (
@@ -187,7 +187,7 @@ export const MetadataEntry = ({
           )}
         >
           [Show Markdown]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
     case 'PythonArtifactMetadataEntry':
       return (
@@ -240,7 +240,7 @@ export const MetadataEntry = ({
       return expandSmallValues && entry.schema.columns.length < 5 ? (
         <TableSchema schema={entry.schema} />
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           modalWidth={900}
           copyContent={() => JSON.stringify(entry.schema, null, 2)}
@@ -256,7 +256,7 @@ export const MetadataEntry = ({
           )}
         >
           [Show Table Schema]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
     case 'NotebookMetadataEntry':
       if (repoLocation) {
@@ -274,7 +274,7 @@ export const MetadataEntry = ({
       );
     case 'CodeReferencesMetadataEntry':
       return (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           modalWidth={900}
           content={() => (
@@ -292,7 +292,7 @@ export const MetadataEntry = ({
           )}
         >
           [Show Code References]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
     default:
       return assertUnreachable(entry);
@@ -333,7 +333,7 @@ const PythonArtifactLink = ({
   </>
 );
 
-const MetadataEntryModalAction = (props: {
+const MetadataEntryDialogAction = (props: {
   children: React.ReactNode;
   label: string;
   modalWidth?: number;
