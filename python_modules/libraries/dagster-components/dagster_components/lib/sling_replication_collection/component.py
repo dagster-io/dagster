@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import Annotated, Optional, Union
 
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -14,6 +14,7 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component_type
 from dagster_components.core.component_generator import ComponentGenerator
+from dagster_components.core.component_rendering import ResolvedFieldInfo
 from dagster_components.core.dsl_schema import (
     AssetAttributesModel,
     AssetSpecTransform,
@@ -25,7 +26,9 @@ from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 class SlingReplicationParams(BaseModel):
     path: str
     op: Optional[OpSpecBaseModel] = None
-    asset_attributes: Optional[AssetAttributesModel] = None
+    asset_attributes: Annotated[
+        Optional[AssetAttributesModel], ResolvedFieldInfo(additional_scope={"stream_definition"})
+    ] = None
 
 
 class SlingReplicationCollectionParams(BaseModel):

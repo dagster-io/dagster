@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Sequence
-from typing import Optional
+from typing import Annotated, Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -9,6 +9,7 @@ from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component_type
+from dagster_components.core.component_rendering import ResolvedFieldInfo
 from dagster_components.core.dsl_schema import (
     AssetAttributesModel,
     AssetSpecTransform,
@@ -21,7 +22,9 @@ from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
-    asset_attributes: Optional[AssetAttributesModel] = None
+    asset_attributes: Annotated[
+        Optional[AssetAttributesModel], ResolvedFieldInfo(additional_scope={"node"})
+    ] = None
     transforms: Optional[Sequence[AssetSpecTransform]] = None
 
 
