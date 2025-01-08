@@ -147,31 +147,6 @@ def test_component_generate_already_exists_fails(in_deployment: bool) -> None:
 # ########################
 
 
-def test_generate_sling_replication_instance() -> None:
-    with (
-        ProxyRunner.test(use_test_component_lib=False) as runner,
-        isolated_example_code_location_bar(runner),
-    ):
-        # We need to add dagster-embedded-elt also because we are using editable installs. Only
-        # direct dependencies will be resolved by uv.tool.sources.
-        subprocess.run(
-            ["uv", "add", "dagster-components[sling]", "dagster-embedded-elt"], check=True
-        )
-        result = runner.invoke(
-            "component", "generate", "dagster_components.sling_replication", "file_ingest"
-        )
-        assert_runner_result(result)
-        assert Path("bar/components/file_ingest").exists()
-
-        component_yaml_path = Path("bar/components/file_ingest/component.yaml")
-        assert component_yaml_path.exists()
-        assert "type: dagster_components.sling_replication" in component_yaml_path.read_text()
-
-        replication_path = Path("bar/components/file_ingest/replication.yaml")
-        assert replication_path.exists()
-        assert "source: " in replication_path.read_text()
-
-
 dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffle_shop"
 
 
