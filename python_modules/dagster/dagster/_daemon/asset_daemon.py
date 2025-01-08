@@ -1161,7 +1161,7 @@ class AssetDaemon(DagsterDaemon):
                     updated_evaluation_keys.add(entity_key)
 
             now = get_current_timestamp()
-            if now - last_status_poll_time > poll_interval:
+            if now - last_status_poll_time >= poll_interval:
                 if remote_sensor:
                     all_sensor_states = {
                         sensor_state.selector_id: sensor_state
