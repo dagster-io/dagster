@@ -8,7 +8,7 @@ import {
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useEffect, useMemo, useRef} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableEmptyState} from './RunTableEmptyState';
@@ -22,8 +22,9 @@ import {
 } from './types/RunsFeedTableEntryFragment.types';
 import {useRunsFeedEntries} from './useRunsFeedEntries';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {RunsFilter} from '../graphql/types';
+import {RunsFeedView, RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {BackfillPartitionsRequestedDialog} from '../instance/backfill/BackfillPartitionsRequestedDialog';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
@@ -45,6 +46,9 @@ interface RunsFeedTableProps {
   scroll?: boolean;
 }
 
+// Potentially other modals in the future
+type RunsFeedDialogState = {type: 'partitions'; backfillId: string};
+
 export const RunsFeedTable = ({
   entries,
   loading,
@@ -63,6 +67,7 @@ export const RunsFeedTable = ({
 
   const entryIds = useMemo(() => entries.map((e) => e.id), [entries]);
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
+  const [dialog, setDialog] = useState<null | RunsFeedDialogState>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: entries.length,
@@ -183,6 +188,10 @@ export const RunsFeedTable = ({
 
     return (
       <div style={{overflow: 'hidden'}}>
+        <BackfillPartitionsRequestedDialog
+          backfillId={dialog?.type === 'partitions' ? dialog.backfillId : undefined}
+          onClose={() => setDialog(null)}
+        />
         <IndeterminateLoadingBar $loading={loading} />
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
           {header}
@@ -205,6 +214,7 @@ export const RunsFeedTable = ({
                       entry={entry}
                       checked={checkedIds.has(entry.id)}
                       onToggleChecked={onToggleFactory(entry.id)}
+                      onShowPartitions={() => setDialog({type: 'partitions', backfillId: entry.id})}
                       refetch={refetch}
                       onAddTag={onAddTag}
                       hideTags={hideTags}
@@ -243,11 +253,11 @@ export const RunsFeedTableWithFilters = ({
   RunsFeedTableProps,
   'actionBarComponents' | 'belowActionBarComponents' | 'emptyState' | 'hideTags' | 'scroll'
 >) => {
-  const {entries, paginationProps, queryResult} = useRunsFeedEntries(
+  const {entries, paginationProps, queryResult} = useRunsFeedEntries({
+    view: includeRunsFromBackfills ? RunsFeedView.RUNS : RunsFeedView.ROOTS,
+    skip: false,
     filter,
-    'all',
-    includeRunsFromBackfills,
-  );
+  });
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   function content() {
