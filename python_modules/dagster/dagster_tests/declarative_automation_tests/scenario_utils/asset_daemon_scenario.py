@@ -212,6 +212,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     amp_tick_futures=amp_tick_futures,
                     debug_crash_flags={},
                     submit_threadpool_executor=None,
+                    poll_interval=0, # check if the sensor was stopped after every run is submitted
                 )
             )
 
