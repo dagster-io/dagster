@@ -85,7 +85,7 @@ class AssetEntry(
         asset_details: Optional[AssetDetails] = None,
         cached_status: Optional["AssetStatusCacheValue"] = None,
         last_observation_record: Optional[EventLogRecord] = None,
-        last_planned_materialization_storage_id: Optional[int] = None,
+        last_planned_materialization_storage_id: Optional[Union[int, str]] = None,
         last_planned_materialization_run_id: Optional[str] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
@@ -106,8 +106,11 @@ class AssetEntry(
             last_observation_record=check.opt_inst_param(
                 last_observation_record, "last_observation_record", EventLogRecord
             ),
+            # FIXME(deepyaman): Validation doesn't make sense now below.
             last_planned_materialization_storage_id=check.opt_int_param(
-                last_planned_materialization_storage_id,
+                int(last_planned_materialization_storage_id)
+                if last_planned_materialization_storage_id
+                else None,
                 "last_planned_materialization_storage_id",
             ),
             last_planned_materialization_run_id=check.opt_str_param(
