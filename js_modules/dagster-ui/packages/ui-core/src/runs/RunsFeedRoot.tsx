@@ -54,8 +54,8 @@ export const RunsFeedRoot = () => {
   );
 
   const [view, setView] = useQueryPersistedState<RunsFeedView>({
-    queryKey: 'view',
-    defaults: {view: RunsFeedView.ROOTS},
+    encode: (v) => ({view: v && v !== RunsFeedView.ROOTS ? v.toLowerCase() : undefined}),
+    decode: (qs) => (qs.view || RunsFeedView.ROOTS).toUpperCase(),
   });
 
   const currentTab = useSelectedRunsFeedTab(filterTokens, view);

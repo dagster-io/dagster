@@ -1,4 +1,11 @@
-import {Box, Button, Dialog, DialogFooter, FontFamily, Spinner} from '@dagster-io/ui-components';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogFooter,
+  FontFamily,
+  SpinnerWithText,
+} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {gql, useQuery} from '../../apollo-client';
@@ -23,7 +30,7 @@ export const BackfillPartitionsRequestedDialog = ({backfillId, onClose}: Props) 
       title={
         <span>
           Partitions requested for backfill:{' '}
-          <span style={{fontSize: '16px', fontFamily: FontFamily.monospace}}>{backfillId}</span>
+          <span style={{fontFamily: FontFamily.monospace}}>{backfillId}</span>
         </span>
       }
       onClose={onClose}
@@ -62,8 +69,8 @@ const DialogContent = (props: {backfillId: string | undefined}) => {
   return (
     <div style={{height: '340px', overflow: 'hidden'}}>
       {loading ? (
-        <Box padding={48}>
-          <Spinner purpose="page" />
+        <Box style={{padding: 64}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+          <SpinnerWithText label="Loading requested partitions…" />
         </Box>
       ) : (
         <VirtualizedItemListForDialog

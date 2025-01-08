@@ -85,7 +85,7 @@ export const InstanceBackfills = () => {
               <span>Backfills are moving:</span>
               <span style={{fontWeight: 'normal'}}>
                 {' '}
-                We&apos;re moving backfills to the <Link to="/runs?view=BACKFILLS">Runs</Link> page
+                We&apos;re moving backfills to the <Link to="/runs?view=backfills">Runs</Link> page
                 to provide a unified view of executions. The Backfills page will be removed in a
                 future release.{' '}
                 <a

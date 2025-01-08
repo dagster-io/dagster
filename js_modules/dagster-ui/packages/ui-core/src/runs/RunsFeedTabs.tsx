@@ -20,7 +20,7 @@ const getDocumentTitle = (selected: SelectedTab) => {
     case 'all':
       return 'Runs | All';
     case 'backfills':
-      return 'Runs | All Backfills';
+      return 'Runs | All backfills';
     case 'failed':
       return 'Runs | Failed';
     case 'in-progress':

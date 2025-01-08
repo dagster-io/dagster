@@ -46,7 +46,7 @@ interface RunsFeedTableProps {
 }
 
 // Potentially other modals in the future
-type RunsFeedModalState = {type: 'partitions'; backfillId: string};
+type RunsFeedDialogState = {type: 'partitions'; backfillId: string};
 
 export const RunsFeedTable = ({
   entries,
@@ -65,7 +65,7 @@ export const RunsFeedTable = ({
 
   const entryIds = useMemo(() => entries.map((e) => e.id), [entries]);
   const [{checkedIds}, {onToggleFactory, onToggleAll}] = useSelectionReducer(entryIds);
-  const [modal, setModal] = useState<null | RunsFeedModalState>(null);
+  const [dialog, setDialog] = useState<null | RunsFeedDialogState>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: entries.length,
@@ -186,8 +186,8 @@ export const RunsFeedTable = ({
     return (
       <div style={{overflow: 'hidden'}}>
         <BackfillPartitionsRequestedDialog
-          backfillId={modal?.type === 'partitions' ? modal.backfillId : undefined}
-          onClose={() => setModal(null)}
+          backfillId={dialog?.type === 'partitions' ? dialog.backfillId : undefined}
+          onClose={() => setDialog(null)}
         />
         <IndeterminateLoadingBar $loading={loading} />
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
@@ -211,7 +211,7 @@ export const RunsFeedTable = ({
                       entry={entry}
                       checked={checkedIds.has(entry.id)}
                       onToggleChecked={onToggleFactory(entry.id)}
-                      onShowPartitions={() => setModal({type: 'partitions', backfillId: entry.id})}
+                      onShowPartitions={() => setDialog({type: 'partitions', backfillId: entry.id})}
                       refetch={refetch}
                       onAddTag={onAddTag}
                       hideTags={hideTags}

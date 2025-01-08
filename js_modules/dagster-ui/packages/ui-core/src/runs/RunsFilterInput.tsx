@@ -127,7 +127,7 @@ export function runsPathWithFilters(
   view?: RunsFeedView,
 ) {
   return `${basePath}?${qs.stringify(
-    {q: tokensAsStringArray(filterTokens), view},
+    {q: tokensAsStringArray(filterTokens), view: view?.toLowerCase()},
     {arrayFormat: 'brackets'},
   )}`;
 }

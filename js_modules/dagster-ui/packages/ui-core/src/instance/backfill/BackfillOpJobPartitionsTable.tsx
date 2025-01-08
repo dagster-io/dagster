@@ -116,27 +116,23 @@ export const BackfillOpJobTarget = ({
     return null;
   };
 
-  const buildRepoLink = () =>
-    repoAddress ? (
-      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} style={{fontSize: '12px'}}>
-        <Icon name="repo" color={Colors.textLight()} />
-        <Link to={workspacePathFromAddress(repoAddress)}>
-          {repoAddressAsHumanString(repoAddress)}
-        </Link>
-      </Box>
-    ) : undefined;
+  const repoLink = repoAddress ? (
+    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}} style={{fontSize: '12px'}}>
+      <Icon name="repo" color={Colors.textLight()} />
+      <Link to={workspacePathFromAddress(repoAddress)}>
+        {repoAddressAsHumanString(repoAddress)}
+      </Link>
+    </Box>
+  ) : undefined;
 
-  const buildPipelineLink = () =>
-    partitionSet && repo ? (
+  const pipelineLink =
+    partitionSet && repoAddress && repo ? (
       <PipelineReference
         showIcon
         size="small"
         isJob={isThisThingAJob(repo, partitionSet.pipelineName)}
         pipelineName={partitionSet.pipelineName}
-        pipelineHrefContext={{
-          name: partitionSet.repositoryOrigin.repositoryName,
-          location: partitionSet.repositoryOrigin.repositoryLocationName,
-        }}
+        pipelineHrefContext={repoAddress}
       />
     ) : null;
 
@@ -144,8 +140,8 @@ export const BackfillOpJobTarget = ({
     <Box flex={{direction: 'column', gap: 4, alignItems: 'start'}}>
       {buildHeader()}
       <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
-        {buildRepoLink()}
-        {buildPipelineLink()}
+        {repoLink}
+        {pipelineLink}
       </Box>
     </Box>
   );
