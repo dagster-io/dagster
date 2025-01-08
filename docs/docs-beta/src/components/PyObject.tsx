@@ -12,32 +12,21 @@ export const PyObject: React.FunctionComponent<{
   section: string;
   module: string;
   object: string;
-  method?: string;
   displayText?: string;
   pluralize?: boolean;
   decorator?: boolean;
-}> = ({
-  section,
-  method,
-  object,
-  displayText,
-  module = 'dagster',
-  pluralize = false,
-  decorator = false,
-}) => {
+}> = ({section, object, displayText, module = 'dagster', pluralize = false, decorator = false}) => {
   let textValue = displayText || object;
   if (pluralize) {
     textValue += 's';
   }
+
   if (decorator) {
     if (module === 'dagster') {
       textValue = '@dg.' + textValue;
     } else {
       textValue = '@' + module + '.' + textValue;
     }
-  }
-  if (method) {
-    textValue += '.' + method;
   }
 
   // Libraries are in a sub-folder, and the `href` will need to be structured slightly differently
@@ -50,6 +39,8 @@ export const PyObject: React.FunctionComponent<{
     const _package = module.replace(/_/g, '-');
     href = `/api/python-api/libraries/${_package}#${module}.${object}`;
   }
+
+  console.log('->', href);
 
   return (
     <Link href={href}>
