@@ -309,6 +309,9 @@ from dagster._core.definitions.module_loaders.load_assets_from_modules import (
     load_assets_from_package_module as load_assets_from_package_module,
     load_assets_from_package_name as load_assets_from_package_name,
 )
+from dagster._core.definitions.module_loaders.load_defs_from_module import (
+    load_definitions_from_module as load_definitions_from_module,
+)
 from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorDefinition as MultiAssetSensorDefinition,
     MultiAssetSensorEvaluationContext as MultiAssetSensorEvaluationContext,
