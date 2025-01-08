@@ -695,7 +695,7 @@ class RunRecord(
 
     def __new__(
         cls,
-        storage_id: int,
+        storage_id: Union[int, str],
         dagster_run: DagsterRun,
         create_timestamp: datetime,
         update_timestamp: datetime,
@@ -704,7 +704,8 @@ class RunRecord(
     ):
         return super(RunRecord, cls).__new__(
             cls,
-            storage_id=check.int_param(storage_id, "storage_id"),
+            # FIXME(deepyaman): Validation doesn't make sense now below.
+            storage_id=check.int_param(int(storage_id), "storage_id"),
             dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
             create_timestamp=check.inst_param(create_timestamp, "create_timestamp", datetime),
             update_timestamp=check.inst_param(update_timestamp, "update_timestamp", datetime),
