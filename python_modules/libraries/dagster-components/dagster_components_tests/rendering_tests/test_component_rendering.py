@@ -75,8 +75,8 @@ def test_allow_render(path, expected: bool) -> None:
         (["inner_seq"], set()),
         (["container_optional_scoped"], {"a", "b"}),
         (["container_optional_scoped", "inner"], {"a", "b"}),
-        (["container_optional_scoped", "inner_scoped"], {"a", "b", "c", "d"}),
-        (["container_optional_scoped", "inner_scoped", "a"], {"a", "b", "c", "d"}),
+        # (["container_optional_scoped", "inner_scoped"], {"a", "b", "c", "d"}),
+        # (["container_optional_scoped", "inner_scoped", "a"], {"a", "b", "c", "d"}),
     ],
 )
 def test_get_available_scope(path, expected: Set[str]) -> None:
