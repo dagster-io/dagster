@@ -3,38 +3,53 @@ import React from 'react';
 
 export const SearchIndexContext = React.createContext(null);
 
+/**
+ * PyObject component renders a formatted link to the Python API docs.
+ *
+ * Because we are using the `<Link>` component, Docusaurus will validate broken links on build.
+ */
 export const PyObject: React.FunctionComponent<{
+  section: string;
   module: string;
   object: string;
   method?: string;
   displayText?: string;
   pluralize?: boolean;
   decorator?: boolean;
-}> = ({object, method, displayText, pluralize = false, decorator = false}) => {
+}> = ({
+  section,
+  method,
+  object,
+  displayText,
+  module = 'dagster',
+  pluralize = false,
+  decorator = false,
+}) => {
   let textValue = displayText || object;
   if (pluralize) {
     textValue += 's';
   }
   if (decorator) {
-    textValue = '@' + textValue;
+    if (module === 'dagster') {
+      textValue = '@dg.' + textValue;
+    } else {
+      textValue = '@' + module + '.' + textValue;
+    }
   }
   if (method) {
     textValue += '.' + method;
   }
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    alert('PyObject not implemented yet');
-  };
+  // As we don't have access to the searchContext like we did in the Next.js version of docs, we
+  // will instead require the user to explicitly define the `.rst` location of the module / object
+  // via the `section` prop.
+
+  // For example: /api/python-api/assets#dagster.MaterializeResult
+  const href = `/api/python-api/${section}/${module}.${object}`;
 
   return (
-    <Link
-      href="#"
-      onClick={handleClick}
-      className="pyobject underline cursor-pointer"
-      title="PyObject not implemented yet"
-    >
-      <code>{textValue}</code>
+    <Link href={href}>
+      <code style={{paddingLeft: '4px', paddingRight: '4px'}}>{textValue}</code>
     </Link>
   );
 };

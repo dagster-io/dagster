@@ -55,8 +55,8 @@ You can read more about our philosophy behind the [asset centric approach](https
 
 ### Products asset
 
-First, we will create an asset that creates a DuckDB table to hold data from the products CSV. This asset takes the `duckdb` resource defined earlier and returns a `MaterializeResult` object.
-Additionally, this asset contains metadata in the `@dg.asset` decorator parameters to help categorize the asset, and in the `return` block to give us a preview of the asset in the Dagster UI.
+First, we will create an asset that creates a DuckDB table to hold data from the products CSV. This asset takes the `duckdb` resource defined earlier and returns a <PyObject object="MaterializeResult" /> object.
+Additionally, this asset contains metadata in the <PyObject object="asset" module="dagster" decorator /> decorator parameters to help categorize the asset, and in the `return` block to give us a preview of the asset in the Dagster UI.
 
 To create this asset, open the `definitions.py` file and copy the following code into it:
 
