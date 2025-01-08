@@ -56,11 +56,7 @@ from dagster._record import (
     has_generated_new,
     is_record,
 )
-from dagster._serdes.errors import (
-    DeserializationError,
-    SerdesUsageError,
-    SerializationError,
-)
+from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -337,12 +333,7 @@ def whitelist_for_serdes(
           if a `FieldSerializer` is provided. Does not apply to enums.
         kwargs_fields (Optional[AbstractSet[str]]): A set of fields that will be passed to the constructor in kwargs.
     """
-    if (
-        storage_field_names
-        or old_fields
-        or skip_when_empty_fields
-        or skip_when_none_fields
-    ):
+    if storage_field_names or old_fields or skip_when_empty_fields or skip_when_none_fields:
         check.invariant(
             serializer is None or issubclass(serializer, ObjectSerializer),
             "storage_field_names, old_fields, skip_when_empty_fields, skip_when_none_fields can only be used with a"
@@ -450,9 +441,7 @@ def _whitelist_for_serdes(
             )
             return klass
         else:
-            raise SerdesUsageError(
-                f"Can not whitelist class {klass} for serializer {serializer}"
-            )
+            raise SerdesUsageError(f"Can not whitelist class {klass} for serializer {serializer}")
 
     return __whitelist_for_serdes
 
@@ -649,17 +638,14 @@ class ObjectSerializer(Serializer, Generic[T]):
         self,
         value: T,
         whitelist_map: WhitelistMap,
-        object_handler: Callable[
-            [SerializableObject, WhitelistMap, str], JsonSerializableValue
-        ],
+        object_handler: Callable[[SerializableObject, WhitelistMap, str], JsonSerializableValue],
         descent_path: str,
     ) -> Iterator[Tuple[str, JsonSerializableValue]]:
         yield "__class__", self.get_storage_name()
         for key, inner_value in self.object_as_mapping(self.before_pack(value)).items():
-            if (
-                key in self.skip_when_empty_fields
-                and inner_value in EMPTY_VALUES_TO_SKIP
-            ) or (key in self.skip_when_none_fields and inner_value is None):
+            if (key in self.skip_when_empty_fields and inner_value in EMPTY_VALUES_TO_SKIP) or (
+                key in self.skip_when_none_fields and inner_value is None
+            ):
                 continue
             storage_key = self.storage_field_names.get(key, key)
             custom = self.field_serializers.get(key)
@@ -740,9 +726,7 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
 # `@record`-decorated classes.
 RecordSerializer = NamedTupleSerializer
 
-T_Dataclass = TypeVar(
-    "T_Dataclass", bound="DataclassInstance", default="DataclassInstance"
-)
+T_Dataclass = TypeVar("T_Dataclass", bound="DataclassInstance", default="DataclassInstance")
 
 
 class DataclassSerializer(ObjectSerializer[T_Dataclass]):
@@ -764,8 +748,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
         result = {}
         for key, field in self._model_fields.items():
             if field.alias is None and (
-                field.serialization_alias is not None
-                or field.validation_alias is not None
+                field.serialization_alias is not None or field.validation_alias is not None
             ):
                 raise SerializationError(
                     "Can't serialize pydantic models with serialization or validation aliases. Use "
@@ -827,9 +810,7 @@ class SetToSequenceFieldSerializer(FieldSerializer):
         descent_path: str,
     ) -> Optional[Sequence[Any]]:
         return (
-            sorted(
-                [pack_value(x, whitelist_map, descent_path) for x in set_value], key=str
-            )
+            sorted([pack_value(x, whitelist_map, descent_path) for x in set_value], key=str)
             if set_value is not None
             else None
         )
@@ -927,9 +908,7 @@ def pack_value(
 def _transform_for_serialization(
     val: PackableValue,
     whitelist_map: WhitelistMap,
-    object_handler: Callable[
-        [SerializableObject, WhitelistMap, str], JsonSerializableValue
-    ],
+    object_handler: Callable[[SerializableObject, WhitelistMap, str], JsonSerializableValue],
     descent_path: str,
 ) -> JsonSerializableValue:
     # this is a hot code path so we handle the common base cases without isinstance
@@ -1149,9 +1128,7 @@ def deserialize_value(
 def deserialize_value(
     val: str,
     as_type: Optional[
-        Union[
-            Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]
-        ]
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
     json_loads: Callable = seven.json.loads,
@@ -1188,29 +1165,21 @@ def deserialize_values(
 def deserialize_values(
     vals: Iterable[str],
     as_type: Optional[
-        Union[
-            Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]
-        ]
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
     ],
     whitelist_map: WhitelistMap = ...,
     json_loads: Callable = seven.json.loads,
-) -> Sequence[
-    Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]
-]: ...
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]: ...
 
 
 def deserialize_values(
     vals: Iterable[str],
     as_type: Optional[
-        Union[
-            Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]
-        ]
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
     json_loads: Callable = seven.json.loads,
-) -> Sequence[
-    Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]
-]:
+) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
     """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
     with (
         disable_dagster_warnings(),
@@ -1221,9 +1190,7 @@ def deserialize_values(
             context = UnpackContext()
             unpacked_value = json_loads(
                 val,
-                object_hook=partial(
-                    _unpack_object, whitelist_map=whitelist_map, context=context
-                ),
+                object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
             )
             unpacked_value = context.finalize_unpack(unpacked_value)
             if as_type and not (
@@ -1245,9 +1212,7 @@ class UnknownSerdesValue:
         self.value = value
 
 
-def _unpack_object(
-    val: dict, whitelist_map: WhitelistMap, context: UnpackContext
-) -> UnpackedValue:
+def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext) -> UnpackedValue:
     if "__class__" in val:
         klass_name = val["__class__"]
         if klass_name not in whitelist_map.object_deserializers:
@@ -1325,9 +1290,7 @@ def unpack_value(
 def unpack_value(
     val: JsonSerializableValue,
     as_type: Optional[
-        Union[
-            Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]
-        ]
+        Union[Type[T_PackableValue], Tuple[Type[T_PackableValue], Type[U_PackableValue]]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
     context: Optional[UnpackContext] = None,
@@ -1364,9 +1327,7 @@ def _unpack_value(
         return [_unpack_value(item, whitelist_map, context) for item in val]
 
     if isinstance(val, dict):
-        unpacked_vals = {
-            k: _unpack_value(v, whitelist_map, context) for k, v in val.items()
-        }
+        unpacked_vals = {k: _unpack_value(v, whitelist_map, context) for k, v in val.items()}
         return _unpack_object(unpacked_vals, whitelist_map, context)
 
     return val
@@ -1395,9 +1356,7 @@ def _check_serdes_tuple_class_invariants(
 
     if cls_param.name not in {"cls", "_cls"}:
         raise SerdesUsageError(
-            _with_header(
-                f'First parameter must be _cls or cls. Got "{cls_param.name}".'
-            )
+            _with_header(f'First parameter must be _cls or cls. Got "{cls_param.name}".')
         )
 
     value_params = dunder_new_params[1:]

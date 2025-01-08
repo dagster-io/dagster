@@ -1,20 +1,25 @@
 import dataclasses
-from io import BytesIO
 import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import AbstractSet, Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.events import AssetMaterialization
-import msgpack
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union
+
 import dagster._check as check
 import pydantic
 import pytest
 from dagster._check.functions import CheckError
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._model import DagsterModel
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster._serdes.msgpack import (
+    deserialize_value_with_cbor,
+    deserialize_value_with_msgpack,
+    serialize_value_with_cbor,
+    serialize_value_with_msgpack,
+)
 from dagster._serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
@@ -23,10 +28,7 @@ from dagster._serdes.serdes import (
     SetToSequenceFieldSerializer,
     UnpackContext,
     WhitelistMap,
-    _root,
-    _transform_for_serialization,
     _whitelist_for_serdes,
-    _wrap_object,
     deserialize_value,
     get_prefix_for_a_serialized,
     get_storage_name,
@@ -34,7 +36,6 @@ from dagster._serdes.serdes import (
     serialize_value,
     unpack_value,
 )
-from dagster._serdes.msgpack import serialize_value_with_msgpack, deserialize_value_with_msgpack, deserialize_values_with_msgpack
 from dagster._serdes.utils import hash_str
 from dagster._utils.cached_method import cached_method
 
@@ -92,6 +93,7 @@ def test_descent_path():
         match='Attempted to deserialize class "Fizz" which is not in the whitelist',
     ):
         deserialize_value(ser, whitelist_map=blank_map)
+
 
 def test_forward_compat_serdes_new_field_with_default() -> None:
     test_map = WhitelistMap.create()
@@ -456,9 +458,11 @@ def test_named_tuple() -> None:
     deserialized = deserialize_value(serialized, whitelist_map=test_map)
     assert deserialized == val
 
+
 def test_deserialize_empty_set_msgpack():
     assert set() == deserialize_value_with_msgpack(serialize_value_with_msgpack(set()))
     assert frozenset() == deserialize_value_with_msgpack(serialize_value_with_msgpack(frozenset()))
+
 
 def test_named_tuple_msgpack() -> None:
     test_map = WhitelistMap.create()
@@ -475,8 +479,25 @@ def test_named_tuple_msgpack() -> None:
 def test_event_log_msgpack() -> None:
     materialization = AssetMaterialization(AssetKey("a"))
     serialized = serialize_value_with_msgpack(materialization)
-    print(serialized)
     assert materialization == deserialize_value_with_msgpack(serialized)
+
+
+def test_large_int_msgpack() -> None:
+    val = 2**64
+    serialized = serialize_value_with_msgpack(val)
+    assert val == deserialize_value_with_msgpack(serialized)
+
+
+def test_event_log_cbor() -> None:
+    materialization = AssetMaterialization(AssetKey("a"))
+    serialized = serialize_value_with_cbor(materialization)
+    assert materialization == deserialize_value_with_cbor(serialized)
+
+
+def test_large_int_cbor() -> None:
+    val = 2**64
+    serialized = serialize_value_with_cbor(val)
+    assert val == deserialize_value_with_cbor(serialized)
 
 
 # Ensures it is possible to simultaneously have a class Foo and a separate class that serializes to
