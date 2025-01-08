@@ -277,21 +277,28 @@ def test_component_type_info_multiple_flags_fails() -> None:
 # ##### LIST
 # ########################
 
+_EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
+    dagster_components.test.all_metadata_empty_asset
+    dagster_components.test.simple_asset
+        A simple asset that returns a constant string value.
+    dagster_components.test.simple_pipes_script_asset
+        A simple asset that runs a Python script with the Pipes subprocess client.
+""").strip()
+
 
 def test_list_component_types_success():
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke("component-type", "list")
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
-            dagster_components.test.all_metadata_empty_asset
-            dagster_components.test.simple_asset
-                A simple asset that returns a constant string value.
-            dagster_components.test.simple_pipes_script_asset
-                A simple asset that runs a Python script with the Pipes subprocess client.
-        """).strip()
-        )
+        assert result.output.strip() == _EXPECTED_COMPONENT_TYPES
+
+
+def test_list_component_types_success_with_unmanaged_environment():
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, skip_venv=True):
+        result = runner.invoke("component-type", "list", "--no-use-dg-managed-environment")
+        assert_runner_result(result)
+        assert not Path("uv.lock").exists()
+        assert result.output.strip() == _EXPECTED_COMPONENT_TYPES
 
 
 def test_list_component_types_outside_code_location_fails() -> None:

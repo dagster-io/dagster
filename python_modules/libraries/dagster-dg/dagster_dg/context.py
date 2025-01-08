@@ -106,7 +106,10 @@ class DgContext:
 
     @classmethod
     def from_config(cls, config: DgConfig) -> Self:
-        cache = None if config.disable_cache else DgCache.from_config(config)
+        if config.disable_cache or not config.use_dg_managed_environment:
+            cache = None
+        else:
+            cache = DgCache.from_config(config)
         return cls(config=config, _cache=cache)
 
     @classmethod
@@ -217,7 +220,8 @@ class CodeLocationDirectoryContext:
     @classmethod
     def from_path(cls, path: Path, dg_context: DgContext) -> Self:
         root_path = resolve_code_location_root_directory(path)
-        ensure_uv_lock(root_path)
+        if dg_context.config.use_dg_managed_environment:
+            ensure_uv_lock(root_path)
 
         code_location_config = _load_code_location_config(root_path)
         components_lib_package_name = (
