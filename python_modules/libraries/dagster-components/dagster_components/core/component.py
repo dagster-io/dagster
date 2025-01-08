@@ -25,7 +25,7 @@ from dagster_components.core.component_generator import (
     ComponentGeneratorUnavailableReason,
     DefaultComponentGenerator,
 )
-from dagster_components.core.component_rendering import TemplatedValueRenderer
+from dagster_components.core.component_rendering import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
@@ -216,7 +216,7 @@ class ComponentLoadContext:
     resources: Mapping[str, object]
     registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
-    templated_value_renderer: TemplatedValueRenderer
+    templated_value_resolver: TemplatedValueResolver
 
     @staticmethod
     def for_test(
@@ -229,7 +229,7 @@ class ComponentLoadContext:
             resources=resources or {},
             registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
-            templated_value_renderer=TemplatedValueRenderer.default(),
+            templated_value_resolver=TemplatedValueResolver.default(),
         )
 
     @property
@@ -244,7 +244,7 @@ class ComponentLoadContext:
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
             self,
-            templated_value_renderer=self.templated_value_renderer.with_context(**rendering_scope),
+            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
         )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
@@ -259,7 +259,7 @@ class ComponentLoadContext:
 
     def load_params(self, params_schema: type[T]) -> T:
         with pushd(str(self.path)):
-            preprocessed_params = self.templated_value_renderer.render_params(
+            preprocessed_params = self.templated_value_resolver.render_params(
                 self._raw_params(), params_schema
             )
             return TypeAdapter(params_schema).validate_python(preprocessed_params)

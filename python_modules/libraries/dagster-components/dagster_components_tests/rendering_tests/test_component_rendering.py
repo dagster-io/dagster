@@ -3,16 +3,16 @@ from typing import Annotated, Optional
 
 import pytest
 from dagster_components.core.component_rendering import (
-    RenderedModel,
+    ComponentSchemaBaseModel,
     ResolvedFieldInfo,
-    TemplatedValueRenderer,
+    TemplatedValueResolver,
     allow_render,
     get_available_scope,
 )
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
-class InnerRendered(RenderedModel):
+class InnerRendered(ComponentSchemaBaseModel):
     a: Optional[str] = None
 
 
@@ -98,7 +98,7 @@ def test_render() -> None:
         },
     }
 
-    renderer = TemplatedValueRenderer(context={"foo_val": "foo", "bar_val": "bar"})
+    renderer = TemplatedValueResolver(context={"foo_val": "foo", "bar_val": "bar"})
     rendered_data = renderer.render_params(data, Outer)
 
     assert rendered_data == {
@@ -116,7 +116,7 @@ def test_render() -> None:
     TypeAdapter(Outer).validate_python(rendered_data)
 
 
-class RM(RenderedModel):
+class RM(ComponentSchemaBaseModel):
     the_renderable_int: Annotated[str, ResolvedFieldInfo(output_type=int)]
     the_unrenderable_int: int
 
@@ -131,7 +131,7 @@ def test_valid_rendering() -> None:
         the_str="{{ some_str }}",
         the_opt_int="{{ some_int }}",
     )
-    renderer = TemplatedValueRenderer(context={"some_int": 1, "some_str": "aaa"})
+    renderer = TemplatedValueResolver(context={"some_int": 1, "some_str": "aaa"})
     resolved_properties = rm.render_properties(renderer)
 
     assert resolved_properties == {
@@ -150,7 +150,7 @@ def test_invalid_rendering() -> None:
         the_opt_int="{{ some_str }}",
     )
 
-    renderer = TemplatedValueRenderer(context={"some_int": 1, "some_str": "aaa"})
+    renderer = TemplatedValueResolver(context={"some_int": 1, "some_str": "aaa"})
 
     with pytest.raises(ValidationError):
         # string is not a valid output type for the_opt_int

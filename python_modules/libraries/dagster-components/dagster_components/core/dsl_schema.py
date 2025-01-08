@@ -15,9 +15,9 @@ from dagster._record import replace
 from pydantic import BaseModel
 
 from dagster_components.core.component_rendering import (
-    RenderedModel,
+    ComponentSchemaBaseModel,
     ResolvedFieldInfo,
-    TemplatedValueRenderer,
+    TemplatedValueResolver,
 )
 
 
@@ -26,14 +26,14 @@ class OpSpecBaseModel(BaseModel):
     tags: Optional[dict[str, str]] = None
 
 
-def _post_process_key(rendered: Optional[str]) -> Optional[AssetKey]:
-    return AssetKey.from_user_string(rendered) if rendered else None
+def _post_process_key(resolved: Optional[str]) -> Optional[AssetKey]:
+    return AssetKey.from_user_string(resolved) if resolved else None
 
 
-class AssetAttributesModel(RenderedModel):
+class AssetAttributesModel(ComponentSchemaBaseModel):
     key: Annotated[
         Optional[str],
-        ResolvedFieldInfo(output_type=AssetKey, post_process=_post_process_key),
+        ResolvedFieldInfo(output_type=AssetKey, post_process_fn=_post_process_key),
     ] = None
     deps: Sequence[str] = []
     description: Optional[str] = None
@@ -63,10 +63,10 @@ class AssetSpecTransform(ABC, BaseModel):
     def apply_to_spec(
         self,
         spec: AssetSpec,
-        value_renderer: TemplatedValueRenderer,
+        value_resolver: TemplatedValueResolver,
     ) -> AssetSpec:
         # add the original spec to the context and resolve values
-        attributes = self.attributes.render_properties(value_renderer.with_context(asset=spec))
+        attributes = self.attributes.render_properties(value_resolver.with_context(asset=spec))
 
         if self.operation == "merge":
             mergeable_attributes = {"metadata", "tags"}
@@ -82,13 +82,13 @@ class AssetSpecTransform(ABC, BaseModel):
         else:
             check.failed(f"Unsupported operation: {self.operation}")
 
-    def apply(self, defs: Definitions, value_renderer: TemplatedValueRenderer) -> Definitions:
+    def apply(self, defs: Definitions, value_resolver: TemplatedValueResolver) -> Definitions:
         target_selection = AssetSelection.from_string(self.target, include_sources=True)
         target_keys = target_selection.resolve(defs.get_asset_graph())
 
         mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
         mapped_assets = map_asset_specs(
-            lambda spec: self.apply_to_spec(spec, value_renderer)
+            lambda spec: self.apply_to_spec(spec, value_resolver)
             if spec.key in target_keys
             else spec,
             mappable,

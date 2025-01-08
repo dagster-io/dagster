@@ -13,7 +13,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.errors import DagsterError
 
-from dagster_components.core.component_rendering import TemplatedValueRenderer
+from dagster_components.core.component_rendering import TemplatedValueResolver
 from dagster_components.core.dsl_schema import AssetAttributesModel
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
@@ -56,10 +56,10 @@ def get_path_for_package(package_name: str) -> str:
 class ResolvingInfo:
     obj_name: str
     asset_attributes: AssetAttributesModel
-    value_renderer: TemplatedValueRenderer
+    value_resolver: TemplatedValueResolver
 
-    def get_rendered_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        renderer = self.value_renderer.with_context(**{self.obj_name: obj})
+    def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
+        renderer = self.value_resolver.with_context(**{self.obj_name: obj})
         rendered_attributes = self.asset_attributes.render_properties(renderer)
         return (
             rendered_attributes[attribute]
@@ -85,7 +85,7 @@ class ResolvingInfo:
 
         ```
         """
-        resolver = self.value_renderer.with_context(**context)
+        resolver = self.value_resolver.with_context(**context)
         resolved_attributes = self.asset_attributes.render_properties(resolver)
         return base_spec.replace_attributes(**resolved_attributes)
 
@@ -101,18 +101,18 @@ def get_wrapped_translator_class(translator_type: type):
             self.resolving_info = resolving_info
 
         def get_asset_key(self, obj: Any) -> AssetKey:
-            return self.resolving_info.get_rendered_attribute("key", obj, super().get_asset_key)
+            return self.resolving_info.get_resolved_attribute("key", obj, super().get_asset_key)
 
         def get_group_name(self, obj: Any) -> Optional[str]:
-            return self.resolving_info.get_rendered_attribute(
+            return self.resolving_info.get_resolved_attribute(
                 "group_name", obj, super().get_group_name
             )
 
         def get_tags(self, obj: Any) -> Mapping[str, str]:
-            return self._get_rendered_attribute("tags", obj, super().get_tags)
+            return self.resolving_info.get_resolved_attribute("tags", obj, super().get_tags)
 
         def get_automation_condition(self, obj: Any) -> Optional[AutomationCondition]:
-            return self._get_rendered_attribute(
+            return self.resolving_info.get_resolved_attribute(
                 "automation_condition", obj, super().get_automation_condition
             )
 

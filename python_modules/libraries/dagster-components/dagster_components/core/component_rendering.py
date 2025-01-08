@@ -44,7 +44,7 @@ def _env(key: str) -> Optional[str]:
     return os.environ.get(key)
 
 
-ShouldRenderFn = Callable[[Sequence[Union[str, int]]], bool]
+ShouldResolveFn = Callable[[Sequence[Union[str, int]]], bool]
 
 
 @dataclass
@@ -87,50 +87,50 @@ def _get_resolution_metadata(annotation: type) -> ResolutionMetadata:
     return ResolutionMetadata(output_type=annotation)
 
 
-class RenderedModel(BaseModel):
-    """Base class for models that get rendered lazily."""
+class ComponentSchemaBaseModel(BaseModel):
+    """Base class for models that are part of a component schema."""
 
     model_config = ConfigDict(json_schema_extra={JSON_SCHEMA_EXTRA_DEFER_RENDERING_KEY: True})
 
-    def render_properties(self, value_renderer: "TemplatedValueRenderer") -> Mapping[str, Any]:
-        """Returns a dictionary of rendered properties for this class."""
+    def render_properties(self, value_resolver: "TemplatedValueResolver") -> Mapping[str, Any]:
+        """Returns a dictionary of resolved properties for this class."""
         raw_properties = self.model_dump(exclude_unset=True)
 
-        # validate that the rendered properties match the output type
-        rendered_properties = {}
+        # validate that the resolved properties match the output type
+        resolved_properties = {}
         for k, v in raw_properties.items():
-            rendered = value_renderer.render_obj(v)
+            resolved = value_resolver.render_obj(v)
             annotation = self.__annotations__[k]
             rendering_metadata = _get_resolution_metadata(annotation)
 
             if rendering_metadata.post_process:
-                rendered = rendering_metadata.post_process(rendered)
+                resolved = rendering_metadata.post_process(resolved)
 
             # hook into pydantic's type validation to handle complicated stuff like Optional[Mapping[str, int]]
             TypeAdapter(
                 rendering_metadata.output_type, config={"arbitrary_types_allowed": True}
-            ).validate_python(rendered)
+            ).validate_python(resolved)
 
-            rendered_properties[k] = rendered
+            resolved_properties[k] = resolved
 
-        return rendered_properties
+        return resolved_properties
 
 
 @record
-class TemplatedValueRenderer:
+class TemplatedValueResolver:
     context: Mapping[str, Any]
 
     @staticmethod
-    def default() -> "TemplatedValueRenderer":
-        return TemplatedValueRenderer(
+    def default() -> "TemplatedValueResolver":
+        return TemplatedValueResolver(
             context={"env": _env, "automation_condition": automation_condition_scope()}
         )
 
-    def with_context(self, **additional_context) -> "TemplatedValueRenderer":
-        return TemplatedValueRenderer(context={**self.context, **additional_context})
+    def with_context(self, **additional_context) -> "TemplatedValueResolver":
+        return TemplatedValueResolver(context={**self.context, **additional_context})
 
     def _render_value(self, val: Any) -> Any:
-        """Renders a single value, if it is a templated string."""
+        """Resolves a single value, if it is a templated string."""
         return NativeTemplate(val).render(**self.context) if isinstance(val, str) else val
 
     def _render_obj(
