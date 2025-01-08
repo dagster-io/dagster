@@ -1,11 +1,14 @@
+import sys
 import traceback
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Iterator, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, Iterator, Optional, Sequence, Tuple, Type, Union
 
+import tomli
+import tomli_w
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
@@ -40,7 +43,7 @@ def isolated_example_code_location_bar(
                 *(["--skip-venv"] if skip_venv else []),
                 "bar",
             )
-            with pushd("code_locations/bar"):
+            with clear_module_from_cache("bar"), pushd("code_locations/bar"):
                 yield
     else:
         with runner.isolated_filesystem():
@@ -52,8 +55,17 @@ def isolated_example_code_location_bar(
                 *(["--skip-venv"] if skip_venv else []),
                 "bar",
             )
-            with pushd("bar"):
+            with clear_module_from_cache("bar"), pushd("bar"):
                 yield
+
+
+@contextmanager
+def clear_module_from_cache(module_name: str) -> Iterator[None]:
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+    yield
+    if module_name in sys.modules:
+        del sys.modules[module_name]
 
 
 @dataclass
@@ -124,3 +136,12 @@ def print_exception_info(
     formatted_traceback = "".join(traceback.format_tb(exc_traceback))
     print(formatted_traceback)  # noqa: T201
     print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
+
+
+@contextmanager
+def modify_pyproject_toml() -> Iterator[Dict[str, Any]]:
+    with open("pyproject.toml") as f:
+        toml = tomli.loads(f.read())
+    yield toml
+    with open("pyproject.toml", "w") as f:
+        f.write(tomli_w.dumps(toml))

@@ -1,4 +1,5 @@
 import contextlib
+import importlib.util
 import json
 import os
 import posixpath
@@ -57,6 +58,33 @@ def execute_code_location_command(path: Path, cmd: Sequence[str], dg_context: "D
             full_cmd, stdout=subprocess.PIPE, env=get_uv_command_env(), check=True
         )
         return result.stdout.decode("utf-8")
+
+
+# Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
+# importable.
+@contextlib.contextmanager
+def ensure_loadable_path(path: Path) -> Iterator[None]:
+    orig_path = sys.path.copy()
+    sys.path.insert(0, str(path))
+    try:
+        yield
+    finally:
+        sys.path = orig_path
+
+
+def is_package_installed(package_name: str) -> bool:
+    return bool(importlib.util.find_spec(package_name))
+
+
+def get_path_for_package(package_name: str) -> str:
+    spec = importlib.util.find_spec(package_name)
+    if not spec:
+        raise DgError(f"Cannot find package: {package_name}")
+    # file_path = spec.origin
+    submodule_search_locations = spec.submodule_search_locations
+    if not submodule_search_locations:
+        raise DgError(f"Package does not have any locations for submodules: {package_name}")
+    return submodule_search_locations[0]
 
 
 # uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this

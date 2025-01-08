@@ -1,6 +1,5 @@
 import hashlib
 import json
-import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,10 +13,13 @@ from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import DgConfig
 from dagster_dg.error import DgError
 from dagster_dg.utils import (
+    ensure_loadable_path,
     execute_code_location_command,
+    get_path_for_package,
     get_uv_command_env,
     hash_directory_metadata,
     hash_file_metadata,
+    is_package_installed,
     pushd,
 )
 
@@ -64,16 +66,32 @@ def _is_code_location_root_directory(path: Path) -> bool:
     if (path / "pyproject.toml").exists():
         with open(path / "pyproject.toml") as f:
             toml = tomli.loads(f.read())
-            return bool(toml.get("tool", {}).get("dagster"))
+            return bool(toml.get("tool", {}).get("dagster") is not None)
     return False
+
+
+@dataclass
+class CodeLocationConfig:
+    components_package: Optional[str] = None
+    components_lib_package: Optional[str] = None
+
+
+def _load_code_location_config(path: Path) -> CodeLocationConfig:
+    with open(path / "pyproject.toml") as f:
+        toml = tomli.loads(f.read())
+        raw_dg_config = toml.get("tool", {}).get("dg", {})
+        raw_config = {
+            k: v for k, v in raw_dg_config.items() if k in CodeLocationConfig.__annotations__
+        }
+        return CodeLocationConfig(**raw_config)
 
 
 # Deployment
 _DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code_locations"
 
 # Code location
-_CODE_LOCATION_COMPONENTS_LIB_DIR: Final = "lib"
-_CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
+_DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE: Final = "lib"
+_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE: Final = "components"
 
 
 @dataclass
@@ -130,7 +148,9 @@ def get_code_location_env_hash(code_location_root_path: Path) -> str:
     if not uv_lock_path.exists():
         raise DgError(f"uv.lock file not found in {code_location_root_path}")
     local_components_path = (
-        code_location_root_path / code_location_root_path.name / _CODE_LOCATION_COMPONENTS_LIB_DIR
+        code_location_root_path
+        / code_location_root_path.name
+        / _DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE
     )
     if not local_components_path.exists():
         raise DgError(f"Local components directory not found in {code_location_root_path}")
@@ -186,6 +206,10 @@ class CodeLocationDirectoryContext:
     root_path: Path
     name: str
     component_registry: "RemoteComponentRegistry"
+    components_package_name: str
+    components_path: Path
+    components_lib_package_name: str
+    components_lib_path: Path
     deployment_context: Optional[DeploymentDirectoryContext]
     dg_context: DgContext
 
@@ -193,11 +217,35 @@ class CodeLocationDirectoryContext:
     def from_path(cls, path: Path, dg_context: DgContext) -> Self:
         root_path = resolve_code_location_root_directory(path)
         ensure_uv_lock(root_path)
+
+        code_location_config = _load_code_location_config(root_path)
+        components_lib_package_name = (
+            code_location_config.components_lib_package
+            or f"{path.name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE}"
+        )
+        components_package_name = (
+            code_location_config.components_package
+            or f"{path.name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE}"
+        )
+        with ensure_loadable_path(root_path):
+            if not is_package_installed(components_lib_package_name):
+                raise DgError(
+                    f"Components lib package `{components_lib_package_name}` is not installed."
+                )
+            components_lib_path = Path(get_path_for_package(components_lib_package_name))
+            if not is_package_installed(components_package_name):
+                raise DgError(f"Components package `{components_package_name}` is not installed.")
+            components_path = Path(get_path_for_package(components_package_name))
+
         component_registry = fetch_component_registry(path, dg_context)
         return cls(
             root_path=root_path,
             name=path.name,
             component_registry=component_registry,
+            components_package_name=components_package_name,
+            components_path=components_path,
+            components_lib_package_name=components_lib_package_name,
+            components_lib_path=components_lib_path,
             deployment_context=DeploymentDirectoryContext.from_path(path, dg_context)
             if is_inside_deployment_directory(path)
             else None,
@@ -205,16 +253,8 @@ class CodeLocationDirectoryContext:
         )
 
     @property
-    def config(self) -> DgConfig:
+    def dg_config(self) -> DgConfig:
         return self.dg_context.config
-
-    @property
-    def local_component_types_root_path(self) -> str:
-        return os.path.join(self.root_path, self.name, _CODE_LOCATION_COMPONENTS_LIB_DIR)
-
-    @property
-    def local_component_types_root_module_name(self) -> str:
-        return f"{self.name}.{_CODE_LOCATION_COMPONENTS_LIB_DIR}"
 
     def iter_component_types(self) -> Iterable[Tuple[str, RemoteComponentType]]:
         for key in sorted(self.component_registry.keys()):
@@ -228,24 +268,13 @@ class CodeLocationDirectoryContext:
             raise DgError(f"No component type named {name}")
         return self.component_registry.get(name)
 
-    @property
-    def component_instances_root_path(self) -> Path:
-        return self.root_path / self.name / _CODE_LOCATION_COMPONENT_INSTANCES_DIR
-
-    @property
-    def component_instances_root_module_name(self) -> str:
-        return f"{self.name}.{_CODE_LOCATION_COMPONENT_INSTANCES_DIR}"
-
     def get_component_instance_names(self) -> Iterable[str]:
-        return [
-            str(instance_path.name)
-            for instance_path in self.component_instances_root_path.iterdir()
-        ]
+        return [str(instance_path.name) for instance_path in self.components_path.iterdir()]
 
     def get_component_instance_path(self, name: str) -> Path:
         if not self.has_component_instance(name):
             raise DgError(f"No component instance named {name}")
-        return self.component_instances_root_path / name
+        return self.components_path / name
 
     def has_component_instance(self, name: str) -> bool:
-        return (self.component_instances_root_path / name).is_dir()
+        return (self.components_path / name).is_dir()
