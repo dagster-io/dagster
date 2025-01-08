@@ -89,7 +89,7 @@ const AssetSelectionTag = ({
   assetSelection: AutomationAssetSelectionFragment;
   automationType: AutomationType;
 }) => {
-  const [showAssetSelection, setShowAssetSelection] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
 
   const error =
     assetSelection.assetsOrError.__typename === 'PythonError' ? assetSelection.assetsOrError : null;
@@ -129,9 +129,9 @@ const AssetSelectionTag = ({
   return (
     <>
       <Dialog
-        isOpen={showAssetSelection}
+        isOpen={showDialog}
         title="Targeted assets"
-        onClose={() => setShowAssetSelection(false)}
+        onClose={() => setShowDialog(false)}
         style={{width: '750px', maxWidth: '80vw', minWidth: '500px'}}
         canOutsideClickClose
         canEscapeKeyClose
@@ -162,7 +162,7 @@ const AssetSelectionTag = ({
           <Button
             intent="primary"
             onClick={() => {
-              setShowAssetSelection(false);
+              setShowDialog(false);
             }}
           >
             Close
@@ -181,7 +181,7 @@ const AssetSelectionTag = ({
                 body: <PythonErrorInfo error={error} />,
               });
             } else {
-              setShowAssetSelection(true);
+              setShowDialog(true);
             }
           }}
           color={error ? Colors.textRed() : Colors.linkDefault()}
