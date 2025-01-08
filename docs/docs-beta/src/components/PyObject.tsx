@@ -43,9 +43,9 @@ export const PyObject: React.FunctionComponent<{
   // As we don't have access to the searchContext like we did in the Next.js version of docs, we
   // will instead require the user to explicitly define the `.rst` location of the module / object
   // via the `section` prop.
-
+  //
   // For example: /api/python-api/assets#dagster.MaterializeResult
-  const href = `/api/python-api/${section}/${module}.${object}`;
+  const href = `/api/python-api/${section}#${module}.${object}`;
 
   return (
     <Link href={href}>
