@@ -1,8 +1,7 @@
 ---
-title: Resource lifecycle
-sidebar_position: 400
+title: Managing resource state
+sidebar_position: 900
 ---
-
 
 Once a resource reaches a certain complexity, you may want to manage the state of the resource over its lifetime. This is useful for resources that require special initialization or cleanup. `ConfigurableResource` is a data class meant to encapsulate config, but also provides lifecycle hooks to manage the state of the resource.
 

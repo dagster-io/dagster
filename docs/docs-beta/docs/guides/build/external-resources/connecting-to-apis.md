@@ -1,13 +1,13 @@
 ---
-title: Connect to APIs
-sidebar_position: 600
+title: Connecting to APIs
+sidebar_position: 500
 ---
 
 When building a data pipeline, you'll likely need to connect to several external APIs, each with its own specific configuration and behavior. This guide demonstrates how to standardize your API connections and customize their configuration using Dagster resources.
 
 :::note
 
-This guide assumes familiarity with [assets](/guides/build/assets/) and [resources](/guides/build/external-resources-and-systems/connect/resources).
+This guide assumes familiarity with [assets](/guides/build/assets/) and [resources](/guides/build/external-resources/).
 
 :::
 

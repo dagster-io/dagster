@@ -1,6 +1,6 @@
 ---
-title: Dagster Pipes
-sidebar_position: 20
+title: External pipelines
+sidebar_position: 50
 ---
 
 Dagster Pipes provides a powerful mechanism for invoking code outside of Dagster, while providing all the benefits of scheduling, reporting, and observability of native Dagster pipelines. While Dagster is written in Python, you can run code in other languages and send information back to Dagster.

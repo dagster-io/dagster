@@ -1,6 +1,6 @@
 ---
 title: Testing configurable resources
-sidebar_position: 600
+sidebar_position: 700
 ---
 
 You can test the initialization of a <PyObject object="ConfigurableResource"/> by constructing it manually. In most cases, the resource can be constructed directly:

@@ -41,4 +41,4 @@ This will open the Launchpad, where you can scaffold the config, customize its v
 ## Next steps
 
 - Learn more about Dagster [assets](/guides/build/assets/)
-- Connect to external [APIs](/guides/build/external-resources-and-systems/connect/apis) and [databases](/guides/build/external-resources-and-systems/connect/databases) with resources
+- Connect to external [APIs](/guides/build/external-resources/connecting-to-apis) and [databases](/guides/build/external-resources/connecting-to-databases) with resources

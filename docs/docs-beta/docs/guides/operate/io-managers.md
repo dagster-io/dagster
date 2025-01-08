@@ -17,8 +17,8 @@ For assets that follow this pattern, an I/O manager can streamline the code that
 
 To follow the steps in this guide, you'll need familiarity with:
 
-- [Assets](/guides/build/assets/index.mdx
-- [Resources](/guides/build/external-resources-and-systems/connect/resources)
+- [Assets](/guides/build/assets/)
+- [Resources](/guides/build/external-resources/)
 </details>
 
 ## Before you begin
@@ -82,5 +82,5 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 
 ## Next steps
 
-- Learn to [connect databases](/guides/build/external-resources-and-systems/connect/databases) with resources
-- Learn to [connect APIs](/guides/build/external-resources-and-systems/connect/apis) with resources
+- Learn to [connect databases](/guides/build/external-resources/connecting-to-databases) with resources
+- Learn to [connect APIs](/guides/build/external-resources/connecting-to-apis) with resources

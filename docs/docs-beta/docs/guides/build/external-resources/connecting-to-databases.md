@@ -1,6 +1,6 @@
 ---
-title: Connect to a database
-sidebar_position: 500
+title: Connecting to databases
+sidebar_position: 400
 ---
 
 When building a data pipeline, you may need to extract data from or load data into a database. In Dagster, resources can be used to connect to a database by acting as a wrapper around a database client.
@@ -59,5 +59,5 @@ You can also fetch environment variables using the `os` library. Dagster treats 
 
 ## Next steps
 
-- Explore how to use resources for [Connecting to APIs](apis)
-- Go deeper into [Understanding Resources](resources)
+- Explore how to use resources for [connecting to APIs](connecting-to-apis)
+- Go deeper into understanding [resources](/guides/build/external-resources/)
