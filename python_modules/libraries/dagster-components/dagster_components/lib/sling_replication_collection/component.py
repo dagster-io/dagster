@@ -14,6 +14,7 @@ from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import TemplatedValueRenderer, component_type
+from dagster_components.core.component_generator import ComponentGenerator
 from dagster_components.core.dsl_schema import (
     AssetAttributes,
     AssetAttributesModel,
@@ -90,6 +91,14 @@ class SlingReplicationCollectionComponent(Component):
         self.resource = resource
         self.sling_replications = sling_replications
         self.asset_attributes = asset_attributes
+
+    @classmethod
+    def get_generator(cls) -> ComponentGenerator:
+        from dagster_components.lib.sling_replication_collection.generator import (
+            SlingReplicationComponentGenerator,
+        )
+
+        return SlingReplicationComponentGenerator()
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:

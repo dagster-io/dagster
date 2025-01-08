@@ -9,7 +9,7 @@ if _has_dagster_dbt:
     )
 
 if _has_dagster_embedded_elt:
-    from dagster_components.lib.sling_replication_collection import (
+    from dagster_components.lib.sling_replication_collection.component import (
         SlingReplicationCollectionComponent as SlingReplicationCollectionComponent,
     )
 
