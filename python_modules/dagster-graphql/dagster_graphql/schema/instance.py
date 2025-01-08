@@ -279,10 +279,9 @@ class GrapheneInstance(graphene.ObjectType):
         return isinstance(self._instance.run_coordinator, QueuedRunCoordinator)
 
     def resolve_runQueueConfig(self, _graphene_info: ResolveInfo):
-        from dagster._core.run_coordinator import QueuedRunCoordinator
-
-        if isinstance(self._instance.run_coordinator, QueuedRunCoordinator):
-            return GrapheneRunQueueConfig(self._instance.run_coordinator.get_run_queue_config())
+        run_queue_config = self._instance.get_run_queue_config()
+        if run_queue_config:
+            return GrapheneRunQueueConfig(run_queue_config)
         else:
             return None
 
