@@ -205,7 +205,7 @@ class AssetDaemonScenarioState(ScenarioState):
                 self.instance.start_sensor(sensor)
 
             def _stop_sensor():
-                sleep(1)
+                self.logger.critical("Stopping sensor")
                 if sensor and stop_mid_iteration:
                     self.instance.stop_sensor(sensor.get_remote_origin_id(), sensor.selector_id, sensor)
 
@@ -370,32 +370,79 @@ class AssetDaemonScenarioState(ScenarioState):
             asset_partition.asset_key for asset_partition in expected_requested_asset_partitions
         }
 
+    def _assert_run_requets_lists_equal(self, actual: Sequence[RunRequest], expected: Sequence[RunRequest]):
+        def sort_run_request_key_fn(run_request) -> Tuple[AssetKey, Optional[str]]:
+            return (min(run_request.asset_selection), run_request.partition_key)
+
+        sorted_actual_run_requests = sorted(actual, key=sort_run_request_key_fn)
+        sorted_expected_run_requests = sorted(expected, key=sort_run_request_key_fn)
+
+        try:
+            assert len(sorted_actual_run_requests) == len(sorted_expected_run_requests)
+            for arr, err in zip(sorted_actual_run_requests, sorted_expected_run_requests):
+                assert set(arr.asset_selection or []) == set(err.asset_selection or [])
+                assert arr.partition_key == err.partition_key
+        except:
+            self._log_assertion_error(sorted_expected_run_requests, sorted_actual_run_requests)
+            raise
+
+        return sorted_expected_run_requests
+
     def assert_requested_runs(
         self, *expected_run_requests: RunRequest
     ) -> "AssetDaemonScenarioState":
         """Asserts that the set of runs requested by the previously-evaluated tick is identical to
         the set of runs specified in the expected_run_requests argument.
         """
-
-        def sort_run_request_key_fn(run_request) -> Tuple[AssetKey, Optional[str]]:
-            return (min(run_request.asset_selection), run_request.partition_key)
-
-        sorted_run_requests = sorted(self.run_requests, key=sort_run_request_key_fn)
-        sorted_expected_run_requests = sorted(expected_run_requests, key=sort_run_request_key_fn)
-
-        try:
-            assert len(sorted_run_requests) == len(sorted_expected_run_requests)
-            for arr, err in zip(sorted_run_requests, sorted_expected_run_requests):
-                assert set(arr.asset_selection or []) == set(err.asset_selection or [])
-                assert arr.partition_key == err.partition_key
-        except:
-            self._log_assertion_error(sorted_expected_run_requests, sorted_run_requests)
-            raise
+        sorted_expected_run_requests = self._assert_run_requets_lists_equal(self.run_requests, expected_run_requests)
 
         if self.is_daemon:
             self._assert_requested_runs_daemon(sorted_expected_run_requests)
 
         return self
+
+    def assert_requested_runs_for_stopped_iteration(self, num_expected_submissions: int, *expected_run_requests: RunRequest) -> "AssetDaemonScenarioState":
+        """For ticks that are manually stopped during submitting runs, confirm that the number of runs submitted
+        before the tick was interrupted is as expected. Also confirm that the requests the tick would have submitted
+        as as expected.
+        """
+        assert len(self.run_requests) == num_expected_submissions
+        # assert that the iteration was actually stopped before all runs were submitted
+        assert len(self.run_requests) < len(expected_run_requests)
+
+        if self.is_daemon:
+            sensor_origin = self.get_sensor_origin()
+            if sensor_origin:
+                origin_id = sensor_origin.get_id()
+                selector_id = sensor_origin.get_selector().get_id()
+            else:
+                origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
+                selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
+
+            latest_tick = sorted(
+                self.instance.get_ticks(
+                    origin_id=origin_id,
+                    selector_id=selector_id,
+                ),
+                key=lambda tick: tick.tick_id,
+            )[-1]
+            # since the tick was stopped before all runs were submitted, the tick should be in skipped state
+            assert latest_tick.status == TickStatus.SKIPPED
+
+            if latest_tick.tick_data.reserved_run_ids:
+                assert len(latest_tick.tick_data.reserved_run_ids) == len(expected_run_requests)
+
+            if latest_tick.tick_data.run_requests:
+                self._assert_run_requets_lists_equal(latest_tick.tick_data.run_requests, expected_run_requests)
+            else:
+                if len(expected_run_requests) > 0:
+                    self._log_assertion_error(expected_run_requests, [])
+                    raise AssertionError("Expected run requests not found in tick data")
+
+
+        return self
+
+
 
     def _assert_evaluation_daemon(
         self, key: AssetKey, actual_evaluation: AutomationConditionEvaluation
