@@ -58,8 +58,8 @@ class EventLogCursor(NamedTuple):
         return EventLogCursor(EventLogCursorType.OFFSET, offset)
 
     @staticmethod
-    def from_storage_id(storage_id: int) -> "EventLogCursor":
-        return EventLogCursor(EventLogCursorType.STORAGE_ID, storage_id)
+    def from_storage_id(storage_id: Union[int, str]) -> "EventLogCursor":
+        return EventLogCursor(EventLogCursorType.STORAGE_ID, int(storage_id))
 
 
 class RunShardedEventsCursor(NamedTuple):
