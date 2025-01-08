@@ -424,7 +424,7 @@ class SqlRunStorage(RunStorage):
         rows = self.fetchall(query)
         return [
             RunRecord(
-                storage_id=check.int_param(row["id"], "id"),
+                storage_id=str(check.int_param(row["id"], "id")),
                 dagster_run=self._row_to_run(row),
                 create_timestamp=utc_datetime_from_naive(
                     check.inst(row["create_timestamp"], datetime)
