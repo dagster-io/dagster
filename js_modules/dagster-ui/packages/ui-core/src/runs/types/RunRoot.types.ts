@@ -16,6 +16,7 @@ export type RunRootQuery = {
         parentPipelineSnapshotId: string | null;
         runConfigYaml: string;
         canTerminate: boolean;
+        allConcurrencyKeys: Array<string> | null;
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
@@ -62,4 +63,4 @@ export type RunRootQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunRootQueryVersion = '4f2633b31ddc71c08d3a985be30dc1bf21fbc462287554f165060c51a3554beb';
+export const RunRootQueryVersion = '1da9ea08b905f4749f7941abf4a51cbcba78cd150d77f02345c8467abb497257';

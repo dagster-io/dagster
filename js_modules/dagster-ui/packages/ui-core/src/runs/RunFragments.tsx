@@ -14,6 +14,7 @@ export const RUN_FRAGMENT = gql`
       repositoryName
       repositoryLocationName
     }
+    allConcurrencyKeys
     hasReExecutePermission
     hasTerminatePermission
     hasDeletePermission

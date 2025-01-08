@@ -14,6 +14,7 @@ export type RunActionButtonsTestQuery = {
         parentPipelineSnapshotId: string | null;
         runConfigYaml: string;
         canTerminate: boolean;
+        allConcurrencyKeys: Array<string> | null;
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
@@ -60,4 +61,4 @@ export type RunActionButtonsTestQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunActionButtonsTestQueryVersion = '5d358c3360e683549b885108c3dbb7c1d21d8afd790a5ee963e6e9640ccdbfe8';
+export const RunActionButtonsTestQueryVersion = 'dc4d3b53b887955782addbab7ce79b551014d44bc7646e4932a022280cc0c185';
