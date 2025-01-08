@@ -22,7 +22,6 @@ from dagster import (
     MultiPartitionsDefinition,
     _check as check,
 )
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.partition import (
     CachingDynamicPartitionsLoader,
@@ -177,22 +176,10 @@ def _graphene_asset_node(
 ):
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
-    handle = remote_node.resolve_to_singular_repo_scoped_node().repository_handle
-    base_deployment_context = graphene_info.context.get_base_deployment_context()
-
     return GrapheneAssetNode(
         remote_node=remote_node,
         stale_status_loader=stale_status_loader,
         dynamic_partitions_loader=dynamic_partitions_loader,
-        # base_deployment_context will be None if we are not in a branch deployment
-        asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
-            code_location_name=handle.location_name,
-            repository_name=handle.repository_name,
-            branch_workspace=graphene_info.context,
-            base_workspace=base_deployment_context,
-        )
-        if base_deployment_context is not None
-        else None,
     )
 
 

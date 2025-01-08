@@ -4006,14 +4006,14 @@ export type QueryRunTagsOrErrorArgs = {
 
 export type QueryRunsFeedCountOrErrorArgs = {
   filter?: InputMaybe<RunsFilter>;
-  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
+  view: RunsFeedView;
 };
 
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   filter?: InputMaybe<RunsFilter>;
-  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
   limit: Scalars['Int']['input'];
+  view: RunsFeedView;
 };
 
 export type QueryRunsOrErrorArgs = {
@@ -4840,6 +4840,12 @@ export type RunsFeedEntry = {
   startTime: Maybe<Scalars['Float']['output']>;
   tags: Array<PipelineTag>;
 };
+
+export enum RunsFeedView {
+  BACKFILLS = 'BACKFILLS',
+  ROOTS = 'ROOTS',
+  RUNS = 'RUNS',
+}
 
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
