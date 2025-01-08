@@ -228,7 +228,7 @@ def _create_component_generate_subcommand(
             generate_params = None
 
         generate_component_instance(
-            Path(context.component_instances_root_path),
+            Path(context.components_path),
             component_name,
             component_key,
             generate_params,

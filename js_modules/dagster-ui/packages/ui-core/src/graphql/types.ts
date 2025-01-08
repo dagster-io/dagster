@@ -223,7 +223,7 @@ export type AssetCheckEvaluationPlannedEvent = MessageEvent &
 export type AssetCheckEvaluationTargetMaterializationData = {
   __typename: 'AssetCheckEvaluationTargetMaterializationData';
   runId: Scalars['String']['output'];
-  storageId: Scalars['Int']['output'];
+  storageId: Scalars['ID']['output'];
   timestamp: Scalars['Float']['output'];
 };
 
@@ -6139,7 +6139,10 @@ export const buildAssetCheckEvaluationTargetMaterializationData = (
   return {
     __typename: 'AssetCheckEvaluationTargetMaterializationData',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'exercitationem',
-    storageId: overrides && overrides.hasOwnProperty('storageId') ? overrides.storageId! : 3254,
+    storageId:
+      overrides && overrides.hasOwnProperty('storageId')
+        ? overrides.storageId!
+        : '48345232-8586-483c-9958-ca65cb4208cd',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 3.87,
   };
 };

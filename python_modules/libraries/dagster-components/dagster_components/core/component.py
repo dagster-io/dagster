@@ -20,43 +20,46 @@ from typing import (
     Type,
     TypedDict,
     TypeVar,
+    Union,
 )
 
 import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._record import record
 from dagster._utils import pushd, snakecase
 from pydantic import TypeAdapter
 from typing_extensions import Self
 
-from dagster_components.core.component_rendering import TemplatedValueResolver
+from dagster_components.core.component_generator import (
+    ComponentGenerator,
+    ComponentGeneratorUnavailableReason,
+    DefaultComponentGenerator,
+)
+from dagster_components.core.component_rendering import TemplatedValueRenderer
 
 
 class ComponentDeclNode: ...
 
 
-@record
-class ComponentGenerateRequest:
-    component_type_name: str
-    component_instance_root_path: Path
-
-
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
     params_schema: ClassVar = None
-    generate_params_schema: ClassVar = None
+
+    @classmethod
+    def get_generator(cls) -> Union[ComponentGenerator, ComponentGeneratorUnavailableReason]:
+        """Subclasses should implement this method to override scaffolding behavior. If this component
+        is not meant to be scaffoled it returns a ComponetnGeneratorUnavailableReason with a message
+        This can be determined at runtime based on the environment or configuration. For example,
+        if generators are optionally installed as extras (for example to avoid heavy dependencies in production),
+        this method should return a ComponentGeneratorUnavailableReason with a message explaining
+        how to install the necessary extras.
+        """
+        return DefaultComponentGenerator()
 
     @classmethod
     def get_rendering_scope(cls) -> Mapping[str, Any]:
         return {}
-
-    @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
-        from dagster_components.generate import generate_component_yaml
-
-        generate_component_yaml(request, {})
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
@@ -70,11 +73,16 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
+        generator = cls.get_generator()
+
+        if isinstance(generator, ComponentGeneratorUnavailableReason):
+            raise DagsterError(f"Component {cls.__name__} is not scaffoldable: {generator.message}")
+
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "generate_params_schema": cls.generate_params_schema.schema()
-            if cls.generate_params_schema
+            "generate_params_schema": generator.generator_params.schema()
+            if generator.generator_params
             else None,
             "component_params_schema": cls.params_schema.schema() if cls.params_schema else None,
         }
@@ -212,7 +220,7 @@ class ComponentLoadContext:
     resources: Mapping[str, object]
     registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
-    templated_value_resolver: TemplatedValueResolver
+    templated_value_renderer: TemplatedValueRenderer
 
     @staticmethod
     def for_test(
@@ -225,7 +233,7 @@ class ComponentLoadContext:
             resources=resources or {},
             registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
-            templated_value_resolver=TemplatedValueResolver.default(),
+            templated_value_renderer=TemplatedValueRenderer.default(),
         )
 
     @property
@@ -240,7 +248,7 @@ class ComponentLoadContext:
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
             self,
-            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
+            templated_value_renderer=self.templated_value_renderer.with_context(**rendering_scope),
         )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
@@ -255,7 +263,7 @@ class ComponentLoadContext:
 
     def load_params(self, params_schema: Type[T]) -> T:
         with pushd(str(self.path)):
-            preprocessed_params = self.templated_value_resolver.render_params(
+            preprocessed_params = self.templated_value_renderer.render_params(
                 self._raw_params(), params_schema
             )
             return TypeAdapter(params_schema).validate_python(preprocessed_params)

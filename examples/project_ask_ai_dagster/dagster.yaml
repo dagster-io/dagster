@@ -1,0 +1,6 @@
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+
+concurrency:
+  default_op_concurrency_limit: 1  # Limits concurrent operations to 1 to account for OpenAI and GitHub Rate limiting

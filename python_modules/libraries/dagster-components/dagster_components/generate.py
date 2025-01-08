@@ -6,7 +6,11 @@ import click
 import yaml
 from dagster._utils import mkdir_p
 
-from dagster_components.core.component import Component, ComponentGenerateRequest
+from dagster_components.core.component import Component
+from dagster_components.core.component_generator import (
+    ComponentGenerateRequest,
+    ComponentGeneratorUnavailableReason,
+)
 
 
 class ComponentDumper(yaml.Dumper):
@@ -38,7 +42,14 @@ def generate_component_instance(
     component_instance_root_path = Path(os.path.join(root_path, name))
     click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
     mkdir_p(str(component_instance_root_path))
-    component_type.generate_files(
+    generator = component_type.get_generator()
+
+    if isinstance(generator, ComponentGeneratorUnavailableReason):
+        raise Exception(
+            f"Component type {component_type_name} does not have a generator. Reason: {generator.message}."
+        )
+
+    generator.generate_files(
         ComponentGenerateRequest(
             component_type_name=component_type_name,
             component_instance_root_path=component_instance_root_path,

@@ -23,6 +23,7 @@ import {
   FunctionNameContext,
   IncompleteAndExpressionContext,
   IncompleteAttributeExpressionMissingKeyContext,
+  IncompleteAttributeExpressionMissingSecondValueContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompleteExprContext,
   IncompleteExpressionContext,
@@ -405,6 +406,23 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    */
   exitIncompleteAttributeExpressionMissingValue?: (
     ctx: IncompleteAttributeExpressionMissingValueContext,
+  ) => void;
+
+  /**
+   * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingSecondValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterIncompleteAttributeExpressionMissingSecondValue?: (
+    ctx: IncompleteAttributeExpressionMissingSecondValueContext,
+  ) => void;
+  /**
+   * Exit a parse tree produced by the `IncompleteAttributeExpressionMissingSecondValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitIncompleteAttributeExpressionMissingSecondValue?: (
+    ctx: IncompleteAttributeExpressionMissingSecondValueContext,
   ) => void;
 
   /**

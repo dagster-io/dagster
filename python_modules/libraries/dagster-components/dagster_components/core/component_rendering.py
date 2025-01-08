@@ -62,17 +62,16 @@ class RenderingMetadata:
     """
 
     output_type: Type
+    post_process: Optional[Callable[[Any], Any]] = None
 
 
-def _get_expected_type(annotation: Type) -> Optional[Type]:
+def _get_rendering_metadata(annotation: Type) -> RenderingMetadata:
     origin = get_origin(annotation)
     if origin is Annotated:
         _, f_metadata, *_ = typing.get_args(annotation)
         if isinstance(f_metadata, RenderingMetadata):
-            return f_metadata.output_type
-    else:
-        return annotation
-    return None
+            return f_metadata
+    return RenderingMetadata(output_type=annotation)
 
 
 class RenderedModel(BaseModel):
@@ -80,35 +79,42 @@ class RenderedModel(BaseModel):
 
     model_config = ConfigDict(json_schema_extra={JSON_SCHEMA_EXTRA_KEY: True})
 
-    def render_properties(self, value_resolver: "TemplatedValueResolver") -> Mapping[str, Any]:
+    def render_properties(self, value_renderer: "TemplatedValueRenderer") -> Mapping[str, Any]:
         """Returns a dictionary of rendered properties for this class."""
-        rendered_properties = value_resolver.render_obj(self.model_dump(exclude_unset=True))
+        raw_properties = self.model_dump(exclude_unset=True)
 
         # validate that the rendered properties match the output type
-        for k, v in rendered_properties.items():
+        rendered_properties = {}
+        for k, v in raw_properties.items():
+            rendered = value_renderer.render_obj(v)
             annotation = self.__annotations__[k]
-            expected_type = _get_expected_type(annotation)
-            if expected_type is not None:
-                # hook into pydantic's type validation to handle complicated stuff like Optional[Mapping[str, int]]
-                TypeAdapter(
-                    expected_type, config={"arbitrary_types_allowed": True}
-                ).validate_python(v)
+            rendering_metadata = _get_rendering_metadata(annotation)
+
+            if rendering_metadata.post_process:
+                rendered = rendering_metadata.post_process(rendered)
+
+            # hook into pydantic's type validation to handle complicated stuff like Optional[Mapping[str, int]]
+            TypeAdapter(
+                rendering_metadata.output_type, config={"arbitrary_types_allowed": True}
+            ).validate_python(rendered)
+
+            rendered_properties[k] = rendered
 
         return rendered_properties
 
 
 @record
-class TemplatedValueResolver:
+class TemplatedValueRenderer:
     context: Mapping[str, Any]
 
     @staticmethod
-    def default() -> "TemplatedValueResolver":
-        return TemplatedValueResolver(
+    def default() -> "TemplatedValueRenderer":
+        return TemplatedValueRenderer(
             context={"env": _env, "automation_condition": automation_condition_scope()}
         )
 
-    def with_context(self, **additional_context) -> "TemplatedValueResolver":
-        return TemplatedValueResolver(context={**self.context, **additional_context})
+    def with_context(self, **additional_context) -> "TemplatedValueRenderer":
+        return TemplatedValueRenderer(context={**self.context, **additional_context})
 
     def _render_value(self, val: Any) -> Any:
         """Renders a single value, if it is a templated string."""

@@ -12,6 +12,7 @@ from dagster_dg_tests.utils import (
     assert_runner_result,
     isolated_example_code_location_bar,
     isolated_example_deployment_foo,
+    modify_pyproject_toml,
 )
 
 # ########################
@@ -44,6 +45,38 @@ def test_component_type_generate_already_exists_fails(in_deployment: bool) -> No
         result = runner.invoke("component-type", "generate", "baz")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
+
+
+def test_component_type_generate_succeeds_non_default_component_lib_package() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+        alt_lib_path = Path("bar/_lib")
+        alt_lib_path.mkdir(parents=True)
+        with modify_pyproject_toml() as pyproject_toml:
+            pyproject_toml["tool"]["dg"]["components_lib_package"] = "bar._lib"
+            pyproject_toml["project"]["entry-points"]["dagster.components"]["bar"] = "bar._lib"
+        result = runner.invoke(
+            "component-type",
+            "generate",
+            "baz",
+        )
+        assert_runner_result(result)
+        assert Path("bar/_lib/baz.py").exists()
+        context = CodeLocationDirectoryContext.from_path(Path.cwd(), DgContext.default())
+        assert context.has_component_type("bar.baz")
+
+
+def test_component_type_generate_fails_components_lib_package_does_not_exist() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+        with modify_pyproject_toml() as pyproject_toml:
+            pyproject_toml["tool"]["dg"]["components_lib_package"] = "bar._lib"
+            pyproject_toml["project"]["entry-points"]["dagster.components"]["bar"] = "bar._lib"
+        result = runner.invoke(
+            "component-type",
+            "generate",
+            "baz",
+        )
+        assert_runner_result(result, exit_0=False)
+        assert "Components lib package `bar._lib` is not installed" in str(result.exception)
 
 
 # ########################

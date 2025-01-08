@@ -24,8 +24,8 @@ import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
-import {useReportEventsModal} from './useReportEventsModal';
-import {useWipeModal} from './useWipeModal';
+import {useReportEventsDialog} from './useReportEventsDialog';
+import {useWipeDialog} from './useWipeDialog';
 import {gql, useQuery} from '../apollo-client';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {
@@ -278,7 +278,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
   }, [path, selectedTab, setCurrentPage]);
 
-  const wipe = useWipeModal(
+  const wipe = useWipeDialog(
     definition && !definition.isObservable
       ? {
           assetKey: definition.assetKey,
@@ -296,7 +296,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     },
   );
 
-  const reportEvents = useReportEventsModal(
+  const reportEvents = useReportEventsDialog(
     definition && !definition.isObservable && repoAddress
       ? {
           assetKey: definition.assetKey,

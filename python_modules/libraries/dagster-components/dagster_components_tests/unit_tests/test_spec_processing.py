@@ -5,7 +5,7 @@ from dagster_components.core.dsl_schema import (
     AssetAttributesModel,
     MergeAttributes,
     ReplaceAttributes,
-    TemplatedValueResolver,
+    TemplatedValueRenderer,
 )
 from pydantic import BaseModel, TypeAdapter
 
@@ -30,7 +30,7 @@ def test_replace_attributes() -> None:
         attributes=AssetAttributesModel(tags={"newtag": "newval"}),
     )
 
-    newdefs = op.apply(defs, TemplatedValueResolver.default())
+    newdefs = op.apply(defs, TemplatedValueRenderer.default())
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -44,7 +44,7 @@ def test_merge_attributes() -> None:
         attributes=AssetAttributesModel(tags={"newtag": "newval"}),
     )
 
-    newdefs = op.apply(defs, TemplatedValueResolver.default())
+    newdefs = op.apply(defs, TemplatedValueRenderer.default())
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -56,7 +56,7 @@ def test_render_attributes_asset_context() -> None:
         attributes=AssetAttributesModel(tags={"group_name_tag": "group__{{ asset.group_name }}"})
     )
 
-    newdefs = op.apply(defs, TemplatedValueResolver.default().with_context(foo="theval"))
+    newdefs = op.apply(defs, TemplatedValueRenderer.default().with_context(foo="theval"))
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {"group_name_tag": "group__g1"}
     assert asset_graph.get(AssetKey("b")).tags == {"group_name_tag": "group__g2"}
@@ -80,7 +80,7 @@ def test_render_attributes_custom_context() -> None:
     metadata = {"a": 1, "b": "str", "d": 1.23}
     newdefs = op.apply(
         defs,
-        TemplatedValueResolver.default().with_context(
+        TemplatedValueRenderer.default().with_context(
             foo="theval", metadata=metadata, custom_cron=_custom_cron
         ),
     )

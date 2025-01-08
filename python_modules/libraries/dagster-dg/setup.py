@@ -46,6 +46,6 @@ setup(
         ]
     },
     extras_require={
-        "test": ["click", "pydantic", "pytest"],
+        "test": ["click", "pydantic", "pytest", "tomli-w"],
     },
 )

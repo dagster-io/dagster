@@ -11,7 +11,7 @@ from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
     ComponentTypeRegistry,
-    TemplatedValueResolver,
+    TemplatedValueRenderer,
     get_component_type_name,
     is_registered_component_type,
 )
@@ -103,7 +103,7 @@ def build_defs_from_component_path(
         resources=resources,
         registry=registry,
         decl_node=decl_node,
-        templated_value_resolver=TemplatedValueResolver.default(),
+        templated_value_renderer=TemplatedValueRenderer.default(),
     )
     components = load_components_from_context(context)
     return defs_from_components(resources=resources, context=context, components=components)
@@ -119,7 +119,13 @@ def defs_from_components(
     from dagster._core.definitions.definitions_class import Definitions
 
     return Definitions.merge(
-        *[*[c.build_defs(context) for c in components], Definitions(resources=resources)]
+        *[
+            *[
+                c.build_defs(context.with_rendering_scope(c.get_rendering_scope()))
+                for c in components
+            ],
+            Definitions(resources=resources),
+        ]
     )
 
 
@@ -129,7 +135,7 @@ def build_component_defs(
     code_location_root: Path,
     resources: Optional[Mapping[str, object]] = None,
     registry: Optional["ComponentTypeRegistry"] = None,
-    components_folder: Optional[Path] = None,
+    components_path: Optional[Path] = None,
 ) -> "Definitions":
     """Build a Definitions object for all the component instances in a given code location.
 
@@ -142,7 +148,7 @@ def build_component_defs(
     context = CodeLocationProjectContext.from_code_location_path(
         code_location_root,
         registry or ComponentTypeRegistry.from_entry_point_discovery(),
-        components_folder=components_folder,
+        components_path=components_path,
     )
 
     all_defs: List[Definitions] = []

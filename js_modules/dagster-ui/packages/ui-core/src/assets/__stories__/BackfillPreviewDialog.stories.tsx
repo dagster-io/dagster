@@ -6,7 +6,7 @@ import {
   buildBackfillPolicy,
   buildPartitionDefinition,
 } from '../../graphql/types';
-import {BackfillPreviewModal} from '../BackfillPreviewModal';
+import {BackfillPreviewDialog} from '../BackfillPreviewDialog';
 import {
   BackfillPreviewQueryMock,
   BackfillPreviewQueryMockPartitionKeys,
@@ -14,8 +14,8 @@ import {
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Assets/BackfillPreviewModal',
-  component: BackfillPreviewModal,
+  title: 'Assets/BackfillPreviewDialog',
+  component: BackfillPreviewDialog,
 };
 
 const MOCKS = [BackfillPreviewQueryMock];
@@ -23,7 +23,7 @@ const MOCKS = [BackfillPreviewQueryMock];
 export const PartitionMappedBackfillPreview = () => {
   return (
     <MockedProvider mocks={MOCKS}>
-      <BackfillPreviewModal
+      <BackfillPreviewDialog
         isOpen={true}
         setOpen={() => {}}
         assets={[

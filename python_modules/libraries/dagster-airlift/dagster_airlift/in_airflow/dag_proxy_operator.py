@@ -72,7 +72,8 @@ def matched_dag_id(asset_node: Mapping[str, Any], dag_id: str) -> bool:
         if entry["__typename"] == "JsonMetadataEntry"
     }
 
-    if mapping_entry := json_metadata_entries.get(DAG_MAPPING_METADATA_KEY):
+    mapping_entry = json_metadata_entries.get(DAG_MAPPING_METADATA_KEY)
+    if mapping_entry:
         mappings = json.loads(mapping_entry)
         return any(mapping["dag_id"] == dag_id for mapping in mappings)
     return False

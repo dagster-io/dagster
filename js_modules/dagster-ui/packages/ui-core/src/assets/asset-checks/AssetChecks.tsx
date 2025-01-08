@@ -21,7 +21,7 @@ import {
   AgentUpgradeRequired,
   MigrationRequired,
   NeedsUserCodeUpgrade,
-} from './AssetCheckDetailModal';
+} from './AssetCheckDetailDialog';
 import {AssetCheckExecutionList} from './AssetCheckExecutionList';
 import {AssetCheckOverview} from './AssetCheckOverview';
 import {ASSET_CHECKS_QUERY} from './AssetChecksQuery';
@@ -29,7 +29,7 @@ import {ExecuteChecksButton} from './ExecuteChecksButton';
 import {
   AssetCheckDetailsQuery,
   AssetCheckDetailsQueryVariables,
-} from './types/AssetCheckDetailModal.types';
+} from './types/AssetCheckDetailDialog.types';
 import {assetCheckStatusDescription, getCheckIcon} from './util';
 import {useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';

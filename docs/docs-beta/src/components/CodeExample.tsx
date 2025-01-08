@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
 interface CodeExampleProps {
@@ -7,9 +7,7 @@ interface CodeExampleProps {
   title?: string;
   lineStart?: number;
   lineEnd?: number;
-  pathPrefix?: string;
 }
-
 
 /**
  * Removes content below the `if __name__` block for the given `lines`.
@@ -28,47 +26,83 @@ function filterNoqaComments(lines: string[]): string[] {
   });
 }
 
-const CodeExample: React.FC<CodeExampleProps> = ({
-  filePath,
-  title,
+const contentCache: Record<string, {content?: string; error?: string | null}> = {};
+
+function processModule({
+  cacheKey,
+  module,
   lineStart,
   lineEnd,
-  language = 'python',
-  pathPrefix = 'docs_beta_snippets/docs_beta_snippets',
-  ...props
-}) => {
-  const [content, setContent] = React.useState<string>('');
-  const [error, setError] = React.useState<string | null>(null);
+}: {
+  cacheKey: string;
+  module: any;
+  lineStart?: number;
+  lineEnd?: number;
+}) {
+  var lines = module.default.split('\n');
 
-  React.useEffect(() => {
-    import(`!!raw-loader!/../../examples/${pathPrefix}/${filePath}`)
+  const sliceStart = lineStart && lineStart > 0 ? lineStart : 0;
+  const sliceEnd = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
+  lines = lines.slice(sliceStart, sliceEnd);
+
+  lines = filterNoqaComments(lines);
+  lines = trimMainBlock(lines);
+  contentCache[cacheKey] = {content: lines.join('\n')};
+}
+
+function useLoadModule(cacheKey: string, path: string, lineStart: number, lineEnd: number) {
+  const isServer = typeof window === 'undefined';
+  if (isServer) {
+    /**
+     * Note: Remove the try/catch to cause a hard error on build once all of the bad code examples are cleaned up.
+     */
+    try {
+      const module = require(`!!raw-loader!/../../examples/${path}`);
+      processModule({cacheKey, module, lineStart, lineEnd});
+    } catch (e) {
+      console.error(e);
+      contentCache[cacheKey] = {error: e.toString()};
+    }
+  }
+
+  if (!contentCache[cacheKey]) {
+    /**
+     * We only reach this path on the client.
+     * Throw a promise to suspend in order to avoid un-rendering the codeblock that we SSR'd
+     */
+    throw import(`!!raw-loader!/../../examples/${path}`)
       .then((module) => {
-        var lines = module.default.split('\n');
-
-        const sliceStart = lineStart && lineStart > 0 ? lineStart : 0;
-        const sliceEnd = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
-        lines = lines.slice(sliceStart, sliceEnd);
-
-        lines = filterNoqaComments(lines);
-        lines = trimMainBlock(lines);
-
-        setContent(lines.join('\n'));
-        setError(null);
+        processModule({cacheKey, module, lineStart, lineEnd});
       })
-      .catch((error) => {
-        console.error(`Error loading file: ${filePath}`, error);
-        setError(
-          `Failed to load file: ${filePath}. Please check if the file exists and the path is correct.`,
-        );
+      .catch((e) => {
+        contentCache[cacheKey] = {error: e.toString()};
       });
-  }, [filePath]);
+  }
+
+  return contentCache[cacheKey];
+}
+
+const CodeExample: React.FC<CodeExampleProps> = ({...props}) => {
+  return (
+    <Suspense>
+      <CodeExampleInner {...props} />
+    </Suspense>
+  );
+};
+
+const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
+  const {filePath, title, lineStart, lineEnd, language = 'python', ...extraProps} = props;
+
+  const path = 'docs_beta_snippets/docs_beta_snippets/' + filePath;
+  const cacheKey = JSON.stringify(props);
+  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd);
 
   if (error) {
     return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;
   }
 
   return (
-    <CodeBlock language={language} title={title} {...props}>
+    <CodeBlock language={language} title={title} {...extraProps}>
       {content || 'Loading...'}
     </CodeBlock>
   );
