@@ -471,6 +471,32 @@ class K8sContainerContext(
                     ),
                 )
             )
+            # Override with execution  config form the run, if present
+            execution_config = dagster_run.run_config.get("execution")
+            if execution_config and isinstance(execution_config, dict):
+                execution_config = execution_config.get("config", {})
+                context = context.merge(
+                    K8sContainerContext(
+                        image_pull_policy=execution_config.get("image_pull_policy"),
+                        image_pull_secrets=execution_config.get("image_pull_secrets"),
+                        service_account_name=execution_config.get("service_account_name"),
+                        env_config_maps=execution_config.get("env_config_maps"),
+                        env_secrets=execution_config.get("env_secrets"),
+                        env_vars=execution_config.get("env_vars"),
+                        volume_mounts=execution_config.get("volume_mounts"),
+                        volumes=execution_config.get("volumes"),
+                        labels=execution_config.get("labels"),
+                        namespace=execution_config.get("job_namespace"),
+                        resources=execution_config.get("resources"),
+                        scheduler_name=execution_config.get("scheduler_name"),
+                        security_context=execution_config.get("security_context"),
+                        # step_k8s_config feeds into the run_k8s_config field because it is merged
+                        # with any configuration for the run that was set on the run launcher or code location
+                        run_k8s_config=UserDefinedDagsterK8sConfig.from_dict(
+                            execution_config.get("step_k8s_config", {})
+                        ),
+                    ),
+                )
 
         user_defined_container_context = K8sContainerContext()
 

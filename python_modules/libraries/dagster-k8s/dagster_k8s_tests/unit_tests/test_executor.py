@@ -818,3 +818,53 @@ def test_per_step_k8s_config_dynamic_job(k8s_run_launcher_instance: DagsterInsta
 
     assert raw_k8s_config.container_config["resources"] == FOURTH_RESOURCES_TAGS
     assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"
+
+
+def test_per_step_k8s_config_dynamic_job_on_launch(k8s_run_launcher_instance: DagsterInstance):
+    run_id = "de07af8f-d5f4-4a43-b545-132c33109997"
+    result = dynamic_producer_consumer_job.execute_in_process(
+        instance=k8s_run_launcher_instance,
+        run_id=run_id,
+        run_config={
+            "execution": {
+                "config": {
+                    "step_k8s_config": {  # injected into every step
+                        "container_config": {
+                            "working_dir": "MY_WORKING_DIR",  # set on every step
+                            "resources": THIRD_RESOURCES_TAGS,  # overridden by the per_step level, so ignored
+                        }
+                    },
+                    "per_step_k8s_config": {
+                        "dyn_sink": {
+                            "container_config": {
+                                "resources": FOURTH_RESOURCES_TAGS,
+                            }
+                        }
+                    },
+                }
+            }
+        },
+    )
+    assert result.success
+    recon_job = reconstructable(dynamic_producer_consumer_job)
+    executor = _get_executor(
+        k8s_run_launcher_instance,
+        recon_job,
+    )
+    dynamic_step = "3"
+    dyn_known_state = result.output_for_node("dyn_sink")[dynamic_step]
+    step_handler_context = _step_handler_context(
+        recon_job,
+        result.dagster_run,
+        k8s_run_launcher_instance,
+        executor,
+        step=f"dyn_sink[{dynamic_step}]",
+        known_state=dyn_known_state,
+    )
+    container_context = executor._step_handler._get_container_context(  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+        step_handler_context
+    )
+    raw_k8s_config = container_context.run_k8s_config
+
+    assert raw_k8s_config.container_config["resources"] == FOURTH_RESOURCES_TAGS
+    assert raw_k8s_config.container_config["working_dir"] == "MY_WORKING_DIR"

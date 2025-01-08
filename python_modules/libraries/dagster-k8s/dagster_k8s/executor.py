@@ -243,8 +243,17 @@ class K8sStepHandler(StepHandler):
             self._per_step_k8s_config.get(op_name, {})
         )
 
-        return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config)).merge(
-            K8sContainerContext(run_k8s_config=per_op_override)
+        execution_config = step_handler_context.dagster_run.run_config.get("execution", {})
+        if not isinstance(execution_config, dict):
+            raise Exception("Invalid execution config. Expected a dictionary.")
+        execution_config = execution_config.get("config", {})
+        launch_op_config = UserDefinedDagsterK8sConfig.from_dict(
+            execution_config.get("per_step_k8s_config", {}).get(op_name, {})
+        )
+        return (
+            context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config))
+            .merge(K8sContainerContext(run_k8s_config=per_op_override))
+            .merge(K8sContainerContext(run_k8s_config=launch_op_config))
         )
 
     def _get_k8s_step_job_name(self, step_handler_context: StepHandlerContext):
