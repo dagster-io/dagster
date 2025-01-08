@@ -1,6 +1,5 @@
 ---
-title: Asset jobs | Dagster
-sidebar_label: Asset jobs
+title: Asset jobs
 sidebar_position: 900
 ---
 
