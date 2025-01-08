@@ -101,7 +101,9 @@ export const GROUPS_ONLY_SCALE = 0.15;
 const DEFAULT_SET_HIDE_NODES_MATCH = (_node: AssetNodeForGraphQueryFragment) => true;
 
 export const AssetGraphExplorer = (props: Props) => {
-  const {fullAssetGraphData, fullAssetGraphDataLoading} = useFullAssetGraphData(props.fetchOptions);
+  const {fullAssetGraphData, loading: fullAssetGraphDataLoading} = useFullAssetGraphData(
+    props.fetchOptions,
+  );
   const [hideNodesMatching, setHideNodesMatching] = useState(() => DEFAULT_SET_HIDE_NODES_MATCH);
 
   const {
