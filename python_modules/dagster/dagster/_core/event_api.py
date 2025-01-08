@@ -270,11 +270,11 @@ class AssetRecordsFilter(
             events with timestamp greater than the provided value are returned.
         before_timestamp (Optional[float]): Filter parameter such that only event records for
             events with timestamp less than the provided value are returned.
-        after_storage_id (Optional[float]): Filter parameter such that only event records for
+        after_storage_id (Optional[Union[int, str]]): Filter parameter such that only event records for
             events with storage_id greater than the provided value are returned.
-        before_storage_id (Optional[float]): Filter parameter such that only event records for
+        before_storage_id (Optional[Union[int, str]]): Filter parameter such that only event records for
             events with storage_id less than the provided value are returned.
-        storage_ids (Optional[Sequence[int]]): Filter parameter such that only event records for
+        storage_ids (Optional[Sequence[Union[int, str]]]): Filter parameter such that only event records for
             the given storage ids are returned.
         tags (Optional[Mapping[str, Union[str, Sequence[str]]]]): Filter parameter such that only
             events with the given event tags are returned
@@ -286,9 +286,9 @@ class AssetRecordsFilter(
         asset_partitions: Optional[Sequence[str]] = None,
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
-        after_storage_id: Optional[int] = None,
-        before_storage_id: Optional[int] = None,
-        storage_ids: Optional[Sequence[int]] = None,
+        after_storage_id: Optional[Union[int, str]] = None,
+        before_storage_id: Optional[Union[int, str]] = None,
+        storage_ids: Optional[Sequence[Union[int, str]]] = None,
     ):
         return super(AssetRecordsFilter, cls).__new__(
             cls,
@@ -298,9 +298,17 @@ class AssetRecordsFilter(
             ),
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
-            after_storage_id=check.opt_int_param(after_storage_id, "after_storage_id"),
-            before_storage_id=check.opt_int_param(before_storage_id, "before_storage_id"),
-            storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
+            after_storage_id=check.opt_int_param(
+                int(after_storage_id) if after_storage_id else None, "after_storage_id"
+            ),
+            before_storage_id=check.opt_int_param(
+                int(before_storage_id) if before_storage_id else None, "before_storage_id"
+            ),
+            storage_ids=check.opt_nullable_sequence_param(
+                [int(storage_id) for storage_id in storage_ids] if storage_ids else storage_ids,
+                "storage_ids",
+                of_type=int,
+            ),
         )
 
     def to_event_records_filter(
@@ -361,11 +369,11 @@ class RunStatusChangeRecordsFilter(
             events with timestamp greater than the provided value are returned.
         before_timestamp (Optional[float]): Filter parameter such that only event records for
             events with timestamp less than the provided value are returned.
-        after_storage_id (Optional[float]): Filter parameter such that only event records for
+        after_storage_id (Optional[Union[int, str]]): Filter parameter such that only event records for
             events with storage_id greater than the provided value are returned.
-        before_storage_id (Optional[float]): Filter parameter such that only event records for
+        before_storage_id (Optional[Union[int, str]]): Filter parameter such that only event records for
             events with storage_id less than the provided value are returned.
-        storage_ids (Optional[Sequence[int]]): Filter parameter such that only event records for
+        storage_ids (Optional[Sequence[Union[int, str]]]): Filter parameter such that only event records for
             the given storage ids are returned.
     """
 
@@ -374,9 +382,9 @@ class RunStatusChangeRecordsFilter(
         event_type: RunStatusChangeEventType,
         after_timestamp: Optional[float] = None,
         before_timestamp: Optional[float] = None,
-        after_storage_id: Optional[int] = None,
-        before_storage_id: Optional[int] = None,
-        storage_ids: Optional[Sequence[int]] = None,
+        after_storage_id: Optional[Union[int, str]] = None,
+        before_storage_id: Optional[Union[int, str]] = None,
+        storage_ids: Optional[Sequence[Union[int, str]]] = None,
         job_names: Optional[Sequence[str]] = None,
     ):
         if event_type not in EVENT_TYPE_TO_PIPELINE_RUN_STATUS:
@@ -387,9 +395,18 @@ class RunStatusChangeRecordsFilter(
             event_type=check.inst_param(event_type, "event_type", DagsterEventType),
             after_timestamp=check.opt_float_param(after_timestamp, "after_timestamp"),
             before_timestamp=check.opt_float_param(before_timestamp, "before_timestamp"),
-            after_storage_id=check.opt_int_param(after_storage_id, "after_storage_id"),
-            before_storage_id=check.opt_int_param(before_storage_id, "before_storage_id"),
-            storage_ids=check.opt_nullable_sequence_param(storage_ids, "storage_ids", of_type=int),
+            after_storage_id=check.opt_int_param(
+                int(after_storage_id) if after_storage_id else after_storage_id, "after_storage_id"
+            ),
+            before_storage_id=check.opt_int_param(
+                int(before_storage_id) if before_storage_id else before_storage_id,
+                "before_storage_id",
+            ),
+            storage_ids=check.opt_nullable_sequence_param(
+                [int(storage_id) for storage_id in storage_ids] if storage_ids else storage_ids,
+                "storage_ids",
+                of_type=int,
+            ),
             job_names=check.opt_nullable_sequence_param(job_names, "job_names", of_type=str),
         )
 
