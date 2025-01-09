@@ -255,22 +255,21 @@ def test_load_from_definitions_from_current_module(
 
 
 @pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
+@patch("dagster._core.definitions.module_loaders.load_defs_from_module.find_modules_in_package")
 def test_load_from_definitions_from_package_module(
-    objects: Mapping[str, Any], error_expected: bool
+    mock_module_finder: MagicMock, objects: Mapping[str, Any], error_expected: bool
 ) -> None:
     package_fake = build_module_fake("fake_package", {})
     module_fake = build_module_fake("fake", objects)
-    with patch(
-        "dagster._core.definitions.module_loaders.load_defs_from_module.find_modules_in_package"
-    ) as mock_module_finder:
-        mock_module_finder.return_value = [module_fake]
-        with optional_pytest_raise(
-            error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
-        ):
-            defs = load_definitions_from_package_module(package_fake)
-            obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
-            expected_obj_ids = {id(obj) for obj in objects.values()}
-            assert len(obj_ids) == len(expected_obj_ids)
+
+    mock_module_finder.return_value = [module_fake]
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
+    ):
+        defs = load_definitions_from_package_module(package_fake)
+        obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
+        expected_obj_ids = {id(obj) for obj in objects.values()}
+        assert len(obj_ids) == len(expected_obj_ids)
 
 
 def test_load_with_resources() -> None:
