@@ -4,7 +4,7 @@ description: "Learn about Dagster Pipes APIs and how to compose them to create a
 sidebar_position: 900
 ---
 
-[Dagster Pipes](/guides/build/external-pipelines) is a toolkit for integrating Dagster with an arbitrary external compute environment. While many users will be well-served by the simplified interface offered by Pipes client objects (e.g. <PyObject section="pipes" object="dagster.PipesSubprocessClient" />, <PyObject section="libraries" object="dagster_databricks.PipesDatabricksClient" module="dagster_databricks"/>), others will need a greater level of control over Pipes. This is particularly the case for users seeking to connect large existing codebases to Dagster.
+[Dagster Pipes](/guides/build/external-pipelines) is a toolkit for integrating Dagster with an arbitrary external compute environment. While many users will be well-served by the simplified interface offered by Pipes client objects (e.g. <PyObject section="pipes" module="dagster" object="PipesSubprocessClient" />, <PyObject section="libraries" object="PipesDatabricksClient" module="dagster_databricks"/>), others will need a greater level of control over Pipes. This is particularly the case for users seeking to connect large existing codebases to Dagster.
 
 This guide will cover the lower level Pipes APIs and how you can compose them to provide a custom solution for your data platform.
 
@@ -76,7 +76,7 @@ This guide will cover the lower level Pipes APIs and how you can compose them to
       </td>
       <td>
         A JSON object containing information derived from the execution context
-        (<PyObject section="execution" object="dagster.AssetExecutionContext" />) in the orchestration
+        (<PyObject section="execution" module="dagster" object="AssetExecutionContext" />) in the orchestration
         process. This includes in-scope asset keys, partition keys, etc. The
         context payload is written by the orchestration process to some location
         accessible to the external process. The external process obtains the
@@ -168,7 +168,7 @@ At present the only official Dagster Pipes integration library is Python’s [`d
 
 ### Session lifecycle (orchestration process)
 
-Pipes sessions are represented in the orchestration process by the <PyObject section="pipes" object="dagster.PipesSession" /> class. A session is started with the <PyObject section="pipes" object="dagster.open_pipes_session" /> context manager, which yields a `PipesSession`. `open_pipes_session` should be called inside of an asset, where an <PyObject section="execution" object="dagster.AssetExecutionContext" /> is available:
+Pipes sessions are represented in the orchestration process by the <PyObject section="pipes" module="dagster" object="PipesSession" /> class. A session is started with the <PyObject section="pipes" module="dagster" object="open_pipes_session" /> context manager, which yields a `PipesSession`. `open_pipes_session` should be called inside of an asset, where an <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> is available:
 
 ```python file=/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/session_lifecycle_orchestration.py
 ### ORCHESTRATION PROCESS
@@ -217,12 +217,12 @@ def some_pipes_asset(context: AssetExecutionContext) -> Iterator[PipesExecutionR
     yield from pipes_session.get_results()
 ```
 
-Above we see that <PyObject section="pipes" object="dagster.open_pipes_session" /> takes four parameters:
+Above we see that <PyObject section="pipes" module="dagster" object="open_pipes_session" /> takes four parameters:
 
-- `context`: An execution context (<PyObject section="execution" object="dagster.AssetExecutionContext" />) that will be used to derive the context payload.
+- `context`: An execution context (<PyObject section="execution" module="dagster" object="AssetExecutionContext" />) that will be used to derive the context payload.
 - `extras`: A bundle of key-value pairs in the form of a JSON-serializable dictionary. This is slotted into the context payload. Users can pass arbitrary data here that they want to expose to the external process.
-- `context_injector`: A context injector responsible for writing the serialized context payload to some location and expressing that location as bootstrap parameters for consumption by the external process. Above we used the built-in (and default) <PyObject section="pipes" object="dagster.PipesTempFileContextInjector" />, which writes the serialized context payload to an automatically created local temp file and exposes the path to that file as a bootstrap parameter.
-- `message_reader`: A message reader responsible for reading streaming messages and log files written to some location, and expressing that location as bootstrap parameters for consumption by the external process. Above we used the built-in (and default) <PyObject section="pipes" object="dagster.PipesTempFileMessageReader" />, which tails an automatically created local temp file and exposes the path to that file as a bootstrap parameter.
+- `context_injector`: A context injector responsible for writing the serialized context payload to some location and expressing that location as bootstrap parameters for consumption by the external process. Above we used the built-in (and default) <PyObject section="pipes" module="dagster" object="PipesTempFileContextInjector" />, which writes the serialized context payload to an automatically created local temp file and exposes the path to that file as a bootstrap parameter.
+- `message_reader`: A message reader responsible for reading streaming messages and log files written to some location, and expressing that location as bootstrap parameters for consumption by the external process. Above we used the built-in (and default) <PyObject section="pipes" module="dagster" object="PipesTempFileMessageReader" />, which tails an automatically created local temp file and exposes the path to that file as a bootstrap parameter.
 
 Python context manager invocations have three parts:
 
@@ -230,7 +230,7 @@ Python context manager invocations have three parts:
 2. A body (user code nested in a `with` block).
 3. A closing routine (`__exit__`, executed at the end of a `with` block).
 
-For <PyObject section="pipes" object="dagster.open_pipes_session" />, these three parts perform the following tasks:
+For <PyObject section="pipes" module="dagster" object="open_pipes_session" />, these three parts perform the following tasks:
 
 - **Opening routine**: Writes the context payload and spins up the message reader (which usually involves starting a thread to continually read messages). These steps may involve the creation of resources, such as a temporary file (locally or on some remote system) for the context payload or a temporary directory to which messages will be written.
 - **Body**: User code should handle launching, polling, and termination of the external process here. While the external process is executing, any intermediate results that have been received can be reported to Dagster with `yield from pipes_session.get_results()`.
@@ -240,7 +240,7 @@ For <PyObject section="pipes" object="dagster.open_pipes_session" />, these thre
 
 As noted above, currently the only existing Pipes integration library is Python’s [`dagster-pipes`](/api/python-api/libraries/dagster-pipes). The below example therefore uses Python and `dagster-pipes`. In the future we will be releasing `dagster-pipes` equivalents for selected other languages. and the concepts illustrated here should map straightforwardly to these other integration libraries.
 
-A Pipes session is represented in the external process by a <PyObject section="libraries" object="dagster_pipes.PipesContext" module="dagster_pipes" /> object. A session created by the launching orchestration process can be connected to with <PyObject section="libraries" object="dagster_pipes.open_dagster_pipes" module="dagster_pipes" /> from `dagster-pipes`:
+A Pipes session is represented in the external process by a <PyObject section="libraries" object="PipesContext" module="dagster_pipes" /> object. A session created by the launching orchestration process can be connected to with <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" /> from `dagster-pipes`:
 
 ```python file=/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/session_lifecycle_external.py
 ### EXTERNAL PROCESS
@@ -275,16 +275,16 @@ with open_dagster_pipes(
     )
 ```
 
-Above we see that <PyObject section="libraries" object="dagster_pipes.open_dagster_pipes" module="dagster_pipes"/> takes three parameters:
+Above we see that <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes"/> takes three parameters:
 
-- `params_loader`: A params loader responsible for loading the bootstrap payload injected into the external process at launch. The standard approach is to inject the bootstrap payload into predetermined environment variables that the <PyObject section="libraries" object="dagster_pipes.PipesEnvVarParamsLoader" module="dagster_pipes" /> knows how to read. However, a different bootstrap parameter loader can be substituted in environments where it is not possible to modify environment variables.
-- `context_loader`: A context loader responsible for loading the context payload from a location specified in the bootstrap payload. Above we use <PyObject section="libraries" object="dagster_pipes.PipesDefaultContextLoader" module="dagster_pipes" />, which will look for a `path` key in the bootstrap params for a file path to target. The <PyObject section="pipes" object="dagster.PipesTempFileContextInjector" /> used earlier on the orchestration side writes this `path` key, but the `PipesDefaultContextLoader` does not otherwise depend on a specific context injector.
-- `message_writer:` A message writer responsible for writing streaming messages to a location specified in the bootstrap payload. Above we use <PyObject section="libraries" object="dagster_pipes.PipesDefaultMessageWriter" module="dagster_pipes" />, which will look for a `path` key in the bootstrap params for a file path to target. The <PyObject section="pipes" object="dagster.PipesTempFileMessageReader" /> used earlier on the orchestration side writes this `path` key, but the `PipesDefaultMessageWriter` does not otherwise depend on a specific context injector.
+- `params_loader`: A params loader responsible for loading the bootstrap payload injected into the external process at launch. The standard approach is to inject the bootstrap payload into predetermined environment variables that the <PyObject section="libraries" object="PipesEnvVarParamsLoader" module="dagster_pipes" /> knows how to read. However, a different bootstrap parameter loader can be substituted in environments where it is not possible to modify environment variables.
+- `context_loader`: A context loader responsible for loading the context payload from a location specified in the bootstrap payload. Above we use <PyObject section="libraries" object="PipesDefaultContextLoader" module="dagster_pipes" />, which will look for a `path` key in the bootstrap params for a file path to target. The <PyObject section="pipes" module="dagster" object="PipesTempFileContextInjector" /> used earlier on the orchestration side writes this `path` key, but the `PipesDefaultContextLoader` does not otherwise depend on a specific context injector.
+- `message_writer:` A message writer responsible for writing streaming messages to a location specified in the bootstrap payload. Above we use <PyObject section="libraries" object="PipesDefaultMessageWriter" module="dagster_pipes" />, which will look for a `path` key in the bootstrap params for a file path to target. The <PyObject section="pipes" module="dagster" object="PipesTempFileMessageReader" /> used earlier on the orchestration side writes this `path` key, but the `PipesDefaultMessageWriter` does not otherwise depend on a specific context injector.
 
-As with the orchestration-side <PyObject section="pipes" object="dagster.open_pipes_session" />, <PyObject section="libraries" object="dagster_pipes.open_dagster_pipes" module="dagster_pipes" /> is a context manager. Its three parts perform the following functions:
+As with the orchestration-side <PyObject section="pipes" module="dagster" object="open_pipes_session" />, <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" /> is a context manager. Its three parts perform the following functions:
 
 - **Opening routine**: Reads the bootstrap payload from the environment and then the context payload. Spins up the message writer, which may involve starting a thread to periodically write buffered messages.
-- **Body**: Business logic goes here, and can use the yielded <PyObject section="libraries" object="dagster_pipes.PipesContext" module="dagster_pipes" /> (in the `pipes` variable above) to read context information or write messages.
+- **Body**: Business logic goes here, and can use the yielded <PyObject section="libraries" object="PipesContext" module="dagster_pipes" /> (in the `pipes` variable above) to read context information or write messages.
 - **Closing routine**: Ensures that any messages submitted by business logic have been written before the process exits. This is necessary because some message writers buffer messages between writes.
 
 ## Customization
@@ -293,7 +293,7 @@ Users may implement custom params loaders, context loader/injector pairs, and me
 
 ### Custom params loader
 
-Params loaders need to inherit from <PyObject section="libraries" object="dagster_pipes.PipesParamsLoader" module="dagster_pipes" />. Here is an example that loads parameters from an object called `METADATA` imported from a fictional package called `cloud_service`. It is assumed that "cloud service" represents some compute platform, that the `cloud_service` package is available in the environment, and that the API for launching processes in “cloud service” allows you to set arbitrary key-value pairs in a payload that is exposed as `cloud_service.METADATA`.
+Params loaders need to inherit from <PyObject section="libraries" object="PipesParamsLoader" module="dagster_pipes" />. Here is an example that loads parameters from an object called `METADATA` imported from a fictional package called `cloud_service`. It is assumed that "cloud service" represents some compute platform, that the `cloud_service` package is available in the environment, and that the API for launching processes in “cloud service” allows you to set arbitrary key-value pairs in a payload that is exposed as `cloud_service.METADATA`.
 
 ```python file=/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_bootstrap_loader.py
 ### EXTERNAL PROCESS
@@ -320,7 +320,7 @@ class MyCustomParamsLoader(PipesParamsLoader):
 
 ### Custom context injector/loader
 
-Context injectors must inherit from <PyObject section="pipes" object="dagster.PipesContextInjector" displayText="dagster.PipesContextInjector" /> and context loaders from <PyObject section="libraries" object="dagster_pipes.PipesContextLoader" module="dagster_pipes" displayText="dagster_pipes.PipesContextLoader" />.
+Context injectors must inherit from <PyObject section="pipes" module="dagster" object="PipesContextInjector" displayText="dagster.PipesContextInjector" /> and context loaders from <PyObject section="libraries" object="PipesContextLoader" module="dagster_pipes" displayText="dagster_pipes.PipesContextLoader" />.
 
 In general if you are implementing a custom variant of one, you will want to implement a matching variant of the other. Below is a simple example that uses a fictional `cloud_service` key/value store to write the context. First the context injector:
 
@@ -390,11 +390,11 @@ as these questions are resolved.
 
 :::
 
-Message readers must inherit from <PyObject section="pipes" object="dagster.PipesMessageReader" displayText="dagster.PipesMessageReader" /> and message writers from <PyObject section="libraries" module="dagster_pipes" object="dagster_pipes.PipesMessageWriter" displayText="dagster_pipes.PipesMessageWriter" />.
+Message readers must inherit from <PyObject section="pipes" module="dagster" object="PipesMessageReader" displayText="dagster.PipesMessageReader" /> and message writers from <PyObject section="libraries" module="dagster_pipes" object="PipesMessageWriter" displayText="dagster_pipes.PipesMessageWriter" />.
 
-In general if you are implementing a custom variant of one, you will want to implement a matching variant of the other. Furtheremore, message writers internally create a <PyObject section="libraries" object="dagster_pipes.PipesMessageWriterChannel" module="dagster_pipes" /> subcomponent for which you will likely also need to implement a custom variant-- see below for details.
+In general if you are implementing a custom variant of one, you will want to implement a matching variant of the other. Furtheremore, message writers internally create a <PyObject section="libraries" object="PipesMessageWriterChannel" module="dagster_pipes" /> subcomponent for which you will likely also need to implement a custom variant-- see below for details.
 
-Below is a simple example that uses a fictional `cloud_service` key/value store as a storage layer for message chunks. This example is a little more sophisticated than the context injector/loader example because we are going to inherit from <PyObject section="pipes" object="dagster.PipesBlobStoreMessageReader" /> and <PyObject section="libraries" object="dagster_pipes.PipesBlobStoreMessageWriter" module="dagster_pipes" /> instead of the plain abstract base classes. The blob store reader/writer provide infrastructure for chunking messages. Messages are buffered on the writer and uploaded in chunks at a fixed interval (defaulting to 10 seconds). The reader similarly attempts to download message chunks at a fixed interval (defaulting to 10 seconds). This prevents the need to read/write a cloud service blob store for _every_ message (which could get expensive).
+Below is a simple example that uses a fictional `cloud_service` key/value store as a storage layer for message chunks. This example is a little more sophisticated than the context injector/loader example because we are going to inherit from <PyObject section="pipes" module="dagster" object="PipesBlobStoreMessageReader" /> and <PyObject section="libraries" object="PipesBlobStoreMessageWriter" module="dagster_pipes" /> instead of the plain abstract base classes. The blob store reader/writer provide infrastructure for chunking messages. Messages are buffered on the writer and uploaded in chunks at a fixed interval (defaulting to 10 seconds). The reader similarly attempts to download message chunks at a fixed interval (defaulting to 10 seconds). This prevents the need to read/write a cloud service blob store for _every_ message (which could get expensive).
 
 First, the message reader:
 
