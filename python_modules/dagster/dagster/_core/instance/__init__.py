@@ -2085,7 +2085,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def fetch_materializations(
         self,
-        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        records_filter: Union[AssetKey, "dagster._core.event_api.AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -2109,7 +2109,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @deprecated(breaking_version="2.0")
     def fetch_planned_materializations(
         self,
-        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        records_filter: Union[AssetKey, "dagster._core.event_api.AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -2154,7 +2154,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def fetch_observations(
         self,
-        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        records_filter: Union[AssetKey, "dagster._core.event_api.AssetRecordsFilter"],
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
@@ -2260,7 +2260,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Sequence["AssetRecord"]:
+    ) -> Sequence["dagster._core.storage.event_log.base.AssetRecord"]:
         """Return an `AssetRecord` for each of the given asset keys.
 
         Args:
