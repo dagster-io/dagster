@@ -1,5 +1,5 @@
 import sys
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Optional
 
@@ -267,3 +267,24 @@ def component_list_command(context: click.Context, **global_options: object) -> 
 
     for component_name in dg_context.get_component_names():
         click.echo(component_name)
+
+
+# ########################
+# ##### CHECK
+# ########################
+
+
+@component_group.command(name="check", cls=DgClickCommand)
+@click.argument("paths", nargs=-1, type=click.Path(exists=True))
+@dg_global_options
+@click.pass_context
+def component_check_command(
+    context: click.Context,
+    paths: Sequence[str],
+    **global_options: object,
+) -> None:
+    """Check component files against their schemas, showing validation errors."""
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+
+    dg_context.external_components_command(["check", "component", *paths])
