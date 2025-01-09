@@ -10,6 +10,7 @@ import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
+    load_definitions_from_current_module,
 )
 from dagster._core.definitions.module_loaders.object_list import (
     LoadableDagsterDef,
@@ -226,13 +227,13 @@ def test_load_from_definitions_from_current_module(
 ) -> None:
     module_fake = build_module_fake("fake", objects)
     with patch(
-        "dagster._core.definitions.module_loaders.load_defs_from_module.inspect"
-    ) as mock_inspect:
-        type(mock_inspect).getmodule = PropertyMock(return_value=module_fake)
+        "dagster._core.definitions.module_loaders.load_defs_from_module.inspect.getmodule"
+    ) as mock_getmodule:
+        mock_getmodule.return_value = module_fake
         with optional_pytest_raise(
             error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
         ):
-            defs = load_definitions_from_module(module_fake)
+            defs = load_definitions_from_current_module()
             obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
             expected_obj_ids = {id(obj) for obj in objects.values()}
             assert len(obj_ids) == len(expected_obj_ids)
