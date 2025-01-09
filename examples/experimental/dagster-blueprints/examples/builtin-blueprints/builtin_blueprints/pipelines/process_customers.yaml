@@ -3,6 +3,6 @@
     - key: customers
 
 - command: "python customer_stats.py"
-  asszets:
+  assets:
     - key: customer_stats
       deps: [customers]

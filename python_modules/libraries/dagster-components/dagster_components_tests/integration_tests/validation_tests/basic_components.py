@@ -1,5 +1,3 @@
-from typing import Dict
-
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_components import Component, component_type
 from dagster_components.core.component import ComponentLoadContext
@@ -32,7 +30,7 @@ class MyNestedModel(BaseModel):
 
 
 class MyNestedComponentSchema(BaseModel):
-    nested: Dict[str, MyNestedModel]
+    nested: dict[str, MyNestedModel]
 
 
 @component_type
