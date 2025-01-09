@@ -74,8 +74,8 @@ export const PipelineExplorerContainer = (props: {
     preferAssetRendering: true,
   });
   const job = useJob(repoAddress, explorerPath.pipelineName);
-  const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   if (job && job.isAssetJob && options.preferAssetRendering) {
+    const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
     return (
       <AssetGraphExplorer
         options={options}
