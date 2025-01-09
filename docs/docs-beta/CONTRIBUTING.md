@@ -109,6 +109,39 @@ After:
 
 Forcing empty space using the `{" "}` interpolation is not supported, and must be removed.
 
+### Prerequisites
+
+Before:
+
+```
+## Prerequisites
+
+- Install this
+- Configure that
+```
+
+After:
+
+```
+<details>
+  <summary>Prerequisites</summary>
+
+  - Install this
+  - Configure that
+
+</details>
+```
+
+A prerequisites section should only include steps that the reader must take in order to run the example code in the article. Recommended reading should be formatted as a note:
+
+```
+:::note
+
+This article assumes familiarity with [assets](example-link).
+
+:::
+```
+
 ---
 
 ## Diagrams
