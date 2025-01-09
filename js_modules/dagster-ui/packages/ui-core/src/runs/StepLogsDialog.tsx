@@ -116,8 +116,10 @@ export const StepLogsDialogContent = ({
 
   const flatLogs = useMemo(() => flattenOneLevel(logs.allNodeChunks), [logs]);
 
+  const stepKeysSet = useMemo(() => new Set(stepKeys), [stepKeys]);
+
   const firstLogForStep = flatLogs.find(
-    (l) => l.eventType === DagsterEventType.STEP_START && l.stepKey && stepKeys.includes(l.stepKey),
+    (l) => l.eventType === DagsterEventType.STEP_START && l.stepKey && stepKeysSet.has(l.stepKey),
   );
 
   const firstLogForStepTime = firstLogForStep ? Number(firstLogForStep.timestamp) : 0;
