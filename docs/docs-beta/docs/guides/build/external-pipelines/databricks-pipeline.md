@@ -125,13 +125,14 @@ Let's review what's happening in this code:
 
 - **Passes the `SubmitTask` object, `AssetExecutionContext`, and `extras` dictionary to the `run` method of <PyObject section="libraries" module="dagster_databricks" object="PipesDatabricksClient" />**. This method synchronously executes the Databricks job specified by the `SubmitTask` object. It slightly modifies the object by injecting some environment variables under `new_cluster.spark_env_vars` before submitting the object to the Databricks API.
 
-- **Returns a <PyObject section="assets" object="dagster.MaterializeResult" /> object representing the result of execution**. This is obtained by calling `get_materialize_result` on the <PyObject section="libraries" module="dagster_pipes" object="PipesClientCompletedInvocation" /> object returned by `run` after the Databricks job has finished. **Note**: Execution can take several minutes even for trivial scripts due to Databricks cluster provisioning times.
+- **Returns a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution**. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the Databricks job has finished. **Note**: Execution can take several minutes even for trivial scripts due to Databricks cluster provisioning times.
+{/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> */}
 
 ### Step 1.2: Define the Databricks Pipes client and definitions
 
 The [`dagster-databricks`](/api/python-api/libraries/dagster-databricks) library provides a <PyObject section="libraries" module="dagster_databricks" object="PipesDatabricksClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with your Databricks workspace.
 
-Add the following to the bottom of `dagster_databricks_pipes.py` to define the resource and a <PyObject section="definitions" object="dagster.Definitions" /> object that binds it to the `databricks_asset`:
+Add the following to the bottom of `dagster_databricks_pipes.py` to define the resource and a <PyObject section="definitions" module="dagster" object="Definitions" /> object that binds it to the `databricks_asset`:
 
 ```python file=/guides/dagster/dagster_pipes/databricks/databricks_asset_client.py startafter=start_definitions endbefore=end_definitions
 pipes_databricks_resource = PipesDatabricksClient(
@@ -263,9 +264,9 @@ In this step, you’ll run the Databricks job you created in [Step 1.2](#step-12
 
 ## Advanced: Customization using open_pipes_session
 
-The <PyObject section="libraries" object="PipesDatabricksClient" module="dagster_databricks" /> is a high-level API that doesn't cover all use cases. If you have existing code to launch/poll the job you do not want to change, you want to stream back materializations as they occur, or you just want more control than is permitted by <PyObject section="libraries" object="PipesDatabricksClient" module="dagster_databricks" />, you can use <PyObject section="pipes" object="dagster.open_pipes_session" /> instead of <PyObject section="libraries" object="PipesDatabricksClient" module="dagster_databricks" />.
+The <PyObject section="libraries" object="PipesDatabricksClient" module="dagster_databricks" /> is a high-level API that doesn't cover all use cases. If you have existing code to launch/poll the job you do not want to change, you want to stream back materializations as they occur, or you just want more control than is permitted by <PyObject section="libraries" object="PipesDatabricksClient" module="dagster_databricks" />, you can use <PyObject section="pipes" module="dagster" object="open_pipes_session" /> instead of <PyObject section="libraries" object="PipesDatabricksClient" module="dagster_databricks" />.
 
-To use <PyObject section="pipes" object="dagster.open_pipes_session" />:
+To use <PyObject section="pipes" module="dagster" object="open_pipes_session" />:
 
 1. Your Databricks job be launched within the scope of the `open_pipes_session` context manager; and
 2. Your job is launched on a cluster containing the environment variables available on the yielded `pipes_session`
@@ -275,7 +276,7 @@ While your Databricks code is running, any calls to `report_asset_materializatio
 - Leave these objects buffered until execution is complete (**Option 1** in below example code), or
 - Stream them to Dagster machinery during execution by calling `yield pipes_session.get_results()` (**Option 2**)
 
-With either option, once the <PyObject section="pipes" object="dagster.open_pipes_session" /> block closes, you must call `yield pipes_session.get_results()` to yield any remaining buffered results, since we cannot guarantee that all communications from Databricks have been processed until the `open_pipes_session` block closes.
+With either option, once the <PyObject section="pipes" module="dagster" object="open_pipes_session" /> block closes, you must call `yield pipes_session.get_results()` to yield any remaining buffered results, since we cannot guarantee that all communications from Databricks have been processed until the `open_pipes_session` block closes.
 
 ```python file=/guides/dagster/dagster_pipes/databricks/databricks_asset_open_pipes_session.py
 import os

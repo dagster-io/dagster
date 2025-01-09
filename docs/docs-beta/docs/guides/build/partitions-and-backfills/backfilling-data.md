@@ -38,7 +38,7 @@ backfill policy across all included assets.
 
 To get this behavior, you need to:
 
-- **Set the asset's `backfill_policy` (<PyObject section="partitions" object="dagster.BackfillPolicy" />)** to `single_run`
+- **Set the asset's `backfill_policy` (<PyObject section="partitions" module="dagster" object="BackfillPolicy" />)** to `single_run`
 - **Write code that operates on a range of partitions** instead of just single partitions. This means that, if your code uses the `partition_key` context property, you'll need to update it to use one of the following properties instead:
 
   - [`partition_time_window`](/api/python-api/execution#dagster.OpExecutionContext.partition_time_window)

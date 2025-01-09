@@ -122,18 +122,19 @@ Here’s what we did in this example:
 
 - Created an asset named `k8s_pipes_asset`
 
-- Provided <PyObject section="execution" object="dagster.AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging.
+- Provided <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging.
 
 - Specified a resource for the asset to use, <PyObject section="libraries" module="dagster_k8s" object="PipesK8sClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with Kubernetes.
 
   We also specified the following for the resource:
 
-  - `context` - The asset's `context` (<PyObject section="execution" object="dagster.AssetExecutionContext" />) data
+  - `context` - The asset's `context` (<PyObject section="execution" module="dagster" object="AssetExecutionContext" />) data
   - `image` - The Kubernetes image we created in [Step 1](#step-1-define-the-external-kubernetes-code-container)
 
-  These arguments are passed to the `run` method of <PyObject section="libraries" module="dagster_k8s" object="agster_k8s.PipesK8sClient" />, which submits the provided cluster information to the Kubernetes API and then runs the specified `image`.
+  These arguments are passed to the `run` method of <PyObject section="libraries" module="dagster_k8s" object="PipesK8sClient" />, which submits the provided cluster information to the Kubernetes API and then runs the specified `image`.
 
-- Returned a <PyObject section="assets" object="dagster.MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject section="libraries" module="dagster_pipes" object="PipesClientCompletedInvocation" /> object returned by `run` after the execution in Kubernetes has completed.
+- Returned a <PyObject section="assets" object="dagster.MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the execution in Kubernetes has completed.
+{/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="pipes" module="dagster" object="PipesClientCompletedInvocation" /> */}
 
 :::note
 

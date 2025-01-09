@@ -128,4 +128,4 @@ Dagster will now be able to launch the AWS Glue job from the `glue_pipes_asset` 
 
 By default, the client uses the CloudWatch log stream (`.../output/<job-run-id>`) created by the Glue job to receive Dagster events. The client will also forward the stream to `stdout`.
 
-To customize this behavior, the client can be configured to use <PyObject section="libraries" object="pipes.PipesS3MessageReader" module="dagster_aws" />, and the Glue job to use <PyObject section="libraries" object="pipes.PipesS3MessageWriter" module="dagster_pipes" /> .
+To customize this behavior, the client can be configured to use <PyObject section="libraries" object="pipes.PipesS3MessageReader" module="dagster_aws" />, and the Glue job to use <PyObject section="libraries" object="PipesS3MessageWriter" module="dagster_pipes" /> .
