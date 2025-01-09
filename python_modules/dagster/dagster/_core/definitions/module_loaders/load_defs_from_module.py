@@ -99,7 +99,7 @@ def load_definitions_from_package_module(
     """Constructs the :py:class:`dagster.Definitions` from the given package module.
 
     Args:
-        package_module (Iterable[ModuleType]):
+        package_module (ModuleType):
             The package module to look for :py:class:`dagster.Definitions` inside.
         resources (Optional[Mapping[str, Any]]):
             Dictionary of resources to bind to assets in the loaded :py:class:`dagster.Definitions`.
