@@ -6,7 +6,7 @@ sidebar_position: 300
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR Serverless](https://aws.amazon.com/emr-serverless/).
 
-The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesEMRServerlessClient" module="dagster_aws" /> resource, which can be used to launch AWS EMR Serverless jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
+The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="dagster_aws.pipes.PipesEMRServerlessClient" module="dagster_aws" /> resource, which can be used to launch AWS EMR Serverless jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
 
 
 <details>
@@ -132,7 +132,7 @@ This will launch the AWS EMR Serverless job and wait for it completion. If the j
 
 ## Step 4: Create Dagster definitions
 
-Next, add the `PipesEMRServerlessClient` resource to your project's <PyObject section="definitions" object="Definitions" /> object:
+Next, add the `PipesEMRServerlessClient` resource to your project's <PyObject section="definitions" object="dagster.Definitions" /> object:
 
 ```python file=/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions  # noqa

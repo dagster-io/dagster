@@ -6,7 +6,7 @@ sidebar_position: 300
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR](https://aws.amazon.com/emr/).
 
-The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesEMRClient" module="dagster_aws" /> resource, which can be used to launch AWS EMR jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
+The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="dagster_aws.pipes.PipesEMRClient" module="dagster_aws" /> resource, which can be used to launch AWS EMR jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
 
 
 <details>
@@ -156,7 +156,7 @@ EMR application steps `stdout` and `stderr` will be forwarded to the Dagster pro
 
 ## Step 4: Create Dagster definitions
 
-Next, add the `PipesEMRClient` resource to your project's <PyObject section="definitions" object="Definitions" /> object:
+Next, add the `PipesEMRClient` resource to your project's <PyObject section="definitions" object="dagster.Definitions" /> object:
 
 ```python file=/guides/dagster/dagster_pipes/emr/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions  # noqa

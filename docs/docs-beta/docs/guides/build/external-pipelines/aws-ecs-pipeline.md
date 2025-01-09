@@ -6,7 +6,7 @@ sidebar_position: 200
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS ECS](https://aws.amazon.com/ecs/).
 
-The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesECSClient" module="dagster_aws" /> resource which can be used to launch AWS ECS tasks from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the task side.
+The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="dagster_aws.pipes.PipesECSClient" module="dagster_aws" /> resource which can be used to launch AWS ECS tasks from Dagster assets and ops. Dagster can receive regular events like logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes on the task side.
 
 <details>
   <summary>Prerequisites</summary>
@@ -99,7 +99,7 @@ This will launch the AWS ECS task and wait until it reaches `"STOPPED"` status. 
 
 ## Step 4: Create Dagster definitions
 
-Next, add the `PipesECSClient` resource to your project's <PyObject section="definitions" object="Definitions" /> object:
+Next, add the `PipesECSClient` resource to your project's <PyObject section="definitions" object="dagster.Definitions" /> object:
 
 ```python file=/guides/dagster/dagster_pipes/ecs/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions  # noqa

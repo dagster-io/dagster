@@ -171,7 +171,7 @@ Here’s what we did in this example:
 
 - Provided `AssetExecutionContext` as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging.
 
-- Specified a resource for the asset to use, <PyObject section="libraries" module="dagster_aws" object="pipes.PipesLambdaClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with AWS Lambda.
+- Specified a resource for the asset to use, <PyObject section="libraries" module="dagster_aws" object="dagster_aws.pipes.PipesLambdaClient" />, which is a pre-built Dagster resource that allows you to quickly get Pipes working with AWS Lambda.
 
   We also specified the following for the resource:
 
@@ -179,13 +179,13 @@ Here’s what we did in this example:
   - `function_name` - The name or ARN of the function to invoke. This info can be found on the function's details page in AWS. In our example, the function is named `dagster_pipes_function`
   - `event` - A JSON-serializable object containing data to pass as input to the Lambda function
 
-  This argument is passed to the `run` method of <PyObject section="libraries" module="dagster_aws" object="pipes.PipesLambdaClient" />, which submits the provided information to the [boto `invoke` API](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda/client/invoke.html) and then invokes the specified function (`function_name`).
+  This argument is passed to the `run` method of <PyObject section="libraries" module="dagster_aws" object="dagster_aws.pipes.PipesLambdaClient" />, which submits the provided information to the [boto `invoke` API](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda/client/invoke.html) and then invokes the specified function (`function_name`).
 
-- Returned a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject section="libraries" module="dagster_pipes" object="PipesClientCompletedInvocation" /> object returned by `run` after the execution in AWS Lambda has completed.
+- Returned a <PyObject section="assets" object="dagster.MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject section="libraries" module="pipes" object="dagster.PipesClientCompletedInvocation" /> object returned by `run` after the execution in AWS Lambda has completed.
 
 ### Step 2.2: Create Dagster Definitions
 
-Next, you’ll add the asset and AWS Lambda resource to your project’s code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/deploy/code-locations).
+Next, you’ll add the asset and AWS Lambda resource to your project’s code location via the <PyObject section="definitions" object="dagster.Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/deploy/code-locations).
 
 Copy and paste the following to the bottom of `dagster_lambda_pipes.py`:
 
