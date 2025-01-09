@@ -642,34 +642,6 @@
                     "title": "Envsecrets",
                     "type": "array"
                 },
-                "extraContainers": {
-                    "title": "Extracontainers",
-                    "items": {
-                        "$ref": "#/$defs/Container"
-                    },
-                    "anyOf": [
-                        {
-                            "type": "array"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "extraPrependedInitContainers": {
-                    "title": "Extraprependedinitcontainers",
-                    "items": {
-                        "$ref": "#/$defs/InitContainer"
-                    },
-                    "anyOf": [
-                        {
-                            "type": "array"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
                 "deploymentLabels": {
                     "additionalProperties": {
                         "type": "string"
@@ -791,6 +763,36 @@
                         }
                     ],
                     "default": null
+                },
+                "extraContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extracontainers"
+                },
+                "extraPrependedInitContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/InitContainer"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extraprependedinitcontainers"
                 }
             },
             "required": [
@@ -1263,10 +1265,11 @@
             "type": "object"
         },
         "InitContainer": {
-            "title": "InitContainer",
-            "type": "object",
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container",
+            "additionalProperties": true,
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container"
+            "title": "InitContainer",
+            "type": "object"
         },
         "K8sRunLauncherConfig": {
             "additionalProperties": false,
@@ -1454,22 +1457,38 @@
                     "type": "boolean"
                 },
                 "extraContainers": {
-                    "title": "Extracontainers",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/$defs/Container"
-                    }
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Extracontainers"
                 },
                 "initContainers": {
-                    "title": "Initcontainers",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/$defs/Container"
-                    }
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Initcontainers"
                 }
             },
             "required": [
-                "enabled"
+                "enabled",
+                "extraContainers",
+                "initContainers"
             ],
             "title": "Migrate",
             "type": "object"
@@ -3207,34 +3226,6 @@
                     "title": "Envsecrets",
                     "type": "array"
                 },
-                "extraContainers": {
-                    "title": "Extracontainers",
-                    "items": {
-                        "$ref": "#/$defs/Container"
-                    },
-                    "anyOf": [
-                        {
-                            "type": "array"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "extraPrependedInitContainers": {
-                    "title": "Extraprependedinitcontainers",
-                    "items": {
-                        "$ref": "#/$defs/InitContainer"
-                    },
-                    "anyOf": [
-                        {
-                            "type": "array"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
                 "deploymentLabels": {
                     "additionalProperties": {
                         "type": "string"
@@ -3383,6 +3374,36 @@
                         }
                     ],
                     "default": null
+                },
+                "extraContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extracontainers"
+                },
+                "extraPrependedInitContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/InitContainer"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extraprependedinitcontainers"
                 }
             },
             "required": [
