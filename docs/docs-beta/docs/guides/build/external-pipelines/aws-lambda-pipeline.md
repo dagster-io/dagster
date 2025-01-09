@@ -6,11 +6,11 @@ sidebar_position: 500
 
 :::note
 
-This guide focuses on using an out-of-the-box Amazon Web Services (AWS) Lambda resource. For further customization, use the [`open_pipes_session`](/guides/build/external-pipelines/dagster-pipes-details-and-customization) instead.
+This article focuses on using an out-of-the-box Amazon Web Services (AWS) Lambda resource. For further customization, use the [`open_pipes_session`](/guides/build/external-pipelines/dagster-pipes-details-and-customization) instead.
 
 :::
 
-In this guide, we’ll show you how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster’s AWS Lambda integration to invoke a Lambda function and execute external code.
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster’s AWS Lambda integration to invoke a Lambda function and execute external code.
 
 Dagster Pipes allows your code to interact with Dagster outside of a full Dagster environment. The environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
