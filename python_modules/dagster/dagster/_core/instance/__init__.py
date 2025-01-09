@@ -103,87 +103,39 @@ RUNLESS_RUN_ID = ""
 RUNLESS_JOB_NAME = ""
 
 if TYPE_CHECKING:
-    from dagster._core.debug import DebugRunPayload
-    from dagster._core.definitions.asset_check_spec import AssetCheckKey
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-    from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.partition import PartitionsDefinition
-    from dagster._core.definitions.repository_definition.repository_definition import (
-        RepositoryLoadData,
-    )
-    from dagster._core.definitions.run_request import InstigatorType
-    from dagster._core.event_api import (
-        AssetRecordsFilter,
-        EventHandlerFn,
-        RunStatusChangeRecordsFilter,
-    )
-    from dagster._core.events import (
-        AssetMaterialization,
-        DagsterEvent,
-        DagsterEventBatchMetadata,
-        DagsterEventType,
-        EngineEventData,
-        JobFailureData,
-    )
-    from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import (
-        BulkActionsFilter,
-        BulkActionStatus,
-        PartitionBackfill,
-    )
-    from dagster._core.execution.plan.plan import ExecutionPlan
-    from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-    from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster._core.launcher import RunLauncher
-    from dagster._core.remote_representation import (
-        CodeLocation,
-        HistoricalJob,
-        RemoteJob,
-        RemoteJobOrigin,
-        RemoteSchedule,
-        RemoteSensor,
-    )
-    from dagster._core.run_coordinator import RunCoordinator
-    from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
-    from dagster._core.scheduler.instigation import (
-        InstigatorState,
-        InstigatorStatus,
-        InstigatorTick,
-        TickData,
-        TickStatus,
-    )
-    from dagster._core.secrets import SecretsLoader
-    from dagster._core.snap import (
-        ExecutionPlanSnapshot,
-        ExecutionStepOutputSnap,
-        ExecutionStepSnap,
-        JobSnap,
-    )
-    from dagster._core.storage.asset_check_execution_record import (
-        AssetCheckExecutionRecord,
-        AssetCheckInstanceSupport,
-    )
-    from dagster._core.storage.compute_log_manager import ComputeLogManager
-    from dagster._core.storage.daemon_cursor import DaemonCursorStorage
-    from dagster._core.storage.event_log import EventLogStorage
-    from dagster._core.storage.event_log.base import (
-        AssetRecord,
-        EventLogConnection,
-        EventLogRecord,
-        EventRecordsFilter,
-        EventRecordsResult,
-        PlannedMaterializationInfo,
-    )
-    from dagster._core.storage.partition_status_cache import (
-        AssetPartitionStatus,
-        AssetStatusCacheValue,
-    )
-    from dagster._core.storage.root import LocalArtifactStorage
-    from dagster._core.storage.runs import RunStorage
-    from dagster._core.storage.schedules import ScheduleStorage
-    from dagster._core.storage.sql import AlembicVersion
-    from dagster._core.workspace.context import BaseWorkspaceRequestContext
-    from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+    import dagster._core.debug
+    import dagster._core.definitions.asset_check_spec
+    import dagster._core.definitions.base_asset_graph
+    import dagster._core.definitions.job_definition
+    import dagster._core.definitions.partition
+    import dagster._core.definitions.repository_definition.repository_definition
+    import dagster._core.definitions.run_request
+    import dagster._core.event_api
+    import dagster._core.events
+    import dagster._core.events.log
+    import dagster._core.execution.backfill
+    import dagster._core.execution.plan.plan
+    import dagster._core.execution.plan.resume_retry
+    import dagster._core.execution.stats
+    import dagster._core.launcher
+    import dagster._core.remote_representation
+    import dagster._core.run_coordinator
+    import dagster._core.scheduler
+    import dagster._core.scheduler.instigation
+    import dagster._core.secrets
+    import dagster._core.snap
+    import dagster._core.storage.asset_check_execution_record
+    import dagster._core.storage.compute_log_manager
+    import dagster._core.storage.daemon_cursor
+    import dagster._core.storage.event_log
+    import dagster._core.storage.event_log.base
+    import dagster._core.storage.partition_status_cache
+    import dagster._core.storage.root
+    import dagster._core.storage.runs
+    import dagster._core.storage.schedules
+    import dagster._core.storage.sql
+    import dagster._core.workspace.context
+    import dagster._daemon.types
 
 
 DagsterInstanceOverrides: TypeAlias = Mapping[str, Any]
@@ -494,7 +446,9 @@ class DagsterInstance(DynamicPartitionsStore):
             )
 
         # Used for batched event handling
-        self._event_buffer: dict[str, list[EventLogEntry]] = defaultdict(list)
+        self._event_buffer: dict[str, list[dagster._core.events.log.EventLogEntry]] = defaultdict(
+            list
+        )
 
     # ctors
 
@@ -502,7 +456,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @staticmethod
     def ephemeral(
         tempdir: Optional[str] = None,
-        preload: Optional[Sequence["DebugRunPayload"]] = None,
+        preload: Optional[Sequence["dagster._core.debug.DebugRunPayload"]] = None,
         settings: Optional[dict] = None,
     ) -> "DagsterInstance":
         """Create a `DagsterInstance` suitable for ephemeral execution, useful in test contexts. An
@@ -755,7 +709,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage
 
     @property
-    def daemon_cursor_storage(self) -> "DaemonCursorStorage":
+    def daemon_cursor_storage(self) -> "dagster._core.storage.daemon_cursor.DaemonCursorStorage":
         return self._run_storage
 
     # schedule storage
@@ -786,7 +740,10 @@ class DagsterInstance(DynamicPartitionsStore):
             )
             run_coordinator = cast(InstanceRef, self._ref).run_coordinator
             check.invariant(run_coordinator, "Run coordinator not configured in instance ref")
-            self._run_coordinator = cast("RunCoordinator", run_coordinator)
+            self._run_coordinator = cast(
+                "dagster._core.run_coordinator.RunCoordinator",  # noqa: SLF001
+                run_coordinator,
+            )
             self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
@@ -800,7 +757,7 @@ class DagsterInstance(DynamicPartitionsStore):
             check.invariant(self._ref, "Run launcher not provided, and no instance ref available")
             launcher = cast(InstanceRef, self._ref).run_launcher
             check.invariant(launcher, "Run launcher not configured in instance ref")
-            self._run_launcher = cast("RunLauncher", launcher)
+            self._run_launcher = cast("dagster._core.launcher.RunLauncher", launcher)  # noqa: SLF001
             self._run_launcher.register_instance(self)
         return self._run_launcher
 
@@ -818,7 +775,10 @@ class DagsterInstance(DynamicPartitionsStore):
             check.invariant(
                 compute_log_manager, "Compute log manager not configured in instance ref"
             )
-            self._compute_log_manager = cast("ComputeLogManager", compute_log_manager)
+            self._compute_log_manager = cast(
+                "dagster._core.storage.compute_log_manager.ComputeLogManager",  # noqa: SLF001
+                compute_log_manager,
+            )
             self._compute_log_manager.register_instance(self)
         return self._compute_log_manager
 
