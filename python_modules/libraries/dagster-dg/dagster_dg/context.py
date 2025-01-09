@@ -177,15 +177,13 @@ def ensure_uv_lock(root_path: Path) -> None:
 
 
 def fetch_component_registry(path: Path, dg_context: DgContext) -> RemoteComponentRegistry:
-    root_path = resolve_code_location_root_directory(path)
-
     if dg_context.has_cache:
-        cache_key = make_cache_key(root_path, "component_registry_data")
+        cache_key = make_cache_key(path, "component_registry_data")
 
     raw_registry_data = dg_context.cache.get(cache_key) if dg_context.has_cache else None
     if not raw_registry_data:
         raw_registry_data = execute_code_location_command(
-            root_path, ["list", "component-types"], dg_context
+            path, ["list", "component-types"], dg_context
         )
         if dg_context.has_cache:
             dg_context.cache.set(cache_key, raw_registry_data)
