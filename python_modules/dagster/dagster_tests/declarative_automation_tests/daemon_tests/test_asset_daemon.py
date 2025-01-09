@@ -65,27 +65,18 @@ from dagster_tests.declarative_automation_tests.scenario_utils.asset_daemon_scen
 )
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import run_request
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
+    day_partition_key,
+    hour_partition_key,
     one_asset,
     one_upstream_observable_asset,
+    time_partitions_start_str,
     two_assets_in_sequence,
+    two_distinct_partitions_graphs,
     two_partitions_def,
 )
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import (
     ScenarioSpec,
     get_code_location_origin,
-)
-from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
-    hour_partition_key,
-    hourly_to_daily,
-    time_partitions_start_str,
-)
-
-from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
-    hour_partition_key,
-    hourly_to_daily,
-    time_partitions_start_str,
-    day_partition_key,
-    two_distinct_partitions_graphs
 )
 
 
@@ -235,18 +226,23 @@ auto_materialize_sensor_scenarios = [
         .with_all_eager(),
         execution_fn=lambda state: state.with_runs(
             *[
-                run_request(
-                    ["A"], partition_key=hour_partition_key(state.current_time, delta=-i)
-                )
+                run_request(["A"], partition_key=hour_partition_key(state.current_time, delta=-i))
                 for i in range(25)
             ],
-            run_request(["C"], partition_key=day_partition_key(state.current_time))
+            run_request(["C"], partition_key=day_partition_key(state.current_time)),
         )
         .evaluate_tick(stop_mid_iteration=True)
-        .assert_requested_runs_for_stopped_iteration(1, run_request(
-                asset_keys=["B"], partition_key=hour_partition_key(state.current_time)
-            ), run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)))
-    )
+        .assert_requested_runs_for_stopped_iteration(
+            1,
+            run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
+            run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
+        )
+        .start_sensor(state.sensor_name)
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time))
+        ),
+    ),
 ]
 
 
@@ -287,7 +283,6 @@ def test_asset_daemon_with_threadpool_without_sensor(
 )
 @pytest.mark.parametrize("num_threads", [0, 4])
 def test_asset_daemon_with_sensor(scenario: AssetDaemonScenario, num_threads: int) -> None:
-    # test_asset_daemon_with_sensor[0-two_distinct_graphs_so_multiple_runs]
     with get_daemon_instance(
         extra_overrides={
             "auto_materialize": {
