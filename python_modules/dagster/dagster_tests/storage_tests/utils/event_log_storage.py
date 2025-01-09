@@ -805,6 +805,16 @@ class TestEventLogStorage:
         assert stats.start_time
         assert math.isclose(stats.start_time, start_time)
 
+    def test_event_log_step_stats_retry_with_no_start(
+        self, test_run_id: str, storage: EventLogStorage
+    ):
+        storage.store_event(
+            _event_record(test_run_id, "E", time.time() - 150, DagsterEventType.STEP_UP_FOR_RETRY),
+        )
+        step_stats = storage.get_step_stats_for_run(test_run_id)
+        assert len(step_stats) == 1
+        assert not step_stats[0].status
+
     def test_event_log_step_stats(
         self,
         test_run_id: str,
