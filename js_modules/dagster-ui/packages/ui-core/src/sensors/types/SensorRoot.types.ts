@@ -152,6 +152,11 @@ export type SensorAssetSelectionQuery = {
         assetSelection: {
           __typename: 'AssetSelection';
           assetSelectionString: string | null;
+          assetChecks: Array<{
+            __typename: 'AssetCheckhandle';
+            name: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
           assetsOrError:
             | {
                 __typename: 'AssetConnection';
@@ -184,4 +189,4 @@ export type SensorAssetSelectionQuery = {
 
 export const SensorRootQueryVersion = 'fd32c8557a75c273133137c289091357635f3be0af17b9a57b052087f8e9d023';
 
-export const SensorAssetSelectionQueryVersion = '188cd7bab57cb2a04cf4941133f43327d91cf9edef01018d3635cacf6e36582d';
+export const SensorAssetSelectionQueryVersion = '2fb6c2c612ee7ab4a7ad1f59cfd7677a6a3d14319200f8c49b43850de8b3b0f3';

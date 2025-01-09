@@ -7,7 +7,6 @@ import {
   Dialog,
   DialogFooter,
   DisclosureTriangleButton,
-  MiddleTruncate,
   Subtitle2,
   Tag,
 } from '@dagster-io/ui-components';
@@ -15,17 +14,22 @@ import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {
-  AssetSelectionNodeFragment,
-  AutomationAssetSelectionFragment,
-} from './types/AutomationAssetSelectionFragment.types';
+  renderItemAssetCheck,
+  renderItemAssetKey,
+  sortItemAssetCheck,
+  sortItemAssetKey,
+} from '../assets/AssetListUtils';
+import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
+import {AutomationAssetSelectionFragment} from './types/AutomationAssetSelectionFragment.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {COMMON_COLLATOR} from '../app/Util';
-import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {
+  assetDetailsPathForAssetCheck,
+  assetDetailsPathForKey,
+} from '../assets/assetDetailsPathForKey';
 import {SensorType} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
@@ -94,34 +98,41 @@ const AssetSelectionTag = ({
   const error =
     assetSelection.assetsOrError.__typename === 'PythonError' ? assetSelection.assetsOrError : null;
 
-  const sortedAssets = useMemo(() => {
+  const {checks, assets, assetsWithAMP, assetsWithoutAMP} = useMemo(() => {
     if (assetSelection.assetsOrError.__typename === 'PythonError') {
-      return [];
+      return {checks: [], assets: [], assetsWithAMP: [], assetsWithoutAMP: []};
     }
-    return assetSelection.assetsOrError.nodes
-      .slice()
-      .sort((a, b) =>
-        COMMON_COLLATOR.compare(displayNameForAssetKey(a.key), displayNameForAssetKey(b.key)),
-      );
-  }, [assetSelection.assetsOrError]);
+    const assets = assetSelection.assetsOrError.nodes;
 
-  const assetsWithAMP = useMemo(
-    () => sortedAssets.filter((asset) => !!asset.definition?.automationCondition),
-    [sortedAssets],
-  );
-  const assetsWithoutAMP = useMemo(
-    () => sortedAssets.filter((asset) => !asset.definition?.automationCondition),
-    [sortedAssets],
-  );
+    return {
+      checks: assetSelection.assetChecks.slice().sort(sortItemAssetCheck),
+      assets: assets.map((a) => a.key).sort(sortItemAssetKey),
+      assetsWithAMP: assets
+        .filter((asset) => !!asset.definition?.automationCondition)
+        .map((a) => a.key)
+        .sort(sortItemAssetKey),
+      assetsWithoutAMP: assets
+        .filter((asset) => !asset.definition?.automationCondition)
+        .map((a) => a.key)
+        .sort(sortItemAssetKey),
+    };
+  }, [assetSelection]);
 
   const assetSelectionString = assetSelection.assetSelectionString || '';
   const isAllAssets = assetSelectionString === ALL_ASSETS_STRING;
-  const firstAsset = sortedAssets[0];
 
-  if (firstAsset && sortedAssets.length === 1) {
+  if (assets.length === 1) {
     return (
       <Tag icon="asset">
-        <Link to={assetDetailsPathForKey(firstAsset.key)}>{assetSelectionString}</Link>
+        <Link to={assetDetailsPathForKey(assets[0]!)}>{assetSelectionString}</Link>
+      </Tag>
+    );
+  }
+
+  if (checks.length === 1) {
+    return (
+      <Tag icon="asset_check">
+        <Link to={assetDetailsPathForAssetCheck(checks[0]!)}>{assetSelectionString}</Link>
       </Tag>
     );
   }
@@ -146,16 +157,55 @@ const AssetSelectionTag = ({
               <Section
                 title="Assets with a materialization policy"
                 titleBorder="bottom"
-                assets={assetsWithAMP}
+                count={assetsWithAMP.length}
+                list={
+                  <VirtualizedItemListForDialog
+                    items={assetsWithAMP}
+                    renderItem={renderItemAssetKey}
+                    itemBorders
+                  />
+                }
               />
               <Section
                 title="Assets without a materialization policy"
-                titleBorder="top-and-bottom"
-                assets={assetsWithoutAMP}
+                titleBorder="bottom"
+                count={assetsWithoutAMP.length}
+                list={
+                  <VirtualizedItemListForDialog
+                    items={assetsWithoutAMP}
+                    renderItem={renderItemAssetKey}
+                    itemBorders
+                  />
+                }
               />
             </>
           ) : (
-            <Section assets={sortedAssets} />
+            <Section
+              title={checks.length ? 'Assets' : undefined}
+              titleBorder="bottom"
+              count={assets.length}
+              list={
+                <VirtualizedItemListForDialog
+                  items={assets}
+                  renderItem={renderItemAssetKey}
+                  itemBorders
+                />
+              }
+            />
+          )}
+          {checks.length > 0 && (
+            <Section
+              title="Asset checks"
+              titleBorder="bottom"
+              count={checks.length}
+              list={
+                <VirtualizedItemListForDialog
+                  items={checks}
+                  renderItem={renderItemAssetCheck}
+                  itemBorders
+                />
+              }
+            />
           )}
         </Box>
         <DialogFooter topBorder>
@@ -169,10 +219,7 @@ const AssetSelectionTag = ({
           </Button>
         </DialogFooter>
       </Dialog>
-      <Tag
-        icon={sortedAssets.length === 1 ? 'asset' : 'asset_group'}
-        intent={error ? 'danger' : 'none'}
-      >
+      <Tag icon={assets.length === 1 ? 'asset' : 'asset_group'} intent={error ? 'danger' : 'none'}>
         <ButtonLink
           onClick={() => {
             if (error) {
@@ -198,43 +245,40 @@ const AssetSelectionTag = ({
 };
 
 const Section = ({
-  assets,
+  count,
+  list,
   title,
   titleBorder = 'top-and-bottom',
 }: {
-  assets: AssetSelectionNodeFragment[];
+  count: number;
+  list: React.ReactNode;
   title?: string;
   titleBorder?: React.ComponentProps<typeof Box>['border'];
 }) => {
   const [isOpen, setIsOpen] = useState(true);
+
+  // BG Note: This doesn't use CollapsibleSection because we want to put
+  // the sections and their content in the same top-level flexbox to render
+  // two sections with two virtualized lists that each scroll.
   return (
     <>
       {title ? (
-        <Box border={titleBorder} padding={{right: 24, vertical: 12}}>
-          <Box
-            flex={{direction: 'row', gap: 4}}
-            style={{cursor: 'pointer'}}
-            onClick={() => {
-              setIsOpen(!isOpen);
-            }}
-          >
-            <DisclosureTriangleButton onToggle={() => {}} isOpen={isOpen} />
+        <Box
+          border={titleBorder}
+          padding={{horizontal: 24, vertical: 12}}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <Box flex={{direction: 'row', gap: 4}} style={{cursor: 'pointer', userSelect: 'none'}}>
             <Subtitle2>
-              {title} ({numberFormatter.format(assets.length)})
+              {title} ({numberFormatter.format(count)})
             </Subtitle2>
+            <DisclosureTriangleButton onToggle={() => {}} isOpen={isOpen} />
           </Box>
         </Box>
       ) : null}
       {isOpen ? (
-        assets.length ? (
-          <div style={{height: '100%', overflowY: 'hidden'}}>
-            <VirtualizedItemListForDialog
-              padding={0}
-              items={assets}
-              renderItem={(asset) => <VirtualizedSelectedAssetRow asset={asset} key={asset.id} />}
-              itemBorders
-            />
-          </div>
+        count ? (
+          <div style={{height: '100%', overflowY: 'hidden'}}>{list}</div>
         ) : (
           <Box padding={{horizontal: 24, vertical: 12}}>
             <Caption color={Colors.textLight()}>0 assets</Caption>
@@ -242,21 +286,5 @@ const Section = ({
         )
       ) : null}
     </>
-  );
-};
-
-const VirtualizedSelectedAssetRow = ({asset}: {asset: AssetSelectionNodeFragment}) => {
-  return (
-    <Box
-      flex={{alignItems: 'center', gap: 4}}
-      style={{cursor: 'pointer'}}
-      padding={{horizontal: 24}}
-    >
-      <Link to={assetDetailsPathForKey(asset.key)} target="_blank">
-        <Box style={{overflow: 'hidden'}}>
-          <MiddleTruncate text={displayNameForAssetKey(asset.key)} />
-        </Box>
-      </Link>
-    </Box>
   );
 };
