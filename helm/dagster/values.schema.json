@@ -645,7 +645,7 @@
                 "extraContainers": {
                     "title": "Extracontainers",
                     "items": {
-                        "$ref": "#/definitions/Container"
+                        "$ref": "#/$defs/Container"
                     },
                     "anyOf": [
                         {
@@ -659,7 +659,7 @@
                 "extraPrependedInitContainers": {
                     "title": "Extraprependedinitcontainers",
                     "items": {
-                        "$ref": "#/definitions/InitContainer"
+                        "$ref": "#/$defs/InitContainer"
                     },
                     "anyOf": [
                         {
@@ -1457,14 +1457,14 @@
                     "title": "Extracontainers",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Container"
+                        "$ref": "#/$defs/Container"
                     }
                 },
                 "initContainers": {
                     "title": "Initcontainers",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/Container"
+                        "$ref": "#/$defs/Container"
                     }
                 }
             },
@@ -3210,7 +3210,7 @@
                 "extraContainers": {
                     "title": "Extracontainers",
                     "items": {
-                        "$ref": "#/definitions/Container"
+                        "$ref": "#/$defs/Container"
                     },
                     "anyOf": [
                         {
@@ -3224,7 +3224,7 @@
                 "extraPrependedInitContainers": {
                     "title": "Extraprependedinitcontainers",
                     "items": {
-                        "$ref": "#/definitions/InitContainer"
+                        "$ref": "#/$defs/InitContainer"
                     },
                     "anyOf": [
                         {
