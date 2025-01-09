@@ -315,7 +315,7 @@ const BackfillRequestedRange = ({
 
 const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested: string[]}) => {
   const health: PartitionStatusHealthSourceOps = React.useMemo(() => {
-    const requestedSet = new Set(requested ?? []);
+    const requestedSet = new Set(requested);
     return {
       runStatusForPartitionKey: (key: string) =>
         requestedSet.has(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
