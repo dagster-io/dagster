@@ -314,13 +314,13 @@ const BackfillRequestedRange = ({
 };
 
 const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested: string[]}) => {
-  const health: PartitionStatusHealthSourceOps = React.useMemo(
-    () => ({
+  const health: PartitionStatusHealthSourceOps = React.useMemo(() => {
+    const requestedSet = new Set(requested ?? []);
+    return {
       runStatusForPartitionKey: (key: string) =>
-        requested && requested.includes(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
-    }),
-    [requested],
-  );
+        requestedSet.has(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
+    };
+  }, [requested]);
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
 
