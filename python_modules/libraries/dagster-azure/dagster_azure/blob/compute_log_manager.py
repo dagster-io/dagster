@@ -279,6 +279,20 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._download_urls[blob_key] = url
         return url
 
+    def get_log_manager_metadata(self) -> dict[str, str]:
+        metadata = super().get_log_manager_metadata()
+        return {
+            **metadata,
+            "storage_account": self._storage_account,
+            "container": self._container,
+        }
+
+    def uri_or_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+        if not self.is_capture_complete(log_key):
+            return None
+
+        return self._blob_key(log_key, io_type)
+
     @contextmanager
     def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
         with super().capture_logs(log_key) as local_context:
@@ -291,7 +305,12 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
                 out_url = f"{azure_base_url}/{out_key}"
                 err_url = f"{azure_base_url}/{err_key}"
                 yield CapturedLogContext(
-                    local_context.log_key, external_stdout_url=out_url, external_stderr_url=err_url
+                    local_context.log_key,
+                    external_stdout_url=out_url,
+                    external_stderr_url=err_url,
+                    log_manager_metadata=self.get_serialized_log_manager_metadata(),
+                    stdout_uri_or_path=out_key,
+                    stderr_uri_or_path=err_key,
                 )
 
     def _request_user_delegation_key(

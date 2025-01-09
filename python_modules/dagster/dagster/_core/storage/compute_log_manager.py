@@ -27,6 +27,9 @@ class CapturedLogContext(
             ("external_url", Optional[str]),
             ("external_stdout_url", Optional[str]),
             ("external_stderr_url", Optional[str]),
+            ("log_manager_metadata", Optional[str]),
+            ("stdout_uri_or_path", Optional[str]),
+            ("stderr_uri_or_path", Optional[str]),
         ],
     )
 ):
@@ -41,6 +44,9 @@ class CapturedLogContext(
         external_stdout_url: Optional[str] = None,
         external_stderr_url: Optional[str] = None,
         external_url: Optional[str] = None,
+        log_manager_metadata: Optional[str] = None,
+        stdout_uri_or_path: Optional[str] = None,
+        stderr_uri_or_path: Optional[str] = None,
     ):
         if external_url and (external_stdout_url or external_stderr_url):
             check.failed(
@@ -54,6 +60,9 @@ class CapturedLogContext(
             external_stdout_url=external_stdout_url,
             external_stderr_url=external_stderr_url,
             external_url=external_url,
+            log_manager_metadata=log_manager_metadata,
+            stdout_uri_or_path=stdout_uri_or_path,
+            stderr_uri_or_path=stderr_uri_or_path,
         )
 
 
@@ -90,11 +99,16 @@ class CapturedLogMetadata(
             ("stderr_location", Optional[str]),
             ("stdout_download_url", Optional[str]),
             ("stderr_download_url", Optional[str]),
+            ("log_manager_metadata", Optional[str]),
+            ("stdout_uri_or_path", Optional[str]),
+            ("stderr_uri_or_path", Optional[str]),
         ],
     )
 ):
-    """Object representing metadata info for the captured log data, containing a display string for
-    the location of the log data and a URL for direct download of the captured log data.
+    """Object representing metadata info for the captured log data.
+    It contains:
+     - a display string for the location of the log data,
+     - a URL for direct download of the captured log data.
     """
 
     def __new__(
@@ -103,6 +117,9 @@ class CapturedLogMetadata(
         stderr_location: Optional[str] = None,
         stdout_download_url: Optional[str] = None,
         stderr_download_url: Optional[str] = None,
+        log_manager_metadata: Optional[str] = None,
+        stdout_uri_or_path: Optional[str] = None,
+        stderr_uri_or_path: Optional[str] = None,
     ):
         return super().__new__(
             cls,
@@ -110,6 +127,9 @@ class CapturedLogMetadata(
             stderr_location=stderr_location,
             stdout_download_url=stdout_download_url,
             stderr_download_url=stderr_download_url,
+            log_manager_metadata=log_manager_metadata,
+            stdout_uri_or_path=stdout_uri_or_path,
+            stderr_uri_or_path=stderr_uri_or_path,
         )
 
 

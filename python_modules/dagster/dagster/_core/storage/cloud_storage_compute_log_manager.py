@@ -51,6 +51,21 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
     def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
         """Calculates a download url given a log key and compute io type."""
 
+    def uri_or_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> Optional[str]:
+        """Calculates a download uri given a log key and compute io type."""
+        return None
+
+    def get_log_manager_metadata(self) -> dict[str, str]:
+        """Returns metadata about the log manager."""
+        return {"type": self.__class__.__name__}
+
+    def get_serialized_log_manager_metadata(self) -> Optional[str]:
+        """Returns serialized metadata about the log manager."""
+        metadata = self.get_log_manager_metadata()
+        if not metadata:
+            return None
+        return json.dumps(metadata)
+
     @abstractmethod
     def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
         """Returns a display path given a log key and compute io type."""
@@ -136,6 +151,9 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
             stderr_location=self.display_path_for_type(log_key, ComputeIOType.STDERR),
             stdout_download_url=self.download_url_for_type(log_key, ComputeIOType.STDOUT),
             stderr_download_url=self.download_url_for_type(log_key, ComputeIOType.STDERR),
+            log_manager_metadata=self.get_serialized_log_manager_metadata(),
+            stdout_uri_or_path=self.uri_or_path_for_type(log_key, ComputeIOType.STDOUT),
+            stderr_uri_or_path=self.uri_or_path_for_type(log_key, ComputeIOType.STDERR),
         )
 
     def on_progress(self, log_key):

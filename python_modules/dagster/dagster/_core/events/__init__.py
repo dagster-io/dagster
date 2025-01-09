@@ -1492,6 +1492,9 @@ class DagsterEvent(
             event_specific_data=ComputeLogsCaptureData(
                 step_keys=step_keys,
                 file_key=file_key,
+                log_manager_metadata=log_context.log_manager_metadata,
+                stdout_uri_or_path=log_context.stdout_uri_or_path,
+                stderr_uri_or_path=log_context.stderr_uri_or_path,
                 external_stdout_url=log_context.external_stdout_url,
                 external_stderr_url=log_context.external_stderr_url,
                 external_url=log_context.external_url,
@@ -1874,6 +1877,9 @@ class ComputeLogsCaptureData(
             ("external_url", Optional[str]),
             ("external_stdout_url", Optional[str]),
             ("external_stderr_url", Optional[str]),
+            ("log_manager_metadata", Optional[str]),
+            ("stdout_uri_or_path", Optional[str]),
+            ("stderr_uri_or_path", Optional[str]),
         ],
     )
 ):
@@ -1884,6 +1890,9 @@ class ComputeLogsCaptureData(
         external_url: Optional[str] = None,
         external_stdout_url: Optional[str] = None,
         external_stderr_url: Optional[str] = None,
+        log_manager_metadata: Optional[str] = None,
+        stdout_uri_or_path: Optional[str] = None,
+        stderr_uri_or_path: Optional[str] = None,
     ):
         return super().__new__(
             cls,
@@ -1892,6 +1901,9 @@ class ComputeLogsCaptureData(
             external_url=check.opt_str_param(external_url, "external_url"),
             external_stdout_url=check.opt_str_param(external_stdout_url, "external_stdout_url"),
             external_stderr_url=check.opt_str_param(external_stderr_url, "external_stderr_url"),
+            log_manager_metadata=check.opt_str_param(log_manager_metadata, "log_manager_metadata"),
+            stdout_uri_or_path=check.opt_str_param(stdout_uri_or_path, "stdout_uri_or_path"),
+            stderr_uri_or_path=check.opt_str_param(stderr_uri_or_path, "stderr_uri_or_path"),
         )
 
 
