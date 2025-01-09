@@ -256,7 +256,7 @@ def github_discussions_embeddings(
    
    This asset:
    1. Fetches URLs from the Dagster documentation sitemap
-   2. Processes the first 4 URLs as a sample set
+   2. Processes the URLs as a set
    3. Converts each page into a Document object with cleaned content
    4. Implements rate limiting (0.5s delay between requests)
    
@@ -298,6 +298,27 @@ def docs_scrape_raw(
     context.add_output_metadata({"pages scraped": len(urls)})
 
     return documents
+
+
+def split_text(text: str, max_chars: int = 1000) -> list[str]:
+    """Split text into chunks of roughly equal size."""
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    current_length = 0
+
+    for word in words:
+        if current_length + len(word) > max_chars:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [word]
+            current_length = len(word)
+        else:
+            current_chunk.append(word)
+            current_length += len(word) + 1
+
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+    return chunks
 
 
 @dg.asset(
@@ -344,35 +365,54 @@ def docs_embedding(
     openai: OpenAIResource,
     docs_scrape_raw: list[Document],
 ) -> dg.MaterializeResult:
+    BATCH_SIZE = 10
+    PINECONE_BATCH_SIZE = 100
+
     pinecone.create_index("dagster-knowledge", dimension=1536)
     index, namespace_kwargs = pinecone.get_index("dagster-knowledge", namespace="dagster-docs")
 
-    # Get embeddings for all documents
-    with openai.get_client(context) as client:
-        texts = [doc.page_content for doc in docs_scrape_raw]
-        embeddings_response = client.embeddings.create(model="text-embedding-3-small", input=texts)
-        embeddings = [item.embedding for item in embeddings_response.data]
+    # Split each document into chunks
+    all_chunks = []
+    chunk_to_doc = {}  # Track which document each chunk came from
+    for i, doc in enumerate(docs_scrape_raw):
+        chunks = split_text(doc.page_content)
+        all_chunks.extend(chunks)
+        for j in range(len(chunks)):
+            chunk_to_doc[len(all_chunks) - len(chunks) + j] = i
 
-    # Prepare metadata for each document
-    metadatas = []
-    doc_ids = []
+    all_embeddings = []
+    for i in range(0, len(all_chunks), BATCH_SIZE):
+        batch = all_chunks[i : i + BATCH_SIZE]
+        with openai.get_client(context) as client:
+            batch_embeddings = [
+                item.embedding
+                for item in client.embeddings.create(
+                    model="text-embedding-3-small", input=batch
+                ).data
+            ]
+        all_embeddings.extend(batch_embeddings)
+        time.sleep(1)
 
-    for doc in docs_scrape_raw:
-        # Clean metadata
+    # Create vectors with metadata
+    vectors = []
+    for i, embedding in enumerate(all_embeddings):
+        doc_idx = chunk_to_doc[i]
+        doc = docs_scrape_raw[doc_idx]
         meta = {k: v for k, v in doc.metadata.items() if isinstance(v, (str, int, float, bool))}
-        metadatas.append(meta)
+        meta["chunk_index"] = i
+        doc_id = f"{hashlib.md5(doc.metadata['source'].encode()).hexdigest()}_{i}"
+        vectors.append((doc_id, embedding, meta))
 
-        # Create unique ID for each document
-        doc_id = hashlib.md5(doc.metadata["source"].encode()).hexdigest()
-        doc_ids.append(doc_id)
-
-    # Batch upsert to Pinecone
-    index.upsert(vectors=zip(doc_ids, embeddings, metadatas), **namespace_kwargs)
+        # Upsert when batch is full or at end
+        if len(vectors) >= PINECONE_BATCH_SIZE or i == len(all_embeddings) - 1:
+            index.upsert(vectors=vectors, **namespace_kwargs)
+            vectors = []
+            time.sleep(1)
 
     return dg.MaterializeResult(
         metadata={
             "documents_embedded": len(docs_scrape_raw),
-            "embedding_dimension": len(embeddings[0]) if embeddings else 0,
+            "embedding_dimension": len(all_embeddings[0]) if all_embeddings else 0,
             "urls_processed": [doc.metadata["source"] for doc in docs_scrape_raw],
         }
     )
