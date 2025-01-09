@@ -8,4 +8,12 @@ Definitions
 
 .. autofunction:: create_repository_using_definitions_args
 
+.. autofunction:: load_definitions_from_current_module
+
 .. autofunction:: load_definitions_from_module
+
+.. autofunction:: load_definitions_from_modules
+
+.. autofunction:: load_definitions_from_package_module
+
+.. autofunction:: load_definitions_from_package_name
