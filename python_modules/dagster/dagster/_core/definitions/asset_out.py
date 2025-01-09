@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Sequence, Type, Union
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import (
@@ -52,7 +53,7 @@ class AssetOut:
 
     _spec: AssetSpec
     key_prefix: Optional[Sequence[str]]
-    dagster_type: Union[Type, DagsterType]
+    dagster_type: Union[type, DagsterType]
     is_required: bool
     io_manager_key: Optional[str]
     backfill_policy: Optional[BackfillPolicy]
@@ -61,7 +62,7 @@ class AssetOut:
         self,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         key: Optional[CoercibleToAssetKey] = None,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
@@ -235,7 +236,7 @@ class AssetOut:
     @staticmethod
     def from_spec(
         spec: AssetSpec,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, DagsterType] = NoValueSentinel,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
         backfill_policy: Optional[BackfillPolicy] = None,

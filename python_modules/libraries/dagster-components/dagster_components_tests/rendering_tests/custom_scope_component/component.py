@@ -1,4 +1,5 @@
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
 from dagster_components import Component, ComponentLoadContext, component_type

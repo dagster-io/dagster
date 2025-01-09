@@ -2,9 +2,10 @@ import logging
 import os
 import sys
 import threading
+from collections.abc import Iterable, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, Iterable, Mapping, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
@@ -62,7 +63,7 @@ def execute_backfill_iteration_loop(
     from dagster._daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
     from dagster._daemon.daemon import SpanMarker
 
-    backfill_futures: Dict[str, Future] = {}
+    backfill_futures: dict[str, Future] = {}
     while True:
         start_time = get_current_timestamp()
         if until and start_time >= until:
@@ -100,7 +101,7 @@ def execute_backfill_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    backfill_futures: Optional[Dict[str, Future]] = None,
+    backfill_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
@@ -144,7 +145,7 @@ def execute_backfill_jobs(
     logger: logging.Logger,
     backfill_jobs: Sequence[PartitionBackfill],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    backfill_futures: Optional[Dict[str, Future]] = None,
+    backfill_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance

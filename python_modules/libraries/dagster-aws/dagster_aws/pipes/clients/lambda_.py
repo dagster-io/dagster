@@ -1,5 +1,6 @@
 import json
-from typing import Any, Mapping, Optional, Union
+from collections.abc import Mapping
+from typing import Any, Optional, Union
 
 import boto3
 from dagster import PipesClient

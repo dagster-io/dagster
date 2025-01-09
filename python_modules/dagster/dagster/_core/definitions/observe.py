@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import AssetSelection

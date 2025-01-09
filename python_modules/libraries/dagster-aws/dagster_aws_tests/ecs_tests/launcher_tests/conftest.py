@@ -1,7 +1,8 @@
 import json
 from collections import namedtuple
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Callable, ContextManager, Iterator, Mapping, Sequence
+from typing import Any, Callable, ContextManager  # noqa: UP035
 
 import boto3
 import moto

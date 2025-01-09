@@ -5,10 +5,11 @@ import signal
 import subprocess
 import time
 import uuid
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Generator, List, Mapping
+from typing import Any
 
 import pytest
 import requests
@@ -73,7 +74,7 @@ def setup_dagster(dagster_home: str, prefix_env: str) -> Generator[Any, None, No
 
 @contextmanager
 def stand_up_dagster(
-    dagster_dev_cmd: List[str], port: int = 3000
+    dagster_dev_cmd: list[str], port: int = 3000
 ) -> Generator[subprocess.Popen, None, None]:
     """Stands up a dagster instance using the dagster dev CLI. dagster_defs_path must be provided
     by a fixture included in the callsite.

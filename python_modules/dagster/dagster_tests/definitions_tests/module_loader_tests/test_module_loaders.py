@@ -1,7 +1,8 @@
 import logging
+from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from types import ModuleType
-from typing import Any, Mapping, Sequence, Type, cast
+from typing import Any, cast
 
 import dagster as dg
 import pytest
@@ -61,7 +62,7 @@ def all_loadable_objects_from_defs(defs: Definitions) -> Sequence[LoadableDagste
 
 
 @contextmanager
-def optional_pytest_raise(error_expected: bool, exception_cls: Type[Exception]):
+def optional_pytest_raise(error_expected: bool, exception_cls: type[Exception]):
     if error_expected:
         with pytest.raises(exception_cls):
             yield

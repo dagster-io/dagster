@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Iterable, NamedTuple, Optional, Sequence, Union
+from collections.abc import Iterable, Sequence
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr

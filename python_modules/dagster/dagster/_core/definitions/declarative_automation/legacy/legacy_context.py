@@ -4,19 +4,9 @@ import functools
 import logging
 import os
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    FrozenSet,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, TypeVar  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
@@ -288,7 +278,7 @@ class LegacyRuleEvaluationContext:
     @root_property
     def _parent_has_updated_subset_and_new_latest_storage_id(
         self,
-    ) -> Tuple[ValidAssetSubset, Optional[int]]:
+    ) -> tuple[ValidAssetSubset, Optional[int]]:
         """Returns the set of asset partitions whose parents have updated since the last time this
         condition was evaluated.
         """
@@ -385,10 +375,10 @@ class LegacyRuleEvaluationContext:
     def add_evaluation_data_from_previous_tick(
         self,
         asset_partitions_by_frozen_metadata: Mapping[
-            FrozenSet[Tuple[str, MetadataValue]], AbstractSet[AssetKeyPartitionKey]
+            frozenset[tuple[str, MetadataValue]], AbstractSet[AssetKeyPartitionKey]
         ],
         ignore_subset: SerializableEntitySubset,
-    ) -> Tuple[ValidAssetSubset, Sequence[AssetSubsetWithMetadata]]:
+    ) -> tuple[ValidAssetSubset, Sequence[AssetSubsetWithMetadata]]:
         """Combines information calculated on this tick with information from the previous tick,
         returning a tuple of the combined true subset and the combined subsets with metadata.
 

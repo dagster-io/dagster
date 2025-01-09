@@ -1,4 +1,4 @@
-from typing import List
+from typing import List  # noqa: UP035
 
 import dagster as dg
 

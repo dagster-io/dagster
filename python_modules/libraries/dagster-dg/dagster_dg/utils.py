@@ -6,21 +6,10 @@ import posixpath
 import re
 import subprocess
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Final,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Final, Optional, TypeVar, Union
 
 import click
 import jinja2
@@ -129,7 +118,7 @@ def snakecase(string: str) -> str:
     return string
 
 
-_DEFAULT_EXCLUDES: List[str] = [
+_DEFAULT_EXCLUDES: list[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
@@ -146,7 +135,7 @@ PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 # Copied from dagster._generate.generate
 def generate_subtree(
     path: Path,
-    excludes: Optional[List[str]] = None,
+    excludes: Optional[list[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
     templates_path: str = PROJECT_NAME_PLACEHOLDER,
     project_name: Optional[str] = None,
@@ -217,7 +206,7 @@ def generate_subtree(
     click.echo(f"Generated files for Dagster project in {path}.")
 
 
-def _should_skip_file(path: str, excludes: List[str] = _DEFAULT_EXCLUDES):
+def _should_skip_file(path: str, excludes: list[str] = _DEFAULT_EXCLUDES):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 
@@ -277,7 +266,7 @@ def not_none(value: Optional[T]) -> T:
 class DgClickHelpMixin:
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        self._commands: List[str] = []
+        self._commands: list[str] = []
 
     def format_help(self, context: click.Context, formatter: click.HelpFormatter):
         """Customizes the help to include hierarchical usage."""
@@ -291,7 +280,7 @@ class DgClickHelpMixin:
 
     def get_partitioned_opts(
         self, ctx: click.Context
-    ) -> Tuple[Sequence[click.Parameter], Sequence[click.Parameter]]:
+    ) -> tuple[Sequence[click.Parameter], Sequence[click.Parameter]]:
         from dagster_dg.cli.global_options import GLOBAL_OPTIONS
 
         if not isinstance(self, click.Command):

@@ -5,11 +5,21 @@ description: Sensors allow you to instigate runs based on any external state cha
 
 # Sensors
 
-Sensors are definitions in Dagster that allow you to instigate runs based on some external state change. For example, you can:
+Sensors are definitions that allow you to take action in response to events occurring either internally or in external systems.
 
-- Launch a run whenever a file appears in an s3 bucket
-- Launch a run whenever another job materializes a specific asset
-- Launch a run whenever an external system is down
+Examples of events include:
+
+- a run completes in Dagster
+- a run fails in Dagster
+- a job materializes a specific asset
+- a file appears in an s3 bucket
+- an external system is down
+
+Example of actions are:
+
+- launching a run
+- sending a Slack message
+- inserting a row into a database
 
 A sensor defines an evaluation function that returns either:
 
@@ -242,7 +252,7 @@ from typing import List
 class UsersAPI(ConfigurableResource):
     url: str
 
-    def fetch_users(self) -> List[str]:
+    def fetch_users(self) -> list[str]:
         return requests.get(self.url).json()
 
 @job
@@ -428,7 +438,7 @@ from dagster import build_sensor_context, validate_run_config
 
 def test_process_new_users_sensor():
     class FakeUsersAPI:
-        def fetch_users(self) -> List[str]:
+        def fetch_users(self) -> list[str]:
             return ["1", "2", "3"]
 
     context = build_sensor_context()

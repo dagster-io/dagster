@@ -4,8 +4,9 @@ import logging
 import random
 import string
 import uuid
+from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any, Mapping
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import mlflow

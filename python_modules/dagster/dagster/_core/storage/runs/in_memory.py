@@ -1,6 +1,7 @@
 import uuid
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Iterator, Optional, Sequence
+from typing import Optional
 
 import sqlalchemy as db
 from sqlalchemy.engine import Connection

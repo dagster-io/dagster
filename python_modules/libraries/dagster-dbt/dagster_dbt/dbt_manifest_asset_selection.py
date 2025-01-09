@@ -1,4 +1,5 @@
-from typing import AbstractSet, Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 from dagster import (
     AssetKey,

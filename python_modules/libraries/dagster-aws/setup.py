@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_aws/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -36,7 +35,6 @@ setup(
     python_requires=">=3.9,<3.13",
     install_requires=[
         "boto3",
-        "boto3-stubs-lite[ecs,glue,emr,emr-serverless]",
         f"dagster{pin}",
         "packaging",
         "requests",

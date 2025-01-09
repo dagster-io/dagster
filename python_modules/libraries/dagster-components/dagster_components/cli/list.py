@@ -1,7 +1,7 @@
 import json
 import sys
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import click
 
@@ -38,7 +38,7 @@ def list_component_types_command(ctx: click.Context) -> None:
             builtin_component_lib=builtin_component_lib
         ),
     )
-    output: Dict[str, Any] = {}
+    output: dict[str, Any] = {}
     for key, component_type in context.list_component_types():
         package, name = key.rsplit(".", 1)
         output[key] = ComponentTypeMetadata(

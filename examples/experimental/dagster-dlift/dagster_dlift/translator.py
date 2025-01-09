@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Mapping, Sequence, Union, cast
+from typing import Any, Union, cast
 
 from dagster import (
     AssetCheckResult,

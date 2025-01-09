@@ -2,9 +2,10 @@ import abc
 import json
 import re
 import time
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Dict, Mapping, Optional, Sequence, Type, Union
+from typing import Any, Optional, Union
 from urllib.parse import urlencode
 
 import requests
@@ -44,7 +45,7 @@ def _clean_op_name(name: str) -> str:
     return re.sub(r"[^a-z0-9A-Z]+", "_", name)
 
 
-def generate_data_source_id(data_source: Dict[str, Any]) -> str:
+def generate_data_source_id(data_source: dict[str, Any]) -> str:
     """Generates a unique ID for a data source based on its properties.
     We use this for cases where the API does not provide a unique ID for a data source.
     This ID is never surfaced to the user and is only used internally to track dependencies.
@@ -128,7 +129,7 @@ class PowerBIWorkspace(ConfigurableResource):
         endpoint: str,
         method: str = "GET",
         json: Any = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
         group_scoped: bool = True,
     ) -> requests.Response:
         """Fetch JSON data from the PowerBI API. Raises an exception if the request fails.
@@ -164,9 +165,9 @@ class PowerBIWorkspace(ConfigurableResource):
         endpoint: str,
         method: str = "GET",
         json: Any = None,
-        params: Optional[Dict[str, Any]] = None,
+        params: Optional[dict[str, Any]] = None,
         group_scoped: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self._fetch(endpoint, method, json, group_scoped=group_scoped, params=params).json()
 
     @public
@@ -359,7 +360,7 @@ class PowerBIWorkspace(ConfigurableResource):
     )
     def build_defs(
         self,
-        dagster_powerbi_translator: Type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
+        dagster_powerbi_translator: type[DagsterPowerBITranslator] = DagsterPowerBITranslator,
         enable_refresh_semantic_models: bool = False,
     ) -> Definitions:
         """Returns a Definitions object which will load Power BI content from
@@ -397,7 +398,7 @@ class PowerBIWorkspace(ConfigurableResource):
 def load_powerbi_asset_specs(
     workspace: PowerBIWorkspace,
     dagster_powerbi_translator: Optional[
-        Union[DagsterPowerBITranslator, Type[DagsterPowerBITranslator]]
+        Union[DagsterPowerBITranslator, type[DagsterPowerBITranslator]]
     ] = None,
     use_workspace_scan: bool = True,
 ) -> Sequence[AssetSpec]:

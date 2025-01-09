@@ -189,7 +189,7 @@ def test_registry_multithreading(instance):
 class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(self, instance):
         self.mocked_loadable_target_origin = None
-        super(TestMockProcessGrpcServerRegistry, self).__init__(
+        super().__init__(
             instance_ref=instance.get_ref(),
             heartbeat_ttl=600,
             startup_timeout=30,

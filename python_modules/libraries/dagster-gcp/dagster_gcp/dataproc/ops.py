@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from dagster import (
     Bool,
@@ -52,7 +52,7 @@ class DataprocOpConfig(Config):
         )
     )
     region: str = Field(description="The GCP region.")
-    job_config: Dict[str, Any] = Field(
+    job_config: dict[str, Any] = Field(
         description="Python dictionary containing configuration for the Dataproc Job."
     )
 
@@ -62,7 +62,7 @@ def _dataproc_compute(context):
     job_timeout = context.op_config["job_timeout_in_seconds"]
 
     context.log.info(
-        "submitting job with config: %s and timeout of: %d seconds"
+        "submitting job with config: %s and timeout of: %d seconds"  # noqa: UP031
         % (str(json.dumps(job_config)), job_timeout)
     )
 
@@ -102,7 +102,7 @@ def configurable_dataproc_op(context, dataproc: DataprocResource, config: Datapr
     job_timeout = config.job_timeout_in_seconds
 
     context.log.info(
-        "submitting job with config: %s and timeout of: %d seconds"
+        "submitting job with config: %s and timeout of: %d seconds"  # noqa: UP031
         % (str(json.dumps(job_config)), job_timeout)
     )
 

@@ -2,9 +2,10 @@ import base64
 import logging
 import os
 import time
+from collections.abc import Mapping
 from enum import Enum
 from importlib.metadata import version
-from typing import IO, Any, Mapping, Optional, Tuple
+from typing import IO, Any, Final, Optional
 
 import dagster
 import dagster._check as check
@@ -20,7 +21,6 @@ from databricks.sdk.core import (
     pat_auth,
 )
 from databricks.sdk.service import jobs
-from typing_extensions import Final
 
 import dagster_databricks
 from dagster_databricks.types import DatabricksRunState
@@ -566,7 +566,7 @@ class DatabricksJobRunner:
 
     def retrieve_logs_for_run_id(
         self, log: logging.Logger, databricks_run_id: int
-    ) -> Optional[Tuple[Optional[str], Optional[str]]]:
+    ) -> Optional[tuple[Optional[str], Optional[str]]]:
         """Retrieve the stdout and stderr logs for a run."""
         run = self.client.workspace_client.jobs.get_run(databricks_run_id)
         # Run.cluster_instance can be None. In that case, fall back to cluster instance on first

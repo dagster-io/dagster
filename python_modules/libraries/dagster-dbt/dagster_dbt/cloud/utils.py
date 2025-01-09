@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Callable, Optional, Union
 
 import dateutil
 from dagster import (
@@ -31,7 +32,7 @@ def _node_result_to_metadata(node_result: Mapping[str, Any]) -> Mapping[str, Raw
 
 
 def _timing_to_metadata(timings: Sequence[Mapping[str, Any]]) -> Mapping[str, RawMetadataValue]:
-    metadata: Dict[str, RawMetadataValue] = {}
+    metadata: dict[str, RawMetadataValue] = {}
     for timing in timings:
         if timing["name"] == "execute":
             desc = "Execution"

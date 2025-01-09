@@ -1,6 +1,7 @@
 import warnings
+from collections.abc import Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Optional
 
 from dagster._core.scheduler.instigation import InstigatorType, TickStatus
 from dagster._time import get_current_datetime

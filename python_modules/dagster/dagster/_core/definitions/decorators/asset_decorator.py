@@ -1,18 +1,5 @@
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    overload,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import (
@@ -112,7 +99,7 @@ def asset(
 
 def _validate_hidden_non_argument_dep_param(
     non_argument_deps: Any,
-) -> Optional[Union[Set[AssetKey], Set[str]]]:
+) -> Optional[Union[set[AssetKey], set[str]]]:
     if non_argument_deps is None:
         return non_argument_deps
 
@@ -341,7 +328,7 @@ def resolve_asset_key_and_name_for_decorator(
     name: Optional[str],
     decorator_name: str,
     fn: Callable[..., Any],
-) -> Tuple[AssetKey, str]:
+) -> tuple[AssetKey, str]:
     if (name or key_prefix) and key:
         raise DagsterInvalidDefinitionError(
             f"Cannot specify a name or key prefix for {decorator_name} when the key"
@@ -373,7 +360,7 @@ class AssetDecoratorArgs(NamedTuple):
     tags: Optional[Mapping[str, str]]
     description: Optional[str]
     config_schema: Optional[UserConfigSchema]
-    resource_defs: Dict[str, object]
+    resource_defs: dict[str, object]
     io_manager_key: Optional[str]
     io_manager_def: Optional[object]
     compute_kind: Optional[str]
@@ -549,7 +536,7 @@ def multi_asset(
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-    internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+    internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -1129,7 +1116,7 @@ def graph_multi_asset(
 
 def _deps_and_non_argument_deps_to_asset_deps(
     deps: Optional[Iterable[CoercibleToAssetDep]],
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
+    non_argument_deps: Optional[Union[set[AssetKey], set[str]]],
 ) -> Optional[Iterable[AssetDep]]:
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
     Ensures only one of deps and non_argument_deps is provided, then converts the deps to AssetDeps.

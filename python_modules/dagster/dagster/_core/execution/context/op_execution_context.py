@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from collections.abc import Iterator, Mapping, Sequence
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -115,8 +116,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             StepExecutionContext,
         )
         self._pdb: Optional[ForkedPdb] = None
-        self._events: List[DagsterEvent] = []
-        self._output_metadata: Dict[str, Any] = {}
+        self._events: list[DagsterEvent] = []
+        self._output_metadata: dict[str, Any] = {}
 
     @property
     def op_execution_context(self) -> "OpExecutionContext":

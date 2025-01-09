@@ -3,8 +3,8 @@
 import json
 import random
 import string
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 import cloud_service  # type: ignore
 from dagster_pipes import PipesContextData, PipesParams

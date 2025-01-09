@@ -1,5 +1,6 @@
 import re
-from typing import Any, Iterable, Mapping, Sequence, Union
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Union
 
 from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 

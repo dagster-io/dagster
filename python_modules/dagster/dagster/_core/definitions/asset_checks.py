@@ -1,4 +1,5 @@
-from typing import Mapping, Optional
+from collections.abc import Mapping
+from typing import Optional
 
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.assets import AssetsDefinition

@@ -1,7 +1,8 @@
 import logging
 import time
 from collections import defaultdict
-from typing import Callable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Callable
 
 from dagster import DagsterEvent, execute_job, job, op
 from dagster._core.definitions.events import DynamicOutput

@@ -1,4 +1,5 @@
-from typing import Callable, Iterator, Mapping, NamedTuple, NoReturn, cast
+from collections.abc import Iterator, Mapping
+from typing import Callable, NamedTuple, NoReturn, cast
 
 from typing_extensions import TypeAlias
 
@@ -25,7 +26,7 @@ class OpConfigEntry(
     NamedTuple("_SolidConfigEntry", [("handle", NodeHandle), ("solid_config", OpConfig)])
 ):
     def __new__(cls, handle: NodeHandle, op_config: OpConfig):
-        return super(OpConfigEntry, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(handle, "handle", NodeHandle),
             check.inst_param(op_config, "solid_config", OpConfig),
@@ -41,7 +42,7 @@ class DescentStack(
     NamedTuple("_DescentStack", [("job_def", JobDefinition), ("handle", NodeHandle)])
 ):
     def __new__(cls, job_def: JobDefinition, handle: NodeHandle):
-        return super(DescentStack, cls).__new__(
+        return super().__new__(
             cls,
             job_def=check.inst_param(job_def, "job_def", JobDefinition),
             handle=check.inst_param(handle, "handle", NodeHandle),

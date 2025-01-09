@@ -3,9 +3,9 @@ import argparse
 import os
 import subprocess
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, Generator, List, Tuple
 
 import dagster._check as check
 from dagster import Definitions, RepositoryDefinition, build_sensor_context
@@ -24,7 +24,7 @@ DAGSTER_HOME = MAKEFILE_DIR / ".dagster_home"
 @contextmanager
 def modify_constants(num_dags, num_tasks, num_assets) -> Generator[None, None, None]:
     # Read the original content
-    with open(CONSTANTS_FILE, "r") as f:
+    with open(CONSTANTS_FILE) as f:
         original_content = f.read()
 
     # Write new constants
@@ -157,13 +157,13 @@ def main() -> None:
 
 def run_suite_for_defs(
     *,
-    module_name_to_defs_and_instance: Dict[str, Tuple[Definitions, AirflowInstance]],
+    module_name_to_defs_and_instance: dict[str, tuple[Definitions, AirflowInstance]],
     num_dags: int,
     instance: DagsterInstance,
-) -> List[str]:
+) -> list[str]:
     lines = []
-    module_name_to_repo_def_and_instance: Dict[
-        str, Tuple[RepositoryDefinition, AirflowInstance]
+    module_name_to_repo_def_and_instance: dict[
+        str, tuple[RepositoryDefinition, AirflowInstance]
     ] = {}
     for module_name, (defs, af_instance) in module_name_to_defs_and_instance.items():
         defs_initial_load_time = time.time()

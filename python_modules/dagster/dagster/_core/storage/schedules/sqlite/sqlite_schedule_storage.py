@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Optional
 
 import sqlalchemy as db
 from packaging.version import parse

@@ -2,9 +2,10 @@ import datetime
 import random
 import string
 import time
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Dict, Optional, Sequence, cast
+from typing import Optional, cast
 
 import pytest
 from dagster import (
@@ -119,7 +120,7 @@ def evaluate_schedules(
     debug_crash_flags: Optional[DebugCrashFlags] = None,
     timeout: int = FUTURES_TIMEOUT,
     submit_executor: Optional[ThreadPoolExecutor] = None,
-    iteration_times: Optional[Dict[str, ScheduleIterationTimes]] = None,
+    iteration_times: Optional[dict[str, ScheduleIterationTimes]] = None,
 ):
     logger = get_default_daemon_logger("SchedulerDaemon")
     futures = {}

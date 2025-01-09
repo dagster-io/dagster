@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional
+from collections.abc import Iterator, Mapping
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import superseded
@@ -45,7 +46,7 @@ class StepRunRef(
     ):
         from dagster._core.execution.plan.state import KnownExecutionState
 
-        return super(StepRunRef, cls).__new__(
+        return super().__new__(
             cls,
             check.mapping_param(run_config, "run_config", key_type=str),
             check.inst_param(dagster_run, "dagster_run", DagsterRun),

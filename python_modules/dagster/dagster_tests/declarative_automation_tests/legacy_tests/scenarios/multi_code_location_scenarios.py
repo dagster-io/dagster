@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 from dagster import AssetsDefinition, FreshnessPolicy
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy

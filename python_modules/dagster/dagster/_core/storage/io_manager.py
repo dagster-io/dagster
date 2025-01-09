@@ -1,6 +1,15 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Union, cast, overload
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    Union,
+    cast,
+    overload,
+)
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -69,7 +78,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             if output_config_schema is not None
             else None
         )
-        super(IOManagerDefinition, self).__init__(
+        super().__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,
@@ -164,7 +173,7 @@ def io_manager(
     description: Optional[str] = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     version: Optional[str] = None,
 ) -> Callable[[IOManagerFunction], IOManagerDefinition]: ...
 
@@ -174,7 +183,7 @@ def io_manager(
     description: Optional[str] = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     version: Optional[str] = None,
 ) -> Union[
     IOManagerDefinition,
@@ -255,7 +264,7 @@ class _IOManagerDecoratorCallable:
         description: Optional[str] = None,
         output_config_schema: CoercableToConfigSchema = None,
         input_config_schema: CoercableToConfigSchema = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
         version: Optional[str] = None,
     ):
         # type validation happens in IOManagerDefinition

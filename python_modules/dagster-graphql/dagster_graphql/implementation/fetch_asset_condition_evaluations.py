@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey

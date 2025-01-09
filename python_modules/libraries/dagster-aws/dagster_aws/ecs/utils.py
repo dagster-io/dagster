@@ -1,6 +1,7 @@
 import hashlib
 import re
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from dagster._core.remote_representation.origin import RemoteJobOrigin
 

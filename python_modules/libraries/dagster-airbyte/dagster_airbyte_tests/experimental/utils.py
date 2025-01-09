@@ -1,12 +1,12 @@
 from contextlib import contextmanager
-from typing import Optional, Type
+from typing import Optional
 
 import pytest
 
 
 @contextmanager
 def optional_pytest_raise(
-    error_expected: bool, exception_cls: Type[Exception], exception_message: Optional[str] = None
+    error_expected: bool, exception_cls: type[Exception], exception_message: Optional[str] = None
 ):
     if error_expected:
         kwargs = {}

@@ -29,7 +29,7 @@ class LocationStateChangeEvent(
         message: str,
         server_id: Optional[str] = None,
     ):
-        return super(LocationStateChangeEvent, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(event_type, "event_type", LocationStateChangeEventType),
             check.str_param(location_name, "location_name"),

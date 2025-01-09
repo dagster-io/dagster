@@ -1,5 +1,6 @@
 import datetime
-from typing import Mapping, Optional
+from collections.abc import Mapping
+from typing import Optional
 
 import pendulum
 from airflow.models.dag import DAG

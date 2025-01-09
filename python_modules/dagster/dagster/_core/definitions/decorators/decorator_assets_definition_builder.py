@@ -1,21 +1,8 @@
 from collections import Counter
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
 from inspect import Parameter
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
@@ -58,7 +45,7 @@ from dagster._core.types.dagster_type import (
 
 def get_function_params_without_context_or_config_or_resources(
     fn: Callable[..., Any],
-) -> List[Parameter]:
+) -> list[Parameter]:
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
         "context"
@@ -129,7 +116,7 @@ def build_and_validate_named_ins(
                     "of the arguments to the decorated function"
                 )
 
-    named_ins_by_asset_key: Dict[AssetKey, NamedIn] = {}
+    named_ins_by_asset_key: dict[AssetKey, NamedIn] = {}
     for input_name in all_input_names:
         asset_key = None
 
@@ -164,7 +151,7 @@ def build_and_validate_named_ins(
 
 def build_named_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "NamedOut"]:
     """Creates a mapping from AssetKey to (name of output, Out object)."""
-    named_outs_by_asset_key: Dict[AssetKey, NamedOut] = {}
+    named_outs_by_asset_key: dict[AssetKey, NamedOut] = {}
     for output_name, asset_out in asset_outs.items():
         out = asset_out.to_out()
         asset_key = asset_out.key or AssetKey(
@@ -177,8 +164,8 @@ def build_named_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "N
 
 
 def build_subsettable_named_ins(
-    asset_ins: Mapping[AssetKey, Tuple[str, In]],
-    asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+    asset_ins: Mapping[AssetKey, tuple[str, In]],
+    asset_outs: Mapping[AssetKey, tuple[str, Out]],
     internal_upstream_deps: Iterable[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, "NamedIn"]:
     """Creates a mapping from AssetKey to (name of input, In object) for any asset key that is not
@@ -209,7 +196,7 @@ class NamedOut(NamedTuple):
 
 
 def make_keys_by_output_name(
-    asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+    asset_outs: Mapping[AssetKey, tuple[str, Out]],
 ) -> Mapping[str, AssetKey]:
     return {output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()}
 
@@ -233,7 +220,7 @@ def compute_required_resource_keys(
 
 
 class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
-    asset_deps: Mapping[str, Set[AssetKey]]
+    asset_deps: Mapping[str, set[AssetKey]]
     asset_in_map: Mapping[str, AssetIn]
     asset_out_map: Mapping[str, AssetOut]
     assets_def_resource_defs: Mapping[str, ResourceDefinition]
@@ -268,7 +255,7 @@ class DecoratorAssetsDefinitionBuilder:
         *,
         named_ins_by_asset_key: Mapping[AssetKey, NamedIn],
         named_outs_by_asset_key: Mapping[AssetKey, NamedOut],
-        internal_deps: Mapping[AssetKey, Set[AssetKey]],
+        internal_deps: Mapping[AssetKey, set[AssetKey]],
         op_name: str,
         args: DecoratorAssetsDefinitionBuilderArgs,
         fn: Callable[..., Any],
@@ -414,7 +401,7 @@ class DecoratorAssetsDefinitionBuilder:
         op_name: str,
         asset_in_map: Mapping[str, AssetIn],
         asset_out_map: Mapping[str, AssetOut],
-        asset_deps: Mapping[str, Set[AssetKey]],
+        asset_deps: Mapping[str, set[AssetKey]],
         upstream_asset_deps: Optional[Iterable[AssetDep]],
         passed_args: DecoratorAssetsDefinitionBuilderArgs,
     ):
@@ -497,7 +484,7 @@ class DecoratorAssetsDefinitionBuilder:
         }
 
     @cached_property
-    def asset_keys(self) -> Set[AssetKey]:
+    def asset_keys(self) -> set[AssetKey]:
         return set(self.named_outs_by_asset_key.keys())
 
     @cached_property
@@ -519,7 +506,7 @@ class DecoratorAssetsDefinitionBuilder:
         }
 
     @cached_property
-    def overlapping_output_names(self) -> Set[str]:
+    def overlapping_output_names(self) -> set[str]:
         return set(self.outs_by_output_name.keys()) & set(self.check_outs_by_output_name.keys())
 
     @cached_property

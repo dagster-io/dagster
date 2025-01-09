@@ -1,7 +1,8 @@
 import os
 import sys
 import tempfile
-from typing import Iterator, Optional, cast
+from collections.abc import Iterator
+from typing import Optional, cast
 
 import pytest
 from dagster import DagsterInstance

@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from inspect import Parameter, Signature, isgeneratorfunction, signature
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Callable, NamedTuple, Optional
 
 from dagster._core.decorator_utils import get_type_hints
 from dagster._core.definitions.utils import NoValueSentinel

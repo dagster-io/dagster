@@ -1,9 +1,10 @@
 import hashlib
 import json
 import subprocess
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Iterable, Mapping, Optional, Tuple
+from typing import Final, Optional
 
 import tomli
 from typing_extensions import Self
@@ -160,7 +161,7 @@ def get_code_location_env_hash(code_location_root_path: Path) -> str:
     return hasher.hexdigest()
 
 
-def make_cache_key(code_location_path: Path, data_type: CachableDataType) -> Tuple[str, str, str]:
+def make_cache_key(code_location_path: Path, data_type: CachableDataType) -> tuple[str, str, str]:
     path_parts = [str(part) for part in code_location_path.parts if part != "/"]
     env_hash = get_code_location_env_hash(code_location_path)
     return ("_".join(path_parts), env_hash, data_type)
@@ -256,7 +257,7 @@ class CodeLocationDirectoryContext:
     def dg_config(self) -> DgConfig:
         return self.dg_context.config
 
-    def iter_component_types(self) -> Iterable[Tuple[str, RemoteComponentType]]:
+    def iter_component_types(self) -> Iterable[tuple[str, RemoteComponentType]]:
         for key in sorted(self.component_registry.keys()):
             yield key, self.component_registry.get(key)
 

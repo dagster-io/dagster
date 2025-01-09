@@ -1,8 +1,9 @@
 import logging
 import re
 import textwrap
+from collections.abc import Sequence
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any
 
 from docutils import nodes, writers
 from docutils.nodes import Element
@@ -41,7 +42,7 @@ class TextWrapper(textwrap.TextWrapper):
         """
         lines: list[str] = []
         if self.width <= 0:
-            raise ValueError("invalid width %r (must be > 0)" % self.width)
+            raise ValueError(f"invalid width {self.width!r} (must be > 0)")
 
         chunks.reverse()
 
@@ -237,11 +238,11 @@ class MdxTranslator(SphinxTranslator):
                 # not all have a "href" attribute).
                 if empty or isinstance(node, (nodes.Sequential, nodes.docinfo, nodes.table)):
                     # Insert target right in front of element.
-                    prefix.append('<Link id="%s"></Link>' % id)
+                    prefix.append(f'<Link id="{id}"></Link>')
                 else:
                     # Non-empty tag.  Place the auxiliary <span> tag
                     # *inside* the element, as the first child.
-                    suffix += '<Link id="%s"></Link>' % id
+                    suffix += f'<Link id="{id}"></Link>'
         attlist = sorted(atts.items())
         parts = [tagname]
         for name, value in attlist:
@@ -250,14 +251,14 @@ class MdxTranslator(SphinxTranslator):
             assert value is not None
             if isinstance(value, list):
                 values = [str(v) for v in value]
-                parts.append('%s="%s"' % (name.lower(), self.attval(" ".join(values))))
+                parts.append('{}="{}"'.format(name.lower(), self.attval(" ".join(values))))
             else:
-                parts.append('%s="%s"' % (name.lower(), self.attval(str(value))))
+                parts.append(f'{name.lower()}="{self.attval(str(value))}"')
         if empty:
             infix = " /"
         else:
             infix = ""
-        return "".join(prefix) + "<%s%s>" % (" ".join(parts), infix) + suffix
+        return "".join(prefix) + "<{}{}>".format(" ".join(parts), infix) + suffix
 
     def end_state(
         self,

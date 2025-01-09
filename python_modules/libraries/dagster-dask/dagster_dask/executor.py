@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import dask
 import dask.distributed
@@ -250,7 +251,7 @@ class DaskExecutor(Executor):
 
                     run_config = plan_context.run_config
 
-                    dask_task_name = "%s.%s" % (job_name, step.key)
+                    dask_task_name = f"{job_name}.{step.key}"
 
                     recon_job = plan_context.reconstructable_job
 

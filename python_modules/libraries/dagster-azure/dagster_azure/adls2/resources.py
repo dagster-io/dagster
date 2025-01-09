@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.filedatalake import DataLakeLeaseClient
@@ -34,7 +34,7 @@ class ADLS2Key(Config):
 
 class ADLS2DefaultAzureCredential(Config):
     credential_type: Literal["default_azure_credential"] = "default_azure_credential"
-    kwargs: Dict[str, Any]
+    kwargs: dict[str, Any]
 
 
 class ADLS2BaseResource(ConfigurableResource):

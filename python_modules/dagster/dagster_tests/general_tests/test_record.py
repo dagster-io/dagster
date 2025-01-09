@@ -1,19 +1,9 @@
 import os
 import pickle
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Generic,
-    List,
-    NamedTuple,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
 from dagster._check.functions import CheckError
@@ -32,7 +22,6 @@ from dagster._record import (
 from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._utils import hash_collection
 from dagster._utils.cached_method import cached_method
-from typing_extensions import Annotated
 
 if TYPE_CHECKING:
     from dagster._core.test_utils import TestType
@@ -285,8 +274,8 @@ def test_optional_arg() -> None:
 def test_dont_share_containers() -> None:
     @record
     class Empties:
-        items: List[str] = []
-        map: Dict[str, str] = {}
+        items: list[str] = []
+        map: dict[str, str] = {}
 
     e_1 = Empties()
     e_2 = Empties()
@@ -376,7 +365,7 @@ class Person:
 @record_custom
 class Agent(IHaveNew):
     name: str
-    secrets: List[str]
+    secrets: list[str]
 
     def __new__(cls, name: str, **kwargs):
         return super().__new__(
@@ -455,14 +444,14 @@ def test_base_class_conflicts() -> None:
 def test_lazy_import():
     @record
     class BadModel:
-        foos: List["TestType"]
+        foos: list["TestType"]
 
     with pytest.raises(check.CheckError, match="Unable to resolve"):
         BadModel(foos=[])
 
     @record
     class AnnotatedModel:
-        foos: List[Annotated["TestType", ImportFrom("dagster._core.test_utils")]]
+        foos: list[Annotated["TestType", ImportFrom("dagster._core.test_utils")]]
 
     assert AnnotatedModel(foos=[])
 

@@ -3,7 +3,19 @@ title: Create event-based pipelines with sensors
 sidebar_position: 30
 ---
 
-Sensors enable you to trigger Dagster runs in response to events from external systems. They run at regular intervals, either triggering a run or explaining why a run was skipped. For example, you can trigger a run when a new file is added to an Amazon S3 bucket or when a database row is updated.
+Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems. They check for events at regular intervals and either perform an action or provide an explanation for why the action was skipped.
+
+Examples of events include:
+- a run completes in Dagster
+- a run fails in Dagster
+- a job materializes a specific asset 
+- a file appears in an s3 bucket
+- an external system is down
+
+Examples of actions include:
+- launching a run
+- sending a Slack message
+- inserting a row into a database
 
 :::tip
 An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/automate#graphql-endpoint).

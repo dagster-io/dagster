@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import polars as pl
 import pyarrow.dataset as ds
@@ -50,7 +50,7 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     context_metadata = context.definition_metadata or {}
 
     storage_options = cast(
-        Optional[Dict[str, Any]],
+        Optional[dict[str, Any]],
         (path.storage_options if hasattr(path, "storage_options") else None),
     )
 
