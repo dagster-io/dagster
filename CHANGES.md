@@ -1,6 +1,60 @@
 # Changelog
 
-## 1.9.6 (core) / 0.25.6 (libraries)
+# 1.9.7 (core) / 0.25.7 (libraries)
+
+### New
+
+- Added new function `load_definitions_from_module`, which can load all the assets, checks, schedules, sensors, and job objects within a module scope into a single Definitions object. Check out the documentation to learn more: https://docs.dagster.io/_apidocs/definitions#dagster.load_definitions_from_module.
+- Previously, asset backfills could only target selections of assets in which all assets had a `BackfillPolicy`, or none of them did. Mixed selections are now supported.
+- `AssetSpecs` may now contain a `partitions_def`. Different `AssetSpecs` passed to the same invocation of `@multi_asset` can now have different `PartitionsDefinitions`, as long as `can_subset=True`.
+- Added the option to use a thread pool to process backfills in parallel.
+- Exceptions that are raised when a schedule or sensor is writing to logs will now write an error message to stdout instead of failing the tick.
+- Added validation of `title` for asset backfills (not just for job backfills).
+- [ui] Design tweaks to the asset Automations tab.
+- [ui] Asset selection filtering is now case insensitive.
+- [ui] Add Teradata icon for kind tags.
+- [ui] When creating and editing alerts, when the form is in an invalid state, display the reason on the disabled buttons.
+- [ui] Add Automation history to asset checks.
+- [ui] Improve performance of Run page for very long-running runs.
+- [dagster-airbyte] The `airbyte_assets` decorator has been added. It can be used with the `AirbyteCloudWorkspace` resource and `DagsterAirbyteTranslator` translator to load Airbyte tables for a given connection as assets in Dagster. The `build_airbyte_assets_definitions` factory can be used to create assets for all the connections in your Airbyte workspace.
+- [dagster-airbyte] Airbyte Cloud assets can now be materialized using the `AirbyteCloudWorkspace.sync_and_poll(…)` method in the definition of a `@airbyte_assets` decorator.
+- [dagster-airlift] Airflow imports are now compatible with Airflow 1.
+- [dagster-aws] new `ecs_executor` which executes Dagster steps via AWS ECS tasks. This can be used in conjunction with `ECSRunLauncher`.
+- [dagster-dbt] `dbt-core>=1.9` is now supported.
+- [dagster-dbt] Adds SQL syntax highlighting to raw sql code in dbt asset descriptions.
+- [dagster-looker] `load_looker_asset_specs` and `build_looker_pdt_assets_definitions` are updated to accept an instance of `DagsterLookerApiTranslator` or custom subclass.
+- [dagster-looker] Type hints in the signature of `DagsterLookerApiTranslator.get_asset_spec` have been updated - the parameter `looker_structure` is now of type `LookerApiTranslatorStructureData` instead of `LookerStructureData`. Custom Looker API translators should be updated.
+- [dagster-powerbi] `load_powerbi_asset_specs` has been updated to accept an instance of `DagsterPowerBITranslator` or custom subclass.
+- [dagster-powerbi] Type hints in the signature of `DagsterPowerBITranslator.get_asset_spec` have been updated - the parameter `data` is now of type `PowerBITranslatorData` instead of `PowerBIContentData`. Custom Power BI translators should be updated.
+- [dagster-sigma] `load_sigma_asset_specs` has been updated to accept an instance of `DagsterSigmaTranslator` or a custom subclass.
+- [dagster-sigma] Type hints in the signature of `DagsterLookerApiTranslator.get_asset_spec` have been updated - the parameter `data` is now of type `Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]` instead of `Union[SigmaDataset, SigmaWorkbook]`. Custom Looker API translators should be updated.
+- [dagster-sigma] Added the option to filter to specific workbooks in addition to folders.
+- [dagster-sigma] Added the option to skip fetching lineage for workbooks in cases where users want to build this information themselves.
+- [dagster-tableau] `load_tableau_asset_specs` has been updated to accept an instance of `DagsterTableauTranslator` or custom subclass.
+- [dagster-tableau] Type hints in the signature of `DagsterTableauTranslator.get_asset_spec` have been updated - the parameter `data` is now of type `TableauTranslatorData` instead of `TableauContentData`. Custom Tableau translators should be updated.
+
+### Bugfixes
+
+- Fixed an issue where sensor and schedule tick logs would accumulate disk over time on Dagster code servers.
+- [ui] Fixed an issue where the app sometimes loads with styles missing.
+- [ui] Fix search string highlighting in global search results.
+- Fixed a race condition where immediately after adding a new asset to the graph, a freshness check sensor targeting that asset might raise an InvalidSubsetError in its first one.
+- [ui] Fixed a bug where backfills launched by Declarative Automation were not being shown in the table of launched runs.
+- The `dagster-airlift` package erroneously introduced a dependency on `dagster`. This has been rectified - `dagster` is only required for the `dagster-airlift[core]` submodule.
+
+### Deprecations
+
+- Deprecation of `@multi_asset_sensor` has been rolled back.
+
+### Dagster Plus
+
+- Introduce the Catalog Viewer role for Users and Teams.
+- Slack, MS Teams, and email alerts for run failures will list the steps that were successful or not executed.
+- [experimental] The option `blobStorageSnapshotUploads` has been added which enables a new process for how definition snapshots are uploaded to Dagster Cloud.
+- Fixed a catalog search issue where exact prefix matches are not prioritized in the search results.
+- Fixed a bug with Insights metric customization.
+
+# 1.9.6 (core) / 0.25.6 (libraries)
 
 ### New
 
@@ -33,7 +87,7 @@
 
 - Fixed a typo in the `dlt_assets` API docs. (Thanks, [@zilto](https://github.com/zilto)!)
 
-## 1.9.5 (core) / 0.25.5 (libraries)
+# 1.9.5 (core) / 0.25.5 (libraries)
 
 ### New
 
@@ -61,7 +115,7 @@
 - [ui] Fixed an issue that would sometimes cause the asset graph to fail to render on initial load.
 - [ui] Fix global auto-materialize tick timeline when paginating.
 
-## 1.9.4 (core) / 0.25.4 (libraries)
+# 1.9.4 (core) / 0.25.4 (libraries)
 
 ### New
 
@@ -99,7 +153,7 @@
 - [dagster-sigma] `DagsterSigmaTranslator.get_asset_key` is deprecated in favor of `DagsterSigmaTranslator.get_asset_spec().key`
 - [dagster-tableau] `DagsterTableauTranslator.get_asset_key` is deprecated in favor of `DagsterTableauTranslator.get_asset_spec().key`
 
-## 1.9.3 (core) / 0.25.3 (libraries)
+# 1.9.3 (core) / 0.25.3 (libraries)
 
 ### New
 
@@ -156,7 +210,7 @@
 - [ui] Fixed an issue with filtering and catalog search in branch deployments.
 - [ui] Fixed an issue where the asset graph would reload unexpectedly.
 
-## 1.9.2 (core) / 0.25.2 (libraries)
+# 1.9.2 (core) / 0.25.2 (libraries)
 
 ### New
 
@@ -203,7 +257,7 @@
 - [ui] The code location configuration dialog now contains more metadata about the code location.
 - [ui] Fixed an issue where the incorrect user icons were shown in the Users table when a search filter had been applied.
 
-## 1.9.1 (core) / 0.25.1 (libraries)
+# 1.9.1 (core) / 0.25.1 (libraries)
 
 ### New
 
@@ -320,7 +374,7 @@
 - The `DataBricksPysparkStepLauncher`, `EmrPySparkStepLauncher`, and any custom subclass of `StepLauncher` have been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning they will continue to function as they currently do for the foreseeable future. Their functionality has been superseded by the interfaces provided by `dagster-pipes`, and so future development work will be focused there.
 - The experimental `multi_asset_sensor` has been marked as deprecated, as its main use cases have been superseded by the `AutomationCondition` APIs. However, it will not be removed until version 2.0.0.
 
-## 1.8.13 (core) / 0.24.13 (libraries)
+# 1.8.13 (core) / 0.24.13 (libraries)
 
 ### New
 
@@ -345,7 +399,7 @@
 - [helm] the blockOpConcurrencyLimitedRuns section of queuedRunCoordinator now correctly templates the appropriate config.
 - [dagster-sigma] Fixed pulling incomplete data for very large workspaces.
 
-## 1.8.12 (core) / 0.24.12 (libraries)
+# 1.8.12 (core) / 0.24.12 (libraries)
 
 ### New
 
@@ -380,7 +434,7 @@
 - [ui] Column lineage now correctly renders when set on asset definition metadata
 - [ui] Fixed Settings link on the list of deployments, for users in the legacy navigation flag.
 
-## 1.8.11 (core) / 0.24.11 (libraries)
+# 1.8.11 (core) / 0.24.11 (libraries)
 
 ### New
 
@@ -407,7 +461,7 @@
 
 - Fixed a bug in the catalog UI where owners filters were not applied correctly.
 
-## 1.8.10 (core) / 0.24.10 (libraries)
+# 1.8.10 (core) / 0.24.10 (libraries)
 
 ### New
 
@@ -446,7 +500,7 @@
 - [dagster-databricks] Added docs for using Databricks Pipes with existing clusters.
 - [dagster-dbt] Corrected sample sql code (thanks @b-per!)
 
-## 1.8.9 (core) / 0.24.9 (libraries)
+# 1.8.9 (core) / 0.24.9 (libraries)
 
 ### New
 
@@ -472,7 +526,7 @@
 - Fixed an issue where users with Launcher permissions for a particular code location were not able to cancel backfills targeting only assets in that code location.
 - Fixed an issue preventing long-running alerts from being sent when there was a quick subsequent run.
 
-## 1.8.8 (core) / 0.24.8 (libraries)
+# 1.8.8 (core) / 0.24.8 (libraries)
 
 ### New
 
@@ -499,7 +553,7 @@
 - Backfill daemon logs are now available in the "Coordinator Logs" tab in a backfill details page.
 - Users without proper code location permissions can no longer edit sensor cursors.
 
-## 1.8.7 (core) / 0.24.7 (libraries)
+# 1.8.7 (core) / 0.24.7 (libraries)
 
 ### New
 
@@ -530,14 +584,14 @@
 - Dagster+ users with a "Viewer" role can now create private catalog views.
 - Fixed an issue where the default IOManager used by Dagster+ Serverless did not respect setting `allow_missing_partitions` as metadata on a downstream asset.
 
-## 1.8.6 (core) / 0.24.6 (libraries)
+# 1.8.6 (core) / 0.24.6 (libraries)
 
 ### Bugfixes
 
 - Fixed an issue where runs in Dagster+ Serverless that materialized partitioned assets would sometimes fail with an `object has no attribute '_base_path'` error.
 - [dagster-graphql] Fixed an issue where the `statuses` filter argument to the `sensorsOrError` GraphQL field was sometimes ignored when querying GraphQL for multiple sensors at the same time.
 
-## 1.8.5 (core) / 0.24.5 (libraries)
+# 1.8.5 (core) / 0.24.5 (libraries)
 
 ### New
 
@@ -577,7 +631,7 @@
 - Fixed a bug that caused an error when loading the launchpad for a partition, when using Dagster+ with an agent with version below 1.8.2.
 - Fixed an issue where terminating a Dagster+ Serverless run wouldn’t forward the termination signal to the job to allow it to cleanly terminate.
 
-## 1.8.4 (core) / 0.24.4 (libraries)
+# 1.8.4 (core) / 0.24.4 (libraries)
 
 ### Bugfixes
 
@@ -589,13 +643,13 @@
 - The default io_manager on Serverless now supports the `allow_missing_partitions` configuration option.
 - Fixed a bug that caused an error when loading the launchpad for a partition, when using in Dagster+ with an agent with version below 1.8.2
 
-## 1.8.3 (core) / 0.24.3 (libraries) (YANKED - This version of Dagster resulted in errors when trying to launch runs that target individual asset partitions)
+# 1.8.3 (core) / 0.24.3 (libraries) (YANKED - This version of Dagster resulted in errors when trying to launch runs that target individual asset partitions)
 
 ### New
 
 - When different assets within a code location have different `PartitionsDefinition`s, there will no longer be an implicit asset job `__ASSET_JOB_...` for each `PartitionsDefinition`; there will just be one with all the assets. This reduces the time it takes to load code locations with assets with many different `PartitionsDefinition`s.
 
-## 1.8.2 (core) / 0.24.2 (libraries)
+# 1.8.2 (core) / 0.24.2 (libraries)
 
 ### New
 
@@ -1459,13 +1513,13 @@
 - [experimental] The metadata key for specifying column schema that will be rendered prominently on the new Overview tab of the asset details page has been changed from `"columns"` to `"dagster/column_schema"`. Materializations using the old metadata key will no longer result in the Columns section of the tab being filled out.
 - [ui] Fixed an Insights bug where loading a view filtered to a specific code location would not preserve that filter on pageload.
 
-## 1.6.11 (core) / 0.22.11 (libraries)
+# 1.6.11 (core) / 0.22.11 (libraries)
 
 ### Bugfixes
 
 - Fixed an issue where `dagster dev` or the Dagster UI would display an error when loading jobs created with op or asset selections.
 
-## 1.6.10 (core) / 0.22.10 (libraries)
+# 1.6.10 (core) / 0.22.10 (libraries)
 
 ### New
 
@@ -1492,7 +1546,7 @@
 - [ui] Fixed an issue causing void invoices to show up as “overdue” on the billing page.
 - [experimental] Branch deployments can now indicate the new and modified assets in the branch deployment as compared to the main deployment. To enable this feature, turn on the “Enable experimental branch deployment asset graph diffing” user setting.
 
-## 1.6.9 (core) / 0.22.9 (libraries)
+# 1.6.9 (core) / 0.22.9 (libraries)
 
 ### New
 
@@ -1544,7 +1598,7 @@
 - Microsoft Teams is now supported for alerts. [Documentation](https://docs.dagster.io/dagster-cloud/managing-deployments/setting-up-alerts)
 - A `send sample alert` button now exists on both the alert policies page and in the alert policies editor to make it easier to debug and configure alerts without having to wait for an event to kick them off.
 
-## 1.6.8 (core) / 0.22.8 (libraries)
+# 1.6.8 (core) / 0.22.8 (libraries)
 
 ### Bugfixes
 
@@ -1554,7 +1608,7 @@
 
 - [asset checks] `graph_multi_assets` with `check_specs` now support subsetting.
 
-## 1.6.7 (core) / 0.22.7 (libraries)
+# 1.6.7 (core) / 0.22.7 (libraries)
 
 ### New
 
@@ -1588,7 +1642,7 @@
 - [Insights] You can now toggle the visibility of a row in the chart by clicking on the dot for the row in the table.
 - [Users] Added a new column “Licensed role” that shows the user's most permissive role.
 
-## 1.6.6 (core) / 0.22.6 (libraries)
+# 1.6.6 (core) / 0.22.6 (libraries)
 
 ### New
 
@@ -1622,7 +1676,7 @@
 
 - [kubernetes] Fixed an issue where the Kubernetes agent would sometimes leave dangling kubernetes services if the agent was interrupted during the middle of being terminated.
 
-## 1.6.5 (core) / 0.22.5 (libraries)
+# 1.6.5 (core) / 0.22.5 (libraries)
 
 ### New
 
