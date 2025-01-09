@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 from dagster._record import record
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic

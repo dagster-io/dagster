@@ -2,7 +2,8 @@ import datetime
 import json
 import os
 import time
-from typing import Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 import pytest
 from dagster import (
@@ -883,8 +884,8 @@ def _create_partitioned_run(
     graphql_context: WorkspaceRequestContext,
     job_name: str,
     partition_key: str,
-    asset_selection: Optional[List[AssetKey]] = None,
-    tags: Optional[Dict[str, str]] = None,
+    asset_selection: Optional[list[AssetKey]] = None,
+    tags: Optional[dict[str, str]] = None,
 ) -> str:
     base_partition_tags: Sequence[GqlTag] = [
         {"key": "dagster/partition", "value": partition_key},

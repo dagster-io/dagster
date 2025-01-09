@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import dagster as dg
 import requests
@@ -10,7 +10,7 @@ class SitemapScraper(dg.ConfigurableResource):
     sitemap_url: str
     headers: dict = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
-    def parse_sitemap(self) -> List[str]:
+    def parse_sitemap(self) -> list[str]:
         """Extract URLs from sitemap XML."""
         response = requests.get(self.sitemap_url, headers=self.headers)
         soup = BeautifulSoup(response.content, "xml")

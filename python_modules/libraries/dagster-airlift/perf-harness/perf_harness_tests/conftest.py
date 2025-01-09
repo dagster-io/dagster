@@ -1,7 +1,7 @@
 import os
 import subprocess
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 import pytest
 from dagster._core.test_utils import environ

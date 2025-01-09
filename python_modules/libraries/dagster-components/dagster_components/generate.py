@@ -1,6 +1,7 @@
 import os
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping, Optional, Type
+from typing import Any, Optional
 
 import click
 import yaml
@@ -35,7 +36,7 @@ def generate_component_yaml(
 def generate_component_instance(
     root_path: str,
     name: str,
-    component_type: Type[Component],
+    component_type: type[Component],
     component_type_name: str,
     generate_params: Mapping[str, Any],
 ) -> None:

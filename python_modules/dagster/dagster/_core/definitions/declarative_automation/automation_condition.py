@@ -1,7 +1,8 @@
 import datetime
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Generic, Optional
 
 from typing_extensions import Self
 

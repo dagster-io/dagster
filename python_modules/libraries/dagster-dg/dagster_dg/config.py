@@ -1,7 +1,8 @@
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, Type, TypeVar
+from typing import TypeVar
 
 import click
 from typing_extensions import Self
@@ -61,7 +62,7 @@ class DgConfig:
 # This validation will generally already be done by click, but this internal validation routine
 # provides insurance and satisfies the type checker.
 def _validate_global_option(
-    global_options: Mapping[str, object], key: str, expected_type: Type[T]
+    global_options: Mapping[str, object], key: str, expected_type: type[T]
 ) -> T:
     value = global_options.get(key, getattr(DgConfig, key))
     if not isinstance(value, expected_type):

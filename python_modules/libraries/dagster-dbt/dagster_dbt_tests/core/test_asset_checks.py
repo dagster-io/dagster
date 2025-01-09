@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Optional, Set, cast
+from typing import Any, Optional, cast
 
 import pytest
 from dagster import (
@@ -36,13 +36,13 @@ def dbt_commands(request):
     return request.param
 
 
-def _get_select_args(dbt_cli_invocation) -> Set[str]:
+def _get_select_args(dbt_cli_invocation) -> set[str]:
     *_, dbt_select_flag, dbt_select_args = list(dbt_cli_invocation.process.args)
     assert dbt_select_flag == "--select"
     return set(dbt_select_args.split())
 
 
-def test_without_asset_checks(test_asset_checks_manifest: Dict[str, Any]) -> None:
+def test_without_asset_checks(test_asset_checks_manifest: dict[str, Any]) -> None:
     @dbt_assets(
         manifest=test_asset_checks_manifest,
         dagster_dbt_translator=dagster_dbt_translator_without_checks,
@@ -66,7 +66,7 @@ def test_without_asset_checks(test_asset_checks_manifest: Dict[str, Any]) -> Non
     assert not result.get_asset_check_evaluations()
 
 
-def test_asset_checks_enabled_by_default(test_asset_checks_manifest: Dict[str, Any]) -> None:
+def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_asset_checks_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
@@ -250,12 +250,12 @@ def test_enable_asset_checks_with_custom_translator() -> None:
 
 
 def _materialize_dbt_assets(
-    manifest: Dict[str, Any],
-    dbt_commands: List[List[str]],
+    manifest: dict[str, Any],
+    dbt_commands: list[list[str]],
     selection: Optional[AssetSelection],
-    expected_dbt_selection: Optional[Set[str]] = None,
+    expected_dbt_selection: Optional[set[str]] = None,
     dagster_dbt_translator=dagster_dbt_translator_with_checks,
-    additional_assets: Optional[List[AssetsDefinition]] = None,
+    additional_assets: Optional[list[AssetsDefinition]] = None,
 ) -> ExecuteInProcessResult:
     @dbt_assets(manifest=manifest, dagster_dbt_translator=dagster_dbt_translator)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -278,7 +278,7 @@ def _materialize_dbt_assets(
 
 
 def test_materialize_no_selection(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]]
 ) -> None:
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
@@ -293,7 +293,7 @@ def test_materialize_no_selection(
 
 
 def test_materialize_asset_and_checks(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]]
 ) -> None:
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
@@ -338,7 +338,7 @@ def test_materialize_asset_and_checks(
 
 
 def test_materialize_asset_and_checks_with_python_check(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]]
 ) -> None:
     @asset_check(asset=AssetKey(["customers"]))
     def my_python_check():
@@ -359,7 +359,7 @@ def test_materialize_asset_and_checks_with_python_check(
 
 
 def test_materialize_asset_checks_disabled(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]]
 ) -> None:
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
@@ -377,7 +377,7 @@ def test_materialize_asset_checks_disabled(
 
 
 def test_materialize_asset_no_checks(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]]
 ) -> None:
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
@@ -404,8 +404,8 @@ def test_materialize_asset_no_checks(
     ],
 )
 def test_materialize_checks_no_asset(
-    test_asset_checks_manifest: Dict[str, Any],
-    dbt_commands: List[List[str]],
+    test_asset_checks_manifest: dict[str, Any],
+    dbt_commands: list[list[str]],
     dagster_dbt_translator: DagsterDbtTranslator,
 ) -> None:
     expected_dbt_selection = {
@@ -441,7 +441,7 @@ def test_materialize_checks_no_asset(
 
 
 def test_extra_checks(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]]
 ) -> None:
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
@@ -466,7 +466,7 @@ def test_extra_checks(
 
 
 def test_asset_checks_results(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]]
 ):
     @dbt_assets(
         manifest=test_asset_checks_manifest,
@@ -580,7 +580,7 @@ def test_asset_checks_results(
     ["customers", "tag:customer_info"],
 )
 def test_select_model_with_tests(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]], selection: str
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]], selection: str
 ):
     @dbt_assets(
         manifest=test_asset_checks_manifest,
@@ -647,7 +647,7 @@ def test_select_model_with_tests(
     }
 
 
-def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: Dict[str, Any]) -> None:
+def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: dict[str, Any]) -> None:
     @dbt_assets(
         manifest=test_dbt_alias_manifest, dagster_dbt_translator=dagster_dbt_translator_with_checks
     )

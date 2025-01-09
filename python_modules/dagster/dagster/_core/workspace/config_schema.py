@@ -1,5 +1,6 @@
 import os
-from typing import Dict, Mapping, cast
+from collections.abc import Mapping
+from typing import cast
 
 import dagster._check as check
 from dagster._config import (
@@ -36,7 +37,7 @@ def ensure_workspace_config(
             validation_result.errors,
             workspace_config,
         )
-    return cast(Dict[str, object], validation_result.value)
+    return cast(dict[str, object], validation_result.value)
 
 
 def _get_target_config() -> Mapping[str, ScalarUnion]:

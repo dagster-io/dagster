@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Type
+from typing import TYPE_CHECKING, Any, Callable
 
 import dagster._check as check
 from dagster._core.definitions.events import Failure, RetryRequested
@@ -31,7 +32,7 @@ class RetryRequestedFromPolicy(RetryRequested):
 
 @contextmanager
 def op_execution_error_boundary(
-    error_cls: Type[DagsterUserCodeExecutionError],
+    error_cls: type[DagsterUserCodeExecutionError],
     msg_fn: Callable[[], str],
     step_context: "StepExecutionContext",
     **kwargs: Any,

@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import typer
 import yaml
@@ -9,7 +9,6 @@ from dagster._cli.project import check_if_pypi_package_conflict_exists
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
-from typing_extensions import Annotated
 
 from dagster_sdf.include import STARTER_PROJECT_PATH
 from dagster_sdf.sdf_version import SDF_VERSION_UPPER_BOUND

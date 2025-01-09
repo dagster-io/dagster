@@ -67,4 +67,7 @@ def build_dagster_ui_core_steps() -> List[CommandStep]:
 
 
 def skip_if_no_dagster_ui_changes():
-    return skip_if_no_dagster_ui_components_changes() or skip_if_no_dagster_ui_core_changes()
+    return (
+        skip_if_no_dagster_ui_components_changes()
+        or skip_if_no_dagster_ui_core_changes()
+    )

@@ -12,7 +12,7 @@ class StepHandle(NamedTuple("_StepHandle", [("node_handle", NodeHandle), ("key",
     """A reference to an ExecutionStep that was determined statically."""
 
     def __new__(cls, node_handle: NodeHandle, key: Optional[str] = None):
-        return super(StepHandle, cls).__new__(
+        return super().__new__(
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
             # mypy can't tell that if default is set, this is guaranteed to be a str
@@ -45,7 +45,7 @@ class UnresolvedStepHandle(NamedTuple("_UnresolvedStepHandle", [("node_handle", 
     """A reference to an UnresolvedMappedExecutionStep in an execution."""
 
     def __new__(cls, node_handle: NodeHandle):
-        return super(UnresolvedStepHandle, cls).__new__(
+        return super().__new__(
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
         )
@@ -71,7 +71,7 @@ class ResolvedFromDynamicStepHandle(
     """
 
     def __new__(cls, node_handle: NodeHandle, mapping_key: str, key: Optional[str] = None):
-        return super(ResolvedFromDynamicStepHandle, cls).__new__(
+        return super().__new__(
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
             mapping_key=check.str_param(mapping_key, "mapping_key"),

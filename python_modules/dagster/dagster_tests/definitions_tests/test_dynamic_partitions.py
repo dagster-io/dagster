@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Callable, Optional, Sequence
+from typing import Callable, Optional
 
 import pytest
 from dagster import (

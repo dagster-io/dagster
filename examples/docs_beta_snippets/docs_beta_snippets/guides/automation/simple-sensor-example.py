@@ -1,5 +1,5 @@
 import random
-from typing import List
+from typing import List  # noqa: UP035
 
 import dagster as dg
 
@@ -16,7 +16,7 @@ my_job = dg.define_asset_job("my_job", selection=[my_asset])
 
 # highlight-start
 # Define file check
-def check_for_new_files() -> List[str]:
+def check_for_new_files() -> list[str]:
     if random.random() > 0.5:
         return ["file1", "file2"]
     return []

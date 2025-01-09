@@ -1,16 +1,6 @@
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ContextManager,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
@@ -90,8 +80,8 @@ class OutputContext:
     _resources_cm: Optional[ContextManager["Resources"]]
     _resources_contain_cm: Optional[bool]
     _cm_scope_entered: Optional[bool]
-    _events: List["DagsterEvent"]
-    _user_events: List[Union[AssetMaterialization, AssetObservation]]
+    _events: list["DagsterEvent"]
+    _user_events: list[Union[AssetMaterialization, AssetObservation]]
 
     def __init__(
         self,

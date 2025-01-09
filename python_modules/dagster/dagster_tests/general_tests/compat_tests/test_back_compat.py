@@ -662,9 +662,7 @@ def test_remote_job_origin_instigator_origin():
             ),
         ):
             def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
-                return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
-                    cls, host, port, socket, location_name, use_ssl
-                )
+                return super().__new__(cls, host, port, socket, location_name, use_ssl)
 
         return (
             legacy_env,

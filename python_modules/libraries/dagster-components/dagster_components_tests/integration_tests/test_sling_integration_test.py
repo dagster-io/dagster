@@ -1,8 +1,9 @@
 import shutil
 import tempfile
+from collections.abc import Generator, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Generator, Iterator, Mapping, Union
+from typing import Any, Union
 
 import pytest
 import yaml
@@ -30,7 +31,7 @@ COMPONENT_RELPATH = "components/ingest"
 
 def _update_yaml(path: Path, fn) -> None:
     # applies some arbitrary fn to an existing yaml dictionary
-    with open(path, "r") as f:
+    with open(path) as f:
         data = yaml.safe_load(f)
     with open(path, "w") as f:
         yaml.dump(fn(data), f)
@@ -49,7 +50,7 @@ def sling_path() -> Generator[Path, None, None]:
             # update the replication yaml to reference a CSV file in the tempdir
             replication_path = Path(temp_dir) / COMPONENT_RELPATH / "replication.yaml"
 
-            def _update_replication(data: Dict[str, Any]) -> Mapping[str, Any]:
+            def _update_replication(data: dict[str, Any]) -> Mapping[str, Any]:
                 placeholder_data = data["streams"].pop("<PLACEHOLDER>")
                 data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
                 return data
@@ -59,7 +60,7 @@ def sling_path() -> Generator[Path, None, None]:
             # update the defs yaml to add a duckdb instance
             defs_path = Path(temp_dir) / COMPONENT_RELPATH / "component.yaml"
 
-            def _update_defs(data: Dict[str, Any]) -> Mapping[str, Any]:
+            def _update_defs(data: dict[str, Any]) -> Mapping[str, Any]:
                 data["params"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
                 return data
 

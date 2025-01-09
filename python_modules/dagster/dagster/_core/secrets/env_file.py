@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Any, Dict, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 from dotenv import dotenv_values
 from typing_extensions import Self
@@ -11,7 +12,7 @@ from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 
 
-def get_env_var_dict(base_dir: str) -> Dict[str, str]:
+def get_env_var_dict(base_dir: str) -> dict[str, str]:
     env_file_path = os.path.join(base_dir, ".env")
     if not os.path.exists(env_file_path):
         return {}
@@ -28,7 +29,7 @@ class EnvFileLoader(SecretsLoader, ConfigurableClass):
         self._inst_data = inst_data
         self._base_dir = base_dir or os.getcwd()
 
-    def get_secrets_for_environment(self, location_name: Optional[str]) -> Dict[str, str]:
+    def get_secrets_for_environment(self, location_name: Optional[str]) -> dict[str, str]:
         env_file_path = os.path.join(self._base_dir, ".env")
 
         env_var_dict = get_env_var_dict(env_file_path)

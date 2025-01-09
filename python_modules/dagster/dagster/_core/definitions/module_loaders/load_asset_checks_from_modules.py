@@ -1,7 +1,8 @@
 import inspect
+from collections.abc import Iterable, Sequence
 from importlib import import_module
 from types import ModuleType
-from typing import Iterable, Optional, Sequence
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks import AssetChecksDefinition

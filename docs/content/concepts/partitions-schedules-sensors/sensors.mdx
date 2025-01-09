@@ -242,7 +242,7 @@ from typing import List
 class UsersAPI(ConfigurableResource):
     url: str
 
-    def fetch_users(self) -> List[str]:
+    def fetch_users(self) -> list[str]:
         return requests.get(self.url).json()
 
 @job
@@ -428,7 +428,7 @@ from dagster import build_sensor_context, validate_run_config
 
 def test_process_new_users_sensor():
     class FakeUsersAPI:
-        def fetch_users(self) -> List[str]:
+        def fetch_users(self) -> list[str]:
             return ["1", "2", "3"]
 
     context = build_sensor_context()

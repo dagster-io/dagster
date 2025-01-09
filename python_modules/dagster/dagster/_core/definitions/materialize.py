@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -207,7 +208,7 @@ def materialize_to_memory(
 
 def _get_required_io_manager_keys(
     assets: Sequence[Union[AssetsDefinition, AssetSpec, SourceAsset]],
-) -> Set[str]:
+) -> set[str]:
     io_manager_keys = set()
     for asset in assets:
         if isinstance(asset, (AssetsDefinition, SourceAsset)):

@@ -9,14 +9,20 @@ Example Usage
 import json
 import os
 import pathlib
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, Tuple, TypedDict
+from typing import TypedDict
 
 import modal
 
 from . import config
 
-Segment = TypedDict("Segment", {"text": str, "start": float, "end": float})
+
+class Segment(TypedDict):
+    text: str
+    start: float
+    end: float
+
 
 logger = config.get_logger(__name__)
 
@@ -87,7 +93,7 @@ cloud_bucket_mount = modal.CloudBucketMount(
 
 def split_silences(
     path: str, min_segment_length: float = 30.0, min_silence_length: float = 1.0
-) -> Iterator[Tuple[float, float]]:
+) -> Iterator[tuple[float, float]]:
     """Split audio file into contiguous chunks using the ffmpeg `silencedetect` filter.
 
     Retuns:

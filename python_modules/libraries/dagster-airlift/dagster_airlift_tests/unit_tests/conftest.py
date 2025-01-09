@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Generator, Sequence
 from datetime import datetime, timedelta
-from typing import Dict, Generator, List, Optional, Sequence, Tuple, Union
+from typing import Optional, Union
 
 import pytest
 from dagster import (
@@ -41,10 +42,10 @@ def strip_to_first_of_month(dt: datetime) -> datetime:
 
 
 def fully_loaded_repo_from_airflow_asset_graph(
-    assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
+    assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
-    dag_level_asset_overrides: Optional[Dict[str, List[str]]] = None,
+    dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
 ) -> RepositoryDefinition:
     defs = load_definitions_airflow_asset_graph(
@@ -60,11 +61,11 @@ def fully_loaded_repo_from_airflow_asset_graph(
 
 
 def load_definitions_airflow_asset_graph(
-    assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
+    assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     create_assets_defs: bool = True,
-    dag_level_asset_overrides: Optional[Dict[str, List[str]]] = None,
+    dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
 ) -> Definitions:
     assets = []
@@ -132,12 +133,12 @@ def load_definitions_airflow_asset_graph(
 
 def build_and_invoke_sensor(
     *,
-    assets_per_task: Dict[str, Dict[str, List[Tuple[str, List[str]]]]],
+    assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
     instance: DagsterInstance,
     additional_defs: Definitions = Definitions(),
-    dag_level_asset_overrides: Optional[Dict[str, List[str]]] = None,
+    dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
-) -> Tuple[SensorResult, SensorEvaluationContext]:
+) -> tuple[SensorResult, SensorEvaluationContext]:
     repo_def = fully_loaded_repo_from_airflow_asset_graph(
         assets_per_task,
         additional_defs=additional_defs,
@@ -160,7 +161,7 @@ def assert_expected_key_order(
 
 
 def assert_dependency_structure_in_assets(
-    repo_def: RepositoryDefinition, expected_deps: Dict[str, List[str]]
+    repo_def: RepositoryDefinition, expected_deps: dict[str, list[str]]
 ) -> None:
     for key, deps_list in expected_deps.items():
         qual_key = AssetKey.from_user_string(key)

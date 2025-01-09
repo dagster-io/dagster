@@ -1,7 +1,8 @@
 import dataclasses
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Mapping, Optional, Sequence, Tuple
+from typing import Optional
 
 import dagster._check as check
 from dagster import AssetKey, AutomationContext
@@ -64,7 +65,7 @@ class AutomationConditionScenarioState(ScenarioState):
 
     async def evaluate(
         self, asset: CoercibleToAssetKey
-    ) -> Tuple["AutomationConditionScenarioState", AutomationResult]:
+    ) -> tuple["AutomationConditionScenarioState", AutomationResult]:
         asset_key = AssetKey.from_coercible(asset)
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery

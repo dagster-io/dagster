@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, List, Mapping, Optional
+from typing import Any, Optional
 
 import click
 from click.core import ParameterSource
@@ -56,7 +57,7 @@ class ComponentGenerateGroup(DgClickGroup):
             self._define_commands(cli_context)
         return super().get_command(cli_context, cmd_name)
 
-    def list_commands(self, cli_context: click.Context) -> List[str]:
+    def list_commands(self, cli_context: click.Context) -> list[str]:
         if not self._commands_defined:
             self._define_commands(cli_context)
         return super().list_commands(cli_context)

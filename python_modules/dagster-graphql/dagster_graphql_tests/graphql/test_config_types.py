@@ -1,5 +1,5 @@
 import json
-from typing import Sequence
+from collections.abc import Sequence
 
 import dagster._check as check
 from dagster._config import ALL_CONFIG_BUILTINS

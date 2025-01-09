@@ -1,4 +1,5 @@
-from typing import Annotated, Optional, Sequence
+from collections.abc import Sequence
+from typing import Annotated, Optional
 
 import pytest
 from dagster_components.core.component_rendering import (

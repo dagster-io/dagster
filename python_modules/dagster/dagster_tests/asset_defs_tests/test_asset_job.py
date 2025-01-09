@@ -1,6 +1,5 @@
 import hashlib
 import os
-from typing import Dict
 
 import pytest
 from dagster import (
@@ -2318,7 +2317,7 @@ def test_simple_graph_backed_asset_subset(
 
     result = job.execute_in_process()
 
-    expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))
+    expected_asset_keys = set(AssetKey(a) for a in expected_assets.split(","))
 
     # make sure we've generated the correct set of keys
     assert _all_asset_keys(result) == expected_asset_keys
@@ -2394,9 +2393,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
             ).records
         }
 
-    expected_asset_keys = set(
-        (AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
-    )
+    expected_asset_keys = set(AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
     # make sure we've planned on the correct set of keys
     assert planned_asset_keys == expected_asset_keys
 
@@ -2883,7 +2880,7 @@ def test_mixed_asset_job():
 def test_partial_dependency_on_upstream_multi_asset():
     class MyIOManager(IOManager):
         def __init__(self):
-            self.values: Dict[AssetKey, int] = {}
+            self.values: dict[AssetKey, int] = {}
 
         def handle_output(self, context: OutputContext, obj: object):
             self.values[context.asset_key] = obj  # pyright: ignore[reportArgumentType]

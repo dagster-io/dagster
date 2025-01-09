@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -30,8 +30,8 @@ class WebserverIngressConfiguration(BaseModel):
     path: str
     pathType: IngressPathType
     tls: IngressTLSConfiguration
-    precedingPaths: List[IngressPath]
-    succeedingPaths: List[IngressPath]
+    precedingPaths: list[IngressPath]
+    succeedingPaths: list[IngressPath]
 
 
 class FlowerIngressConfiguration(BaseModel):
@@ -39,8 +39,8 @@ class FlowerIngressConfiguration(BaseModel):
     path: str
     pathType: IngressPathType
     tls: IngressTLSConfiguration
-    precedingPaths: List[IngressPath]
-    succeedingPaths: List[IngressPath]
+    precedingPaths: list[IngressPath]
+    succeedingPaths: list[IngressPath]
 
 
 # We have `extra="allow"` here to support passing `dagit` as an alias for `dagsterWebserver` when

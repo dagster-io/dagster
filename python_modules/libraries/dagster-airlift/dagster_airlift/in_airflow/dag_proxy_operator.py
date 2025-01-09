@@ -1,7 +1,8 @@
 import json
 import os
 from abc import abstractmethod
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any
 
 import requests
 from airflow import DAG

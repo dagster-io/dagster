@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import graphene
 from dagster import _check as check
@@ -390,7 +390,7 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
     def resolve_assetGroups(self, graphene_info: ResolveInfo):
-        groups: Dict[str, List[AssetNodeSnap]] = {}
+        groups: dict[str, list[AssetNodeSnap]] = {}
         for asset_node_snap in self.get_repository(graphene_info).get_asset_node_snaps():
             if not asset_node_snap.group_name:
                 continue
@@ -406,7 +406,7 @@ class GrapheneRepository(graphene.ObjectType):
             for group_name, asset_node_snaps in groups.items()
         ]
 
-    def resolve_allTopLevelResourceDetails(self, graphene_info) -> List[GrapheneResourceDetails]:
+    def resolve_allTopLevelResourceDetails(self, graphene_info) -> list[GrapheneResourceDetails]:
         return [
             GrapheneResourceDetails(
                 location_name=self._handle.location_name,

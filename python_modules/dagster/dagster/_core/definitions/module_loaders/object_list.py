@@ -1,7 +1,8 @@
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
 from types import ModuleType
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Sequence, Union, cast, get_args
+from typing import Any, Callable, Optional, Union, cast, get_args
 
 from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
@@ -71,7 +72,7 @@ class ModuleScopedDagsterDefs:
         ]
 
     @cached_property
-    def objects_by_id(self) -> Dict[int, LoadableDagsterDef]:
+    def objects_by_id(self) -> dict[int, LoadableDagsterDef]:
         return {id(asset_object): asset_object for asset_object in self.flat_object_list}
 
     @cached_property
@@ -111,7 +112,7 @@ class ModuleScopedDagsterDefs:
         return [sensor for sensor in self.deduped_objects if isinstance(sensor, SensorDefinition)]
 
     @cached_property
-    def module_name_by_id(self) -> Dict[int, str]:
+    def module_name_by_id(self) -> dict[int, str]:
         return {
             id(asset_object): module_name
             for module_name, objects in self.objects_per_module.items()

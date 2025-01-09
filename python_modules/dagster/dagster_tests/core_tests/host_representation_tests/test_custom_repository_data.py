@@ -1,5 +1,5 @@
 import sys
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from dagster import file_relative_path, job, op, repository

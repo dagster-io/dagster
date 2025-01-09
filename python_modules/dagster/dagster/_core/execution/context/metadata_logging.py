@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Union
+from collections.abc import Mapping
+from typing import Any, Optional, Union
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._record import record

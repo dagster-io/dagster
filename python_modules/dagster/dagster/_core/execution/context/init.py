@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Union
+from collections.abc import Mapping
+from typing import Any, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import public
@@ -160,7 +161,7 @@ class UnboundInitResourceContext(InitResourceContext):
         self._resources_contain_cm = isinstance(resources, IContainsGenerator)
 
         self._cm_scope_entered = False
-        super(UnboundInitResourceContext, self).__init__(
+        super().__init__(
             resource_config=resource_config,
             resources=resources,
             resource_def=None,

@@ -1,6 +1,7 @@
+from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 
 from dagster import (
     ConfigurableIOManager,
@@ -152,7 +153,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
         }
 
     def _get_cleanup_statement(
-        self, table: str, schema: str, time_window: Optional[Tuple[datetime, datetime]]
+        self, table: str, schema: str, time_window: Optional[tuple[datetime, datetime]]
     ) -> str:
         """Returns a SQL statement that deletes data in the given table to make way for the output data
         being written.
@@ -183,7 +184,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
         table: str,
         schema: str,
         columns: Optional[Sequence[str]],
-        time_window: Optional[Tuple[datetime, datetime]],
+        time_window: Optional[tuple[datetime, datetime]],
     ):
         col_str = ", ".join(columns) if columns else "*"
         if time_window:
@@ -194,6 +195,6 @@ class SnowflakeIOManager(ConfigurableIOManager):
         else:
             return f"""SELECT {col_str} FROM {schema}.{table}"""
 
-    def _time_window_where_clause(self, time_window: Tuple[datetime, datetime]) -> str:
+    def _time_window_where_clause(self, time_window: tuple[datetime, datetime]) -> str:
         start_dt, end_dt = time_window
         return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)}' AND '{end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)}'"""

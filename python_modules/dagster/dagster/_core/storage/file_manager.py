@@ -3,8 +3,9 @@ import os
 import shutil
 import uuid
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import BinaryIO, ContextManager, Iterator, Optional, TextIO, Union
+from typing import BinaryIO, ContextManager, Optional, TextIO, Union  # noqa: UP035
 
 from typing_extensions import TypeAlias
 

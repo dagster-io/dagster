@@ -5,18 +5,15 @@ import string
 import uuid
 import warnings
 from collections import OrderedDict, deque
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from contextvars import copy_context
-from typing import (
+from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Iterable,
-    Iterator,
-    Mapping,
+    Final,
     Optional,
-    Sequence,
-    Tuple,
     TypedDict,
     TypeVar,
     Union,
@@ -25,7 +22,6 @@ from typing import (
 from weakref import WeakSet
 
 import toposort as toposort_
-from typing_extensions import Final
 
 import dagster._check as check
 from dagster._utils import library_version_from_core_version, parse_package_version
@@ -128,7 +124,7 @@ def get_env_var_name(env_var_str: str):
         return env_var_str
 
 
-def parse_env_var(env_var_str: str) -> Tuple[str, str]:
+def parse_env_var(env_var_str: str) -> tuple[str, str]:
     if "=" in env_var_str:
         split = env_var_str.split("=", maxsplit=1)
         return (split[0], split[1])
@@ -153,7 +149,7 @@ class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
         max_workers: Optional[int] = None,
         thread_name_prefix: str = "",
         initializer: Any = None,
-        initargs: Tuple[Any, ...] = (),
+        initargs: tuple[Any, ...] = (),
     ) -> None:
         super().__init__(max_workers, thread_name_prefix, initializer, initargs)
         # The default threadpool class doesn't track the futures it creates,

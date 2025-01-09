@@ -1,6 +1,6 @@
 import uuid
 import warnings
-from typing import Mapping, Sequence, Set, Tuple
+from collections.abc import Mapping, Sequence
 
 import pytest
 from dagster import (
@@ -68,7 +68,7 @@ def make_compute_fn():
 def _do_construct(
     ops: Sequence[OpDefinition],
     dependencies: DependencyMapping[str],
-) -> Tuple[Mapping[str, Set[str]], Mapping[str, Set[str]]]:
+) -> tuple[Mapping[str, set[str]], Mapping[str, set[str]]]:
     job_def = JobDefinition(
         graph_def=GraphDefinition(name="test", node_defs=ops, dependencies=dependencies)
     )

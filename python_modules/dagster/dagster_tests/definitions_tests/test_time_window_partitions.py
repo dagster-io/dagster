@@ -1,7 +1,8 @@
 import pickle
 import random
+from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import Optional, Sequence, cast
+from typing import Optional, cast
 
 import pytest
 from dagster import (

@@ -1,5 +1,4 @@
 import json
-from typing import List, Tuple
 from unittest import mock
 
 from dagster import EventLogRecord, EventRecordsResult, GraphDefinition, build_sensor_context
@@ -8,7 +7,7 @@ from dagster._core.test_utils import instance_for_test
 from project_fully_featured.sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 
 
-def get_mock_fetch_materializations(asset_events: List[Tuple[str, int]]):
+def get_mock_fetch_materializations(asset_events: list[tuple[str, int]]):
     def fetch_materializations(asset_records_filter, **kwargs):
         asset_key = asset_records_filter.asset_key
         after_storage_id = asset_records_filter.after_storage_id

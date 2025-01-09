@@ -1,16 +1,6 @@
+from collections.abc import Mapping, Sequence, Set
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Generic,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Generic, NamedTuple, Optional, TypeVar
 
 from dagster._core.definitions.events import AssetKey
 from dagster._record import record
@@ -37,9 +27,9 @@ class AssetDefinitionChangeType(Enum):
 
 
 class MappedKeyDiff(NamedTuple):
-    added: AbstractSet[str]
-    changed: AbstractSet[str]
-    removed: AbstractSet[str]
+    added: Set[str]
+    changed: Set[str]
+    removed: Set[str]
 
 
 T = TypeVar("T")
@@ -55,9 +45,9 @@ class ValueDiff(Generic[T]):
 @whitelist_for_serdes
 @record
 class DictDiff(Generic[T]):
-    added_keys: AbstractSet[T]
-    changed_keys: AbstractSet[T]
-    removed_keys: AbstractSet[T]
+    added_keys: Set[T]
+    changed_keys: Set[T]
+    removed_keys: Set[T]
 
 
 @whitelist_for_serdes
@@ -71,7 +61,7 @@ class AssetDefinitionDiffDetails:
     "NEW" and "REMOVED" change types do not have diff info.
     """
 
-    change_types: AbstractSet[AssetDefinitionChangeType]
+    change_types: Set[AssetDefinitionChangeType]
     code_version: Optional[ValueDiff[Optional[str]]] = None
     dependencies: Optional[DictDiff[AssetKey]] = None
     partitions_definition: Optional[ValueDiff[Optional[str]]] = None
@@ -120,7 +110,7 @@ class AssetGraphDiffer:
             asset_key
         ).resolve_to_singular_repo_scoped_node()
 
-        change_types: Set[AssetDefinitionChangeType] = set()
+        change_types: set[AssetDefinitionChangeType] = set()
         code_version_diff: Optional[ValueDiff] = None
         dependencies_diff: Optional[DictDiff] = None
         partitions_definition_diff: Optional[ValueDiff] = None

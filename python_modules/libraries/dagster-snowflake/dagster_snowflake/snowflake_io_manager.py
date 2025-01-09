@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Optional, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
@@ -22,7 +23,7 @@ SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def build_snowflake_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
 ) -> IOManagerDefinition:
     """Builds an IO manager definition that reads inputs from and writes outputs to Snowflake.
 
@@ -279,7 +280,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
     )
-    additional_snowflake_connection_args: Optional[Dict[str, Any]] = Field(
+    additional_snowflake_connection_args: Optional[dict[str, Any]] = Field(
         default=None,
         description=(
             "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
@@ -309,7 +310,7 @@ class SnowflakeIOManager(ConfigurableIOManagerFactory):
         ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         """If an asset or op is not annotated with an return type, default_load_type will be used to
         determine which TypeHandler to use to store and load the output.
 

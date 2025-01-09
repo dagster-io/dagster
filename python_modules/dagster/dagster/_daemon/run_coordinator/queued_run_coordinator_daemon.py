@@ -2,9 +2,10 @@ import json
 import sys
 import threading
 import time
+from collections.abc import Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence
+from typing import Optional
 
 from dagster import (
     DagsterEvent,
@@ -46,7 +47,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self._exit_stack = ExitStack()
         self._executor: Optional[ThreadPoolExecutor] = None
         self._location_timeouts_lock = threading.Lock()
-        self._location_timeouts: Dict[str, float] = {}
+        self._location_timeouts: dict[str, float] = {}
         self._page_size = page_size
         self._global_concurrency_blocked_runs_lock = threading.Lock()
         self._global_concurrency_blocked_runs = set()
@@ -99,7 +100,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         run_coordinator: QueuedRunCoordinator,
-        runs_to_dequeue: List[DagsterRun],
+        runs_to_dequeue: list[DagsterRun],
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
     ) -> Iterator[None]:
@@ -137,7 +138,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def _dequeue_runs_iter_threaded(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-        runs_to_dequeue: List[DagsterRun],
+        runs_to_dequeue: list[DagsterRun],
         max_workers: Optional[int],
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
@@ -165,7 +166,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def _dequeue_runs_iter_loop(
         self,
         workspace_process_context: IWorkspaceProcessContext,
-        runs_to_dequeue: List[DagsterRun],
+        runs_to_dequeue: list[DagsterRun],
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
     ) -> Iterator[None]:
@@ -190,7 +191,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         instance: DagsterInstance,
         run_queue_config: RunQueueConfig,
         fixed_iteration_time: Optional[float],
-    ) -> List[DagsterRun]:
+    ) -> list[DagsterRun]:
         if not isinstance(instance.run_coordinator, QueuedRunCoordinator):
             check.failed(f"Expected QueuedRunCoordinator, got {instance.run_coordinator}")
 
@@ -212,7 +213,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
         cursor = None
         has_more = True
-        batch: List[DagsterRun] = []
+        batch: list[DagsterRun] = []
 
         now = fixed_iteration_time or time.time()
 
@@ -322,7 +323,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def _get_in_progress_run_records(self, instance: DagsterInstance) -> Sequence[RunRecord]:
         return instance.get_run_records(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
-    def _priority_sort(self, runs: Iterable[DagsterRun]) -> List[DagsterRun]:
+    def _priority_sort(self, runs: Iterable[DagsterRun]) -> list[DagsterRun]:
         def get_priority(run: DagsterRun) -> int:
             priority_tag_value = run.tags.get(PRIORITY_TAG, "0")
             try:

@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets import AssetsDefinition

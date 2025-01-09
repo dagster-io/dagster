@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Mapping, Sequence, Union
+from typing import Union
 
 import dagster._check as check
 from dagster._config.config_type import ConfigTypeKind

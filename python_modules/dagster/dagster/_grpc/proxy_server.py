@@ -2,7 +2,7 @@ import logging
 import sys
 import threading
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.instance import InstanceRef
@@ -49,7 +49,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         instance_ref: Optional[InstanceRef],
         logger: logging.Logger,
     ):
-        super(DagsterProxyApiServicer, self).__init__()
+        super().__init__()
 
         self._loadable_target_origin = loadable_target_origin
         self._fixed_server_id = fixed_server_id
@@ -104,7 +104,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         # Map runs to the client that launched them, so that we can route
         # termination requests
-        self._run_clients: Dict[str, DagsterGrpcClient] = {}
+        self._run_clients: dict[str, DagsterGrpcClient] = {}
 
         self._reload_location()
 

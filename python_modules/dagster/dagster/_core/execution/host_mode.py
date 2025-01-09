@@ -1,6 +1,7 @@
 import logging
 import sys
-from typing import Iterator, Mapping, Optional, Sequence, Union
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Optional, Union
 
 import dagster._check as check
 from dagster._config import Field, process_config

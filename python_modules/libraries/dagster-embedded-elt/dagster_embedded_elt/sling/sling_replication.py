@@ -1,6 +1,7 @@
-from functools import lru_cache
+from collections.abc import Mapping
+from functools import cache
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union, cast
+from typing import Any, Optional, Union, cast
 
 import dagster._check as check
 import yaml
@@ -8,7 +9,7 @@ import yaml
 SlingReplicationParam = Union[Mapping[str, Any], str, Path]
 
 
-@lru_cache(maxsize=None)
+@cache
 def read_replication_path(replication_path: Path) -> Mapping[str, Any]:
     """Reads a Sling replication config from a path and returns a dict.
 

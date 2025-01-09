@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from enum import Enum, unique
-from typing import Dict, Mapping, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 
 @unique
@@ -26,7 +27,7 @@ class Permissions(str, Enum):
         return str.__str__(self)
 
 
-VIEWER_PERMISSIONS: Dict[str, bool] = {
+VIEWER_PERMISSIONS: dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_EXECUTION: False,
     Permissions.LAUNCH_PIPELINE_REEXECUTION: False,
     Permissions.START_SCHEDULE: False,
@@ -46,7 +47,7 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.EDIT_CONCURRENCY_LIMIT: False,
 }
 
-EDITOR_PERMISSIONS: Dict[str, bool] = {
+EDITOR_PERMISSIONS: dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_EXECUTION: True,
     Permissions.LAUNCH_PIPELINE_REEXECUTION: True,
     Permissions.START_SCHEDULE: True,

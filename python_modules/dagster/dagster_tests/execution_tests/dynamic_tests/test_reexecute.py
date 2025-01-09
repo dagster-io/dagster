@@ -1,6 +1,5 @@
 import time
 from multiprocessing import Process
-from typing import List
 
 import pytest
 from dagster import (
@@ -168,7 +167,7 @@ def echo(x):
 
 
 @op
-def adder(ls: List[int]) -> int:
+def adder(ls: list[int]) -> int:
     return sum(ls)
 
 

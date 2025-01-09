@@ -1,4 +1,4 @@
-from typing import Callable, ContextManager
+from typing import Callable, ContextManager  # noqa: UP035
 
 from dagster import job, op, repository
 from dagster._config import process_config, resolve_to_config_type

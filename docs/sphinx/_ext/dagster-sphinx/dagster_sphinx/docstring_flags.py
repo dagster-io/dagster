@@ -1,5 +1,5 @@
 import re
-from typing import List, Union
+from typing import Union
 
 import dagster._check as check
 import docutils.nodes as nodes
@@ -15,7 +15,7 @@ from sphinx.util.docutils import SphinxDirective
 
 
 def inject_object_flag(
-    obj: object, info: Union[SupersededInfo, DeprecatedInfo, ExperimentalInfo], docstring: List[str]
+    obj: object, info: Union[SupersededInfo, DeprecatedInfo, ExperimentalInfo], docstring: list[str]
 ) -> None:
     if isinstance(info, DeprecatedInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
@@ -38,7 +38,7 @@ def inject_object_flag(
 
 
 def inject_param_flag(
-    lines: List[str],
+    lines: list[str],
     param: str,
     info: Union[DeprecatedInfo, ExperimentalInfo],
 ):

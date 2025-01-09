@@ -1,6 +1,6 @@
 # ruff: isort: skip_file
 
-from typing import List
+from typing import List  # noqa: UP035
 from dagster import job, op
 
 
@@ -36,7 +36,7 @@ from dagster import ConfigurableIOManager, InputContext, OutputContext
 
 class MyIOManager(ConfigurableIOManager):
     # specifies an optional string list input, via config system
-    path_prefix: List[str] = []
+    path_prefix: list[str] = []
 
     def _get_path(self, context) -> str:
         return "/".join(self.path_prefix + context.asset_key.path)

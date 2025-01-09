@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey

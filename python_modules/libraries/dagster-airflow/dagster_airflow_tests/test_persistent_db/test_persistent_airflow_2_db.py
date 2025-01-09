@@ -1,7 +1,6 @@
 import datetime
 import os
 import tempfile
-from typing import List
 
 import pytest
 import pytz
@@ -209,7 +208,7 @@ def airflow_examples_repo(postgres_airflow_db) -> RepositoryDefinition:
     return definitions.get_repository_def()
 
 
-def get_examples_airflow_repo_params() -> List[ParameterSet]:
+def get_examples_airflow_repo_params() -> list[ParameterSet]:
     definitions = make_dagster_definitions_from_airflow_example_dags()
     repo = definitions.get_repository_def()
     params = []

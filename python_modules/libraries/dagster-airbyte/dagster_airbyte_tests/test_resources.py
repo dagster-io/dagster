@@ -1,5 +1,5 @@
 import re
-from typing import Any, Callable, Dict
+from typing import Any, Callable
 
 import pytest
 import responses
@@ -21,7 +21,7 @@ from dagster_airbyte_tests.utils import (
 
 
 @pytest.fixture(name="airbyte_instance_constructor", params=[True, False], scope="module")
-def airbyte_instance_constructor_fixture(request) -> Callable[[Dict[str, Any]], AirbyteResource]:
+def airbyte_instance_constructor_fixture(request) -> Callable[[dict[str, Any]], AirbyteResource]:
     if request.param:
         return lambda config: AirbyteResource(**config)
     else:
@@ -30,7 +30,7 @@ def airbyte_instance_constructor_fixture(request) -> Callable[[Dict[str, Any]], 
 
 @responses.activate
 def test_trigger_connection(
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
+    airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -50,7 +50,7 @@ def test_trigger_connection(
 
 
 def test_trigger_connection_fail(
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
+    airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor({"host": "some_host", "port": "8000"})
     with pytest.raises(
@@ -77,7 +77,7 @@ def test_trigger_connection_fail(
     [True, False],
 )
 def test_sync_and_poll(
-    state, forward_logs, airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    state, forward_logs, airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource]
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -140,7 +140,7 @@ def test_sync_and_poll(
 
 @responses.activate
 def test_start_sync_bad_out_fail(
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
+    airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -161,7 +161,7 @@ def test_start_sync_bad_out_fail(
 
 @responses.activate
 def test_get_connection_details_bad_out_fail(
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
+    airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -186,7 +186,7 @@ def test_get_connection_details_bad_out_fail(
     [True, False],
 )
 def test_get_job_status_bad_out_fail(
-    forward_logs, airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    forward_logs, airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource]
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -237,7 +237,7 @@ def test_get_job_status_bad_out_fail(
 
 @responses.activate
 def test_logging_multi_attempts(
-    capsys, airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    capsys, airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource]
 ) -> None:
     def _get_attempt(ls):
         return {"logs": {"logLines": ls}}
@@ -319,7 +319,7 @@ def test_logging_multi_attempts(
     [True, False],
 )
 def test_assets(
-    forward_logs, airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    forward_logs, airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource]
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -372,7 +372,7 @@ def test_assets(
     [True, False],
 )
 def test_assets_with_mapping(
-    forward_logs, airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource]
+    forward_logs, airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource]
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -435,7 +435,7 @@ def test_assets_with_mapping(
 def test_sync_and_poll_termination(
     forward_logs,
     cancel_sync_on_run_termination,
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
+    airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -499,7 +499,7 @@ def test_sync_and_poll_termination(
 def test_sync_and_poll_timeout(
     forward_logs,
     cancel_sync_on_run_termination,
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
+    airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource],
 ) -> None:
     ab_resource = airbyte_instance_constructor(
         {
@@ -584,7 +584,7 @@ def test_sync_and_poll_timeout(
 def test_normalization_support(
     supports_norm: bool,
     norm_config_supported: bool,
-    airbyte_instance_constructor: Callable[[Dict[str, Any]], AirbyteResource],
+    airbyte_instance_constructor: Callable[[dict[str, Any]], AirbyteResource],
 ):
     ab_resource = airbyte_instance_constructor(
         {

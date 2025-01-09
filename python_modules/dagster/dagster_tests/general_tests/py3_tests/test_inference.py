@@ -1,4 +1,4 @@
-# ruff: noqa: D416
+# ruff: noqa: D416, UP006, UP035
 
 from typing import Any, Dict, List, Optional, Tuple
 

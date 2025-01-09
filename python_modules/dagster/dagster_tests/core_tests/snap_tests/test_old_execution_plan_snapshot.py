@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import pytest
 from dagster import job
 from dagster._core.errors import DagsterInvariantViolationError
