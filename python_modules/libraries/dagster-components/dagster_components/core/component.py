@@ -275,7 +275,7 @@ class ComponentLoadContext:
                     "params"
                 ]
                 with enrich_validation_errors_with_source_position(
-                    source_position_tree_of_params, []
+                    source_position_tree_of_params, ["params"]
                 ):
                     return TypeAdapter(params_schema).validate_python(preprocessed_params)
             else:

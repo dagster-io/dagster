@@ -41,6 +41,7 @@ def test_basic_component_invalid_value() -> None:
         )
 
     assert "component.yaml:5" in str(e.value)
+    assert "params.an_int" in str(e.value)
     assert "Input should be a valid integer" in str(e.value)
 
 
@@ -53,6 +54,7 @@ def test_basic_component_missing_value() -> None:
 
     # Points to the lowest element in the hierarchy which is missing a required field
     assert "component.yaml:4" in str(e.value)
+    assert "params.an_int" in str(e.value)
     assert "Field required" in str(e.value)
 
 
@@ -65,6 +67,7 @@ def test_nested_component_invalid_values() -> None:
 
     assert "component.yaml:7" in str(e.value)
     assert "Input should be a valid integer" in str(e.value)
+    assert "params.nested.foo.an_int" in str(e.value)
     assert "component.yaml:12" in str(e.value)
     assert "Input should be a valid string" in str(e.value)
 
