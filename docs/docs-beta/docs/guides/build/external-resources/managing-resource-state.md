@@ -9,7 +9,7 @@ You can mark any private state attributes using Pydantic's [`PrivateAttr`](https
 
 ## Lifecycle hooks
 
-When a resource is initialized during a Dagster run, the `setup_for_execution` method is called. This method is passed an <PyObject section="resources" object="dagster.InitResourceContext" /> object, which contains the resource's config and other run information. The resource can use this context to initialize any state it needs for the duration of the run.
+When a resource is initialized during a Dagster run, the `setup_for_execution` method is called. This method is passed an <PyObject section="resources" module="dagster" object="InitResourceContext" /> object, which contains the resource's config and other run information. The resource can use this context to initialize any state it needs for the duration of the run.
 
 Once a resource is no longer needed, the `teardown_after_execution` method is called. This method is passed the same context object as `setup_for_execution`. This method can be useful for cleaning up any state that was initialized in `setup_for_execution`.
 

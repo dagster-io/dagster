@@ -3,7 +3,7 @@ title: Defining resources
 sidebar_position: 100
 ---
 
-Typically, resources are defined by subclassing <PyObject section="resources" object="dagster.ConfigurableResource"/>. Resources typically have a set of [configuration values](/todo), which are used to specify information like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
+Typically, resources are defined by subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/todo), which are used to specify information like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
 
 The configuration system has a few advantages over plain Python parameter passing. Configured values can be:
 
@@ -13,7 +13,7 @@ The configuration system has a few advantages over plain Python parameter passin
 
 ## With asset definitions
 
-The following example demonstrates defining a subclass of <PyObject section="resources" object="dagster.ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject section="definitions" object="dagster.Definitions" /> call.
+The following example demonstrates defining a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject section="definitions" module="dagster" object="Definitions" /> call.
 
 You can define methods on the resource class which depend on config values.
 
@@ -45,7 +45,7 @@ defs = Definitions(
 
 Assets specify resource dependencies by annotating the resource as a parameter to the asset function.
 
-To provide resource values to assets, attach them to the <PyObject section="definitions" object="dagster.Definitions" /> objects. These resources are automatically passed to the function at runtime.
+To provide resource values to assets, attach them to the <PyObject section="definitions" module="dagster" object="Definitions" /> objects. These resources are automatically passed to the function at runtime.
 
 ## With sensors
 
@@ -61,7 +61,7 @@ To specify resource dependencies on a schedule, annotate the resource type as a 
 
 ## With jobs
 
-The following example defines a subclass of <PyObject section="resources" object="dagster.ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject section="definitions" object="dagster.Definitions" /> call.
+The following example defines a subclass of <PyObject section="resources" module="dagster" object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject section="definitions" module="dagster" object="Definitions" /> call.
 
 You can define methods on the resource class which depend on config values.
 
