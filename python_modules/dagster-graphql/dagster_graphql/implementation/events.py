@@ -427,6 +427,9 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             externalUrl=data.external_url,
             externalStdoutUrl=data.external_stdout_url or data.external_url,
             externalStderrUrl=data.external_stderr_url or data.external_url,
+            logManagerMetadata=data.log_manager_metadata,
+            stdoutUriOrPath=data.stdout_uri_or_path,
+            stderrUriOrPath=data.stderr_uri_or_path,
             pid=dagster_event.pid,
             **basic_params,
         )

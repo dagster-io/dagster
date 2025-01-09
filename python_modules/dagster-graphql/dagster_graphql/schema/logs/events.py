@@ -309,6 +309,9 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
     externalUrl = graphene.String()
     externalStdoutUrl = graphene.String()
     externalStderrUrl = graphene.String()
+    logManagerMetadata = graphene.String()  # TODO - replace with union?
+    stderrUriOrPath = graphene.String()
+    stdoutUriOrPath = graphene.String()
     pid = graphene.Int()
     # legacy name for compute log file key... required for back-compat reasons, but has been
     # renamed to fileKey for newer versions of the Dagster UI
