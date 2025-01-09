@@ -35,6 +35,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
+from dagster._core.definitions.metadata.table import TableColumn, TableRecord, TableSchema
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.time_window_partitions import (
@@ -148,7 +149,16 @@ class PipesMessageHandler:
         elif metadata_type == "asset":
             return MetadataValue.asset(AssetKey.from_user_string(value))
         elif metadata_type == "table":
-            return MetadataValue.table(value)
+            value = check.mapping_param(value, "table_value", key_type=str)
+            return MetadataValue.table(
+                records=[TableRecord(record) for record in value["records"]],
+                schema=TableSchema(
+                    columns=[
+                        TableColumn(name=column["name"], type=column["type"])
+                        for column in value["schema"]
+                    ]
+                ),
+            )
         elif metadata_type == "null":
             return MetadataValue.null()
         else:

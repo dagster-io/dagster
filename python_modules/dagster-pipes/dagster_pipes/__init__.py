@@ -165,6 +165,7 @@ PipesMetadataType = Literal[
     "dagster_run",
     "asset",
     "null",
+    "table",
 ]
 
 
