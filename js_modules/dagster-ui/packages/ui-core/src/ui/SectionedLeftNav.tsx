@@ -61,6 +61,8 @@ export const SectionedLeftNav = () => {
     validateExpandedKeys,
   );
 
+  const expandedKeysSet = React.useMemo(() => new Set(expandedKeys), [expandedKeys]);
+
   const onToggle = React.useCallback(
     (repoAddress: RepoAddress) => {
       const key = repoAddressAsURLString(repoAddress);
@@ -142,7 +144,7 @@ export const SectionedLeftNav = () => {
 
       flat.push({type: 'code-location', repoAddress, itemCount});
 
-      if (expandedKeys.includes(key) || sortedRepos.length === 1) {
+      if (expandedKeysSet.has(key) || sortedRepos.length === 1) {
         if (jobItems.length) {
           if (showTypeLabels) {
             flat.push({type: 'item-type', itemType: 'job', isFirst: true});
@@ -198,7 +200,7 @@ export const SectionedLeftNav = () => {
     }
 
     return flat;
-  }, [expandedKeys, sortedRepos]);
+  }, [expandedKeysSet, sortedRepos]);
 
   const rowVirtualizer = useVirtualizer({
     count: flattened.length,
@@ -240,7 +242,7 @@ export const SectionedLeftNav = () => {
           if (type === 'code-location') {
             const repoAddress = row.repoAddress;
             const addressAsString = repoAddressAsURLString(repoAddress);
-            const expanded = sortedRepos.length === 1 || expandedKeys.includes(addressAsString);
+            const expanded = sortedRepos.length === 1 || expandedKeysSet.has(addressAsString);
             return (
               <CodeLocationNameRow
                 key={key}
