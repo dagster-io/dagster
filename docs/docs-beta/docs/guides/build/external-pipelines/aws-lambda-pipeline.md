@@ -181,7 +181,8 @@ Here’s what we did in this example:
 
   This argument is passed to the `run` method of <PyObject section="libraries" module="dagster_aws" object="dagster_aws.pipes.PipesLambdaClient" />, which submits the provided information to the [boto `invoke` API](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/lambda/client/invoke.html) and then invokes the specified function (`function_name`).
 
-- Returned a <PyObject section="assets" object="dagster.MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the <PyObject section="libraries" module="pipes" object="dagster.PipesClientCompletedInvocation" /> object returned by `run` after the execution in AWS Lambda has completed.
+- Returned a <PyObject section="assets" object="dagster.MaterializeResult" /> object representing the result of execution. This is obtained by calling `get_materialize_result` on the `PipesClientCompletedInvocation` object returned by `run` after the execution in AWS Lambda has completed.
+{/* TODO replace `PipesClientCompletedInvocation` with <PyObject section="libraries" module="pipes" object="dagster.PipesClientCompletedInvocation" /> */}
 
 ### Step 2.2: Create Dagster Definitions
 
