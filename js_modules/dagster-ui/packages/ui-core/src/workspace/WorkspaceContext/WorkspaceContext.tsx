@@ -115,7 +115,7 @@ interface FetchLocationDataParams
     React.SetStateAction<Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>>
   >;
   locationStatuses: Record<string, LocationStatusEntryFragment>;
-  fetchingStatusesRef: React.MutableRefObject<Record<string, Promise<any>>>;
+  fetchingStatusesRef: React.MutableRefObject<Record<string, Promise<any> | undefined>>;
 }
 
 const UNLOADED_CACHED_DATA = {};
