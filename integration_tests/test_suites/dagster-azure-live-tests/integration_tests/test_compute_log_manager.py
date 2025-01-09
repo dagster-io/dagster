@@ -1,3 +1,5 @@
+import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -57,3 +59,14 @@ def test_compute_log_manager(
 
     assert stdout.count("Printing without context") == 10
     assert stderr.count("Logging using context") == 10
+
+    assert logs_captured_data.stdout_uri_or_path
+    assert logs_captured_data.stderr_uri_or_path
+    assert logs_captured_data.external_stdout_url.endswith(logs_captured_data.stdout_uri_or_path)
+    assert logs_captured_data.external_stderr_url.endswith(logs_captured_data.stderr_uri_or_path)
+
+    assert logs_captured_data.log_manager_metadata
+    metadata = json.loads(logs_captured_data.log_manager_metadata)
+    assert metadata["type"] == "AzureBlobComputeLogManager"
+    assert metadata["storage_account"] == os.getenv("TEST_AZURE_STORAGE_ACCOUNT_ID")
+    assert metadata["container"] == os.getenv("TEST_AZURE_CONTAINER_ID")
