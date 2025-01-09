@@ -25,8 +25,8 @@ Here’s an overview of the main concepts we'll be using:
 - [Graphs](/todo) - We'll build graphs that define the order our ops should run.
 {/* - [Jobs](/concepts/assets/asset-jobs) - We'll define jobs by binding our graphs to resources. */}
 - [Jobs](/todo) - We'll define jobs by binding our graphs to resources.
-{/* - [Resources](/concepts/resources) - We'll use the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> to swap in different Snowflake connections to our jobs depending on environment. */}
-- [Resources](/todo) - We'll use the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> to swap in different Snowflake connections to our jobs depending on environment.
+{/* - [Resources](/concepts/resources) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource"  /> to swap in different Snowflake connections to our jobs depending on environment. */}
+- [Resources](/todo) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" /> to swap in different Snowflake connections to our jobs depending on environment.
 {/* - [I/O managers](/concepts/io-management/io-managers) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake. */}
 - [I/O managers](/todo) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
 
@@ -232,7 +232,7 @@ def drop_prod_clone():
     drop_database_clone()
 ```
 
-We've defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
+We've defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
 
 We now need to define resources that configure our jobs to the current environment. We can modify the resource mapping by environment as follows:
 
