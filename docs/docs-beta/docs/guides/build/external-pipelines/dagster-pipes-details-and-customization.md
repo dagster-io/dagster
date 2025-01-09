@@ -168,7 +168,7 @@ At present the only official Dagster Pipes integration library is Python’s [`d
 
 ### Session lifecycle (orchestration process)
 
-Pipes sessions are represented in the orchestration process by the <PyObject object="PipesSession" /> class. A session is started with the <PyObject section="pipes" module="dagster" object="open_pipes_session" /> context manager, which yields a `PipesSession`. `open_pipes_session` should be called inside of an asset, where an <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> is available:
+Pipes sessions are represented in the orchestration process by the <PyObject section="pipes" module="dagster" object="PipesSession" /> class. A session is started with the <PyObject section="pipes" module="dagster" object="open_pipes_session" /> context manager, which yields a `PipesSession`. `open_pipes_session` should be called inside of an asset, where an <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> is available:
 
 ```python file=/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/session_lifecycle_orchestration.py
 ### ORCHESTRATION PROCESS
@@ -217,7 +217,7 @@ def some_pipes_asset(context: AssetExecutionContext) -> Iterator[PipesExecutionR
     yield from pipes_session.get_results()
 ```
 
-Above we see that <PyObject object="open_pipes_session" /> takes four parameters:
+Above we see that <PyObject section="pipes" module="dagster" object="open_pipes_session" /> takes four parameters:
 
 - `context`: An execution context (<PyObject section="execution" module="dagster" object="AssetExecutionContext" />) that will be used to derive the context payload.
 - `extras`: A bundle of key-value pairs in the form of a JSON-serializable dictionary. This is slotted into the context payload. Users can pass arbitrary data here that they want to expose to the external process.
@@ -230,7 +230,7 @@ Python context manager invocations have three parts:
 2. A body (user code nested in a `with` block).
 3. A closing routine (`__exit__`, executed at the end of a `with` block).
 
-For <PyObject object="open_pipes_session" />, these three parts perform the following tasks:
+For <PyObject section="pipes" module="dagster" object="open_pipes_session" />, these three parts perform the following tasks:
 
 - **Opening routine**: Writes the context payload and spins up the message reader (which usually involves starting a thread to continually read messages). These steps may involve the creation of resources, such as a temporary file (locally or on some remote system) for the context payload or a temporary directory to which messages will be written.
 - **Body**: User code should handle launching, polling, and termination of the external process here. While the external process is executing, any intermediate results that have been received can be reported to Dagster with `yield from pipes_session.get_results()`.

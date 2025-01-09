@@ -124,7 +124,7 @@ defs = Definitions(
 
 If you prefer to provide the configuration for credentials at launch time, use the `configure_at_launch()` method to defer the construction of the `CredentialsResource` until launch time.
 
-Because `credentials` requires launch time configuration through the launchpad, it must also be passed to the <PyObject object="Definitions" /> object, so that configuration can be provided at launch time. Nested resources only need to be passed to the <PyObject object="Definitions" /> object if they require launch time configuration.
+Because `credentials` requires launch time configuration through the launchpad, it must also be passed to the <PyObject section="definitions" object="Definitions" /> object, so that configuration can be provided at launch time. Nested resources only need to be passed to the <PyObject section="definitions" object="Definitions" /> object if they require launch time configuration.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_dep_job_runtime endbefore=end_new_resource_dep_job_runtime dedent=4
 credentials = CredentialsResource.configure_at_launch()

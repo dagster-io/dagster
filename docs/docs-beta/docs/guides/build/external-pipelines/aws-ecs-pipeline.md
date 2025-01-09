@@ -99,7 +99,7 @@ This will launch the AWS ECS task and wait until it reaches `"STOPPED"` status. 
 
 ## Step 4: Create Dagster definitions
 
-Next, add the `PipesECSClient` resource to your project's <PyObject object="Definitions" /> object:
+Next, add the `PipesECSClient` resource to your project's <PyObject section="definitions" object="Definitions" /> object:
 
 ```python file=/guides/dagster/dagster_pipes/ecs/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions  # noqa
