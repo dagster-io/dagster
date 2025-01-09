@@ -116,7 +116,7 @@ export const useRepositoryOptions = () => {
   return {options, loading};
 };
 
-export const useRepository = (repoAddress: RepoAddress | null) => {
+export const useRepository = (repoAddress: RepoAddress | null | undefined) => {
   const {options} = useRepositoryOptions();
   return findRepositoryAmongOptions(options, repoAddress) || null;
 };
@@ -128,7 +128,7 @@ export const useJob = (repoAddress: RepoAddress | null | undefined, jobName: str
 
 export const findRepositoryAmongOptions = (
   options: DagsterRepoOption[],
-  repoAddress: RepoAddress | null,
+  repoAddress: RepoAddress | null | undefined,
 ) => {
   return repoAddress
     ? options.find(
