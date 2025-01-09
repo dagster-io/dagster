@@ -105,7 +105,7 @@ dt > a.reference.internal {
 }
 
 .preview-tag,
-.flag.preview{
+.flag.preview {
   @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green
 }
 
