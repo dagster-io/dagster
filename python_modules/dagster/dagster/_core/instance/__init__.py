@@ -27,6 +27,7 @@ from typing import (  # noqa: UP035
 )
 
 import yaml
+from beartype import beartype
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
@@ -338,6 +339,7 @@ class DynamicPartitionsStore(Protocol):
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
 
 
+@beartype
 class DagsterInstance(DynamicPartitionsStore):
     """Core abstraction for managing Dagster's access to storage and other resources.
 
@@ -398,16 +400,18 @@ class DagsterInstance(DynamicPartitionsStore):
     def __init__(
         self,
         instance_type: InstanceType,
-        local_artifact_storage: "LocalArtifactStorage",
-        run_storage: "RunStorage",
-        event_storage: "EventLogStorage",
-        run_coordinator: Optional["RunCoordinator"],
-        compute_log_manager: Optional["ComputeLogManager"],
-        run_launcher: Optional["RunLauncher"],
-        scheduler: Optional["Scheduler"] = None,
-        schedule_storage: Optional["ScheduleStorage"] = None,
+        local_artifact_storage: "dagster._core.storage.root.LocalArtifactStorage",
+        run_storage: "dagster._core.storage.runs.RunStorage",
+        event_storage: "dagster._core.storage.event_log.EventLogStorage",
+        run_coordinator: Optional["dagster._core.run_coordinator.RunCoordinator"],
+        compute_log_manager: Optional[
+            "dagster._core.storage.compute_log_manager.ComputeLogManager"
+        ],
+        run_launcher: Optional["dagster._core.launcher.RunLauncher"],
+        scheduler: Optional["dagster._core.scheduler.Scheduler"] = None,
+        schedule_storage: Optional["dagster._core.storage.schedules.ScheduleStorage"] = None,
         settings: Optional[Mapping[str, Any]] = None,
-        secrets_loader: Optional["SecretsLoader"] = None,
+        secrets_loader: Optional["dagster._core.secrets.SecretsLoader"] = None,
         ref: Optional[InstanceRef] = None,
         **_kwargs: Any,  # we accept kwargs for forward-compat of custom instances
     ):
@@ -741,11 +745,11 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
     @property
-    def run_storage(self) -> "RunStorage":
+    def run_storage(self) -> "dagster._core.storage.runs.RunStorage":
         return self._run_storage
 
     @property
-    def event_log_storage(self) -> "EventLogStorage":
+    def event_log_storage(self) -> "dagster._core.storage.event_log.EventLogStorage":
         return self._event_storage
 
     @property
@@ -755,11 +759,11 @@ class DagsterInstance(DynamicPartitionsStore):
     # schedule storage
 
     @property
-    def schedule_storage(self) -> Optional["ScheduleStorage"]:
+    def schedule_storage(self) -> Optional["dagster._core.storage.schedules.ScheduleStorage"]:
         return self._schedule_storage
 
     @property
-    def scheduler(self) -> Optional["Scheduler"]:
+    def scheduler(self) -> Optional["dagster._core.scheduler.Scheduler"]:
         return self._scheduler
 
     @property
@@ -769,7 +773,7 @@ class DagsterInstance(DynamicPartitionsStore):
     # run coordinator
 
     @property
-    def run_coordinator(self) -> "RunCoordinator":
+    def run_coordinator(self):  # -> "dagster._core.run_coordinator.RunCoordinator":
         # Lazily load in case the run coordinator requires dependencies that are not available
         # everywhere that loads the instance
         if not self._run_coordinator:
@@ -785,7 +789,7 @@ class DagsterInstance(DynamicPartitionsStore):
     # run launcher
 
     @property
-    def run_launcher(self) -> "RunLauncher":
+    def run_launcher(self) -> "dagster._core.launcher.RunLauncher":
         # Lazily load in case the launcher requires dependencies that are not available everywhere
         # that loads the instance (e.g. The EcsRunLauncher requires boto3)
         if not self._run_launcher:
@@ -799,7 +803,9 @@ class DagsterInstance(DynamicPartitionsStore):
     # compute logs
 
     @property
-    def compute_log_manager(self) -> "ComputeLogManager":
+    def compute_log_manager(
+        self,
+    ):  # -> "dagster._core.storage.compute_log_manager.ComputeLogManager":
         if not self._compute_log_manager:
             check.invariant(
                 self._ref, "Compute log manager not provided, and no instance ref available"
@@ -1067,7 +1073,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return records[0]
 
     @traced
-    def get_job_snapshot(self, snapshot_id: str) -> "JobSnap":
+    def get_job_snapshot(self, snapshot_id: str) -> "dagster._core.snap.JobSnap":
         return self._run_storage.get_job_snapshot(snapshot_id)
 
     @traced
@@ -1095,7 +1101,9 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.has_job_snapshot(snapshot_id)
 
     @traced
-    def get_execution_plan_snapshot(self, snapshot_id: str) -> "ExecutionPlanSnapshot":
+    def get_execution_plan_snapshot(
+        self, snapshot_id: str
+    ) -> "dagster._core.snap.ExecutionPlanSnapshot":
         return self._run_storage.get_execution_plan_snapshot(snapshot_id)
 
     @traced
@@ -1129,7 +1137,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def create_run_for_job(
         self,
-        job_def: "JobDefinition",
+        job_def: "dagster._core.definitions.job_definition.JobDefinition",
         execution_plan: Optional["ExecutionPlan"] = None,
         run_id: Optional[str] = None,
         run_config: Optional[Mapping[str, object]] = None,
@@ -1140,7 +1148,7 @@ class DagsterInstance(DynamicPartitionsStore):
         parent_run_id: Optional[str] = None,
         op_selection: Optional[Sequence[str]] = None,
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
-        remote_job_origin: Optional["RemoteJobOrigin"] = None,
+        remote_job_origin: Optional["dagster._core.remote_representation.RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
         repository_load_data: Optional["RepositoryLoadData"] = None,
     ) -> DagsterRun:
@@ -1205,7 +1213,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def _construct_run_with_snapshots(
         self,
         job_name: str,
-        run_id: str,
+        run_id: Optional[str],
         run_config: Optional[Mapping[str, object]],
         resolved_op_selection: Optional[AbstractSet[str]],
         step_keys_to_execute: Optional[Sequence[str]],
@@ -1213,13 +1221,13 @@ class DagsterInstance(DynamicPartitionsStore):
         tags: Mapping[str, str],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
-        job_snapshot: Optional["JobSnap"],
-        execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
-        parent_job_snapshot: Optional["JobSnap"],
+        job_snapshot: Optional["dagster._core.snap.JobSnap"],
+        execution_plan_snapshot: Optional["dagster._core.snap.ExecutionPlanSnapshot"],
+        parent_job_snapshot: Optional["dagster._core.snap.JobSnap"],
         asset_selection: Optional[AbstractSet[AssetKey]] = None,
         asset_check_selection: Optional[AbstractSet["AssetCheckKey"]] = None,
         op_selection: Optional[Sequence[str]] = None,
-        remote_job_origin: Optional["RemoteJobOrigin"] = None,
+        remote_job_origin: Optional["dagster._core.remote_representation.RemoteJobOrigin"] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
         # https://github.com/dagster-io/dagster/issues/2403
@@ -1286,8 +1294,8 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def _ensure_persisted_job_snapshot(
         self,
-        job_snapshot: "JobSnap",
-        parent_job_snapshot: "Optional[JobSnap]",
+        job_snapshot: "dagster._core.snap.JobSnap",
+        parent_job_snapshot: "Optional[dagster._core.snap.JobSnap]",
     ) -> str:
         from dagster._core.snap import JobSnap
 
@@ -1316,7 +1324,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def _ensure_persisted_execution_plan_snapshot(
         self,
-        execution_plan_snapshot: "ExecutionPlanSnapshot",
+        execution_plan_snapshot: "dagster._core.snap.ExecutionPlanSnapshot",
         job_snapshot_id: str,
         step_keys_to_execute: Optional[Sequence[str]],
     ) -> str:
@@ -1352,9 +1360,9 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_run: DagsterRun,
         asset_key: AssetKey,
         job_name: str,
-        step: "ExecutionStepSnap",
-        output: "ExecutionStepOutputSnap",
-        asset_graph: Optional["BaseAssetGraph"],
+        step: "dagster._core.snap.ExecutionStepSnap",
+        output: "dagster._core.snap.ExecutionStepOutputSnap",
+        asset_graph: Optional["dagster._core.definitions.base_asset_graph.BaseAssetGraph"],
     ) -> None:
         from dagster._core.definitions.partition import DynamicPartitionsDefinition
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
@@ -1418,8 +1426,8 @@ class DagsterInstance(DynamicPartitionsStore):
     def _log_asset_planned_events(
         self,
         dagster_run: DagsterRun,
-        execution_plan_snapshot: "ExecutionPlanSnapshot",
-        asset_graph: Optional["BaseAssetGraph"],
+        execution_plan_snapshot: "dagster._core.snap.ExecutionPlanSnapshot",
+        asset_graph: Optional["dagster._core.definitions.base_asset_graph.BaseAssetGraph"],
     ) -> None:
         from dagster._core.events import DagsterEvent, DagsterEventType
 
@@ -1467,19 +1475,19 @@ class DagsterInstance(DynamicPartitionsStore):
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
         step_keys_to_execute: Optional[Sequence[str]],
-        execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
-        job_snapshot: Optional["JobSnap"],
-        parent_job_snapshot: Optional["JobSnap"],
+        execution_plan_snapshot: Optional["dagster._core.snap.ExecutionPlanSnapshot"],
+        job_snapshot: Optional["dagster._core.snap.JobSnap"],
+        parent_job_snapshot: Optional["dagster._core.snap.JobSnap"],
         asset_selection: Optional[AbstractSet[AssetKey]],
         asset_check_selection: Optional[AbstractSet["AssetCheckKey"]],
         resolved_op_selection: Optional[AbstractSet[str]],
         op_selection: Optional[Sequence[str]],
-        remote_job_origin: Optional["RemoteJobOrigin"],
+        remote_job_origin: Optional["dagster._core.remote_representation.RemoteJobOrigin"],
         job_code_origin: Optional[JobPythonOrigin],
-        asset_graph: Optional["BaseAssetGraph"],
+        asset_graph: Optional["dagster._core.definitions.base_asset_graph.BaseAssetGraph"],
     ) -> DagsterRun:
         from dagster._core.definitions.asset_check_spec import AssetCheckKey
-        from dagster._core.remote_representation.origin import RemoteJobOrigin
+        from dagster._core.remote_representation import RemoteJobOrigin
         from dagster._core.snap import ExecutionPlanSnapshot, JobSnap
         from dagster._utils.tags import normalize_tags
 
@@ -1730,9 +1738,9 @@ class DagsterInstance(DynamicPartitionsStore):
         tags: Mapping[str, str],
         root_run_id: Optional[str],
         parent_run_id: Optional[str],
-        job_snapshot: Optional["JobSnap"],
-        execution_plan_snapshot: Optional["ExecutionPlanSnapshot"],
-        parent_job_snapshot: Optional["JobSnap"],
+        job_snapshot: Optional["dagster._core.snap.JobSnap"],
+        execution_plan_snapshot: Optional["dagster._core.snap.ExecutionPlanSnapshot"],
+        parent_job_snapshot: Optional["dagster._core.snap.JobSnap"],
         op_selection: Optional[Sequence[str]] = None,
         job_code_origin: Optional[JobPythonOrigin] = None,
     ) -> DagsterRun:
@@ -1791,13 +1799,13 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def add_snapshot(
         self,
-        snapshot: Union["JobSnap", "ExecutionPlanSnapshot"],
+        snapshot: Union["dagster._core.snap.JobSnap", "dagster._core.snap.ExecutionPlanSnapshot"],
         snapshot_id: Optional[str] = None,
     ) -> None:
         return self._run_storage.add_snapshot(snapshot, snapshot_id)
 
     @traced
-    def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
+    def handle_run_event(self, run_id: str, event: "dagster._core.events.DagsterEvent") -> None:
         return self._run_storage.handle_run_event(run_id, event)
 
     @traced
@@ -1887,7 +1895,7 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[int] = None,
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
-    ) -> Sequence["EventLogEntry"]:
+    ) -> Sequence["dagster._core.events.log.EventLogEntry"]:
         return self._event_storage.get_logs_for_run(
             run_id,
             cursor=cursor,
@@ -1900,7 +1908,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         run_id: str,
         of_type: Optional[Union["DagsterEventType", set["DagsterEventType"]]] = None,
-    ) -> Sequence["EventLogEntry"]:
+    ) -> Sequence["dagster._core.events.log.EventLogEntry"]:
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     @traced
@@ -1975,12 +1983,14 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_latest_materialization_events(
         self, asset_keys: Iterable[AssetKey]
-    ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
+    ) -> Mapping[AssetKey, Optional["dagster._core.events.log.EventLogEntry"]]:
         return self._event_storage.get_latest_materialization_events(asset_keys)
 
     @public
     @traced
-    def get_latest_materialization_event(self, asset_key: AssetKey) -> Optional["EventLogEntry"]:
+    def get_latest_materialization_event(
+        self, asset_key: AssetKey
+    ) -> Optional["dagster._core.events.log.EventLogEntry"]:
         """Fetch the latest materialization event for the given asset key.
 
         Args:
@@ -2004,7 +2014,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @deprecated(breaking_version="2.0")
     def get_event_records(
         self,
-        event_records_filter: "EventRecordsFilter",
+        event_records_filter: "dagster._core.storage.event_log.base.EventRecordsFilter",
         limit: Optional[int] = None,
         ascending: bool = False,
     ) -> Sequence["EventLogRecord"]:
@@ -2053,7 +2063,7 @@ class DagsterInstance(DynamicPartitionsStore):
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
-    ) -> "EventRecordsResult":
+    ) -> "dagster._core.storage.event_log.base.EventRecordsResult":
         """Return a list of materialization records stored in the event log storage.
 
         Args:
@@ -2077,7 +2087,7 @@ class DagsterInstance(DynamicPartitionsStore):
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
-    ) -> "EventRecordsResult":
+    ) -> "dagster._core.storage.event_log.base.EventRecordsResult":
         """Return a list of planned materialization records stored in the event log storage.
 
         Args:
@@ -2122,7 +2132,7 @@ class DagsterInstance(DynamicPartitionsStore):
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
-    ) -> "EventRecordsResult":
+    ) -> "dagster._core.storage.event_log.base.EventRecordsResult":
         """Return a list of observation records stored in the event log storage.
 
         Args:
@@ -2146,7 +2156,7 @@ class DagsterInstance(DynamicPartitionsStore):
         limit: int,
         cursor: Optional[str] = None,
         ascending: bool = False,
-    ) -> "EventRecordsResult":
+    ) -> "dagster._core.storage.event_log.base.EventRecordsResult":
         """Return a list of run_status_event records stored in the event log storage.
 
         Args:
@@ -2170,8 +2180,10 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         asset_key: AssetKey,
         partition_keys: Sequence[str],
-        partitions_def: "PartitionsDefinition",
-    ) -> Optional[Mapping[str, "AssetPartitionStatus"]]:
+        partitions_def: "dagster._core.definitions.partition.PartitionsDefinition",
+    ) -> Optional[
+        Mapping[str, "dagster._core.storage.partition_status_cache.AssetPartitionStatus"]
+    ]:
         """Get the current status of provided partition_keys for the provided asset.
 
         Args:
@@ -2411,12 +2423,12 @@ class DagsterInstance(DynamicPartitionsStore):
         handlers.extend(self._get_yaml_python_handlers())
         return handlers
 
-    def store_event(self, event: "EventLogEntry") -> None:
+    def store_event(self, event: "dagster._core.events.log.EventLogEntry") -> None:
         self._event_storage.store_event(event)
 
     def handle_new_event(
         self,
-        event: "EventLogEntry",
+        event: "dagster._core.events.log.EventLogEntry",
         *,
         batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
     ) -> None:
@@ -2505,7 +2517,7 @@ class DagsterInstance(DynamicPartitionsStore):
         step_key: Optional[str] = None,
         job_name: Optional[str] = None,
         run_id: Optional[str] = None,
-    ) -> "DagsterEvent":
+    ) -> "dagster._core.events.DagsterEvent":
         """Report a EngineEvent that occurred outside of a job execution context."""
         from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 
@@ -2549,7 +2561,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def report_dagster_event(
         self,
-        dagster_event: "DagsterEvent",
+        dagster_event: "dagster._core.events.DagsterEvent",
         run_id: str,
         log_level: Union[str, int] = logging.INFO,
     ) -> None:
@@ -2588,7 +2600,7 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         dagster_run: DagsterRun,
         message: Optional[str] = None,
-    ) -> "DagsterEvent":
+    ) -> "dagster._core.events.DagsterEvent":
         from dagster._core.events import DagsterEvent, DagsterEventType
 
         check.inst_param(dagster_run, "dagster_run", DagsterRun)
@@ -2612,7 +2624,7 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_run: DagsterRun,
         message: Optional[str] = None,
         job_failure_data: Optional["JobFailureData"] = None,
-    ) -> "DagsterEvent":
+    ) -> "dagster._core.events.DagsterEvent":
         from dagster._core.events import DagsterEvent, DagsterEventType
 
         check.inst_param(dagster_run, "dagster_run", DagsterRun)
@@ -2645,7 +2657,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Runs coordinator
 
-    def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
+    def submit_run(
+        self, run_id: str, workspace: "dagster._core.workspace.context.BaseWorkspaceRequestContext"
+    ) -> DagsterRun:
         """Submit a pipeline run to the coordinator.
 
         This method delegates to the ``RunCoordinator``, configured on the instance, and will
@@ -2695,7 +2709,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
     # Run launcher
 
-    def launch_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
+    def launch_run(
+        self, run_id: str, workspace: "dagster._core.workspace.context.BaseWorkspaceRequestContext"
+    ) -> DagsterRun:
         """Launch a pipeline run.
 
         This method is typically called using `instance.submit_run` rather than being invoked
@@ -2742,7 +2758,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return run
 
     def resume_run(
-        self, run_id: str, workspace: "BaseWorkspaceRequestContext", attempt_number: int
+        self,
+        run_id: str,
+        workspace: "dagster._core.workspace.context.BaseWorkspaceRequestContext",
+        attempt_number: int,
     ) -> DagsterRun:
         """Resume a pipeline run.
 
@@ -2819,7 +2838,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def reset_schedule(self, remote_schedule: "RemoteSchedule") -> "InstigatorState":
         return self._scheduler.reset_schedule(self, remote_schedule)  # type: ignore
 
-    def scheduler_debug_info(self) -> "SchedulerDebugInfo":
+    def scheduler_debug_info(self):  # -> "dagster._core.scheduler.SchedulerDebugInfo":
         from dagster._core.definitions.run_request import InstigatorType
         from dagster._core.scheduler import SchedulerDebugInfo
 
@@ -3259,7 +3278,9 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     def report_runless_asset_event(
         self,
-        asset_event: Union["AssetMaterialization", "AssetObservation", "AssetCheckEvaluation"],
+        asset_event: Union[
+            "dagster._core.events.AssetMaterialization", "AssetObservation", "AssetCheckEvaluation"
+        ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
         from dagster._core.events import (

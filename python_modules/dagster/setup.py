@@ -82,6 +82,7 @@ setup(
         # core (not explicitly expressed atm)
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
+        "beartype",
         "croniter>=0.3.34,!=4.0.0,<6",
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
