@@ -281,6 +281,7 @@ There are the available badges:
 
 - `{% experimental /%}` {% experimental /%}
 - `{% preview /%}` {% preview /%}
+- `{% beta /%}` {% beta /%}
 - `{% deprecated /%}` {% deprecated /%}
 - `{% superseded /%}` {% superseded /%}
 - `{% legacy /%}` {% legacy /%}

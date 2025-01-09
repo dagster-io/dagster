@@ -3,7 +3,13 @@ from typing import Union
 
 import dagster._check as check
 import docutils.nodes as nodes
-from dagster._annotations import DeprecatedInfo, ExperimentalInfo, PreviewInfo, SupersededInfo
+from dagster._annotations import (
+    BetaInfo,
+    DeprecatedInfo,
+    ExperimentalInfo,
+    PreviewInfo,
+    SupersededInfo,
+)
 
 from sphinx.util.docutils import SphinxDirective
 
@@ -16,7 +22,7 @@ from sphinx.util.docutils import SphinxDirective
 
 def inject_object_flag(
     obj: object,
-    info: Union[SupersededInfo, DeprecatedInfo, ExperimentalInfo, PreviewInfo],
+    info: Union[SupersededInfo, DeprecatedInfo, ExperimentalInfo, PreviewInfo, BetaInfo],
     docstring: list[str],
 ) -> None:
     if isinstance(info, DeprecatedInfo):
@@ -39,6 +45,13 @@ def inject_object_flag(
         message = (
             f"This API is currently in preview, and may have breaking changes in patch version releases. "
             f"This API is not considered ready for production use.\n{additional_text}"
+        )
+    elif isinstance(info, BetaInfo):
+        additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
+        flag_type = "beta"
+        message = (
+            f"This API is currently in beta, and may have breaking changes in minor version releases, "
+            f"with behavior changes in patch releases.\n{additional_text}"
         )
     else:
         check.failed(f"Unexpected info type {type(info)}")
