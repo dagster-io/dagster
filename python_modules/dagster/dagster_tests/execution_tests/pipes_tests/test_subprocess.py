@@ -36,6 +36,7 @@ from dagster._core.definitions.metadata.metadata_value import (
     TableColumnLineageMetadataValue,
     TableMetadataValue,
     TableSchemaMetadataValue,
+    TimestampMetadataValue,
 )
 from dagster._core.definitions.metadata.table import (
     TableColumn,
@@ -304,6 +305,7 @@ def test_pipes_typed_metadata():
                         },
                         "type": "table_column_lineage",
                     },
+                    "timestamp_meta": {"raw_value": 111, "type": "timestamp"},
                 }
             )
 
@@ -380,6 +382,8 @@ def test_pipes_typed_metadata():
         assert metadata["table_column_lineage_meta"].value == TableColumnLineage(
             deps_by_column={"a": [TableColumnDep(asset_key="b", column_name="c")]}
         )
+        assert isinstance(metadata["timestamp_meta"], TimestampMetadataValue)
+        assert metadata["timestamp_meta"].value == 111
 
 
 def test_pipes_asset_failed():
