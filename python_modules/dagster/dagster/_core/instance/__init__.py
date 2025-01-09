@@ -1089,7 +1089,9 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._run_storage.has_snapshot(snapshot_id)
 
     @traced
-    def get_historical_job(self, snapshot_id: str) -> "HistoricalJob":
+    def get_historical_job(
+        self, snapshot_id: str
+    ) -> "dagster._core.remote_representation.HistoricalJob":
         from dagster._core.remote_representation import HistoricalJob
 
         snapshot = self._run_storage.get_job_snapshot(snapshot_id)
