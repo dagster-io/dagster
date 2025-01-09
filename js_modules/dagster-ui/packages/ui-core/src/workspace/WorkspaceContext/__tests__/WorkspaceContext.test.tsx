@@ -511,8 +511,8 @@ describe('WorkspaceContext', () => {
     expect(result.current.data).toEqual({});
   });
 
-  it('Doesnt overfetch the same code location version on cascading location query responses', async () => {
-    const {location1, location2, location3, caches} = getLocationMocks(-1); // Initialize with outdated cache
+  it("Doesn't overfetch the same code location version on cascading location query responses", async () => {
+    const {location1, location2, location3, caches} = getLocationMocks(-1);
 
     caches.codeLocationStatusQuery.has.mockResolvedValue(false);
     caches.location1.has.mockResolvedValue(false);
@@ -523,10 +523,8 @@ describe('WorkspaceContext', () => {
     });
     const mockCbs = mocks.map(getMockResultFn);
 
-    // Include code location status mock a second time since we call runOnlyPendingTimersAsync twice
     const {result} = renderWithMocks([...mocks, mocks[0]!]);
 
-    // Initial state
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
     expect(result.current.loading).toEqual(true);

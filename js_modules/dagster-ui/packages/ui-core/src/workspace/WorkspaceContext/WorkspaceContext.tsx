@@ -116,6 +116,7 @@ interface FetchLocationDataParams
   >;
   locationStatuses: Record<string, LocationStatusEntryFragment>;
   fetchingStatusesRef: React.MutableRefObject<Record<string, Promise<any> | undefined>>;
+  previousLocationVersionsRef: React.MutableRefObject<Record<string, string>>;
 }
 
 const UNLOADED_CACHED_DATA = {};
@@ -204,6 +205,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         setLocationEntryData,
         locationStatuses,
         fetchingStatusesRef,
+        previousLocationVersionsRef,
       };
       return await fetchLocationData(params);
     });
@@ -297,10 +299,9 @@ async function refreshLocationsIfNeeded(params: RefreshLocationsIfNeededParams):
         getData,
         setLocationEntryData,
         locationStatuses,
+        previousLocationVersionsRef,
         fetchingStatusesRef,
       });
-      previousLocationVersionsRef.current[location.name] =
-        locationStatuses[location.name]?.versionKey ?? '';
     }),
   );
 }
@@ -357,6 +358,7 @@ async function fetchLocationData(
     setLocationEntryData,
     locationStatuses,
     fetchingStatusesRef,
+    previousLocationVersionsRef,
   } = params;
 
   const localKey = name + '@' + (locationStatuses[name]?.versionKey ?? '');
@@ -376,6 +378,9 @@ async function fetchLocationData(
 
       const entry = data?.workspaceLocationEntryOrError;
       if (entry) {
+        if (entry.__typename === 'WorkspaceLocationEntry') {
+          previousLocationVersionsRef.current[name] = entry.versionKey;
+        }
         setLocationEntryData((prevData) => ({
           ...prevData,
           [name]: entry,
