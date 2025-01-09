@@ -17,7 +17,7 @@ This documentation assumes familiarity with [Dagster assets](/guides/build/asset
 
 To set up invoking code outside of Dagster, you first need to set up an asset.  We can invoke the external code within the asset function by using a Dagster Pipes client resource.
 
-It's not a requirement that this external code know anything about Dagster.  It can even be a process running a different language on a remote machine - the only requirement is that it can be triggered from Python.
+This external code is not required to know anything about Dagster.  It can even be a process running a different language on a remote machine - the only requirement is that it can be triggered from Python.
 
 In the following example, our external code is in a Python script that we invoke within a Dagster asset.
 
@@ -28,7 +28,7 @@ Materializing this asset in Dagster from the UI or from a sensor/schedule will k
 
 ## Sending logs and metadata back to Dagster from external code
 
-Dagster Pipes also establishes a protocol for external code to optionally send back log and metadata back to Dagster.  A Python client for this protocol is available as part of the `dagster_pipes` package.  To send back log and metadata back to Dagster, we can create a `PipesContext` object within our external code:
+Dagster Pipes also establishes a protocol for external code to optionally send back log and metadata back to Dagster.  A Python client for this protocol is available as part of the <PyObject section="libraries" module="dagster_pipes" /> package.  To send back log and metadata back to Dagster, we can create a `PipesContext` object within our external code:
 
 <CodeExample filePath="guides/external-systems/pipes/external_code_data_passing.py" language="python" title="/usr/bin/external_code.py" />
 

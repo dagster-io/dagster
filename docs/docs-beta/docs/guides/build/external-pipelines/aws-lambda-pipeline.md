@@ -6,7 +6,7 @@ sidebar_position: 500
 
 :::note
 
-**Heads up!** This guide focuses on using an out-of-the-box Amazon Web Services (AWS) Lambda resource. For further customization, use the [`open_pipes_session`](concepts/dagster-pipes/dagster-pipes-details-and-customization) instead.
+This guide focuses on using an out-of-the-box Amazon Web Services (AWS) Lambda resource. For further customization, use the [`open_pipes_session`](/guides/build/external-pipelines/dagster-pipes-details-and-customization) instead.
 
 :::
 
@@ -80,7 +80,7 @@ For simplicity, we're going to copy the contents of the single Dagster Pipes fil
 
 3. Copy the contents of `__init__.py` into the new file you created in AWS. **Note**: We recommend adding the source link and the date you copied the contents to the top of the file as comments:
 
-    ![The copied contents of the Dagster Pipes file into a file in the AWS UI](/images/guides/build/external-pipelines/aws-labmda/aws-lambda-add-dagster-pipes.png)
+    ![The copied contents of the Dagster Pipes file into a file in the AWS UI](/images/guides/build/external-pipelines/aws-lambda/aws-lambda-add-dagster-pipes.png)
 
 4. Save the file as `dagster_pipes.py`.
 
@@ -185,7 +185,7 @@ Here’s what we did in this example:
 
 ### Step 2.2: Create Dagster Definitions
 
-Next, you’ll add the asset and AWS Lambda resource to your project’s code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/deploy/code-locations).
+Next, you’ll add the asset and AWS Lambda resource to your project’s code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/deploy/code-locations).
 
 Copy and paste the following to the bottom of `dagster_lambda_pipes.py`:
 
@@ -214,4 +214,4 @@ In this step, you’ll invoke the AWS Lambda function you defined in [Step 1](#s
 
 3. Click **Materialize** near the top right corner of the page, then click **View** on the **Launched Run** popup. Wait for the run to complete, and the event log should look like this:
 
-   ![Event log for AWS Lambda run](/images/guides/dagster-pipes/aws-lambda/aws-lambda-dagster-ui.png)
+   ![Event log for AWS Lambda run](/images/guides/build/external-pipelines/aws-lambda/aws-lambda-dagster-ui.png)

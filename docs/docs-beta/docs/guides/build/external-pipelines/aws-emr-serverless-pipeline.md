@@ -20,7 +20,7 @@ The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library pro
         pip install dagster dagster-webserver dagster-aws
         ```
 
-        Refer to the [Dagster installation guide](/getting-started/install) for more info.
+        Refer to the [Dagster installation guide](/getting-started/installation) for more info.
 
     - **Configure AWS authentication credentials.** If you don't have this set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 

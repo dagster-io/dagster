@@ -44,8 +44,6 @@ RUN python -m pip install dagster-pipes
 COPY . .
 ```
 
----
-
 ## Step 2: Add dagster-pipes to the ECS task script
 
 Call `open_dagster_pipes` in the ECS task script to create a context that can be used to send messages to Dagster:
@@ -70,8 +68,6 @@ def main():
 if __name__ == "__main__":
     main()
 ```
-
----
 
 ## Step 3: Create an asset using the PipesECSClient to launch the task
 
@@ -100,8 +96,6 @@ def ecs_pipes_asset(context: AssetExecutionContext, pipes_ecs_client: PipesECSCl
 ```
 
 This will launch the AWS ECS task and wait until it reaches `"STOPPED"` status. If any of the tasks's containers fail, the Dagster process will raise an exception. If the Dagster process is interrupted while the task is still running, the task will be terminated.
-
----
 
 ## Step 4: Create Dagster definitions
 
