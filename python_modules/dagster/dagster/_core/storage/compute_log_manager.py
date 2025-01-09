@@ -10,6 +10,8 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.captured_log_api import LogLineCursor
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._record import record
+from dagster._serdes import whitelist_for_serdes
 
 MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
 
@@ -17,6 +19,13 @@ MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
 class ComputeIOType(Enum):
     STDOUT = "stdout"
     STDERR = "stderr"
+
+
+@whitelist_for_serdes
+@record
+class LogRetrievalShellCommand:
+    stdout: Optional[str]
+    stderr: Optional[str]
 
 
 class CapturedLogContext(
@@ -27,6 +36,7 @@ class CapturedLogContext(
             ("external_url", Optional[str]),
             ("external_stdout_url", Optional[str]),
             ("external_stderr_url", Optional[str]),
+            ("shell_cmd", Optional[LogRetrievalShellCommand]),
         ],
     )
 ):
@@ -41,6 +51,7 @@ class CapturedLogContext(
         external_stdout_url: Optional[str] = None,
         external_stderr_url: Optional[str] = None,
         external_url: Optional[str] = None,
+        shell_cmd: Optional[LogRetrievalShellCommand] = None,
     ):
         if external_url and (external_stdout_url or external_stderr_url):
             check.failed(
@@ -54,6 +65,7 @@ class CapturedLogContext(
             external_stdout_url=external_stdout_url,
             external_stderr_url=external_stderr_url,
             external_url=external_url,
+            shell_cmd=shell_cmd,
         )
 
 
@@ -93,8 +105,10 @@ class CapturedLogMetadata(
         ],
     )
 ):
-    """Object representing metadata info for the captured log data, containing a display string for
-    the location of the log data and a URL for direct download of the captured log data.
+    """Object representing metadata info for the captured log data.
+    It can contain:
+     - a display string for the location of the log data,
+     - a URL for direct download of the captured log data.
     """
 
     def __new__(
