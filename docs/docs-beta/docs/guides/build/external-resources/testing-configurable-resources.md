@@ -3,7 +3,7 @@ title: Testing configurable resources
 sidebar_position: 700
 ---
 
-You can test the initialization of a <PyObject object="ConfigurableResource"/> by constructing it manually. In most cases, the resource can be constructed directly:
+You can test the initialization of a <PyObject section="resources" object="dagster.ConfigurableResource"/> by constructing it manually. In most cases, the resource can be constructed directly:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing endbefore=end_new_resource_testing dedent=4
 from dagster import ConfigurableResource
@@ -39,7 +39,7 @@ def test_my_resource_with_nesting():
 
 ## Testing with resource context
 
-In the case that a resource uses the resource initialization context, you can use the <PyObject object="build_init_resource_context"/> utility alongside the `with_init_resource_context` helper on the resource class:
+In the case that a resource uses the resource initialization context, you can use the <PyObject section="resources" object="dagster.build_init_resource_context"/> utility alongside the `with_init_resource_context` helper on the resource class:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_testing_with_context endbefore=end_new_resource_testing_with_context dedent=4
 from dagster import (

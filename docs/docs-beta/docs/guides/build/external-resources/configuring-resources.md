@@ -9,7 +9,7 @@ You can configure resources with environment variables or at launch time. Additi
 
 Resources can be configured using environment variables, which is useful for secrets or other environment-specific configuration. If you're using [Dagster+](/dagster-plus/), environment variables can be [configured directly in the UI](/dagster-plus/deployment/management/environment-variables).
 
-To use environment variables, pass an <PyObject object="EnvVar" /> when constructing the resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated when a run is launched.
+To use environment variables, pass an <PyObject section="resources" object="dagster.EnvVar" /> when constructing the resource. `EnvVar` inherits from `str` and can be used to populate any string config field on a resource. The value of the environment variable will be evaluated when a run is launched.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_env_vars endbefore=end_new_resources_env_vars dedent=4
 from dagster import EnvVar, Definitions, ConfigurableResource
@@ -37,7 +37,7 @@ For more information on using environment variables with Dagster, refer to the [
 
 ## Configuring resources at launch time
 
-In some cases, you may want to specify configuration for a resource at launch time, in the Launchpad or in a <PyObject object="RunRequest" /> for a [schedule](/guides/automate/schedules/) or [sensor](/guides/automate/sensors/). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
+In some cases, you may want to specify configuration for a resource at launch time, in the Launchpad or in a <PyObject section="schedules-sensors" object="dagster.RunRequest" /> for a [schedule](/guides/automate/schedules/) or [sensor](/guides/automate/sensors/). For example, you may want a sensor-triggered run to specify a different target table in a database resource for each run.
 
 You can use the `configure_at_launch()` method to defer the construction of a configurable resource until launch time:
 
@@ -61,7 +61,7 @@ defs = Definitions(
 
 ### Providing resource launch time configuration in Python code
 
-Then, configuration for the resource can be provided at launch time in the Launchpad or in Python code using the `config` parameter of the <PyObject object="RunRequest" />:
+Then, configuration for the resource can be provided at launch time in the Launchpad or in Python code using the `config` parameter of the <PyObject section="schedules-sensors" object="dagster.RunRequest" />:
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_runtime_launch endbefore=end_new_resource_runtime_launch dedent=4
 from dagster import sensor, define_asset_job, RunRequest, RunConfig
@@ -124,7 +124,7 @@ defs = Definitions(
 
 If you prefer to provide the configuration for credentials at launch time, use the `configure_at_launch()` method to defer the construction of the `CredentialsResource` until launch time.
 
-Because `credentials` requires launch time configuration through the launchpad, it must also be passed to the <PyObject section="definitions" object="Definitions" /> object, so that configuration can be provided at launch time. Nested resources only need to be passed to the <PyObject section="definitions" object="Definitions" /> object if they require launch time configuration.
+Because `credentials` requires launch time configuration through the launchpad, it must also be passed to the <PyObject section="definitions" object="dagster.Definitions" /> object, so that configuration can be provided at launch time. Nested resources only need to be passed to the <PyObject section="definitions" object="dagster.Definitions" /> object if they require launch time configuration.
 
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_dep_job_runtime endbefore=end_new_resource_dep_job_runtime dedent=4
 credentials = CredentialsResource.configure_at_launch()
