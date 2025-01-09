@@ -31,8 +31,6 @@ Clients
 
 .. autoclass:: PipesSubprocessClient
 
-.. autoclass:: PipesClientCompletedInvocation
-
 ----
 
 Advanced

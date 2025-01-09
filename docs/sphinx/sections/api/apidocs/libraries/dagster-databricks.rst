@@ -52,8 +52,6 @@ Pipes
 
 .. autoclass:: PipesDbfsMessageReader
 
-.. autoclass:: PipesDbfsLogReader
-
 Other
 =====
 
