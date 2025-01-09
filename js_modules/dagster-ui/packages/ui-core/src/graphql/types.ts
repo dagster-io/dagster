@@ -2431,10 +2431,13 @@ export type LogsCapturedEvent = MessageEvent & {
   fileKey: Scalars['String']['output'];
   level: LogLevel;
   logKey: Scalars['String']['output'];
+  logManagerMetadata: Maybe<Scalars['String']['output']>;
   message: Scalars['String']['output'];
   pid: Maybe<Scalars['Int']['output']>;
   runId: Scalars['String']['output'];
   solidHandleID: Maybe<Scalars['String']['output']>;
+  stderrUriOrPath: Maybe<Scalars['String']['output']>;
+  stdoutUriOrPath: Maybe<Scalars['String']['output']>;
   stepKey: Maybe<Scalars['String']['output']>;
   stepKeys: Maybe<Array<Scalars['String']['output']>>;
   timestamp: Scalars['String']['output'];
@@ -9838,6 +9841,10 @@ export const buildLogsCapturedEvent = (
     fileKey: overrides && overrides.hasOwnProperty('fileKey') ? overrides.fileKey! : 'et',
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     logKey: overrides && overrides.hasOwnProperty('logKey') ? overrides.logKey! : 'fuga',
+    logManagerMetadata:
+      overrides && overrides.hasOwnProperty('logManagerMetadata')
+        ? overrides.logManagerMetadata!
+        : 'distinctio',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ex',
     pid: overrides && overrides.hasOwnProperty('pid') ? overrides.pid! : 7623,
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'modi',
@@ -9845,6 +9852,14 @@ export const buildLogsCapturedEvent = (
       overrides && overrides.hasOwnProperty('solidHandleID')
         ? overrides.solidHandleID!
         : 'assumenda',
+    stderrUriOrPath:
+      overrides && overrides.hasOwnProperty('stderrUriOrPath')
+        ? overrides.stderrUriOrPath!
+        : 'amet',
+    stdoutUriOrPath:
+      overrides && overrides.hasOwnProperty('stdoutUriOrPath')
+        ? overrides.stdoutUriOrPath!
+        : 'recusandae',
     stepKey: overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'quia',
     stepKeys: overrides && overrides.hasOwnProperty('stepKeys') ? overrides.stepKeys! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'et',

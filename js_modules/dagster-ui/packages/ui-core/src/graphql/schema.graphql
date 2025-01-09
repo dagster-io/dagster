@@ -1240,6 +1240,9 @@ type LogsCapturedEvent implements MessageEvent {
   externalUrl: String
   externalStdoutUrl: String
   externalStderrUrl: String
+  logManagerMetadata: String
+  stderrUriOrPath: String
+  stdoutUriOrPath: String
   pid: Int
   logKey: String!
 }

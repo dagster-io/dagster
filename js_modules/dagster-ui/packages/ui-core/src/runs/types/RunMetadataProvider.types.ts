@@ -207,6 +207,9 @@ export type RunMetadataProviderMessageFragment_LogsCapturedEvent = {
   pid: number | null;
   externalStdoutUrl: string | null;
   externalStderrUrl: string | null;
+  logManagerMetadata: string | null;
+  stdoutUriOrPath: string | null;
+  stderrUriOrPath: string | null;
 };
 
 export type RunMetadataProviderMessageFragment_MaterializationEvent = {
