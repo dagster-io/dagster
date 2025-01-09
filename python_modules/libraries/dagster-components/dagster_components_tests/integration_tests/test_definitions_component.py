@@ -19,4 +19,4 @@ def test_definitions_component_validation_error() -> None:
     with pytest.raises(ValidationError) as e:
         load_test_component_defs("definitions/validation_error_file")
 
-        assert "component.yaml:4" in str(e)
+    assert "component.yaml:4" in str(e.value)
