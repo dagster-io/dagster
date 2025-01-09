@@ -6,6 +6,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.output import RUN_ID_PLACEHOLDER
+from dagster._core.instance import DagsterInstance
 
 
 class InitLoggerContext:
@@ -32,11 +33,13 @@ class InitLoggerContext:
         logger_def: Optional[LoggerDefinition] = None,
         job_def: Optional[JobDefinition] = None,
         run_id: Optional[str] = None,
+        instance: Optional[DagsterInstance] = None,
     ):
         self._logger_config = logger_config
         self._job_def = check.opt_inst_param(job_def, "job_def", JobDefinition)
         self._logger_def = check.opt_inst_param(logger_def, "logger_def", LoggerDefinition)
         self._run_id = check.opt_str_param(run_id, "run_id")
+        self._instance = check.opt_inst_param(instance, "instance", DagsterInstance)
 
     @public
     @property
@@ -57,11 +60,23 @@ class InitLoggerContext:
         """The logger definition for the logger being constructed."""
         return self._logger_def
 
+    @property
+    def instance(self) -> Optional[DagsterInstance]:
+        return self._instance
+
     @public
     @property
     def run_id(self) -> Optional[str]:
         """The ID for this run of the job."""
         return self._run_id
+
+    @property
+    def default_log_level(self) -> str:
+        return (
+            self.instance.python_log_level
+            if self.instance and self.instance.python_log_level
+            else "DEBUG"
+        )
 
 
 class UnboundInitLoggerContext(InitLoggerContext):
@@ -73,9 +88,18 @@ class UnboundInitLoggerContext(InitLoggerContext):
     and it is subsumed into an `InitLoggerContext`, which contains the logger_def validated against.
     """
 
-    def __init__(self, logger_config: Any, job_def: Optional[JobDefinition]):
+    def __init__(
+        self,
+        logger_config: Any,
+        job_def: Optional[JobDefinition],
+        instance: Optional[DagsterInstance] = None,
+    ):
         super(UnboundInitLoggerContext, self).__init__(
-            logger_config, logger_def=None, job_def=job_def, run_id=None
+            logger_config,
+            logger_def=None,
+            job_def=job_def,
+            run_id=None,
+            instance=instance,
         )
 
     @property
