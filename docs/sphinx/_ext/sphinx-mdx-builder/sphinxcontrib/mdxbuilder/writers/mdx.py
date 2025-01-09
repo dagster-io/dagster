@@ -972,6 +972,12 @@ class MdxTranslator(SphinxTranslator):
         level = "info"
         if flag_type == "experimental":
             level = "warning"
+        if flag_type == "preview":
+            level = "warning"
+        if flag_type == "beta":
+            level = "warning"
+        if flag_type == "superseded":
+            level = "warning"
         if flag_type == "deprecated":
             level = "danger"
         return level
