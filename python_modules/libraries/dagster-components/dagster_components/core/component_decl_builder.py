@@ -3,7 +3,9 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 from dagster._record import record
-from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
+from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
+from dagster._utils.source_position import SourcePositionTree
+from dagster._utils.yaml_utils import parse_yaml_with_source_positions
 from pydantic import BaseModel
 
 from dagster_components.core.component import ComponentDeclNode
@@ -12,6 +14,21 @@ from dagster_components.core.component import ComponentDeclNode
 class ComponentFileModel(BaseModel):
     type: str
     params: Optional[Mapping[str, Any]] = None
+    _source_position_tree: SourcePositionTree
+
+    @property
+    def source_position_tree(self) -> SourcePositionTree:
+        return self._source_position_tree
+
+    @staticmethod
+    def from_file(contents: str, filepath: str) -> "ComponentFileModel":
+        parsed = parse_yaml_with_source_positions(contents, filepath)
+        obj = _parse_and_populate_model_with_annotated_errors(
+            cls=ComponentFileModel, obj_parse_root=parsed, obj_key_path_prefix=[]
+        )
+
+        obj._source_position_tree = parsed.source_position_tree  # noqa: SLF001
+        return obj
 
 
 @record
@@ -37,9 +54,10 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
     component_path = path / "component.yaml"
 
     if component_path.exists():
-        component_file_model = parse_yaml_file_to_pydantic(
-            ComponentFileModel, component_path.read_text(), str(path)
+        component_file_model = ComponentFileModel.from_file(
+            component_path.read_text(), str(component_path)
         )
+
         return YamlComponentDecl(path=path, component_file_model=component_file_model)
 
     subs = []
