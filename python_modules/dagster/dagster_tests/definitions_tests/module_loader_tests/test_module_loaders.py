@@ -3,7 +3,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from types import ModuleType
 from typing import Any, cast
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import dagster as dg
 import pytest
@@ -222,21 +222,20 @@ def test_load_from_definitions_from_module(
 
 
 @pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
+@patch("dagster._core.definitions.module_loaders.load_defs_from_module.inspect.getmodule")
 def test_load_from_definitions_from_current_module(
-    objects: Mapping[str, Any], error_expected: bool
+    mock_getmodule: MagicMock, objects: Mapping[str, Any], error_expected: bool
 ) -> None:
     module_fake = build_module_fake("fake", objects)
-    with patch(
-        "dagster._core.definitions.module_loaders.load_defs_from_module.inspect.getmodule"
-    ) as mock_getmodule:
-        mock_getmodule.return_value = module_fake
-        with optional_pytest_raise(
-            error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
-        ):
-            defs = load_definitions_from_current_module()
-            obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
-            expected_obj_ids = {id(obj) for obj in objects.values()}
-            assert len(obj_ids) == len(expected_obj_ids)
+    mock_getmodule.return_value = module_fake
+
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
+    ):
+        defs = load_definitions_from_current_module()
+        obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
+        expected_obj_ids = {id(obj) for obj in objects.values()}
+        assert len(obj_ids) == len(expected_obj_ids)
 
 
 def test_load_with_resources() -> None:
