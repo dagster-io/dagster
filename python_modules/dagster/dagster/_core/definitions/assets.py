@@ -119,7 +119,6 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     _specs_by_key: Mapping[AssetKey, AssetSpec]
     _computation: Optional[AssetGraphComputation]
 
-    @experimental_param(param="specs")
     @experimental_param(param="execution_type")
     def __init__(
         self,

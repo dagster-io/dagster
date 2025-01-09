@@ -134,7 +134,6 @@ def _validate_hidden_non_argument_dep_param(
 @experimental_param(param="resource_defs")
 @experimental_param(param="io_manager_def")
 @experimental_param(param="backfill_policy")
-@experimental_param(param="owners")
 @hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
@@ -736,7 +735,6 @@ def graph_asset(
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
-@experimental_param(param="owners")
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
