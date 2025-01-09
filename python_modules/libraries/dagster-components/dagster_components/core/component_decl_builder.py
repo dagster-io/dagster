@@ -14,10 +14,10 @@ from dagster_components.core.component import ComponentDeclNode
 class ComponentFileModel(BaseModel):
     type: str
     params: Optional[Mapping[str, Any]] = None
-    _source_position_tree: SourcePositionTree
+    _source_position_tree: Optional[SourcePositionTree] = None
 
     @property
-    def source_position_tree(self) -> SourcePositionTree:
+    def source_position_tree(self) -> Optional[SourcePositionTree]:
         return self._source_position_tree
 
     @staticmethod

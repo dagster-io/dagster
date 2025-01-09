@@ -268,8 +268,14 @@ class ComponentLoadContext:
             source_position_tree = cast(
                 YamlComponentDecl, self.decl_node
             ).component_file_model.source_position_tree
-            source_position_tree_of_params = source_position_tree.children["params"]
-            with enrich_validation_errors_with_source_position(source_position_tree_of_params, []):
+
+            if source_position_tree:
+                source_position_tree_of_params = source_position_tree.children["params"]
+                with enrich_validation_errors_with_source_position(
+                    source_position_tree_of_params, []
+                ):
+                    return TypeAdapter(params_schema).validate_python(preprocessed_params)
+            else:
                 return TypeAdapter(params_schema).validate_python(preprocessed_params)
 
 
