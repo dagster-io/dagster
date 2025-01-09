@@ -906,7 +906,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("auto_materialize").get("enabled", True)
 
     @property
-    def auto_materialize_minimum_interval_seconds(self) -> int:
+    def auto_materialize_minimum_interval_seconds(self) -> Optional[int]:
         return self.get_settings("auto_materialize").get("minimum_interval_seconds")
 
     @property
