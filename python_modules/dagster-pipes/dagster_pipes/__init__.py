@@ -166,6 +166,8 @@ PipesMetadataType = Literal[
     "asset",
     "null",
     "table",
+    "table_schema",
+    "table_column_lineage",
 ]
 
 
