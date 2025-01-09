@@ -3,14 +3,14 @@ from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from types import ModuleType
 from typing import Any, cast
-from unittest.mock import PropertyMock, patch
+from unittest.mock import patch
 
 import dagster as dg
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
-    load_definitions_from_module,
     load_definitions_from_current_module,
+    load_definitions_from_module,
 )
 from dagster._core.definitions.module_loaders.object_list import (
     LoadableDagsterDef,
