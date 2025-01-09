@@ -35,7 +35,6 @@ setup(
     python_requires=">=3.9,<3.13",
     install_requires=[
         "boto3",
-        "boto3-stubs-lite[ecs,glue,emr,emr-serverless]",
         f"dagster{pin}",
         "packaging",
         "requests",
