@@ -44,6 +44,11 @@ config:
   {{- if $azureBlobComputeLogManagerConfig.defaultAzureCredential }}
   default_azure_credential: {{ $azureBlobComputeLogManagerConfig.defaultAzureCredential | toYaml | nindent 4 }}
   {{- end }}
+
+  {{- if $azureBlobComputeLogManagerConfig.showUrlOnly }}
+  show_url_only: {{ $azureBlobComputeLogManagerConfig.showUrlOnly }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.gcs" }}
