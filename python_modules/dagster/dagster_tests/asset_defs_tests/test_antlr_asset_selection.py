@@ -118,26 +118,26 @@ def test_antlr_tree_invalid(selection_str):
         ("not key:a", AssetSelection.all(include_sources=True) - AssetSelection.assets("a")),
         ("key:a and key:b", AssetSelection.assets("a") & AssetSelection.assets("b")),
         ("key:a or key:b", AssetSelection.assets("a") | AssetSelection.assets("b")),
-        ("+key:a", AssetSelection.assets("a").upstream(1)),
-        ("++key:a", AssetSelection.assets("a").upstream(2)),
-        ("key:a+", AssetSelection.assets("a").downstream(1)),
-        ("key:a++", AssetSelection.assets("a").downstream(2)),
+        ("1+key:a", AssetSelection.assets("a").upstream(1)),
+        ("2+key:a", AssetSelection.assets("a").upstream(2)),
+        ("key:a+1", AssetSelection.assets("a").downstream(1)),
+        ("key:a+2", AssetSelection.assets("a").downstream(2)),
         (
-            "+key:a+",
+            "1+key:a+1",
             AssetSelection.assets("a").upstream(1) | AssetSelection.assets("a").downstream(1),
         ),
-        ("*key:a", AssetSelection.assets("a").upstream()),
-        ("key:a*", AssetSelection.assets("a").downstream()),
+        ("+key:a", AssetSelection.assets("a").upstream()),
+        ("key:a+", AssetSelection.assets("a").downstream()),
         (
-            "*key:a*",
+            "+key:a+",
             AssetSelection.assets("a").downstream() | AssetSelection.assets("a").upstream(),
         ),
         (
-            "key:a* and *key:b",
+            "key:a+ and +key:b",
             AssetSelection.assets("a").downstream() & AssetSelection.assets("b").upstream(),
         ),
         (
-            "*key:a and key:b* and *key:c*",
+            "+key:a and key:b+ and +key:c+",
             AssetSelection.assets("a").upstream()
             & AssetSelection.assets("b").downstream()
             & (AssetSelection.assets("c").upstream() | AssetSelection.assets("c").downstream()),

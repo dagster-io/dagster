@@ -897,11 +897,11 @@ class DownstreamAssetSelection(ChainedAssetSelection):
 
     def to_selection_str(self) -> str:
         if self.depth is None:
-            base = f"{self.child.operand_to_selection_str()}*"
+            base = f"{self.child.operand_to_selection_str()}+"
         elif self.depth == 0:
             base = self.child.operand_to_selection_str()
         else:
-            base = f"{self.child.operand_to_selection_str()}{'+' * self.depth}"
+            base = f"{self.child.operand_to_selection_str()}{'+'}{self.depth}"
 
         if self.include_self:
             return base
@@ -1141,11 +1141,11 @@ class UpstreamAssetSelection(ChainedAssetSelection):
 
     def to_selection_str(self) -> str:
         if self.depth is None:
-            base = f"*{self.child.operand_to_selection_str()}"
+            base = f"+{self.child.operand_to_selection_str()}"
         elif self.depth == 0:
             base = self.child.operand_to_selection_str()
         else:
-            base = f"{'+' * self.depth}{self.child.operand_to_selection_str()}"
+            base = f"{self.depth}{'+'}{self.child.operand_to_selection_str()}"
 
         if self.include_self:
             return base
