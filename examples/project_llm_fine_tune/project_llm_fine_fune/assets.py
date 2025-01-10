@@ -1,17 +1,18 @@
-import dagster as dg
-import pandas as pd
-from collections import defaultdict
-import time
-from dagster_openai import OpenAIResource
-import dagster_duckdb as dg_duckdb
-from . import utils
 import json
+import time
+from collections import Counter, defaultdict
 from textwrap import dedent
-from collections import Counter
-from openai import OpenAI
 from typing import Iterable
+
+import dagster as dg
+import dagster_duckdb as dg_duckdb
+import pandas as pd
+from dagster_openai import OpenAIResource
+from openai import OpenAI
+
 import project_llm_fine_fune.constants as constants
 
+from . import utils
 
 goodreads = dg.AssetSpec(
     "Goodreads",
@@ -30,11 +31,11 @@ def graphic_novels(duckdb_resource: dg_duckdb.DuckDBResource):
     url = "https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/goodreads/byGenre/goodreads_books_comics_graphic.json.gz"
     query = f"""
         create table if not exists graphic_novels as (
-          select *
-          from read_json(
-            '{url}',
-            ignore_errors = true
-          )
+            select *
+            from read_json(
+                '{url}',
+                ignore_errors = true
+            )
         );
     """
     with duckdb_resource.get_connection() as conn:
@@ -51,11 +52,11 @@ def authors(duckdb_resource: dg_duckdb.DuckDBResource):
     url = "https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/goodreads/goodreads_book_authors.json.gz"
     query = f"""
         create table if not exists authors as (
-          select *
-          from read_json(
-            '{url}',
-            ignore_errors = true
-          )
+            select *
+            from read_json(
+                '{url}',
+                ignore_errors = true
+            )
         );
     """
     with duckdb_resource.get_connection() as conn:
@@ -67,19 +68,38 @@ def authors(duckdb_resource: dg_duckdb.DuckDBResource):
     description="Goodreads shelf feature engineering",
     group_name="processing",
 )
-def manga_shelf(duckdb_resource: dg_duckdb.DuckDBResource, graphic_novels):
+def book_category(
+    duckdb_resource: dg_duckdb.DuckDBResource,
+    graphic_novels,
+):
+    sql_categories = ", ".join([f"'{s}'" for s in constants.CATEGORIES])
     query = f"""
-        create table if not exists manga_shelf as (
+        create table if not exists book_category as (
             select
             book_id,
-            (case when sum(manga) > 1 then 'true' else 'false' end) is_manga
+            category
             from (
-            select
+                select
                 book_id,
-                (case when unnest(popular_shelves).name like '%manga%' then 1 else 0 end) as manga
-            from graphic_novels
+                category,
+                category_count,
+                row_number() over (partition by book_id order by category_count desc) as category_rank
+                from (
+                    select
+                    book_id,
+                    shelf.name as category,
+                    cast(shelf.count as integer) as category_count
+                    from (
+                        select
+                            book_id,
+                            unnest(popular_shelves) as shelf
+                        from graphic_novels
+                    )
+                    where category in ({sql_categories})
+                    and category_count > 3
+                )
             )
-            group by 1
+            where category_rank = 1
         );
     """
     with duckdb_resource.get_connection() as conn:
@@ -95,45 +115,46 @@ def enriched_graphic_novels(
     duckdb_resource: dg_duckdb.DuckDBResource,
     graphic_novels,
     authors,
-    manga_shelf,
+    book_category,
 ) -> pd.DataFrame:
     query = f"""
         create table if not exists enriched_graphic_novels as (
             select
-            book.title as title,
-            authors.name as author,
-            book.description as description,
-            manga_shelf.is_manga
+                book.title as title,
+                authors.name as author,
+                book.description as description,
+                book_category.category
             from graphic_novels as book
             left join authors
-            on book.authors[1].author_id = authors.author_id
-            left join manga_shelf
-            on book.book_id = manga_shelf.book_id
+                on book.authors[1].author_id = authors.author_id
+            left join book_category
+                on book.book_id = book_category.book_id
             where nullif(book.description, '') is not null
-        )
+            and category is not null
+        );
     """
     with duckdb_resource.get_connection() as conn:
         conn.execute(query)
         select_query = """
-            select * from enriched_graphic_novels
+            select * from enriched_graphic_novels;
         """
         return conn.execute(select_query).fetch_df()
 
 
-def create_prompt_record(data: dict):
+def create_prompt_record(data: dict, categories: list):
     return {
         "messages": [
             {
                 "role": "system",
-                "content": "Given an author, title and book description, is title manga?",
+                "content": f"Given an author, title and book description, what category is it? Here are the possible categories {", ".join(categories)}",
             },
             {
                 "role": "user",
-                "content": f"{data['title']} by {data['author']} described as: {data['description']}. Is this a manga?",
+                "content": f"What category is {data['title']} by {data["author"]}? Description: {data["description"]}",
             },
             {
                 "role": "assistant",
-                "content": data["is_manga"],
+                "content": data["category"],
                 "weight": 1,
             },
         ]
@@ -150,7 +171,7 @@ def training_file(
     graphic_novels = enriched_graphic_novels.sample(n=constants.TRAINING_FILE_NUM)
     prompt_data = []
     for record in [row for _, row in graphic_novels.iterrows()]:
-        prompt_data.append(create_prompt_record(record))
+        prompt_data.append(create_prompt_record(record, constants.CATEGORIES))
 
     file_name = "goodreads-training.jsonl"
     utils.write_openai_file(file_name, prompt_data)
@@ -167,7 +188,7 @@ def validation_file(
     graphic_novels = enriched_graphic_novels.sample(n=constants.VALIDATION_FILE_NUM)
     prompt_data = []
     for record in [row for _, row in graphic_novels.iterrows()]:
-        prompt_data.append(create_prompt_record(record))
+        prompt_data.append(create_prompt_record(record, constants.CATEGORIES))
 
     file_name = "goodreads-validation.jsonl"
     utils.write_openai_file(file_name, prompt_data)
@@ -250,7 +271,7 @@ def validation_file_format_check():
 
 
 @dg.asset(
-    kinds={"OpenAI"},
+    kinds={"openai"},
     description="Upload training set",
     group_name="fine_tuning",
 )
@@ -266,7 +287,7 @@ def upload_training_file(
 
 
 @dg.asset(
-    kinds={"OpenAI"},
+    kinds={"openai"},
     description="Upload validation file to OpenAI",
     group_name="fine_tuning",
 )
@@ -282,7 +303,7 @@ def upload_validation_file(
 
 
 @dg.asset(
-    kinds={"OpenAI"},
+    kinds={"openai"},
     description="Exeute model fine-tuning job",
     group_name="fine_tuning",
 )
@@ -316,24 +337,47 @@ def fine_tuned_model(
     return fine_tuned_model_name
 
 
-def model_question(client: OpenAI, model: str, prompt: str, question: str) -> bool:
+def model_question(
+    client: OpenAI,
+    model: str,
+    data: dict,
+    categories: list,
+) -> str:
     completion = client.chat.completions.create(
         model=model,
         messages=[
             {
                 "role": "system",
-                "content": dedent(prompt),
+                "content": dedent(
+                    """
+                    You will be provided with the title, author and description of a book.
+                    Determine the category.
+                """,
+                ),
             },
-            {"role": "user", "content": dedent(question)},
+            {
+                "role": "user",
+                "content": dedent(
+                    f"""
+                    What category is {data["title"]} by {data["author"]}?
+                    Description: {data["description"]}
+                """,
+                ),
+            },
         ],
         response_format={
             "type": "json_schema",
             "json_schema": {
-                "name": "is_manga",
+                "name": "category",
                 "schema": {
                     "type": "object",
-                    "properties": {"is_manga": {"type": "boolean"}},
-                    "required": ["is_manga"],
+                    "properties": {
+                        "category": {
+                            "type": "string",
+                            "enum": categories,
+                        }
+                    },
+                    "required": ["category"],
                     "additionalProperties": False,
                 },
                 "strict": True,
@@ -341,7 +385,7 @@ def model_question(client: OpenAI, model: str, prompt: str, question: str) -> bo
         },
     )
     content = completion.choices[0].message.content
-    return json.loads(content)["is_manga"]
+    return json.loads(content)["category"]
 
 
 @dg.asset_check(
@@ -354,11 +398,6 @@ def fine_tuned_model_accuracy(
     openai: OpenAIResource,
     fine_tuned_model,
 ) -> Iterable[dg.AssetCheckResult]:
-    models = Counter()
-    prompt = """
-        You will be provided with the title, author and description of a book.
-        Determine if the title is or is not manga.
-    """
     query = f"""
         select * from enriched_graphic_novels
     """
@@ -367,29 +406,34 @@ def fine_tuned_model_accuracy(
             conn.execute(query).fetch_df().sample(constants.VALIDATION_SAMPLE_SIZE)
         )
 
+    models = Counter()
+    base_model = constants.MODEL_NAME
     with openai.get_client(context) as client:
         for data in [row for _, row in asset_check_validation.iterrows()]:
-            for model in [fine_tuned_model, constants.MODEL_NAME]:
-                question = f"""
-                    Is {data["title"]} by {data["author"]} manga?
-                    Here is a description of the title: {data["description"]}
-                """
-                model_answer = model_question(client, model, prompt, question)
-
-                if model_answer == bool(data["is_manga"]):
+            for model in [fine_tuned_model, base_model]:
+                model_answer = model_question(
+                    client,
+                    model,
+                    data,
+                    categories=constants.CATEGORIES,
+                )
+                if model_answer == data["category"]:
                     models[model] += 1
 
-    fine_tuned_model_accuracy = models[fine_tuned_model] / constants.VALIDATION_SAMPLE_SIZE
-    base_model_accuracy = models[constants.MODEL_NAME] / constants.VALIDATION_SAMPLE_SIZE
+    model_accuracy={
+        fine_tuned_model: models[fine_tuned_model] / constants.VALIDATION_SAMPLE_SIZE,
+        base_model: models[base_model] / constants.VALIDATION_SAMPLE_SIZE,
+    }
 
-    if fine_tuned_model_accuracy > base_model_accuracy:
-        yield dg.AssetCheckResult(
-            passed=True,
-            description=f"{fine_tuned_model}: {fine_tuned_model_accuracy} greater than {base_model_accuracy} base",
-        )
-    else:
+    if model_accuracy[fine_tuned_model] < model_accuracy[base_model]:
         yield dg.AssetCheckResult(
             passed=False,
             severity=dg.AssetCheckSeverity.WARN,
-            description=f"{fine_tuned_model}: {fine_tuned_model_accuracy} lower than {base_model_accuracy} base",
+            description=f"{fine_tuned_model} has lower accuracy than {base_model}",
+            metadata=model_accuracy,
+        )
+    else:
+        yield dg.AssetCheckResult(
+            passed=True,
+            metadata=model_accuracy,
         )

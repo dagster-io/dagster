@@ -7,3 +7,6 @@
 .envrc
 __pycache__/
 tmp*/
+data/data.duckdb
+goodreads-training.jsonl
+goodreads-validation.jsonl

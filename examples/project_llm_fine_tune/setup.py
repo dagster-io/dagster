@@ -8,8 +8,7 @@ setup(
         "dagster-openai",
         "dagster-duckdb",
         "pandas",
-        "requests",
         "openai",
     ],
-    extras_require={"dev": ["dagster-webserver", "pytest", "ruff"]},
+    extras_require={"dev": ["dagster-webserver", "pytest", "ruff==0.8.4"]},
 )

@@ -1,8 +1,8 @@
 import json
-from typing import Generator
+from typing import Generator, Iterator
 
 
-def write_openai_file(file_name: str, data: list):
+def write_openai_file(file_name: str, data: Iterator):
     """Writes the contents of list to file.
 
     Args:
@@ -24,9 +24,9 @@ def read_openai_file(file_name: str) -> Generator:
         file_name (str): name of the input file
 
     Returns:
-        Generator: transcript for podcast if present
+        Generator: records
 
     """
     with open(file_name, "r") as training_file:
         for line in training_file:
-            yield eval(line.strip())
+            yield dict(line.strip())

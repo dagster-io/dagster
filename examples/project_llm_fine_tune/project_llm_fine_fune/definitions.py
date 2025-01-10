@@ -1,9 +1,8 @@
 import dagster as dg
-from dagster_openai import OpenAIResource
 from dagster_duckdb import DuckDBResource
+from dagster_openai import OpenAIResource
 
 import project_llm_fine_fune.assets as assets
-
 
 all_assets = dg.load_assets_from_modules([assets])
 external_assets = [assets.goodreads]
