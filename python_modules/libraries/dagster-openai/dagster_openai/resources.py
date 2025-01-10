@@ -3,7 +3,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 from weakref import WeakKeyDictionary
 
 from dagster import (
@@ -35,12 +35,15 @@ API_ENDPOINT_CLASSES_TO_ENDPOINT_METHODS_MAPPING = {
 }
 
 context_to_counters = WeakKeyDictionary()
+context_to_models = WeakKeyDictionary()
+
+OPENAI_MODELS_METADATA_KEY = "openai.models"
 
 
 def _add_to_asset_metadata(
     context: AssetExecutionContext,
-    usage_metadata: Dict[str, int],
-    model_metadata: Dict[str, str],
+    usage_metadata: dict[str, int],
+    model: str,
     output_name: Optional[str],
 ):
     if context not in context_to_counters:
@@ -49,7 +52,19 @@ def _add_to_asset_metadata(
 
     for metadata_key, delta in usage_metadata.items():
         counters[metadata_key] += delta
-    context.add_output_metadata({**dict(counters), **model_metadata}, output_name)
+
+    if context not in context_to_models:
+        context_to_models[context] = defaultdict(set)
+    models = context_to_models[context]
+    models[OPENAI_MODELS_METADATA_KEY].add(model)
+
+    context.add_output_metadata(
+        metadata={
+            **dict(counters),
+            **dict({key: sorted(list(value)) for key, value in models.items()}),
+        },
+        output_name=output_name,
+    )
 
 
 @public
@@ -139,8 +154,12 @@ def with_usage_metadata(
         }
         if hasattr(usage, "completion_tokens"):
             usage_metadata["openai.completion_tokens"] = usage.completion_tokens
-        model_metadata = {"openai.model": response.model}
-        _add_to_asset_metadata(context, usage_metadata, model_metadata, output_name)
+        _add_to_asset_metadata(
+            context=context,
+            usage_metadata=usage_metadata,
+            model=response.model,
+            output_name=output_name,
+        )
 
         return response
 
