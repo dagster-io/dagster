@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 import click
 import typer
@@ -48,8 +48,9 @@ def number_lines(lines_with_numbers: Sequence[tuple[Optional[int], str]]) -> Seq
 def error_dict_to_formatted_error(
     component_type: type[Component], error_details: ErrorDetails
 ) -> str:
-    source_position: SourcePosition = error_details["ctx"]["source_position"]
-    source_position_path: Sequence[SourcePosition] = error_details["ctx"]["source_position_path"]
+    ctx = error_details.get("ctx", {})
+    source_position: SourcePosition = ctx["source_position"]
+    source_position_path: Sequence[SourcePosition] = ctx["source_position_path"]
 
     # Find the first source position that has a different start line than the current source position
     # This is e.g. the parent json key of the current source position
@@ -87,7 +88,7 @@ def error_dict_to_formatted_error(
         )
         code_snippet = "\n".join(lines_with_line_numbers)
 
-    location = error_details["loc"][0].split(" at ")[0]
+    location = cast(str, error_details["loc"])[0].split(" at ")[0]
 
     # TODO: use typer, when ready, to color-format the output
     fmt_filename = f"{source_position.filename}" f":{source_position.start.line}"
