@@ -197,7 +197,13 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       externalUrl
       externalStdoutUrl
       externalStderrUrl
-      logManagerMetadata
+      logManagerMetadata {
+        ... on LogManagerMetadata {
+          logManagerClass
+          container
+          storageAccount
+        }
+      }
       stdoutUriOrPath
       stderrUriOrPath
     }

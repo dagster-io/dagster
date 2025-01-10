@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 from pathlib import Path
@@ -66,7 +65,7 @@ def test_compute_log_manager(
     assert logs_captured_data.external_stderr_url.endswith(logs_captured_data.stderr_uri_or_path)
 
     assert logs_captured_data.log_manager_metadata
-    metadata = json.loads(logs_captured_data.log_manager_metadata)
-    assert metadata["type"] == "AzureBlobComputeLogManager"
-    assert metadata["storage_account"] == os.getenv("TEST_AZURE_STORAGE_ACCOUNT_ID")
-    assert metadata["container"] == os.getenv("TEST_AZURE_CONTAINER_ID")
+    metadata = logs_captured_data.log_manager_metadata
+    assert metadata.log_manager_class == "AzureBlobComputeLogManager"
+    assert metadata.container == os.getenv("TEST_AZURE_CONTAINER_ID")
+    assert metadata.storage_account == os.getenv("TEST_AZURE_STORAGE_ACCOUNT_ID")

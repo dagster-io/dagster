@@ -45,17 +45,12 @@ export const CapturedOrExternalLogPanel = React.memo(
       if (logCaptureInfo?.logManagerMetadata) {
         const path =
           ioType === 'stdout' ? logCaptureInfo.stdoutUriOrPath : logCaptureInfo.stderrUriOrPath;
-
-        try {
-          const metadata = JSON.parse(logCaptureInfo.logManagerMetadata);
-          switch (metadata.type) {
-            case 'AzureBlobComputeLogManager':
-              if (metadata.storage_account && metadata.container) {
-                return `az storage blob download --account-name ${metadata.storage_account} --container-name ${metadata.container} --name ${path}`;
-              }
-          }
-        } catch {
-          return undefined;
+        const metadata = logCaptureInfo.logManagerMetadata;
+        switch (metadata.logManagerClass) {
+          case 'AzureBlobComputeLogManager':
+            if (metadata.storageAccount && metadata.container) {
+              return `az storage blob download --account-name ${metadata.storageAccount} --container-name ${metadata.container} --name ${path}`;
+            }
         }
       }
       return undefined;

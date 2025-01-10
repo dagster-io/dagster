@@ -19,7 +19,11 @@ from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
 )
-from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
+from dagster._core.storage.compute_log_manager import (
+    CapturedLogContext,
+    ComputeIOType,
+    LogManagerMetadata,
+)
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
@@ -279,13 +283,12 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._download_urls[blob_key] = url
         return url
 
-    def get_log_manager_metadata(self) -> dict[str, str]:
-        metadata = super().get_log_manager_metadata()
-        return {
-            **metadata,
-            "storage_account": self._storage_account,
-            "container": self._container,
-        }
+    def get_log_manager_metadata(self) -> Optional[LogManagerMetadata]:
+        return LogManagerMetadata(
+            log_manager_class=self.__class__.__name__,
+            storage_account=self._storage_account,
+            container=self._container,
+        )
 
     def uri_or_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         if not self.is_capture_complete(log_key):
@@ -308,7 +311,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
                     local_context.log_key,
                     external_stdout_url=out_url,
                     external_stderr_url=err_url,
-                    log_manager_metadata=self.get_serialized_log_manager_metadata(),
+                    log_manager_metadata=self.get_log_manager_metadata(),
                     stdout_uri_or_path=out_key,
                     stderr_uri_or_path=err_key,
                 )

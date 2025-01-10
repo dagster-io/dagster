@@ -299,6 +299,15 @@ class GrapheneHookErroredEvent(graphene.ObjectType):
         name = "HookErroredEvent"
 
 
+class GrapheneLogManagerMetadata(graphene.ObjectType):
+    class Meta:
+        name = "LogManagerMetadata"
+
+    logManagerClass = graphene.String(required=True)
+    storageAccount = graphene.String()
+    container = graphene.String()
+
+
 class GrapheneLogsCapturedEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent,)
@@ -309,13 +318,24 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
     externalUrl = graphene.String()
     externalStdoutUrl = graphene.String()
     externalStderrUrl = graphene.String()
-    logManagerMetadata = graphene.String()  # TODO - replace with union?
+    logManagerMetadataRaw = graphene.JSONString()
+    logManagerMetadata = graphene.Field(GrapheneLogManagerMetadata)
     stderrUriOrPath = graphene.String()
     stdoutUriOrPath = graphene.String()
     pid = graphene.Int()
     # legacy name for compute log file key... required for back-compat reasons, but has been
     # renamed to fileKey for newer versions of the Dagster UI
     logKey = graphene.NonNull(graphene.String)
+
+    def resolve_logManagerMetadata(self, info):
+        if not self.logManagerMetadataRaw:
+            return None
+
+        return GrapheneLogManagerMetadata(
+            logManagerClass=self.logManagerMetadataRaw.log_manager_class,
+            container=self.logManagerMetadataRaw.container,
+            storageAccount=self.logManagerMetadataRaw.storage_account,
+        )
 
 
 def _construct_asset_event_metadata_params(event, metadata):

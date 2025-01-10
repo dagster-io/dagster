@@ -17,6 +17,7 @@ export type Scalars = {
   Int: {input: number; output: number};
   Float: {input: number; output: number};
   GenericScalar: {input: any; output: any};
+  JSONString: {input: any; output: any};
   RunConfigData: {input: any; output: any};
 };
 
@@ -2397,6 +2398,13 @@ export enum LogLevel {
   WARNING = 'WARNING',
 }
 
+export type LogManagerMetadata = {
+  __typename: 'LogManagerMetadata';
+  container: Maybe<Scalars['String']['output']>;
+  logManagerClass: Scalars['String']['output'];
+  storageAccount: Maybe<Scalars['String']['output']>;
+};
+
 export type LogMessageEvent = MessageEvent & {
   __typename: 'LogMessageEvent';
   eventType: Maybe<DagsterEventType>;
@@ -2431,7 +2439,8 @@ export type LogsCapturedEvent = MessageEvent & {
   fileKey: Scalars['String']['output'];
   level: LogLevel;
   logKey: Scalars['String']['output'];
-  logManagerMetadata: Maybe<Scalars['String']['output']>;
+  logManagerMetadata: Maybe<LogManagerMetadata>;
+  logManagerMetadataRaw: Maybe<Scalars['JSONString']['output']>;
   message: Scalars['String']['output'];
   pid: Maybe<Scalars['Int']['output']>;
   runId: Scalars['String']['output'];
@@ -9759,6 +9768,25 @@ export const buildLocationStateChangeSubscription = (
   };
 };
 
+export const buildLogManagerMetadata = (
+  overrides?: Partial<LogManagerMetadata>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LogManagerMetadata'} & LogManagerMetadata => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LogManagerMetadata');
+  return {
+    __typename: 'LogManagerMetadata',
+    container:
+      overrides && overrides.hasOwnProperty('container') ? overrides.container! : 'architecto',
+    logManagerClass:
+      overrides && overrides.hasOwnProperty('logManagerClass')
+        ? overrides.logManagerClass!
+        : 'placeat',
+    storageAccount:
+      overrides && overrides.hasOwnProperty('storageAccount') ? overrides.storageAccount! : 'quasi',
+  };
+};
+
 export const buildLogMessageEvent = (
   overrides?: Partial<LogMessageEvent>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9844,7 +9872,13 @@ export const buildLogsCapturedEvent = (
     logManagerMetadata:
       overrides && overrides.hasOwnProperty('logManagerMetadata')
         ? overrides.logManagerMetadata!
-        : 'distinctio',
+        : relationshipsToOmit.has('LogManagerMetadata')
+          ? ({} as LogManagerMetadata)
+          : buildLogManagerMetadata({}, relationshipsToOmit),
+    logManagerMetadataRaw:
+      overrides && overrides.hasOwnProperty('logManagerMetadataRaw')
+        ? overrides.logManagerMetadataRaw!
+        : 'nisi',
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ex',
     pid: overrides && overrides.hasOwnProperty('pid') ? overrides.pid! : 7623,
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'modi',

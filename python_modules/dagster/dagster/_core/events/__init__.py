@@ -47,7 +47,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.compute_log_manager import CapturedLogContext
+from dagster._core.storage.compute_log_manager import CapturedLogContext, LogManagerMetadata
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._serdes.serdes import EnumSerializer, UnpackContext, is_whitelisted_for_serdes_object
@@ -1877,7 +1877,7 @@ class ComputeLogsCaptureData(
             ("external_url", Optional[str]),
             ("external_stdout_url", Optional[str]),
             ("external_stderr_url", Optional[str]),
-            ("log_manager_metadata", Optional[str]),
+            ("log_manager_metadata", Optional[LogManagerMetadata]),
             ("stdout_uri_or_path", Optional[str]),
             ("stderr_uri_or_path", Optional[str]),
         ],
@@ -1890,7 +1890,7 @@ class ComputeLogsCaptureData(
         external_url: Optional[str] = None,
         external_stdout_url: Optional[str] = None,
         external_stderr_url: Optional[str] = None,
-        log_manager_metadata: Optional[str] = None,
+        log_manager_metadata: Optional[LogManagerMetadata] = None,
         stdout_uri_or_path: Optional[str] = None,
         stderr_uri_or_path: Optional[str] = None,
     ):
@@ -1901,7 +1901,9 @@ class ComputeLogsCaptureData(
             external_url=check.opt_str_param(external_url, "external_url"),
             external_stdout_url=check.opt_str_param(external_stdout_url, "external_stdout_url"),
             external_stderr_url=check.opt_str_param(external_stderr_url, "external_stderr_url"),
-            log_manager_metadata=check.opt_str_param(log_manager_metadata, "log_manager_metadata"),
+            log_manager_metadata=check.opt_inst_param(
+                log_manager_metadata, "log_manager_metadata", LogManagerMetadata
+            ),
             stdout_uri_or_path=check.opt_str_param(stdout_uri_or_path, "stdout_uri_or_path"),
             stderr_uri_or_path=check.opt_str_param(stderr_uri_or_path, "stderr_uri_or_path"),
         )

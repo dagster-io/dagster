@@ -1240,11 +1240,20 @@ type LogsCapturedEvent implements MessageEvent {
   externalUrl: String
   externalStdoutUrl: String
   externalStderrUrl: String
-  logManagerMetadata: String
+  logManagerMetadataRaw: JSONString
+  logManagerMetadata: LogManagerMetadata
   stderrUriOrPath: String
   stdoutUriOrPath: String
   pid: Int
   logKey: String!
+}
+
+scalar JSONString
+
+type LogManagerMetadata {
+  logManagerClass: String!
+  storageAccount: String
+  container: String
 }
 
 type AlertStartEvent implements MessageEvent & RunEvent {

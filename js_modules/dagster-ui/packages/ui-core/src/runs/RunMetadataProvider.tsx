@@ -12,7 +12,7 @@ import {
   RunStepStatsQuery,
   RunStepStatsQueryVariables,
 } from './types/RunMetadataProvider.types';
-import {StepEventStatus} from '../graphql/types';
+import {LogManagerMetadata, StepEventStatus} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
 export enum IStepState {
@@ -73,7 +73,7 @@ export interface ILogCaptureInfo {
   pid?: string;
   externalStdoutUrl?: string;
   externalStderrUrl?: string;
-  logManagerMetadata?: string;
+  logManagerMetadata?: LogManagerMetadata;
   stdoutUriOrPath?: string;
   stderrUriOrPath?: string;
 }
@@ -460,7 +460,13 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       pid
       externalStdoutUrl
       externalStderrUrl
-      logManagerMetadata
+      logManagerMetadata {
+        ... on LogManagerMetadata {
+          logManagerClass
+          container
+          storageAccount
+        }
+      }
       stdoutUriOrPath
       stderrUriOrPath
     }

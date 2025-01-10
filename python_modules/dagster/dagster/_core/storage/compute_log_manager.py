@@ -10,6 +10,7 @@ from typing_extensions import Self
 import dagster._check as check
 from dagster._core.captured_log_api import LogLineCursor
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._serdes import whitelist_for_serdes
 
 MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
 
@@ -17,6 +18,31 @@ MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
 class ComputeIOType(Enum):
     STDOUT = "stdout"
     STDERR = "stderr"
+
+
+@whitelist_for_serdes
+class LogManagerMetadata(
+    NamedTuple(
+        "_LogManagerMetadata",
+        [
+            ("log_manager_class", str),
+            ("container", Optional[str]),
+            ("storage_account", Optional[str]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        log_manager_class: str,
+        container: Optional[str] = None,
+        storage_account: Optional[str] = None,
+    ):
+        return super().__new__(
+            cls,
+            log_manager_class=log_manager_class,
+            container=container,
+            storage_account=storage_account,
+        )
 
 
 class CapturedLogContext(
@@ -27,7 +53,7 @@ class CapturedLogContext(
             ("external_url", Optional[str]),
             ("external_stdout_url", Optional[str]),
             ("external_stderr_url", Optional[str]),
-            ("log_manager_metadata", Optional[str]),
+            ("log_manager_metadata", Optional[LogManagerMetadata]),
             ("stdout_uri_or_path", Optional[str]),
             ("stderr_uri_or_path", Optional[str]),
         ],
@@ -44,7 +70,7 @@ class CapturedLogContext(
         external_stdout_url: Optional[str] = None,
         external_stderr_url: Optional[str] = None,
         external_url: Optional[str] = None,
-        log_manager_metadata: Optional[str] = None,
+        log_manager_metadata: Optional[LogManagerMetadata] = None,
         stdout_uri_or_path: Optional[str] = None,
         stderr_uri_or_path: Optional[str] = None,
     ):
@@ -99,7 +125,7 @@ class CapturedLogMetadata(
             ("stderr_location", Optional[str]),
             ("stdout_download_url", Optional[str]),
             ("stderr_download_url", Optional[str]),
-            ("log_manager_metadata", Optional[str]),
+            ("log_manager_metadata", Optional[LogManagerMetadata]),
             ("stdout_uri_or_path", Optional[str]),
             ("stderr_uri_or_path", Optional[str]),
         ],
@@ -117,7 +143,7 @@ class CapturedLogMetadata(
         stderr_location: Optional[str] = None,
         stdout_download_url: Optional[str] = None,
         stderr_download_url: Optional[str] = None,
-        log_manager_metadata: Optional[str] = None,
+        log_manager_metadata: Optional[LogManagerMetadata] = None,
         stdout_uri_or_path: Optional[str] = None,
         stderr_uri_or_path: Optional[str] = None,
     ):

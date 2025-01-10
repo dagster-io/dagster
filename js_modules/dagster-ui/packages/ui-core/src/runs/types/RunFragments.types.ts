@@ -1532,11 +1532,16 @@ export type RunDagsterRunEventFragment_LogsCapturedEvent = {
   pid: number | null;
   externalStdoutUrl: string | null;
   externalStderrUrl: string | null;
-  logManagerMetadata: string | null;
   stdoutUriOrPath: string | null;
   stderrUriOrPath: string | null;
   eventType: Types.DagsterEventType | null;
   externalUrl: string | null;
+  logManagerMetadata: {
+    __typename: 'LogManagerMetadata';
+    logManagerClass: string;
+    container: string | null;
+    storageAccount: string | null;
+  } | null;
 };
 
 export type RunDagsterRunEventFragment_MaterializationEvent = {

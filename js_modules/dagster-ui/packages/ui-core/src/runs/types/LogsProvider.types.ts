@@ -1654,11 +1654,16 @@ export type PipelineRunLogsSubscription = {
               pid: number | null;
               externalStdoutUrl: string | null;
               externalStderrUrl: string | null;
-              logManagerMetadata: string | null;
               stdoutUriOrPath: string | null;
               stderrUriOrPath: string | null;
               eventType: Types.DagsterEventType | null;
               externalUrl: string | null;
+              logManagerMetadata: {
+                __typename: 'LogManagerMetadata';
+                logManagerClass: string;
+                container: string | null;
+                storageAccount: string | null;
+              } | null;
             }
           | {
               __typename: 'MaterializationEvent';
@@ -4999,11 +5004,16 @@ export type RunLogsSubscriptionSuccessFragment = {
         pid: number | null;
         externalStdoutUrl: string | null;
         externalStderrUrl: string | null;
-        logManagerMetadata: string | null;
         stdoutUriOrPath: string | null;
         stderrUriOrPath: string | null;
         eventType: Types.DagsterEventType | null;
         externalUrl: string | null;
+        logManagerMetadata: {
+          __typename: 'LogManagerMetadata';
+          logManagerClass: string;
+          container: string | null;
+          storageAccount: string | null;
+        } | null;
       }
     | {
         __typename: 'MaterializationEvent';
@@ -8353,11 +8363,16 @@ export type RunLogsQuery = {
               pid: number | null;
               externalStdoutUrl: string | null;
               externalStderrUrl: string | null;
-              logManagerMetadata: string | null;
               stdoutUriOrPath: string | null;
               stderrUriOrPath: string | null;
               eventType: Types.DagsterEventType | null;
               externalUrl: string | null;
+              logManagerMetadata: {
+                __typename: 'LogManagerMetadata';
+                logManagerClass: string;
+                container: string | null;
+                storageAccount: string | null;
+              } | null;
             }
           | {
               __typename: 'MaterializationEvent';
@@ -10093,6 +10108,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = '2f30c164760561ac620a80e7150088f0f5df364e89aa32648c1ecd9cd6698b8d';
+export const PipelineRunLogsSubscriptionVersion = '4e2c6f3f97fcda52e4df12ce253bf0e9be1786261fd3bcc52dd4e7b207b5e23f';
 
-export const RunLogsQueryVersion = 'fc247c26adf353841ebe6e395922586491da0657d7f1f828cc4c066c1eec90d9';
+export const RunLogsQueryVersion = 'b22469d32fc7bdd49032360fdd7aa64adf128907f50ae28aa8632c06f80daef2';
