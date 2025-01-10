@@ -118,7 +118,8 @@ def _rebuild_component_registry(dg_context: DgContext):
     key = make_cache_key(root_path, "component_registry_data")
     dg_context.cache.clear_key(key)
     # This will trigger a rebuild of the component registry
-    fetch_component_registry(Path.cwd(), dg_context)
+    code_location_root = resolve_code_location_root_directory(Path.cwd())
+    fetch_component_registry(code_location_root, dg_context)
 
 
 ENV_PREFIX = "DAGSTER_DG"

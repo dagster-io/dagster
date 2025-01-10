@@ -30,11 +30,12 @@ CLI_CONFIG_KEY = "config"
 
 
 def execute_code_location_command(path: Path, cmd: Sequence[str], dg_context: "DgContext") -> str:
-    code_location_command_prefix = (
-        ["uv", "run", "dagster-components"]
-        if dg_context.config.use_dg_managed_environment
-        else ["dagster-components"]
-    )
+    if dg_context.config.use_dg_managed_environment:
+        code_location_command_prefix = ["dagster-components"]
+        env = None
+    else:
+        code_location_command_prefix = ["uv", "run", "dagster-components"]
+        env = get_uv_command_env()
     full_cmd = [
         *code_location_command_prefix,
         *(
@@ -45,9 +46,7 @@ def execute_code_location_command(path: Path, cmd: Sequence[str], dg_context: "D
         *cmd,
     ]
     with pushd(path):
-        result = subprocess.run(
-            full_cmd, stdout=subprocess.PIPE, env=get_uv_command_env(), check=True
-        )
+        result = subprocess.run(full_cmd, stdout=subprocess.PIPE, env=env, check=True)
         return result.stdout.decode("utf-8")
 
 
