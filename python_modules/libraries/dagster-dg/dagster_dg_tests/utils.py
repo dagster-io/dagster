@@ -41,7 +41,7 @@ def isolated_example_code_location_bar(
                 "generate",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
-                *(["--skip-venv"] if skip_venv else []),
+                *(["--no-use-dg-managed-environment"] if skip_venv else []),
                 "bar",
             )
             with clear_module_from_cache("bar"), pushd("code_locations/bar"):
@@ -53,7 +53,7 @@ def isolated_example_code_location_bar(
                 "generate",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
-                *(["--skip-venv"] if skip_venv else []),
+                *(["--no-use-dg-managed-environment"] if skip_venv else []),
                 "bar",
             )
             with clear_module_from_cache("bar"), pushd("bar"):

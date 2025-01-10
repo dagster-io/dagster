@@ -100,9 +100,17 @@ def _rebuild_component_registry(dg_context: DgContext):
             )
         )
         sys.exit(1)
-    if not dg_context.has_cache:
+    elif not dg_context.has_cache:
         click.echo(
             click.style("Cache is disabled. This command cannot be run without a cache.", fg="red")
+        )
+        sys.exit(1)
+    elif not dg_context.config.use_dg_managed_environment:
+        click.echo(
+            click.style(
+                "Cannot rebuild the component registry with environment management disabled.",
+                fg="red",
+            )
         )
         sys.exit(1)
     root_path = resolve_code_location_root_directory(Path.cwd())
@@ -110,7 +118,8 @@ def _rebuild_component_registry(dg_context: DgContext):
     key = make_cache_key(root_path, "component_registry_data")
     dg_context.cache.clear_key(key)
     # This will trigger a rebuild of the component registry
-    fetch_component_registry(Path.cwd(), dg_context)
+    code_location_root = resolve_code_location_root_directory(Path.cwd())
+    fetch_component_registry(code_location_root, dg_context)
 
 
 ENV_PREFIX = "DAGSTER_DG"

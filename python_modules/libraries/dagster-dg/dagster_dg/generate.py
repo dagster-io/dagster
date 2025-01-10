@@ -125,7 +125,7 @@ def generate_code_location(
     )
 
     # Build the venv
-    if not skip_venv:
+    if dg_context.config.use_dg_managed_environment and not skip_venv:
         ensure_uv_lock(path)
         fetch_component_registry(path, dg_context)  # Populate the cache
 

@@ -106,7 +106,10 @@ class DgContext:
 
     @classmethod
     def from_config(cls, config: DgConfig) -> Self:
-        cache = None if config.disable_cache else DgCache.from_config(config)
+        if config.disable_cache or not config.use_dg_managed_environment:
+            cache = None
+        else:
+            cache = DgCache.from_config(config)
         return cls(config=config, _cache=cache)
 
     @classmethod
@@ -174,15 +177,13 @@ def ensure_uv_lock(root_path: Path) -> None:
 
 
 def fetch_component_registry(path: Path, dg_context: DgContext) -> RemoteComponentRegistry:
-    root_path = resolve_code_location_root_directory(path)
-
     if dg_context.has_cache:
-        cache_key = make_cache_key(root_path, "component_registry_data")
+        cache_key = make_cache_key(path, "component_registry_data")
 
     raw_registry_data = dg_context.cache.get(cache_key) if dg_context.has_cache else None
     if not raw_registry_data:
         raw_registry_data = execute_code_location_command(
-            root_path, ["list", "component-types"], dg_context
+            path, ["list", "component-types"], dg_context
         )
         if dg_context.has_cache:
             dg_context.cache.set(cache_key, raw_registry_data)
@@ -217,7 +218,8 @@ class CodeLocationDirectoryContext:
     @classmethod
     def from_path(cls, path: Path, dg_context: DgContext) -> Self:
         root_path = resolve_code_location_root_directory(path)
-        ensure_uv_lock(root_path)
+        if dg_context.config.use_dg_managed_environment:
+            ensure_uv_lock(root_path)
 
         code_location_config = _load_code_location_config(root_path)
         components_lib_package_name = (

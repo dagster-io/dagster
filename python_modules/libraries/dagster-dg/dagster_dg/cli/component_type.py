@@ -7,9 +7,11 @@ from typing import Any
 import click
 
 from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.context import (
     CodeLocationDirectoryContext,
     DgContext,
+    fetch_component_registry,
     is_inside_code_location_directory,
 )
 from dagster_dg.generate import generate_component_type
@@ -72,22 +74,13 @@ def component_type_info_command(
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     dg_context = DgContext.from_cli_global_options(global_options)
-    if not is_inside_code_location_directory(Path.cwd()):
-        click.echo(
-            click.style(
-                "This command must be run inside a Dagster code location directory.", fg="red"
-            )
-        )
-        sys.exit(1)
-
-    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
-    if not context.has_component_type(component_type):
+    registry = _get_component_type_registry(Path.cwd(), dg_context)
+    if not registry.has(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
         )
         sys.exit(1)
-
-    if sum([description, generate_params_schema, component_params_schema]) > 1:
+    elif sum([description, generate_params_schema, component_params_schema]) > 1:
         click.echo(
             click.style(
                 "Only one of --description, --generate-params-schema, and --component-params-schema can be specified.",
@@ -96,7 +89,7 @@ def component_type_info_command(
         )
         sys.exit(1)
 
-    component_type_metadata = context.get_component_type(component_type)
+    component_type_metadata = registry.get(component_type)
 
     if description:
         if component_type_metadata.description:
@@ -142,16 +135,22 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 def component_type_list(**global_options: object) -> None:
     """List registered Dagster components in the current code location environment."""
     dg_context = DgContext.from_cli_global_options(global_options)
-    if not is_inside_code_location_directory(Path.cwd()):
-        click.echo(
-            click.style(
-                "This command must be run inside a Dagster code location directory.", fg="red"
-            )
-        )
-        sys.exit(1)
-
-    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
-    for key, component_type in context.iter_component_types():
+    registry = _get_component_type_registry(Path.cwd(), dg_context)
+    for key in sorted(registry.keys()):
         click.echo(key)
+        component_type = registry.get(key)
         if component_type.summary:
             click.echo(f"    {component_type.summary}")
+
+
+# ########################
+# ##### HELPERS
+# ########################
+
+
+def _get_component_type_registry(path: Path, dg_context: DgContext) -> RemoteComponentRegistry:
+    if not is_inside_code_location_directory(path):
+        return fetch_component_registry(path, dg_context)
+    else:
+        context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
+        return context.component_registry

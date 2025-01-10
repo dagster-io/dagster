@@ -83,6 +83,58 @@ def test_component_type_generate_fails_components_lib_package_does_not_exist() -
 # ##### INFO
 # ########################
 
+_EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
+    dagster_components.test.simple_pipes_script_asset
+
+    Description:
+
+    A simple asset that runs a Python script with the Pipes subprocess client.
+
+    Because it is a pipes asset, no value is returned.
+
+    Generate params schema:
+
+    {
+        "properties": {
+            "asset_key": {
+                "title": "Asset Key",
+                "type": "string"
+            },
+            "filename": {
+                "title": "Filename",
+                "type": "string"
+            }
+        },
+        "required": [
+            "asset_key",
+            "filename"
+        ],
+        "title": "SimplePipesScriptAssetParams",
+        "type": "object"
+    }
+
+    Component params schema:
+
+    {
+        "properties": {
+            "asset_key": {
+                "title": "Asset Key",
+                "type": "string"
+            },
+            "filename": {
+                "title": "Filename",
+                "type": "string"
+            }
+        },
+        "required": [
+            "asset_key",
+            "filename"
+        ],
+        "title": "SimplePipesScriptAssetParams",
+        "type": "object"
+    }
+""").strip()
+
 
 def test_component_type_info_all_metadata_success():
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
@@ -92,60 +144,7 @@ def test_component_type_info_all_metadata_success():
             "dagster_components.test.simple_pipes_script_asset",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
-            dagster_components.test.simple_pipes_script_asset
-
-            Description:
-
-            A simple asset that runs a Python script with the Pipes subprocess client.
-
-            Because it is a pipes asset, no value is returned.
-
-            Generate params schema:
-
-            {
-                "properties": {
-                    "asset_key": {
-                        "title": "Asset Key",
-                        "type": "string"
-                    },
-                    "filename": {
-                        "title": "Filename",
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "asset_key",
-                    "filename"
-                ],
-                "title": "SimplePipesScriptAssetParams",
-                "type": "object"
-            }
-
-            Component params schema:
-
-            {
-                "properties": {
-                    "asset_key": {
-                        "title": "Asset Key",
-                        "type": "string"
-                    },
-                    "filename": {
-                        "title": "Filename",
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "asset_key",
-                    "filename"
-                ],
-                "title": "SimplePipesScriptAssetParams",
-                "type": "object"
-            }
-        """).strip()
-        )
+        assert result.output.strip() == _EXPECTED_COMPONENT_TYPE_INFO_FULL
 
 
 def test_component_type_info_all_metadata_empty_success():
@@ -245,16 +244,16 @@ def test_component_type_info_flag_fields_success():
         )
 
 
-def test_component_type_info_outside_code_location_fails() -> None:
+def test_component_type_info_success_outside_code_location() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
             "component-type",
             "info",
             "dagster_components.test.simple_pipes_script_asset",
-            "--component-params-schema",
+            "--no-use-dg-managed-environment",
         )
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster code location directory" in result.output
+        assert_runner_result(result)
+        assert result.output.strip() == _EXPECTED_COMPONENT_TYPE_INFO_FULL
 
 
 def test_component_type_info_multiple_flags_fails() -> None:
@@ -277,25 +276,31 @@ def test_component_type_info_multiple_flags_fails() -> None:
 # ##### LIST
 # ########################
 
+_EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
+    dagster_components.test.all_metadata_empty_asset
+    dagster_components.test.simple_asset
+        A simple asset that returns a constant string value.
+    dagster_components.test.simple_pipes_script_asset
+        A simple asset that runs a Python script with the Pipes subprocess client.
+""").strip()
+
 
 def test_list_component_types_success():
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke("component-type", "list")
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
-            dagster_components.test.all_metadata_empty_asset
-            dagster_components.test.simple_asset
-                A simple asset that returns a constant string value.
-            dagster_components.test.simple_pipes_script_asset
-                A simple asset that runs a Python script with the Pipes subprocess client.
-        """).strip()
-        )
+        assert result.output.strip() == _EXPECTED_COMPONENT_TYPES
 
 
-def test_list_component_types_outside_code_location_fails() -> None:
+def test_list_component_types_success_with_unmanaged_environment():
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, skip_venv=True):
+        result = runner.invoke("component-type", "list", "--no-use-dg-managed-environment")
+        assert_runner_result(result)
+        assert not Path("uv.lock").exists()
+        assert result.output.strip() == _EXPECTED_COMPONENT_TYPES
+
+
+def test_component_type_list_success_outside_code_location():
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("component-type", "list")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster code location directory" in result.output
+        result = runner.invoke("component-type", "list", "--no-use-dg-managed-environment")
+        assert_runner_result(result)

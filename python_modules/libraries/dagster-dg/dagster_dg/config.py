@@ -36,12 +36,15 @@ class DgConfig:
             be used.
         verbose (bool): If True, log debug information.
         builitin_component_lib (str): The name of the builtin component library to load.
+        use_dg_managed_environment (bool): If True, `dg` will build and manage a virtual environment
+            using `uv`. Note that disabling the managed enviroment will also disable caching.
     """
 
     disable_cache: bool = False
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     builtin_component_lib: str = DEFAULT_BUILTIN_COMPONENT_LIB
+    use_dg_managed_environment: bool = True
 
     @classmethod
     def from_cli_global_options(cls, global_options: Mapping[str, object]) -> Self:
@@ -51,6 +54,9 @@ class DgConfig:
             verbose=_validate_global_option(global_options, "verbose", bool),
             builtin_component_lib=_validate_global_option(
                 global_options, "builtin_component_lib", str
+            ),
+            use_dg_managed_environment=_validate_global_option(
+                global_options, "use_dg_managed_environment", bool
             ),
         )
 
