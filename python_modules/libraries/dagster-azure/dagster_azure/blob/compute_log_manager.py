@@ -50,6 +50,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             ``dagster._seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
         upload_interval: (Optional[int]): Interval in seconds to upload partial log files blob storage. By default, will only upload when the capture is complete.
+        show_url_only – (bool): Only show the URL of the log file in the UI, instead of fetching and displaying the full content. Default False.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
 
@@ -71,6 +72,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             prefix: "dagster-test-"
             local_dir: "/tmp/cool"
             upload_interval: 30
+            show_url_only: false
 
     Using an Azure Blob Storage account with a `DefaultAzureCredential <https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.defaultazurecredential?view=azure-python>`_:
 
@@ -87,6 +89,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             prefix: "dagster-test-"
             local_dir: "/tmp/cool"
             upload_interval: 30
+            show_url_only: false
 
     Using an Azure Blob Storage account with an access key:
 
@@ -102,6 +105,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             prefix: "dagster-test-"
             local_dir: "/tmp/cool"
             upload_interval: 30
+            show_url_only: false
 
     """
 
@@ -116,7 +120,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         upload_interval=None,
         default_azure_credential=None,
         access_key_or_sas_token: Optional[str] = None,
-        show_url_only=True,
+        show_url_only: bool = False,
     ):
         self._show_url_only = check.bool_param(show_url_only, "show_url_only")
         self._storage_account = check.str_param(storage_account, "storage_account")
@@ -183,6 +187,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
             "local_dir": Field(Noneable(StringSource), is_required=False, default_value=None),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
             "upload_interval": Field(Noneable(int), is_required=False, default_value=None),
+            "show_url_only": Field(bool, is_required=False, default_value=False),
         }
 
     @classmethod
