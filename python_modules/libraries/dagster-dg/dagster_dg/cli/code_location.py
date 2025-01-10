@@ -97,7 +97,9 @@ def code_location_generate_command(
     else:
         editable_dagster_root = None
 
-    generate_code_location(code_location_path, dg_context, editable_dagster_root, skip_venv)
+    generate_code_location(
+        code_location_path, dg_context, editable_dagster_root, skip_venv=skip_venv
+    )
 
 
 # ########################
