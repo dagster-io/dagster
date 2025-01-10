@@ -111,7 +111,7 @@ setup(
         "pydantic>=2,<3.0.0",
         "rich",
         "filelock",
-        "dagster-pipes==1.9.7",
+        "dagster-pipes==1.9.8",
         "antlr4-python3-runtime",
     ],
     extras_require={
