@@ -83,36 +83,36 @@ describe('parseOpSelectionQuery', () => {
     });
 
     it('should parse upstream plus query', () => {
-      assertQueryResult('+name:A', ['A']);
-      assertQueryResult('+name:B', ['A', 'B']);
-      assertQueryResult('+name:C', ['B', 'B2', 'C']);
-      assertQueryResult('++name:C', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('1+name:A', ['A']);
+      assertQueryResult('1+name:B', ['A', 'B']);
+      assertQueryResult('1+name:C', ['B', 'B2', 'C']);
+      assertQueryResult('2+name:C', ['A', 'B', 'B2', 'C']);
     });
 
     it('should parse downstream plus query', () => {
-      assertQueryResult('name:A+', ['A', 'B', 'B2']);
-      assertQueryResult('name:A++', ['A', 'B', 'B2', 'C']);
-      assertQueryResult('name:C+', ['C']);
-      assertQueryResult('name:B+', ['B', 'C']);
+      assertQueryResult('name:A+1', ['A', 'B', 'B2']);
+      assertQueryResult('name:A+2', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('name:C+1', ['C']);
+      assertQueryResult('name:B+1', ['B', 'C']);
     });
 
     it('should parse upstream star query', () => {
-      assertQueryResult('*name:A', ['A']);
-      assertQueryResult('*name:B', ['A', 'B']);
-      assertQueryResult('*name:C', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('+name:A', ['A']);
+      assertQueryResult('+name:B', ['A', 'B']);
+      assertQueryResult('+name:C', ['A', 'B', 'B2', 'C']);
     });
 
     it('should parse downstream star query', () => {
-      assertQueryResult('name:A*', ['A', 'B', 'B2', 'C']);
-      assertQueryResult('name:B*', ['B', 'C']);
-      assertQueryResult('name:C*', ['C']);
+      assertQueryResult('name:A+', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('name:B+', ['B', 'C']);
+      assertQueryResult('name:C+', ['C']);
     });
 
     it('should parse up and down traversal queries', () => {
-      assertQueryResult('name:A* and *name:C', ['A', 'B', 'B2', 'C']);
-      assertQueryResult('*name:B*', ['A', 'B', 'C']);
-      assertQueryResult('name:A* and *name:C and *name:B*', ['A', 'B', 'C']);
-      assertQueryResult('name:A* and *name:B* and *name:C', ['A', 'B', 'C']);
+      assertQueryResult('name:A+ and +name:C', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('+name:B+', ['A', 'B', 'C']);
+      assertQueryResult('name:A+ and +name:C and +name:B+', ['A', 'B', 'C']);
+      assertQueryResult('name:A+ and +name:B+ and +name:C', ['A', 'B', 'C']);
     });
   });
 });
