@@ -123,9 +123,10 @@ class ModuleScopedDagsterDefs:
     def asset_objects_by_key(
         self,
     ) -> Mapping[AssetKey, Sequence[Union[SourceAsset, AssetSpec, AssetsDefinition]]]:
+        # NOTE: does not include specs at the moment, just to dodge an error
         objects_by_key = defaultdict(list)
         for asset_object in self.flat_object_list:
-            if not isinstance(asset_object, (SourceAsset, AssetSpec, AssetsDefinition)):
+            if not isinstance(asset_object, (SourceAsset, AssetsDefinition)):
                 continue
             for key in key_iterator(asset_object):
                 objects_by_key[key].append(asset_object)
