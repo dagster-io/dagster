@@ -100,7 +100,6 @@ export class AntlrAssetSelectionVisitor
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
     const selection = this.visit(ctx.traversalAllowedExpr());
     const traversal_depth: number = getTraversalDepth(ctx.upTraversal());
-    console.log({traversal_depth});
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
