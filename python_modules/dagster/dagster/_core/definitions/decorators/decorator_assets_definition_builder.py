@@ -600,7 +600,7 @@ class DecoratorAssetsDefinitionBuilder:
 
         return [
             spec.replace_attributes(
-                group_name=self.group_name,
+                group_name=spec.group_name or self.group_name,
                 partitions_def=spec.partitions_def or self.args.partitions_def,
             )
             for spec in specs
