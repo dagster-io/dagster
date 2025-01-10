@@ -1,4 +1,4 @@
-// Generated from /Users/briantu/repos/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
 
@@ -8,6 +8,7 @@ import {
   AttributeExprContext,
   AttributeExpressionContext,
   CodeLocationAttributeExprContext,
+  DownTraversalContext,
   DownTraversalExpressionContext,
   ExprContext,
   FunctionCallExpressionContext,
@@ -24,8 +25,8 @@ import {
   TagAttributeExprContext,
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
-  TraversalContext,
   UpAndDownTraversalExpressionContext,
+  UpTraversalContext,
   UpTraversalExpressionContext,
   ValueContext,
 } from './AssetSelectionParser';
@@ -303,15 +304,26 @@ export interface AssetSelectionListener extends ParseTreeListener {
   exitTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => void;
 
   /**
-   * Enter a parse tree produced by `AssetSelectionParser.traversal`.
+   * Enter a parse tree produced by `AssetSelectionParser.upTraversal`.
    * @param ctx the parse tree
    */
-  enterTraversal?: (ctx: TraversalContext) => void;
+  enterUpTraversal?: (ctx: UpTraversalContext) => void;
   /**
-   * Exit a parse tree produced by `AssetSelectionParser.traversal`.
+   * Exit a parse tree produced by `AssetSelectionParser.upTraversal`.
    * @param ctx the parse tree
    */
-  exitTraversal?: (ctx: TraversalContext) => void;
+  exitUpTraversal?: (ctx: UpTraversalContext) => void;
+
+  /**
+   * Enter a parse tree produced by `AssetSelectionParser.downTraversal`.
+   * @param ctx the parse tree
+   */
+  enterDownTraversal?: (ctx: DownTraversalContext) => void;
+  /**
+   * Exit a parse tree produced by `AssetSelectionParser.downTraversal`.
+   * @param ctx the parse tree
+   */
+  exitDownTraversal?: (ctx: DownTraversalContext) => void;
 
   /**
    * Enter a parse tree produced by `AssetSelectionParser.functionName`.

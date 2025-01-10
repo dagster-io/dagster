@@ -1,4 +1,4 @@
-// Generated from /Users/briantu/repos/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/marcosalazar/code/dagster/python_modules/dagster/dagster/_core/definitions/antlr_asset_selection/AssetSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeVisitor} from 'antlr4ts/tree/ParseTreeVisitor';
 
@@ -8,6 +8,7 @@ import {
   AttributeExprContext,
   AttributeExpressionContext,
   CodeLocationAttributeExprContext,
+  DownTraversalContext,
   DownTraversalExpressionContext,
   ExprContext,
   FunctionCallExpressionContext,
@@ -24,8 +25,8 @@ import {
   TagAttributeExprContext,
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
-  TraversalContext,
   UpAndDownTraversalExpressionContext,
+  UpTraversalContext,
   UpTraversalExpressionContext,
   ValueContext,
 } from './AssetSelectionParser';
@@ -204,11 +205,18 @@ export interface AssetSelectionVisitor<Result> extends ParseTreeVisitor<Result> 
   visitTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => Result;
 
   /**
-   * Visit a parse tree produced by `AssetSelectionParser.traversal`.
+   * Visit a parse tree produced by `AssetSelectionParser.upTraversal`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitTraversal?: (ctx: TraversalContext) => Result;
+  visitUpTraversal?: (ctx: UpTraversalContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `AssetSelectionParser.downTraversal`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitDownTraversal?: (ctx: DownTraversalContext) => Result;
 
   /**
    * Visit a parse tree produced by `AssetSelectionParser.functionName`.

@@ -43,6 +43,8 @@ export class GraphTraverser<T extends GraphQueryItem> {
   ) {
     results[item.name] = item;
 
+    console.log({depth});
+
     if (depth > 0) {
       step(item, (next) => {
         if (!(next.name in results)) {
