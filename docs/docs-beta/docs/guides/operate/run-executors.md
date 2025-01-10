@@ -1,5 +1,5 @@
 ---
-title: About run executors
+title: Run executors
 sidebar_position: 100
 unlisted: true
 ---

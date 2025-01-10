@@ -110,7 +110,7 @@ TODO: add picture previously at "/images/dagster-cloud/user-token-management/cod
 
 |                                                                          | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
-| View runs of [jobs](/guides/build/ops-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| View runs of [jobs](/guides/build/assets/asset-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Launch, re-execute, terminate, and delete runs of jobs                   | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/schedules)                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/sensors)                            | ❌     | ❌       | ✅     | ✅    | ✅                       |

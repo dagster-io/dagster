@@ -1,5 +1,5 @@
 ---
-title: Trigger cross-job dependencies with asset sensors
+title: Define cross-job dependencies with asset sensors
 sidebar_position: 40
 ---
 
@@ -9,7 +9,7 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 :::note
 
-This documentation assumes familiarity with [assets](/guides/build/create-asset-pipelines/assets-concepts/index.md) and [ops and jobs](/guides/build/ops-jobs)
+This documentation assumes familiarity with [assets](/guides/build/assets/index.md) and [jobs](/guides/build/assets/asset-jobs)
 
 :::
 

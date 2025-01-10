@@ -17,7 +17,7 @@ In this guide, you'll learn how to create, access, and share catalog views with 
 <summary>Prerequisites</summary>
 
 - **Organization Admin**, **Admin**, or **Editor** permissions on Dagster+
-- Familiarity with [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx and [Asset metadata](/guides/build/create-asset-pipelines/metadata)
+- Familiarity with [Assets](/guides/build/assets/) and [Asset metadata](/guides/build/assets/organizing-assets-with-tags-and-metadata)
 
 </details>
 
