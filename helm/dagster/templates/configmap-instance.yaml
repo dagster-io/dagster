@@ -93,6 +93,9 @@ data:
       {{- if not (kindIs "invalid" $runMonitoring.cancelTimeoutSeconds) }}
       cancel_timeout_seconds:  {{ $runMonitoring.cancelTimeoutSeconds }}
       {{- end }}
+      {{- if not (kindIs "invalid" $runMonitoring.maxRuntimeSeconds) }}
+      max_runtime_seconds:  {{ $runMonitoring.maxRuntimeSeconds }}
+      {{- end }}
       {{- if not (kindIs "invalid" $runMonitoring.maxResumeRunAttempts) }}
       max_resume_run_attempts: {{ $runMonitoring.maxResumeRunAttempts }}
       {{- end }}
