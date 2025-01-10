@@ -585,6 +585,30 @@ def test_reuse_task_definition(instance, ecs):
     )
 
 
+def test_task_definition_prefix(ecs, instance_cm, run, workspace, job, remote_job):
+    with instance_cm(
+        {
+            "task_definition_prefix": "foo",
+        }
+    ) as instance:
+        initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+
+        run = instance.create_run_for_job(
+            job,
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
+        )
+        instance.launch_run(run.run_id, workspace)
+
+        task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+        assert len(task_definitions) == len(initial_task_definitions) + 1
+        task_definition_arn = next(iter(set(task_definitions).difference(initial_task_definitions)))
+        task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
+        task_definition = task_definition["taskDefinition"]
+
+        assert task_definition["family"] == get_task_definition_family("foo", run.remote_job_origin)
+
+
 def test_default_task_definition_resources(ecs, instance_cm, run, workspace, job, remote_job):
     task_role_arn = "fake-task-role"
     execution_role_arn = "fake-execution-role"
