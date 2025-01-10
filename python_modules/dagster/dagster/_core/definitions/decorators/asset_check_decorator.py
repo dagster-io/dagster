@@ -259,7 +259,15 @@ def asset_check(
 
         op_def = builder.create_op_definition()
 
-        return AssetChecksDefinition.create(
+        keys_by_input_name={
+            input_tuple[0]: asset_key
+            for asset_key, input_tuple in named_in_by_asset_key.items()
+        }
+        if resolved_name == "validate_totals":
+            name
+        if resolved_name == "check_tag_propogation":
+            name
+        asset_check_x = AssetChecksDefinition.create(
             keys_by_input_name={
                 input_tuple[0]: asset_key
                 for asset_key, input_tuple in named_in_by_asset_key.items()
@@ -269,6 +277,7 @@ def asset_check(
             check_specs_by_output_name={op_def.output_defs[0].name: spec},
             can_subset=False,
         )
+        return asset_check_x 
 
     return inner
 

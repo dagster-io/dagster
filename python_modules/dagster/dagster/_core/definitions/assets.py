@@ -951,6 +951,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         upstream_keys = {
             *(dep.asset_key for key in self.keys for dep in self._specs_by_key[key].deps),
             *(spec.asset_key for spec in self.check_specs if spec.asset_key not in self.keys),
+            *(dep.asset_key for spec in self.check_specs for dep in spec.additional_deps),
         }
 
         return {
