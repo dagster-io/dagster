@@ -1,0 +1,4 @@
+include README.md
+include LICENSE
+include integration.yaml
+include dagster_sling/py.typed
