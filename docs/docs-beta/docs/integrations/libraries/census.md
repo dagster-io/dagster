@@ -15,9 +15,9 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/census.svg
 ---
-
-
 
 With the `dagster-census` integration you can execute a Census sync and poll until that sync completes, raising an error if it's unsuccessful.
 

@@ -9,15 +9,14 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pandera
 docslink: https://docs.dagster.io/integrations/pandera
 partnerlink: https://pandera.readthedocs.io/en/stable/
-logo: /integrations/Pandera.svg
 categories:
   - Metadata
 enabledBy:
 enables:
 tags: [dagster-supported, metadata]
+sidebar_custom_props:
+  logo: images/integrations/pandera.svg
 ---
-
-
 
 The `dagster-pandera` integration library provides an API for generating Dagster Types from [Pandera DataFrame schemas](https://pandera.readthedocs.io/en/stable/dataframe_schemas.html).
 

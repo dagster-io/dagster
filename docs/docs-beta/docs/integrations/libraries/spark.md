@@ -9,16 +9,15 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-spark
 docslink: https://docs.dagster.io/integrations/spark
 partnerlink:
-logo: /integrations/Spark.svg
 categories:
   - Compute
 enabledBy:
   - dagster-pyspark
 enables:
 tags: [dagster-supported, compute]
+sidebar_custom_props:
+  logo: images/integrations/spark.svg
 ---
-
-
 
 Spark jobs typically execute on infrastructure that's specialized for Spark. Spark applications are typically not containerized or executed on Kubernetes.
 
