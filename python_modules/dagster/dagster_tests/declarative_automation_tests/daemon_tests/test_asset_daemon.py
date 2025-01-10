@@ -237,10 +237,17 @@ auto_materialize_sensor_scenarios = [
             run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
             run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
         )
+        .with_current_time_advanced(minutes=10)
+        .start_sensor(state.sensor_name)
+        .evaluate_tick()
+        .assert_requested_runs()  # cursor was updated by the last tick, so we don't have new runs
+        .with_current_time_advanced(hours=1)
         .start_sensor(state.sensor_name)
         .evaluate_tick()
         .assert_requested_runs(
-            run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time))
+            run_request(
+                asset_keys=["A", "B"], partition_key=hour_partition_key(state.current_time, delta=1)
+            )
         ),
     ),
 ]

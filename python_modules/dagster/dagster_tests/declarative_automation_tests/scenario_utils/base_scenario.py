@@ -503,7 +503,7 @@ class AssetReconciliationScenario(
                             amp_tick_futures={},
                             debug_crash_flags=(debug_crash_flags or {}),
                             submit_threadpool_executor=None,
-                            poll_interval=0,  # check the status of the sensor after every run submission
+                            batch_size=1,  # check the status of the sensor after every run submission
                         )
                     )
 

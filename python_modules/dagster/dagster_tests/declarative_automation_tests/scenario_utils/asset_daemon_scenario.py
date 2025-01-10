@@ -220,7 +220,7 @@ class AssetDaemonScenarioState(ScenarioState):
                         amp_tick_futures=amp_tick_futures,
                         debug_crash_flags={},
                         submit_threadpool_executor=None,
-                        poll_interval=0,  # check the status of the sensor after every run submission
+                        batch_size=1,  # check the status of the sensor after every run submission
                     )
                 )
 
@@ -441,6 +441,11 @@ class AssetDaemonScenarioState(ScenarioState):
             ),
             key=lambda tick: tick.tick_id,
         )[-1]
+        assert len(latest_tick.run_ids) == num_expected_submissions
+        assert (
+            len(latest_tick.unsubmitted_run_ids_with_requests)
+            == len(expected_run_requests) - num_expected_submissions
+        )
         # since the tick was stopped before all runs were submitted, the tick should be in skipped state
         assert latest_tick.status == TickStatus.SKIPPED
 
