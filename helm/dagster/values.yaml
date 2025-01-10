@@ -226,6 +226,7 @@ computeLogManager:
   #     localDir: ~
   #     prefix: ~
   #     uploadInterval: ~
+  #     showUrlOnly: ~
   ##  Uncomment this configuration if the GCSComputeLogManager is selected
   #   gcsComputeLogManager:
   #     bucket: ~
