@@ -72,6 +72,8 @@ if __name__ == "__main__":
     main()
 ```
 
+Note: The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](/concepts/dagster-pipes/subprocess/reference#passing-rich-metadata-to-dagster).
+
 ---
 
 ## Step 3: Create an asset using the PipesECSClient to launch the task
