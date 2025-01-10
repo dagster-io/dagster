@@ -148,7 +148,7 @@ def test_component_generate_succeeds_non_default_component_package() -> None:
         alt_lib_path = Path("bar/_components")
         alt_lib_path.mkdir(parents=True)
         with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["components_package"] = "bar._components"
+            pyproject_toml["tool"]["dg"]["component_package"] = "bar._components"
         result = runner.invoke(
             "component",
             "generate",
@@ -168,7 +168,7 @@ def test_component_generate_succeeds_non_default_component_package() -> None:
 def test_component_generate_fails_components_package_does_not_exist() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["components_package"] = "bar._components"
+            pyproject_toml["tool"]["dg"]["component_package"] = "bar._components"
         result = runner.invoke(
             "component",
             "generate",

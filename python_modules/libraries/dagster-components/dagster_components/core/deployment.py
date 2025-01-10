@@ -49,7 +49,7 @@ def _is_code_location_root(path: Path) -> bool:
 
 @dataclass
 class CodeLocationConfig:
-    components_package: Optional[str] = None
+    component_package: Optional[str] = None
 
 
 def _load_code_location_config(path: Path) -> CodeLocationConfig:
@@ -79,13 +79,13 @@ class CodeLocationProjectContext:
         name = os.path.basename(path)
         config = _load_code_location_config(path)
         components_package_name = (
-            config.components_package or f"{name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE}"
+            config.component_package or f"{name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE}"
         )
         if not components_path:
             with ensure_loadable_path(path):
                 components_path = (
-                    Path(get_path_for_package(config.components_package))
-                    if config.components_package
+                    Path(get_path_for_package(config.component_package))
+                    if config.component_package
                     else path / name / _DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE
                 )
 
