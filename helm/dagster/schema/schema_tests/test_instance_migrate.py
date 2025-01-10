@@ -95,9 +95,7 @@ def test_job_instance_migrate_keeps_volumes_and_volumeMounts(template: HelmTempl
 
     helm_values_migrate_enabled = DagsterHelmValues.construct(
         migrate=Migrate(enabled=True, extraContainers=[], initContainers=[]),
-        dagsterWebserver=Webserver.construct(
-            volumes=volumes, volumeMounts=volume_mounts
-        ),
+        dagsterWebserver=Webserver.construct(volumes=volumes, volumeMounts=volume_mounts),
     )
 
     jobs = template.render(helm_values_migrate_enabled)
