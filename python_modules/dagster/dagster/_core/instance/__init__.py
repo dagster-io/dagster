@@ -1905,12 +1905,16 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.get_records_for_run(run_id, cursor, of_type, limit, ascending)
 
     def watch_event_logs(
-        self, run_id: str, cursor: Optional[str], cb: "dagster._core.event_api.EventHandlerFn"
+        self,
+        run_id: str,
+        cursor: Optional[str],
+        # TODO(deepyaman): Check why forward reference doesn't work here
+        cb: Callable[["dagster._core.events.log.EventLogEntry", str], None],
     ) -> None:
         return self._event_storage.watch(run_id, cursor, cb)
 
     def end_watch_event_logs(
-        self, run_id: str, cb: "dagster._core.event_api.EventHandlerFn"
+        self, run_id: str, cb: Callable[["dagster._core.events.log.EventLogEntry", str], None]
     ) -> None:
         return self._event_storage.end_watch(run_id, cb)
 
