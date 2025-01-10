@@ -31,11 +31,11 @@ CLI_CONFIG_KEY = "config"
 
 def execute_code_location_command(path: Path, cmd: Sequence[str], dg_context: "DgContext") -> str:
     if dg_context.config.use_dg_managed_environment:
-        code_location_command_prefix = ["dagster-components"]
-        env = None
-    else:
         code_location_command_prefix = ["uv", "run", "dagster-components"]
         env = get_uv_command_env()
+    else:
+        code_location_command_prefix = ["dagster-components"]
+        env = None
     full_cmd = [
         *code_location_command_prefix,
         *(
