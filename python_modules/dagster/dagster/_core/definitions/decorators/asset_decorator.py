@@ -248,8 +248,7 @@ def asset(
             e.g. `team:finops`.
         kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
             will be made visible in the Dagster UI.
-        pool (Optional[str]): A string that identifies the concurrency limit group that governs
-            this asset's execution.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this asset's execution.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
             Hidden parameter not exposed in the decorator signature, but passed in kwargs.
@@ -610,8 +609,8 @@ def multi_asset(
             by this function.
         check_specs (Optional[Sequence[AssetCheckSpec]]): Specs for asset checks that
             execute in the decorated function after materializing the assets.
-        pool (Optional[str]): A string that identifies the concurrency limit group that
-            governs this multi-asset's execution.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this
+            multi-asset's execution.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the
             multi_asset.

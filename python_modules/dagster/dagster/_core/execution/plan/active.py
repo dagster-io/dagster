@@ -23,7 +23,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode, RetryState
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG, PRIORITY_TAG
+from dagster._core.storage.tags import PRIORITY_TAG
 from dagster._utils.interrupts import pop_captured_interrupt
 from dagster._utils.tags import TagConcurrencyLimitsCounter
 
@@ -339,14 +339,13 @@ class ActiveExecution:
                 run_scoped_concurrency_limits_counter.update_counters_with_launched_item(step)
 
             # fallback to fetching from tags for backwards compatibility
-            pool = step.pool if step.pool else step.tags.get(GLOBAL_CONCURRENCY_TAG)
-            if pool and self._instance_concurrency_context:
+            if step.pool and self._instance_concurrency_context:
                 try:
                     step_priority = int(step.tags.get(PRIORITY_TAG, 0))
                 except ValueError:
                     step_priority = 0
 
-                if not self._instance_concurrency_context.claim(pool, step.key, step_priority):
+                if not self._instance_concurrency_context.claim(step.pool, step.key, step_priority):
                     continue
 
             batch.append(step)
@@ -643,7 +642,7 @@ class ActiveExecution:
             ):
                 step = self.get_step_by_key(step_key)
                 step_context = plan_context.for_step(step)
-                pool = cast(str, step.pool)
+                pool = check.inst(step.pool, str)
                 self._messaged_concurrency_slots[step_key] = time.time()
                 is_initial_message = last_messaged_timestamp is None
                 yield DagsterEvent.step_concurrency_blocked(
