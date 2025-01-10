@@ -250,7 +250,7 @@ def test_component_type_info_success_outside_code_location() -> None:
             "component-type",
             "info",
             "dagster_components.test.simple_pipes_script_asset",
-            "--disable-uv",
+            "--no-use-dg-managed-environment",
         )
         assert_runner_result(result)
         assert result.output.strip() == _EXPECTED_COMPONENT_TYPE_INFO_FULL
@@ -302,5 +302,5 @@ def test_list_component_types_success_with_unmanaged_environment():
 
 def test_component_type_list_success_outside_code_location():
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("component-type", "list", "--disable-uv")
+        result = runner.invoke("component-type", "list", "--no-use-dg-managed-environment")
         assert_runner_result(result)
