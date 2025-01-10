@@ -32,16 +32,19 @@ export class OpSelectionParser extends Parser {
   public static readonly RPAREN = 9;
   public static readonly NAME = 10;
   public static readonly NAME_SUBSTRING = 11;
-  public static readonly QUOTED_STRING = 12;
-  public static readonly UNQUOTED_STRING = 13;
-  public static readonly WS = 14;
+  public static readonly SINKS = 12;
+  public static readonly ROOTS = 13;
+  public static readonly QUOTED_STRING = 14;
+  public static readonly UNQUOTED_STRING = 15;
+  public static readonly WS = 16;
   public static readonly RULE_start = 0;
   public static readonly RULE_expr = 1;
   public static readonly RULE_traversalAllowedExpr = 2;
   public static readonly RULE_upTraversal = 3;
   public static readonly RULE_downTraversal = 4;
-  public static readonly RULE_attributeExpr = 5;
-  public static readonly RULE_value = 6;
+  public static readonly RULE_functionName = 5;
+  public static readonly RULE_attributeExpr = 6;
+  public static readonly RULE_value = 7;
   // tslint:disable:no-trailing-whitespace
   public static readonly ruleNames: string[] = [
     'start',
@@ -49,6 +52,7 @@ export class OpSelectionParser extends Parser {
     'traversalAllowedExpr',
     'upTraversal',
     'downTraversal',
+    'functionName',
     'attributeExpr',
     'value',
   ];
@@ -66,6 +70,8 @@ export class OpSelectionParser extends Parser {
     "')'",
     "'name'",
     "'name_substring'",
+    "'sinks'",
+    "'roots'",
   ];
   private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
     undefined,
@@ -80,6 +86,8 @@ export class OpSelectionParser extends Parser {
     'RPAREN',
     'NAME',
     'NAME_SUBSTRING',
+    'SINKS',
+    'ROOTS',
     'QUOTED_STRING',
     'UNQUOTED_STRING',
     'WS',
@@ -130,9 +138,9 @@ export class OpSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 14;
+        this.state = 16;
         this.expr(0);
-        this.state = 15;
+        this.state = 17;
         this.match(OpSelectionParser.EOF);
       }
     } catch (re) {
@@ -167,7 +175,7 @@ export class OpSelectionParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 32;
+        this.state = 34;
         this._errHandler.sync(this);
         switch (this.interpreter.adaptivePredict(this._input, 0, this._ctx)) {
           case 1:
@@ -176,7 +184,7 @@ export class OpSelectionParser extends Parser {
               this._ctx = _localctx;
               _prevctx = _localctx;
 
-              this.state = 18;
+              this.state = 20;
               this.traversalAllowedExpr();
             }
             break;
@@ -186,11 +194,11 @@ export class OpSelectionParser extends Parser {
               _localctx = new UpAndDownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 19;
-              this.upTraversal();
-              this.state = 20;
-              this.traversalAllowedExpr();
               this.state = 21;
+              this.upTraversal();
+              this.state = 22;
+              this.traversalAllowedExpr();
+              this.state = 23;
               this.downTraversal();
             }
             break;
@@ -200,9 +208,9 @@ export class OpSelectionParser extends Parser {
               _localctx = new UpTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 23;
+              this.state = 25;
               this.upTraversal();
-              this.state = 24;
+              this.state = 26;
               this.traversalAllowedExpr();
             }
             break;
@@ -212,9 +220,9 @@ export class OpSelectionParser extends Parser {
               _localctx = new DownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 26;
+              this.state = 28;
               this.traversalAllowedExpr();
-              this.state = 27;
+              this.state = 29;
               this.downTraversal();
             }
             break;
@@ -224,9 +232,9 @@ export class OpSelectionParser extends Parser {
               _localctx = new NotExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 29;
+              this.state = 31;
               this.match(OpSelectionParser.NOT);
-              this.state = 30;
+              this.state = 32;
               this.expr(4);
             }
             break;
@@ -236,13 +244,13 @@ export class OpSelectionParser extends Parser {
               _localctx = new AllExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 31;
+              this.state = 33;
               this.match(OpSelectionParser.STAR);
             }
             break;
         }
         this._ctx._stop = this._input.tryLT(-1);
-        this.state = 42;
+        this.state = 44;
         this._errHandler.sync(this);
         _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
@@ -252,7 +260,7 @@ export class OpSelectionParser extends Parser {
             }
             _prevctx = _localctx;
             {
-              this.state = 40;
+              this.state = 42;
               this._errHandler.sync(this);
               switch (this.interpreter.adaptivePredict(this._input, 1, this._ctx)) {
                 case 1:
@@ -263,13 +271,13 @@ export class OpSelectionParser extends Parser {
                       _startState,
                       OpSelectionParser.RULE_expr,
                     );
-                    this.state = 34;
+                    this.state = 36;
                     if (!this.precpred(this._ctx, 3)) {
                       throw this.createFailedPredicateException('this.precpred(this._ctx, 3)');
                     }
-                    this.state = 35;
+                    this.state = 37;
                     this.match(OpSelectionParser.AND);
-                    this.state = 36;
+                    this.state = 38;
                     this.expr(4);
                   }
                   break;
@@ -282,20 +290,20 @@ export class OpSelectionParser extends Parser {
                       _startState,
                       OpSelectionParser.RULE_expr,
                     );
-                    this.state = 37;
+                    this.state = 39;
                     if (!this.precpred(this._ctx, 2)) {
                       throw this.createFailedPredicateException('this.precpred(this._ctx, 2)');
                     }
-                    this.state = 38;
+                    this.state = 40;
                     this.match(OpSelectionParser.OR);
-                    this.state = 39;
+                    this.state = 41;
                     this.expr(3);
                   }
                   break;
               }
             }
           }
-          this.state = 44;
+          this.state = 46;
           this._errHandler.sync(this);
           _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
         }
@@ -321,7 +329,7 @@ export class OpSelectionParser extends Parser {
     );
     this.enterRule(_localctx, 4, OpSelectionParser.RULE_traversalAllowedExpr);
     try {
-      this.state = 50;
+      this.state = 57;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case OpSelectionParser.NAME:
@@ -329,19 +337,34 @@ export class OpSelectionParser extends Parser {
           _localctx = new AttributeExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 45;
+            this.state = 47;
             this.attributeExpr();
+          }
+          break;
+        case OpSelectionParser.SINKS:
+        case OpSelectionParser.ROOTS:
+          _localctx = new FunctionCallExpressionContext(_localctx);
+          this.enterOuterAlt(_localctx, 2);
+          {
+            this.state = 48;
+            this.functionName();
+            this.state = 49;
+            this.match(OpSelectionParser.LPAREN);
+            this.state = 50;
+            this.expr(0);
+            this.state = 51;
+            this.match(OpSelectionParser.RPAREN);
           }
           break;
         case OpSelectionParser.LPAREN:
           _localctx = new ParenthesizedExpressionContext(_localctx);
-          this.enterOuterAlt(_localctx, 2);
+          this.enterOuterAlt(_localctx, 3);
           {
-            this.state = 46;
+            this.state = 53;
             this.match(OpSelectionParser.LPAREN);
-            this.state = 47;
+            this.state = 54;
             this.expr(0);
-            this.state = 48;
+            this.state = 55;
             this.match(OpSelectionParser.RPAREN);
           }
           break;
@@ -369,17 +392,17 @@ export class OpSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 53;
+        this.state = 60;
         this._errHandler.sync(this);
         _la = this._input.LA(1);
         if (_la === OpSelectionParser.DIGITS) {
           {
-            this.state = 52;
+            this.state = 59;
             this.match(OpSelectionParser.DIGITS);
           }
         }
 
-        this.state = 55;
+        this.state = 62;
         this.match(OpSelectionParser.PLUS);
       }
     } catch (re) {
@@ -402,14 +425,14 @@ export class OpSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 57;
+        this.state = 64;
         this.match(OpSelectionParser.PLUS);
-        this.state = 59;
+        this.state = 66;
         this._errHandler.sync(this);
         switch (this.interpreter.adaptivePredict(this._input, 5, this._ctx)) {
           case 1:
             {
-              this.state = 58;
+              this.state = 65;
               this.match(OpSelectionParser.DIGITS);
             }
             break;
@@ -429,22 +452,56 @@ export class OpSelectionParser extends Parser {
     return _localctx;
   }
   // @RuleVersion(0)
+  public functionName(): FunctionNameContext {
+    const _localctx: FunctionNameContext = new FunctionNameContext(this._ctx, this.state);
+    this.enterRule(_localctx, 10, OpSelectionParser.RULE_functionName);
+    let _la: number;
+    try {
+      this.enterOuterAlt(_localctx, 1);
+      {
+        this.state = 68;
+        _la = this._input.LA(1);
+        if (!(_la === OpSelectionParser.SINKS || _la === OpSelectionParser.ROOTS)) {
+          this._errHandler.recoverInline(this);
+        } else {
+          if (this._input.LA(1) === Token.EOF) {
+            this.matchedEOF = true;
+          }
+
+          this._errHandler.reportMatch(this);
+          this.consume();
+        }
+      }
+    } catch (re) {
+      if (re instanceof RecognitionException) {
+        _localctx.exception = re;
+        this._errHandler.reportError(this, re);
+        this._errHandler.recover(this, re);
+      } else {
+        throw re;
+      }
+    } finally {
+      this.exitRule();
+    }
+    return _localctx;
+  }
+  // @RuleVersion(0)
   public attributeExpr(): AttributeExprContext {
     let _localctx: AttributeExprContext = new AttributeExprContext(this._ctx, this.state);
-    this.enterRule(_localctx, 10, OpSelectionParser.RULE_attributeExpr);
+    this.enterRule(_localctx, 12, OpSelectionParser.RULE_attributeExpr);
     try {
-      this.state = 67;
+      this.state = 76;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case OpSelectionParser.NAME:
           _localctx = new NameExprContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 61;
+            this.state = 70;
             this.match(OpSelectionParser.NAME);
-            this.state = 62;
+            this.state = 71;
             this.match(OpSelectionParser.COLON);
-            this.state = 63;
+            this.state = 72;
             this.value();
           }
           break;
@@ -452,11 +509,11 @@ export class OpSelectionParser extends Parser {
           _localctx = new NameSubstringExprContext(_localctx);
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 64;
+            this.state = 73;
             this.match(OpSelectionParser.NAME_SUBSTRING);
-            this.state = 65;
+            this.state = 74;
             this.match(OpSelectionParser.COLON);
-            this.state = 66;
+            this.state = 75;
             this.value();
           }
           break;
@@ -479,12 +536,12 @@ export class OpSelectionParser extends Parser {
   // @RuleVersion(0)
   public value(): ValueContext {
     const _localctx: ValueContext = new ValueContext(this._ctx, this.state);
-    this.enterRule(_localctx, 12, OpSelectionParser.RULE_value);
+    this.enterRule(_localctx, 14, OpSelectionParser.RULE_value);
     let _la: number;
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 69;
+        this.state = 78;
         _la = this._input.LA(1);
         if (
           !(_la === OpSelectionParser.QUOTED_STRING || _la === OpSelectionParser.UNQUOTED_STRING)
@@ -532,37 +589,40 @@ export class OpSelectionParser extends Parser {
   }
 
   public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x10J\x04\x02' +
+    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x12S\x04\x02' +
     '\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07' +
-    '\t\x07\x04\b\t\b\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03\x03\x03\x03' +
+    '\t\x07\x04\b\t\b\x04\t\t\t\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03' +
     '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x03\x03\x05\x03#\n\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x07\x03+\n\x03\f\x03\x0E\x03.\v\x03\x03\x04\x03\x04\x03\x04\x03' +
-    '\x04\x03\x04\x05\x045\n\x04\x03\x05\x05\x058\n\x05\x03\x05\x03\x05\x03' +
-    '\x06\x03\x06\x05\x06>\n\x06\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03' +
-    '\x07\x05\x07F\n\x07\x03\b\x03\b\x03\b\x02\x02\x03\x04\t\x02\x02\x04\x02' +
-    '\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x02\x03\x03\x02\x0E\x0F\x02M\x02\x10' +
-    '\x03\x02\x02\x02\x04"\x03\x02\x02\x02\x064\x03\x02\x02\x02\b7\x03\x02' +
-    '\x02\x02\n;\x03\x02\x02\x02\fE\x03\x02\x02\x02\x0EG\x03\x02\x02\x02\x10' +
-    '\x11\x05\x04\x03\x02\x11\x12\x07\x02\x02\x03\x12\x03\x03\x02\x02\x02\x13' +
-    '\x14\b\x03\x01\x02\x14#\x05\x06\x04\x02\x15\x16\x05\b\x05\x02\x16\x17' +
-    '\x05\x06\x04\x02\x17\x18\x05\n\x06\x02\x18#\x03\x02\x02\x02\x19\x1A\x05' +
-    '\b\x05\x02\x1A\x1B\x05\x06\x04\x02\x1B#\x03\x02\x02\x02\x1C\x1D\x05\x06' +
-    '\x04\x02\x1D\x1E\x05\n\x06\x02\x1E#\x03\x02\x02\x02\x1F \x07\x05\x02\x02' +
-    ' #\x05\x04\x03\x06!#\x07\x06\x02\x02"\x13\x03\x02\x02\x02"\x15\x03\x02' +
-    '\x02\x02"\x19\x03\x02\x02\x02"\x1C\x03\x02\x02\x02"\x1F\x03\x02\x02' +
-    '\x02"!\x03\x02\x02\x02#,\x03\x02\x02\x02$%\f\x05\x02\x02%&\x07\x03\x02' +
-    "\x02&+\x05\x04\x03\x06'(\f\x04\x02\x02()\x07\x04\x02\x02)+\x05\x04\x03" +
-    "\x05*$\x03\x02\x02\x02*'\x03\x02\x02\x02+.\x03\x02\x02\x02,*\x03\x02" +
-    '\x02\x02,-\x03\x02\x02\x02-\x05\x03\x02\x02\x02.,\x03\x02\x02\x02/5\x05' +
-    '\f\x07\x0201\x07\n\x02\x0212\x05\x04\x03\x0223\x07\v\x02\x0235\x03\x02' +
-    '\x02\x024/\x03\x02\x02\x0240\x03\x02\x02\x025\x07\x03\x02\x02\x0268\x07' +
-    '\b\x02\x0276\x03\x02\x02\x0278\x03\x02\x02\x0289\x03\x02\x02\x029:\x07' +
-    '\x07\x02\x02:\t\x03\x02\x02\x02;=\x07\x07\x02\x02<>\x07\b\x02\x02=<\x03' +
-    '\x02\x02\x02=>\x03\x02\x02\x02>\v\x03\x02\x02\x02?@\x07\f\x02\x02@A\x07' +
-    '\t\x02\x02AF\x05\x0E\b\x02BC\x07\r\x02\x02CD\x07\t\x02\x02DF\x05\x0E\b' +
-    '\x02E?\x03\x02\x02\x02EB\x03\x02\x02\x02F\r\x03\x02\x02\x02GH\t\x02\x02' +
-    '\x02H\x0F\x03\x02\x02\x02\t"*,47=E';
+    '\x03\x03\x03\x03\x03\x03\x03\x05\x03%\n\x03\x03\x03\x03\x03\x03\x03\x03' +
+    '\x03\x03\x03\x03\x03\x07\x03-\n\x03\f\x03\x0E\x030\v\x03\x03\x04\x03\x04' +
+    '\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04' +
+    '<\n\x04\x03\x05\x05\x05?\n\x05\x03\x05\x03\x05\x03\x06\x03\x06\x05\x06' +
+    'E\n\x06\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x05\bO\n\b' +
+    '\x03\t\x03\t\x03\t\x02\x02\x03\x04\n\x02\x02\x04\x02\x06\x02\b\x02\n\x02' +
+    '\f\x02\x0E\x02\x10\x02\x02\x04\x03\x02\x0E\x0F\x03\x02\x10\x11\x02V\x02' +
+    '\x12\x03\x02\x02\x02\x04$\x03\x02\x02\x02\x06;\x03\x02\x02\x02\b>\x03' +
+    '\x02\x02\x02\nB\x03\x02\x02\x02\fF\x03\x02\x02\x02\x0EN\x03\x02\x02\x02' +
+    '\x10P\x03\x02\x02\x02\x12\x13\x05\x04\x03\x02\x13\x14\x07\x02\x02\x03' +
+    '\x14\x03\x03\x02\x02\x02\x15\x16\b\x03\x01\x02\x16%\x05\x06\x04\x02\x17' +
+    '\x18\x05\b\x05\x02\x18\x19\x05\x06\x04\x02\x19\x1A\x05\n\x06\x02\x1A%' +
+    '\x03\x02\x02\x02\x1B\x1C\x05\b\x05\x02\x1C\x1D\x05\x06\x04\x02\x1D%\x03' +
+    '\x02\x02\x02\x1E\x1F\x05\x06\x04\x02\x1F \x05\n\x06\x02 %\x03\x02\x02' +
+    '\x02!"\x07\x05\x02\x02"%\x05\x04\x03\x06#%\x07\x06\x02\x02$\x15\x03' +
+    '\x02\x02\x02$\x17\x03\x02\x02\x02$\x1B\x03\x02\x02\x02$\x1E\x03\x02\x02' +
+    "\x02$!\x03\x02\x02\x02$#\x03\x02\x02\x02%.\x03\x02\x02\x02&'\f\x05\x02" +
+    "\x02'(\x07\x03\x02\x02(-\x05\x04\x03\x06)*\f\x04\x02\x02*+\x07\x04\x02" +
+    '\x02+-\x05\x04\x03\x05,&\x03\x02\x02\x02,)\x03\x02\x02\x02-0\x03\x02\x02' +
+    '\x02.,\x03\x02\x02\x02./\x03\x02\x02\x02/\x05\x03\x02\x02\x020.\x03\x02' +
+    '\x02\x021<\x05\x0E\b\x0223\x05\f\x07\x0234\x07\n\x02\x0245\x05\x04\x03' +
+    '\x0256\x07\v\x02\x026<\x03\x02\x02\x0278\x07\n\x02\x0289\x05\x04\x03\x02' +
+    '9:\x07\v\x02\x02:<\x03\x02\x02\x02;1\x03\x02\x02\x02;2\x03\x02\x02\x02' +
+    ';7\x03\x02\x02\x02<\x07\x03\x02\x02\x02=?\x07\b\x02\x02>=\x03\x02\x02' +
+    '\x02>?\x03\x02\x02\x02?@\x03\x02\x02\x02@A\x07\x07\x02\x02A\t\x03\x02' +
+    '\x02\x02BD\x07\x07\x02\x02CE\x07\b\x02\x02DC\x03\x02\x02\x02DE\x03\x02' +
+    '\x02\x02E\v\x03\x02\x02\x02FG\t\x02\x02\x02G\r\x03\x02\x02\x02HI\x07\f' +
+    '\x02\x02IJ\x07\t\x02\x02JO\x05\x10\t\x02KL\x07\r\x02\x02LM\x07\t\x02\x02' +
+    'MO\x05\x10\t\x02NH\x03\x02\x02\x02NK\x03\x02\x02\x02O\x0F\x03\x02\x02' +
+    '\x02PQ\t\x03\x02\x02Q\x11\x03\x02\x02\x02\t$,.;>DN';
   public static __ATN: ATN;
   public static get _ATN(): ATN {
     if (!OpSelectionParser.__ATN) {
@@ -930,6 +990,44 @@ export class AttributeExpressionContext extends TraversalAllowedExprContext {
     }
   }
 }
+export class FunctionCallExpressionContext extends TraversalAllowedExprContext {
+  public functionName(): FunctionNameContext {
+    return this.getRuleContext(0, FunctionNameContext);
+  }
+  public LPAREN(): TerminalNode {
+    return this.getToken(OpSelectionParser.LPAREN, 0);
+  }
+  public expr(): ExprContext {
+    return this.getRuleContext(0, ExprContext);
+  }
+  public RPAREN(): TerminalNode {
+    return this.getToken(OpSelectionParser.RPAREN, 0);
+  }
+  constructor(ctx: TraversalAllowedExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: OpSelectionListener): void {
+    if (listener.enterFunctionCallExpression) {
+      listener.enterFunctionCallExpression(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: OpSelectionListener): void {
+    if (listener.exitFunctionCallExpression) {
+      listener.exitFunctionCallExpression(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: OpSelectionVisitor<Result>): Result {
+    if (visitor.visitFunctionCallExpression) {
+      return visitor.visitFunctionCallExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
 export class ParenthesizedExpressionContext extends TraversalAllowedExprContext {
   public LPAREN(): TerminalNode {
     return this.getToken(OpSelectionParser.LPAREN, 0);
@@ -1032,6 +1130,42 @@ export class DownTraversalContext extends ParserRuleContext {
   public accept<Result>(visitor: OpSelectionVisitor<Result>): Result {
     if (visitor.visitDownTraversal) {
       return visitor.visitDownTraversal(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+
+export class FunctionNameContext extends ParserRuleContext {
+  public SINKS(): TerminalNode | undefined {
+    return this.tryGetToken(OpSelectionParser.SINKS, 0);
+  }
+  public ROOTS(): TerminalNode | undefined {
+    return this.tryGetToken(OpSelectionParser.ROOTS, 0);
+  }
+  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+    super(parent, invokingState);
+  }
+  // @Override
+  public get ruleIndex(): number {
+    return OpSelectionParser.RULE_functionName;
+  }
+  // @Override
+  public enterRule(listener: OpSelectionListener): void {
+    if (listener.enterFunctionName) {
+      listener.enterFunctionName(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: OpSelectionListener): void {
+    if (listener.exitFunctionName) {
+      listener.exitFunctionName(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: OpSelectionVisitor<Result>): Result {
+    if (visitor.visitFunctionName) {
+      return visitor.visitFunctionName(this);
     } else {
       return visitor.visitChildren(this);
     }

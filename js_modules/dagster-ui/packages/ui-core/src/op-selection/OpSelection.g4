@@ -15,11 +15,15 @@ expr:
 
 // Allowed expressions for traversals
 traversalAllowedExpr:
-	attributeExpr			# AttributeExpression
-	| LPAREN expr RPAREN	# ParenthesizedExpression;
+	attributeExpr						# AttributeExpression
+	| functionName LPAREN expr RPAREN	# FunctionCallExpression
+	| LPAREN expr RPAREN				# ParenthesizedExpression;
 
 upTraversal: DIGITS? PLUS;
 downTraversal: PLUS DIGITS?;
+
+// Function names as tokens
+functionName: SINKS | ROOTS;
 
 // Attribute expressions for specific attributes
 attributeExpr:
@@ -47,6 +51,10 @@ RPAREN: ')';
 // Tokens for attributes
 NAME: 'name';
 NAME_SUBSTRING: 'name_substring';
+
+// Tokens for function names
+SINKS: 'sinks';
+ROOTS: 'roots';
 
 // Tokens for strings
 QUOTED_STRING: '"' (~["\\\r\n])* '"';

@@ -10,6 +10,8 @@ import {
   DownTraversalContext,
   DownTraversalExpressionContext,
   ExprContext,
+  FunctionCallExpressionContext,
+  FunctionNameContext,
   NameExprContext,
   NameSubstringExprContext,
   NotExpressionContext,
@@ -173,6 +175,19 @@ export interface OpSelectionListener extends ParseTreeListener {
   exitAttributeExpression?: (ctx: AttributeExpressionContext) => void;
 
   /**
+   * Enter a parse tree produced by the `FunctionCallExpression`
+   * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  enterFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `FunctionCallExpression`
+   * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  exitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
+
+  /**
    * Enter a parse tree produced by the `ParenthesizedExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
    * @param ctx the parse tree
@@ -239,6 +254,17 @@ export interface OpSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitDownTraversal?: (ctx: DownTraversalContext) => void;
+
+  /**
+   * Enter a parse tree produced by `OpSelectionParser.functionName`.
+   * @param ctx the parse tree
+   */
+  enterFunctionName?: (ctx: FunctionNameContext) => void;
+  /**
+   * Exit a parse tree produced by `OpSelectionParser.functionName`.
+   * @param ctx the parse tree
+   */
+  exitFunctionName?: (ctx: FunctionNameContext) => void;
 
   /**
    * Enter a parse tree produced by `OpSelectionParser.attributeExpr`.
