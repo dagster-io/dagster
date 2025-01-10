@@ -11,11 +11,10 @@ from dagster_openai import OpenAIResource
 from openai import OpenAI
 
 import project_llm_fine_fune.constants as constants
-
-from . import utils
+import project_llm_fine_fune.utils as utils
 
 goodreads = dg.AssetSpec(
-    "Goodreads",
+    "goodreads_source_dataset",
     description="Goodreads Data. https://mengtingwan.github.io/data/goodreads#datasets",
     group_name="raw_data",
 )
@@ -24,7 +23,7 @@ goodreads = dg.AssetSpec(
 @dg.asset(
     kinds={"duckdb"},
     description="Goodreads graphic novel data",
-    group_name="processing",
+    group_name="ingestion",
     deps=[goodreads],
 )
 def graphic_novels(duckdb_resource: dg_duckdb.DuckDBResource):
@@ -45,7 +44,7 @@ def graphic_novels(duckdb_resource: dg_duckdb.DuckDBResource):
 @dg.asset(
     kinds={"duckdb"},
     description="Goodreads author data",
-    group_name="processing",
+    group_name="ingestion",
     deps=[goodreads],
 )
 def authors(duckdb_resource: dg_duckdb.DuckDBResource):
@@ -66,7 +65,7 @@ def authors(duckdb_resource: dg_duckdb.DuckDBResource):
 @dg.asset(
     kinds={"duckdb"},
     description="Goodreads shelf feature engineering",
-    group_name="processing",
+    group_name="feature_engineering",
 )
 def book_category(
     duckdb_resource: dg_duckdb.DuckDBResource,
@@ -118,7 +117,7 @@ def enriched_graphic_novels(
     book_category,
 ) -> pd.DataFrame:
     query = f"""
-        create table if not exists enriched_graphic_novels as (
+        create table if not exists enriched_graphic_novels as ( 
             select
                 book.title as title,
                 authors.name as author,
@@ -162,6 +161,7 @@ def create_prompt_record(data: dict, categories: list):
 
 
 @dg.asset(
+    kinds={"python"},
     group_name="preparation",
     description="Generate training file",
 )
@@ -179,6 +179,7 @@ def training_file(
 
 
 @dg.asset(
+    kinds={"python"},
     group_name="preparation",
     description="Generate validation file",
 )
@@ -402,14 +403,14 @@ def fine_tuned_model_accuracy(
         select * from enriched_graphic_novels
     """
     with duckdb_resource.get_connection() as conn:
-        asset_check_validation = (
-            conn.execute(query).fetch_df().sample(constants.VALIDATION_SAMPLE_SIZE)
+        validation = (
+            conn.execute(query).fetch_df().sample(n=constants.VALIDATION_SAMPLE_SIZE)
         )
 
     models = Counter()
     base_model = constants.MODEL_NAME
     with openai.get_client(context) as client:
-        for data in [row for _, row in asset_check_validation.iterrows()]:
+        for data in [row for _, row in validation.iterrows()]:
             for model in [fine_tuned_model, base_model]:
                 model_answer = model_question(
                     client,
