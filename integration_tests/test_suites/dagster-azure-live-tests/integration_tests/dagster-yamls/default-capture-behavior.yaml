@@ -6,15 +6,9 @@ compute_logs:
       env: TEST_AZURE_STORAGE_ACCOUNT_ID
     container: 
       env: TEST_AZURE_CONTAINER_ID 
-    secret_credential: 
-      client_id: 
-        env: TEST_AZURE_CLIENT_ID
-      tenant_id: 
-        env: TEST_AZURE_TENANT_ID
-      client_secret: 
-        env: TEST_AZURE_CLIENT_SECRET
+    default_azure_credential:
+      exclude_environment_credential: false 
     prefix: 
       env: TEST_AZURE_LOG_PREFIX
     local_dir: "/tmp/cool"
     upload_interval: 30    
-    show_url_only: true 

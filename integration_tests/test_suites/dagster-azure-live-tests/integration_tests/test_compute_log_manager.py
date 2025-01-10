@@ -10,11 +10,19 @@ from dagster import (
     EventRecordsFilter,
     _check as check,
 )
+from dagster._core.event_api import EventLogRecord
+
+YAMLS_NOT_CAPTURED = ["default-capture-behavior.yaml"]
 
 
 @pytest.mark.parametrize(
     "dagster_yaml",
-    ["secret-credential.yaml", "default-credential.yaml", "access-key-credential.yaml"],
+    [
+        "secret-credential.yaml",
+        "default-credential.yaml",
+        "access-key-credential.yaml",
+        "default-capture-behavior.yaml",
+    ],
     indirect=True,
 )
 def test_compute_log_manager(
@@ -28,18 +36,38 @@ def test_compute_log_manager(
         ["dagster", "asset", "materialize", "--select", "my_asset", "-m", "azure_test_proj.defs"],
         check=True,
     )
+    logs_captured_record = DagsterInstance.get().get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.LOGS_CAPTURED,
+        )
+    )[0]
+
+    stdout, stderr = (
+        get_captured_logs_from_urls(
+            logs_captured_record,
+            credentials,
+        )
+        if dagster_yaml.name not in YAMLS_NOT_CAPTURED
+        else get_captured_logs_from_run(
+            logs_captured_record,
+            prefix_env,
+            container_client,
+        )
+    )
+
+    assert stdout.count("Printing without context") == 10
+    assert stderr.count("Logging using context") == 10
+
+
+def get_captured_logs_from_urls(
+    captured_logs_event: EventLogRecord, credentials: ClientSecretCredential
+) -> tuple[str, str]:
     logs_captured_data = check.not_none(
-        DagsterInstance.get()
-        .get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.LOGS_CAPTURED,
-            )
-        )[0]
-        .event_log_entry.dagster_event
+        captured_logs_event.event_log_entry.dagster_event
     ).logs_captured_data
 
-    assert logs_captured_data.external_stderr_url
-    assert logs_captured_data.external_stdout_url
+    assert logs_captured_data.external_stderr_url is not None
+    assert logs_captured_data.external_stdout_url is not None
 
     stderr = (
         BlobClient.from_blob_url(logs_captured_data.external_stderr_url, credential=credentials)
@@ -54,6 +82,23 @@ def test_compute_log_manager(
         .readall()
         .decode()
     )
+    return stdout, stderr
 
-    assert stdout.count("Printing without context") == 10
-    assert stderr.count("Logging using context") == 10
+
+def get_captured_logs_from_run(
+    captured_logs_event: EventLogRecord, prefix_env: str, container_client: ContainerClient
+) -> tuple[str, str]:
+    run_id = captured_logs_event.run_id
+    expected_log_folder = f"{prefix_env}/storage/{run_id}/compute_logs"
+    # list all blobs coming from this log folder
+    blob_list = list(container_client.list_blobs(name_starts_with=expected_log_folder))
+    assert len(blob_list) == 2
+    stdout = next(iter([blob for blob in blob_list if "out" in blob.name]))
+    stderr = next(iter([blob for blob in blob_list if "err" in blob.name]))
+    # get blob for each log
+    stdout_blob = container_client.get_blob_client(stdout.name)
+    stderr_blob = container_client.get_blob_client(stderr.name)
+    # download content
+    stdout_content = stdout_blob.download_blob().readall().decode()
+    stderr_content = stderr_blob.download_blob().readall().decode()
+    return stdout_content, stderr_content
