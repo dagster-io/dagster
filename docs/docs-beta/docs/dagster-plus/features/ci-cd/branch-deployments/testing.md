@@ -15,7 +15,7 @@ This guide details a workflow to test Dagster code in your cloud environment wit
 
 With these tools, we can merge changes with confidence in the impact on our data platform and with the assurance that our code will execute as intended.
 
-Here’s an overview of the main concepts we'll be using:
+Here's an overview of the main concepts we'll be using:
 
 {/* - [Assets](/concepts/assets/software-defined-assets) - We'll define three assets that each persist a table to Snowflake. */}
 - [Assets](/todo) - We'll define three assets that each persist a table to Snowflake.
@@ -35,7 +35,7 @@ Here’s an overview of the main concepts we'll be using:
 ## Prerequisites
 
 :::note
-  This guide is an extension of the <a href="/guides/dagster/transitioning-data-pipelines-from-development-to-production"> Transitioning data pipelines from development to production </a> guide, illustrating a workflow for staging deployments. We'll use the examples from this guide to build a workflow atop Dagster+’s branch deployment feature.
+  This guide is an extension of the <a href="/guides/dagster/transitioning-data-pipelines-from-development-to-production"> Transitioning data pipelines from development to production </a> guide, illustrating a workflow for staging deployments. We'll use the examples from this guide to build a workflow atop Dagster+'s branch deployment feature.
 :::
 
 To complete the steps in this guide, you'll need:
@@ -184,7 +184,7 @@ Refer to the [Dagster+ environment variables documentation](/todo) for more info
 
 ## Step 3: Create jobs to manage database cloning per branch deployment
 
-We’ll first need to define a job that clones our `PRODUCTION` database for each branch deployment. Later, in our GitHub actions workflow, we can trigger this job to run upon each redeploy. Each clone will be named `PRODUCTION_CLONE_<ID>` with `<ID>` representing the pull request ID, ensuring each branch deployment has a unique clone. This job will drop a database clone if it exists and then reclone from production, ensuring each redeployment has a fresh clone of `PRODUCTION`:
+We'll first need to define a job that clones our `PRODUCTION` database for each branch deployment. Later, in our GitHub actions workflow, we can trigger this job to run upon each redeploy. Each clone will be named `PRODUCTION_CLONE_<ID>` with `<ID>` representing the pull request ID, ensuring each branch deployment has a unique clone. This job will drop a database clone if it exists and then reclone from production, ensuring each redeployment has a fresh clone of `PRODUCTION`:
 
 :::note
   <strong> Why use ops and jobs instead of assets? </strong> We'll be writing

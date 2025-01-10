@@ -4,7 +4,7 @@ description: "Learn to integrate Dagster Pipes with Databricks to launch externa
 sidebar_position: 600
 ---
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster’s [Databricks integration](/integrations/libraries/databricks) to launch Databricks jobs.
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Databricks integration](/integrations/libraries/databricks) to launch Databricks jobs.
 
 Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr` of the driver process) and events back to Dagster. This does not require a full Dagster environment on Databricks; instead:
 
@@ -24,7 +24,7 @@ Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr
 
     - **In Databricks**, you'll need:
 
-    - **A Databricks workspace**. If you don’t have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
+    - **A Databricks workspace**. If you don't have this, follow the [Databricks quickstart](https://docs.databricks.com/workflows/jobs/jobs-quickstart.html) to set one up.
     - **The following information about your Databricks workspace**:
 
         - `host` - The host URL of your Databricks workspace, ex: `https://dbc-xxxxxxx-yyyy.cloud.databricks.com/`
@@ -41,7 +41,7 @@ Pipes allows your Databricks jobs to stream logs (including `stdout` and `stderr
 
 ## Step 1: Create an asset computed in Databricks
 
-In this step, you’ll create a Dagster asset that, when materialized, opens a Dagster pipes session and launches a Databricks job.
+In this step, you'll create a Dagster asset that, when materialized, opens a Dagster pipes session and launches a Databricks job.
 
 ### Step 1.1: Define the Dagster asset
 
@@ -108,8 +108,8 @@ Let's review what's happening in this code:
 
 - **Creates an asset named `databricks_asset`.** We also:
 
-  - Provided <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging. We’ll come back to this a bit later in this section.
-  - Specified a <PyObject section="libraries" module="dagster_databricks" object="PipesDatabricksClient" /> resource for the asset to use. We’ll also come back to this later.
+  - Provided <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> as the `context` argument to the asset. This object provides access to system APIs such as resources, config, and logging. We'll come back to this a bit later in this section.
+  - Specified a <PyObject section="libraries" module="dagster_databricks" object="PipesDatabricksClient" /> resource for the asset to use. We'll also come back to this later.
 
 - **Defines a Databricks `SubmitTask` object in the asset body.** Coverage of all the fields on this object is beyond the scope of this guide, but you can find further information in the [Databricks SDK API docs](https://databricks-sdk-py.readthedocs.io/en/latest/workspace/jobs/jobs.html) and [source code](https://github.com/databricks/databricks-sdk-py/blob/main/databricks/sdk/service/jobs.py) for the `SubmitTask` object.
 
@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
 ## Step 3: Run the Databricks job from the Dagster UI
 
-In this step, you’ll run the Databricks job you created in [Step 1.2](#step-12-define-the-databricks-pipes-client-and-definitions) from the Dagster UI.
+In this step, you'll run the Databricks job you created in [Step 1.2](#step-12-define-the-databricks-pipes-client-and-definitions) from the Dagster UI.
 
 1. In a new command line session, run the following to start the UI:
 

@@ -10,7 +10,7 @@ This article focuses on using an out-of-the-box Kubernetes resource. For further
 
 :::
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster’s [Kubernetes integration](/integrations/libraries/kubernetes) to launch Kubernetes pods and execute external code.
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Kubernetes integration](/integrations/libraries/kubernetes) to launch Kubernetes pods and execute external code.
 
 Pipes allows your code to interact with Dagster outside of a full Dagster environment. Instead, the environment only needs to contain [`dagster-pipes`](https://pypi.org/project/dagster-pipes), a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
@@ -31,7 +31,7 @@ Pipes allows your code to interact with Dagster outside of a full Dagster enviro
 
 ## Step 1: Define the external Kubernetes code container
 
-In this step, you’ll create a Kubernetes container image that runs some code that uses `dagster-pipes`.
+In this step, you'll create a Kubernetes container image that runs some code that uses `dagster-pipes`.
 
 ### Step 1.1: Write a Python script
 
@@ -94,7 +94,7 @@ docker build -t pipes-example:v1 .
 
 ## Step 2: Create the Dagster objects
 
-In this step, you’ll create a Dagster asset that, when materialized, opens a Dagster pipes session and spins up a Kubernetes pod to execute the container created in the previous step.
+In this step, you'll create a Dagster asset that, when materialized, opens a Dagster pipes session and spins up a Kubernetes pod to execute the container created in the previous step.
 
 ### Step 2.1: Define the Dagster asset
 
@@ -118,7 +118,7 @@ def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sCl
   ).get_materialize_result()
 ```
 
-Here’s what we did in this example:
+Here's what we did in this example:
 
 - Created an asset named `k8s_pipes_asset`
 
@@ -147,7 +147,7 @@ Depending on your Kubernetes setup, there may be a few additional things you nee
 
 ### Step 2.2: Create Dagster Definitions
 
-Next, you’ll add the asset and Kubernetes resource to your project’s code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/deploy/code-locations).
+Next, you'll add the asset and Kubernetes resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/deploy/code-locations).
 
 Copy and paste the following to the bottom of `dagster_k8s_pipes.py`:
 
@@ -192,7 +192,7 @@ defs = Definitions(
 
 ## Step 3: Launch the Kubernetes container from the Dagster UI
 
-In this step, you’ll run the Kubernetes container you defined in [Step 1](#step-1-define-the-external-kubernetes-code-container) from the Dagster UI.
+In this step, you'll run the Kubernetes container you defined in [Step 1](#step-1-define-the-external-kubernetes-code-container) from the Dagster UI.
 
 1. In a new command line session, run the following to start the UI:
 

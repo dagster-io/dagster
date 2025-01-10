@@ -12,8 +12,6 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets,
 - A downstream asset can depend on one or more partitions of an upstream asset
 - The partitioning schemes don't need to be identical, but they should be compatible
 
----
-
 :::note
 
 This article assumes familiarity with [assets](/guides/build/assets/) and [partitions](partitioning-assets).

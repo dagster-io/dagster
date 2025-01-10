@@ -10,7 +10,7 @@ This article focuses on using an out-of-the-box Amazon Web Services (AWS) Lambda
 
 :::
 
-This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster’s AWS Lambda integration to invoke a Lambda function and execute external code.
+This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's AWS Lambda integration to invoke a Lambda function and execute external code.
 
 Dagster Pipes allows your code to interact with Dagster outside of a full Dagster environment. The environment only needs to contain `dagster-pipes`, a single-file Python package with no dependencies that can be installed from PyPI or easily vendored. `dagster-pipes` handles streaming `stdout`/`stderr` and Dagster events back to the orchestration process.
 
@@ -141,7 +141,7 @@ When finished, click the **Deploy** button to update and deploy the function.
 
 ## Step 2: Create the Dagster objects
 
-In this step, you’ll create a Dagster asset that, when materialized, opens a Dagster pipes session and invokes the Lambda function you created in [Step 1](#step-1-create-a-lambda-function).
+In this step, you'll create a Dagster asset that, when materialized, opens a Dagster pipes session and invokes the Lambda function you created in [Step 1](#step-1-create-a-lambda-function).
 
 ### Step 2.1: Define the Dagster asset
 
@@ -167,7 +167,7 @@ def lambda_pipes_asset(
     ).get_materialize_result()
 ```
 
-Here’s what we did in this example:
+Here's what we did in this example:
 
 - Created an asset named `lambda_pipes_asset`
 
@@ -188,7 +188,7 @@ Here’s what we did in this example:
 
 ### Step 2.2: Create Dagster Definitions
 
-Next, you’ll add the asset and AWS Lambda resource to your project’s code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/deploy/code-locations).
+Next, you'll add the asset and AWS Lambda resource to your project's code location via the <PyObject section="definitions" module="dagster" object="Definitions" /> object. This makes the resource available to [other Dagster definitions in the project](/guides/deploy/code-locations).
 
 Copy and paste the following to the bottom of `dagster_lambda_pipes.py`:
 
@@ -205,7 +205,7 @@ Sometimes, you may want to transition data pipelines between development and pro
 
 ## Step 3: Invoke the AWS Lambda function from the Dagster UI
 
-In this step, you’ll invoke the AWS Lambda function you defined in [Step 1](#step-1-create-a-lambda-function) from the Dagster UI.
+In this step, you'll invoke the AWS Lambda function you defined in [Step 1](#step-1-create-a-lambda-function) from the Dagster UI.
 
 1. In a new command line session, run the following to start the UI:
 
