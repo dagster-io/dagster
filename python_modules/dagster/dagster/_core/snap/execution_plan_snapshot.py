@@ -21,7 +21,6 @@ from dagster._core.execution.plan.step import (
     UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
 )
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -183,16 +182,6 @@ class ExecutionStepSnap(
             # argument
             pool=check.opt_str_param(pool, "pool"),
         )
-
-    @property
-    def concurrency_key(self):
-        # Separate property in case the snapshot was created before pool was added as
-        # a separate argument from tags
-        if self.pool:
-            return self.pool
-        if not self.tags:
-            return None
-        return self.tags.get(GLOBAL_CONCURRENCY_TAG)
 
 
 @whitelist_for_serdes
