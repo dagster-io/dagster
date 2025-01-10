@@ -117,6 +117,18 @@
                     ],
                     "default": null,
                     "title": "Uploadinterval"
+                },
+                "showUrlOnly": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Showurlonly"
                 }
             },
             "required": [

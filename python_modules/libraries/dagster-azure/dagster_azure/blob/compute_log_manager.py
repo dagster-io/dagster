@@ -49,8 +49,8 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
             ``dagster._seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
-        upload_interval: (Optional[int]): Interval in seconds to upload partial log files blob storage. By default, will only upload when the capture is complete.
-        show_url_only – (bool): Only show the URL of the log file in the UI, instead of fetching and displaying the full content. Default False.
+        upload_interval (Optional[int]): Interval in seconds to upload partial log files blob storage. By default, will only upload when the capture is complete.
+        show_url_only (bool): Only show the URL of the log file in the UI, instead of fetching and displaying the full content. Default False.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
 

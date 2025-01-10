@@ -24,6 +24,7 @@ class AzureBlobComputeLogManager(BaseModel):
     localDir: Optional[StringSource] = None
     prefix: Optional[StringSource] = None
     uploadInterval: Optional[int] = None
+    showUrlOnly: Optional[bool] = None
 
 
 class GCSComputeLogManager(BaseModel):
