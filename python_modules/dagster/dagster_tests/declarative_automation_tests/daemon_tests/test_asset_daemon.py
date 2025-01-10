@@ -131,11 +131,9 @@ mid_iteration_terminate_scenario = AssetDaemonScenario(
         run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
     )
     .with_current_time_advanced(minutes=10)
-    .start_sensor(state.sensor_name)
     .evaluate_tick()
     .assert_requested_runs()  # cursor was updated by the last tick, so we don't have new runs
     .with_current_time_advanced(hours=1)
-    .start_sensor(state.sensor_name)
     .evaluate_tick()
     .assert_requested_runs(
         run_request(
@@ -259,6 +257,7 @@ auto_materialize_sensor_scenarios = [
     "scenario", daemon_scenarios, ids=[scenario.id for scenario in daemon_scenarios]
 )
 def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
+    # test_asset_daemon_without_sensor[two_distinct_graphs_so_multiple_runs]
     with get_daemon_instance(
         extra_overrides={"auto_materialize": {"use_sensors": False}}
     ) as instance:
