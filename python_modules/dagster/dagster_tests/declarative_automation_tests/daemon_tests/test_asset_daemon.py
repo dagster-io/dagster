@@ -112,8 +112,40 @@ def _get_threadpool_executor(instance: DagsterInstance):
         yield executor
 
 
+mid_iteration_terminate_scenario = AssetDaemonScenario(
+    id="two_distinct_graphs_so_multiple_runs",
+    initial_spec=two_distinct_partitions_graphs.with_current_time(time_partitions_start_str)
+    .with_current_time_advanced(days=1, hours=1)
+    .with_all_eager(),
+    execution_fn=lambda state: state.with_runs(
+        *[
+            run_request(["A"], partition_key=hour_partition_key(state.current_time, delta=-i))
+            for i in range(25)
+        ],
+        run_request(["C"], partition_key=day_partition_key(state.current_time)),
+    )
+    .evaluate_tick(stop_mid_iteration=True)
+    .assert_requested_runs_for_stopped_iteration(
+        1,
+        run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
+        run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
+    )
+    .with_current_time_advanced(minutes=10)
+    .start_sensor(state.sensor_name)
+    .evaluate_tick()
+    .assert_requested_runs()  # cursor was updated by the last tick, so we don't have new runs
+    .with_current_time_advanced(hours=1)
+    .start_sensor(state.sensor_name)
+    .evaluate_tick()
+    .assert_requested_runs(
+        run_request(
+            asset_keys=["A", "B"], partition_key=hour_partition_key(state.current_time, delta=1)
+        )
+    ),
+)
+
 # just run over a subset of the total scenarios
-daemon_scenarios = [*basic_scenarios, *partition_scenarios]
+daemon_scenarios = [*basic_scenarios, *partition_scenarios, mid_iteration_terminate_scenario]
 
 
 # Additional repo with assets that should be not be included in the evaluation
@@ -148,6 +180,7 @@ cross_repo_sensor_scenario = AssetDaemonScenario(
 
 auto_materialize_sensor_scenarios = [
     cross_repo_sensor_scenario,
+    mid_iteration_terminate_scenario,
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned",
         initial_spec=one_asset.with_asset_properties(
@@ -219,37 +252,6 @@ auto_materialize_sensor_scenarios = [
         .evaluate_tick()
         .assert_requested_runs(run_request(["A", "B"])),
     ),
-    AssetDaemonScenario(
-        id="two_distinct_graphs_so_multiple_runs",
-        initial_spec=two_distinct_partitions_graphs.with_current_time(time_partitions_start_str)
-        .with_current_time_advanced(days=1, hours=1)
-        .with_all_eager(),
-        execution_fn=lambda state: state.with_runs(
-            *[
-                run_request(["A"], partition_key=hour_partition_key(state.current_time, delta=-i))
-                for i in range(25)
-            ],
-            run_request(["C"], partition_key=day_partition_key(state.current_time)),
-        )
-        .evaluate_tick(stop_mid_iteration=True)
-        .assert_requested_runs_for_stopped_iteration(
-            1,
-            run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
-            run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
-        )
-        .with_current_time_advanced(minutes=10)
-        .start_sensor(state.sensor_name)
-        .evaluate_tick()
-        .assert_requested_runs()  # cursor was updated by the last tick, so we don't have new runs
-        .with_current_time_advanced(hours=1)
-        .start_sensor(state.sensor_name)
-        .evaluate_tick()
-        .assert_requested_runs(
-            run_request(
-                asset_keys=["A", "B"], partition_key=hour_partition_key(state.current_time, delta=1)
-            )
-        ),
-    ),
 ]
 
 
@@ -263,7 +265,10 @@ def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
         scenario.evaluate_daemon(instance)
 
 
-daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]
+daemon_scenarios_with_threadpool_without_sensor = [
+    *basic_scenarios[:5],
+    mid_iteration_terminate_scenario,
+]
 
 
 @pytest.mark.parametrize(

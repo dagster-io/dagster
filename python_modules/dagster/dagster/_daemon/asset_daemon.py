@@ -271,8 +271,8 @@ class AutoMaterializeLaunchContext:
 
         self._tick = self._tick.with_status(status=status, **kwargs)
 
-    def set_user_canceled(self, user_canceled: bool):
-        self._tick = self._tick.with_user_canceled(user_canceled)
+    def set_user_interrupted(self, user_interrupted: bool):
+        self._tick = self._tick.with_user_interrupted(user_interrupted)
 
     def __enter__(self):
         return self
@@ -1182,21 +1182,28 @@ class AssetDaemon(DagsterDaemon):
             # check if the sensor is still enabled:
             if num_submitted >= batch_size:
                 num_submitted = 0
-                if remote_sensor:
+                should_terminate = False
+                use_auto_materialize_sensors = instance.auto_materialize_use_sensors
+                if not use_auto_materialize_sensors and get_auto_materialize_paused(instance):
+                    should_terminate = True
+                if use_auto_materialize_sensors and remote_sensor:
                     instigator_state = instance.get_instigator_state(
                         remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
                     )
                     if instigator_state and not instigator_state.is_running:
-                        # The user has manually stopped the sensor mid-iteration. In this case we assume
-                        # the user has a good reason for stopping the sensor (e.g. the sensor is submitting
-                        # many unintentional runs) so we stop submitting runs and will mark the tick as
-                        # skipped so that when the sensor is turned back on we don't detect this tick as incomplete
-                        # and try to submit the same runs again.
-                        self._logger.info(
-                            "Sensor has been manually stopped while submitted runs. No more runs will be submitted."
-                        )
-                        tick_context.set_user_canceled(True)
-                        break
+                        should_terminate = True
+                if should_terminate:
+                    # The user has manually stopped the sensor mid-iteration. In this case we assume
+                    # the user has a good reason for stopping the sensor (e.g. the sensor is submitting
+                    # many unintentional runs) so we stop submitting runs and will mark the tick as
+                    # skipped so that when the sensor is turned back on we don't detect this tick as incomplete
+                    # and try to submit the same runs again.
+                    self._logger.info(
+                        "Sensor has been manually stopped while submitted runs. No more runs will be submitted."
+                    )
+                    tick_context.set_user_interrupted(True)
+                    self._reset_cursor(instance=instance, prev_cursor=stored_cursor, remote_sensor=remote_sensor, tick=tick_context.tick)
+                    break
 
         evaluations_to_update = [
             evaluations_by_key[asset_key] for asset_key in updated_evaluation_keys
@@ -1209,7 +1216,7 @@ class AssetDaemon(DagsterDaemon):
 
         check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
 
-        if tick_context.tick.tick_data.user_canceled:
+        if tick_context.tick.tick_data.user_interrupted:
             # mark as skipped so that we don't request any remaining runs when the sensor is started again
             tick_context.update_state(TickStatus.SKIPPED)
         else:

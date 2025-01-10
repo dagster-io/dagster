@@ -46,6 +46,7 @@ from dagster._daemon.asset_daemon import (
     _get_pre_sensor_auto_materialize_cursor,
     asset_daemon_cursor_from_instigator_serialized_cursor,
     get_current_evaluation_id,
+    set_auto_materialize_paused,
 )
 from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
 
@@ -201,11 +202,15 @@ class AssetDaemonScenarioState(ScenarioState):
                 # start sensor if it hasn't started already
                 self.instance.start_sensor(sensor)
 
-            def _stop_sensor():
-                if sensor:
-                    self.instance.stop_sensor(
-                        sensor.get_remote_origin_id(), sensor.selector_id, sensor
-                    )
+            def _stop_tick():
+                use_auto_materialize_sensors = self.instance.auto_materialize_use_sensors
+                if use_auto_materialize_sensors:
+                    if sensor:
+                        self.instance.stop_sensor(
+                            sensor.get_remote_origin_id(), sensor.selector_id, sensor
+                        )
+                else:
+                    set_auto_materialize_paused(instance=self.instance, paused=False)
 
             def _run_daemon():
                 amp_tick_futures = {}
@@ -233,7 +238,7 @@ class AssetDaemonScenarioState(ScenarioState):
                     thread_name_prefix="unit_test_worker",
                 )
                 test_futures["daemon"] = sensor_controller_threadpool.submit(_run_daemon)
-                test_futures["stop"] = sensor_controller_threadpool.submit(_stop_sensor)
+                test_futures["stop"] = sensor_controller_threadpool.submit(_stop_tick)
                 wait_for_futures(test_futures)
             else:
                 _run_daemon()
