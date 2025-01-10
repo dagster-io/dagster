@@ -210,7 +210,7 @@ class AssetDaemonScenarioState(ScenarioState):
                             sensor.get_remote_origin_id(), sensor.selector_id, sensor
                         )
                 else:
-                    set_auto_materialize_paused(instance=self.instance, paused=False)
+                    set_auto_materialize_paused(instance=self.instance, paused=True)
 
             def _run_daemon():
                 amp_tick_futures = {}
