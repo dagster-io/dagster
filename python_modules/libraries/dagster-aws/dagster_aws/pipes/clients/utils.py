@@ -1,6 +1,7 @@
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from dagster._core.pipes.utils import PipesSession
+from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
     from mypy_boto3_emr.type_defs import ConfigurationUnionTypeDef
@@ -70,3 +71,17 @@ def emr_inject_pipes_env_vars(
         )
 
     return configurations
+
+
+class WaiterConfig(TypedDict):
+    """A WaiterConfig representing the configuration of the waiter.
+
+    Args:
+        Delay (NotRequired[int]): The amount of time in seconds to wait between attempts. Defaults to 6.
+        MaxAttempts (NotRequired[int]): The maximum number of attempts to be made. Defaults to 1000000
+            By default the waiter is configured to wait up to 70 days (waiter_delay*waiter_max_attempts).
+            See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/waiter/TasksStopped.html>`_
+    """
+
+    Delay: NotRequired[int]
+    MaxAttempts: NotRequired[int]
