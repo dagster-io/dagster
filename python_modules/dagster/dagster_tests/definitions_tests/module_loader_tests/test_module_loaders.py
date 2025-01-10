@@ -11,6 +11,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_current_module,
     load_definitions_from_module,
+    load_definitions_from_modules,
 )
 from dagster._core.definitions.module_loaders.object_list import (
     LoadableDagsterDef,
@@ -205,6 +206,20 @@ def test_collision_detection(objects: Mapping[str, Any], error_expected: bool) -
         obj_list = ModuleScopedDagsterDefs.from_modules([module_fake]).get_object_list()
         obj_ids = {id(obj) for obj in objects.values()}
         assert len(obj_list.loaded_defs) == len(obj_ids)
+
+
+@pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
+def test_load_from_definitions_from_modules(
+    objects: Mapping[str, Any], error_expected: bool
+) -> None:
+    module_fake = build_module_fake("fake", objects)
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
+    ):
+        defs = load_definitions_from_modules([module_fake])
+        obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
+        expected_obj_ids = {id(obj) for obj in objects.values()}
+        assert len(obj_ids) == len(expected_obj_ids)
 
 
 @pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
