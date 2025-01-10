@@ -271,6 +271,9 @@ class AutoMaterializeLaunchContext:
 
         self._tick = self._tick.with_status(status=status, **kwargs)
 
+    def set_user_canceled(self, user_canceled: bool):
+        self._tick = self._tick.with_user_canceled(user_canceled)
+
     def __enter__(self):
         return self
 
@@ -419,7 +422,7 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
 
-            poll_interval = self._settings.get("poll_interval_seconds", 1)
+            batch_size = self._settings.get("run_submission_batch_size", 25)
 
             while True:
                 start_time = get_current_timestamp()
@@ -431,7 +434,7 @@ class AssetDaemon(DagsterDaemon):
                         submit_threadpool_executor=submit_threadpool_executor,
                         amp_tick_futures=amp_tick_futures,
                         debug_crash_flags={},
-                        poll_interval=poll_interval,
+                        batch_size=batch_size,
                     )
                 except Exception:
                     error_info = DaemonErrorCapture.process_exception(
@@ -454,7 +457,7 @@ class AssetDaemon(DagsterDaemon):
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         amp_tick_futures: dict[Optional[str], Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        poll_interval: int,
+        batch_size: int,
     ):
         instance: DagsterInstance = workspace_process_context.instance
 
@@ -590,7 +593,7 @@ class AssetDaemon(DagsterDaemon):
                     sensor,
                     debug_crash_flags,
                     submit_threadpool_executor,
-                    poll_interval,
+                    batch_size,
                 )
                 amp_tick_futures[selector_id] = future
                 yield
@@ -601,7 +604,7 @@ class AssetDaemon(DagsterDaemon):
                     sensor,
                     debug_crash_flags,
                     submit_threadpool_executor,
-                    poll_interval,
+                    batch_size,
                 )
 
     def _create_initial_sensor_cursors_from_raw_cursor(
@@ -689,7 +692,7 @@ class AssetDaemon(DagsterDaemon):
         sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
-        poll_interval: int,
+        batch_size: int,
     ):
         evaluation_time = get_current_datetime()
 
@@ -885,7 +888,7 @@ class AssetDaemon(DagsterDaemon):
                     debug_crash_flags,
                     is_retry=(retry_tick is not None),
                     submit_threadpool_executor=submit_threadpool_executor,
-                    poll_interval=poll_interval,
+                    batch_size=batch_size,
                 )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
@@ -911,7 +914,7 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         is_retry: bool,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
-        poll_interval: int,
+        batch_size: int,
     ):
         evaluation_id = tick.automation_condition_evaluation_id
 
@@ -1045,7 +1048,7 @@ class AssetDaemon(DagsterDaemon):
             debug_crash_flags=debug_crash_flags,
             submit_threadpool_executor=submit_threadpool_executor,
             remote_sensor=sensor,
-            poll_interval=poll_interval,
+            batch_size=batch_size,
         )
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
@@ -1130,7 +1133,7 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         remote_sensor: Optional[RemoteSensor],
-        poll_interval: int,
+        batch_size: int,
     ):
         updated_evaluation_keys = set()
         run_request_execution_data_cache = {}
@@ -1158,11 +1161,11 @@ class AssetDaemon(DagsterDaemon):
         else:
             gen_run_request_results = map(submit_run_request, to_submit)
 
-        last_status_poll_time = get_current_timestamp()
-        user_canceled = False
+        num_submitted = 0
         for submitted_run_id, entity_keys in gen_run_request_results:
             # heartbeat after each submitted run
             yield
+            num_submitted += 1
 
             tick_context.add_run_info(run_id=submitted_run_id)
 
@@ -1176,26 +1179,24 @@ class AssetDaemon(DagsterDaemon):
                     )
                     updated_evaluation_keys.add(entity_key)
 
-            now = get_current_timestamp()
-            if now - last_status_poll_time >= poll_interval:
+            # check if the sensor is still enabled:
+            if num_submitted >= batch_size:
+                num_submitted = 0
                 if remote_sensor:
-                    all_sensor_states = {
-                        sensor_state.selector_id: sensor_state
-                        for sensor_state in instance.all_instigator_state(
-                            instigator_type=InstigatorType.SENSOR
-                        )
-                    }
-                    if not remote_sensor.get_current_instigator_state(
-                        all_sensor_states.get(remote_sensor.selector_id)
-                    ).is_running:
+                    instigator_state = instance.get_instigator_state(
+                        remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
+                    )
+                    if instigator_state and not instigator_state.is_running:
                         # The user has manually stopped the sensor mid-iteration. In this case we assume
                         # the user has a good reason for stopping the sensor (e.g. the sensor is submitting
                         # many unintentional runs) so we stop submitting runs and will mark the tick as
                         # skipped so that when the sensor is turned back on we don't detect this tick as incomplete
                         # and try to submit the same runs again.
-                        user_canceled = True
+                        self._logger.info(
+                            "Sensor has been manually stopped while submitted runs. No more runs will be submitted."
+                        )
+                        tick_context.set_user_canceled(True)
                         break
-                last_status_poll_time = now
 
         evaluations_to_update = [
             evaluations_by_key[asset_key] for asset_key in updated_evaluation_keys
@@ -1208,7 +1209,7 @@ class AssetDaemon(DagsterDaemon):
 
         check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
 
-        if user_canceled:
+        if tick_context.tick.tick_data.user_canceled:
             # mark as skipped so that we don't request any remaining runs when the sensor is started again
             tick_context.update_state(TickStatus.SKIPPED)
         else:

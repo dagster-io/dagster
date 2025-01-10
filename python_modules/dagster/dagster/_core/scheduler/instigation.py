@@ -356,6 +356,11 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             )
         )
 
+    def with_user_canceled(self, user_canceled: bool) -> "InstigatorTick":
+        return self._replace(
+            tick_data=self.tick_data.with_user_canceled(user_canceled=user_canceled)
+        )
+
     @property
     def instigator_origin_id(self) -> str:
         return self.tick_data.instigator_origin_id
@@ -569,6 +574,7 @@ class TickData(
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
             ("consecutive_failure_count", int),
+            ("user_canceled", bool),
         ],
     )
 ):
@@ -637,6 +643,7 @@ class TickData(
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
         consecutive_failure_count: Optional[int] = None,
+        user_canceled: bool = False,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -668,6 +675,7 @@ class TickData(
             consecutive_failure_count=check.opt_int_param(
                 consecutive_failure_count, "consecutive_failure_count", 0
             ),
+            user_canceled=user_canceled,
         )
 
     def with_status(
@@ -766,6 +774,14 @@ class TickData(
                         dynamic_partitions_request_result,
                     ]
                 },
+            )
+        )
+
+    def with_user_canceled(self, user_canceled: bool):
+        return TickData(
+            **merge_dicts(
+                self._asdict(),
+                {"user_canceled": user_canceled},
             )
         )
 
