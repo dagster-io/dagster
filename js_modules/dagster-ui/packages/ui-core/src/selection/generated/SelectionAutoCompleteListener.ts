@@ -14,6 +14,7 @@ import {
   DownTraversalContext,
   DownTraversalExprContext,
   DownTraversalExpressionContext,
+  DownTraversalTokenContext,
   ExprContext,
   ExpressionLessParenthesizedExprContext,
   ExpressionlessFunctionExpressionContext,
@@ -52,7 +53,6 @@ import {
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
   TraversalAllowedParenthesizedExpressionContext,
-  TraversalContext,
   UnclosedExpressionlessFunctionExpressionContext,
   UnclosedExpressionlessParenthesizedExpressionContext,
   UnclosedFunctionExpressionContext,
@@ -63,6 +63,7 @@ import {
   UpTraversalContext,
   UpTraversalExprContext,
   UpTraversalExpressionContext,
+  UpTraversalTokenContext,
   ValueContext,
 } from './SelectionAutoCompleteParser';
 
@@ -634,15 +635,26 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitDownTraversalExpr?: (ctx: DownTraversalExprContext) => void;
 
   /**
-   * Enter a parse tree produced by `SelectionAutoCompleteParser.traversal`.
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.upTraversalToken`.
    * @param ctx the parse tree
    */
-  enterTraversal?: (ctx: TraversalContext) => void;
+  enterUpTraversalToken?: (ctx: UpTraversalTokenContext) => void;
   /**
-   * Exit a parse tree produced by `SelectionAutoCompleteParser.traversal`.
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.upTraversalToken`.
    * @param ctx the parse tree
    */
-  exitTraversal?: (ctx: TraversalContext) => void;
+  exitUpTraversalToken?: (ctx: UpTraversalTokenContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.downTraversalToken`.
+   * @param ctx the parse tree
+   */
+  enterDownTraversalToken?: (ctx: DownTraversalTokenContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.downTraversalToken`.
+   * @param ctx the parse tree
+   */
+  exitDownTraversalToken?: (ctx: DownTraversalTokenContext) => void;
 
   /**
    * Enter a parse tree produced by `SelectionAutoCompleteParser.attributeName`.

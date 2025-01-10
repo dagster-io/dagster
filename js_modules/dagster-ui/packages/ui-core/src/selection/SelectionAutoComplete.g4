@@ -54,12 +54,13 @@ expressionLessParenthesizedExpr:
 		ExpressionlessParenthesizedExpression;
 
 upTraversalExpr:
-	traversal postUpwardTraversalWhitespace # UpTraversal;
+	upTraversalToken postUpwardTraversalWhitespace # UpTraversal;
 
 downTraversalExpr:
-	traversal postDownwardTraversalWhitespace # DownTraversal;
+	downTraversalToken postDownwardTraversalWhitespace # DownTraversal;
 
-traversal: STAR | PLUS+;
+upTraversalToken: DIGITS? PLUS;
+downTraversalToken: PLUS DIGITS?;
 
 // Attribute and function names (to be validated externally)
 attributeName: IDENTIFIER;
@@ -110,6 +111,8 @@ NOT: 'not';
 
 STAR: '*';
 PLUS: '+';
+
+DIGITS: [0-9]+;
 
 COLON: ':';
 
