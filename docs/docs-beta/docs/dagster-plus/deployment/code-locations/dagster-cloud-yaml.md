@@ -7,92 +7,26 @@ sidebar_position: 200
 This reference is applicable to Dagster+.
 :::
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <tbody>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Name</strong>
-      </td>
-      <td>dagster_cloud.yaml</td>
-    </tr>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Status</strong>
-      </td>
-      <td>Active</td>
-    </tr>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Required</strong>
-      </td>
-      <td>Required for Dagster+</td>
-    </tr>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Description</strong>
-      </td>
-      <td>
-        {" "}
-        Similar to the <code>workspace.yaml</code> in open source to define code
-        locations for Dagster+.
-      </td>
-    </tr>
-    <tr>
-      <td
-        style={{
-          width: "15%",
-        }}
-      >
-        <strong>Uses</strong>
-      </td>
-      <td>
-        Defines multiple code locations for Dagster+. For Hybrid deployments, this file can be used
-        <a href="/dagster-plus/managing-deployments/setting-environment-variables-agents"> to manage
-        environment variables/secrets.</a>
-        <ul></ul>
-      </td>
-    </tr>
-  </tbody>
-</table>
+`dagster_cloud.yaml` is used to define multiple code locations for Dagster+. It is similar to `workspace.yaml` in Dagster open source. For [Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/), `dagster_cloud.yaml` can be used to manage environment variables and secrets.
+
 
 ## File location
 
-The `dagster_cloud.yaml` file should be placed in the root of your Dagster project. Below is an example of a file structure modified from the [Dagster+ ETL quickstart](https://github.com/dagster-io/dagster/tree/master/examples/quickstart_etl).
+The `dagster_cloud.yaml` file should be placed in the root of your Dagster project, similar to the example below:
 
 ```shell
-quickstart_etl
+example_etl
 ├── README.md
-├── quickstart_etl
+├── example_etl
 │   ├── __init__.py
 │   ├── assets
 │   ├── docker_image
 ├── ml_project
-│   ├── quickstart_ml
+│   ├── example_ml
 │     ├── __init__.py
 │     ├── ml_assets
 ├── random_assets.py
-├── quickstart_etl_tests
+├── example_etl_tests
 ├── dagster_cloud.yaml
 ├── pyproject.toml
 ├── setup.cfg
@@ -111,13 +45,13 @@ Settings are formatted using YAML. For example, using the file structure above a
 locations:
   - location_name: data-eng-pipeline
     code_source:
-      package_name: quickstart_etl
+      package_name: example_etl
     build:
-      directory: ./quickstart_etl
+      directory: ./example_etl
       registry: localhost:5000/docker_image
   - location_name: ml-pipeline
     code_source:
-      package_name: quickstart_ml
+      package_name: example_ml
     working_directory: ./ml_project
     executable_path: venvs/path/to/ml_tensorflow/bin/python
   - location_name: my_random_assets
@@ -153,7 +87,7 @@ The `dagster_cloud.yaml` file contains a single top-level key, `locations`. This
 locations:
   - location_name: data-eng-pipeline
     code_source:
-      package_name: quickstart_etl
+      package_name: example_etl
 ```
 
 | Property        | Description                                                                            | Format   |
@@ -175,7 +109,7 @@ A `code_source` key must contain either a `module_name`, `package_name`, or `fil
 locations:
   - location_name: data-eng-pipeline
     code_source:
-      package_name: quickstart_etl
+      package_name: example_etl
 ```
 
 </TabItem>
@@ -187,7 +121,7 @@ locations:
 locations:
   - location_name: data-eng-pipeline
     code_source:
-      package_name: quickstart_etl
+      package_name: example_etl
   - location_name: machine_learning
     code_source:
       python_file: ml/ml_model.py
@@ -209,13 +143,13 @@ Use the `working_directory` setting to load Dagster code from a different direct
 Consider the following project:
 
 ```shell
-quickstart_etl
+example_etl
 ├── README.md
 ├── project_directory
-│   ├── quickstart_etl
+│   ├── example_etl
 │     ├── __init__.py
 │     ├── assets
-│   ├── quickstart_etl_tests
+│   ├── example_etl_tests
 ├── dagster_cloud.yaml
 ├── pyproject.toml
 ├── setup.cfg
@@ -230,7 +164,7 @@ To load from `/project_directory`, the `dagster_cloud.yaml` code location would 
 locations:
   - location_name: data-eng-pipeline
     code_source:
-      package_name: quickstart_etl
+      package_name: example_etl
     working_directory: ./project_directory
 ```
 
@@ -253,7 +187,7 @@ In the example below, the Docker image for the code location is in the root dire
 locations:
   - location_name: data-eng-pipeline
     code_source:
-      package_name: quickstart_etl
+      package_name: example_etl
     build:
       directory: ./
       registry: your-docker-image-registry/image-name # e.g. localhost:5000/myimage
@@ -279,7 +213,7 @@ For Dagster+ Serverless deployments, you can specify a different Python version 
 locations:
   - location_name: data-eng-pipeline
     code_source:
-      package_name: quickstart_etl
+      package_name: example_etl
     executable_path: venvs/path/to/dataengineering_spark_team/bin/python
   - location_name: machine_learning
     code_source:
