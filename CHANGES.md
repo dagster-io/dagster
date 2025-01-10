@@ -60,6 +60,7 @@
 
 - Updated `cronitor` pin to allow versions `>= 5.0.1` to enable use of `DayOfWeek` as 7. Cronitor `4.0.0` is still disallowed. (Thanks, [@joshuataylor](https://github.com/joshuataylor)!)
 - Added flag `checkDbReadyInitContainer` to optionally disable db check initContainer.
+- Added job name filtering to increase the throughput for run status sensors that target jobs.
 - [ui] Added Google Drive icon for `kind` tags. (Thanks, [@dragos-pop](https://github.com/dragos-pop)!)
 - [ui] Renamed the run lineage sidebar on the Run details page to `Re-executions`.
 - [ui] Sensors and schedules that appear in the Runs page are now clickable.
