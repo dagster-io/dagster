@@ -3307,8 +3307,8 @@ class DagsterInstance(DynamicPartitionsStore):
         self,
         asset_event: Union[
             "dagster._core.events.AssetMaterialization",
-            "dagster._core.definitions.events.AssetObservation",
-            "dagster._core.definitions.asset_check_evaluation.AssetCheckEvaluation",
+            "dagster._core.definitions.AssetObservation",
+            "dagster._core.definitions.AssetCheckEvaluation",
         ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
