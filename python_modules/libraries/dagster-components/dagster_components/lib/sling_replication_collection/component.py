@@ -85,9 +85,9 @@ class SlingReplicationCollectionComponent(Component):
             dagster_sling_translator=translator_cls(
                 base_translator=DagsterSlingTranslator(),
                 resolving_info=ResolvingInfo(
-                    obj_name="sling_replication",
+                    obj_name="stream_definition",
                     asset_attributes=replication.asset_attributes or AssetAttributesModel(),
-                    value_renderer=context.templated_value_renderer,
+                    value_resolver=context.templated_value_resolver,
                 ),
             ),
         )
@@ -109,5 +109,5 @@ class SlingReplicationCollectionComponent(Component):
             ],
         )
         for transform in self.transforms:
-            defs = transform.apply(defs, context.templated_value_renderer)
+            defs = transform.apply(defs, context.templated_value_resolver)
         return defs

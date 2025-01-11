@@ -80,7 +80,7 @@ class DbtProjectComponent(Component):
                 resolving_info=ResolvingInfo(
                     obj_name="node",
                     asset_attributes=self.asset_attributes or AssetAttributesModel(),
-                    value_renderer=context.templated_value_renderer,
+                    value_resolver=context.templated_value_resolver,
                 ),
             ),
         )
@@ -89,7 +89,7 @@ class DbtProjectComponent(Component):
 
         defs = Definitions(assets=[_fn])
         for transform in self.transforms:
-            defs = transform.apply(defs, context.templated_value_renderer)
+            defs = transform.apply(defs, context.templated_value_resolver)
         return defs
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
