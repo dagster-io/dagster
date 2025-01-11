@@ -6,11 +6,10 @@ import re
 from collections.abc import Iterator, Sequence
 from typing import Optional, Union
 
-from croniter import croniter as _croniter
-
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
 from dagster._time import get_timezone
+from dagster._vendored.croniter import croniter as _croniter
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster._vendored.dateutil.tz import datetime_ambiguous, datetime_exists
 
