@@ -28,7 +28,7 @@ from dagster._core.pipes.utils import (
     PipesLogReader,
     open_pipes_session,
 )
-from dagster_pipes import PipesContextData, PipesExtras, PipesParams
+from dagster_pipes import PipesBlobStoreMessageWriter, PipesContextData, PipesExtras, PipesParams
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 from pydantic import Field
@@ -100,11 +100,17 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
             if cluster.get("cluster_log_conf", {}).get("dbfs", None):
                 existing_cluster_has_logging_configured = True
 
-        logging_configured = (
-            new_cluster_logging_configured or existing_cluster_has_logging_configured
-        )
+        if (
+            isinstance(self.message_reader, PipesDbfsMessageReader)
+            and self.message_reader.include_stdio_in_messages
+        ):  # logs will be coming from Pipes messages, we don't need to create log readers
+            create_log_readers = False
+        elif new_cluster_logging_configured or existing_cluster_has_logging_configured:
+            create_log_readers = True
+        else:
+            create_log_readers = False
 
-        if logging_configured:
+        if create_log_readers:
             log_readers = [
                 PipesDbfsLogReader(
                     client=self.client,
@@ -362,7 +368,8 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
         cluster_log_root (Optional[str]): The root path on DBFS where the cluster logs are written.
             If set, this will be used to read stderr/stdout logs.
-        log_readers (Optional[Sequence[PipesLogReader]]): A se of log readers for logs on DBFS.
+        include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
+        log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers for logs on DBFS.
     """
 
     def __init__(
@@ -370,8 +377,12 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         *,
         interval: float = 10,
         client: WorkspaceClient,
+        include_stdio_in_messages: bool = False,
         log_readers: Optional[Sequence[PipesLogReader]] = None,
     ):
+        self.include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
         super().__init__(
             interval=interval,
             log_readers=log_readers,
@@ -383,6 +394,9 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         with ExitStack() as stack:
             params: PipesParams = {}
             params["path"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
+            params[PipesBlobStoreMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY] = (
+                self.include_stdio_in_messages
+            )
             yield params
 
     def messages_are_readable(self, params: PipesParams) -> bool:
