@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 from dagster_components.core.component_rendering import (
     RenderedModel,
-    RenderingMetadata,
+    ResolvedFieldInfo,
     TemplatedValueRenderer,
 )
 
@@ -33,22 +33,22 @@ def _post_process_key(rendered: Optional[str]) -> Optional[AssetKey]:
 class AssetAttributesModel(RenderedModel):
     key: Annotated[
         Optional[str],
-        RenderingMetadata(output_type=AssetKey, post_process=_post_process_key),
+        ResolvedFieldInfo(output_type=AssetKey, post_process=_post_process_key),
     ] = None
     deps: Sequence[str] = []
     description: Optional[str] = None
     metadata: Annotated[
-        Union[str, Mapping[str, Any]], RenderingMetadata(output_type=Mapping[str, Any])
+        Union[str, Mapping[str, Any]], ResolvedFieldInfo(output_type=Mapping[str, Any])
     ] = {}
     group_name: Optional[str] = None
     skippable: bool = False
     code_version: Optional[str] = None
     owners: Sequence[str] = []
     tags: Annotated[
-        Union[str, Mapping[str, str]], RenderingMetadata(output_type=Mapping[str, str])
+        Union[str, Mapping[str, str]], ResolvedFieldInfo(output_type=Mapping[str, str])
     ] = {}
     automation_condition: Annotated[
-        Optional[str], RenderingMetadata(output_type=Optional[AutomationCondition])
+        Optional[str], ResolvedFieldInfo(output_type=Optional[AutomationCondition])
     ] = None
 
 
