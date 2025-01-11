@@ -166,6 +166,14 @@ See: https://github.com/helm/charts/blob/61c2cc0db49b06b948f90c8e44e9143d7bab430
 {{- end }}
 {{- end }}
 
+{{- define "dagster.postgresql.secretPasswordKey" -}}
+{{- if .Values.global.postgresqlSecretPasswordKey }}
+{{- .Values.global.postgresqlSecretPasswordKey }}
+{{- else }}
+{{- printf "postgresql-password" }}
+{{- end }}
+{{- end }}
+
 {{/*
 Celery options
 */}}
