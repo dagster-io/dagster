@@ -101,7 +101,6 @@ class ExecuteRunArgs(
     NamedTuple(
         "_ExecuteRunArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the PipelineRun
             ("job_origin", JobPythonOrigin),
             ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
@@ -152,7 +151,6 @@ class ResumeRunArgs(
     NamedTuple(
         "_ResumeRunArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
             ("job_origin", JobPythonOrigin),
             ("run_id", str),
             ("instance_ref", Optional[InstanceRef]),
@@ -238,7 +236,6 @@ class ExecuteStepArgs(
     NamedTuple(
         "_ExecuteStepArgs",
         [
-            # Deprecated, only needed for back-compat since it can be pulled from the DagsterRun
             ("job_origin", JobPythonOrigin),
             ("run_id", str),
             ("step_keys_to_execute", Optional[Sequence[str]]),
