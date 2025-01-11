@@ -82,7 +82,6 @@ setup(
         # core (not explicitly expressed atm)
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
-        "croniter>=0.3.34,!=4.0.0,<6",
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
         "packaging>=20.9",
@@ -92,6 +91,7 @@ setup(
         "pytz",
         "requests",
         "setuptools",
+        "six",  # for vendored dateutil
         "tabulate",
         "tomli<3",
         "tqdm<5",
@@ -142,7 +142,6 @@ setup(
             "types-backports",  # version will be resolved against backports
             "types-certifi",  # version will be resolved against certifi
             "types-chardet",  # chardet is a 2+-order dependency of some Dagster libs
-            "types-croniter",  # version will be resolved against croniter
             "types-cryptography",  # version will be resolved against cryptography
             "types-mock",  # version will be resolved against mock
             "types-paramiko",  # version will be resolved against paramiko
