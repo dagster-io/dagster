@@ -13,8 +13,8 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.errors import DagsterError
 
-from dagster_components.core.component_rendering import TemplatedValueResolver
-from dagster_components.core.dsl_schema import AssetAttributesModel
+from dagster_components.core.schema.objects import AssetAttributesModel
+from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
 

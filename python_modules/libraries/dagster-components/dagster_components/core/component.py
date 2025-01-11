@@ -25,7 +25,7 @@ from dagster_components.core.component_generator import (
     ComponentGeneratorUnavailableReason,
     DefaultComponentGenerator,
 )
-from dagster_components.core.component_rendering import TemplatedValueResolver
+from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
