@@ -9,6 +9,7 @@ from dagster import (
     ResourceDefinition,
     _check as check,
 )
+from dagster._annotations import superseded
 from dagster._core.instance import IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._utils.tags import normalize_tags
 
@@ -19,6 +20,11 @@ from dagster_airflow.resources import (
 from dagster_airflow.utils import normalized_name
 
 
+@superseded(
+    additional_warn_text=(
+        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+    )
+)
 def make_dagster_job_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,

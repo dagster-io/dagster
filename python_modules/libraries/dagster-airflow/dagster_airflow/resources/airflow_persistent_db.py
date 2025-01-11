@@ -13,6 +13,7 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from dagster._annotations import superseded
 
 from dagster_airflow.resources.airflow_db import AirflowDatabase
 from dagster_airflow.utils import (
@@ -54,6 +55,11 @@ class AirflowPersistentDatabase(AirflowDatabase):
         )
 
 
+@superseded(
+    additional_warn_text=(
+        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+    )
+)
 def make_persistent_airflow_db_resource(
     uri: str = "",
     connections: list[Connection] = [],

@@ -10,11 +10,17 @@ import requests
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook  # type: ignore
 from airflow.models import Connection
+from dagster._annotations import superseded
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
+@superseded(
+    additional_warn_text=(
+        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+    )
+)
 class DagsterHook(BaseHook):
     conn_name_attr = "dagster_conn_id"
     default_conn_name = "dagster_default"
