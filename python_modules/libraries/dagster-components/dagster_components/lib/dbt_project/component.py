@@ -1,7 +1,6 @@
-from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional
+from collections.abc import Iterator, Sequence
+from typing import Optional
 
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
@@ -9,58 +8,21 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import TemplatedValueRenderer, component_type
+from dagster_components.core.component import component_type
 from dagster_components.core.dsl_schema import (
     AssetAttributesModel,
     AssetSpecTransform,
     OpSpecBaseModel,
 )
 from dagster_components.lib.dbt_project.generator import DbtProjectComponentGenerator
+from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
 class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
-    translator: Optional[AssetAttributesModel] = None
+    asset_attributes: Optional[AssetAttributesModel] = None
     transforms: Optional[Sequence[AssetSpecTransform]] = None
-
-
-class DbtProjectComponentTranslator(DagsterDbtTranslator):
-    def __init__(
-        self,
-        *,
-        params: Optional[AssetAttributesModel],
-        value_renderer: TemplatedValueRenderer,
-    ):
-        self.params = params or AssetAttributesModel()
-        self.value_renderer = value_renderer
-
-    def _get_rendered_attribute(
-        self, attribute: str, dbt_resource_props: Mapping[str, Any], default_method
-    ) -> Any:
-        renderer = self.value_renderer.with_context(node=dbt_resource_props)
-        rendered_attribute = self.params.render_properties(renderer).get(attribute)
-        return (
-            rendered_attribute
-            if rendered_attribute is not None
-            else default_method(dbt_resource_props)
-        )
-
-    def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-        return self._get_rendered_attribute("key", dbt_resource_props, super().get_asset_key)
-
-    def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-        return self._get_rendered_attribute(
-            "group_name", dbt_resource_props, super().get_group_name
-        )
-
-    def get_tags(self, dbt_resource_props):
-        return self._get_rendered_attribute("tags", dbt_resource_props, super().get_tags)
-
-    def get_automation_condition(self, dbt_resource_props):
-        return self._get_rendered_attribute(
-            "automation_condition", dbt_resource_props, super().get_automation_condition
-        )
 
 
 @component_type(name="dbt_project")
@@ -69,13 +31,13 @@ class DbtProjectComponent(Component):
         self,
         dbt_resource: DbtCliResource,
         op_spec: Optional[OpSpecBaseModel],
-        dbt_translator: Optional[DagsterDbtTranslator],
+        asset_attributes: Optional[AssetAttributesModel],
         transforms: Sequence[AssetSpecTransform],
     ):
         self.dbt_resource = dbt_resource
         self.op_spec = op_spec
-        self.dbt_translator = dbt_translator
         self.transforms = transforms
+        self.asset_attributes = asset_attributes
 
     @classmethod
     def get_generator(cls) -> "DbtProjectComponentGenerator":
@@ -92,23 +54,32 @@ class DbtProjectComponent(Component):
         return cls(
             dbt_resource=loaded_params.dbt,
             op_spec=loaded_params.op,
-            dbt_translator=DbtProjectComponentTranslator(
-                params=loaded_params.translator,
-                value_renderer=context.templated_value_renderer,
-            ),
+            asset_attributes=loaded_params.asset_attributes,
             transforms=loaded_params.transforms or [],
         )
+
+    def get_translator(self) -> DagsterDbtTranslator:
+        return DagsterDbtTranslator()
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         project = DbtProject(self.dbt_resource.project_dir)
         project.prepare_if_dev()
+
+        translator_cls = get_wrapped_translator_class(DagsterDbtTranslator)
 
         @dbt_assets(
             manifest=project.manifest_path,
             project=project,
             name=self.op_spec.name if self.op_spec else project.name,
             op_tags=self.op_spec.tags if self.op_spec else None,
-            dagster_dbt_translator=self.dbt_translator,
+            dagster_dbt_translator=translator_cls(
+                base_translator=self.get_translator(),
+                resolving_info=ResolvingInfo(
+                    obj_name="node",
+                    asset_attributes=self.asset_attributes or AssetAttributesModel(),
+                    value_renderer=context.templated_value_renderer,
+                ),
+            ),
         )
         def _fn(context: AssetExecutionContext):
             yield from self.execute(context=context, dbt=self.dbt_resource)

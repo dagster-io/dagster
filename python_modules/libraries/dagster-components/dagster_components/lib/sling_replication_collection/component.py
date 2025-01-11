@@ -19,7 +19,7 @@ from dagster_components.core.dsl_schema import (
     AssetSpecTransform,
     OpSpecBaseModel,
 )
-from dagster_components.utils import get_wrapped_translator_class
+from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
 class SlingReplicationParams(BaseModel):
@@ -80,10 +80,12 @@ class SlingReplicationCollectionComponent(Component):
             op_tags=replication.op.tags if replication.op else {},
             replication_config=self.dirpath / replication.path,
             dagster_sling_translator=translator_cls(
-                obj_name="stream_definition",
                 base_translator=DagsterSlingTranslator(),
-                asset_attributes=replication.asset_attributes or AssetAttributesModel(),
-                value_renderer=context.templated_value_renderer,
+                resolving_info=ResolvingInfo(
+                    obj_name="sling_replication",
+                    asset_attributes=replication.asset_attributes or AssetAttributesModel(),
+                    value_renderer=context.templated_value_renderer,
+                ),
             ),
         )
         def _asset(context: AssetExecutionContext):
