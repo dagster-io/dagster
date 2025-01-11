@@ -65,7 +65,9 @@ def _subschemas_on_path(
     # List[ComplexType] (e.g.) will contain a reference to the complex type schema in the
     # top-level $defs, so we dereference it here.
     if "$ref" in subschema:
-        subschema = json_schema["$defs"].get(subschema["$ref"][len(REF_BASE) :])
+        # depending on the pydantic version, the extras may be stored with the reference or not
+        extras = {k: v for k, v in subschema.items() if k != "$ref"}
+        subschema = {**json_schema["$defs"].get(subschema["$ref"][len(REF_BASE) :]), **extras}
 
     yield subschema
     if len(valpath) == 0:
