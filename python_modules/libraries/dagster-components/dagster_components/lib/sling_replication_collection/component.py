@@ -79,8 +79,6 @@ class SlingReplicationTranslator(DagsterSlingTranslator):
 
 @component_type(name="sling_replication_collection")
 class SlingReplicationCollectionComponent(Component):
-    params_schema = SlingReplicationCollectionParams
-
     def __init__(
         self,
         dirpath: Path,
@@ -102,8 +100,12 @@ class SlingReplicationCollectionComponent(Component):
         return SlingReplicationComponentGenerator()
 
     @classmethod
+    def get_component_schema_type(cls):
+        return SlingReplicationCollectionParams
+
+    @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
-        loaded_params = context.load_params(cls.params_schema)
+        loaded_params = context.load_params(cls.get_component_schema_type())
         return cls(
             dirpath=context.path,
             resource=loaded_params.sling or SlingResource(),

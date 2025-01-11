@@ -1,9 +1,10 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, Optional
 
 from dagster._record import record
+from pydantic import BaseModel
 
 
 @record
@@ -13,7 +14,9 @@ class ComponentGenerateRequest:
 
 
 class ComponentGenerator:
-    generator_params: ClassVar = None
+    @classmethod
+    def get_params_schema_type(cls) -> Optional[type[BaseModel]]:
+        return None
 
     @abstractmethod
     def generate_files(self, request: ComponentGenerateRequest, params: Any) -> None: ...
