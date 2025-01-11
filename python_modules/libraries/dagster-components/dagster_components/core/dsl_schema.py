@@ -1,7 +1,8 @@
 from abc import ABC
 from collections.abc import Mapping, Sequence
-from typing import AbstractSet, Annotated, Any, Literal, Optional, Union  # noqa: UP035
+from typing import Annotated, Any, Literal, Optional, Union
 
+import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
@@ -11,7 +12,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from dagster_components.core.component_rendering import (
     RenderedModel,
@@ -51,28 +52,35 @@ class AssetAttributesModel(RenderedModel):
     ] = None
 
 
-class AssetSpecProcessor(ABC, BaseModel):
+class AssetSpecTransform(ABC, BaseModel):
     target: str = "*"
+    operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesModel
 
     class Config:
         arbitrary_types_allowed = True
 
-    def _apply_to_spec(self, spec: AssetSpec, attributes: Mapping[str, Any]) -> AssetSpec: ...
-
     def apply_to_spec(
         self,
         spec: AssetSpec,
         value_renderer: TemplatedValueRenderer,
-        target_keys: AbstractSet[AssetKey],
     ) -> AssetSpec:
-        if spec.key not in target_keys:
-            return spec
-
         # add the original spec to the context and resolve values
-        return self._apply_to_spec(
-            spec, self.attributes.render_properties(value_renderer.with_context(asset=spec))
-        )
+        attributes = self.attributes.render_properties(value_renderer.with_context(asset=spec))
+
+        if self.operation == "merge":
+            mergeable_attributes = {"metadata", "tags"}
+            merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
+            replace_attributes = {
+                k: v for k, v in attributes.items() if k not in mergeable_attributes
+            }
+            return spec.merge_attributes(**merge_attributes).replace_attributes(
+                **replace_attributes
+            )
+        elif self.operation == "replace":
+            return spec.replace_attributes(**attributes)
+        else:
+            check.failed(f"Unsupported operation: {self.operation}")
 
     def apply(self, defs: Definitions, value_renderer: TemplatedValueRenderer) -> Definitions:
         target_selection = AssetSelection.from_string(self.target, include_sources=True)
@@ -80,7 +88,9 @@ class AssetSpecProcessor(ABC, BaseModel):
 
         mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
         mapped_assets = map_asset_specs(
-            lambda spec: self.apply_to_spec(spec, value_renderer, target_keys),
+            lambda spec: self.apply_to_spec(spec, value_renderer)
+            if spec.key in target_keys
+            else spec,
             mappable,
         )
 
@@ -89,27 +99,3 @@ class AssetSpecProcessor(ABC, BaseModel):
             *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
         ]
         return replace(defs, assets=assets)
-
-
-class MergeAttributes(AssetSpecProcessor):
-    # default operation is "merge"
-    operation: Literal["merge"] = "merge"
-
-    def _apply_to_spec(self, spec: AssetSpec, attributes: Mapping[str, Any]) -> AssetSpec:
-        mergeable_attributes = {"metadata", "tags"}
-        merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
-        replace_attributes = {k: v for k, v in attributes.items() if k not in mergeable_attributes}
-        return spec.merge_attributes(**merge_attributes).replace_attributes(**replace_attributes)
-
-
-class ReplaceAttributes(AssetSpecProcessor):
-    # operation must be set explicitly
-    operation: Literal["replace"]
-
-    def _apply_to_spec(self, spec: AssetSpec, attributes: Mapping[str, Any]) -> AssetSpec:
-        return spec.replace_attributes(**attributes)
-
-
-AssetAttributes = Sequence[
-    Annotated[Union[MergeAttributes, ReplaceAttributes], Field(union_mode="left_to_right")]
-]

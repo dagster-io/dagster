@@ -154,7 +154,7 @@ def test_load_from_path(sling_path: Path) -> None:
     assert len(components) == 1
     assert get_asset_keys(components[0]) == {
         AssetKey("input_csv"),
-        AssetKey("input_duckdb"),
+        AssetKey(["foo", "input_duckdb"]),
     }
 
     assert_assets(components[0], 2)

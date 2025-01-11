@@ -4,7 +4,7 @@ params:
   dbt:
     project_dir: jaffle_shop
 
-  asset_attributes:
+  asset_transforms:
     - attributes:
         tags:
           foo: bar
