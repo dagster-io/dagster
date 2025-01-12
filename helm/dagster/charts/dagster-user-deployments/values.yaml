@@ -154,7 +154,7 @@ deployments:
 
     # Strategy to follow when replacing old pods with new pods. See:
     # https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
-    deploymentStrategy: {}    
+    deploymentStrategy: {}
 
     service:
       annotations: {}
