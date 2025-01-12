@@ -7,6 +7,38 @@ from dagster._annotations import public
 from dagster_airbyte.managed.types import GeneratedAirbyteSource
 
 
+class DynamoDbSource(GeneratedAirbyteSource):
+    @public
+    def __init__(
+        self,
+        name: str,
+        access_key_id: str,
+        secret_access_key: str,
+        endpoint: str,
+        region: str,
+        reserved_attribute_names: Optional[str] = None,
+    ):
+        """Airbyte Source for DynamoDB.
+
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/dynamodb/
+
+        Args:
+            name (str): The name of the destination.
+            access_key_id (str): AWS access key
+            secret_access_key (str): AWS secret access key
+            endpoint (str): optional endpoint
+            region (str): region name in AWS
+        """
+        self.access_key_id = check.opt_str_param(access_key_id, "access_key_id")
+        self.secret_access_key = check.str_param(secret_access_key, "secret_access_key")
+        self.endpoint = check.str_param(endpoint, "endpoint")
+        self.region = check.str_param(region, "region")
+        self.reserved_attribute_names = check.opt_str_param(
+            reserved_attribute_names, "reserved_attribute_names"
+        )
+        super().__init__("dynamodb", name)
+
+
 class StravaSource(GeneratedAirbyteSource):
     @public
     def __init__(
