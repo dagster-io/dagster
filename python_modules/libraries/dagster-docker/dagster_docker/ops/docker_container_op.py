@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import docker
 import docker.errors
@@ -82,6 +82,7 @@ def execute_docker_container(
     networks: Optional[Sequence[str]] = None,
     registry: Optional[Mapping[str, str]] = None,
     env_vars: Optional[Sequence[str]] = None,
+    pull_policy: Literal["always", "if_not_present", "never"] = "if_not_present",
     container_kwargs: Optional[Mapping[str, Any]] = None,
 ):
     """This function is a utility for executing a Docker container from within a Dagster op.
@@ -94,11 +95,15 @@ def execute_docker_container(
             Default: None.
         networks (Optional[Sequence[str]]): Names of the Docker networks to which to connect the
             launched container. Default: None.
-        registry: (Optional[Mapping[str, str]]): Information for using a non local/public Docker
+        registry (Optional[Mapping[str, str]]): Information for using a non local/public Docker
             registry. Can have "url", "username", or "password" keys.
-        env_vars (Optional[Sequence[str]]): List of environemnt variables to include in the launched
-            container. ach can be of the form KEY=VALUE or just KEY (in which case the value will be
+        env_vars (Optional[Sequence[str]]): List of environment variables to include in the launched
+            container. Each can be of the form KEY=VALUE or just KEY (in which case the value will be
             pulled from the calling environment.
+        pull_policy (Literal["always", "if_not_present", "never"]): What pull policy to use.
+            `always` will always pull the image before launching the container, `if_not_present` will
+            only pull it if the image is not found, and `never` will never pull the image and relies
+            on the image already existing on the host. Default: `if_not_present`.
         container_kwargs (Optional[Dict[str[Any]]]): key-value pairs that can be passed into
             containers.create in the Docker Python API. See
             https://docker-py.readthedocs.io/en/stable/containers.html for the full list
@@ -122,16 +127,14 @@ def execute_docker_container(
     container_context = run_container_context.merge(op_container_context)
 
     client = _get_client(container_context)
+    existing_images = [tag for image in client.images for tag in image.tags]
 
-    try:
-        container = _create_container(
-            context, client, container_context, image, entrypoint, command
-        )
-    except docker.errors.ImageNotFound:
+    if pull_policy == "always" or (pull_policy == "if_not_present" and image not in existing_images):
         client.images.pull(image)
-        container = _create_container(
-            context, client, container_context, image, entrypoint, command
-        )
+
+    container = _create_container(
+        context, client, container_context, image, entrypoint, command
+    )
 
     if len(container_context.networks) > 1:
         for network_name in container_context.networks[1:]:
