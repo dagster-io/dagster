@@ -129,12 +129,12 @@ def execute_docker_container(
     client = _get_client(container_context)
     existing_images = [tag for image in client.images for tag in image.tags]
 
-    if pull_policy == "always" or (pull_policy == "if_not_present" and image not in existing_images):
+    if pull_policy == "always" or (
+        pull_policy == "if_not_present" and image not in existing_images
+    ):
         client.images.pull(image)
 
-    container = _create_container(
-        context, client, container_context, image, entrypoint, command
-    )
+    container = _create_container(context, client, container_context, image, entrypoint, command)
 
     if len(container_context.networks) > 1:
         for network_name in container_context.networks[1:]:
