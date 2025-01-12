@@ -127,7 +127,7 @@ def execute_docker_container(
     container_context = run_container_context.merge(op_container_context)
 
     client = _get_client(container_context)
-    existing_images = [tag for image in client.images for tag in image.tags]
+    existing_images = [tag for image in client.images.list() for tag in image.tags]
 
     if pull_policy == "always" or (
         pull_policy == "if_not_present" and image not in existing_images
