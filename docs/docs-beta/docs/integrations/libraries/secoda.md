@@ -10,15 +10,14 @@ apireflink:
 docslink: https://www.secoda.co/automations/automated-documentation-for-new-integrations-in-dagster
 partnerlink: https://www.secoda.co/integrations/dagster
 communityIntegration: true
-logo: /integrations/Secoda.svg
 categories:
   - Metadata
 enabledBy:
 enables:
 tags: [community-supported, metadata]
+sidebar_custom_props:
+  logo: images/integrations/secoda.svg
 ---
-
-
 
 Connect Dagster to Secoda and see metadata related to your Dagster assets, asset groups and jobs right in Secoda. Simplify your team's access, and remove the need to switch between tools.
 

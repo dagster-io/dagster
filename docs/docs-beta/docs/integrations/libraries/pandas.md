@@ -9,15 +9,14 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pandas
 docslink: https://docs.dagster.io/integrations/pandas
 partnerlink: https://pandas.pydata.org/
-logo: /integrations/Pandas.svg
 categories:
   - Metadata
 enabledBy:
 enables:
 tags: [dagster-supported, metadata]
+sidebar_custom_props:
+  logo: images/integrations/pandas.svg
 ---
-
-
 
 Perform data validation, emit summary statistics, and enable reliable DataFrame serialization/deserialization. The dagster_pandas library provides you with the utilities for implementing validation on Pandas DataFrames. The Dagster type system generates documentation of your DataFrame constraints and makes it accessible in the Dagster UI.
 

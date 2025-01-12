@@ -9,13 +9,14 @@ date: 2022-11-07
 apireflink:
 docslink: https://docs.dagster.io/integrations/dagstermill
 partnerlink:
-logo: /integrations/Jupyter.svg
 enabledBy:
   - dagster-dagstermill
 categories:
   - Compute
 enables:
 tags: [dagster-supported, compute]
+sidebar_custom_props: 
+  logo: images/integrations/jupyter.svg
 ---
 
 ### About Jupyter

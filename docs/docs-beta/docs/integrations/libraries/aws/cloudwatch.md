@@ -9,15 +9,14 @@ date: 2024-06-21
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
 docslink:
 partnerlink: https://aws.amazon.com/
-logo: /integrations/aws-cloudwatch.svg
 categories:
   - Monitoring
 enabledBy:
 enables:
 tags: [dagster-supported, monitoring]
+sidebar_custom_props: 
+  logo: images/integrations/aws-cloudwatch.svg
 ---
-
-
 
 This integration allows you to send Dagster logs to AWS CloudWatch, enabling centralized logging and monitoring of your Dagster jobs. By using AWS CloudWatch, you can take advantage of its powerful log management features, such as real-time log monitoring, log retention policies, and alerting capabilities.
 
