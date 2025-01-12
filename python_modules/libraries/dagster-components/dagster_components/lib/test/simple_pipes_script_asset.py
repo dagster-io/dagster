@@ -26,7 +26,9 @@ class SimplePipesScriptAssetParams(BaseModel):
 
 
 class SimplePipesScriptAssetGenerator(ComponentGenerator):
-    generator_params = SimplePipesScriptAssetParams
+    @classmethod
+    def get_params_schema_type(cls):
+        return SimplePipesScriptAssetParams
 
     def generate_files(
         self, request: ComponentGenerateRequest, params: SimplePipesScriptAssetParams
@@ -54,18 +56,20 @@ class SimplePipesScriptAsset(Component):
     Because it is a pipes asset, no value is returned.
     """
 
-    params_schema = SimplePipesScriptAssetParams
-
     @classmethod
     def get_generator(cls) -> ComponentGenerator:
         return SimplePipesScriptAssetGenerator()
+
+    @classmethod
+    def get_component_schema_type(cls):
+        return SimplePipesScriptAssetParams
 
     @classmethod
     def from_decl_node(
         cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
     ) -> Self:
         assert isinstance(decl_node, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(
+        loaded_params = TypeAdapter(cls.get_component_schema_type()).validate_python(
             decl_node.component_file_model.params
         )
         return cls(

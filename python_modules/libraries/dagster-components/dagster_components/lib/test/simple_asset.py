@@ -27,7 +27,9 @@ class SimpleAssetParams(BaseModel):
 class SimpleAsset(Component):
     """A simple asset that returns a constant string value."""
 
-    params_schema = SimpleAssetParams
+    @classmethod
+    def get_component_schema_type(cls):
+        return SimpleAssetParams
 
     @classmethod
     def get_generator(cls) -> ComponentGenerator:
@@ -38,7 +40,7 @@ class SimpleAsset(Component):
         cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
     ) -> Self:
         assert isinstance(decl_node, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(
+        loaded_params = TypeAdapter(cls.get_component_schema_type()).validate_python(
             decl_node.component_file_model.params
         )
         return cls(

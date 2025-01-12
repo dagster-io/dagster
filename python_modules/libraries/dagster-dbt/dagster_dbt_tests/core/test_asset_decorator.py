@@ -548,6 +548,22 @@ def test_with_partition_mappings(
         )
 
 
+def test_partitioned_with_group_name(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> str:
+            return "THE_GROUP"
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=CustomDagsterDbtTranslator(),
+        partitions_def=DailyPartitionsDefinition(start_date="2023-10-01"),
+    )
+    def my_dbt_assets(): ...
+
+    for spec in my_dbt_assets.specs:
+        assert spec.group_name == "THE_GROUP"
+
+
 def test_with_description_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     expected_description = "customized description"
 

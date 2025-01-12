@@ -1,10 +1,20 @@
 import importlib.util
 import sys
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Optional
 
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.errors import DagsterError
+
+from dagster_components.core.component_rendering import TemplatedValueResolver
+from dagster_components.core.dsl_schema import AssetAttributesModel
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
 
@@ -40,3 +50,70 @@ def get_path_for_package(package_name: str) -> str:
     if not submodule_search_locations:
         raise DagsterError(f"Package does not have any locations for submodules: {package_name}")
     return submodule_search_locations[0]
+
+
+@dataclass
+class ResolvingInfo:
+    obj_name: str
+    asset_attributes: AssetAttributesModel
+    value_resolver: TemplatedValueResolver
+
+    def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
+        renderer = self.value_resolver.with_context(**{self.obj_name: obj})
+        rendered_attributes = self.asset_attributes.render_properties(renderer)
+        return (
+            rendered_attributes[attribute]
+            if attribute in rendered_attributes
+            else default_method(obj)
+        )
+
+    def get_asset_spec(self, base_spec: AssetSpec, context: Mapping[str, Any]) -> AssetSpec:
+        """Returns an AssetSpec that combines the base spec with attributes resolved using the provided context.
+
+        Usage:
+
+        ```python
+        class WrappedDagsterXTranslator(DagsterXTranslator):
+            def __init__(self, *, base_translator, resolving_info: ResolvingInfo):
+                self.base_translator = base_translator
+                self.resolving_info = resolving_info
+
+            def get_asset_spec(self, base_spec: AssetSpec, x_params: Any) -> AssetSpec:
+                return self.resolving_info.get_asset_spec(
+                    base_spec, {"x_params": x_params}
+                )
+
+        ```
+        """
+        resolver = self.value_resolver.with_context(**context)
+        resolved_attributes = self.asset_attributes.render_properties(resolver)
+        return base_spec.replace_attributes(**resolved_attributes)
+
+
+def get_wrapped_translator_class(translator_type: type):
+    """Temporary hack to allow wrapping of many methods of a given translator class. Will be removed
+    once all translators implement `get_asset_spec`.
+    """
+
+    class WrappedTranslator(translator_type):
+        def __init__(self, *, base_translator, resolving_info: ResolvingInfo):
+            self.base_translator = base_translator
+            self.resolving_info = resolving_info
+
+        def get_asset_key(self, obj: Any) -> AssetKey:
+            return self.resolving_info.get_resolved_attribute("key", obj, super().get_asset_key)
+
+        def get_group_name(self, obj: Any) -> Optional[str]:
+            return self.resolving_info.get_resolved_attribute(
+                "group_name", obj, super().get_group_name
+            )
+
+        def get_tags(self, obj: Any) -> Mapping[str, str]:
+            return self.resolving_info.get_resolved_attribute("tags", obj, super().get_tags)
+
+        def get_automation_condition(self, obj: Any) -> Optional[AutomationCondition]:
+            return self.resolving_info.get_resolved_attribute(
+                "automation_condition", obj, super().get_automation_condition
+            )
+
+    return WrappedTranslator

@@ -17,7 +17,7 @@ from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd, snakecase
-from pydantic import TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components.core.component_generator import (
@@ -25,7 +25,7 @@ from dagster_components.core.component_generator import (
     ComponentGeneratorUnavailableReason,
     DefaultComponentGenerator,
 )
-from dagster_components.core.component_rendering import TemplatedValueRenderer
+from dagster_components.core.component_rendering import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
@@ -33,7 +33,10 @@ class ComponentDeclNode: ...
 
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
-    params_schema: ClassVar = None
+
+    @classmethod
+    def get_component_schema_type(cls) -> Optional[type[BaseModel]]:
+        return None
 
     @classmethod
     def get_generator(cls) -> Union[ComponentGenerator, ComponentGeneratorUnavailableReason]:
@@ -67,13 +70,17 @@ class Component(ABC):
         if isinstance(generator, ComponentGeneratorUnavailableReason):
             raise DagsterError(f"Component {cls.__name__} is not scaffoldable: {generator.message}")
 
+        component_params = cls.get_component_schema_type()
+        generator_params = generator.get_params_schema_type()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "generate_params_schema": generator.generator_params.schema()
-            if generator.generator_params
-            else None,
-            "component_params_schema": cls.params_schema.schema() if cls.params_schema else None,
+            "generate_params_schema": None
+            if generator_params is None
+            else generator_params.model_json_schema(),
+            "component_params_schema": None
+            if component_params is None
+            else component_params.model_json_schema(),
         }
 
     @classmethod
@@ -209,7 +216,7 @@ class ComponentLoadContext:
     resources: Mapping[str, object]
     registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
-    templated_value_renderer: TemplatedValueRenderer
+    templated_value_resolver: TemplatedValueResolver
 
     @staticmethod
     def for_test(
@@ -222,7 +229,7 @@ class ComponentLoadContext:
             resources=resources or {},
             registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
-            templated_value_renderer=TemplatedValueRenderer.default(),
+            templated_value_resolver=TemplatedValueResolver.default(),
         )
 
     @property
@@ -237,7 +244,7 @@ class ComponentLoadContext:
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
             self,
-            templated_value_renderer=self.templated_value_renderer.with_context(**rendering_scope),
+            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
         )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
@@ -252,7 +259,7 @@ class ComponentLoadContext:
 
     def load_params(self, params_schema: type[T]) -> T:
         with pushd(str(self.path)):
-            preprocessed_params = self.templated_value_renderer.render_params(
+            preprocessed_params = self.templated_value_resolver.render_params(
                 self._raw_params(), params_schema
             )
             return TypeAdapter(params_schema).validate_python(preprocessed_params)

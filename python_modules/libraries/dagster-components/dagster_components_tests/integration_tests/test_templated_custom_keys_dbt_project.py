@@ -68,7 +68,7 @@ def test_python_params_node_rename(dbt_path: Path) -> None:
             type="dbt_project",
             params={
                 "dbt": {"project_dir": "jaffle_shop"},
-                "translator": {
+                "asset_attributes": {
                     "key": "some_prefix/{{ node.name }}",
                 },
             },
@@ -87,7 +87,7 @@ def test_python_params_group(dbt_path: Path) -> None:
             type="dbt_project",
             params={
                 "dbt": {"project_dir": "jaffle_shop"},
-                "translator": {
+                "asset_attributes": {
                     "group_name": "some_group",
                 },
             },
@@ -126,7 +126,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
                 type="dbt_project",
                 params={
                     "dbt": {"project_dir": "jaffle_shop"},
-                    "translator": {
+                    "asset_attributes": {
                         "group_name": "{{ env('GROUP_AS_ENV') }}",
                     },
                 },
@@ -147,7 +147,7 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
                 type="dbt_project",
                 params={
                     "dbt": {"project_dir": "jaffle_shop"},
-                    "translator": {
+                    "asset_attributes": {
                         "key": "{{ env('ASSET_KEY_PREFIX') }}/{{ node.name }}",
                     },
                 },

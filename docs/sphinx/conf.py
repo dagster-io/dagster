@@ -97,7 +97,6 @@ autodoc_mock_imports = [
     "airflow",
     "azure",
     "coloredlogs",
-    "croniter",
     "dask",
     "databricks",
     "databricks_api",
