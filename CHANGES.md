@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.9.8 (core) / 0.25.8 (libraries)
+# 1.9.8 (core) / 0.25.8 (libraries)
 
 ### Bugfixes
 
