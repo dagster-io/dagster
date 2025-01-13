@@ -80,9 +80,17 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
                 assert result.exit_code == 0, str(result.stdout)
 
 
-def test_validation_cli_multiple_components() -> None:
+@pytest.mark.parametrize(
+    "scope_check_run",
+    [True, False],
+)
+def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
     """Ensure that the check CLI can validate multiple components in a single code location, and
     that error messages from all components are displayed.
+
+    The parameter `scope_check_run` determines whether the check CLI is run pointing at both
+    components or none (defaulting to the entire workspace) - the output should be the same in
+    either case, this just tests that the CLI can handle multiple filters.
     """
     runner = CliRunner()
 
@@ -99,6 +107,18 @@ def test_validation_cli_multiple_components() -> None:
                     "dagster_components.test",
                     "check",
                     "component",
+                    *(
+                        [
+                            str(
+                                Path("my_location") / "components" / "basic_component_missing_value"
+                            ),
+                            str(
+                                Path("my_location") / "components" / "basic_component_invalid_value"
+                            ),
+                        ]
+                        if scope_check_run
+                        else []
+                    ),
                 ],
                 catch_exceptions=False,
             )
@@ -110,9 +130,7 @@ def test_validation_cli_multiple_components() -> None:
 
 
 def test_validation_cli_multiple_components_filter() -> None:
-    """Ensure that the check CLI can validate multiple components in a single code location, and
-    that error messages from all components are displayed.
-    """
+    """Ensure that the check CLI filters components to validate based on the provided paths."""
     runner = CliRunner()
 
     with create_code_location_from_components(
