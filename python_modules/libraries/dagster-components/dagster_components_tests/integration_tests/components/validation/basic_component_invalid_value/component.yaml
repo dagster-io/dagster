@@ -1,0 +1,5 @@
+type: .my_component
+
+params:
+  a_string: "test"
+  an_int: {}

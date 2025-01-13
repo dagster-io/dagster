@@ -10,13 +10,14 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, ClassVar, Optional, TypedDict, TypeVar, Union
+from typing import Any, ClassVar, Optional, TypedDict, TypeVar, Union, cast
 
 import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd, snakecase
+from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
@@ -258,11 +259,22 @@ class ComponentLoadContext:
         return self.decl_node.component_file_model.params
 
     def load_params(self, params_schema: type[T]) -> T:
+        from dagster_components.core.component_decl_builder import YamlComponentDecl
+
         with pushd(str(self.path)):
             preprocessed_params = self.templated_value_resolver.render_params(
                 self._raw_params(), params_schema
             )
-            return TypeAdapter(params_schema).validate_python(preprocessed_params)
+            yaml_decl = cast(YamlComponentDecl, self.decl_node)
+
+            if yaml_decl.source_position_tree:
+                source_position_tree_of_params = yaml_decl.source_position_tree.children["params"]
+                with enrich_validation_errors_with_source_position(
+                    source_position_tree_of_params, ["params"]
+                ):
+                    return TypeAdapter(params_schema).validate_python(preprocessed_params)
+            else:
+                return TypeAdapter(params_schema).validate_python(preprocessed_params)
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"

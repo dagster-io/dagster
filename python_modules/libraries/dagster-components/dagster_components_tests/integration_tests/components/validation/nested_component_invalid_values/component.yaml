@@ -1,0 +1,13 @@
+type: .my_nested_component
+
+params:
+  nested:
+    foo:
+      a_string: "test"
+      an_int: {}
+    bar:
+      a_string: "test"
+      an_int: 5
+    baz:
+      a_string: {}
+      an_int: 5
