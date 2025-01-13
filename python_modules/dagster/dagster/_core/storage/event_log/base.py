@@ -35,6 +35,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+from dagster._record import record
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 from dagster._utils.warnings import deprecation_warning
@@ -183,6 +184,13 @@ class PlannedMaterializationInfo(NamedTuple):
 
     storage_id: int
     run_id: str
+
+
+@record
+class PoolLimit:
+    name: str
+    limit: int
+    from_default: bool
 
 
 class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
@@ -558,6 +566,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
         """Get concurrency info for key."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_pool_limits(self) -> Sequence[PoolLimit]:
+        """Get the set of concurrency limited keys and limits."""
         raise NotImplementedError()
 
     @abstractmethod
