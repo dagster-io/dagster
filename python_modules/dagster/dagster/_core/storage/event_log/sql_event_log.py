@@ -72,6 +72,7 @@ from dagster._core.storage.event_log.base import (
     EventLogStorage,
     EventRecordsFilter,
     PlannedMaterializationInfo,
+    PoolLimit,
 )
 from dagster._core.storage.event_log.migration import (
     ASSET_DATA_MIGRATIONS,
@@ -2145,6 +2146,19 @@ class SqlEventLogStorage(EventLogStorage):
         return self.has_table(ConcurrencySlotsTable.name)
 
     @cached_property
+    def has_default_pool_limit_col(self) -> bool:
+        # This table was added later, and to avoid forcing a migration
+        # we handle in the code if its been added or not.
+        if not self.has_table(ConcurrencyLimitsTable.name):
+            return False
+
+        with self.index_connection() as conn:
+            column_names = [
+                x.get("name") for x in db.inspect(conn).get_columns(ConcurrencyLimitsTable.name)
+            ]
+            return ConcurrencyLimitsTable.c.using_default_limit.name in column_names
+
+    @cached_property
     def has_concurrency_limits_table(self) -> bool:
         # This table was added later, and to avoid forcing a migration
         # we handle in the code if its been added or not.
@@ -2205,6 +2219,38 @@ class SqlEventLogStorage(EventLogStorage):
 
         default_limit = self._instance.global_op_concurrency_default_limit
 
+        if self.has_default_pool_limit_col:
+            with self.index_transaction() as conn:
+                if default_limit is None:
+                    conn.execute(
+                        ConcurrencyLimitsTable.delete().where(
+                            ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
+                        )
+                    )
+                    self._allocate_concurrency_slots(conn, concurrency_key, 0)
+                else:
+                    try:
+                        conn.execute(
+                            ConcurrencyLimitsTable.insert().values(
+                                concurrency_key=concurrency_key,
+                                limit=default_limit,
+                                using_default_limit=True,
+                            )
+                        )
+                    except db_exc.IntegrityError:
+                        conn.execute(
+                            ConcurrencyLimitsTable.update()
+                            .values(limit=default_limit)
+                            .where(
+                                db.and_(
+                                    ConcurrencyLimitsTable.c.concurrency_key == concurrency_key,
+                                    ConcurrencyLimitsTable.c.limit != default_limit,
+                                )
+                            )
+                        )
+                    self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
+            return True
+
         if default_limit is None:
             return False
 
@@ -2215,9 +2261,10 @@ class SqlEventLogStorage(EventLogStorage):
                         concurrency_key=concurrency_key, limit=default_limit
                     )
                 )
-                self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
             except db_exc.IntegrityError:
                 pass
+
+        self._allocate_concurrency_slots(conn, concurrency_key, default_limit)
         return True
 
     def _upsert_and_lock_limit_row(self, conn, concurrency_key: str, num: int):
@@ -2637,6 +2684,60 @@ class SqlEventLogStorage(EventLogStorage):
                 return ConcurrencySlotStatus.BLOCKED
 
             return ConcurrencySlotStatus.CLAIMED
+
+    def get_pool_limits(self) -> Sequence[PoolLimit]:
+        self._reconcile_concurrency_limits_from_slots()
+        has_default_col = self.has_default_pool_limit_col
+        with self.index_connection() as conn:
+            if self.has_concurrency_limits_table and has_default_col:
+                query = db_select(
+                    [
+                        ConcurrencyLimitsTable.c.concurrency_key,
+                        ConcurrencyLimitsTable.c.limit,
+                        ConcurrencyLimitsTable.c.using_default_limit,
+                    ]
+                ).select_from(ConcurrencyLimitsTable)
+                rows = conn.execute(query).fetchall()
+                return [
+                    PoolLimit(
+                        name=cast(str, row[0]),
+                        limit=cast(int, row[1]),
+                        from_default=cast(bool, row[2]),
+                    )
+                    for row in rows
+                ]
+
+            if self.has_concurrency_limits_table:
+                query = db_select(
+                    [
+                        ConcurrencyLimitsTable.c.concurrency_key,
+                        ConcurrencyLimitsTable.c.limit,
+                    ]
+                ).select_from(ConcurrencyLimitsTable)
+            else:
+                query = (
+                    db_select(
+                        [
+                            ConcurrencySlotsTable.c.concurrency_key,
+                            db.func.count().label("count"),
+                        ]
+                    )
+                    .where(
+                        ConcurrencySlotsTable.c.deleted == False,  # noqa: E712
+                    )
+                    .group_by(
+                        ConcurrencySlotsTable.c.concurrency_key,
+                    )
+                )
+            rows = conn.execute(query).fetchall()
+            return [
+                PoolLimit(
+                    name=cast(str, row[0]),
+                    limit=cast(int, row[1]),
+                    from_default=False,
+                )
+                for row in rows
+            ]
 
     def get_concurrency_keys(self) -> set[str]:
         self._reconcile_concurrency_limits_from_slots()

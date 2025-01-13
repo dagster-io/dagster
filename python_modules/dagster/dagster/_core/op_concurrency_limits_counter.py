@@ -74,18 +74,19 @@ class GlobalOpConcurrencyLimitsCounter:
             os.getenv("DAGSTER_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS", "5")
         )
 
+        queued_pool_names = self._get_queued_pool_names(runs)
+        # initialize all the pool limits to the default if necessary
+        self._initialize_pool_limits(instance, queued_pool_names)
+
         # fetch all the concurrency info for all of the runs at once, so we can claim in the correct
         # priority order
-        self._fetch_concurrency_info(instance, runs)
+        self._fetch_concurrency_info(instance, queued_pool_names)
 
         # fetch all the outstanding pools for in-progress runs
         self._process_in_progress_runs(in_progress_run_records)
 
-    def _fetch_concurrency_info(self, instance: DagsterInstance, queued_runs: Sequence[DagsterRun]):
-        # fetch all the concurrency slot information for all the queued runs
-        all_pools = set()
-
-        configured_pools = instance.event_log_storage.get_concurrency_keys()
+    def _get_queued_pool_names(self, queued_runs: Sequence[DagsterRun]) -> set[str]:
+        queued_pool_names = set()
         for run in queued_runs:
             if run.run_op_concurrency:
                 # if using run granularity, consider all the concurrency keys required by the run
@@ -95,17 +96,32 @@ class GlobalOpConcurrencyLimitsCounter:
                     if self._pool_granularity == PoolGranularity.OP
                     else run.run_op_concurrency.all_pools or []
                 )
-                all_pools.update(run_pools)
+                queued_pool_names.update(run_pools)
+        return queued_pool_names
 
-        for pool in all_pools:
-            if pool is None:
+    def _initialize_pool_limits(self, instance: DagsterInstance, pool_names: set[str]):
+        default_limit = instance.global_op_concurrency_default_limit
+        pool_limits_by_name = {
+            pool.name: pool for pool in instance.event_log_storage.get_pool_limits()
+        }
+        for pool_name in pool_names:
+            if pool_name is None:
                 continue
 
-            if pool not in configured_pools:
-                instance.event_log_storage.initialize_concurrency_limit_to_default(pool)
+            if (pool_name not in pool_limits_by_name and default_limit) or (
+                pool_name in pool_limits_by_name
+                and pool_limits_by_name[pool_name].from_default
+                and pool_limits_by_name[pool_name].limit != default_limit
+            ):
+                instance.event_log_storage.initialize_concurrency_limit_to_default(pool_name)
 
-            self._concurrency_info_by_key[pool] = instance.event_log_storage.get_concurrency_info(
-                pool
+    def _fetch_concurrency_info(self, instance: DagsterInstance, pool_names: set[str]):
+        for pool_name in pool_names:
+            if pool_name is None:
+                continue
+
+            self._concurrency_info_by_key[pool_name] = (
+                instance.event_log_storage.get_concurrency_info(pool_name)
             )
 
     def _should_allocate_slots_for_in_progress_run(self, record: RunRecord):

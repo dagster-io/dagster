@@ -5260,6 +5260,26 @@ class TestEventLogStorage:
         assert storage.get_concurrency_keys() == set(["foo"])
         assert storage.get_concurrency_info("foo").slot_count == 1
 
+    def test_changing_default_concurrency_key(
+        self, storage: EventLogStorage, instance: DagsterInstance
+    ):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if not self.can_set_concurrency_defaults():
+            pytest.skip("storage does not support setting global op concurrency defaults")
+
+        self.set_default_op_concurrency(instance, storage, 1)
+
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 1
+
+        self.set_default_op_concurrency(instance, storage, 2)
+
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 2
+
     def test_asset_checks(
         self,
         storage: EventLogStorage,
