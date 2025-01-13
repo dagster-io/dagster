@@ -1699,6 +1699,10 @@
             "path": "/_apidocs/libraries/dagster-slack"
           },
           {
+            "title": "Sling (dagster-sling)",
+            "path": "/_apidocs/libraries/dagster-sling"
+          },
+          {
             "title": "Snowflake (dagster-snowflake)",
             "path": "/_apidocs/libraries/dagster-snowflake"
           },
