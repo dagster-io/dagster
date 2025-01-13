@@ -1099,6 +1099,10 @@
         ]
       },
       {
+        "title": "dlt",
+        "path": "/integration/dlt"
+      },
+      {
         "title": "DuckDB",
         "path": "/integrations/duckdb",
         "children": [
@@ -1116,10 +1120,6 @@
         "title": "Embedded ELT",
         "path": "/integrations/embedded-elt",
         "children": [
-          {
-            "title": "dlt & Dagster",
-            "path": "/integrations/embedded-elt/dlt"
-          },
           {
             "title": "Sling & Dagster",
             "path": "/integrations/embedded-elt/sling"
