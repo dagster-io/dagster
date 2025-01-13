@@ -1,8 +1,8 @@
 import json
-from typing import Generator, Iterator
+from typing import Generator
 
 
-def write_openai_file(file_name: str, data: Iterator):
+def write_openai_file(file_name: str, data: list):
     """Writes the contents of list to file.
 
     Args:
@@ -24,9 +24,10 @@ def read_openai_file(file_name: str) -> Generator:
         file_name (str): name of the input file
 
     Returns:
-        Generator: records
+        Generator: records of the jsonl file as dicts
 
     """
     with open(file_name, "r") as training_file:
         for line in training_file:
-            yield dict(line.strip())
+            if line.strip():
+                yield json.loads(line)

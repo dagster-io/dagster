@@ -117,27 +117,21 @@ def enriched_graphic_novels(
     book_category,
 ) -> pd.DataFrame:
     query = f"""
-        create table if not exists enriched_graphic_novels as ( 
-            select
-                book.title as title,
-                authors.name as author,
-                book.description as description,
-                book_category.category
-            from graphic_novels as book
-            left join authors
-                on book.authors[1].author_id = authors.author_id
-            left join book_category
-                on book.book_id = book_category.book_id
-            where nullif(book.description, '') is not null
-            and category is not null
-        );
+        select
+            book.title as title,
+            authors.name as author,
+            book.description as description,
+            book_category.category
+        from graphic_novels as book
+        left join authors
+            on book.authors[1].author_id = authors.author_id
+        left join book_category
+            on book.book_id = book_category.book_id
+        where nullif(book.description, '') is not null
+        and category is not null
     """
     with duckdb_resource.get_connection() as conn:
-        conn.execute(query)
-        select_query = """
-            select * from enriched_graphic_novels;
-        """
-        return conn.execute(select_query).fetch_df()
+        return conn.execute(query).fetch_df()
 
 
 def create_prompt_record(data: dict, categories: list):
@@ -196,9 +190,9 @@ def validation_file(
     return file_name
 
 
-def openai_file_validation(file_name: str) -> Iterable:
+def openai_file_validation(data: Iterable) -> dg.AssetCheckResult:
     format_errors = defaultdict(int)
-    for ex in utils.read_openai_file(file_name):
+    for ex in data:
         if not isinstance(ex, dict):
             format_errors["data_type"] += 1
             continue
@@ -213,17 +207,11 @@ def openai_file_validation(file_name: str) -> Iterable:
                 format_errors["message_missing_key"] += 1
 
             if any(
-                k not in ("role", "content", "name", "function_call", "weight")
-                for k in message
+                k not in ("role", "content", "name", "function_call", "weight") for k in message
             ):
                 format_errors["message_unrecognized_key"] += 1
 
-            if message.get("role", None) not in (
-                "system",
-                "user",
-                "assistant",
-                "function",
-            ):
+            if message.get("role", None) not in ("system", "user", "assistant", "function"):
                 format_errors["unrecognized_role"] += 1
 
             content = message.get("content", None)
@@ -236,14 +224,14 @@ def openai_file_validation(file_name: str) -> Iterable:
             format_errors["example_missing_assistant_message"] += 1
 
     if format_errors:
-        yield dg.AssetCheckResult(
+        return dg.AssetCheckResult(
             passed=False,
             severity=dg.AssetCheckSeverity.ERROR,
             description="Training data set has errors",
             metadata=format_errors,
         )
     else:
-        yield dg.AssetCheckResult(
+        return dg.AssetCheckResult(
             passed=True,
             description="Training data set is ready to upload",
         )
@@ -256,8 +244,9 @@ def openai_file_validation(file_name: str) -> Iterable:
         "source": "https://cookbook.openai.com/examples/chat_finetuning_data_prep#format-validation"
     },
 )
-def training_file_format_check():
-    openai_file_validation("goodreads-training.jsonl")
+def training_file_format_check() -> Iterable[dg.AssetCheckResult]:
+    data = utils.read_openai_file("goodreads-training.jsonl")
+    yield openai_file_validation(data)
 
 
 @dg.asset_check(
@@ -267,8 +256,9 @@ def training_file_format_check():
         "source": "https://cookbook.openai.com/examples/chat_finetuning_data_prep#format-validation"
     },
 )
-def validation_file_format_check():
-    openai_file_validation("goodreads-validation.jsonl")
+def validation_file_format_check() -> Iterable[dg.AssetCheckResult]:
+    data = utils.read_openai_file("goodreads-validation.jsonl")
+    yield openai_file_validation(data)
 
 
 @dg.asset(
@@ -391,21 +381,16 @@ def model_question(
 
 @dg.asset_check(
     asset=fine_tuned_model,
+    additional_ins={"data": dg.AssetIn("enriched_graphic_novels")},
     description="Compare fine-tuned model against base model accuracy",
 )
 def fine_tuned_model_accuracy(
     context: dg.AssetCheckExecutionContext,
-    duckdb_resource: dg_duckdb.DuckDBResource,
     openai: OpenAIResource,
     fine_tuned_model,
+    data,
 ) -> Iterable[dg.AssetCheckResult]:
-    query = f"""
-        select * from enriched_graphic_novels
-    """
-    with duckdb_resource.get_connection() as conn:
-        validation = (
-            conn.execute(query).fetch_df().sample(n=constants.VALIDATION_SAMPLE_SIZE)
-        )
+    validation = data.sample(n=constants.VALIDATION_SAMPLE_SIZE)
 
     models = Counter()
     base_model = constants.MODEL_NAME
@@ -421,7 +406,7 @@ def fine_tuned_model_accuracy(
                 if model_answer == data["category"]:
                     models[model] += 1
 
-    model_accuracy={
+    model_accuracy = {
         fine_tuned_model: models[fine_tuned_model] / constants.VALIDATION_SAMPLE_SIZE,
         base_model: models[base_model] / constants.VALIDATION_SAMPLE_SIZE,
     }
