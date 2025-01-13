@@ -293,7 +293,7 @@ Users may implement custom params loaders, context loader/injector pairs, and me
 
 ### Custom params loader
 
-Params loaders need to inherit from <PyObject section="libraries" object="PipesParamsLoader" module="dagster_pipes" />. Here is an example that loads parameters from an object called `METADATA` imported from a fictional package called `cloud_service`. It is assumed that "cloud service" represents some compute platform, that the `cloud_service` package is available in the environment, and that the API for launching processes in “cloud service” allows you to set arbitrary key-value pairs in a payload that is exposed as `cloud_service.METADATA`.
+Params loaders need to inherit from <PyObject section="libraries" object="PipesParamsLoader" module="dagster_pipes" />. Here is an example that loads parameters from an object called `METADATA` imported from a fictional package called `cloud_service`. It is assumed that "cloud service" represents some compute platform, that the `cloud_service` package is available in the environment, and that the API for launching processes in "cloud service" allows you to set arbitrary key-value pairs in a payload that is exposed as `cloud_service.METADATA`.
 
 ```python file=/guides/dagster/dagster_pipes/dagster_pipes_details_and_customization/custom_bootstrap_loader.py
 ### EXTERNAL PROCESS
