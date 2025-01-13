@@ -55,7 +55,7 @@ def prepend_lines_with_line_numbers(
 
 def format_indented_error_msg(col: int, msg: str) -> str:
     """Format an error message with a caret pointing to the column where the error occurred."""
-    return " " * col + f"^ {msg}"
+    return " " * (col - 1) + f"^ {msg}"
 
 
 OFFSET_LINES_BEFORE = 2
