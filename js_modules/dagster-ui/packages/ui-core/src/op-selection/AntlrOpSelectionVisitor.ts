@@ -6,6 +6,7 @@ import {
   AndExpressionContext,
   AttributeExpressionContext,
   DownTraversalExpressionContext,
+  FunctionCallExpressionContext,
   NameExprContext,
   NameSubstringExprContext,
   NotExpressionContext,
@@ -17,7 +18,11 @@ import {
   UpTraversalExpressionContext,
 } from './generated/OpSelectionParser';
 import {OpSelectionVisitor} from './generated/OpSelectionVisitor';
-import {getTraversalDepth, getValue} from '../asset-selection/AntlrAssetSelectionVisitor';
+import {
+  getFunctionName,
+  getTraversalDepth,
+  getValue,
+} from '../asset-selection/AntlrAssetSelectionVisitor';
 
 export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   extends AbstractParseTreeVisitor<Set<T>>
@@ -56,6 +61,36 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
       this.traverser.fetchDownstream(item, down_depth).forEach((i) => selection.add(i));
     }
     return selection;
+  }
+
+  visitFunctionCallExpression(ctx: FunctionCallExpressionContext) {
+    const function_name: string = getFunctionName(ctx.functionName());
+    const selection = this.visit(ctx.expr());
+    if (function_name === 'sinks') {
+      const sinks = new Set<T>();
+      for (const item of selection) {
+        const downstream = this.traverser
+          .fetchDownstream(item, Number.MAX_VALUE)
+          .filter((i) => selection.has(i));
+        if (downstream.length === 0 || (downstream.length === 1 && downstream[0] === item)) {
+          sinks.add(item);
+        }
+      }
+      return sinks;
+    }
+    if (function_name === 'roots') {
+      const roots = new Set<T>();
+      for (const item of selection) {
+        const upstream = this.traverser
+          .fetchUpstream(item, Number.MAX_VALUE)
+          .filter((i) => selection.has(i));
+        if (upstream.length === 0 || (upstream.length === 1 && upstream[0] === item)) {
+          roots.add(item);
+        }
+      }
+      return roots;
+    }
+    throw new Error(`Unknown function: ${function_name}`);
   }
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {

@@ -107,7 +107,6 @@ describe('createAssetSelectionHint', () => {
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
       ],
       from: 13, // cursor location
@@ -118,7 +117,6 @@ describe('createAssetSelectionHint', () => {
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
       ],
       from: 12, // cursor location
@@ -153,7 +151,6 @@ describe('createAssetSelectionHint', () => {
         {displayText: 'sinks()', text: 'sinks()'},
         {displayText: 'roots()', text: 'roots()'},
         {displayText: 'not', text: 'not '},
-        {displayText: '*', text: '*'},
         {displayText: '+', text: '+'},
         {displayText: '(', text: '()'},
       ],
@@ -202,7 +199,6 @@ describe('createAssetSelectionHint', () => {
       list: [
         {displayText: 'and', text: ' and '},
         {displayText: 'or', text: ' or '},
-        {displayText: '*', text: '*'},
         {displayText: '+', text: '+'},
       ],
       to: 2,
@@ -221,7 +217,6 @@ describe('createAssetSelectionHint', () => {
         {displayText: 'sinks()', text: 'sinks()'},
         {displayText: 'roots()', text: 'roots()'},
         {displayText: 'not', text: 'not '},
-        {displayText: '*', text: '*'},
         {displayText: '+', text: '+'},
         {displayText: '(', text: '()'},
       ],
@@ -270,7 +265,6 @@ describe('createAssetSelectionHint', () => {
         {text: ' code_location:', displayText: 'code_location:'},
         {text: ' sinks()', displayText: 'sinks()'},
         {text: ' roots()', displayText: 'roots()'},
-        {text: ' *', displayText: '*'},
         {text: ' +', displayText: '+'},
         {text: ' ()', displayText: '('},
       ],
@@ -289,7 +283,6 @@ describe('createAssetSelectionHint', () => {
         {text: 'code_location:', displayText: 'code_location:'},
         {text: 'sinks()', displayText: 'sinks()'},
         {text: 'roots()', displayText: 'roots()'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
       ],
@@ -311,7 +304,6 @@ describe('createAssetSelectionHint', () => {
         {text: 'sinks()', displayText: 'sinks()'},
         {text: 'roots()', displayText: 'roots()'},
         {text: 'not ', displayText: 'not'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
       ],
@@ -333,7 +325,6 @@ describe('createAssetSelectionHint', () => {
         {text: 'sinks()', displayText: 'sinks()'},
         {text: 'roots()', displayText: 'roots()'},
         {text: 'not ', displayText: 'not'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
       ],
@@ -369,7 +360,6 @@ describe('createAssetSelectionHint', () => {
         {text: 'sinks()', displayText: 'sinks()'},
         {text: 'roots()', displayText: 'roots()'},
         {text: 'not ', displayText: 'not'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
       ],
@@ -394,7 +384,6 @@ describe('createAssetSelectionHint', () => {
         {text: ' sinks()', displayText: 'sinks()'},
         {text: ' roots()', displayText: 'roots()'},
         {text: ' not ', displayText: 'not'},
-        {text: ' *', displayText: '*'},
         {text: ' +', displayText: '+'},
         {text: ' ()', displayText: '('},
       ],
@@ -440,11 +429,10 @@ describe('createAssetSelectionHint', () => {
     });
 
     // UpAndDownTraversal
-    expect(testAutocomplete('*key:"value"|+')).toEqual({
+    expect(testAutocomplete('+key:"value"|+')).toEqual({
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
       ],
       from: 12, // cursor location
@@ -456,7 +444,6 @@ describe('createAssetSelectionHint', () => {
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
       ],
       from: 11, // cursor location
@@ -480,7 +467,6 @@ describe('createAssetSelectionHint', () => {
         {text: 'sinks()', displayText: 'sinks()'},
         {text: 'roots()', displayText: 'roots()'},
         {text: 'not ', displayText: 'not'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
       ],
@@ -503,7 +489,6 @@ describe('createAssetSelectionHint', () => {
         {text: 'sinks()', displayText: 'sinks()'},
         {text: 'roots()', displayText: 'roots()'},
         {text: 'not ', displayText: 'not'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
       ],
@@ -525,7 +510,6 @@ describe('createAssetSelectionHint', () => {
         {text: 'sinks()', displayText: 'sinks()'},
         {text: 'roots()', displayText: 'roots()'},
         {text: 'not ', displayText: 'not'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
       ],
@@ -539,7 +523,6 @@ describe('createAssetSelectionHint', () => {
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
       ],
       from: 2, // cursor position
@@ -552,7 +535,6 @@ describe('createAssetSelectionHint', () => {
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
       ],
       from: 23, // cursor position
@@ -563,7 +545,6 @@ describe('createAssetSelectionHint', () => {
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
       ],
       from: 50, // cursor position
@@ -580,7 +561,6 @@ describe('createAssetSelectionHint', () => {
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
-        {text: '*', displayText: '*'},
         {text: '+', displayText: '+'},
       ],
       from: 27, // cursor position
@@ -589,7 +569,7 @@ describe('createAssetSelectionHint', () => {
   });
 
   it('makes suggestions around traversals', () => {
-    expect(testAutocomplete('sinks()++|')).toEqual({
+    expect(testAutocomplete('sinks()+2|')).toEqual({
       list: [
         {text: ' and ', displayText: 'and'},
         {text: ' or ', displayText: 'or'},
@@ -609,7 +589,7 @@ describe('createAssetSelectionHint', () => {
       to: 8, // end of value
     });
 
-    expect(testAutocomplete('|++sinks()++')).toEqual({
+    expect(testAutocomplete('|2+sinks()+2')).toEqual({
       list: [
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
@@ -618,7 +598,7 @@ describe('createAssetSelectionHint', () => {
       to: 0, // end of value
     });
 
-    expect(testAutocomplete('+|+sinks()++')).toEqual({
+    expect(testAutocomplete('2|+sinks()+2')).toEqual({
       list: [
         {text: '+', displayText: '+'},
         {text: '()', displayText: '('},
@@ -641,7 +621,6 @@ describe('createAssetSelectionHint', () => {
         {displayText: 'sinks()', text: 'sinks()'},
         {displayText: 'roots()', text: 'roots()'},
         {displayText: 'not', text: 'not '},
-        {displayText: '*', text: '*'},
         {displayText: '+', text: '+'},
         {displayText: '(', text: '()'},
       ],
@@ -661,7 +640,6 @@ describe('createAssetSelectionHint', () => {
         {displayText: 'sinks()', text: ' sinks()'},
         {displayText: 'roots()', text: ' roots()'},
         {displayText: 'not', text: ' not '},
-        {displayText: '*', text: ' *'},
         {displayText: '+', text: ' +'},
         {displayText: '(', text: ' ()'},
       ],
@@ -681,7 +659,6 @@ describe('createAssetSelectionHint', () => {
         {displayText: 'sinks()', text: ' sinks()'},
         {displayText: 'roots()', text: ' roots()'},
         {displayText: 'not', text: ' not '},
-        {displayText: '*', text: ' *'},
         {displayText: '+', text: ' +'},
         {displayText: '(', text: ' ()'},
       ],
@@ -692,13 +669,12 @@ describe('createAssetSelectionHint', () => {
 
   it('suggestions within incomplete function call expression', () => {
     expect(
-      testAutocomplete('(sinks(key:"value"++ or (key_substring:"aws_cost_report"++)|'),
+      testAutocomplete('(sinks(key:"value"+2 or (key_substring:"aws_cost_report"+2)|'),
     ).toEqual({
       from: 59,
       list: [
         {displayText: 'and', text: ' and '},
         {displayText: 'or', text: ' or '},
-        {displayText: '*', text: '*'},
         {displayText: '+', text: '+'},
         {displayText: ')', text: ')'},
       ],
@@ -722,7 +698,6 @@ describe('createAssetSelectionHint', () => {
         {displayText: 'sinks()', text: 'sinks()'},
         {displayText: 'roots()', text: 'roots()'},
         {displayText: 'not', text: 'not '},
-        {displayText: '*', text: '*'},
         {displayText: '+', text: '+'},
         {displayText: '(', text: '()'},
       ],
@@ -820,7 +795,7 @@ describe('createAssetSelectionHint', () => {
   });
 
   it('handles complex ands/ors', () => {
-    expect(testAutocomplete('key:"value"* or tag:"value"+ and owner:"owner" and |')).toEqual({
+    expect(testAutocomplete('key:"value"+ or tag:"value"+ and owner:"owner" and |')).toEqual({
       from: 51,
       list: [
         {
@@ -862,10 +837,6 @@ describe('createAssetSelectionHint', () => {
         {
           displayText: 'not',
           text: 'not ',
-        },
-        {
-          displayText: '*',
-          text: '*',
         },
         {
           displayText: '+',

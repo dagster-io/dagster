@@ -209,7 +209,7 @@ export class SelectionAutoCompleteVisitor
   public addUnmatchedValueResults(
     _value: string,
     textCallback: TextCallback = DEFAULT_TEXT_CALLBACK,
-    options: {excludeNot?: boolean; excludeStar?: boolean; excludePlus?: boolean} = {},
+    options: {excludeNot?: boolean; excludePlus?: boolean} = {},
   ) {
     const value = _value.trim();
     if (value) {
@@ -240,9 +240,6 @@ export class SelectionAutoCompleteVisitor
       this.list.push({text: textCallback('not '), displayText: 'not'});
     }
     if (value === '') {
-      if (!options.excludeStar) {
-        this.list.push({text: textCallback('*'), displayText: '*'});
-      }
       if (!options.excludePlus) {
         this.list.push({text: textCallback('+'), displayText: '+'});
       }
@@ -273,15 +270,11 @@ export class SelectionAutoCompleteVisitor
   private addAfterExpressionResults(
     ctx: ParserRuleContext,
     options: {
-      excludeStar?: boolean;
       excludePlus?: boolean;
     } = {},
   ) {
     this.list.push({text: ' and ', displayText: 'and'}, {text: ' or ', displayText: 'or'});
 
-    if (!options.excludeStar) {
-      this.list.push({text: '*', displayText: '*'});
-    }
     if (!options.excludePlus) {
       this.list.push({text: '+', displayText: '+'});
     }
@@ -298,7 +291,6 @@ export class SelectionAutoCompleteVisitor
       this.startReplacementIndex = this.cursorIndex;
       this.stopReplacementIndex = this.cursorIndex;
       this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
-        excludeStar: true,
         excludePlus: true,
       });
       if (isInsideExpressionlessParenthesizedExpression(ctx)) {
@@ -425,7 +417,6 @@ export class SelectionAutoCompleteVisitor
       return this.visit(ctx.postNeighborTraversalWhitespace());
     }
     this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
-      excludeStar: true,
       excludeNot: true,
     });
   }
@@ -449,24 +440,19 @@ export class SelectionAutoCompleteVisitor
     });
   }
 
-  visitPostNeighborTraversalWhitespace(ctx: PostNeighborTraversalWhitespaceContext) {
-    const isAtStart = this.cursorIndex === ctx.start.startIndex;
-    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
-      excludeStar: isAtStart,
-    });
+  visitPostNeighborTraversalWhitespace(_ctx: PostNeighborTraversalWhitespaceContext) {
+    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK);
   }
 
-  visitPostUpwardTraversalWhitespace(ctx: PostUpwardTraversalWhitespaceContext) {
+  visitPostUpwardTraversalWhitespace(_ctx: PostUpwardTraversalWhitespaceContext) {
     this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
-      excludeStar: true,
-      excludePlus: ctx.parent?.children?.[0]?.text.includes('+'),
+      excludePlus: true,
     });
   }
 
   visitPostDownwardTraversalWhitespace(ctx: PostDownwardTraversalWhitespaceContext) {
     this.addAfterExpressionResults(ctx, {
-      excludeStar: true,
-      excludePlus: ctx.parent?.children?.[0]?.text.includes('+'),
+      excludePlus: true,
     });
   }
 

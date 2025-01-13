@@ -35,8 +35,8 @@ function assertQueryResult(query: string, expectedNames: string[]) {
   if (result instanceof Error) {
     throw result;
   }
-  expect(result.all.length).toBe(expectedNames.length);
   expect(new Set(result.all.map((op) => op.name))).toEqual(new Set(expectedNames));
+  expect(result.all.length).toBe(expectedNames.length);
 }
 
 // Most tests copied from AntlrAssetSelection.test.ts
@@ -48,8 +48,6 @@ describe('parseOpSelectionQuery', () => {
       expect(parseOpSelectionQuery(TEST_GRAPH, 'not')).toBeInstanceOf(Error);
       expect(parseOpSelectionQuery(TEST_GRAPH, 'and')).toBeInstanceOf(Error);
       expect(parseOpSelectionQuery(TEST_GRAPH, 'name:A and')).toBeInstanceOf(Error);
-      expect(parseOpSelectionQuery(TEST_GRAPH, 'sinks(*)')).toBeInstanceOf(Error);
-      expect(parseOpSelectionQuery(TEST_GRAPH, 'roots(*)')).toBeInstanceOf(Error);
       expect(parseOpSelectionQuery(TEST_GRAPH, 'notafunction()')).toBeInstanceOf(Error);
       expect(parseOpSelectionQuery(TEST_GRAPH, 'tag:foo=')).toBeInstanceOf(Error);
       expect(parseOpSelectionQuery(TEST_GRAPH, 'owner')).toBeInstanceOf(Error);
@@ -113,6 +111,12 @@ describe('parseOpSelectionQuery', () => {
       assertQueryResult('+name:B+', ['A', 'B', 'C']);
       assertQueryResult('name:A+ and +name:C and +name:B+', ['A', 'B', 'C']);
       assertQueryResult('name:A+ and +name:B+ and +name:C', ['A', 'B', 'C']);
+    });
+
+    it('should handle sinks and roots', () => {
+      assertQueryResult('*', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('roots(*)', ['A']);
+      assertQueryResult('sinks(*)', ['C']);
     });
   });
 });

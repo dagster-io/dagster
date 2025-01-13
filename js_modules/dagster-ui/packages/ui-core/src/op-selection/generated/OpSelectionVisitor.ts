@@ -10,6 +10,8 @@ import {
   DownTraversalContext,
   DownTraversalExpressionContext,
   ExprContext,
+  FunctionCallExpressionContext,
+  FunctionNameContext,
   NameExprContext,
   NameSubstringExprContext,
   NotExpressionContext,
@@ -121,6 +123,14 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
   visitAttributeExpression?: (ctx: AttributeExpressionContext) => Result;
 
   /**
+   * Visit a parse tree produced by the `FunctionCallExpression`
+   * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => Result;
+
+  /**
    * Visit a parse tree produced by the `ParenthesizedExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
    * @param ctx the parse tree
@@ -162,6 +172,13 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
    * @return the visitor result
    */
   visitDownTraversal?: (ctx: DownTraversalContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `OpSelectionParser.functionName`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitFunctionName?: (ctx: FunctionNameContext) => Result;
 
   /**
    * Visit a parse tree produced by `OpSelectionParser.attributeExpr`.
