@@ -301,8 +301,15 @@ const JOB_SELECTED_TICK_QUERY = gql`
             path
           }
           requestedAssetMaterializationCount
+          submittedAssetMaterializationCount
           autoMaterializeAssetEvaluationId
           requestedMaterializationsForAssets {
+            assetKey {
+              path
+            }
+            partitionKeys
+          }
+          submittedMaterializationsForAssets {
             assetKey {
               path
             }

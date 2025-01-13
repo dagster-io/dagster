@@ -15,8 +15,15 @@ export const ASSET_DAEMON_TICK_FRAGMENT = gql`
       path
     }
     requestedAssetMaterializationCount
+    submittedAssetMaterializationCount
     autoMaterializeAssetEvaluationId
     requestedMaterializationsForAssets {
+      assetKey {
+        path
+      }
+      partitionKeys
+    }
+    submittedMaterializationsForAssets {
       assetKey {
         path
       }

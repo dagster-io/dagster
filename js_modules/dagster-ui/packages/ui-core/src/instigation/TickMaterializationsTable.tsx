@@ -18,6 +18,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {
   AssetGroupAndLocationQuery,
   AssetGroupAndLocationQueryVariables,
@@ -39,7 +40,7 @@ export const TickMaterializationsTable = ({
 }: {
   tick: Pick<
     AssetDaemonTickFragment,
-    'requestedAssetKeys' | 'requestedMaterializationsForAssets' | 'autoMaterializeAssetEvaluationId'
+    'requestedAssetKeys' | 'requestedMaterializationsForAssets' | 'submittedMaterializationsForAssets' |'autoMaterializeAssetEvaluationId'
   > | null;
 }) => {
   const [queryString, setQueryString] = useState('');
@@ -71,6 +72,14 @@ export const TickMaterializationsTable = ({
     });
     return map;
   }, [tick?.requestedMaterializationsForAssets]);
+
+  const submittedAssetKeyToPartitionsMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    tick?.submittedMaterializationsForAssets.forEach(({assetKey, partitionKeys}) => {
+      map[tokenForAssetKey(assetKey)] = partitionKeys;
+    });
+    return map;
+  }, [tick?.submittedMaterializationsForAssets]);
 
   const content = () => {
     if (queryString && !filteredAssetKeys.length) {
@@ -108,7 +117,8 @@ export const TickMaterializationsTable = ({
                 $height={size}
                 $start={start}
                 assetKey={assetKey}
-                partitionKeys={assetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
+                requestedPartitionKeys={assetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
+                submittedPartitionKeys={submittedAssetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
                 evaluationId={tick.autoMaterializeAssetEvaluationId!}
               />
             );
@@ -143,17 +153,20 @@ const AssetDetailRow = ({
   $start,
   $height,
   assetKey,
-  partitionKeys,
+  requestedPartitionKeys,
+  submittedPartitionKeys,
   evaluationId,
 }: {
   $start: number;
   $height: number;
   assetKey: AssetKeyInput;
-  partitionKeys?: string[];
+  requestedPartitionKeys?: string[];
+  submittedPartitionKeys?: string[];
   evaluationId: string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const numMaterializations = partitionKeys?.length || 1;
+  const numMaterializations = requestedPartitionKeys?.length || 1;
+  const numSubmittedMaterializations = submittedPartitionKeys?.length || 0;
   const queryResult = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
     ASSET_GROUP_QUERY,
     {
@@ -208,6 +221,11 @@ const AssetDetailRow = ({
                 evaluationID={evaluationId}
                 assetKeyPath={assetKey.path}
               />
+              {/*  need to get the instigator name too */}
+              <Link to={runsPathWithFilters([{token: 'tag', value: `dagster/tick=${evaluationId}`}])}>
+                {numSubmittedMaterializations} materialization
+                {numSubmittedMaterializations === 1 ? '' : 's'} submitted
+              </Link>
             </>
           ) : null}
         </RowCell>

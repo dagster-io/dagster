@@ -70,6 +70,7 @@ export type HistoryTickFragment = {
   instigationType: Types.InstigationType;
   skipReason: string | null;
   requestedAssetMaterializationCount: number;
+  submittedAssetMaterializationCount: number;
   runIds: Array<string>;
   originRunIds: Array<string>;
   logKey: Array<string> | null;

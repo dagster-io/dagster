@@ -527,7 +527,7 @@ function TickRow({
               <ButtonLink onClick={() => onShowDetails(tick)}>
                 {tick.requestedAssetMaterializationCount === 1
                   ? '1 materialization requested'
-                  : `${tick.requestedAssetMaterializationCount} materializations requested`}
+                  : `${tick.submittedAssetMaterializationCount}/${tick.requestedAssetMaterializationCount} requested materializations submitted`}
               </ButtonLink>
             </Box>
           )}

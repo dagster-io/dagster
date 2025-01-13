@@ -1159,6 +1159,9 @@ class AssetDaemon(DagsterDaemon):
         for submitted_run_id, entity_keys in gen_run_request_results:
             # heartbeat after each submitted run
             yield
+            import time
+
+            time.sleep(5)
             num_submitted += 1
 
             tick_context.add_run_info(run_id=submitted_run_id)
