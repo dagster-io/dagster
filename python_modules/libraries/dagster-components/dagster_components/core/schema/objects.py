@@ -1,4 +1,3 @@
-from abc import ABC
 from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Literal, Optional, Union
 
@@ -12,47 +11,44 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
-from pydantic import BaseModel
 
-from dagster_components.core.component_rendering import (
-    ComponentSchemaBaseModel,
-    ResolvedFieldInfo,
-    TemplatedValueResolver,
-)
-
-
-class OpSpecBaseModel(BaseModel):
-    name: Optional[str] = None
-    tags: Optional[dict[str, str]] = None
+from dagster_components.core.schema.base import ComponentSchemaBaseModel
+from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 
 def _post_process_key(resolved: Optional[str]) -> Optional[AssetKey]:
     return AssetKey.from_user_string(resolved) if resolved else None
 
 
+class OpSpecBaseModel(ComponentSchemaBaseModel):
+    name: Optional[str] = None
+    tags: Optional[dict[str, str]] = None
+
+
 class AssetAttributesModel(ComponentSchemaBaseModel):
     key: Annotated[
         Optional[str],
-        ResolvedFieldInfo(output_type=AssetKey, post_process_fn=_post_process_key),
+        ResolvableFieldInfo(output_type=AssetKey, post_process_fn=_post_process_key),
     ] = None
     deps: Sequence[str] = []
     description: Optional[str] = None
     metadata: Annotated[
-        Union[str, Mapping[str, Any]], ResolvedFieldInfo(output_type=Mapping[str, Any])
+        Union[str, Mapping[str, Any]], ResolvableFieldInfo(output_type=Mapping[str, Any])
     ] = {}
     group_name: Optional[str] = None
     skippable: bool = False
     code_version: Optional[str] = None
     owners: Sequence[str] = []
     tags: Annotated[
-        Union[str, Mapping[str, str]], ResolvedFieldInfo(output_type=Mapping[str, str])
+        Union[str, Mapping[str, str]], ResolvableFieldInfo(output_type=Mapping[str, str])
     ] = {}
     automation_condition: Annotated[
-        Optional[str], ResolvedFieldInfo(output_type=Optional[AutomationCondition])
+        Optional[str], ResolvableFieldInfo(output_type=Optional[AutomationCondition])
     ] = None
 
 
-class AssetSpecTransform(ABC, BaseModel):
+class AssetSpecTransformModel(ComponentSchemaBaseModel):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesModel

@@ -11,7 +11,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from pydantic import BaseModel
 
 from dagster_components.core.component import Component, ComponentLoadContext, component_type
-from dagster_components.core.dsl_schema import AssetAttributesModel
+from dagster_components.core.schema.objects import AssetAttributesModel
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
