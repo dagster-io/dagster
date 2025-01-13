@@ -1,4 +1,4 @@
-from dagster_embedded_elt.sling import SlingResource, sling_assets
+from dagster_sling import SlingResource, sling_assets
 
 from dagster import Definitions, file_relative_path
 
