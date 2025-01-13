@@ -16,27 +16,26 @@ class ComponentFileModel(BaseModel):
     params: Optional[Mapping[str, Any]] = None
 
 
-class ComponentFileModelWithSourceInfo(ComponentFileModel):
-    source_position_tree: SourcePositionTree
-
-    @staticmethod
-    def from_file(contents: str, filepath: str) -> "ComponentFileModelWithSourceInfo":
-        parsed = parse_yaml_with_source_positions(contents, filepath)
-        obj = _parse_and_populate_model_with_annotated_errors(
-            cls=ComponentFileModel, obj_parse_root=parsed, obj_key_path_prefix=[]
-        )
-
-        return ComponentFileModelWithSourceInfo(
-            type=obj.type,
-            params=obj.params,
-            source_position_tree=parsed.source_position_tree,
-        )
-
-
 @record
 class YamlComponentDecl(ComponentDeclNode):
     path: Path
     component_file_model: ComponentFileModel
+    source_position_tree: Optional[SourcePositionTree] = None
+
+    @staticmethod
+    def from_path(component_file_path: Path) -> "YamlComponentDecl":
+        parsed = parse_yaml_with_source_positions(
+            component_file_path.read_text(), str(component_file_path)
+        )
+        obj = _parse_and_populate_model_with_annotated_errors(
+            cls=ComponentFileModel, obj_parse_root=parsed, obj_key_path_prefix=[]
+        )
+
+        return YamlComponentDecl(
+            path=component_file_path.parent,
+            component_file_model=obj,
+            source_position_tree=parsed.source_position_tree,
+        )
 
 
 @record
@@ -56,13 +55,7 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
     component_path = path / "component.yaml"
 
     if component_path.exists():
-        component_file_model_and_source_position = ComponentFileModelWithSourceInfo.from_file(
-            component_path.read_text(), str(component_path)
-        )
-
-        return YamlComponentDecl(
-            path=path, component_file_model=component_file_model_and_source_position
-        )
+        return YamlComponentDecl.from_path(component_path)
 
     subs = []
     for subpath in path.iterdir():

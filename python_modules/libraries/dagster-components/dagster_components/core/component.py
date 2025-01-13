@@ -259,21 +259,16 @@ class ComponentLoadContext:
         return self.decl_node.component_file_model.params
 
     def load_params(self, params_schema: type[T]) -> T:
-        from dagster_components.core.component_decl_builder import (
-            ComponentFileModelWithSourceInfo,
-            YamlComponentDecl,
-        )
+        from dagster_components.core.component_decl_builder import YamlComponentDecl
 
         with pushd(str(self.path)):
             preprocessed_params = self.templated_value_resolver.render_params(
                 self._raw_params(), params_schema
             )
-            component_file_model = cast(YamlComponentDecl, self.decl_node).component_file_model
+            yaml_decl = cast(YamlComponentDecl, self.decl_node)
 
-            if isinstance(component_file_model, ComponentFileModelWithSourceInfo):
-                source_position_tree_of_params = component_file_model.source_position_tree.children[
-                    "params"
-                ]
+            if yaml_decl.source_position_tree:
+                source_position_tree_of_params = yaml_decl.source_position_tree.children["params"]
                 with enrich_validation_errors_with_source_position(
                     source_position_tree_of_params, ["params"]
                 ):
