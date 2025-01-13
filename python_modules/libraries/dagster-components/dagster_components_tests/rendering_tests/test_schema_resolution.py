@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 
 import pytest
 from dagster_components import ComponentSchemaBaseModel, ResolvableFieldInfo, TemplatedValueResolver
-from dagster_components.core.schema.metadata import allow_render, get_available_scope
+from dagster_components.core.schema.metadata import allow_resolve, get_available_scope
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
@@ -58,7 +58,7 @@ class Outer(BaseModel):
     ],
 )
 def test_allow_render(path, expected: bool) -> None:
-    assert allow_render(path, Outer.model_json_schema(), Outer.model_json_schema()) == expected
+    assert allow_resolve(path, Outer.model_json_schema(), Outer.model_json_schema()) == expected
 
 
 @pytest.mark.parametrize(
@@ -93,8 +93,8 @@ def test_render() -> None:
         },
     }
 
-    renderer = TemplatedValueResolver(context={"foo_val": "foo", "bar_val": "bar"})
-    rendered_data = renderer.render_params(data, Outer)
+    renderer = TemplatedValueResolver(scope={"foo_val": "foo", "bar_val": "bar"})
+    rendered_data = renderer.resolve_params(data, Outer)
 
     assert rendered_data == {
         "a": "foo",
@@ -126,8 +126,8 @@ def test_valid_rendering() -> None:
         the_str="{{ some_str }}",
         the_opt_int="{{ some_int }}",
     )
-    renderer = TemplatedValueResolver(context={"some_int": 1, "some_str": "aaa"})
-    resolved_properties = rm.render_properties(renderer)
+    renderer = TemplatedValueResolver(scope={"some_int": 1, "some_str": "aaa"})
+    resolved_properties = rm.resolve_properties(renderer)
 
     assert resolved_properties == {
         "the_renderable_int": 1,
@@ -145,8 +145,8 @@ def test_invalid_rendering() -> None:
         the_opt_int="{{ some_str }}",
     )
 
-    renderer = TemplatedValueResolver(context={"some_int": 1, "some_str": "aaa"})
+    renderer = TemplatedValueResolver(scope={"some_int": 1, "some_str": "aaa"})
 
     with pytest.raises(ValidationError):
         # string is not a valid output type for the_opt_int
-        rm.render_properties(renderer)
+        rm.resolve_properties(renderer)

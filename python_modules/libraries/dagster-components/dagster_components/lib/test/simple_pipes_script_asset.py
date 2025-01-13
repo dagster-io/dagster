@@ -59,12 +59,12 @@ class SimplePipesScriptAsset(Component):
         return SimplePipesScriptAssetScaffolder()
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return SimplePipesScriptAssetParams
 
     @classmethod
     def load(cls, context: "ComponentLoadContext") -> Self:
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
         return cls(
             asset_key=AssetKey.from_user_string(loaded_params.asset_key),
             script_path=context.path / loaded_params.filename,
