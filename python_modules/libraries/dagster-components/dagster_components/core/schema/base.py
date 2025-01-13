@@ -13,7 +13,9 @@ from dagster_components.core.schema.resolver import TemplatedValueResolver
 class ComponentSchemaBaseModel(BaseModel):
     """Base class for models that are part of a component schema."""
 
-    model_config = ConfigDict(json_schema_extra={JSON_SCHEMA_EXTRA_DEFER_RENDERING_KEY: True})
+    model_config = ConfigDict(
+        json_schema_extra={JSON_SCHEMA_EXTRA_DEFER_RENDERING_KEY: True}, extra="forbid"
+    )
 
     def render_properties(self, value_resolver: TemplatedValueResolver) -> Mapping[str, Any]:
         """Returns a dictionary of resolved properties for this class."""
