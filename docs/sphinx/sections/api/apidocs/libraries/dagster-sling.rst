@@ -3,7 +3,7 @@ dlt (dagster-dlt)
 
 This library provides a Dagster integration with `Sling <https://slingdata.io>`_.
 
-For more information on getting started, see the `Sling & Dagster <https://docs.dagster.io/integrations/embedded-elt/sling>`_ documentation.
+For more information on getting started, see the `Sling & Dagster <https://docs.dagster.io/integrations/sling>`_ documentation.
 
 
 .. currentmodule:: dagster_sling
