@@ -23,7 +23,7 @@ This integration allows you to use [Sling](https://slingdata.io/) to extract and
 ### Installation
 
 ```bash
-pip install dagster-embedded-elt
+pip install dagster-sling
 ```
 
 ### Example
