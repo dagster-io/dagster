@@ -34,10 +34,12 @@ if TYPE_CHECKING:
 
 @click.group(name="check")
 def check_cli():
-    """Commands for listing Dagster components and related entities."""
+    """Commands for checking components."""
 
 
-def number_lines(lines_with_numbers: Sequence[tuple[Optional[int], str]]) -> Sequence[str]:
+def prepend_lines_with_line_numbers(
+    lines_with_numbers: Sequence[tuple[Optional[int], str]],
+) -> Sequence[str]:
     max_line_number_length = max([len(str(n)) for n, _ in lines_with_numbers])
     return [
         f"{(str(n) if n else '').rjust(max_line_number_length)} | {line.rstrip()}"
@@ -83,7 +85,7 @@ def error_dict_to_formatted_error(
             + lines_with_line_numbers[source_position.start.line : source_position.end.line + 3]
         )
 
-        lines_with_line_numbers = number_lines(
+        lines_with_line_numbers = prepend_lines_with_line_numbers(
             [(None, ""), *filtered_lines_with_line_numbers, (None, "")]
         )
         code_snippet = "\n".join(lines_with_line_numbers)

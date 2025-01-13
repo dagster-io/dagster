@@ -1,91 +1,107 @@
-from pathlib import Path
-
 import pytest
+from click.testing import CliRunner
+from dagster._core.test_utils import new_cwd
+from dagster_components.cli import cli
+from dagster_components.utils import ensure_dagster_components_tests_import
 from pydantic import ValidationError
 
+from dagster_components_tests.integration_tests.validation_tests.test_cases import (
+    BASIC_INVALID_VALUE,
+    BASIC_MISSING_VALUE,
+    COMPONENT_VALIDATION_TEST_CASES,
+    ComponentValidationTestCase,
+)
 from dagster_components_tests.integration_tests.validation_tests.utils import (
+    create_code_location_from_components,
     load_test_component_defs_inject_component,
 )
 
-
-def test_basic_component_success() -> None:
-    load_test_component_defs_inject_component(
-        "validation/basic_component_success", Path(__file__).parent / "basic_components.py"
-    )
+ensure_dagster_components_tests_import()
 
 
-def test_basic_component_invalid_value() -> None:
-    with pytest.raises(ValidationError) as e:
+@pytest.mark.parametrize(
+    "test_case",
+    COMPONENT_VALIDATION_TEST_CASES,
+    ids=[str(case.component_path) for case in COMPONENT_VALIDATION_TEST_CASES],
+)
+def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
+    """Tests raw YAML error messages when attempting to load components with
+    errors.
+    """
+    if test_case.should_error:
+        with pytest.raises(ValidationError) as e:
+            load_test_component_defs_inject_component(
+                str(test_case.component_path),
+                test_case.component_type_filepath,
+            )
+
+        assert test_case.validate_error_msg
+        test_case.validate_error_msg(str(e.value))
+    else:
         load_test_component_defs_inject_component(
-            "validation/basic_component_invalid_value",
-            Path(__file__).parent / "basic_components.py",
+            str(test_case.component_path),
+            test_case.component_type_filepath,
         )
 
-    assert "component.yaml:5" in str(e.value)
-    assert "params.an_int" in str(e.value)
-    assert "Input should be a valid integer" in str(e.value)
+
+@pytest.mark.parametrize(
+    "test_case",
+    COMPONENT_VALIDATION_TEST_CASES,
+    ids=[str(case.component_path) for case in COMPONENT_VALIDATION_TEST_CASES],
+)
+def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
+    """Tests that the check CLI prints rich error messages when attempting to
+    load components with errors.
+    """
+    runner = CliRunner()
+
+    with create_code_location_from_components(
+        test_case.component_path, local_component_defn_to_inject=test_case.component_type_filepath
+    ) as tmpdir:
+        with new_cwd(str(tmpdir)):
+            result = runner.invoke(
+                cli,
+                [
+                    "--builtin-component-lib",
+                    "dagster_components.test",
+                    "check",
+                    "component",
+                ],
+                catch_exceptions=False,
+            )
+            if test_case.should_error:
+                assert result.exit_code != 0, str(result.stdout)
+
+                assert test_case.validate_error_msg
+                test_case.validate_error_msg(str(result.stdout))
+            else:
+                assert result.exit_code == 0, str(result.stdout)
 
 
-def test_basic_component_missing_value() -> None:
-    with pytest.raises(ValidationError) as e:
-        load_test_component_defs_inject_component(
-            "validation/basic_component_missing_value",
-            Path(__file__).parent / "basic_components.py",
-        )
+def test_validation_cli_multiple_components() -> None:
+    """Ensure that the check CLI can validate multiple components in a single code location, and
+    that error messages from all components are displayed.
+    """
+    runner = CliRunner()
 
-    # Points to the lowest element in the hierarchy which is missing a required field
-    assert "component.yaml:4" in str(e.value)
-    assert "params.an_int" in str(e.value)
-    assert "Field required" in str(e.value)
+    with create_code_location_from_components(
+        BASIC_MISSING_VALUE.component_path,
+        BASIC_INVALID_VALUE.component_path,
+        local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+    ) as tmpdir:
+        with new_cwd(str(tmpdir)):
+            result = runner.invoke(
+                cli,
+                [
+                    "--builtin-component-lib",
+                    "dagster_components.test",
+                    "check",
+                    "component",
+                ],
+                catch_exceptions=False,
+            )
+            assert result.exit_code != 0, str(result.stdout)
 
-
-def test_basic_component_extra_value() -> None:
-    with pytest.raises(ValidationError) as e:
-        load_test_component_defs_inject_component(
-            "validation/basic_component_extra_value",
-            Path(__file__).parent / "basic_components.py",
-        )
-
-    assert "component.yaml:7" in str(e.value)
-    assert "params.a_bool" in str(e.value)
-    assert "Extra inputs are not permitted" in str(e.value)
-
-
-def test_nested_component_invalid_values() -> None:
-    with pytest.raises(ValidationError) as e:
-        load_test_component_defs_inject_component(
-            "validation/nested_component_invalid_values",
-            Path(__file__).parent / "basic_components.py",
-        )
-
-    assert "component.yaml:7" in str(e.value)
-    assert "Input should be a valid integer" in str(e.value)
-    assert "params.nested.foo.an_int" in str(e.value)
-    assert "component.yaml:12" in str(e.value)
-    assert "Input should be a valid string" in str(e.value)
-
-
-def test_nested_component_missing_value() -> None:
-    with pytest.raises(ValidationError) as e:
-        load_test_component_defs_inject_component(
-            "validation/nested_component_missing_values",
-            Path(__file__).parent / "basic_components.py",
-        )
-
-    assert "component.yaml:6" in str(e.value)
-    assert "Field required" in str(e.value)
-    assert "component.yaml:11" in str(e.value)
-
-
-def test_nested_component_extra_value() -> None:
-    with pytest.raises(ValidationError) as e:
-        load_test_component_defs_inject_component(
-            "validation/nested_component_extra_values",
-            Path(__file__).parent / "basic_components.py",
-        )
-
-    assert "component.yaml:8" in str(e.value)
-    assert "params.nested.foo.a_bool" in str(e.value)
-    assert "Extra inputs are not permitted" in str(e.value)
-    assert "component.yaml:15" in str(e.value)
-    assert "params.nested.baz.another_bool" in str(e.value)
+            assert BASIC_INVALID_VALUE.validate_error_msg and BASIC_MISSING_VALUE.validate_error_msg
+            BASIC_INVALID_VALUE.validate_error_msg(str(result.stdout))
+            BASIC_MISSING_VALUE.validate_error_msg(str(result.stdout))
