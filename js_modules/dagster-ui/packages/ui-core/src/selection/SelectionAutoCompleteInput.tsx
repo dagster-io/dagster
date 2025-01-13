@@ -232,10 +232,10 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         style={{
           display: 'grid',
           gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-          alignItems: 'center',
+          alignItems: 'flex-start',
         }}
       >
-        <Icon name="op_selector" />
+        <Icon name="op_selector" style={{marginTop: 2}} />
         <div ref={editorRef} />
       </InputDiv>
       {ReactDOM.createPortal(<div ref={hintContainerRef} />, document.body)}
