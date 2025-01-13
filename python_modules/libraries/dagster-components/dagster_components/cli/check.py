@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, cast
 
 import click
+import typer
 from pydantic import ValidationError
 from pydantic_core import ErrorDetails
 
@@ -55,7 +56,7 @@ def prepend_lines_with_line_numbers(
 
 def format_indented_error_msg(col: int, msg: str) -> str:
     """Format an error message with a caret pointing to the column where the error occurred."""
-    return " " * (col - 1) + f"^ {msg}"
+    return typer.style(" " * (col - 1) + f"^ {msg}", fg=typer.colors.YELLOW)
 
 
 OFFSET_LINES_BEFORE = 2
@@ -107,9 +108,12 @@ def error_dict_to_formatted_error(
     location = cast(str, error_details["loc"])[0].split(" at ")[0]
 
     # TODO: use typer, when ready, to color-format the output
-    fmt_filename = f"{source_position.filename}" f":{source_position.start.line}"
-    fmt_location = location
-    fmt_name = get_component_type_name(component_type)
+    fmt_filename = (
+        f"{source_position.filename}"
+        f":{typer.style(source_position.start.line, fg=typer.colors.GREEN)}"
+    )
+    fmt_location = typer.style(location, fg=typer.colors.BRIGHT_WHITE)
+    fmt_name = typer.style(get_component_type_name(component_type), fg=typer.colors.RED)
     return f"{fmt_filename} - {fmt_name} {fmt_location} {error_details['msg']}\n{code_snippet}\n"
 
 
