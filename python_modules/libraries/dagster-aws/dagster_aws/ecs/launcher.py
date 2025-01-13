@@ -461,10 +461,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def _run_task(self, **run_task_kwargs):
         return run_ecs_task(self.ecs, run_task_kwargs)
 
+    def _get_container_context(self, run: DagsterRun):
+        return EcsContainerContext.create_for_run(run, self, only_allow_user_defined_keys=None)
+
     def launch_run(self, context: LaunchRunContext) -> None:
         """Launch a run in an ECS task."""
         run = context.dagster_run
-        container_context = EcsContainerContext.create_for_run(run, self)
+
+        container_context = self._get_container_context(run)
 
         job_origin = check.not_none(context.job_code_origin)
 
@@ -858,7 +862,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_worker_id = run.tags.get(RUN_WORKER_ID_TAG)
 
         tags = self._get_run_tags(run.run_id)
-        container_context = EcsContainerContext.create_for_run(run, self)
+        container_context = self._get_container_context(run)
 
         if not (tags.arn and tags.cluster):
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "", run_worker_id=run_worker_id)

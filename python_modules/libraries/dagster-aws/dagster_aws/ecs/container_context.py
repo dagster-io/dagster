@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, cast  # noqa: UP035
 
 from dagster import (
     Array,
@@ -189,7 +189,6 @@ ECS_CONTAINER_CONTEXT_SCHEMA = {
                 ),
                 "replica_count": Field(
                     int,
-                    default_value=1,
                     is_required=False,
                     description="The number of code server instances to launch.",
                 ),
@@ -340,7 +339,11 @@ class EcsContainerContext(
         return {env_var_tuple[0]: env_var_tuple[1] for env_var_tuple in parsed_env_var_tuples}
 
     @staticmethod
-    def create_for_run(dagster_run: DagsterRun, run_launcher: Optional["EcsRunLauncher[Any]"]):
+    def create_for_run(
+        dagster_run: DagsterRun,
+        run_launcher: Optional["EcsRunLauncher[Any]"],
+        only_allow_user_defined_keys: Optional[AbstractSet[str]] = None,
+    ):
         context = EcsContainerContext()
         if run_launcher:
             context = context.merge(
@@ -370,39 +373,63 @@ class EcsContainerContext(
         if not run_container_context:
             return context
 
-        return context.merge(EcsContainerContext.create_from_config(run_container_context))
+        return context.merge(
+            EcsContainerContext.create_from_config(
+                run_container_context, only_allow_user_defined_keys=only_allow_user_defined_keys
+            )
+        )
 
     @staticmethod
-    def create_from_config(run_container_context) -> "EcsContainerContext":
+    def create_from_config(
+        run_container_context_config,
+        only_allow_user_defined_keys: Optional[AbstractSet[str]] = None,
+    ) -> "EcsContainerContext":
         processed_shared_container_context = process_shared_container_context_config(
-            run_container_context or {}
-        )
-        shared_container_context = EcsContainerContext(
-            env_vars=processed_shared_container_context.get("env_vars", [])
+            run_container_context_config or {}
         )
 
+        disallowed_keys = set()
+
+        env_vars = processed_shared_container_context.get("env_vars", [])
+        if (
+            env_vars
+            and only_allow_user_defined_keys is not None
+            and "env_vars" not in only_allow_user_defined_keys
+        ):
+            disallowed_keys.add("env_vars")
+
+        shared_container_context = EcsContainerContext(env_vars=env_vars)
+
         run_ecs_container_context = (
-            run_container_context.get("ecs", {}) if run_container_context else {}
+            run_container_context_config.get("ecs", {}) if run_container_context_config else {}
         )
 
         if not run_ecs_container_context:
-            return shared_container_context
-
-        processed_container_context = process_config(
-            ECS_CONTAINER_CONTEXT_SCHEMA, run_ecs_container_context
-        )
-
-        if not processed_container_context.success:
-            raise DagsterInvalidConfigError(
-                "Errors while parsing ECS container context",
-                processed_container_context.errors,
-                run_ecs_container_context,
+            run_container_context = EcsContainerContext()
+        else:
+            processed_container_context = process_config(
+                ECS_CONTAINER_CONTEXT_SCHEMA, run_ecs_container_context
             )
 
-        processed_context_value = cast(Mapping[str, Any], processed_container_context.value)
+            if not processed_container_context.success:
+                raise DagsterInvalidConfigError(
+                    "Errors while parsing ECS container context",
+                    processed_container_context.errors,
+                    run_ecs_container_context,
+                )
 
-        return shared_container_context.merge(
-            EcsContainerContext(
+            processed_context_value = cast(Mapping[str, Any], processed_container_context.value)
+
+            if only_allow_user_defined_keys is not None:
+                disallowed_keys = disallowed_keys.union(
+                    {
+                        key
+                        for key, value in processed_context_value.items()
+                        if value and key not in only_allow_user_defined_keys
+                    }
+                )
+
+            run_container_context = EcsContainerContext(
                 secrets=processed_context_value.get("secrets"),
                 secrets_tags=processed_context_value.get("secrets_tags"),
                 env_vars=processed_context_value.get("env_vars"),
@@ -422,4 +449,10 @@ class EcsContainerContext(
                 repository_credentials=processed_context_value.get("repository_credentials"),
                 server_health_check=processed_context_value.get("server_health_check"),
             )
-        )
+
+        if disallowed_keys:
+            raise Exception(
+                f"Attempted to create a task with fields that violated the allowed list: {', '.join(sorted(disallowed_keys))}"
+            )
+
+        return shared_container_context.merge(run_container_context)

@@ -12,12 +12,12 @@ def empty_container_context():
 
 @pytest.fixture
 def secrets_container_context(container_context_config):
-    return EcsContainerContext.create_from_config(container_context_config)
+    return EcsContainerContext.create_from_config(container_context_config, None)
 
 
 @pytest.fixture
 def other_secrets_container_context(other_container_context_config):
-    return EcsContainerContext.create_from_config(other_container_context_config)
+    return EcsContainerContext.create_from_config(other_container_context_config, None)
 
 
 def test_empty_container_context(empty_container_context):
@@ -31,8 +31,91 @@ def test_invalid_config():
         DagsterInvalidConfigError, match="Errors while parsing ECS container context"
     ):
         EcsContainerContext.create_from_config(
-            {"ecs": {"secrets": {"foo": "bar"}}}
+            {"ecs": {"secrets": {"foo": "bar"}}}, None
         )  # invalid formatting
+
+
+def test_disallowed_config(container_context_config, secrets_container_context):
+    assert EcsContainerContext.create_from_config(
+        {"env_vars": ["FOO=bar"]}, only_allow_user_defined_keys=None
+    ).env_vars == ["FOO=bar"]
+
+    assert EcsContainerContext.create_from_config(
+        {"env_vars": ["FOO=bar"]}, only_allow_user_defined_keys={"env_vars"}
+    ).env_vars == ["FOO=bar"]
+
+    assert EcsContainerContext.create_from_config(
+        {"env_vars": ["FOO=bar"], "ecs": {"env_vars": ["BAZ=qux"]}},
+        only_allow_user_defined_keys={"env_vars"},
+    ).env_vars == ["BAZ=qux", "FOO=bar"]
+
+    with pytest.raises(
+        Exception,
+        match="Attempted to create a task with fields that violated the allowed list: env_vars",
+    ):
+        EcsContainerContext.create_from_config(
+            {"env_vars": ["FOO=bar"]}, only_allow_user_defined_keys=set()
+        )  # invalid formatting
+
+    with pytest.raises(
+        Exception,
+        match="Attempted to create a task with fields that violated the allowed list: container_name, env_vars, execution_role_arn, mount_points, repository_credentials, run_ecs_tags, run_resources, run_sidecar_containers, runtime_platform, secrets, secrets_tags, server_ecs_tags, server_health_check, server_resources, server_sidecar_containers, task_role_arn, volumes",
+    ):
+        EcsContainerContext.create_from_config(
+            container_context_config, only_allow_user_defined_keys=set()
+        )
+
+    assert (
+        EcsContainerContext.create_from_config(
+            container_context_config,
+            only_allow_user_defined_keys={
+                "container_name",
+                "env_vars",
+                "execution_role_arn",
+                "mount_points",
+                "repository_credentials",
+                "run_ecs_tags",
+                "run_resources",
+                "run_sidecar_containers",
+                "runtime_platform",
+                "secrets",
+                "secrets_tags",
+                "server_ecs_tags",
+                "server_health_check",
+                "server_resources",
+                "server_sidecar_containers",
+                "task_role_arn",
+                "volumes",
+            },
+        )
+        == secrets_container_context
+    )
+
+    with pytest.raises(
+        Exception,
+        match="Attempted to create a task with fields that violated the allowed list: volumes",
+    ):
+        EcsContainerContext.create_from_config(
+            container_context_config,
+            only_allow_user_defined_keys={
+                "container_name",
+                "env_vars",
+                "execution_role_arn",
+                "mount_points",
+                "repository_credentials",
+                "run_ecs_tags",
+                "run_resources",
+                "run_sidecar_containers",
+                "runtime_platform",
+                "secrets",
+                "secrets_tags",
+                "server_ecs_tags",
+                "server_health_check",
+                "server_resources",
+                "server_sidecar_containers",
+                "task_role_arn",
+            },
+        )
 
 
 def test_merge(
