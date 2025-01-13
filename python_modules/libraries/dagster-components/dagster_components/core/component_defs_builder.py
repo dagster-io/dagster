@@ -12,7 +12,7 @@ from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
     ComponentTypeRegistry,
-    TemplatedValueRenderer,
+    TemplatedValueResolver,
     get_component_type_name,
     is_registered_component_type,
 )
@@ -104,7 +104,7 @@ def build_defs_from_component_path(
         resources=resources,
         registry=registry,
         decl_node=decl_node,
-        templated_value_renderer=TemplatedValueRenderer.default(),
+        templated_value_resolver=TemplatedValueResolver.default(),
     )
     components = load_components_from_context(context)
     return defs_from_components(resources=resources, context=context, components=components)

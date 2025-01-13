@@ -1,23 +1,27 @@
-from collections.abc import Sequence
+from collections.abc import Sequence, Set
 from typing import Annotated, Optional
 
 import pytest
 from dagster_components.core.component_rendering import (
-    RenderedModel,
-    RenderingMetadata,
-    TemplatedValueRenderer,
-    can_render_with_default_scope,
+    ComponentSchemaBaseModel,
+    ResolvedFieldInfo,
+    TemplatedValueResolver,
+    allow_render,
+    get_available_scope,
 )
-from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
-class InnerRendered(RenderedModel):
+class InnerRendered(ComponentSchemaBaseModel):
     a: Optional[str] = None
 
 
 class Container(BaseModel):
     a: str
     inner: InnerRendered
+    inner_scoped: Annotated[InnerRendered, ResolvedFieldInfo(additional_scope={"c", "d"})] = Field(
+        default_factory=InnerRendered
+    )
 
 
 class Outer(BaseModel):
@@ -25,6 +29,9 @@ class Outer(BaseModel):
     inner: InnerRendered
     container: Container
     container_optional: Optional[Container] = None
+    container_optional_scoped: Annotated[
+        Optional[Container], ResolvedFieldInfo(additional_scope={"a", "b"})
+    ] = None
     inner_seq: Sequence[InnerRendered]
     inner_optional: Optional[InnerRendered] = None
     inner_optional_seq: Optional[Sequence[InnerRendered]] = None
@@ -42,6 +49,9 @@ class Outer(BaseModel):
         (["container_optional", "a"], True),
         (["container_optional", "inner"], False),
         (["container_optional", "inner", "a"], False),
+        (["container_optional_scoped"], False),
+        (["container_optional_scoped", "inner", "a"], False),
+        (["container_optional_scoped", "inner_scoped", "a"], False),
         (["inner_seq"], True),
         (["inner_seq", 0], False),
         (["inner_seq", 0, "a"], False),
@@ -52,10 +62,26 @@ class Outer(BaseModel):
         (["inner_optional_seq", 0, "a"], False),
     ],
 )
-def test_can_render(path, expected: bool) -> None:
+def test_allow_render(path, expected: bool) -> None:
+    assert allow_render(path, Outer.model_json_schema(), Outer.model_json_schema()) == expected
+
+
+@pytest.mark.parametrize(
+    "path,expected",
+    [
+        (["a"], set()),
+        (["inner", "a"], set()),
+        (["container_optional", "inner", "a"], set()),
+        (["inner_seq"], set()),
+        (["container_optional_scoped"], {"a", "b"}),
+        (["container_optional_scoped", "inner"], {"a", "b"}),
+        # (["container_optional_scoped", "inner_scoped"], {"a", "b", "c", "d"}),
+        # (["container_optional_scoped", "inner_scoped", "a"], {"a", "b", "c", "d"}),
+    ],
+)
+def test_get_available_scope(path, expected: Set[str]) -> None:
     assert (
-        can_render_with_default_scope(path, Outer.model_json_schema(), Outer.model_json_schema())
-        == expected
+        get_available_scope(path, Outer.model_json_schema(), Outer.model_json_schema()) == expected
     )
 
 
@@ -72,7 +98,7 @@ def test_render() -> None:
         },
     }
 
-    renderer = TemplatedValueRenderer(context={"foo_val": "foo", "bar_val": "bar"})
+    renderer = TemplatedValueResolver(context={"foo_val": "foo", "bar_val": "bar"})
     rendered_data = renderer.render_params(data, Outer)
 
     assert rendered_data == {
@@ -90,12 +116,12 @@ def test_render() -> None:
     TypeAdapter(Outer).validate_python(rendered_data)
 
 
-class RM(RenderedModel):
-    the_renderable_int: Annotated[str, RenderingMetadata(output_type=int)]
+class RM(ComponentSchemaBaseModel):
+    the_renderable_int: Annotated[str, ResolvedFieldInfo(output_type=int)]
     the_unrenderable_int: int
 
     the_str: str
-    the_opt_int: Annotated[Optional[str], RenderingMetadata(output_type=Optional[int])] = None
+    the_opt_int: Annotated[Optional[str], ResolvedFieldInfo(output_type=Optional[int])] = None
 
 
 def test_valid_rendering() -> None:
@@ -105,7 +131,7 @@ def test_valid_rendering() -> None:
         the_str="{{ some_str }}",
         the_opt_int="{{ some_int }}",
     )
-    renderer = TemplatedValueRenderer(context={"some_int": 1, "some_str": "aaa"})
+    renderer = TemplatedValueResolver(context={"some_int": 1, "some_str": "aaa"})
     resolved_properties = rm.render_properties(renderer)
 
     assert resolved_properties == {
@@ -124,7 +150,7 @@ def test_invalid_rendering() -> None:
         the_opt_int="{{ some_str }}",
     )
 
-    renderer = TemplatedValueRenderer(context={"some_int": 1, "some_str": "aaa"})
+    renderer = TemplatedValueResolver(context={"some_int": 1, "some_str": "aaa"})
 
     with pytest.raises(ValidationError):
         # string is not a valid output type for the_opt_int

@@ -9,15 +9,14 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-airbyte
 docslink: https://docs.dagster.io/integrations/airbyte
 partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines
-logo: /integrations/airbyte.svg
 categories:
   - ETL
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/airbyte.svg
 ---
-
-
 
 Using this integration, you can trigger Airbyte syncs and orchestrate your Airbyte connections from within Dagster, making it easy to chain an Airbyte sync with upstream or downstream steps in your workflow.
 

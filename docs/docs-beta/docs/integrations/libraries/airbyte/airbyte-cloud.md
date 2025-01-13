@@ -15,6 +15,8 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/airbyte.svg
 ---
 
 This guide provides instructions for using Dagster with Airbyte Cloud using the `dagster-airbyte` library. Your Airbyte Cloud connection tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Airbyte Cloud assets and data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Airbyte Cloud connections, allowing you to trigger syncs for these on a cadence or based on upstream data changes.

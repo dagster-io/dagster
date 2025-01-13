@@ -9,15 +9,14 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
 docslink:
 partnerlink:
-logo: /integrations/gcp-bigquery.svg
 categories:
   - Storage
 enabledBy:
 enables:
 tags: [dagster-supported, storage]
+sidebar_custom_props:
+  logo: images/integrations/gcp-bigquery.svg
 ---
-
-
 
 The Google Cloud Platform BigQuery integration allows data engineers to easily query and store data in the BigQuery data warehouse through the use of the `BigQueryResource`.
 

@@ -9,15 +9,14 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-dbt#assets-dbt-cloud
 docslink: https://docs.dagster.io/integrations/dbt_cloud
 partnerlink:
-logo: /integrations/dbt.svg
 categories:
   - ETL
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/dbt.svg
 ---
-
-
 
 Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
 

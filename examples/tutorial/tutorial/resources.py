@@ -9,8 +9,8 @@ from faker import Faker
 from pydantic import Field
 
 # This file holds a resource you'll use in the tutorial
-# You won't need to use this file/class until the Connecting to External Services section of the tutorial (Part 8).
-# Once you are on Part 8, you will the contents of this file, but you don't need to understand the underlying code.
+# You won't need to use this file/class until the Connecting to External Services section of the tutorial (Part 6).
+# Once you are on Part 6, you will use the contents of this file, but you don't need to understand the underlying code.
 
 
 # To the curious user: This is the underlying code to generate the signups

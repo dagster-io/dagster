@@ -10,15 +10,14 @@ apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-wandb
 docslink: https://docs.wandb.ai/guides/integrations/dagster
 partnerlink: https://wandb.ai/
 communityIntegration: True
-logo: /integrations/WandB.svg
 categories:
   - Other
 enabledBy:
 enables:
 tags: [community-supported]
+sidebar_custom_props:
+  logo: images/integrations/wandb.svg
 ---
-
-
 
 Use Dagster and Weights & Biases (W&B) to orchestrate your MLOps pipelines and maintain ML assets. The integration with W&B makes it easy within Dagster to:
 

@@ -15,9 +15,9 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/dlthub.jpeg
 ---
-
-
 
 This integration allows you to use [dlt](https://dlthub.com/) to easily ingest and replicate data between systems through Dagster.
 
