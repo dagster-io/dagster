@@ -40,6 +40,17 @@ class SourcePositionTree(NamedTuple):
             return None
         return self.children[head].lookup(tail)
 
+    def lookup_nearest(self, key_path: KeyPath) -> Optional[SourcePosition]:
+        """Returns the source position of the descendant at the given path. If the path does not
+        exist, returns the source position of the nearest ancestor.
+        """
+        if len(key_path) == 0:
+            return self.position
+        head, *tail = key_path
+        if head not in self.children:
+            return self.position
+        return self.children[head].lookup_nearest(tail)
+
 
 class ValueAndSourcePositionTree(NamedTuple):
     """A tree-like object (like a JSON-structured dict) and an accompanying SourcePositionTree.

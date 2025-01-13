@@ -15,9 +15,9 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/dbt.svg
 ---
-
-
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
 

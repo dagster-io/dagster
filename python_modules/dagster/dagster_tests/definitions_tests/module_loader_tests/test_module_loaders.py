@@ -3,12 +3,17 @@ from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
 from types import ModuleType
 from typing import Any, cast
+from unittest.mock import MagicMock, patch
 
 import dagster as dg
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
+    load_definitions_from_current_module,
     load_definitions_from_module,
+    load_definitions_from_modules,
+    load_definitions_from_package_module,
+    load_definitions_from_package_name,
 )
 from dagster._core.definitions.module_loaders.object_list import (
     LoadableDagsterDef,
@@ -206,12 +211,87 @@ def test_collision_detection(objects: Mapping[str, Any], error_expected: bool) -
 
 
 @pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
-def test_load_from_definitions(objects: Mapping[str, Any], error_expected: bool) -> None:
+def test_load_from_definitions_from_modules(
+    objects: Mapping[str, Any], error_expected: bool
+) -> None:
+    module_fake = build_module_fake("fake", objects)
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
+    ):
+        defs = load_definitions_from_modules([module_fake])
+        obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
+        expected_obj_ids = {id(obj) for obj in objects.values()}
+        assert len(obj_ids) == len(expected_obj_ids)
+
+
+@pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
+def test_load_from_definitions_from_module(
+    objects: Mapping[str, Any], error_expected: bool
+) -> None:
     module_fake = build_module_fake("fake", objects)
     with optional_pytest_raise(
         error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
     ):
         defs = load_definitions_from_module(module_fake)
+        obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
+        expected_obj_ids = {id(obj) for obj in objects.values()}
+        assert len(obj_ids) == len(expected_obj_ids)
+
+
+@pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
+@patch("dagster._core.definitions.module_loaders.load_defs_from_module.inspect.getmodule")
+def test_load_from_definitions_from_current_module(
+    mock_getmodule: MagicMock, objects: Mapping[str, Any], error_expected: bool
+) -> None:
+    module_fake = build_module_fake("fake", objects)
+    mock_getmodule.return_value = module_fake
+
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
+    ):
+        defs = load_definitions_from_current_module()
+        obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
+        expected_obj_ids = {id(obj) for obj in objects.values()}
+        assert len(obj_ids) == len(expected_obj_ids)
+
+
+@pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
+@patch("dagster._core.definitions.module_loaders.load_defs_from_module.find_modules_in_package")
+def test_load_from_definitions_from_package_module(
+    mock_module_finder: MagicMock, objects: Mapping[str, Any], error_expected: bool
+) -> None:
+    package_fake = build_module_fake("fake_package", {})
+    module_fake = build_module_fake("fake", objects)
+
+    mock_module_finder.return_value = [module_fake]
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
+    ):
+        defs = load_definitions_from_package_module(package_fake)
+        obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
+        expected_obj_ids = {id(obj) for obj in objects.values()}
+        assert len(obj_ids) == len(expected_obj_ids)
+
+
+@pytest.mark.parametrize(**ModuleScopeTestSpec.as_parametrize_kwargs(MODULE_TEST_SPECS))
+@patch("dagster._core.definitions.module_loaders.load_defs_from_module.find_modules_in_package")
+@patch("dagster._core.definitions.module_loaders.load_defs_from_module.import_module")
+def test_load_from_definitions_from_package_name(
+    mock_module_importer: MagicMock,
+    mock_module_finder: MagicMock,
+    objects: Mapping[str, Any],
+    error_expected: bool,
+) -> None:
+    package_name_fake = "fake_package"
+    package_fake = build_module_fake(package_name_fake, {})
+    module_fake = build_module_fake("fake", objects)
+
+    mock_module_importer.return_value = package_fake
+    mock_module_finder.return_value = [module_fake]
+    with optional_pytest_raise(
+        error_expected=error_expected, exception_cls=dg.DagsterInvalidDefinitionError
+    ):
+        defs = load_definitions_from_package_name(package_name_fake)
         obj_ids = {id(obj) for obj in all_loadable_objects_from_defs(defs)}
         expected_obj_ids = {id(obj) for obj in objects.values()}
         assert len(obj_ids) == len(expected_obj_ids)

@@ -417,6 +417,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.log_key
 
     @property
+    def consecutive_failure_count(self) -> int:
+        return self.tick_data.consecutive_failure_count
+
+    @property
     def is_completed(self) -> bool:
         return (
             self.tick_data.status == TickStatus.SUCCESS
@@ -564,6 +568,7 @@ class TickData(
             ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
+            ("consecutive_failure_count", int),
         ],
     )
 ):
@@ -585,8 +590,11 @@ class TickData(
         skip_reason (str): message for why the tick was skipped
         cursor (Optional[str]): Cursor output by this tick.
         origin_run_ids (List[str]): The runs originated from the schedule/sensor.
-        failure_count (int): The number of times this tick has failed. If the status is not
-            FAILED, this is the number of previous failures before it reached the current state.
+        failure_count (int): The number of times this particular tick has failed (to determine
+            whether the next tick should be a retry of that tick).
+            For example, for a schedule, this tracks the number of attempts we have made for a
+            particular scheduled execution time. The next tick will attempt to retry the most recent
+            tick if it failed and its failure count is less than the configured retry limit.
         dynamic_partitions_request_results (Sequence[DynamicPartitionsRequestResult]): The results
             of the dynamic partitions requests evaluated within the tick.
         end_timestamp (Optional[float]) Time that this tick finished.
@@ -597,6 +605,12 @@ class TickData(
         reserved_run_ids (Optional[Sequence[str]]): A list of run IDs to use for each of the
             run_requests. Used to ensure that if the tick fails partway through, we don't create
             any duplicate runs for the tick. Currently only used by AUTO_MATERIALIZE ticks.
+        consecutive_failure_count (Optional[int]): The number of times this instigator has failed
+            consecutively. Differs from failure_count in that it spans multiple executions, whereas
+            failure_count measures the number of times that a particular tick should retry. For
+            example, if a daily schedule fails on 3 consecutive days, failure_count tracks the
+            number of failures for each day, and consecutive_failure_count tracks the total
+            number of consecutive failures across all days.
     """
 
     def __new__(
@@ -622,6 +636,7 @@ class TickData(
         run_requests: Optional[Sequence[RunRequest]] = None,
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
+        consecutive_failure_count: Optional[int] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -650,6 +665,9 @@ class TickData(
             run_requests=check.opt_sequence_param(run_requests, "run_requests"),
             auto_materialize_evaluation_id=auto_materialize_evaluation_id,
             reserved_run_ids=check.opt_sequence_param(reserved_run_ids, "reserved_run_ids"),
+            consecutive_failure_count=check.opt_int_param(
+                consecutive_failure_count, "consecutive_failure_count", 0
+            ),
         )
 
     def with_status(
@@ -703,16 +721,6 @@ class TickData(
                     "run_requests": run_requests,
                     "reserved_run_ids": reserved_run_ids,
                     "cursor": cursor,
-                },
-            )
-        )
-
-    def with_failure_count(self, failure_count: int) -> "TickData":
-        return TickData(
-            **merge_dicts(
-                self._asdict(),
-                {
-                    "failure_count": failure_count,
                 },
             )
         )

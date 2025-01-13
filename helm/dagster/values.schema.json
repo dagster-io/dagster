@@ -117,6 +117,18 @@
                     ],
                     "default": null,
                     "title": "Uploadinterval"
+                },
+                "showUrlOnly": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Showurlonly"
                 }
             },
             "required": [
@@ -763,6 +775,36 @@
                         }
                     ],
                     "default": null
+                },
+                "extraContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extracontainers"
+                },
+                "extraPrependedInitContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/InitContainer"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extraprependedinitcontainers"
                 }
             },
             "required": [
@@ -821,6 +863,13 @@
                 }
             },
             "title": "DaemonSchedulerConfig",
+            "type": "object"
+        },
+        "DeploymentStrategy": {
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.apps.v1.DeploymentStrategy",
+            "additionalProperties": true,
+            "properties": {},
+            "title": "DeploymentStrategy",
             "type": "object"
         },
         "EnvVar": {
@@ -1234,6 +1283,13 @@
             "title": "IngressTLSConfiguration",
             "type": "object"
         },
+        "InitContainer": {
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container",
+            "additionalProperties": true,
+            "properties": {},
+            "title": "InitContainer",
+            "type": "object"
+        },
         "K8sRunLauncherConfig": {
             "additionalProperties": false,
             "properties": {
@@ -1418,10 +1474,40 @@
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
+                },
+                "extraContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Extracontainers"
+                },
+                "initContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Initcontainers"
                 }
             },
             "required": [
-                "enabled"
+                "enabled",
+                "extraContainers",
+                "initContainers"
             ],
             "title": "Migrate",
             "type": "object"
@@ -3007,6 +3093,17 @@
                     ],
                     "default": null,
                     "title": "Sidecarcontainers"
+                },
+                "deploymentStrategy": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/DeploymentStrategy"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 }
             },
             "required": [
@@ -3307,6 +3404,36 @@
                         }
                     ],
                     "default": null
+                },
+                "extraContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extracontainers"
+                },
+                "extraPrependedInitContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/InitContainer"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extraprependedinitcontainers"
                 }
             },
             "required": [

@@ -35,7 +35,7 @@ def load_asset_checks_from_modules(
         asset_key_prefix, "asset_key_prefix"
     )
     return (
-        ModuleScopedDagsterDefs.from_modules(modules)
+        ModuleScopedDagsterDefs.from_modules(modules, allow_spec_collisions=True)
         .get_object_list()
         .with_attributes(
             key_prefix=asset_key_prefix,

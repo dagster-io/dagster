@@ -508,6 +508,13 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if "launchType" in run_task_kwargs and run_task_kwargs.get("capacityProviderStrategy"):
             del run_task_kwargs["launchType"]
 
+        # Remove networkConfiguration if it is set to None
+        if (
+            "networkConfiguration" in run_task_kwargs
+            and run_task_kwargs.get("networkConfiguration") is None
+        ):
+            del run_task_kwargs["networkConfiguration"]
+
         # Run a task using the same network configuration as this processes's task.
         task = backoff(
             self._run_task,

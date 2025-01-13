@@ -26,26 +26,21 @@ To complete the steps in this guide, you'll need:
 ## Setting environment variables for a code location
 
 :::note
-  To set environment variables, you need <a href="/dagster-plus/account/managing-users"> one of the following user roles</a> in Dagster+:
-  <ul>
-    <li>Organization Admin, or</li>
-    <li>
-      Editor or Admin. <strong>Note:</strong> Editors and Admins can only set
-      environment variables in full deployments where you're an Editor or Admin.
-    </li>
-  </ul>
+
+Setting environment variables require **Organization Admin**, **Admin**, or **Editor** permissions on Dagster+.
+
+If you're a Dagster **Editor** or **Admin**, you can only set environment variables for full deployments where you're an **Editor** or **Admin**.
+
 :::
 
-Setting environment variables for specific code locations is accomplished by adding them to your agent's configuration in your project's [`dagster_cloud.yaml` file](/dagster-plus/deployment/management/settings/). The `container_context` property in this file sets the variables in the agent's environment.
+You can set environment variables for specific code locations by adding them to your agent's configuration in your project's [`dagster_cloud.yaml` file](/dagster-plus/deployment/code-locations/dagster-cloud-yaml.md). The `container_context` property in this file sets the variables in the agent's environment.
 
-**Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/dagster-plus/deployment/management/environment-variables/dagster-ui).
+This approach is functionally the same as [setting environment variables using the Dagster+ UI](/dagster-plus/deployment/management/environment-variables/dagster-ui).
 
 How `container_context` is configured depends on the agent type. Click the tab for your agent type to view instructions.
 
 <Tabs>
-  <TabItem value="Amazon ECS">
-
-### Amazon ECS agents
+  <TabItem value="Amazon ECS agents">
 
 Using the `container_context.ecs.env_vars` and `container_context.ecs.secrets` properties, you can configure environment variables and secrets for a specific code location.
 
@@ -82,9 +77,7 @@ After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagste
 !["Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
 
 </TabItem>
-<TabItem value="Docker">
-
-### Docker agents
+<TabItem value="Docker agents">
 
 Using the `container_context.docker.env_vars` property, you can include environment variables and secrets in the Docker container associated with a specific code location. For example:
 
@@ -109,9 +102,7 @@ After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagste
 ![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
 
 </TabItem>
-<TabItem value="Kubernetes">
-
-### Kubernetes agents
+<TabItem value="Kubernetes agents">
 
 Using the `container_context.k8s.env_vars` and `container_context.k8s.env_secrets` properties, you can specify environment variables and secrets for a specific code location. For example:
 
@@ -134,9 +125,8 @@ locations:
 
  | Key           | Description                                                                                                                                                                                                                                                                                                                                              |
  |---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
- | `env_vars`    | A list of environment variable names to inject into the job, formatted as <code>KEY</code> or <code>KEY=VALUE</code>. If only <code>KEY</code> is specified, the value will be pulled from the current process.                                                                                                                                          |
- | `env_secrets` | A list of secret names, from which environment variables for a job are drawn using <code>envFrom</code>. Refer to the <a href="https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables">Kubernetes documentation</a> for more info. |
-
+ | `env_vars`    | A list of environment variable names to inject into the job, formatted as `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the current process.                                                                                                                                          |
+ | `env_secrets` | A list of secret names, from which environment variables for a job are drawn using `envFrom`. For more information, see the [Kubernetes](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables). |
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
@@ -148,10 +138,9 @@ After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagste
 ## Setting environment variables for full deployments
 
 :::note
-  If you're a Dagster+ <a href="/dagster-plus/account/managing-users"> <strong>Editor</strong> or
-  <strong>Admin</strong> </a> , you can only set environment variables for full deployments where
-  you're an <strong> Editor
-  </strong> or <strong>Admin</strong>.
+
+If you're a Dagster **Editor** or **Admin**, you can only set environment variables for full deployments where you're an **Editor** or **Admin**.
+
 :::
 
 Setting environment variables for a full deployment will make the variables available for all code locations in the full deployment. Using this approach will pull variable values from your user cluster, bypassing Dagster+ entirely.
@@ -159,9 +148,7 @@ Setting environment variables for a full deployment will make the variables avai
 Click the tab for your agent type to view instructions.
 
 <Tabs>
-  <TabItem value="Amazon ECS">
-
-### Amazon ECS agents
+  <TabItem value="Amazon ECS agents">
 
 To make environment variables accessible to a full deployment with an Amazon ECS agent, you'll need to modify the agent's CloudFormation template as follows:
 
@@ -210,9 +197,7 @@ To make environment variables accessible to a full deployment with an Amazon ECS
 11. Click **Submit** to update the stack.
 
 </TabItem>
-<TabItem value="Docker">
-
-### Docker agents
+<TabItem value="Docker agents">
 
 To make environment variables accessible to a full deployment with a Docker agent, you'll need to modify your project's `dagster.yaml` file.
 
@@ -235,9 +220,7 @@ user_code_launcher:
 In `env_vars`, specify the environment variables as keys (`SNOWFLAKE_PASSWORD`) or key-value pairs (`SNOWFLAKE_USERNAME=dev`). If only `KEY` is provided, the value will be pulled from the agent's environment.
 
 </TabItem>
-<TabItem value="Kubernetes">
-
-### Kubernetes agents
+<TabItem value="Kubernetes agents">
 
 To make environment variables available to a full deployment with a Kubernetes agent, you'll need to modify and upgrade the Helm chart's `values.yaml`.
 

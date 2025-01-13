@@ -1,17 +1,17 @@
+from collections.abc import Sequence
+
 import pytest
 from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
-from dagster_components.core.dsl_schema import (
-    AssetAttributes,
+from dagster_components.core.schema.objects import (
     AssetAttributesModel,
-    MergeAttributes,
-    ReplaceAttributes,
-    TemplatedValueRenderer,
+    AssetSpecTransformModel,
+    TemplatedValueResolver,
 )
 from pydantic import BaseModel, TypeAdapter
 
 
 class M(BaseModel):
-    asset_attributes: AssetAttributes = []
+    asset_attributes: Sequence[AssetSpecTransformModel] = []
 
 
 defs = Definitions(
@@ -24,13 +24,13 @@ defs = Definitions(
 
 
 def test_replace_attributes() -> None:
-    op = ReplaceAttributes(
+    op = AssetSpecTransformModel(
         operation="replace",
         target="group:g2",
         attributes=AssetAttributesModel(tags={"newtag": "newval"}),
     )
 
-    newdefs = op.apply(defs, TemplatedValueRenderer.default())
+    newdefs = op.apply(defs, TemplatedValueResolver.default())
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -38,13 +38,13 @@ def test_replace_attributes() -> None:
 
 
 def test_merge_attributes() -> None:
-    op = MergeAttributes(
+    op = AssetSpecTransformModel(
         operation="merge",
         target="group:g2",
         attributes=AssetAttributesModel(tags={"newtag": "newval"}),
     )
 
-    newdefs = op.apply(defs, TemplatedValueRenderer.default())
+    newdefs = op.apply(defs, TemplatedValueResolver.default())
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -52,11 +52,11 @@ def test_merge_attributes() -> None:
 
 
 def test_render_attributes_asset_context() -> None:
-    op = MergeAttributes(
+    op = AssetSpecTransformModel(
         attributes=AssetAttributesModel(tags={"group_name_tag": "group__{{ asset.group_name }}"})
     )
 
-    newdefs = op.apply(defs, TemplatedValueRenderer.default().with_context(foo="theval"))
+    newdefs = op.apply(defs, TemplatedValueResolver.default().with_context(foo="theval"))
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {"group_name_tag": "group__g1"}
     assert asset_graph.get(AssetKey("b")).tags == {"group_name_tag": "group__g2"}
@@ -64,7 +64,7 @@ def test_render_attributes_asset_context() -> None:
 
 
 def test_render_attributes_custom_context() -> None:
-    op = ReplaceAttributes(
+    op = AssetSpecTransformModel(
         operation="replace",
         target="group:g2",
         attributes=AssetAttributesModel(
@@ -80,7 +80,7 @@ def test_render_attributes_custom_context() -> None:
     metadata = {"a": 1, "b": "str", "d": 1.23}
     newdefs = op.apply(
         defs,
-        TemplatedValueRenderer.default().with_context(
+        TemplatedValueResolver.default().with_context(
             foo="theval", metadata=metadata, custom_cron=_custom_cron
         ),
     )
@@ -102,11 +102,11 @@ def test_render_attributes_custom_context() -> None:
         # default to merge and a * target
         (
             {"attributes": {"tags": {"a": "b"}}},
-            MergeAttributes(target="*", attributes=AssetAttributesModel(tags={"a": "b"})),
+            AssetSpecTransformModel(target="*", attributes=AssetAttributesModel(tags={"a": "b"})),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}},
-            ReplaceAttributes(
+            AssetSpecTransformModel(
                 operation="replace",
                 target="*",
                 attributes=AssetAttributesModel(tags={"a": "b"}),
@@ -115,14 +115,14 @@ def test_render_attributes_custom_context() -> None:
         # explicit target
         (
             {"attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
-            MergeAttributes(
+            AssetSpecTransformModel(
                 target="group:g2",
                 attributes=AssetAttributesModel(tags={"a": "b"}),
             ),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
-            ReplaceAttributes(
+            AssetSpecTransformModel(
                 operation="replace",
                 target="group:g2",
                 attributes=AssetAttributesModel(tags={"a": "b"}),
@@ -131,6 +131,6 @@ def test_render_attributes_custom_context() -> None:
     ],
 )
 def test_load_attributes(python, expected) -> None:
-    loaded = TypeAdapter(AssetAttributes).validate_python([python])
+    loaded = TypeAdapter(Sequence[AssetSpecTransformModel]).validate_python([python])
     assert len(loaded) == 1
     assert loaded[0] == expected

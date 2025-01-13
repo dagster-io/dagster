@@ -1,9 +1,9 @@
 community-supported:
-  label: 'community-supported'
+  label: 'Community supported'
   permalink: '/integrations/community-supported'
   description: 'Community-supported integrations.'
 dagster-supported:
-  label: 'dagster-supported'
+  label: 'Dagster supported'
   permalink: '/integrations/dagster-supported'
   description: 'Dagster-supported integrations.'
 etl:

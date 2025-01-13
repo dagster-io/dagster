@@ -12,4 +12,12 @@ from dagster_components.core.component_generator import (
     ComponentGenerator as ComponentGenerator,
     ComponentGeneratorUnavailableReason as ComponentGeneratorUnavailableReason,
 )
+from dagster_components.core.schema.base import ComponentSchemaBaseModel as ComponentSchemaBaseModel
+from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
+from dagster_components.core.schema.objects import (
+    AssetAttributesModel as AssetAttributesModel,
+    AssetSpecTransformModel as AssetSpecTransformModel,
+    OpSpecBaseModel as OpSpecBaseModel,
+)
+from dagster_components.core.schema.resolver import TemplatedValueResolver as TemplatedValueResolver
 from dagster_components.version import __version__ as __version__

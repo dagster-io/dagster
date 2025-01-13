@@ -45,6 +45,6 @@ setup(
         ]
     },
     extras_require={
-        "test": ["click", "pydantic", "pytest", "tomli-w"],
+        "test": ["click", "dagster-components", "pydantic", "pytest", "tomli-w"],
     },
 )

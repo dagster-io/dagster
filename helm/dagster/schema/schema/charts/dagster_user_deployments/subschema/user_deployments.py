@@ -41,6 +41,7 @@ class UserDeployment(BaseModel):
     schedulerName: Optional[str] = None
     initContainers: Optional[list[kubernetes.Container]] = None
     sidecarContainers: Optional[list[kubernetes.Container]] = None
+    deploymentStrategy: Optional[kubernetes.DeploymentStrategy] = None
 
 
 class UserDeployments(BaseModel):

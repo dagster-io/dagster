@@ -9,15 +9,14 @@ date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-slack
 docslink:
 partnerlink: https://slack.com/
-logo: /integrations/Slack.svg
 categories:
   - Alerting
 enabledBy:
 enables:
 tags: [dagster-supported, alerting]
+sidebar_custom_props:
+  logo: images/integrations/slack.svg
 ---
-
-
 
 This library provides an integration with Slack to support posting messages in your company's Slack workspace.
 

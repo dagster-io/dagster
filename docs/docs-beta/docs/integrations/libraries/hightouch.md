@@ -15,9 +15,9 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/hightouch.svg
 ---
-
-
 
 With this integration you can trigger Hightouch syncs and monitor them from within Dagster. Fine-tune when Hightouch syncs kick-off, visualize their dependencies, and monitor the steps in your data activation workflow.
 

@@ -11,7 +11,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from pydantic import BaseModel
 
 from dagster_components.core.component import Component, ComponentLoadContext, component_type
-from dagster_components.core.dsl_schema import AssetAttributesModel
+from dagster_components.core.schema.objects import AssetAttributesModel
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -30,8 +30,6 @@ class PipesSubprocessScriptCollectionParams(BaseModel):
 class PipesSubprocessScriptCollection(Component):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    params_schema = PipesSubprocessScriptCollectionParams
-
     def __init__(self, dirpath: Path, path_specs: Mapping[Path, Sequence[AssetSpec]]):
         self.dirpath = dirpath
         # mapping from the script name (e.g. /path/to/script_abc.py -> script_abc)
@@ -44,8 +42,12 @@ class PipesSubprocessScriptCollection(Component):
         return PipesSubprocessScriptCollection(dirpath=path, path_specs=path_specs)
 
     @classmethod
+    def get_component_schema_type(cls):
+        return PipesSubprocessScriptCollectionParams
+
+    @classmethod
     def load(cls, context: ComponentLoadContext) -> "PipesSubprocessScriptCollection":
-        loaded_params = context.load_params(cls.params_schema)
+        loaded_params = context.load_params(cls.get_component_schema_type())
 
         path_specs = {}
         for script in loaded_params.scripts:
@@ -53,7 +55,7 @@ class PipesSubprocessScriptCollection(Component):
             if not script_path.exists():
                 raise FileNotFoundError(f"Script {script_path} does not exist")
             path_specs[script_path] = [
-                AssetSpec(**asset.render_properties(context.templated_value_renderer))
+                AssetSpec(**asset.render_properties(context.templated_value_resolver))
                 for asset in script.assets
             ]
 

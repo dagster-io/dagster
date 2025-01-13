@@ -7,7 +7,7 @@ unlisted: true
 # Dagster+ deployment settings reference
 
 :::note
-This guide is applicable to Dagster+.
+This article is applicable to Dagster+.
 :::
 
 {/* /dagster-plus */}
@@ -64,7 +64,7 @@ run_queue:
 
 | Property | Description |
 | --- | --- |
-| run_queue.max_concurrent_runs | The maximum number of runs that are allowed to be in progress at once. Set to 0 to stop any runs from launching. Negative values aren't permitted. <ul><li>**Default** - `10` (20 minutes)</li><li>**Maximum** - `500` <a href="/todo.md">(Hybrid)</a>, `50` <a href="/todo.md">(Serverless)</a></li></ul> |
+| run_queue.max_concurrent_runs | The maximum number of runs that are allowed to be in progress at once. Set to 0 to stop any runs from launching. Negative values aren't permitted. <ul><li>**Default** - `10` (20 minutes)</li><li>**Maximum** - `500` ([Hybrid](/dagster-plus/deployment/deployment-types/hybrid/)), `50` ([Serverless](/dagster-plus/deployment/deployment-types/serverless/))</li></ul> |
 | run_queue.tag_concurrency_limits | A list of limits applied to runs with particular tags. <ul><li>**Defaults** - `[]`</li></ul> Each list item may have the following properties: <ul><li>`key`</li><li>`value`</li><ul><li>If defined, the `limit` is applied only to the `key-value` pair.</li><li>If set to a dict with applyLimitPerUniqueValue: true, the `limit` is applied to the number of unique values for the `key`.</li><li>If set to a dict with `applyLimitPerUniqueValue: true`, the limit is applied to the number of unique values for the `key`.</li></ul><li>`limit`</li></ul> |
 
 ### Run monitoring (run_monitoring)

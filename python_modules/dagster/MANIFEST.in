@@ -3,6 +3,7 @@ include LICENSE
 include COPYING
 include dagster/py.typed
 include dagster/_grpc/__generated__/api_pb2.pyi
+include dagster/_vendored/croniter/LICENSE
 include dagster/_vendored/dateutil/LICENSE
 exclude python_modules/dagster/dagster/_core/types/ruff.toml
 recursive-include dagster *.md

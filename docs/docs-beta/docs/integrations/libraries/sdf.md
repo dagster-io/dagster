@@ -10,15 +10,14 @@ apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-sdf
 docslink: https://docs.sdf.com/integrations/dagster/getting-started
 partnerlink: https://www.sdf.com/
 communityIntegration: true
-logo: /integrations/sdf.jpeg
 categories:
   - ETL
 enabledBy:
 enables:
 tags: [community-supported, etl]
+sidebar_custom_props:
+  logo: images/integrations/sdf.jpeg
 ---
-
-
 
 SDF can integrate seamlessly with your existing Dagster projects, providing the best-in-class transformation layer while enabling you to schedule, orchestrate, and monitor your dags in Dagster.
 

@@ -1,5 +1,13 @@
 # Changelog
 
+# 1.9.8 (core) / 0.25.8 (libraries)
+
+### Bugfixes
+
+- Fixed a bug with `load_assets_from_x` functions where we began erroring when a spec and AssetsDefinition had the same key in a given module. We now only error in this case if `include_specs=True`.
+- [dagster-azure] Fixed a bug in 1.9.6 and 1.9.7 where the default behavior of the compute log manager switched from showing logs in the UI to showing a URL. You can toggle the `show_url_only` option to `True` to enable the URL showing behavior.
+- [dagster-dbt] Fixed an issue where group names set on partitioned dbt assets created using the `@dbt_assets` decorator would be ignored
+
 # 1.9.7 (core) / 0.25.7 (libraries)
 
 ### New
