@@ -1,8 +1,8 @@
 ---
-title: Managing concurrency of Dagster assets, jobs, and Dagster instances
+title: "Managing concurrency of Dagster assets, jobs, and Dagster instances"
 sidebar_label: Managing concurrency
 description: How to limit the number of runs a job, or assets for an instance of Dagster.
-sidebar_position: 900
+sidebar_position: 200
 ---
 
 You often want to control the number of concurrent runs for a Dagster job, a specific asset, or for a type of asset or job. Limiting concurrency in your data pipelines can help prevent performance problems and downtime.

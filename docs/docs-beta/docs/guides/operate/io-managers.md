@@ -1,5 +1,6 @@
 ---
 title: "Managing stored data with I/O managers"
+sidebar_position: 100
 ---
 
 I/O managers in Dagster allow you to keep the code for data processing separate from the code for reading and writing data. This reduces repetitive code and makes it easier to change where your data is stored.
