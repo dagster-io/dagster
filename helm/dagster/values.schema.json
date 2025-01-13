@@ -865,6 +865,13 @@
             "title": "DaemonSchedulerConfig",
             "type": "object"
         },
+        "DeploymentStrategy": {
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.apps.v1.DeploymentStrategy",
+            "additionalProperties": true,
+            "properties": {},
+            "title": "DeploymentStrategy",
+            "type": "object"
+        },
         "EnvVar": {
             "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar",
             "additionalProperties": true,
@@ -3086,6 +3093,17 @@
                     ],
                     "default": null,
                     "title": "Sidecarcontainers"
+                },
+                "deploymentStrategy": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/DeploymentStrategy"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 }
             },
             "required": [
