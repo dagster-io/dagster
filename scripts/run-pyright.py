@@ -556,6 +556,10 @@ def print_report(result: RunResult) -> None:
 
 
 if __name__ == "__main__":
+    assert sys.version_info < (3, 12), (
+        "This script is not currently compatible with Python 3.12+ "
+        "because of `dagster-airflow[test_airflow_2]`.",
+    )
     assert os.path.exists(".git"), "Must be run from the root of the repository"
     args = parser.parse_args()
     params = get_params(args)
