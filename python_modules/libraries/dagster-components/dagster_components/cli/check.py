@@ -107,7 +107,6 @@ def error_dict_to_formatted_error(
     # params.nested.foo.an_int
     location = cast(str, error_details["loc"])[0].split(" at ")[0]
 
-    # TODO: use typer, when ready, to color-format the output
     fmt_filename = (
         f"{source_position.filename}"
         f":{typer.style(source_position.start.line, fg=typer.colors.GREEN)}"
