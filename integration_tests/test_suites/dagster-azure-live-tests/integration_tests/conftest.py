@@ -42,10 +42,13 @@ def delete_blobs_with_prefix(prefix: str) -> None:
         container_client.delete_blob(blob.name)
 
 
+REQUIRES_ENV_CREDENTIALS = ["default-credential.yaml", "default-capture-behavior.yaml"]
+
+
 @pytest.fixture(name="dagster_yaml")
 def dagster_yaml_path(request) -> Generator[Path, None, None]:
     additional_env_vars = {}
-    if request.param == "default-credential.yaml":
+    if request.param in REQUIRES_ENV_CREDENTIALS:
         additional_env_vars = {
             "AZURE_CLIENT_ID": os.environ["TEST_AZURE_CLIENT_ID"],
             "AZURE_CLIENT_SECRET": os.environ["TEST_AZURE_CLIENT_SECRET"],
