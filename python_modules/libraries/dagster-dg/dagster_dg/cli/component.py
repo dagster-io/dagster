@@ -1,6 +1,7 @@
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from subprocess import CalledProcessError
 from typing import Any, Optional
 
 import click
@@ -287,4 +288,7 @@ def component_check_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
 
-    dg_context.external_components_command(["check", "component", *paths])
+    try:
+        dg_context.external_components_command(["check", "component", *paths])
+    except CalledProcessError:
+        sys.exit(1)

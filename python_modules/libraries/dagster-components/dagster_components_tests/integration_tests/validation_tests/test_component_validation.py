@@ -1,30 +1,11 @@
-import shutil
-import tempfile
 from pathlib import Path
 
 import pytest
-from dagster._core.definitions.definitions_class import Definitions
 from pydantic import ValidationError
 
-from dagster_components_tests.integration_tests.component_loader import (
-    build_defs_from_component_path,
-    load_test_component_project_context,
+from dagster_components_tests.integration_tests.validation_tests.utils import (
+    load_test_component_defs_inject_component,
 )
-
-
-def load_test_component_defs_inject_component(path: str, component_to_inject: Path) -> Definitions:
-    origin_path = Path(__file__).parent.parent / "components" / path
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        shutil.copytree(origin_path, tmpdir, dirs_exist_ok=True)
-        shutil.copy(component_to_inject, Path(tmpdir) / "__init__.py")
-
-        context = load_test_component_project_context()
-        return build_defs_from_component_path(
-            path=Path(tmpdir),
-            registry=context.component_registry,
-            resources={},
-        )
 
 
 def test_basic_component_success() -> None:

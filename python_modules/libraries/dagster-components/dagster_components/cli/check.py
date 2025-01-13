@@ -156,5 +156,6 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
                 click.echo(error_dict_to_formatted_error(component_type, error_dict))
 
         click.echo(f"Found {errs} validation errors in {len(validation_errors)} components.")
+        sys.exit(1)
     else:
         click.echo("All components validated successfully.")
