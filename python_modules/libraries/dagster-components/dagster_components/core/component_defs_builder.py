@@ -2,10 +2,12 @@ import importlib
 import importlib.util
 import inspect
 from collections.abc import Mapping, Sequence
+from contextlib import nullcontext
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
+from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
@@ -55,9 +57,20 @@ def resolve_decl_node_to_yaml_decls(decl: ComponentDeclNode) -> list[YamlCompone
 
 def load_components_from_context(context: ComponentLoadContext) -> Sequence[Component]:
     if isinstance(context.decl_node, YamlComponentDecl):
+        decl = cast(YamlComponentDecl, context.decl_node)
         component_type = component_type_from_yaml_decl(context.registry, context.decl_node)
         context = context.with_rendering_scope(component_type.get_rendering_scope())
-        return [component_type.load(context)]
+
+        with (
+            enrich_validation_errors_with_source_position(
+                decl.source_position_tree.children["params"],
+                ["params"],
+                title=component_type.__name__,
+            )
+            if decl.source_position_tree
+            else nullcontext()
+        ):
+            return [component_type.load(context)]
     elif isinstance(context.decl_node, ComponentFolder):
         components = []
         for sub_decl in context.decl_node.sub_decls:

@@ -117,4 +117,33 @@ COMPONENT_VALIDATION_TEST_CASES = [
         # The CLI is able to link the error to the component file
         validate_error_msg_additional_cli=msg_includes_all_of("component.yaml"),
     ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_templating_valid",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
+        should_error=False,
+    ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_templating_env_var_missing",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "component.yaml:4",
+            "params.an_int",
+            "Input should be a valid string",
+            "component.yaml:5",
+            "params.a_string",
+            "Input should be a valid integer",
+        ),
+    ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_templating_invalid_scope",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "`fake` not found in scope",
+            "component.yaml:4",
+            "params.a_string",
+            "available scope is: env, automation_condition",
+        ),
+    ),
 ]

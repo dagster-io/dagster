@@ -1,0 +1,5 @@
+type: .my_component
+
+params:
+  a_string: "{{ env('STRING_ENV_VAR') }}"
+  an_int: "{{ env('INT_ENV_VAR') }}"
