@@ -101,6 +101,7 @@ def main(
         "python_modules/libraries/dagster-pyspark",
         "python_modules/libraries/dagster-shell",
         "python_modules/libraries/dagster-slack",
+        "python_modules/libraries/dagster-sling",
         "python_modules/libraries/dagster-snowflake",
         "python_modules/libraries/dagster-snowflake-pandas",
         "python_modules/libraries/dagster-spark",
