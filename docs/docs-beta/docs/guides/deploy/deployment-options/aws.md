@@ -1,8 +1,7 @@
 ---
-title: Deploying Dagster to Amazon Web Services
-sidebar_label: "Amazon Web Services"
+title: "Deploying Dagster to Amazon Web Services"
 description: To deploy Dagster to AWS, EC2 or ECS can host the Dagster webserver, RDS can store runs and events, and S3 can act as an IO manager.
-sidebar_position: 500
+sidebar_position: 50
 ---
 
 

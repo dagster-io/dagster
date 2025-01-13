@@ -1,8 +1,8 @@
 ---
-title: Running Dagster locally
+title: "Running Dagster locally"
 sidebar_label: Local deployment
 description: How to run Dagster on your local machine.
-sidebar_position: 100
+sidebar_position: 1
 ---
 
 In this guide, we'll walk you through how to run Dagster on your local machine using the `dagster dev` command.  The `dagster dev` command launches the Dagster UI and the Dagster daemon, allowing you to start a full deployment of Dagster from the command line.

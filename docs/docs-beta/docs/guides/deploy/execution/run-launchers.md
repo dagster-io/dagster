@@ -1,6 +1,6 @@
 ---
 title: "Run launchers"
-The run launcher is the interface to the computational resources that will be used to actually execute Dagster runs.
+description: The run launcher is the interface to the computational resources that will be used to actually execute Dagster runs.
 sidebar_position: 200
 ---
 

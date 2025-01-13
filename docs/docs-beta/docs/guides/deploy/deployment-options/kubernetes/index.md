@@ -1,6 +1,6 @@
 ---
-title: "Deployment options"
-sidebar_position: 1
+title: "Kubernetes"
+sidebar_position: 30
 ---
 
 import DocCardList from '@theme/DocCardList';

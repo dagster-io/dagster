@@ -1,5 +1,5 @@
 ---
-title: "Deploying to Kubernetes"
+title: "Deploying Dagster to Kubernetes"
 sidebar_label: Kubernetes
 sidebar_position: 300
 ---
