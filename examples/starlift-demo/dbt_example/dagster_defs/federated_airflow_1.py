@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 from dagster import AssetsDefinition, Definitions, SensorDefinition
 from dagster_airlift.core import (

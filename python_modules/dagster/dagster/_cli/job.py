@@ -2,7 +2,8 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, cast
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Callable, Optional, TypeVar, cast
 
 import click
 
@@ -16,11 +17,13 @@ from dagster._cli.workspace.cli_target import (
     ClickArgValue,
     ClickOption,
     get_code_location_from_workspace,
+    get_config_from_args,
     get_job_python_origin_from_kwargs,
     get_remote_job_from_kwargs,
     get_remote_job_from_remote_repo,
     get_remote_repository_from_code_location,
     get_remote_repository_from_kwargs,
+    get_run_config_from_file_list,
     get_workspace_from_kwargs,
     job_repository_target_argument,
     job_target_argument,
@@ -60,7 +63,7 @@ from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 from dagster._utils.tags import normalize_tags
-from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
+from dagster._utils.yaml_utils import dump_run_config_yaml
 
 T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
@@ -235,11 +238,6 @@ def print_op(
             printer.line(output_def_snap.name)
 
 
-def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping[str, object]:
-    check.opt_sequence_param(file_list, "file_list", of_type=str)
-    return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
-
-
 @job_cli.command(
     name="execute",
     help="Execute a job.\n\n{instructions}".format(
@@ -275,7 +273,7 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
     check.inst_param(instance, "instance", DagsterInstance)
 
     config = list(
-        check.opt_tuple_param(cast(Tuple[str, ...], kwargs.get("config")), "config", of_type=str)
+        check.opt_tuple_param(cast(tuple[str, ...], kwargs.get("config")), "config", of_type=str)
     )
 
     tags = get_tags_from_args(kwargs)
@@ -304,33 +302,6 @@ def get_tags_from_args(kwargs: ClickArgMapping) -> Mapping[str, str]:
                 serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
             )
         ) from e
-
-
-def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
-    config = cast(Tuple[str, ...], kwargs.get("config"))  # files
-    config_json = kwargs.get("config_json")
-
-    if not config and not config_json:
-        return {}
-
-    elif config and config_json:
-        raise click.UsageError("Cannot specify both -c / --config and --config-json")
-
-    elif config:
-        config_file_list = list(check.opt_tuple_param(config, "config", of_type=str))
-        return get_run_config_from_file_list(config_file_list)
-
-    elif config_json:
-        config_json = cast(str, config_json)
-        try:
-            return json.loads(config_json)
-
-        except JSONDecodeError:
-            raise click.UsageError(
-                f"Invalid JSON-string given for `--config-json`: {config_json}\n\n{serializable_error_info_from_exc_info(sys.exc_info()).to_string()}"
-            )
-    else:
-        check.failed("Unhandled case getting config from kwargs")
 
 
 def get_op_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
@@ -505,7 +476,7 @@ def _check_execute_remote_job_args(
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
-) -> Tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
+) -> tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
     check.inst_param(remote_job, "remote_job", RemoteJob)
     run_config = check.opt_mapping_param(run_config, "run_config")
 

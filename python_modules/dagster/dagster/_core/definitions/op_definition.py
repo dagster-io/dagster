@@ -1,17 +1,6 @@
 import inspect
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
 from typing_extensions import TypeAlias, get_args, get_origin
 
@@ -177,7 +166,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             else None
         )
 
-        super(OpDefinition, self).__init__(
+        super().__init__(
             name=name,
             input_defs=check.sequence_param(resolved_input_defs, "input_defs", InputDefinition),
             output_defs=check.sequence_param(output_defs, "output_defs", OutputDefinition),
@@ -226,7 +215,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def name(self) -> str:
         """str: The name of this op."""
-        return super(OpDefinition, self).name
+        return super().name
 
     @public
     @property
@@ -275,27 +264,27 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def tags(self) -> Mapping[str, str]:
         """Mapping[str, str]: The tags for this op."""
-        return super(OpDefinition, self).tags
+        return super().tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given name."""
-        return super(OpDefinition, self).alias(name)
+        return super().alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given tags."""
-        return super(OpDefinition, self).tag(tags)
+        return super().tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given hook definitions."""
-        return super(OpDefinition, self).with_hooks(hook_defs)
+        return super().with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given retry policy."""
-        return super(OpDefinition, self).with_retry_policy(retry_policy)
+        return super().with_retry_policy(retry_policy)
 
     def is_from_decorator(self) -> bool:
         from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -321,7 +310,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def resolve_output_to_origin(
         self, output_name: str, handle: Optional[NodeHandle]
-    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
+    ) -> tuple[OutputDefinition, Optional[NodeHandle]]:
         return self.output_def_named(output_name), handle
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
@@ -367,12 +356,14 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     ) -> "OpDefinition":
         return OpDefinition.dagster_internal_init(
             name=name,
-            ins=ins
-            or {input_def.name: In.from_definition(input_def) for input_def in self.input_defs},
-            outs=outs
-            or {
+            ins={input_def.name: In.from_definition(input_def) for input_def in self.input_defs}
+            if ins is None
+            else ins,
+            outs={
                 output_def.name: Out.from_definition(output_def) for output_def in self.output_defs
-            },
+            }
+            if outs is None
+            else outs,
             compute_fn=self.compute_fn,
             config_schema=config_schema or self.config_schema,
             description=description or self.description,
@@ -449,7 +440,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         from dagster._core.definitions.composition import is_in_composition
 
         if is_in_composition():
-            return super(OpDefinition, self).__call__(*args, **kwargs)
+            return super().__call__(*args, **kwargs)
 
         return direct_invocation_result(self, *args, **kwargs)
 

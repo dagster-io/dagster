@@ -3,8 +3,9 @@ import logging
 import time
 import uuid
 from abc import abstractmethod
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, List, Mapping, Optional, Sequence, Set, Type, Union
+from typing import Any, Optional, Union
 
 import jwt
 import requests
@@ -23,6 +24,7 @@ from dagster._annotations import deprecated, experimental
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
+from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from tableauserverclient.server.endpoint.auth_endpoint import Auth
 
@@ -32,6 +34,7 @@ from dagster_tableau.translator import (
     TableauContentType,
     TableauMetadataSet,
     TableauTagSet,
+    TableauTranslatorData,
     TableauWorkspaceData,
 )
 
@@ -70,7 +73,7 @@ class BaseTableauClient:
         return get_dagster_logger()
 
     @cached_method
-    def get_workbooks(self) -> List[TSC.WorkbookItem]:
+    def get_workbooks(self) -> list[TSC.WorkbookItem]:
         """Fetches a list of all Tableau workbooks in the workspace."""
         workbooks, _ = self._server.workbooks.get()
         return workbooks
@@ -254,7 +257,7 @@ class BaseTableauClient:
             headers={"kid": self.connected_app_secret_id, "iss": self.connected_app_client_id},
         )
 
-        tableau_auth = TSC.JWTAuth(jwt_token, site_id=self.site_name)  # pyright: ignore (reportAttributeAccessIssue)
+        tableau_auth = TSC.JWTAuth(jwt_token, site_id=self.site_name)
         return self._server.auth.sign_in(tableau_auth)
 
     @property
@@ -381,11 +384,13 @@ class BaseTableauWorkspace(ConfigurableResource):
         raise NotImplementedError()
 
     @contextmanager
-    def get_client(self):
+    def get_client(self) -> Iterator[Union[TableauCloudClient, TableauServerClient]]:
         if not self._client:
             self.build_client()
-        with self._client.sign_in():
-            yield self._client
+
+        client = check.not_none(self._client, "build_client failed to set _client")
+        with client.sign_in():
+            yield client
 
     def fetch_tableau_workspace_data(
         self,
@@ -399,15 +404,15 @@ class BaseTableauWorkspace(ConfigurableResource):
         with self.get_client() as client:
             workbook_ids = [workbook.id for workbook in client.get_workbooks()]
 
-            workbooks: List[TableauContentData] = []
-            sheets: List[TableauContentData] = []
-            dashboards: List[TableauContentData] = []
-            data_sources: List[TableauContentData] = []
-            data_source_ids: Set[str] = set()
+            workbooks: list[TableauContentData] = []
+            sheets: list[TableauContentData] = []
+            dashboards: list[TableauContentData] = []
+            data_sources: list[TableauContentData] = []
+            data_source_ids: set[str] = set()
             for workbook_id in workbook_ids:
                 workbook = client.get_workbook(workbook_id=workbook_id)
                 workbook_data_list = check.is_list(
-                    workbook["data"]["workbooks"],
+                    workbook["data"]["workbooks"],  # pyright: ignore[reportIndexIssue]
                     additional_message=f"Invalid data for Tableau workbook for id {workbook_id}.",
                 )
                 if not workbook_data_list:
@@ -474,7 +479,7 @@ class BaseTableauWorkspace(ConfigurableResource):
     def build_defs(
         self,
         refreshable_workbook_ids: Optional[Sequence[str]] = None,
-        dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+        dagster_tableau_translator: type[DagsterTableauTranslator] = DagsterTableauTranslator,
     ) -> Definitions:
         """Returns a Definitions object which will load Tableau content from
         the workspace and translate it into assets, using the provided translator.
@@ -500,7 +505,7 @@ class BaseTableauWorkspace(ConfigurableResource):
 
         resource_key = "tableau"
 
-        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator)
+        asset_specs = load_tableau_asset_specs(self, dagster_tableau_translator())
 
         non_executable_asset_specs = [
             spec
@@ -530,23 +535,36 @@ class BaseTableauWorkspace(ConfigurableResource):
 @experimental
 def load_tableau_asset_specs(
     workspace: BaseTableauWorkspace,
-    dagster_tableau_translator: Type[DagsterTableauTranslator] = DagsterTableauTranslator,
+    dagster_tableau_translator: Optional[
+        Union[DagsterTableauTranslator, type[DagsterTableauTranslator]]
+    ] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Tableau content in the workspace.
 
     Args:
         workspace (Union[TableauCloudWorkspace, TableauServerWorkspace]): The Tableau workspace to fetch assets from.
-        dagster_tableau_translator (Type[DagsterTableauTranslator]): The translator to use
-            to convert Tableau content into AssetSpecs. Defaults to DagsterTableauTranslator.
+        dagster_tableau_translator (Optional[Union[DagsterTableauTranslator, Type[DagsterTableauTranslator]]]):
+            The translator to use to convert Tableau content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterTableauTranslator`.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Tableau content in the workspace.
     """
+    if isinstance(dagster_tableau_translator, type):
+        deprecation_warning(
+            subject="Support of `dagster_tableau_translator` as a Type[DagsterTableauTranslator]",
+            breaking_version="1.10",
+            additional_warn_text=(
+                "Pass an instance of DagsterTableauTranslator or subclass to `dagster_tableau_translator` instead."
+            ),
+        )
+        dagster_tableau_translator = dagster_tableau_translator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
         return check.is_list(
             TableauWorkspaceDefsLoader(
                 workspace=initialized_workspace,
-                translator_cls=dagster_tableau_translator,
+                translator=dagster_tableau_translator or DagsterTableauTranslator(),
             )
             .build_defs()
             .assets,
@@ -595,7 +613,7 @@ class TableauServerWorkspace(BaseTableauWorkspace):
 @record
 class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: BaseTableauWorkspace
-    translator_cls: Type[DagsterTableauTranslator]
+    translator: DagsterTableauTranslator
 
     @property
     def defs_key(self) -> str:
@@ -605,8 +623,6 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
         return self.workspace.fetch_tableau_workspace_data()
 
     def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:
-        translator = self.translator_cls(context=state)
-
         all_external_data = [
             *state.data_sources_by_id.values(),
             *state.sheets_by_id.values(),
@@ -614,7 +630,10 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
         ]
 
         all_external_asset_specs = [
-            translator.get_asset_spec(content) for content in all_external_data
+            self.translator.get_asset_spec(
+                TableauTranslatorData(content_data=content, workspace_data=state)
+            )
+            for content in all_external_data
         ]
 
         return Definitions(assets=all_external_asset_specs)

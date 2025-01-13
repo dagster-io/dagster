@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Set
+from typing import Any
 
 import pytest
 from botocore.exceptions import ClientError
@@ -881,7 +881,7 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
 
     retries = 0
     original_describe_tasks = instance.run_launcher.ecs.describe_tasks
-    original_backoff_retries = dagster_aws.ecs.tasks.BACKOFF_RETRIES
+    original_backoff_retries = dagster_aws.ecs.tasks.BACKOFF_RETRIES  # pyright: ignore[reportAttributeAccessIssue]
 
     def describe_tasks(*_args, **_kwargs):
         nonlocal retries
@@ -894,12 +894,12 @@ def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
 
     with pytest.raises(EcsEventualConsistencyTimeout):
         monkeypatch.setattr(instance.run_launcher.ecs, "describe_tasks", describe_tasks)
-        monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", 0)
+        monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", 0)  # pyright: ignore[reportAttributeAccessIssue]
         instance.launch_run(run.run_id, workspace)
 
     # Reset the mock
     retries = 0
-    monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", original_backoff_retries)
+    monkeypatch.setattr(dagster_aws.ecs.tasks, "BACKOFF_RETRIES", original_backoff_retries)  # pyright: ignore[reportAttributeAccessIssue]
     instance.launch_run(run.run_id, workspace)
 
     tasks = ecs.list_tasks()["taskArns"]
@@ -999,9 +999,9 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, remote_job):
     ],
 )
 def test_propagate_tags_include_all(
-    run_tags: Dict[str, str],
-    expected_ecs_tag_keys: Set[str],
-    allow_list: List[str],
+    run_tags: dict[str, str],
+    expected_ecs_tag_keys: set[str],
+    allow_list: list[str],
     instance_cm,
     workspace,
     job,
@@ -1045,7 +1045,7 @@ def test_propagate_tags_args_validated(
     workspace,
     job,
     remote_job,
-    propagate_tags: Dict[str, Any],
+    propagate_tags: dict[str, Any],
 ):
     with pytest.raises(CheckError):
         with instance_cm({"propagate_tags": propagate_tags}) as instance:
@@ -1326,7 +1326,7 @@ def test_overrides_too_long(
                 fn_name="foo",
             ),
             container_image="test:latest",
-            container_context=large_container_context,
+            container_context=large_container_context,  # pyright: ignore[reportArgumentType]
         ),
     )
 

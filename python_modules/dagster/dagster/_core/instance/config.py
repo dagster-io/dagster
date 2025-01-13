@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type, cast
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dagster import (
     Array,
@@ -40,7 +41,7 @@ def dagster_instance_config(
     base_dir: str,
     config_filename: str = DAGSTER_CONFIG_YAML_FILENAME,
     overrides: Optional[Mapping[str, object]] = None,
-) -> Tuple[Mapping[str, Any], Optional[Type["DagsterInstance"]]]:
+) -> tuple[Mapping[str, Any], Optional[type["DagsterInstance"]]]:
     check.str_param(base_dir, "base_dir")
     check.invariant(os.path.isdir(base_dir), "base_dir should be a directory")
     overrides = check.opt_mapping_param(overrides, "overrides")
@@ -71,7 +72,7 @@ def dagster_instance_config(
             )
 
         custom_instance_class = cast(
-            Type["DagsterInstance"],
+            type["DagsterInstance"],
             class_from_code_pointer(
                 custom_instance_class_data["module"], custom_instance_class_data["class"]
             ),
@@ -267,6 +268,20 @@ def get_tick_retention_settings(
         return default_retention_settings
 
 
+def backfills_daemon_config() -> Field:
+    return Field(
+        {
+            "use_threads": Field(Bool, is_required=False, default_value=False),
+            "num_workers": Field(
+                int,
+                is_required=False,
+                description="How many threads to use to process multiple backfills in parallel",
+            ),
+        },
+        is_required=False,
+    )
+
+
 def sensors_daemon_config() -> Field:
     return Field(
         {
@@ -389,6 +404,7 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         ),
         "secrets": secrets_loader_config_schema(),
         "retention": retention_config_schema(),
+        "backfills": backfills_daemon_config(),
         "sensors": sensors_daemon_config(),
         "schedules": schedules_daemon_config(),
         "auto_materialize": Field(

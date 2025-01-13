@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional, Sequence, Type, Union, cast
+from typing import Any, NamedTuple, Optional, Union, cast
 
 from dagster import _check as check
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
@@ -76,8 +77,8 @@ def _attach_code_references_to_definitions(blueprint: Blueprint, defs: Definitio
 def load_defs_from_yaml(
     *,
     path: Union[Path, str],
-    per_file_blueprint_type: Union[Type[Blueprint], Type[Sequence[Blueprint]]],
-    resources: Optional[Dict[str, Any]] = None,
+    per_file_blueprint_type: Union[type[Blueprint], type[Sequence[Blueprint]]],
+    resources: Optional[dict[str, Any]] = None,
 ) -> Definitions:
     """Load Dagster definitions from a YAML file of blueprints.
 
@@ -103,7 +104,8 @@ def load_defs_from_yaml(
         file_paths = list(resolved_path.rglob("*.yaml")) + list(resolved_path.rglob("*.yml"))
 
     origin = get_origin(per_file_blueprint_type)
-    if safe_is_subclass(origin, Sequence):
+    # per_file_blueprint_type might be a typing type or a Python builtin like list
+    if safe_is_subclass(origin, Sequence) or safe_is_subclass(per_file_blueprint_type, Sequence):
         args = get_args(per_file_blueprint_type)
         check.invariant(
             args and len(args) == 1,
@@ -122,7 +124,7 @@ def load_defs_from_yaml(
     else:
         blueprints = [
             parse_yaml_file_to_pydantic(
-                cast(Type[Blueprint], per_file_blueprint_type),
+                cast(type[Blueprint], per_file_blueprint_type),
                 file_path.read_text(),
                 str(file_path),
             )
@@ -153,9 +155,9 @@ class YamlBlueprintsLoader(NamedTuple):
     """
 
     path: Path
-    per_file_blueprint_type: Union[Type[Blueprint], Type[Sequence[Blueprint]]]
+    per_file_blueprint_type: Union[type[Blueprint], type[Sequence[Blueprint]]]
 
-    def load_defs(self, resources: Optional[Dict[str, Any]] = None) -> Definitions:
+    def load_defs(self, resources: Optional[dict[str, Any]] = None) -> Definitions:
         """Load Dagster definitions from a YAML file of blueprints.
 
         Args:
@@ -168,6 +170,6 @@ class YamlBlueprintsLoader(NamedTuple):
             resources=resources,
         )
 
-    def model_json_schema(self) -> Dict[str, Any]:
+    def model_json_schema(self) -> dict[str, Any]:
         """Returns a JSON schema for the model or models that the loader is responsible for loading."""
         return json_schema_from_type(self.per_file_blueprint_type)

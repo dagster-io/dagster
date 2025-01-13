@@ -6,9 +6,10 @@ import tempfile
 import time
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import IO, Dict, Iterator, Optional, Sequence, Tuple, TypeVar, Union
+from typing import IO, Optional, TypeVar, Union
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -134,13 +135,18 @@ class PipesFileMessageReader(PipesMessageReader):
     Args:
         path (str): The path of the file to which messages will be written. The file will be deleted
             on close of the pipes session.
+        include_stdio_in_messages (bool): Whether to include stdout/stderr logs in the messages produced by the message writer in the external process.
+        cleanup_file (bool): Whether to delete the file on close of the pipes session.
     """
 
-    def __init__(self, path: str, include_stdio_in_messages: bool = False):
+    def __init__(
+        self, path: str, include_stdio_in_messages: bool = False, cleanup_file: bool = True
+    ):
         self._path = check.str_param(path, "path")
         self._include_stdio_in_messages = check.bool_param(
             include_stdio_in_messages, "include_stdio_in_messages"
         )
+        self._cleanup_file = cleanup_file
 
     def on_launched(self, params: PipesLaunchedData) -> None:
         self.launched_payload = params
@@ -178,7 +184,7 @@ class PipesFileMessageReader(PipesMessageReader):
             is_session_closed.set()
             if thread:
                 thread.join()
-            if os.path.exists(self._path):
+            if os.path.exists(self._path) and self._cleanup_file:
                 os.remove(self._path)
 
     def _reader_thread(self, handler: "PipesMessageHandler", is_resource_complete: Event) -> None:
@@ -264,7 +270,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
     """
 
     interval: float
-    log_readers: Dict[str, "PipesLogReader"]
+    log_readers: dict[str, "PipesLogReader"]
     opened_payload: Optional[PipesOpenedData]
     launched_payload: Optional[PipesLaunchedData]
 
@@ -355,7 +361,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
     @abstractmethod
     def download_messages(
         self, cursor: Optional[TCursor], params: PipesParams
-    ) -> Optional[Tuple[TCursor, str]]:
+    ) -> Optional[tuple[TCursor, str]]:
         """Download a chunk of messages from the target location.
 
         Args:
@@ -554,7 +560,7 @@ class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
 
     def download_messages(
         self, cursor: Optional[int], params: PipesParams
-    ) -> Optional[Tuple[int, str]]:
+    ) -> Optional[tuple[int, str]]:
         # mapping new interface to the old one
         # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
         chunk = self.download_messages_chunk(self.counter, params)

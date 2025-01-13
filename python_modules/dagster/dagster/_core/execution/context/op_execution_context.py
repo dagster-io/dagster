@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from collections.abc import Iterator, Mapping, Sequence
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
@@ -115,8 +116,8 @@ class OpExecutionContext(AbstractComputeExecutionContext):
             StepExecutionContext,
         )
         self._pdb: Optional[ForkedPdb] = None
-        self._events: List[DagsterEvent] = []
-        self._output_metadata: Dict[str, Any] = {}
+        self._events: list[DagsterEvent] = []
+        self._output_metadata: dict[str, Any] = {}
 
     @property
     def op_execution_context(self) -> "OpExecutionContext":
@@ -292,7 +293,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
                 #   ["2023-08-21", "2023-08-22", "2023-08-23", "2023-08-24", "2023-08-25"]
         """
         key_range = self.partition_key_range
-        partitions_def = self.assets_def.partitions_def
+        partitions_def = self._step_execution_context.run_partitions_def
         if partitions_def is None:
             raise DagsterInvariantViolationError(
                 "Cannot access partition_keys for a non-partitioned run"

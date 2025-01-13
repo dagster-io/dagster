@@ -324,7 +324,7 @@ def test_output_map_mult():
 
     @graph
     def mult_graph():
-        one, two = wrap_mult()
+        one, two = wrap_mult()  # pyright: ignore[reportGeneralTypeIssues]
         echo.alias("echo_one")(one)
         echo.alias("echo_two")(two)
 
@@ -341,7 +341,7 @@ def test_output_map_mult_swizzle():
 
     @graph
     def mult_graph():
-        x, y = wrap_mult()
+        x, y = wrap_mult()  # pyright: ignore[reportGeneralTypeIssues]
         echo.alias("echo_x")(x)
         echo.alias("echo_y")(y)
 
@@ -860,12 +860,12 @@ def test_composition_order():
 
     @job
     def a_job():
-        a_op.with_hooks(hook_defs={test_hook}).alias("hook_alias_tag").tag({"pos": 3})()
-        a_op.with_hooks(hook_defs={test_hook}).tag({"pos": 2}).alias("hook_tag_alias")()
-        a_op.alias("alias_tag_hook").tag({"pos": 2}).with_hooks(hook_defs={test_hook})()
-        a_op.alias("alias_hook_tag").with_hooks(hook_defs={test_hook}).tag({"pos": 3})()
-        a_op.tag({"pos": 1}).with_hooks(hook_defs={test_hook}).alias("tag_hook_alias")()
-        a_op.tag({"pos": 1}).alias("tag_alias_hook").with_hooks(hook_defs={test_hook})()
+        a_op.with_hooks(hook_defs={test_hook}).alias("hook_alias_tag").tag({"pos": 3})()  # pyright: ignore[reportArgumentType]
+        a_op.with_hooks(hook_defs={test_hook}).tag({"pos": 2}).alias("hook_tag_alias")()  # pyright: ignore[reportArgumentType]
+        a_op.alias("alias_tag_hook").tag({"pos": 2}).with_hooks(hook_defs={test_hook})()  # pyright: ignore[reportArgumentType]
+        a_op.alias("alias_hook_tag").with_hooks(hook_defs={test_hook}).tag({"pos": 3})()  # pyright: ignore[reportArgumentType]
+        a_op.tag({"pos": 1}).with_hooks(hook_defs={test_hook}).alias("tag_hook_alias")()  # pyright: ignore[reportArgumentType]
+        a_op.tag({"pos": 1}).alias("tag_alias_hook").with_hooks(hook_defs={test_hook})()  # pyright: ignore[reportArgumentType]
 
     result = a_job.execute_in_process(raise_on_error=False)
     assert result.success

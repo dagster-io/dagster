@@ -1,10 +1,11 @@
 import os
 import sys
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional, cast
 
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation import CodeLocation, RemoteRepository
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -73,11 +74,12 @@ def workspace_fixture(
 
 @pytest.fixture(name="remote_repo", scope="session")
 def remote_repo_fixture(workspace_context: WorkspaceProcessContext) -> RemoteRepository:
-    return next(
-        iter(workspace_context.create_request_context().get_code_location_entries().values())
-    ).code_location.get_repository(  # type: ignore  # (possible none)
-        "the_repo"
-    )
+    return cast(
+        CodeLocation,
+        next(
+            iter(workspace_context.create_request_context().get_code_location_entries().values())
+        ).code_location,
+    ).get_repository("the_repo")
 
 
 def loadable_target_origin() -> LoadableTargetOrigin:

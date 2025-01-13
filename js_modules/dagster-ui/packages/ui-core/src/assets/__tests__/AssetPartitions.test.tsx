@@ -242,4 +242,115 @@ describe('AssetPartitions', () => {
     });
     expect(screen.queryByTestId('dimension-range-input')).toBeNull();
   });
+
+  it('should support searching within a multiple asset partition', async () => {
+    const Component = () => {
+      const [params, setParams] = useState<AssetViewParams>({});
+      return (
+        <MemoryRouter>
+          <MockedProvider mocks={[MultiDimensionTimeFirstPartitionHealthQuery]}>
+            <AssetPartitions
+              assetKey={{path: ['multi_dimension_time_first']}}
+              params={params}
+              setParams={setParams}
+              paramsTimeWindowOnly={false}
+              assetPartitionDimensions={['date', 'zstate']}
+              dataRefreshHint={undefined}
+              isLoadingDefinition={false}
+            />
+          </MockedProvider>
+        </MemoryRouter>
+      );
+    };
+
+    render(<Component />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('partitions-date')).toBeVisible();
+      expect(screen.getByTestId('partitions-zstate')).toBeVisible();
+    });
+
+    await waitFor(() => {
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-02-05-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+      ).toBeVisible();
+    });
+
+    // search partitions
+    const searchInput = screen.getByTestId(`search-0`);
+    await userEvent.type(searchInput, '2023-01-3');
+
+    // verify partitions search results
+    await waitFor(() => {
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-01-31-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-01-30-index-1',
+        ),
+      ).toBeVisible();
+      expect(
+        screen.queryByTestId('asset-partition-row-2023-02-05-index-0'),
+      ).not.toBeInTheDocument();
+
+      // verify zstate is unchanged
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+      ).toBeVisible();
+    });
+
+    // search zstate
+    const searchInput1 = screen.getByTestId(`search-1`);
+    await userEvent.type(searchInput1, 'VA');
+
+    await waitFor(() => {
+      // verify zstate search filters properly
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-VA-index-0'),
+      ).toBeVisible();
+      expect(screen.queryByTestId('asset-partition-row-TN-index-0')).not.toBeInTheDocument();
+
+      // verify partitions search results are unchanged
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-01-31-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-01-30-index-1',
+        ),
+      ).toBeVisible();
+    });
+
+    // clear the search input
+    await userEvent.clear(searchInput);
+    await userEvent.clear(searchInput1);
+
+    // verify original rows are visible again
+    await waitFor(() => {
+      expect(
+        getByTestId(
+          screen.getByTestId('partitions-date'),
+          'asset-partition-row-2023-02-05-index-0',
+        ),
+      ).toBeVisible();
+      expect(
+        getByTestId(screen.getByTestId('partitions-zstate'), 'asset-partition-row-TN-index-0'),
+      ).toBeVisible();
+    });
+  });
 });

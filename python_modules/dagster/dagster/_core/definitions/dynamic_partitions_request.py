@@ -1,4 +1,5 @@
-from typing import NamedTuple, Sequence
+from collections.abc import Sequence
+from typing import NamedTuple
 
 import dagster._check as check
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -21,7 +22,7 @@ class AddDynamicPartitionsRequest(
         partitions_def_name: str,
         partition_keys: Sequence[str],
     ):
-        return super(AddDynamicPartitionsRequest, cls).__new__(
+        return super().__new__(
             cls,
             partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
             partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
@@ -45,7 +46,7 @@ class DeleteDynamicPartitionsRequest(
         partitions_def_name: str,
         partition_keys: Sequence[str],
     ):
-        return super(DeleteDynamicPartitionsRequest, cls).__new__(
+        return super().__new__(
             cls,
             partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
             partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),

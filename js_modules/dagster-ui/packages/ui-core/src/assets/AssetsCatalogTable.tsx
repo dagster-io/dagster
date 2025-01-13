@@ -210,10 +210,13 @@ export const AssetsCatalogTable = ({
     activeFiltersJsx,
     kindFilter,
   } = useAssetCatalogFiltering({assets});
-  const {filterInput, filtered, fetchResult, assetSelection, setAssetSelection} =
-    useAssetSelectionInput(partiallyFiltered);
+  const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
+    useAssetSelectionInput({
+      assets: partiallyFiltered,
+      assetsLoading: !assets || filteredAssetsLoading,
+    });
 
-  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !fetchResult.loading);
+  useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !loading);
 
   const {displayPathForAsset, displayed} = useMemo(
     () =>
@@ -225,7 +228,7 @@ export const AssetsCatalogTable = ({
 
   const refreshState = useRefreshAtInterval({
     refresh: query,
-    intervalMs: FIFTEEN_SECONDS,
+    intervalMs: 4 * FIFTEEN_SECONDS,
     leading: true,
   });
 
@@ -255,7 +258,7 @@ export const AssetsCatalogTable = ({
     <AssetTable
       view={view}
       assets={displayed}
-      isLoading={filteredAssetsLoading}
+      isLoading={filteredAssetsLoading || loading}
       isFiltered={isFiltered}
       actionBarComponents={
         <div

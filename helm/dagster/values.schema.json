@@ -37,20 +37,17 @@
                     ],
                     "title": "Container"
                 },
-                "secretKey": {
+                "secretCredential": {
                     "anyOf": [
                         {
-                            "type": "string"
-                        },
-                        {
-                            "$ref": "#/$defs/Source"
+                            "type": "object"
                         },
                         {
                             "type": "null"
                         }
                     ],
                     "default": null,
-                    "title": "Secretkey"
+                    "title": "Secretcredential"
                 },
                 "defaultAzureCredential": {
                     "anyOf": [
@@ -63,6 +60,21 @@
                     ],
                     "default": null,
                     "title": "Defaultazurecredential"
+                },
+                "accessKeyOrSasToken": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Accesskeyorsastoken"
                 },
                 "localDir": {
                     "anyOf": [
@@ -218,6 +230,18 @@
                 },
                 "resources": {
                     "$ref": "#/$defs/Resources"
+                },
+                "checkDbReadyInitContainer": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checkdbreadyinitcontainer"
                 },
                 "livenessProbe": {
                     "$ref": "#/$defs/LivenessProbe"
@@ -650,6 +674,18 @@
                 "resources": {
                     "$ref": "#/$defs/Resources"
                 },
+                "checkDbReadyInitContainer": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checkdbreadyinitcontainer"
+                },
                 "livenessProbe": {
                     "$ref": "#/$defs/LivenessProbe"
                 },
@@ -839,6 +875,18 @@
                 },
                 "securityContext": {
                     "$ref": "#/$defs/SecurityContext"
+                },
+                "checkDbReadyInitContainer": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checkdbreadyinitcontainer"
                 },
                 "resources": {
                     "$ref": "#/$defs/Resources"
@@ -3139,6 +3187,18 @@
                 },
                 "securityContext": {
                     "$ref": "#/$defs/SecurityContext"
+                },
+                "checkDbReadyInitContainer": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Checkdbreadyinitcontainer"
                 },
                 "resources": {
                     "$ref": "#/$defs/Resources"

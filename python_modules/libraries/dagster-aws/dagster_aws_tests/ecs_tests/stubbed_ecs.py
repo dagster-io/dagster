@@ -165,10 +165,10 @@ class StubbedEcs:
         cluster = self._cluster(kwargs.get("cluster"))
         arns = kwargs.get("tasks")
 
-        for i, arn in enumerate(arns):
+        for i, arn in enumerate(arns):  # pyright: ignore[reportArgumentType]
             if ":" not in arn:
                 # We received just a task ID, not a full ARN
-                arns[i] = self._arn("task", f"{cluster}/{arn}")
+                arns[i] = self._arn("task", f"{cluster}/{arn}")  # pyright: ignore[reportOptionalSubscript]
 
         tasks = [task for task in self.storage.tasks[cluster] if task["taskArn"] in arns]
 
@@ -297,7 +297,7 @@ class StubbedEcs:
             # Sleep for long enough that we hit the lock
             time.sleep(0.2)
             # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
-            if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
+            if len(family) > 255 or not re.match(r"^[\w\-]+$", family):  # pyright: ignore[reportCallIssue,reportArgumentType]
                 self.stubber.add_client_error(
                     method="register_task_definition", expected_params={**kwargs}
                 )
@@ -505,7 +505,7 @@ class StubbedEcs:
                 service_response={},
                 expected_params={**kwargs},
             )
-            self.storage.tags[arn] = tags
+            self.storage.tags[arn] = tags  # pyright: ignore[reportArgumentType]
         else:
             self.stubber.add_client_error(method="tag_resource", expected_params={**kwargs})
 

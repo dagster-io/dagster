@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Union, cast
+from typing import AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
 from dagster import _check as check
 from dagster._config import (
@@ -75,7 +76,7 @@ class JobSnapSerializer(RecordSerializer["JobSnap"]):
         self,
         context,
         unpacked_dict: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if unpacked_dict.get("graph_def_name") is None:
             unpacked_dict["graph_def_name"] = unpacked_dict["name"]
         if unpacked_dict.get("metadata") is None:

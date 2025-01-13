@@ -1,5 +1,6 @@
 import datetime
-from typing import Any, Literal, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Literal, Optional
 
 import great_expectations as ge
 from dagster import (
@@ -27,7 +28,7 @@ from pydantic import Field
 
 
 class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-    ge_root_dir: str = Field(
+    ge_root_dir: Optional[str] = Field(
         default=None,
         description="The root directory for your Great Expectations project.",
     )

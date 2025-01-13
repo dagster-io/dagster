@@ -183,6 +183,16 @@ The <PyObject object="dlt_assets" module="dagster_embedded_elt.dlt" decorator />
 
 In the same file containing your Dagster assets, you can create an instance of your <PyObject object="dlt_assets" module="dagster_embedded_elt.dlt" decorator /> by doing something like the following:
 
+<Note>
+  If you are using the{" "}
+  <a href="https://dlthub.com/docs/api_reference/sources/sql_database/__init__#sql_database">
+    sql_database
+  </a>{" "}
+  source, consider setting <code>defer_table_reflect=True</code> to reduce
+  database reads. By default, the Dagster daemon will refresh definitions
+  roughly every minute, which will query the database for resource definitions.
+</Note>
+
 ```python
 from dagster import AssetExecutionContext, Definitions
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
@@ -245,6 +255,7 @@ from dagster_embedded_elt.dlt import (
     DagsterDltTranslator,
     dlt_assets,
 )
+from dlt.extract.resource import DltResource
 
 from dagster import AssetExecutionContext, AssetKey
 
@@ -257,11 +268,11 @@ def example_dlt_source():
 
 
 class CustomDagsterDltTranslator(DagsterDltTranslator):
-    def get_asset_key(self, resource: DagsterDltResource) -> AssetKey:
+    def get_asset_key(self, resource: DltResource) -> AssetKey:
         """Overrides asset key to be the dlt resource name."""
         return AssetKey(f"{resource.name}")
 
-    def get_deps_asset_keys(self, resource: DagsterDltResource) -> Iterable[AssetKey]:
+    def get_deps_asset_keys(self, resource: DltResource) -> Iterable[AssetKey]:
         """Overrides upstream asset key to be a single source asset."""
         return [AssetKey("common_upstream_dlt_dependency")]
 

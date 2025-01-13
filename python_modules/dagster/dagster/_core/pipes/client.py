@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster_pipes import (
     DagsterPipesError,
@@ -214,10 +215,10 @@ class PipesMessageReader(ABC):
 def materialize_result_from_pipes_results(
     all_results: Sequence[PipesExecutionResult],
 ) -> MaterializeResult:
-    mat_results: List[MaterializeResult] = [
+    mat_results: list[MaterializeResult] = [
         mat_result for mat_result in all_results if isinstance(mat_result, MaterializeResult)
     ]
-    check_results: List[AssetCheckResult] = [
+    check_results: list[AssetCheckResult] = [
         check_result for check_result in all_results if isinstance(check_result, AssetCheckResult)
     ]
 
@@ -251,10 +252,10 @@ def materialize_result_from_pipes_results(
 def _check_result_from_pipes_results(
     all_results: Sequence[PipesExecutionResult],
 ) -> AssetCheckResult:
-    mat_results: List[MaterializeResult] = [
+    mat_results: list[MaterializeResult] = [
         mat_result for mat_result in all_results if isinstance(mat_result, MaterializeResult)
     ]
-    check_results: List[AssetCheckResult] = [
+    check_results: list[AssetCheckResult] = [
         check_result for check_result in all_results if isinstance(check_result, AssetCheckResult)
     ]
 

@@ -1653,9 +1653,9 @@ def test_asset_selection(graphql_context):
     assert result.data
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
 
-    assert (
-        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
-        == 'key:"fresh_diamond_bottom" or key:"asset_with_automation_condition" or key:"asset_with_custom_automation_condition"'
+    assert result.data["sensorOrError"]["assetSelection"]["assetSelectionString"] == (
+        '(key:"fresh_diamond_bottom" or key:"asset_with_automation_condition"'
+        ' or key:"asset_with_custom_automation_condition") and code_location:"test_location"'
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [
         {"path": ["asset_with_automation_condition"]},
@@ -1700,7 +1700,8 @@ def test_jobless_asset_selection(graphql_context):
     assert result.data
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
     assert (
-        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"] == 'key:"asset_one"'
+        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
+        == 'key:"asset_one" and code_location:"test_location"'
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [{"path": ["asset_one"]}]
     assert result.data["sensorOrError"]["assetSelection"]["assets"] == [
@@ -1730,7 +1731,7 @@ def test_invalid_sensor_asset_selection(graphql_context):
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
     assert (
         result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
-        == 'key:"does_not_exist"'
+        == 'key:"does_not_exist" and code_location:"test_location"'
     )
     assert (
         result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["__typename"]

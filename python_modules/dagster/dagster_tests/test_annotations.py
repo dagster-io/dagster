@@ -2,7 +2,7 @@ import re
 import sys
 import warnings
 from abc import abstractmethod
-from typing import NamedTuple, get_type_hints
+from typing import Annotated, NamedTuple, get_type_hints
 
 import pytest
 from dagster import resource
@@ -26,7 +26,6 @@ from dagster._annotations import (
 )
 from dagster._check import CheckError
 from dagster._utils.warnings import ExperimentalWarning
-from typing_extensions import Annotated
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
@@ -207,7 +206,7 @@ def test_deprecated_classmethod(decorators):
     with pytest.warns(
         DeprecationWarning, match=r"`[^`]+Foo.bar` is deprecated and will be removed in 2.0"
     ) as warning:
-        Foo.bar()
+        Foo.bar()  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
@@ -325,7 +324,7 @@ def test_deprecated_param_staticmethod(decorators):
     with pytest.warns(
         DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is deprecated"
     ) as warning:
-        Foo.bar(baz="ok")
+        Foo.bar(baz="ok")  # pyright: ignore[reportArgumentType]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
@@ -351,7 +350,7 @@ def test_deprecated_param_classmethod(decorators):
     with pytest.warns(
         DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is deprecated"
     ) as warning:
-        Foo.bar(baz="ok")
+        Foo.bar(baz="ok")  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
@@ -497,7 +496,7 @@ def test_experimental_classmethod(decorators):
     assert is_experimental(Foo.__dict__["bar"])  # __dict__ access to get descriptor
 
     with pytest.warns(ExperimentalWarning, match=r"`[^`]+Foo.bar` is experimental") as warning:
-        Foo.bar()
+        Foo.bar()  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
@@ -653,7 +652,7 @@ def test_experimental_param_staticmethod(decorators):
     with pytest.warns(
         ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is experimental"
     ) as warning:
-        Foo.bar(baz="ok")
+        Foo.bar(baz="ok")  # pyright: ignore[reportArgumentType]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
@@ -679,7 +678,7 @@ def test_experimental_param_classmethod(decorators):
     with pytest.warns(
         ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is experimental"
     ) as warning:
-        Foo.bar(baz="ok")
+        Foo.bar(baz="ok")  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
 
 

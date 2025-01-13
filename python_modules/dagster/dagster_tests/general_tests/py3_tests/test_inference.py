@@ -1,4 +1,4 @@
-# ruff: noqa: D416
+# ruff: noqa: D416, UP006, UP035
 
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -151,11 +151,11 @@ def test_wrapped_input_and_output_lambda():
     assert len(add_one.input_defs) == 1
     assert add_one.input_defs[0].name == "nums"
     assert add_one.input_defs[0].dagster_type.kind == DagsterTypeKind.LIST
-    assert add_one.input_defs[0].dagster_type.inner_type.unique_name == "Int"
+    assert add_one.input_defs[0].dagster_type.inner_type.unique_name == "Int"  # pyright: ignore[reportAttributeAccessIssue]
 
     assert len(add_one.output_defs) == 1
     assert add_one.output_defs[0].dagster_type.kind == DagsterTypeKind.NULLABLE
-    assert add_one.output_defs[0].dagster_type.inner_type.kind == DagsterTypeKind.LIST
+    assert add_one.output_defs[0].dagster_type.inner_type.kind == DagsterTypeKind.LIST  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def test_kitchen_sink():

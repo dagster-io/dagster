@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import duckdb
 import pandas as pd
@@ -13,7 +12,7 @@ def load_csv_to_duckdb(
     *,
     csv_path: Path,
     db_path: Path,
-    columns: List[str],
+    columns: list[str],
 ) -> None:
     if not csv_path.exists():
         raise ValueError(f"CSV file not found at {csv_path}")

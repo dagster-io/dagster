@@ -1,5 +1,5 @@
 import sys
-from typing import Generator, Iterable, Iterator
+from collections.abc import Generator, Iterable, Iterator
 
 import pytest
 from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, op
@@ -86,8 +86,8 @@ def test_precedence():
     assert precedence.input_defs[0].default_value == "hi"
     assert precedence.input_defs[0].metadata["explicit"]
     assert precedence.input_defs[0].input_manager_key == "rudy"
-    assert precedence.input_defs[0].get_asset_key(None) is not None
-    assert precedence.input_defs[0].get_asset_partitions(None) is not None
+    assert precedence.input_defs[0].get_asset_key(None) is not None  # pyright: ignore[reportArgumentType]
+    assert precedence.input_defs[0].get_asset_partitions(None) is not None  # pyright: ignore[reportArgumentType]
 
 
 def test_output_merge():

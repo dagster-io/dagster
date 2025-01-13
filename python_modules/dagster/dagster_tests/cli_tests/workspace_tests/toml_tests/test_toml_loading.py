@@ -58,13 +58,13 @@ def test_is_valid_modules_list_from_toml():
 
 def test_is_valid_modules_list_not_a_list():
     with raises(ValueError, match="Modules should be a list."):
-        is_valid_modules_list("not a list")
+        is_valid_modules_list("not a list")  # pyright: ignore[reportArgumentType]
 
 
 def test_is_valid_modules_list_item_not_dict():
     modules = ["not a dictionary"]
     with raises(ValueError, match="Item at index 0 is not a dictionary."):
-        is_valid_modules_list(modules)
+        is_valid_modules_list(modules)  # pyright: ignore[reportArgumentType]
 
 
 def test_is_valid_modules_list_missing_type():

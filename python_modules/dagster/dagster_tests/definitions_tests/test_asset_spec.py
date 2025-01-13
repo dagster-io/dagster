@@ -2,7 +2,14 @@ from typing import cast
 
 import dagster as dg
 import pytest
-from dagster import AssetSpec, AutoMaterializePolicy, AutomationCondition
+from dagster import (
+    AssetSpec,
+    AutoMaterializePolicy,
+    AutomationCondition,
+    IdentityPartitionMapping,
+    LastPartitionMapping,
+)
+from dagster._check import CheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets import AssetsDefinition
@@ -230,3 +237,164 @@ def test_map_asset_specs_multi_asset() -> None:
     assert all(
         spec.owners == ["ben@dagsterlabs.com"] for asset in mapped_assets for spec in asset.specs
     )
+
+
+def test_map_asset_specs_additional_deps() -> None:
+    @dg.multi_asset(specs=[AssetSpec(key="a")])
+    def my_asset():
+        pass
+
+    @dg.multi_asset(specs=[AssetSpec(key="c", deps=["a"])])
+    def my_other_asset():
+        pass
+
+    assets = [my_asset, my_other_asset]
+
+    mapped_assets = dg.map_asset_specs(
+        lambda spec: spec.merge_attributes(deps=["b"]) if spec.key == my_other_asset.key else spec,
+        assets,
+    )
+
+    c_asset = next(iter(asset for asset in mapped_assets if asset.key == my_other_asset.key))
+    assert set(next(iter(c_asset.specs)).deps) == {AssetDep("a"), AssetDep("b")}
+
+
+def test_map_asset_specs_multiple_deps_same_key() -> None:
+    @dg.multi_asset(specs=[AssetSpec(key="a", deps=[AssetDep("b")])])
+    def my_asset():
+        pass
+
+    # This works because the dep is coerced to an identical object.
+
+    dg.map_asset_specs(lambda spec: spec.merge_attributes(deps=[AssetKey("b")]), [my_asset])
+
+    # This doesn't work because we change the object.
+    with pytest.raises(DagsterInvariantViolationError):
+        dg.map_asset_specs(
+            lambda spec: spec.merge_attributes(
+                deps=[AssetDep(AssetKey("b"), partition_mapping=LastPartitionMapping())]
+            ),
+            [my_asset],
+        )
+
+
+def test_map_asset_specs_nonarg_dep_removal() -> None:
+    @dg.multi_asset(specs=[AssetSpec(key="a", deps=[AssetDep("b")])])
+    def my_asset():
+        pass
+
+    new_asset = next(
+        iter(dg.map_asset_specs(lambda spec: spec.replace_attributes(deps=[]), [my_asset]))
+    )
+    new_spec = next(iter(new_asset.specs))
+    assert new_spec.deps == []
+    # Ensure that dep removal propogated to the underlying op
+    assert new_asset.keys_by_input_name == {}
+    assert len(new_asset.op.input_defs) == 0
+
+
+def test_map_asset_specs_arg_dep_removal() -> None:
+    @dg.asset(key="a")
+    def my_asset(b):
+        pass
+
+    with pytest.raises(CheckError):
+        dg.map_asset_specs(lambda spec: spec.replace_attributes(deps=[]), [my_asset])
+
+
+def test_map_additional_deps_partition_mapping() -> None:
+    @dg.multi_asset(
+        specs=[AssetSpec(key="a", deps=[AssetDep("b", partition_mapping=LastPartitionMapping())])]
+    )
+    def my_asset():
+        pass
+
+    a_asset = next(
+        iter(
+            dg.map_asset_specs(
+                lambda spec: spec.merge_attributes(
+                    deps=[AssetDep("c", partition_mapping=IdentityPartitionMapping())]
+                ),
+                [my_asset],
+            )
+        )
+    )
+    a_spec = next(iter(a_asset.specs))
+    b_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("b")))
+    assert b_dep.partition_mapping == LastPartitionMapping()
+    c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("c")))
+    assert c_dep.partition_mapping == IdentityPartitionMapping()
+    assert a_asset.get_partition_mapping(AssetKey("c")) == IdentityPartitionMapping()
+    assert a_asset.get_partition_mapping(AssetKey("b")) == LastPartitionMapping()
+
+
+def test_add_specs_non_executable_asset() -> None:
+    assets_def = (
+        dg.Definitions(assets=[AssetSpec(key="foo")])
+        .get_repository_def()
+        .assets_defs_by_key[AssetKey("foo")]
+    )
+    foo_spec = next(
+        iter(
+            next(
+                iter(
+                    dg.map_asset_specs(lambda spec: spec.merge_attributes(deps=["a"]), [assets_def])
+                )
+            ).specs
+        )
+    )
+    assert foo_spec.deps == [AssetDep("a")]
+
+
+def test_graph_backed_asset_additional_deps() -> None:
+    @dg.op
+    def foo_op():
+        pass
+
+    @dg.graph_asset()
+    def foo():
+        return foo_op()
+
+    with pytest.raises(CheckError):
+        dg.map_asset_specs(lambda spec: spec.merge_attributes(deps=["baz"]), [foo])
+
+
+def test_static_partition_mapping_dep() -> None:
+    @dg.asset(partitions_def=dg.StaticPartitionsDefinition(["1", "2"]))
+    def b():
+        pass
+
+    @dg.multi_asset(
+        specs=[
+            AssetSpec(
+                key="a",
+                partitions_def=dg.StaticPartitionsDefinition(["1", "2"]),
+                deps=[
+                    AssetDep("b", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"}))
+                ],
+            )
+        ]
+    )
+    def my_asset():
+        pass
+
+    a_asset = next(
+        iter(
+            dg.map_asset_specs(
+                lambda spec: spec.merge_attributes(
+                    deps=[
+                        AssetDep(
+                            "c", partition_mapping=dg.StaticPartitionMapping({"1": "1", "2": "2"})
+                        )
+                    ]
+                ),
+                [my_asset],
+            )
+        )
+    )
+
+    a_spec = next(iter(a_asset.specs))
+    b_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("b")))
+    c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("c")))
+    assert b_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
+    assert c_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})

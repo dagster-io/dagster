@@ -1,5 +1,6 @@
 import enum
-from typing import Iterable, NamedTuple, Optional, cast
+from collections.abc import Iterable
+from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
@@ -27,6 +28,12 @@ class AssetCheckExecutionRecordStatus(enum.Enum):
     PLANNED = "PLANNED"
     SUCCEEDED = "SUCCEEDED"
     FAILED = "FAILED"  # explicit fail result
+
+
+COMPLETED_ASSET_CHECK_EXECUTION_RECORD_STATUSES = {
+    AssetCheckExecutionRecordStatus.SUCCEEDED,
+    AssetCheckExecutionRecordStatus.FAILED,
+}
 
 
 class AssetCheckExecutionResolvedStatus(enum.Enum):
@@ -87,7 +94,7 @@ class AssetCheckExecutionRecord(
                 f" {event_type} instead of ASSET_CHECK_EVALUATION",
             )
 
-        return super(AssetCheckExecutionRecord, cls).__new__(
+        return super().__new__(
             cls,
             key=key,
             id=id,

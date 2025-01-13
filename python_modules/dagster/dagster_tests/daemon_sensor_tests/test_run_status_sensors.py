@@ -1,8 +1,9 @@
 import tempfile
 import time
+from collections.abc import Iterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Mapping, NamedTuple, Optional, Tuple, cast
+from typing import Any, NamedTuple, Optional, cast
 
 import pytest
 from dagster import (
@@ -79,7 +80,7 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
-    repositories: Dict[str, RemoteRepository]
+    repositories: dict[str, RemoteRepository]
     code_location: CodeLocation
 
     def get_single_repository(self) -> RemoteRepository:
@@ -91,7 +92,7 @@ class CodeLocationInfoForSensorTest(NamedTuple):
 def instance_with_single_code_location_multiple_repos_with_sensors(
     overrides: Optional[Mapping[str, Any]] = None,
     workspace_load_target: Optional[WorkspaceLoadTarget] = None,
-) -> Iterator[Tuple[DagsterInstance, WorkspaceProcessContext, Dict[str, RemoteRepository]]]:
+) -> Iterator[tuple[DagsterInstance, WorkspaceProcessContext, dict[str, RemoteRepository]]]:
     with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
         assert len(many_tuples) == 1
         location_info = next(iter(many_tuples.values()))
@@ -105,12 +106,12 @@ def instance_with_single_code_location_multiple_repos_with_sensors(
 @contextmanager
 def instance_with_multiple_code_locations(
     overrides: Optional[Mapping[str, Any]] = None, workspace_load_target=None
-) -> Iterator[Dict[str, CodeLocationInfoForSensorTest]]:
+) -> Iterator[dict[str, CodeLocationInfoForSensorTest]]:
     with instance_for_test(overrides) as instance:
         with create_test_daemon_workspace_context(
             workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
-            location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
+            location_infos: dict[str, CodeLocationInfoForSensorTest] = {}
 
             for code_location_entry in (
                 workspace_context.create_request_context().get_code_location_entries().values()
@@ -607,7 +608,7 @@ def test_run_failure_sensor_overfetch(
                 )
 
 
-def sqlite_storage_config_fn(temp_dir: str) -> Dict[str, Any]:
+def sqlite_storage_config_fn(temp_dir: str) -> dict[str, Any]:
     # non-run sharded storage
     return {
         "run_storage": {
@@ -711,8 +712,8 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     freeze_datetime,
                     TickStatus.SUCCESS,
                 )
-                assert len(ticks[0].origin_run_ids) == 1
-                assert ticks[0].origin_run_ids[0] == run2.run_id
+                assert len(ticks[0].origin_run_ids) == 1  # pyright: ignore[reportArgumentType]
+                assert ticks[0].origin_run_ids[0] == run2.run_id  # pyright: ignore[reportOptionalSubscript]
 
             # fail run 1
             with freeze_time(freeze_datetime):
@@ -736,8 +737,8 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     freeze_datetime,
                     TickStatus.SUCCESS,
                 )
-                assert len(ticks[0].origin_run_ids) == 1
-                assert ticks[0].origin_run_ids[0] == run1.run_id
+                assert len(ticks[0].origin_run_ids) == 1  # pyright: ignore[reportArgumentType]
+                assert ticks[0].origin_run_ids[0] == run1.run_id  # pyright: ignore[reportOptionalSubscript]
 
 
 @pytest.mark.parametrize("storage_config_fn", [sql_event_log_storage_config_fn])

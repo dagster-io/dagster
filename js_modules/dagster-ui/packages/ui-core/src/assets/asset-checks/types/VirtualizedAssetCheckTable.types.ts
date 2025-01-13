@@ -8,6 +8,11 @@ export type AssetCheckTableFragment = {
   description: string | null;
   canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
   jobNames: Array<string>;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   executionForLatestMaterialization: {
     __typename: 'AssetCheckExecution';
     id: string;

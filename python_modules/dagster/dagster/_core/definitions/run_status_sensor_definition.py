@@ -1,22 +1,10 @@
 import functools
 import logging
 import os
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterator,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -31,11 +19,11 @@ from dagster._core.definitions.scoped_resources_builder import Resources, Scoped
 from dagster._core.definitions.sensor_definition import (
     DagsterRunReaction,
     DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
     RunRequest,
     SensorDefinition,
     SensorEvaluationContext,
     SensorResult,
+    SensorReturnTypesUnion,
     SensorType,
     SkipReason,
     get_context_param_name,
@@ -71,12 +59,12 @@ if TYPE_CHECKING:
     )
 
 RunStatusSensorEvaluationFunction: TypeAlias = Union[
-    Callable[..., RawSensorEvaluationFunctionReturn],
-    Callable[..., RawSensorEvaluationFunctionReturn],
+    Callable[..., SensorReturnTypesUnion],
+    Callable[..., SensorReturnTypesUnion],
 ]
 RunFailureSensorEvaluationFn: TypeAlias = Union[
-    Callable[..., RawSensorEvaluationFunctionReturn],
-    Callable[..., RawSensorEvaluationFunctionReturn],
+    Callable[..., SensorReturnTypesUnion],
+    Callable[..., SensorReturnTypesUnion],
 ]
 
 
@@ -111,7 +99,7 @@ class RunStatusSensorCursor(
     )
 ):
     def __new__(cls, record_id, update_timestamp=None, record_timestamp=None):
-        return super(RunStatusSensorCursor, cls).__new__(
+        return super().__new__(
             cls,
             record_id=check.int_param(record_id, "record_id"),
             update_timestamp=check.opt_str_param(update_timestamp, "update_timestamp"),
@@ -645,7 +633,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, object]] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
     ):
         from dagster._core.definitions.selector import (
             CodeLocationSelector,
@@ -675,7 +663,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             monitor_all_code_locations, "monitor_all_code_locations", default=False
         )
 
-        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(run_status_sensor_fn)}
+        resource_arg_names: set[str] = {arg.name for arg in get_resource_args(run_status_sensor_fn)}
 
         combined_required_resource_keys = (
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
@@ -762,6 +750,42 @@ class RunStatusSensorDefinition(SensorDefinition):
                         after_timestamp=cast(
                             datetime, parse_time_string(sensor_cursor.update_timestamp)
                         ).timestamp(),
+                    ),
+                    ascending=True,
+                    limit=fetch_limit,
+                ).records
+            elif (
+                context.instance.event_log_storage.supports_run_status_change_job_name_filter
+                and monitored_jobs
+                and all(
+                    [
+                        not isinstance(monitored, (RepositorySelector, CodeLocationSelector))
+                        for monitored in monitored_jobs
+                    ]
+                )
+            ):
+                # the event log storage supports run status change selectors... we should construct
+                # the appropriate job selectors so that we can filter the events by jobs in the
+                # storage layer instead of in memory.  This should improve throughput since we will
+                # avoid fetching events that we will filter out later on.
+                job_names = _job_names_for_monitored(
+                    cast(
+                        Sequence[
+                            Union[
+                                JobDefinition,
+                                GraphDefinition,
+                                UnresolvedAssetJobDefinition,
+                                "JobSelector",
+                            ]
+                        ],
+                        monitored_jobs,
+                    )
+                )
+                event_records = context.instance.fetch_run_status_changes(
+                    records_filter=RunStatusChangeRecordsFilter(
+                        event_type=cast(RunStatusChangeEventType, event_type),
+                        after_storage_id=sensor_cursor.record_id,
+                        job_names=job_names,
                     ),
                     ascending=True,
                     limit=fetch_limit,
@@ -967,7 +991,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     error=serializable_error,
                 )
 
-        super(RunStatusSensorDefinition, self).__init__(
+        super().__init__(
             name=name,
             evaluation_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,
@@ -980,7 +1004,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             metadata=metadata,
         )
 
-    def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:
+    def __call__(self, *args, **kwargs) -> SensorReturnTypesUnion:
         context_param_name = get_context_param_name(self._run_status_sensor_fn)
         context = get_or_create_sensor_context(
             self._run_status_sensor_fn,
@@ -1126,3 +1150,24 @@ def run_status_sensor(
         )
 
     return inner
+
+
+def _job_names_for_monitored(
+    monitored: Sequence[
+        Union[
+            JobDefinition,
+            GraphDefinition,
+            UnresolvedAssetJobDefinition,
+            "JobSelector",
+        ]
+    ],
+) -> Sequence[str]:
+    from dagster._core.definitions.selector import JobSelector
+
+    job_names = []
+    for m in monitored:
+        if isinstance(m, JobSelector):
+            job_names.append(m.job_name)
+        else:
+            job_names.append(m.name)
+    return job_names

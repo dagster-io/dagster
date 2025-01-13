@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 import graphene
+from dagster._core.definitions import ExpectationResult
 from dagster._core.events import AssetLineageInfo, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
@@ -10,7 +11,7 @@ from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster_graphql.implementation.events import construct_basic_params
 from dagster_graphql.implementation.fetch_runs import gen_run_by_id, get_step_stats
 from dagster_graphql.schema.asset_checks import GrapheneAssetCheckEvaluation
-from dagster_graphql.schema.asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
+from dagster_graphql.schema.entity_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from dagster_graphql.schema.errors import GraphenePythonError, GrapheneRunNotFoundError
 from dagster_graphql.schema.logs.log_level import GrapheneLogLevel
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
@@ -209,10 +210,18 @@ class GrapheneExpectationResult(graphene.ObjectType):
         interfaces = (GrapheneDisplayableEvent,)
         name = "ExpectationResult"
 
+    def __init__(self, expectation_result: ExpectationResult):
+        self._expectation_result = expectation_result
+        super().__init__(
+            success=expectation_result.success,
+            label=expectation_result.label,
+            description=expectation_result.description,
+        )
+
     def resolve_metadataEntries(self, _graphene_info: ResolveInfo):
         from dagster_graphql.implementation.events import _to_metadata_entries
 
-        return _to_metadata_entries(self.metadata)
+        return _to_metadata_entries(self._expectation_result.metadata)
 
 
 class GrapheneTypeCheck(graphene.ObjectType):
@@ -635,8 +644,12 @@ class GrapheneRunStepStats(graphene.ObjectType):
             status=stats.status.value,
             startTime=stats.start_time,
             endTime=stats.end_time,
-            materializations=stats.materialization_events,
-            expectationResults=stats.expectation_results,
+            materializations=[
+                GrapheneMaterializationEvent(event) for event in stats.materialization_events
+            ],
+            expectationResults=[
+                GrapheneExpectationResult(result) for result in stats.expectation_results
+            ],
             attempts=[
                 GrapheneRunMarker(startTime=attempt.start_time, endTime=attempt.end_time)
                 for attempt in stats.attempts_list

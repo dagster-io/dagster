@@ -9,14 +9,16 @@ import sys
 import textwrap
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from threading import Event
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Literal
 from uuid import uuid4
 
 import boto3
+import botocore
 import pytest
 from dagster import AssetsDefinition, asset, materialize, open_pipes_session
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
@@ -46,6 +48,7 @@ from dagster_aws.pipes import (
     PipesS3LogReader,
     PipesS3MessageReader,
 )
+from dagster_aws.pipes.clients.ecs import WaiterConfig
 from dagster_aws_tests.pipes_tests.fake_ecs import LocalECSMockClient
 from dagster_aws_tests.pipes_tests.fake_glue import LocalGlueMockClient
 from dagster_aws_tests.pipes_tests.fake_lambda import (
@@ -862,6 +865,10 @@ def ecs_asset(context: AssetExecutionContext, pipes_ecs_client: PipesECSClient):
                 ]
             },
         },
+        waiter_config=WaiterConfig(
+            Delay=int(os.getenv("WAIT_DELAY", "6")),
+            MaxAttempts=int(os.getenv("WAIT_MAX_ATTEMPTS", "1000000")),
+        ),
     ).get_results()
 
 
@@ -904,8 +911,8 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
                     resources={"pipes_ecs_client": pipes_ecs_client},
                 )
         finally:
-            assert len(pipes_ecs_client._client._task_runs) > 0  # noqa
-            task_arn = next(iter(pipes_ecs_client._client._task_runs.keys()))  # noqa
+            assert len(pipes_ecs_client._client._task_runs) > 0  # noqa  # pyright: ignore[reportAttributeAccessIssue]
+            task_arn = next(iter(pipes_ecs_client._client._task_runs.keys()))  # noqa  # pyright: ignore[reportAttributeAccessIssue]
             return_dict[0] = pipes_ecs_client._client.describe_tasks(  # noqa
                 cluster="test-cluster", tasks=[task_arn]
             )
@@ -935,13 +942,44 @@ def test_ecs_pipes_interruption_forwarding(pipes_ecs_client: PipesECSClient):
         assert return_dict[0]["tasks"][0]["stoppedReason"] == "Dagster process was interrupted"
 
 
+def test_ecs_pipes_waiter_config(pipes_ecs_client: PipesECSClient):
+    with instance_for_test() as instance:
+        """
+        Test Error is thrown when the wait delay is less than the processing time.
+        """
+        os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "1", "SLEEP_SECONDS": "2"})
+        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # pyright: ignore (reportAttributeAccessIssue)
+            materialize(
+                [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
+            )
+
+        """
+        Test Error is thrown when the wait attempts * wait delay is less than the processing time.
+        """
+        os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "2", "SLEEP_SECONDS": "3"})
+        with pytest.raises(botocore.exceptions.WaiterError, match=r".* Max attempts exceeded"):  # pyright: ignore (reportAttributeAccessIssue)
+            materialize(
+                [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
+            )
+
+        """
+        Test asset is materialized successfully when the wait attempts * wait delay is greater than the processing time.
+        """
+        os.environ.update({"WAIT_DELAY": "1", "WAIT_MAX_ATTEMPTS": "10", "SLEEP_SECONDS": "2"})
+        materialize(
+            [ecs_asset], instance=instance, resources={"pipes_ecs_client": pipes_ecs_client}
+        )
+        mat = instance.get_latest_materialization_event(ecs_asset.key)
+        assert mat and mat.asset_materialization
+
+
 EMR_SERVERLESS_APP_NAME = "Example"
 
 
 @pytest.fixture
 def emr_serverless_setup(
     moto_server, external_s3_glue_script, s3_client
-) -> Tuple["EMRServerlessClient", str]:
+) -> tuple["EMRServerlessClient", str]:
     client = boto3.client("emr-serverless", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
     resp = client.create_application(
         type="SPARK",
@@ -951,7 +989,7 @@ def emr_serverless_setup(
     return client, resp["applicationId"]
 
 
-def test_emr_serverless_manual(emr_serverless_setup: Tuple["EMRServerlessClient", str]):
+def test_emr_serverless_manual(emr_serverless_setup: tuple["EMRServerlessClient", str]):
     client, application_id = emr_serverless_setup
 
     @asset

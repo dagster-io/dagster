@@ -1,11 +1,7 @@
 ---
 title: "Code location history and rollbacks"
-displayed_sidebar: "dagsterPlus"
-sidebar_position: 4
-sidebar_label: "Code location history and rollbacks"
+sidebar_position: 100
 ---
-
-# Code location history and rollbacks
 
 Dagster+ automatically tracks metadata every time a code location is loaded. This can be used to understand when changes have been made, and what those changes were. In addition, this metadata can be used to quickly redeploy an older version.
 
@@ -54,4 +50,4 @@ If you notice an issue with newly deployed code, or your code fails to deploy su
 ## Next steps
 
 - Learn more about [Code Locations](/dagster-plus/deployment/code-locations)
-- Learn how to [Alert when a code location fails to load](/dagster-plus/deployment/alerts#alerting-when-a-code-location-fails-to-load)
+- Learn how to [Alert when a code location fails to load](/dagster-plus/features/alerts/creating-alerts#alerting-when-a-code-location-fails-to-load)

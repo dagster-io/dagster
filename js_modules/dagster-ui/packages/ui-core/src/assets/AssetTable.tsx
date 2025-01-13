@@ -80,7 +80,7 @@ export const AssetTable = ({
   }, [checkedDisplayKeys, displayKeys, groupedByDisplayKey]);
 
   const content = () => {
-    if (!assets.length) {
+    if (!assets.length && !isLoading) {
       if (assetSelection) {
         return (
           <Box padding={{top: 64}}>

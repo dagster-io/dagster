@@ -191,7 +191,7 @@ def test_grpc_multi_location_workspace(config_source):
     with ExitStack() as stack:
         instance = stack.enter_context(instance_for_test())
         code_locations = {
-            name: stack.enter_context(origin.create_single_location(instance))
+            name: stack.enter_context(origin.create_single_location(instance))  # pyright: ignore[reportAttributeAccessIssue]
             for name, origin in origins.items()
         }
 
@@ -209,17 +209,17 @@ def test_grpc_multi_location_workspace(config_source):
         assert loaded_from_module_location.repository_names == {"hello_world_repository"}
 
         named_loaded_from_file_location = code_locations.get("named_loaded_from_file")
-        assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}
+        assert named_loaded_from_file_location.repository_names == {"hello_world_repository_name"}  # pyright: ignore[reportOptionalMemberAccess]
         assert isinstance(named_loaded_from_file_location, GrpcServerCodeLocation)
 
         named_loaded_from_module_location = code_locations.get("named_loaded_from_module")
-        assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}
+        assert named_loaded_from_module_location.repository_names == {"hello_world_repository_name"}  # pyright: ignore[reportOptionalMemberAccess]
         assert isinstance(named_loaded_from_module_location, GrpcServerCodeLocation)
 
         named_loaded_from_module_attribute_location = code_locations.get(
             "named_loaded_from_module_attribute"
         )
-        assert named_loaded_from_module_attribute_location.repository_names == {
+        assert named_loaded_from_module_attribute_location.repository_names == {  # pyright: ignore[reportOptionalMemberAccess]
             "hello_world_repository_name"
         }
         assert isinstance(named_loaded_from_module_attribute_location, GrpcServerCodeLocation)
@@ -227,7 +227,7 @@ def test_grpc_multi_location_workspace(config_source):
         named_loaded_from_file_attribute_location = code_locations.get(
             "named_loaded_from_file_attribute"
         )
-        assert named_loaded_from_file_attribute_location.repository_names == {
+        assert named_loaded_from_file_attribute_location.repository_names == {  # pyright: ignore[reportOptionalMemberAccess]
             "hello_world_repository_name"
         }
         assert isinstance(named_loaded_from_file_attribute_location, GrpcServerCodeLocation)

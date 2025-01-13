@@ -34,8 +34,8 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
         self._output_config_schema = convert_user_facing_definition_config_schema(
             output_config_schema
         )
-        super(OutputManagerDefinition, self).__init__(
-            resource_fn=resource_fn,
+        super().__init__(
+            resource_fn=resource_fn,  # pyright: ignore[reportArgumentType]
             config_schema=config_schema,
             description=description,
             required_resource_keys=required_resource_keys,

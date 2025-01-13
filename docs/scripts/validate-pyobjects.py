@@ -15,7 +15,6 @@ USAGE
 import json
 import re
 from glob import glob
-from typing import Dict, List
 
 # Location of Sphinx index; requires building Sphinx docs beforehand
 SPHINX_INDEX_PATH = "sphinx/_build/json/searchindex.json"
@@ -24,12 +23,12 @@ SPHINX_INDEX_PATH = "sphinx/_build/json/searchindex.json"
 PYOBJECT_PATTERN = r'<PyObject (?:object="([\w\d]+)"\s*)?(?:module="([\w\d]+)"\s*)?/>'
 
 
-def extract_pyobject_object_and_module() -> Dict[str, List[dict]]:
+def extract_pyobject_object_and_module() -> dict[str, list[dict]]:
     """Finds all <PyObject> components in MDX files and return mapping of file to object/module."""
     mdx_files = glob("**/*.mdx", recursive=True)
     references = {}
     for f in mdx_files:
-        content = open(f, "r").read().replace("\n", " ")
+        content = open(f).read().replace("\n", " ")
         matches = [
             {"object": m.group(1), "module": m.group(2)}
             for m in re.finditer(PYOBJECT_PATTERN, content)
@@ -39,7 +38,7 @@ def extract_pyobject_object_and_module() -> Dict[str, List[dict]]:
     return references
 
 
-def get_sphinx_search_index() -> Dict:
+def get_sphinx_search_index() -> dict:
     """Loads Sphinx JSON search index."""
     return json.load(open(SPHINX_INDEX_PATH))
 

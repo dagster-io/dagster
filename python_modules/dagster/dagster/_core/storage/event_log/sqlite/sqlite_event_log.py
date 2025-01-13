@@ -7,9 +7,10 @@ import sqlite3
 import threading
 import time
 from collections import defaultdict
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ContextManager, Iterator, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union  # noqa: UP035
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -306,7 +307,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         if is_asset_query:
             # asset materializations, observations and materialization planned events
             # get mirrored into the index shard, so no custom run shard-aware cursor logic needed
-            return super(SqliteEventLogStorage, self).get_event_records(
+            return super().get_event_records(
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
 
@@ -412,7 +413,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
         event_records_filter = (
-            records_filter.to_event_records_filter(cursor, ascending)
+            records_filter.to_event_records_filter_without_job_names(cursor, ascending)
             if isinstance(records_filter, RunStatusChangeRecordsFilter)
             else EventRecordsFilter(
                 event_type, before_cursor=before_cursor, after_cursor=after_cursor
@@ -422,7 +423,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # bypass the run-sharded cursor logic... any caller of this run status change specific
         # method should be reading from the index shard, which as of 1.5.0 contains mirrored run
         # status change events
-        records = super(SqliteEventLogStorage, self).get_event_records(
+        records = super().get_event_records(
             event_records_filter=event_records_filter, limit=limit, ascending=ascending
         )
         if records:
@@ -433,9 +434,6 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             new_cursor = EventLogCursor.from_storage_id(-1).to_string()
         has_more = len(records) == limit
         return EventRecordsResult(records, cursor=new_cursor, has_more=has_more)
-
-    def supports_event_consumer_queries(self) -> bool:
-        return False
 
     def wipe(self) -> None:
         # should delete all the run-sharded db files and drop the contents of the index
@@ -467,7 +465,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         # default implementation will update the event_logs in the sharded dbs, and the asset_key
         # table in the asset shard, but will not remove the mirrored event_log events in the asset
         # shard
-        super(SqliteEventLogStorage, self).wipe_asset(asset_key)
+        super().wipe_asset(asset_key)
         self._delete_mirrored_events_for_asset_key(asset_key)
 
     def watch(self, run_id: str, cursor: Optional[str], callback: EventHandlerFn) -> None:
@@ -522,7 +520,7 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         self._cb = check.callable_param(callback, "callback")
         self._log_path = event_log_storage.path_for_shard(run_id)
         self._cursor = cursor
-        super(SqliteEventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)
+        super().__init__(patterns=[self._log_path], **kwargs)
 
     def _process_log(self) -> None:
         connection = self._event_log_storage.get_records_for_run(self._run_id, self._cursor)

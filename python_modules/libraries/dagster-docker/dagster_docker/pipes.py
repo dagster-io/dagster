@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 import docker
 import docker.errors

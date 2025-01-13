@@ -1,20 +1,14 @@
 import contextlib
 import inspect
 from abc import ABC, abstractmethod
-from typing import (
+from collections.abc import Generator, Iterator, Mapping
+from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Generator,
     Generic,
-    Iterator,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
-    Set,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -77,7 +71,7 @@ class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
 
     @property
     @abstractmethod
-    def configurable_resource_cls(self) -> Type: ...
+    def configurable_resource_cls(self) -> type: ...
 
     def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:
         for attr_name, partial_resource in self.nested_partial_resources.items():
@@ -119,7 +113,7 @@ class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
 class ConfigurableResourceFactoryResourceDefinition(NestedResourcesResourceDefinition):
     def __init__(
         self,
-        configurable_resource_cls: Type,
+        configurable_resource_cls: type,
         resource_fn: ResourceFunction,
         config_schema: Any,
         description: Optional[str],
@@ -138,7 +132,7 @@ class ConfigurableResourceFactoryResourceDefinition(NestedResourcesResourceDefin
         self._dagster_maintained = dagster_maintained
 
     @property
-    def configurable_resource_cls(self) -> Type:
+    def configurable_resource_cls(self) -> type:
         return self._configurable_resource_cls
 
     @property
@@ -159,10 +153,10 @@ class ConfigurableResourceFactoryResourceDefinition(NestedResourcesResourceDefin
 
 class ConfigurableResourceFactoryState(NamedTuple):
     nested_partial_resources: Mapping[str, Any]
-    resolved_config_dict: Dict[str, Any]
+    resolved_config_dict: dict[str, Any]
     config_schema: DefinitionConfigSchema
     schema: DagsterField
-    nested_resources: Dict[str, Any]
+    nested_resources: dict[str, Any]
     resource_context: Optional[InitResourceContext]
 
 
@@ -278,7 +272,7 @@ class ConfigurableResourceFactory(
         return False
 
     @classmethod
-    def _is_cm_resource_cls(cls: Type["ConfigurableResourceFactory"]) -> bool:
+    def _is_cm_resource_cls(cls: type["ConfigurableResourceFactory"]) -> bool:
         return (
             cls.yield_for_execution != ConfigurableResourceFactory.yield_for_execution
             or cls.teardown_after_execution != ConfigurableResourceFactory.teardown_after_execution
@@ -322,7 +316,7 @@ class ConfigurableResourceFactory(
         return self._nested_resources
 
     @classmethod
-    def configure_at_launch(cls: "Type[T_Self]", **kwargs) -> "PartialResource[T_Self]":
+    def configure_at_launch(cls: "type[T_Self]", **kwargs) -> "PartialResource[T_Self]":
         """Returns a partially initialized copy of the resource, with remaining config fields
         set at runtime.
         """
@@ -359,7 +353,7 @@ class ConfigurableResourceFactory(
         """
         from dagster._core.execution.build_resources import wrap_resource_for_execution
 
-        partial_resources_to_update: Dict[str, Any] = {}
+        partial_resources_to_update: dict[str, Any] = {}
         if self._nested_partial_resources:
             for attr_name, resource in self._nested_partial_resources.items():
                 key = _resolve_partial_resource_to_key(
@@ -469,7 +463,8 @@ class ConfigurableResourceFactory(
         return self.from_resource_context(
             build_init_resource_context(
                 config=post_process_config(
-                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                    self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
+                    self._convert_to_config_dictionary(),  # pyright: ignore[reportArgumentType]
                 ).value,
             ),
             nested_resources=self.nested_resources,
@@ -485,7 +480,8 @@ class ConfigurableResourceFactory(
         with self.from_resource_context_cm(
             build_init_resource_context(
                 config=post_process_config(
-                    self._config_schema.config_type, self._convert_to_config_dictionary()
+                    self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
+                    self._convert_to_config_dictionary(),  # pyright: ignore[reportArgumentType]
                 ).value
             ),
             nested_resources=self.nested_resources,
@@ -640,24 +636,24 @@ def _is_fully_configured(resource: "CoercibleToResource") -> bool:
 
 
 class PartialResourceState(NamedTuple):
-    nested_partial_resources: Dict[str, Any]
+    nested_partial_resources: dict[str, Any]
     config_schema: DagsterField
     resource_fn: Callable[[InitResourceContext], Any]
     description: Optional[str]
-    nested_resources: Dict[str, Any]
+    nested_resources: dict[str, Any]
 
 
 class PartialResource(
     MakeConfigCacheable,
     Generic[TResValue],
 ):
-    data: Dict[str, Any]
-    resource_cls: Type[Any]
+    data: dict[str, Any]
+    resource_cls: type[Any]
 
     def __init__(
         self,
-        resource_cls: Type[ConfigurableResourceFactory[TResValue]],
-        data: Dict[str, Any],
+        resource_cls: type[ConfigurableResourceFactory[TResValue]],
+        data: dict[str, Any],
     ):
         resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
 
@@ -786,11 +782,11 @@ class ConfigurableLegacyResourceAdapter(ConfigurableResource, ABC):
 
 
 class SeparatedResourceParams(NamedTuple):
-    resources: Dict[str, Any]
-    non_resources: Dict[str, Any]
+    resources: dict[str, Any]
+    non_resources: dict[str, Any]
 
 
-def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> bool:
+def _is_annotated_as_resource_type(annotation: type, metadata: list[str]) -> bool:
     """Determines if a field in a structured config class is annotated as a resource type or not."""
     from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
@@ -816,11 +812,11 @@ def _is_annotated_as_resource_type(annotation: Type, metadata: List[str]) -> boo
 class ResourceDataWithAnnotation(NamedTuple):
     key: str
     value: Any
-    annotation: Type
-    annotation_metadata: List[str]
+    annotation: type
+    annotation_metadata: list[str]
 
 
-def _get_resource_param_fields(cls: Type[BaseModel]) -> Set[str]:
+def _get_resource_param_fields(cls: type[BaseModel]) -> set[str]:
     """Returns the set of field names in a structured config class which are annotated as resource types."""
     # We need to grab metadata from the annotation in order to tell if
     # this key was annotated with a typing.Annotated annotation (which we use for resource/resource deps),
@@ -840,7 +836,7 @@ def _get_resource_param_fields(cls: Type[BaseModel]) -> Set[str]:
     }
 
 
-def separate_resource_params(cls: Type[BaseModel], data: Dict[str, Any]) -> SeparatedResourceParams:
+def separate_resource_params(cls: type[BaseModel], data: dict[str, Any]) -> SeparatedResourceParams:
     """Separates out the key/value inputs of fields in a structured config Resource class which
     are marked as resources (ie, using ResourceDependency) from those which are not.
     """
@@ -867,7 +863,7 @@ def _call_resource_fn_with_default(
     from dagster._config.validate import process_config
 
     if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
-        value = cast(Dict[str, Any], obj.config_schema.resolve_config({}).value)
+        value = cast(dict[str, Any], obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         # To explain why we need to process config here;

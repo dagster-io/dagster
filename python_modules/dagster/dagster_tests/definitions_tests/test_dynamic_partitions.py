@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Callable, Optional, Sequence
+from typing import Callable, Optional
 
 import pytest
 from dagster import (
@@ -75,7 +76,7 @@ def test_dynamic_partitioned_run():
         assert materialize([my_asset], instance=instance, partition_key="a").success
         materialization = instance.get_latest_materialization_event(AssetKey("my_asset"))
         assert materialization
-        assert materialization.dagster_event.partition == "a"
+        assert materialization.dagster_event.partition == "a"  # pyright: ignore[reportOptionalMemberAccess]
 
         with pytest.raises(CheckError):
             partitions_def.get_partition_keys()
@@ -97,7 +98,7 @@ def test_dynamic_partitioned_asset_dep():
         assert context.asset_keys_for_input() == ["apple"]
 
     with instance_for_test() as instance:
-        instance.add_dynamic_partitions(partitions_def.name, ["apple"])
+        instance.add_dynamic_partitions(partitions_def.name, ["apple"])  # pyright: ignore[reportArgumentType]
         materialize_to_memory([asset1], instance=instance, partition_key="apple")
 
 
@@ -127,7 +128,7 @@ def test_dynamic_partitioned_asset_io_manager_context():
         return asset1
 
     with instance_for_test() as instance:
-        instance.add_dynamic_partitions(partitions_def.name, ["apple"])
+        instance.add_dynamic_partitions(partitions_def.name, ["apple"])  # pyright: ignore[reportArgumentType]
 
         materialize(
             [asset1, asset2],
@@ -164,7 +165,7 @@ def test_dynamic_partitions_mapping():
         return 1
 
     with instance_for_test() as instance:
-        instance.add_dynamic_partitions(partitions_def.name, ["apple"])
+        instance.add_dynamic_partitions(partitions_def.name, ["apple"])  # pyright: ignore[reportArgumentType]
 
         materialize([dynamic1, dynamic2, unpartitioned], instance=instance, partition_key="apple")
 
@@ -188,7 +189,7 @@ def test_unpartitioned_downstream_of_dynamic_asset():
         return 1
 
     with instance_for_test() as instance:
-        instance.add_dynamic_partitions(partitions_def.name, partitions)
+        instance.add_dynamic_partitions(partitions_def.name, partitions)  # pyright: ignore[reportArgumentType]
 
         for partition in partitions[:-1]:
             materialize([dynamic1], instance=instance, partition_key=partition)
@@ -200,7 +201,7 @@ def test_has_partition_key():
     partitions_def = DynamicPartitionsDefinition(name="fruits")
 
     with instance_for_test() as instance:
-        instance.add_dynamic_partitions(partitions_def.name, ["apple", "banana"])
+        instance.add_dynamic_partitions(partitions_def.name, ["apple", "banana"])  # pyright: ignore[reportArgumentType]
         assert partitions_def.has_partition_key("apple", dynamic_partitions_store=instance)
         assert partitions_def.has_partition_key("banana", dynamic_partitions_store=instance)
         assert not partitions_def.has_partition_key("peach", dynamic_partitions_store=instance)

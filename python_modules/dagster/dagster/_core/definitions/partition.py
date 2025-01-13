@@ -3,20 +3,16 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import (
+from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Type,
     Union,
     cast,
 )
@@ -126,7 +122,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     """
 
     @property
-    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+    def partitions_subset_class(self) -> type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
     @abstractmethod
@@ -205,7 +201,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return self.partitions_subset_class.empty_subset(self)
+        return self.partitions_subset_class.create_empty_subset(self)
 
     def subset_with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
         return self.empty_subset().with_partition_keys(partition_keys)
@@ -294,7 +290,7 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
 
 
 def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> None:
-    counts: Dict[str, int] = defaultdict(lambda: 0)
+    counts: dict[str, int] = defaultdict(lambda: 0)
     for partition_key in partition_keys:
         counts[partition_key] += 1
     found_duplicates = [key for key in counts.keys() if counts[key] > 1]
@@ -469,7 +465,7 @@ class DynamicPartitionsDefinition(
                 "Cannot provide both partition_fn and name to DynamicPartitionsDefinition."
             )
 
-        return super(DynamicPartitionsDefinition, cls).__new__(
+        return super().__new__(
             cls,
             partition_fn=check.opt_callable_param(partition_fn, "partition_fn"),
             name=check.opt_str_param(name, "name"),
@@ -992,6 +988,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if self is other or other.is_empty:
             return self
         # Anything | AllPartitionsSubset = AllPartitionsSubset
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return other
         return self.with_partition_keys(other.get_partition_keys())
@@ -1002,6 +999,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if other.is_empty:
             return self
         # Anything - AllPartitionsSubset = Empty
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return self.empty_subset()
         return self.empty_subset().with_partition_keys(
@@ -1014,6 +1012,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if other.is_empty:
             return other
         # Anything & AllPartitionsSubset = Anything
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return self
         return self.empty_subset().with_partition_keys(
@@ -1045,9 +1044,11 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @abstractmethod
     def __contains__(self, value) -> bool: ...
 
+    def empty_subset(self) -> "PartitionsSubset[T_str]": ...
+
     @classmethod
     @abstractmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
     ) -> "PartitionsSubset[T_str]": ...
 
@@ -1105,7 +1106,7 @@ class DefaultPartitionsSubset(
         subset: Optional[AbstractSet[str]] = None,
     ):
         check.opt_set_param(subset, "subset")
-        return super(DefaultPartitionsSubset, cls).__new__(cls, subset or set())
+        return super().__new__(cls, subset or set())
 
     def get_partition_keys_not_in_subset(
         self,
@@ -1212,10 +1213,15 @@ class DefaultPartitionsSubset(
         return f"DefaultPartitionsSubset(subset={self.subset})"
 
     @classmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
     ) -> "DefaultPartitionsSubset":
         return cls()
+
+    def empty_subset(
+        self,
+    ) -> "DefaultPartitionsSubset":
+        return DefaultPartitionsSubset()
 
 
 class AllPartitionsSubset(
@@ -1295,11 +1301,16 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+        from dagster._core.definitions.time_window_partitions import (
+            TimeWindowPartitionsDefinition,
+            TimeWindowPartitionsSubset,
+        )
 
         if self == other:
             return self.partitions_def.empty_subset()
-        elif isinstance(other, TimeWindowPartitionsSubset):
+        elif isinstance(other, TimeWindowPartitionsSubset) and isinstance(
+            self.partitions_def, TimeWindowPartitionsDefinition
+        ):
             return TimeWindowPartitionsSubset.from_all_partitions_subset(self) - other
         return self.partitions_def.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
@@ -1340,10 +1351,14 @@ class AllPartitionsSubset(
     ) -> "PartitionsSubset[T_str]":
         raise NotImplementedError()
 
-    def empty_subset(
-        self, partitions_def: Optional[PartitionsDefinition] = None
-    ) -> PartitionsSubset:
+    def empty_subset(self) -> PartitionsSubset:
         return self.partitions_def.empty_subset()
+
+    @classmethod
+    def create_empty_subset(
+        cls, partitions_def: Optional[PartitionsDefinition] = None
+    ) -> PartitionsSubset:
+        return check.not_none(partitions_def).empty_subset()
 
     def to_serializable_subset(self) -> PartitionsSubset:
         return self.partitions_def.subset_with_all_partitions(

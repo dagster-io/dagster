@@ -76,7 +76,7 @@ import {
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
-import {Loading} from '../ui/Loading';
+import {Loading, LoadingSpinner} from '../ui/Loading';
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 
@@ -98,15 +98,26 @@ type Props = {
 export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
 
-export const AssetGraphExplorer = (props: Props) => {
-  const fullAssetGraphData = useFullAssetGraphData(props.fetchOptions);
-  const [hideNodesMatching, setHideNodesMatching] = useState(
-    () => (_node: AssetNodeForGraphQueryFragment) => true,
-  );
+const DEFAULT_SET_HIDE_NODES_MATCH = (_node: AssetNodeForGraphQueryFragment) => true;
 
-  const {fetchResult, assetGraphData, graphQueryItems, allAssetKeys} = useAssetGraphData(
+export const AssetGraphExplorer = (props: Props) => {
+  const {fullAssetGraphData, loading: fullAssetGraphDataLoading} = useFullAssetGraphData(
+    props.fetchOptions,
+  );
+  const [hideNodesMatching, setHideNodesMatching] = useState(() => DEFAULT_SET_HIDE_NODES_MATCH);
+
+  const {
+    loading: graphDataLoading,
+    fetchResult,
+    assetGraphData,
+    graphQueryItems,
+    allAssetKeys,
+  } = useAssetGraphData(
     props.explorerPath.opsQuery,
-    {...props.fetchOptions, hideNodesMatching},
+    useMemo(
+      () => ({...props.fetchOptions, hideNodesMatching}),
+      [props.fetchOptions, hideNodesMatching],
+    ),
   );
 
   const {explorerPath, onChangeExplorerPath} = props;
@@ -119,7 +130,7 @@ export const AssetGraphExplorer = (props: Props) => {
         () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
         [fullAssetGraphData],
       ),
-      loading: fetchResult.loading,
+      loading: graphDataLoading,
       viewType: props.viewType,
       assetSelection: explorerPath.opsQuery,
       setAssetSelection: React.useCallback(
@@ -143,6 +154,9 @@ export const AssetGraphExplorer = (props: Props) => {
   return (
     <Loading allowStaleData queryResult={fetchResult}>
       {() => {
+        if (graphDataLoading || filteredAssetsLoading || fullAssetGraphDataLoading) {
+          return <LoadingSpinner purpose="page" />;
+        }
         if (!assetGraphData || !allAssetKeys || !fullAssetGraphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
@@ -169,7 +183,7 @@ export const AssetGraphExplorer = (props: Props) => {
             filterButton={button}
             kindFilter={kindFilter}
             groupsFilter={groupsFilter}
-            filteredAssetsLoading={filteredAssetsLoading}
+            loading={filteredAssetsLoading || graphDataLoading}
             {...props}
           />
         );
@@ -183,7 +197,7 @@ type WithDataProps = Props & {
   assetGraphData: GraphData;
   fullAssetGraphData: GraphData;
   graphQueryItems: AssetGraphQueryItem[];
-  filteredAssetsLoading: boolean;
+  loading: boolean;
 
   filterButton: React.ReactNode;
   filterBar: React.ReactNode;
@@ -209,7 +223,7 @@ const AssetGraphExplorerWithData = ({
   viewType,
   kindFilter,
   groupsFilter,
-  filteredAssetsLoading,
+  loading: dataLoading,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
@@ -235,7 +249,11 @@ const AssetGraphExplorerWithData = ({
   });
   const focusGroupIdAfterLayoutRef = React.useRef('');
 
-  const {layout, loading, async} = useAssetLayout(
+  const {
+    layout,
+    loading: layoutLoading,
+    async,
+  } = useAssetLayout(
     assetGraphData,
     expandedGroups,
     useMemo(() => ({direction}), [direction]),
@@ -665,6 +683,8 @@ const AssetGraphExplorerWithData = ({
     </SVGViewport>
   ) : null;
 
+  const loading = layoutLoading || dataLoading;
+
   const explorer = (
     <SplitPanelContainer
       key="explorer"
@@ -673,7 +693,7 @@ const AssetGraphExplorerWithData = ({
       firstMinSize={400}
       secondMinSize={400}
       first={
-        filteredAssetsLoading ? (
+        loading ? (
           <LoadingContainer>
             <Box margin={{bottom: 24}}>Loading assets…</Box>
             <Spinner purpose="page" />
@@ -736,7 +756,7 @@ const AssetGraphExplorerWithData = ({
                   )}
                   <div>{filterButton}</div>
                   <GraphQueryInputFlexWrap>
-                    {featureEnabled(FeatureFlag.flagAssetSelectionSyntax) ? (
+                    {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
                       <AssetSelectionInput
                         assets={graphQueryItems}
                         value={explorerPath.opsQuery}
@@ -769,7 +789,7 @@ const AssetGraphExplorerWithData = ({
         )
       }
       second={
-        filteredAssetsLoading ? null : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
+        loading ? null : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
           <RightInfoPanel>
             <RightInfoPanelContent>
               <ErrorBoundary region="asset sidebar" resetErrorOnChange={[selectedGraphNodes[0].id]}>
@@ -814,7 +834,7 @@ const AssetGraphExplorerWithData = ({
               setShowSidebar(false);
             }}
             onFilterToGroup={onFilterToGroup}
-            loading={filteredAssetsLoading}
+            loading={loading}
           />
         }
         second={explorer}

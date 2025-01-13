@@ -3,7 +3,9 @@ import os
 import packaging.version
 import requests
 
-GIT_REPO_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
+GIT_REPO_ROOT = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."
+)
 
 
 def _get_latest_dagster_release() -> str:

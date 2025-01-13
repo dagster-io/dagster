@@ -1,7 +1,8 @@
 import logging
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Optional, Union
 
 from dagster._annotations import experimental
 from dagster._model import DagsterModel

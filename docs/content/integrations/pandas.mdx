@@ -43,10 +43,10 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
         PandasColumn.integer_column("bike_id", min_value=0),
         PandasColumn.categorical_column("color", categories={"red", "green", "blue"}),
         PandasColumn.datetime_column(
-            "start_time", min_datetime=datetime(year=2020, month=2, day=10)
+            "start_time", min_datetime=Timestamp(year=2020, month=2, day=10)
         ),
         PandasColumn.datetime_column(
-            "end_time", min_datetime=datetime(year=2020, month=2, day=10)
+            "end_time", min_datetime=Timestamp(year=2020, month=2, day=10)
         ),
         PandasColumn.string_column("station"),
         PandasColumn.exists("amount_paid"),
@@ -133,9 +133,7 @@ To tie this back to our example, let's say that we want to validate that the amo
 class DivisibleByFiveConstraint(ColumnConstraint):
     def __init__(self):
         message = "Value must be divisible by 5"
-        super(DivisibleByFiveConstraint, self).__init__(
-            error_description=message, markdown_description=message
-        )
+        super().__init__(error_description=message, markdown_description=message)
 
     def validate(self, dataframe, column_name):
         rows_with_unexpected_buckets = dataframe[

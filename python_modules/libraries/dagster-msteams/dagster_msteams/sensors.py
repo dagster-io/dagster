@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from dagster import DefaultSensorStatus
 from dagster._annotations import deprecated_param

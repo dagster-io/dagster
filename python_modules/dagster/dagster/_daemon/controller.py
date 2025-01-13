@@ -4,11 +4,11 @@ import sys
 import threading
 import time
 import uuid
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, ExitStack, contextmanager
 from types import TracebackType
-from typing import Callable, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Type
-import os
-from dagster._core.instance.config import Field
+from typing import Callable, Optional
+
 from typing_extensions import Self
 
 import dagster._check as check
@@ -133,16 +133,16 @@ def daemon_controller_from_instance(
 
 class DagsterDaemonController(AbstractContextManager):
     _daemon_uuid: str
-    _daemons: Dict[str, DagsterDaemon]
+    _daemons: dict[str, DagsterDaemon]
     _grpc_server_registry: Optional[GrpcServerRegistry]
-    _daemon_threads: Dict[str, threading.Thread]
+    _daemon_threads: dict[str, threading.Thread]
     _workspace_process_context: IWorkspaceProcessContext
     _instance: DagsterInstance
     _heartbeat_interval_seconds: float
     _heartbeat_tolerance_seconds: float
     _daemon_shutdown_event: threading.Event
     _logger: logging.Logger
-    _last_healthy_heartbeat_times: Dict[str, float]
+    _last_healthy_heartbeat_times: dict[str, float]
     _start_time: datetime.datetime
     _skip_workspace_reload: bool
     _daemon_reload_local_code_servers: bool
@@ -255,7 +255,6 @@ class DagsterDaemonController(AbstractContextManager):
                 for daemon_type in self._daemons.keys()
             }
 
-
     def check_daemon_threads(self) -> None:
         failed_daemons = [
             daemon_type
@@ -346,7 +345,7 @@ class DagsterDaemonController(AbstractContextManager):
 
     def __exit__(
         self,
-        exception_type: Type[BaseException],
+        exception_type: type[BaseException],
         exception_value: Exception,
         traceback: TracebackType,
     ) -> None:
@@ -388,7 +387,7 @@ def create_daemon_of_type(daemon_type: str, instance: DagsterInstance) -> Dagste
             interval_seconds=instance.run_coordinator.dequeue_interval_seconds  # type: ignore  # (??)
         )
     elif daemon_type == BackfillDaemon.daemon_type():
-        return BackfillDaemon(interval_seconds=DEFAULT_DAEMON_INTERVAL_SECONDS)
+        return BackfillDaemon(settings=instance.get_backfill_settings())
     elif daemon_type == MonitoringDaemon.daemon_type():
         return MonitoringDaemon(interval_seconds=instance.run_monitoring_poll_interval_seconds)
     elif daemon_type == EventLogConsumerDaemon.daemon_type():
@@ -455,7 +454,7 @@ def get_daemon_statuses(
         curr_time_seconds, "curr_time_seconds", default=get_current_timestamp()
     )
 
-    daemon_statuses_by_type: Dict[str, DaemonStatus] = {}
+    daemon_statuses_by_type: dict[str, DaemonStatus] = {}
     heartbeats = instance.get_daemon_heartbeats()
 
     for daemon_type in daemon_types:

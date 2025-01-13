@@ -6,9 +6,10 @@ import os
 import string
 import time
 from collections import OrderedDict
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
-from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Optional, TypeVar, Union
 
 from dagster import (
     Any,
@@ -131,7 +132,7 @@ LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
 @dagster_type_loader(String)
 def df_input_schema(_context, path: str) -> Sequence[OrderedDict]:
-    with open(path, "r", encoding="utf8") as fd:
+    with open(path, encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
@@ -502,7 +503,7 @@ def scalar_output_job():
     def return_bool():
         return True
 
-    @op(out=Out(Any))
+    @op(out=Out(Any))  # pyright: ignore[reportArgumentType]
     def return_any():
         return "dkjfkdjfe"
 
@@ -620,16 +621,16 @@ def foo_logger(init_context):
     return logger_
 
 
-@logger({"log_level": Field(str), "prefix": Field(str)})
+@logger({"log_level": Field(str), "prefix": Field(str)})  # pyright: ignore[reportArgumentType]
 def bar_logger(init_context):
     class BarLogger(logging.Logger):
         def __init__(self, name, prefix, *args, **kwargs):
             self.prefix = prefix
-            super(BarLogger, self).__init__(name, *args, **kwargs)
+            super().__init__(name, *args, **kwargs)
 
         def log(self, lvl, msg, *args, **kwargs):
             msg = self.prefix + msg
-            super(BarLogger, self).log(lvl, msg, *args, **kwargs)
+            super().log(lvl, msg, *args, **kwargs)
 
     logger_ = BarLogger("bar", init_context.logger_config["prefix"])
     logger_.setLevel(coerce_valid_log_level(init_context.logger_config["log_level"]))
@@ -764,7 +765,7 @@ def eventually_successful():
         return depth
 
     @op
-    def collect(fan_in: List[int]):
+    def collect(fan_in: list[int]):
         if fan_in != [1, 2, 3]:
             raise Exception(f"Fan in failed, expected [1, 2, 3] got {fan_in}")
 
@@ -1400,6 +1401,15 @@ def hanging_op(context, my_op):
         time.sleep(0.1)
 
 
+@job(
+    partitions_def=integers_partitions,
+    config=integers_config,
+    resource_defs={"hanging_asset_resource": hanging_asset_resource},
+)
+def hanging_partitioned_job():
+    hanging_op(my_op())
+
+
 @op
 def never_runs_op(hanging_op):
     pass
@@ -1742,7 +1752,7 @@ def ungrouped_asset_5():
 
 
 @multi_asset(outs={"int_asset": AssetOut(), "str_asset": AssetOut()})
-def typed_multi_asset() -> Tuple[int, str]:
+def typed_multi_asset() -> tuple[int, str]:
     return (1, "yay")
 
 
@@ -2036,6 +2046,7 @@ def define_standard_jobs() -> Sequence[JobDefinition]:
         hard_failer,
         hello_world_with_tags,
         infinite_loop_job,
+        hanging_partitioned_job,
         integers,
         job_with_default_config,
         job_with_enum_config,

@@ -1,8 +1,14 @@
+import re
+from unittest.mock import MagicMock
+
 import pytest
 import responses
-from dagster import Failure
+from dagster import AssetExecutionContext, AssetKey, Failure
+from dagster._config.field_utils import EnvVar
+from dagster._core.definitions.materialize import materialize
+from dagster._core.test_utils import environ
 from dagster._vendored.dateutil import parser
-from dagster_fivetran import FivetranOutput, FivetranWorkspace
+from dagster_fivetran import FivetranOutput, FivetranWorkspace, fivetran_assets
 from dagster_fivetran.translator import MIN_TIME_STR
 
 from dagster_fivetran_tests.experimental.conftest import (
@@ -13,6 +19,8 @@ from dagster_fivetran_tests.experimental.conftest import (
     TEST_API_SECRET,
     TEST_MAX_TIME_STR,
     TEST_PREVIOUS_MAX_TIME_STR,
+    TEST_SCHEMA_NAME,
+    TEST_TABLE_NAME,
     get_fivetran_connector_api_url,
     get_sample_connection_details,
 )
@@ -52,6 +60,17 @@ def test_basic_resource_request(
     assert connector_id in all_api_mocks.calls[1].request.url
     assert all_api_mocks.calls[1].request.method == "PATCH"
 
+    # columns config calls
+    all_api_mocks.calls.reset()
+    client.get_columns_config_for_table(
+        connector_id=connector_id, schema_name=TEST_SCHEMA_NAME, table_name=TEST_TABLE_NAME
+    )
+    assert len(all_api_mocks.calls) == 1
+    assert (
+        f"{connector_id}/schemas/{TEST_SCHEMA_NAME}/tables/{TEST_TABLE_NAME}/columns"
+        in all_api_mocks.calls[0].request.url
+    )
+
     # sync calls
     all_api_mocks.calls.reset()
     client.start_sync(connector_id=connector_id)
@@ -74,7 +93,8 @@ def test_basic_resource_request(
     # Succeeded poll
     all_api_mocks.calls.reset()
     client.poll_sync(
-        connector_id=connector_id, previous_sync_completed_at=parser.parse(MIN_TIME_STR)
+        connector_id=connector_id,
+        previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
     )
     assert len(all_api_mocks.calls) == 1
 
@@ -85,7 +105,7 @@ def test_basic_resource_request(
             connector_id=connector_id,
             # The poll process will time out because the value of
             # `FivetranConnector.last_sync_completed_at` does not change in the test
-            previous_sync_completed_at=parser.parse(TEST_MAX_TIME_STR),
+            previous_sync_completed_at=parser.parse(TEST_MAX_TIME_STR),  # pyright: ignore[reportArgumentType]
             poll_timeout=2,
             poll_interval=1,
         )
@@ -104,7 +124,7 @@ def test_basic_resource_request(
     with pytest.raises(Failure, match=f"Sync for connector '{connector_id}' failed!"):
         client.poll_sync(
             connector_id=connector_id,
-            previous_sync_completed_at=parser.parse(MIN_TIME_STR),
+            previous_sync_completed_at=parser.parse(MIN_TIME_STR),  # pyright: ignore[reportArgumentType]
             poll_timeout=2,
             poll_interval=1,
         )
@@ -137,7 +157,7 @@ def test_basic_resource_request(
         "resync_long_success",
     ],
 )
-def test_sync_and_poll_methods(method, n_polls, succeed_at_end, connector_id):
+def test_sync_and_poll_client_methods(method, n_polls, succeed_at_end, connector_id):
     resource = FivetranWorkspace(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
@@ -205,3 +225,75 @@ def test_sync_and_poll_methods(method, n_polls, succeed_at_end, connector_id):
     else:
         with pytest.raises(Failure, match="failed!"):
             _mock_interaction()
+
+
+def test_fivetran_sync_and_poll_materialization_method(
+    connector_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+    sync_and_poll: MagicMock,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        workspace = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        @fivetran_assets(connector_id=connector_id, workspace=workspace, name=connector_id)
+        def my_fivetran_assets(context: AssetExecutionContext, fivetran: FivetranWorkspace):
+            yield from fivetran.sync_and_poll(context=context)
+
+        # Mocked FivetranClient.sync_and_poll returns API response where all connector tables are expected
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets.keys == materialized_asset_keys
+
+        # Mocked FivetranClient.sync_and_poll returns API response
+        # where one expected table is missing and an unexpected table is present
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+        )
+
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 4
+        materialized_asset_keys = {
+            asset_materialization.asset_key for asset_materialization in asset_materializations
+        }
+        assert len(materialized_asset_keys) == 4
+        assert my_fivetran_assets.keys != materialized_asset_keys
+        assert (
+            AssetKey(["schema_name_in_destination_1", "another_table_name_in_destination_1"])
+            in materialized_asset_keys
+        )
+        assert (
+            AssetKey(["schema_name_in_destination_1", "table_name_in_destination_1"])
+            not in materialized_asset_keys
+        )
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - An unexpected asset was materialized", captured.err
+        )
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err
+        )

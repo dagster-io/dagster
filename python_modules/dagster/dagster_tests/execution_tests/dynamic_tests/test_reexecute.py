@@ -1,6 +1,5 @@
 import time
 from multiprocessing import Process
-from typing import List
 
 import pytest
 from dagster import (
@@ -168,7 +167,7 @@ def echo(x):
 
 
 @op
-def adder(ls: List[int]) -> int:
+def adder(ls: list[int]) -> int:
     return sum(ls)
 
 
@@ -258,10 +257,8 @@ def dynamic_with_transitive_optional_output_job():
     @op(out=Out(is_required=False))
     def add_one_with_optional_output(context, i: int):
         if (
-            context.run.parent_run_id
-            and i % 2 == 0  # re-execution run skipped odd numbers
-            or not context.run.parent_run_id
-            and i % 2 == 1  # root run skipped even numbers
+            (context.run.parent_run_id and i % 2 == 0)  # re-execution run skipped odd numbers
+            or (not context.run.parent_run_id and i % 2 == 1)  # root run skipped even numbers
         ):
             yield Output(i + 1)
 

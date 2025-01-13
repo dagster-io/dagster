@@ -224,7 +224,7 @@ def run_key_sensor(_context):
 @sensor(job_name="the_job")
 def only_once_cursor_sensor(context):
     if not context.cursor:
-        context.update_cursor(str("cursor"))
+        context.update_cursor("cursor")
         return RunRequest()
 
 
@@ -2600,7 +2600,7 @@ def test_status_in_code_sensor(executor, instance):
     ) as workspace_context:
         remote_repo = next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
-        ).code_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         with freeze_time(freeze_datetime):
             running_sensor = remote_repo.get_sensor("always_running_sensor")
@@ -2858,11 +2858,11 @@ def test_repository_namespacing(executor):
                 full_workspace_context.create_request_context().get_code_location_entries().values()
             )
         ).code_location
-        repo = full_location.get_repository("the_repo")
-        other_repo = full_location.get_repository("the_other_repo")
+        repo = full_location.get_repository("the_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        other_repo = full_location.get_repository("the_other_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         # stop always on sensor
-        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
+        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
         running_sensor = status_in_code_repo.get_sensor("always_running_sensor")
         instance.stop_sensor(
             running_sensor.get_remote_origin_id(), running_sensor.selector_id, running_sensor
@@ -2906,12 +2906,6 @@ def test_repository_namespacing(executor):
             assert instance.get_runs_count() == 2  # still 2
             ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 2
-
-
-def test_settings():
-    settings = {"use_threads": True, "num_workers": 4}
-    with instance_for_test(overrides={"sensors": settings}) as thread_inst:
-        assert thread_inst.get_settings("sensors") == settings
 
 
 @pytest.mark.parametrize("sensor_name", ["logging_sensor", "multi_asset_logging_sensor"])

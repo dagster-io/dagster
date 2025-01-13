@@ -1,6 +1,6 @@
 import re
-from collections import abc
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterator, Optional, Sequence, Union, cast
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster import (
     AssetMaterialization,
@@ -76,9 +76,9 @@ SLING_COLUMN_PREFIX = "_sling_"
 def fetch_row_count_metadata(
     materialization: SlingEventType,
     sling_cli: "SlingResource",
-    replication_config: Dict[str, Any],
+    replication_config: dict[str, Any],
     context: Union[OpExecutionContext, AssetExecutionContext],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     target_name = replication_config["target"]
     if not materialization.metadata:
         raise Exception("Missing required metadata to retrieve stream_name")
@@ -103,9 +103,9 @@ def fetch_row_count_metadata(
 def fetch_column_metadata(
     materialization: SlingEventType,
     sling_cli: "SlingResource",
-    replication_config: Dict[str, Any],
+    replication_config: dict[str, Any],
     context: Union[OpExecutionContext, AssetExecutionContext],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     target_name = replication_config["target"]
 
     if not materialization.metadata:
@@ -168,7 +168,7 @@ def fetch_column_metadata(
     return {}
 
 
-class SlingEventIterator(Generic[T], abc.Iterator):
+class SlingEventIterator(Iterator[T]):
     """A wrapper around an iterator of Sling events which contains additional methods for
     post-processing the events, such as fetching column metadata.
     """
@@ -177,7 +177,7 @@ class SlingEventIterator(Generic[T], abc.Iterator):
         self,
         events: Iterator[T],
         sling_cli: "SlingResource",
-        replication_config: Dict[str, Any],
+        replication_config: dict[str, Any],
         context: Union[OpExecutionContext, AssetExecutionContext],
     ) -> None:
         self._inner_iterator = events

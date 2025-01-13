@@ -2,44 +2,58 @@ import json
 import logging
 import os
 import time
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
 
 import requests
 from dagster import (
+    AssetExecutionContext,
+    AssetMaterialization,
     Definitions,
     Failure,
     InitResourceContext,
+    MaterializeResult,
     MetadataValue,
     __version__,
     _check as check,
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._record import record
+from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
 
+from dagster_fivetran.fivetran_event_iterator import FivetranEventIterator
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnector,
     FivetranConnectorScheduleType,
+    FivetranConnectorTableProps,
     FivetranDestination,
+    FivetranMetadataSet,
     FivetranSchemaConfig,
     FivetranWorkspaceData,
 )
 from dagster_fivetran.types import FivetranOutput
-from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
+from dagster_fivetran.utils import (
+    DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY,
+    get_fivetran_connector_table_name,
+    get_fivetran_connector_url,
+    get_fivetran_logs_url,
+    get_translator_from_fivetran_assets,
+    metadata_for_table,
+)
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_API_VERSION = "v1"
@@ -171,7 +185,7 @@ class FivetranResource(ConfigurableResource):
         if connector_details["status"]["setup_state"] != "connected":
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
-    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime, bool, str]:
+    def get_connector_sync_status(self, connector_id: str) -> tuple[datetime, bool, str]:
         """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 
@@ -191,8 +205,8 @@ class FivetranResource(ConfigurableResource):
         failed_at = parser.parse(connector_details["failed_at"] or min_time_str)
 
         return (
-            max(succeeded_at, failed_at),
-            succeeded_at > failed_at,
+            max(succeeded_at, failed_at),  # pyright: ignore[reportReturnType]
+            succeeded_at > failed_at,  # pyright: ignore[reportOperatorIssue]
             connector_details["status"]["sync_state"],
         )
 
@@ -618,6 +632,24 @@ class FivetranClient:
             method="PATCH", endpoint=connector_id, data=json.dumps({"schedule_type": schedule_type})
         )
 
+    def get_columns_config_for_table(
+        self, connector_id: str, schema_name: str, table_name: str
+    ) -> Mapping[str, Any]:
+        """Fetches the source table columns config for a given table from the Fivetran API.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID.
+            schema_name (str): The Fivetran Schema name.
+            table_name (str): The Fivetran Table name.
+
+        Returns:
+            Dict[str, Any]: Parsed json data from the response to this request.
+        """
+        return self._make_connector_request(
+            method="GET",
+            endpoint=f"{connector_id}/schemas/{schema_name}/tables/{table_name}/columns",
+        )
+
     def start_sync(self, connector_id: str) -> None:
         """Initiates a sync of a Fivetran connector.
 
@@ -828,8 +860,7 @@ class FivetranWorkspace(ConfigurableResource):
         ),
     )
 
-    _client: FivetranClient = PrivateAttr(default=None)
-
+    @cached_method
     def get_client(self) -> FivetranClient:
         return FivetranClient(
             api_key=self.api_key,
@@ -843,7 +874,6 @@ class FivetranWorkspace(ConfigurableResource):
         self,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
-        Future work will cache this data to avoid repeated calls to the Fivetran API.
 
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
@@ -890,18 +920,168 @@ class FivetranWorkspace(ConfigurableResource):
             schema_configs_by_connector_id=schema_configs_by_connector_id,
         )
 
+    @cached_method
+    def load_asset_specs(
+        self,
+        dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+    ) -> Sequence[AssetSpec]:
+        """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
+
+        Args:
+            dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
+                to convert Fivetran content into :py:class:`dagster.AssetSpec`.
+                Defaults to :py:class:`DagsterFivetranTranslator`.
+
+        Returns:
+            List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
+
+        Examples:
+            Loading the asset specs for a given Fivetran workspace:
+
+            .. code-block:: python
+                from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
+
+                import dagster as dg
+
+                fivetran_workspace = FivetranWorkspace(
+                    account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+                    api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+                    api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+                )
+
+                fivetran_specs = fivetran_workspace.load_asset_specs()
+                defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
+        """
+        return load_fivetran_asset_specs(
+            workspace=self,
+            dagster_fivetran_translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
+        )
+
+    def _generate_materialization(
+        self,
+        fivetran_output: FivetranOutput,
+        dagster_fivetran_translator: DagsterFivetranTranslator,
+    ):
+        connector = FivetranConnector.from_connector_details(
+            connector_details=fivetran_output.connector_details
+        )
+        schema_config = FivetranSchemaConfig.from_schema_config_details(
+            schema_config_details=fivetran_output.schema_config
+        )
+
+        for schema in schema_config.schemas.values():
+            if not schema.enabled:
+                continue
+
+            for table in schema.tables.values():
+                if not table.enabled:
+                    continue
+
+                asset_key = dagster_fivetran_translator.get_asset_spec(
+                    props=FivetranConnectorTableProps(
+                        table=get_fivetran_connector_table_name(
+                            schema_name=schema.name_in_destination,
+                            table_name=table.name_in_destination,
+                        ),
+                        connector_id=connector.id,
+                        name=connector.name,
+                        connector_url=connector.url,
+                        schema_config=schema_config,
+                        database=None,
+                        service=None,
+                    )
+                ).key
+
+                yield AssetMaterialization(
+                    asset_key=asset_key,
+                    description=(
+                        f"Table generated via Fivetran sync: {schema.name_in_destination}.{table.name_in_destination}"
+                    ),
+                    metadata={
+                        **metadata_for_table(
+                            as_dict(table),
+                            get_fivetran_connector_url(fivetran_output.connector_details),
+                            include_column_info=True,
+                            database=None,
+                            schema=schema.name_in_destination,
+                            table=table.name_in_destination,
+                        ),
+                        **FivetranMetadataSet(
+                            connector_id=connector.id,
+                            destination_schema_name=schema.name_in_destination,
+                            destination_table_name=table.name_in_destination,
+                        ),
+                    },
+                )
+
+    @public
+    @experimental
+    def sync_and_poll(
+        self, context: AssetExecutionContext
+    ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
+        """Executes a sync and poll process to materialize Fivetran assets.
+            This method can only be used in the context of an asset execution.
+
+        Args:
+            context (AssetExecutionContext): The execution context
+                from within `@fivetran_assets`.
+
+        Returns:
+            Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
+                or AssetMaterialization.
+        """
+        return FivetranEventIterator(
+            events=self._sync_and_poll(context=context), fivetran_workspace=self, context=context
+        )
+
+    def _sync_and_poll(self, context: AssetExecutionContext):
+        assets_def = context.assets_def
+        dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
+        connector_id = next(
+            check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
+            for spec in assets_def.specs
+        )
+
+        client = self.get_client()
+        fivetran_output = client.sync_and_poll(
+            connector_id=connector_id,
+        )
+
+        materialized_asset_keys = set()
+        for materialization in self._generate_materialization(
+            fivetran_output=fivetran_output, dagster_fivetran_translator=dagster_fivetran_translator
+        ):
+            # Scan through all tables actually created, if it was expected then emit a MaterializeResult.
+            # Otherwise, emit a runtime AssetMaterialization.
+            if materialization.asset_key in context.selected_asset_keys:
+                yield MaterializeResult(
+                    asset_key=materialization.asset_key, metadata=materialization.metadata
+                )
+                materialized_asset_keys.add(materialization.asset_key)
+            else:
+                context.log.warning(
+                    f"An unexpected asset was materialized: {materialization.asset_key}. "
+                    f"Yielding a materialization event."
+                )
+                yield materialization
+
+        unmaterialized_asset_keys = context.selected_asset_keys - materialized_asset_keys
+        if unmaterialized_asset_keys:
+            context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
+
 
 @experimental
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
-    dagster_fivetran_translator: Type[DagsterFivetranTranslator] = DagsterFivetranTranslator,
+    dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
     Args:
         workspace (FivetranWorkspace): The Fivetran workspace to fetch assets from.
-        dagster_fivetran_translator (Type[DagsterFivetranTranslator]): The translator to use
-            to convert Fivetran content into AssetSpecs. Defaults to DagsterFivetranTranslator.
+        dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
+            to convert Fivetran content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterFivetranTranslator`.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -910,6 +1090,7 @@ def load_fivetran_asset_specs(
         Loading the asset specs for a given Fivetran workspace:
 
         .. code-block:: python
+
             from dagster_fivetran import FivetranWorkspace, load_fivetran_asset_specs
 
             import dagster as dg
@@ -923,22 +1104,29 @@ def load_fivetran_asset_specs(
             fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
             defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
     """
+    dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return check.is_list(
-            FivetranWorkspaceDefsLoader(
-                workspace=initialized_workspace,
-                translator_cls=dagster_fivetran_translator,
+        return [
+            spec.merge_attributes(
+                metadata={DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY: dagster_fivetran_translator}
             )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
+            for spec in check.is_list(
+                FivetranWorkspaceDefsLoader(
+                    workspace=initialized_workspace,
+                    translator=dagster_fivetran_translator,
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+        ]
 
 
 @record
 class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: FivetranWorkspace
-    translator_cls: Type[DagsterFivetranTranslator]
+    translator: DagsterFivetranTranslator
 
     @property
     def defs_key(self) -> str:
@@ -948,10 +1136,8 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
         return self.workspace.fetch_fivetran_workspace_data()
 
     def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
-        translator = self.translator_cls()
-
         all_asset_specs = [
-            translator.get_asset_spec(props)
+            self.translator.get_asset_spec(props)
             for props in state.to_fivetran_connector_table_props_data()
         ]
 

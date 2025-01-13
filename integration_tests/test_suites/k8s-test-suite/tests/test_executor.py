@@ -1,7 +1,8 @@
 import datetime
 import os
 import time
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import dagster._check as check
 import pytest
@@ -51,8 +52,8 @@ def test_k8s_run_launcher_default(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -79,7 +80,7 @@ def test_k8s_run_launcher_volume_mounts(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -109,8 +110,8 @@ def test_k8s_executor_get_config_from_run_launcher(
 ):
     # Verify that if you do not specify executor config it is delegated by the run launcher
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {"config": {"job_image": dagster_docker_image}},
         },
@@ -134,8 +135,8 @@ def test_k8s_executor_combine_configs(
     # from run launcher config and executor config. Also includes each executor secret
     # twice to verify that duplicates within the combined config are acceptable
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -213,7 +214,7 @@ def _launch_executor_run(
     run_id = launch_run_over_graphql(webserver_url, run_config=run_config, job_name=job_name)
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -242,8 +243,8 @@ def test_k8s_run_launcher_image_from_origin(
     check.invariant(not celery_pod_names)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml")),  # pyright: ignore[reportArgumentType]
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -261,7 +262,7 @@ def test_k8s_run_launcher_image_from_origin(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -280,7 +281,7 @@ def test_k8s_run_launcher_terminate(
     job_name = "slow_job_k8s"
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -299,7 +300,7 @@ def test_k8s_run_launcher_terminate(
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
     timeout = datetime.timedelta(0, 30)
     start_time = datetime.datetime.now()
@@ -344,7 +345,7 @@ def test_k8s_executor_resource_requirements(
     check.invariant(not celery_pod_names)
 
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -365,7 +366,7 @@ def test_k8s_executor_resource_requirements(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -382,7 +383,7 @@ def test_execute_on_k8s_retry_job(
     webserver_url_for_k8s_run_launcher,
 ):
     run_config = merge_dicts(
-        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),
+        load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env_s3.yaml")),  # pyright: ignore[reportArgumentType]
         {
             "execution": {
                 "config": {
@@ -403,7 +404,7 @@ def test_execute_on_k8s_retry_job(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"

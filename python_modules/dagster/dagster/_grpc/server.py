@@ -9,25 +9,12 @@ import threading
 import time
 import uuid
 import warnings
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from functools import update_wrapper
 from threading import Event as ThreadingEventType
 from time import sleep
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    TypedDict,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -140,7 +127,7 @@ class GrpcApiMetrics(TypedDict):
 class DagsterCodeServerUtilizationMetrics(TypedDict):
     container_utilization: ContainerUtilizationMetrics
     request_utilization: RequestUtilizationMetrics
-    per_api_metrics: Dict[str, GrpcApiMetrics]
+    per_api_metrics: dict[str, GrpcApiMetrics]
 
 
 _UTILIZATION_METRICS = init_optional_typeddict(DagsterCodeServerUtilizationMetrics)
@@ -227,15 +214,18 @@ class LoadedRepositories:
     def __init__(
         self,
         loadable_target_origin: Optional[LoadableTargetOrigin],
+        container_image: Optional[str],
         entry_point: Sequence[str],
-        container_image: Optional[str] = None,
+        container_context: Optional[Mapping[str, Any]],
     ):
         self._loadable_target_origin = loadable_target_origin
 
-        self._code_pointers_by_repo_name: Dict[str, CodePointer] = {}
-        self._recon_repos_by_name: Dict[str, ReconstructableRepository] = {}
-        self._repo_defs_by_name: Dict[str, RepositoryDefinition] = {}
-        self._loadable_repository_symbols: List[LoadableRepositorySymbol] = []
+        self._code_pointers_by_repo_name: dict[str, CodePointer] = {}
+        self._recon_repos_by_name: dict[str, ReconstructableRepository] = {}
+        self._repo_defs_by_name: dict[str, RepositoryDefinition] = {}
+        self._loadable_repository_symbols: list[LoadableRepositorySymbol] = []
+
+        self._container_context = container_context
 
         if not loadable_target_origin:
             # empty workspace
@@ -264,8 +254,9 @@ class LoadedRepositories:
                 recon_repo = ReconstructableRepository(
                     pointer,
                     container_image,
-                    sys.executable,
+                    executable_path=loadable_target_origin.executable_path or sys.executable,
                     entry_point=entry_point,
+                    container_context=self._container_context,
                 )
                 with user_code_error_boundary(
                     DagsterUserCodeLoadError,
@@ -353,7 +344,7 @@ class DagsterApiServer(DagsterApiServicer):
         location_name: Optional[str] = None,
         enable_metrics: bool = False,
     ):
-        super(DagsterApiServer, self).__init__()
+        super().__init__()
 
         check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
@@ -378,9 +369,9 @@ class DagsterApiServer(DagsterApiServicer):
         # termination event once all current executions have finished, which will stop the server)
         self._shutdown_once_executions_finish_event = threading.Event()
 
-        self._executions: Dict[str, Tuple[multiprocessing.Process, InstanceRef]] = {}
-        self._termination_events: Dict[str, MPEvent] = {}
-        self._termination_times: Dict[str, float] = {}
+        self._executions: dict[str, tuple[multiprocessing.Process, InstanceRef]] = {}
+        self._termination_events: dict[str, MPEvent] = {}
+        self._termination_times: dict[str, float] = {}
         self._execution_lock = threading.Lock()
 
         self._serializable_load_error = None
@@ -420,8 +411,9 @@ class DagsterApiServer(DagsterApiServicer):
 
             self._loaded_repositories: Optional[LoadedRepositories] = LoadedRepositories(
                 loadable_target_origin,
-                self._entry_point,
-                self._container_image,
+                entry_point=self._entry_point,
+                container_image=self._container_image,
+                container_context=self._container_context,
             )
         except Exception:
             if not lazy_load_user_code:
@@ -523,6 +515,17 @@ class DagsterApiServer(DagsterApiServicer):
                 f'Could not find a repository called "{remote_repo_origin.repository_name}"'
             )
         return loaded_repos.definitions_by_name[remote_repo_origin.repository_name]
+
+    def _get_reconstructable_repo_for_origin(
+        self,
+        remote_repo_origin: RemoteRepositoryOrigin,
+    ) -> ReconstructableRepository:
+        loaded_repos = check.not_none(self._loaded_repositories)
+        if remote_repo_origin.repository_name not in loaded_repos.definitions_by_name:
+            raise Exception(
+                f'Could not find a repository called "{remote_repo_origin.repository_name}"'
+            )
+        return loaded_repos.reconstructables_by_name[remote_repo_origin.repository_name]
 
     def ReloadCode(
         self, _request: api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
@@ -758,6 +761,9 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_external_pipeline_subset_result = serialize_value(
                 get_external_pipeline_subset_result(
                     self._get_repo_for_origin(
+                        job_subset_snapshot_args.job_origin.repository_origin
+                    ),
+                    self._get_reconstructable_repo_for_origin(
                         job_subset_snapshot_args.job_origin.repository_origin
                     ),
                     job_subset_snapshot_args.job_origin.job_name,
@@ -1284,13 +1290,13 @@ class DagsterGrpcServer:
         try:
             self.server.wait_for_termination()
         finally:
-            self._api_servicer.cleanup()
+            self._api_servicer.cleanup()  # pyright: ignore[reportAttributeAccessIssue]
             server_termination_thread.join()
 
 
 class CouldNotStartServerProcess(Exception):
     def __init__(self, port=None, socket=None):
-        super(CouldNotStartServerProcess, self).__init__(
+        super().__init__(
             "Could not start server with "
             + (f"port {port}" if port is not None else f"socket {socket}")
         )
@@ -1350,10 +1356,10 @@ def open_server_process(
     startup_timeout: int = 20,
     cwd: Optional[str] = None,
     log_level: str = "INFO",
-    env: Optional[Dict[str, str]] = None,
+    env: Optional[dict[str, str]] = None,
     inject_env_vars_from_instance: bool = True,
     container_image: Optional[str] = None,
-    container_context: Optional[Dict[str, Any]] = None,
+    container_context: Optional[dict[str, Any]] = None,
     enable_metrics: bool = False,
     additional_timeout_msg: Optional[str] = None,
 ):
@@ -1428,7 +1434,7 @@ def open_server_process(
 def _open_server_process_on_dynamic_port(
     max_retries: int = 10,
     **kwargs,
-) -> Tuple[Optional["Popen[str]"], Optional[int]]:
+) -> tuple[Optional["Popen[str]"], Optional[int]]:
     server_process = None
     retries = 0
     port = None
@@ -1459,11 +1465,11 @@ class GrpcServerProcess:
         startup_timeout: int = 20,
         cwd: Optional[str] = None,
         log_level: str = "INFO",
-        env: Optional[Dict[str, str]] = None,
+        env: Optional[dict[str, str]] = None,
         wait_on_exit=False,
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
-        container_context: Optional[Dict[str, Any]] = None,
+        container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
     ):
         self.port = None

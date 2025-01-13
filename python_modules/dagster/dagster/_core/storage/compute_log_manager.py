@@ -1,10 +1,11 @@
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
-from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequence, Tuple
+from typing import IO, Callable, Final, NamedTuple, Optional
 
-from typing_extensions import Final, Self
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.captured_log_api import LogLineCursor
@@ -47,7 +48,7 @@ class CapturedLogContext(
                 " `external_stdout_url`/`external_stderr_url`"
             )
 
-        return super(CapturedLogContext, cls).__new__(
+        return super().__new__(
             cls,
             log_key,
             external_stdout_url=external_stdout_url,
@@ -78,7 +79,7 @@ class CapturedLogData(
         stderr: Optional[bytes] = None,
         cursor: Optional[str] = None,
     ):
-        return super(CapturedLogData, cls).__new__(cls, log_key, stdout, stderr, cursor)
+        return super().__new__(cls, log_key, stdout, stderr, cursor)
 
 
 class CapturedLogMetadata(
@@ -103,7 +104,7 @@ class CapturedLogMetadata(
         stdout_download_url: Optional[str] = None,
         stderr_download_url: Optional[str] = None,
     ):
-        return super(CapturedLogMetadata, cls).__new__(
+        return super().__new__(
             cls,
             stdout_location=stdout_location,
             stderr_location=stderr_location,
@@ -204,21 +205,23 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         """
 
     @abstractmethod
-    def get_log_data(
+    def get_log_data_for_type(
         self,
         log_key: Sequence[str],
-        cursor: Optional[str] = None,
-        max_bytes: Optional[int] = None,
-    ) -> CapturedLogData:
-        """Returns a chunk of the captured stdout logs for a given log key.
+        io_type: ComputeIOType,
+        offset: int,
+        max_bytes: Optional[int],
+    ) -> tuple[Optional[bytes], int]:
+        """Returns a chunk of the captured io_type logs for a given log key.
 
         Args:
             log_key (List[String]): The log key identifying the captured logs
-            cursor (Optional[str]): A cursor representing the position of the log chunk to fetch
+            io_type (ComputeIOType): stderr or stdout
+            offset (Optional[int]): An offset in to the log to start from
             max_bytes (Optional[int]): A limit on the size of the log chunk to fetch
 
         Returns:
-            CapturedLogData
+            Tuple[Optional[bytes], int]: The content read and offset in to the file
         """
 
     @abstractmethod
@@ -235,7 +238,9 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def delete_logs(
-        self, log_key: Optional[Sequence[str]] = None, prefix: Optional[Sequence[str]] = None
+        self,
+        log_key: Optional[Sequence[str]] = None,
+        prefix: Optional[Sequence[str]] = None,
     ) -> None:
         """Deletes the captured logs for a given log key.
 
@@ -269,6 +274,47 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def dispose(self):
         pass
 
+    def parse_cursor(self, cursor: Optional[str] = None) -> tuple[int, int]:
+        # Translates a string cursor into a set of byte offsets for stdout, stderr
+        if not cursor:
+            return 0, 0
+
+        parts = cursor.split(":")
+        if not parts or len(parts) != 2:
+            return 0, 0
+
+        stdout, stderr = [int(_) for _ in parts]
+        return stdout, stderr
+
+    def build_cursor(self, stdout_offset: int, stderr_offset: int) -> str:
+        return f"{stdout_offset}:{stderr_offset}"
+
+    def get_log_data(
+        self,
+        log_key: Sequence[str],
+        cursor: Optional[str] = None,
+        max_bytes: Optional[int] = None,
+    ) -> CapturedLogData:
+        stdout_offset, stderr_offset = self.parse_cursor(cursor)
+        stdout, new_stdout_offset = self.get_log_data_for_type(
+            log_key,
+            ComputeIOType.STDOUT,
+            stdout_offset,
+            max_bytes,
+        )
+        stderr, new_stderr_offset = self.get_log_data_for_type(
+            log_key,
+            ComputeIOType.STDERR,
+            stderr_offset,
+            max_bytes,
+        )
+        return CapturedLogData(
+            log_key=log_key,
+            stdout=stdout,
+            stderr=stderr,
+            cursor=self.build_cursor(new_stdout_offset, new_stderr_offset),
+        )
+
     def build_log_key_for_run(self, run_id: str, step_key: str) -> Sequence[str]:
         """Legacy adapter to translate run_id/key to captured log manager-based log_key."""
         return [run_id, "compute_logs", step_key]
@@ -282,21 +328,28 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError("Must implement get_log_keys_for_log_key_prefix")
 
     def _get_log_lines_for_log_key(
-        self, log_key: Sequence[str], io_type: ComputeIOType
+        self,
+        log_key: Sequence[str],
+        io_type: ComputeIOType,
     ) -> Sequence[str]:
         """For a log key, gets the corresponding file, and splits the file into lines."""
-        log_data = self.get_log_data(log_key)
-        if io_type == ComputeIOType.STDOUT:
-            raw_logs = log_data.stdout.decode("utf-8") if log_data.stdout else ""
-        else:
-            raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""
+        log_data, _ = self.get_log_data_for_type(
+            log_key,
+            io_type,
+            offset=0,
+            max_bytes=None,
+        )
+        raw_logs = log_data.decode("utf-8") if log_data else ""
         log_lines = raw_logs.split("\n")
 
         return log_lines
 
     def read_log_lines_for_log_key_prefix(
-        self, log_key_prefix: Sequence[str], cursor: Optional[str], io_type: ComputeIOType
-    ) -> Tuple[Sequence[str], Optional[LogLineCursor]]:
+        self,
+        log_key_prefix: Sequence[str],
+        cursor: Optional[str],
+        io_type: ComputeIOType,
+    ) -> tuple[Sequence[str], Optional[LogLineCursor]]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
         as if they are a single continuous file. Reads env var DAGSTER_CAPTURED_LOG_CHUNK_SIZE lines at a time.
         Returns the lines read and the next cursor.
@@ -360,6 +413,8 @@ class ComputeLogManager(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
                     )
 
         new_cursor = LogLineCursor(
-            log_key=log_keys[log_key_to_fetch_idx], line=line_cursor, has_more_now=has_more
+            log_key=log_keys[log_key_to_fetch_idx],
+            line=line_cursor,
+            has_more_now=has_more,
         )
         return records, new_cursor

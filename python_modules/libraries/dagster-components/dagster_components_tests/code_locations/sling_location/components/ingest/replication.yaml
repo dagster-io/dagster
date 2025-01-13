@@ -1,0 +1,14 @@
+source: LOCAL
+target: DUCKDB
+
+defaults:
+  mode: full-refresh
+  object: "{stream_table}"
+
+streams:
+  <PLACEHOLDER>:
+    object: "main.tbl"
+    meta:
+      dagster:
+        asset_key: input_duckdb
+        deps: [input_csv]

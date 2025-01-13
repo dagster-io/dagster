@@ -270,12 +270,12 @@ In this example,`first_asset` and `second_asset` will be stored using the defaul
 
 ```python file=/concepts/assets/asset_input_managers.py startafter=start_different_input_managers endbefore=end_different_input_managers
 @asset
-def first_asset() -> List[int]:
+def first_asset() -> list[int]:
     return [1, 2, 3]
 
 
 @asset
-def second_asset() -> List[int]:
+def second_asset() -> list[int]:
     return [4, 5, 6]
 
 
@@ -396,7 +396,7 @@ from dagster import ConfigurableIOManager, InputContext, OutputContext
 
 class MyIOManager(ConfigurableIOManager):
     # specifies an optional string list input, via config system
-    path_prefix: List[str] = []
+    path_prefix: list[str] = []
 
     def _get_path(self, context) -> str:
         return "/".join(self.path_prefix + context.asset_key.path)
@@ -538,7 +538,7 @@ def upstream_asset(context: AssetExecutionContext) -> pd.DataFrame:
 @asset(
     partitions_def=daily_partitions,
 )
-def downstream_asset(upstream_asset: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+def downstream_asset(upstream_asset: dict[str, pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(list(upstream_asset.values()))
 
 

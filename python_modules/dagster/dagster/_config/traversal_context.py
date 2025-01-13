@@ -110,7 +110,7 @@ class ValidationContext(ContextData):
 
 
 class TraversalContext(ContextData):
-    __slots__ = ["_config_type", "_traversal_type", "_all_config_types"]
+    __slots__ = ["_all_config_types", "_config_type", "_traversal_type"]
 
     def __init__(
         self,
@@ -120,7 +120,7 @@ class TraversalContext(ContextData):
         stack: EvaluationStack,
         traversal_type: TraversalType,
     ):
-        super(TraversalContext, self).__init__(
+        super().__init__(
             config_schema_snapshot=config_schema_snapshot,
             config_type_snap=config_type_snap,
             stack=stack,

@@ -1,5 +1,6 @@
 import inspect
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Sequence, Set
+from collections.abc import Mapping, Sequence
+from typing import Any, Callable, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import public
@@ -9,8 +10,8 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
     SensorDefinition,
+    SensorReturnTypesUnion,
     SensorType,
     validate_and_get_resource_dict,
 )
@@ -80,14 +81,14 @@ class AssetSensorDefinition(SensorDefinition):
         job_name: Optional[str],
         asset_materialization_fn: Callable[
             ...,
-            RawSensorEvaluationFunctionReturn,
+            SensorReturnTypesUnion,
         ],
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job: Optional[ExecutableDefinition] = None,
         jobs: Optional[Sequence[ExecutableDefinition]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, object]] = None,
     ):
@@ -95,7 +96,7 @@ class AssetSensorDefinition(SensorDefinition):
 
         from dagster._core.event_api import AssetRecordsFilter
 
-        resource_arg_names: Set[str] = {
+        resource_arg_names: set[str] = {
             arg.name for arg in get_resource_args(asset_materialization_fn)
         }
 
@@ -149,15 +150,14 @@ class AssetSensorDefinition(SensorDefinition):
 
                 result = materialization_fn(**args)
                 if inspect.isgenerator(result) or isinstance(result, list):
-                    for item in result:
-                        yield item
+                    yield from result
                 elif isinstance(result, (SkipReason, RunRequest)):
                     yield result
                 context.update_cursor(str(event_record.storage_id))
 
             return _fn
 
-        super(AssetSensorDefinition, self).__init__(
+        super().__init__(
             name=check_valid_name(name),
             job_name=job_name,
             evaluation_fn=_wrap_asset_fn(

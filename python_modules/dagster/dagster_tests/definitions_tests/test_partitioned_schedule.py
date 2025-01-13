@@ -80,9 +80,9 @@ def test_daily_schedule():
     my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30
     )
-    assert my_schedule.cron_schedule == "30 9 * * *"
+    assert my_schedule.cron_schedule == "30 9 * * *"  # pyright: ignore[reportAttributeAccessIssue]
 
-    run_request = my_schedule.evaluate_tick(
+    run_request = my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-05-08", DATE_FORMAT)
         )
@@ -117,14 +117,14 @@ def test_daily_schedule_with_offsets():
     }
 
     my_schedule_default = schedule_for_partitioned_config(my_partitioned_config)
-    assert my_schedule_default.cron_schedule == "15 2 * * *"
+    assert my_schedule_default.cron_schedule == "15 2 * * *"  # pyright: ignore[reportAttributeAccessIssue]
 
     my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30
     )
-    assert my_schedule.cron_schedule == "30 9 * * *"
+    assert my_schedule.cron_schedule == "30 9 * * *"  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert my_schedule.evaluate_tick(
+    assert my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         build_schedule_context(scheduled_execution_time=datetime(2021, 5, 8, 9, 30))
     ).run_requests[0].run_config == {
         "start": "2021-05-07T02:15:00+00:00",
@@ -155,12 +155,12 @@ def test_hourly_schedule():
     }
 
     my_schedule_default = schedule_for_partitioned_config(my_partitioned_config)
-    assert my_schedule_default.cron_schedule == "0 * * * *"
+    assert my_schedule_default.cron_schedule == "0 * * * *"  # pyright: ignore[reportAttributeAccessIssue]
 
     my_schedule = schedule_for_partitioned_config(my_partitioned_config, minute_of_hour=30)
-    assert my_schedule.cron_schedule == "30 * * * *"
+    assert my_schedule.cron_schedule == "30 * * * *"  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert my_schedule.evaluate_tick(
+    assert my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-05-08", DATE_FORMAT)
         )
@@ -192,9 +192,9 @@ def test_hourly_schedule_with_offsets():
     }
 
     my_schedule = schedule_for_partitioned_config(my_partitioned_config, minute_of_hour=30)
-    assert my_schedule.cron_schedule == "30 * * * *"
+    assert my_schedule.cron_schedule == "30 * * * *"  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert my_schedule.evaluate_tick(
+    assert my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-05-08", DATE_FORMAT)
         )
@@ -228,9 +228,9 @@ def test_weekly_schedule():
     my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30, day_of_week=2
     )
-    assert my_schedule.cron_schedule == "30 9 * * 2"
+    assert my_schedule.cron_schedule == "30 9 * * 2"  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert my_schedule.evaluate_tick(
+    assert my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-05-21", DATE_FORMAT)
         )
@@ -266,9 +266,9 @@ def test_weekly_schedule_with_offsets():
     my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30, day_of_week=2
     )
-    assert my_schedule.cron_schedule == "30 9 * * 2"
+    assert my_schedule.cron_schedule == "30 9 * * 2"  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert my_schedule.evaluate_tick(
+    assert my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-05-21", DATE_FORMAT)
         )
@@ -302,9 +302,9 @@ def test_monthly_schedule():
     my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30, day_of_month=2
     )
-    assert my_schedule.cron_schedule == "30 9 2 * *"
+    assert my_schedule.cron_schedule == "30 9 2 * *"  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert my_schedule.evaluate_tick(
+    assert my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-07-21", DATE_FORMAT)
         )
@@ -352,9 +352,9 @@ def test_monthly_schedule_with_offsets():
     my_schedule = schedule_for_partitioned_config(
         my_partitioned_config, hour_of_day=9, minute_of_hour=30, day_of_month=2
     )
-    assert my_schedule.cron_schedule == "30 9 2 * *"
+    assert my_schedule.cron_schedule == "30 9 2 * *"  # pyright: ignore[reportAttributeAccessIssue]
 
-    assert my_schedule.evaluate_tick(
+    assert my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-06-21", DATE_FORMAT)
         )
@@ -379,13 +379,13 @@ def test_empty_partitions():
         my_partitioned_config, hour_of_day=9, minute_of_hour=30
     )
 
-    result = my_schedule.evaluate_tick(
+    result = my_schedule.evaluate_tick(  # pyright: ignore[reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2021-05-05", DATE_FORMAT)
         )
     )
 
-    assert len(result.run_requests) == 0
+    assert len(result.run_requests) == 0  # pyright: ignore[reportArgumentType]
     assert result.skip_message is not None
 
 
@@ -398,7 +398,7 @@ def test_future_tick():
 
         my_schedule = schedule_for_partitioned_config(my_partitioned_config)
 
-        run_request = my_schedule.evaluate_tick(
+        run_request = my_schedule.evaluate_tick(  # pyright: ignore[reportOptionalSubscript,reportAttributeAccessIssue]
             build_schedule_context(
                 scheduled_execution_time=datetime.strptime("2022-03-05", DATE_FORMAT)
             )
@@ -431,14 +431,14 @@ def test_multipartitioned_job_schedule():
     def my_repo():
         return [my_asset, my_schedule, my_job]
 
-    run_requests = my_schedule.evaluate_tick(
+    run_requests = my_schedule.evaluate_tick(  # pyright: ignore[reportAttributeAccessIssue]
         build_schedule_context(
             scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT),
             repository_def=my_repo,
         )
     ).run_requests
-    assert len(run_requests) == 4
-    assert set([req.partition_key for req in run_requests]) == set(
+    assert len(run_requests) == 4  # pyright: ignore[reportArgumentType]
+    assert set([req.partition_key for req in run_requests]) == set(  # pyright: ignore[reportOptionalIterable]
         [
             "2020-01-01|a",
             "2020-01-01|b",
@@ -490,8 +490,8 @@ def test_unresolved_partitioned_schedule():
         )
         .run_requests
     )
-    assert len(run_requests) == 1
-    assert run_requests[0].partition_key == "2020-01-01"
+    assert len(run_requests) == 1  # pyright: ignore[reportArgumentType]
+    assert run_requests[0].partition_key == "2020-01-01"  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_unresolved_multi_partitioned_schedule():
@@ -521,8 +521,8 @@ def test_unresolved_multi_partitioned_schedule():
         )
         .run_requests
     )
-    assert len(run_requests) == 4
-    assert set([req.partition_key for req in run_requests]) == set(
+    assert len(run_requests) == 4  # pyright: ignore[reportArgumentType]
+    assert set([req.partition_key for req in run_requests]) == set(  # pyright: ignore[reportOptionalIterable]
         [
             "2020-01-01|a",
             "2020-01-01|b",
@@ -554,9 +554,9 @@ def test_dynamic_multipartitioned_job_schedule():
         return [my_asset, my_schedule, my_job]
 
     with instance_for_test() as instance:
-        instance.add_dynamic_partitions(dynamic_partitions.name, ["a", "b", "c", "d"])
+        instance.add_dynamic_partitions(dynamic_partitions.name, ["a", "b", "c", "d"])  # pyright: ignore[reportArgumentType]
 
-        run_requests = my_schedule.evaluate_tick(
+        run_requests = my_schedule.evaluate_tick(  # pyright: ignore[reportAttributeAccessIssue]
             build_schedule_context(
                 scheduled_execution_time=datetime.strptime("2020-01-02", DATE_FORMAT),
                 repository_def=my_repo,
@@ -564,8 +564,8 @@ def test_dynamic_multipartitioned_job_schedule():
             )
         ).run_requests
 
-        assert len(run_requests) == 4
-        assert set([req.partition_key for req in run_requests]) == {
+        assert len(run_requests) == 4  # pyright: ignore[reportArgumentType]
+        assert set([req.partition_key for req in run_requests]) == {  # pyright: ignore[reportOptionalIterable]
             "2020-01-01|a",
             "2020-01-01|b",
             "2020-01-01|c",

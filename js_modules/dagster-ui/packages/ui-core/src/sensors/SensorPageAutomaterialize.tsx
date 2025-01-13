@@ -218,6 +218,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
                 <RunsFeedTableWithFilters
                   filter={runTableFilter}
                   actionBarComponents={tableViewSwitch}
+                  includeRunsFromBackfills={true}
                 />
               )}
             </Box>

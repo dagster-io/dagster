@@ -1,30 +1,20 @@
 import hashlib
 import inspect
 import re
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    Union,
-    cast,
-)
+from typing import Any, Callable, NamedTuple, Optional, Union, cast
 
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
     OpExecutionContext,
     _check as check,
     multi_asset,
 )
+from dagster._annotations import experimental
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -41,10 +31,12 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
 
-from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
+from dagster_fivetran.asset_decorator import fivetran_assets
+from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource, FivetranWorkspace
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnectorTableProps,
+    FivetranMetadataSet,
     FivetranSchemaConfig,
 )
 from dagster_fivetran.utils import (
@@ -111,7 +103,7 @@ def _build_fivetran_assets(
     op_tags: Optional[Mapping[str, Any]],
     asset_tags: Optional[Mapping[str, Any]],
     max_threadpool_workers: int = DEFAULT_MAX_THREADPOOL_WORKERS,
-    translator: Optional[Type[DagsterFivetranTranslator]] = None,
+    translator: Optional[type[DagsterFivetranTranslator]] = None,
     connection_metadata: Optional["FivetranConnectionMetadata"] = None,
 ) -> Sequence[AssetsDefinition]:
     asset_key_prefix = check.opt_sequence_param(asset_key_prefix, "asset_key_prefix", of_type=str)
@@ -367,14 +359,14 @@ class FivetranConnectionMetadata(
         table_to_asset_key_fn: Callable[[str], AssetKey],
         io_manager_key: Optional[str] = None,
     ) -> AssetsDefinitionCacheableData:
-        schema_table_meta: Dict[str, RawMetadataMapping] = {}
+        schema_table_meta: dict[str, RawMetadataMapping] = {}
         if "schemas" in self.schemas:
-            schemas_inner = cast(Dict[str, Any], self.schemas["schemas"])
+            schemas_inner = cast(dict[str, Any], self.schemas["schemas"])
             for schema in schemas_inner.values():
                 if schema["enabled"]:
                     schema_name = schema["name_in_destination"]
-                    schema_tables: Dict[str, Dict[str, Any]] = cast(
-                        Dict[str, Dict[str, Any]], schema["tables"]
+                    schema_tables: dict[str, dict[str, Any]] = cast(
+                        dict[str, dict[str, Any]], schema["tables"]
                     )
                     for table in schema_tables.values():
                         if table["enabled"]:
@@ -394,7 +386,7 @@ class FivetranConnectionMetadata(
             for table in schema_table_meta.keys()
         }
 
-        internal_deps: Dict[str, Set[AssetKey]] = {}
+        internal_deps: dict[str, set[AssetKey]] = {}
 
         return AssetsDefinitionCacheableData(
             keys_by_input_name={},
@@ -426,7 +418,7 @@ def _build_fivetran_assets_from_metadata(
     poll_interval: float,
     poll_timeout: Optional[float],
     fetch_column_metadata: bool,
-    translator: Optional[Type[DagsterFivetranTranslator]] = None,
+    translator: Optional[type[DagsterFivetranTranslator]] = None,
 ) -> AssetsDefinition:
     metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
     connector_id = cast(str, metadata["connector_id"])
@@ -446,7 +438,7 @@ def _build_fivetran_assets_from_metadata(
         ),
         asset_key_prefix=list(assets_defn_meta.key_prefix or []),
         metadata_by_table_name=cast(
-            Dict[str, RawMetadataMapping], assets_defn_meta.metadata_by_output_name
+            dict[str, RawMetadataMapping], assets_defn_meta.metadata_by_output_name
         ),
         io_manager_key=io_manager_key,
         table_to_asset_key_map=assets_defn_meta.keys_by_output_name,
@@ -472,11 +464,11 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
         connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connector_to_asset_key_fn: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
-        destination_ids: Optional[List[str]],
+        destination_ids: Optional[list[str]],
         poll_interval: float,
         poll_timeout: Optional[float],
         fetch_column_metadata: bool,
-        translator: Optional[Type[DagsterFivetranTranslator]] = None,
+        translator: Optional[type[DagsterFivetranTranslator]] = None,
     ):
         self._fivetran_resource_def = fivetran_resource_def
         if isinstance(fivetran_resource_def, FivetranResource):
@@ -516,7 +508,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         super().__init__(unique_id=f"fivetran-{contents.hexdigest()}")
 
     def _get_connectors(self) -> Sequence[FivetranConnectionMetadata]:
-        output_connectors: List[FivetranConnectionMetadata] = []
+        output_connectors: list[FivetranConnectionMetadata] = []
 
         if not self._destination_ids:
             groups = self._fivetran_instance.make_request("GET", "groups")["items"]
@@ -562,7 +554,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         return output_connectors
 
     def compute_cacheable_data(self) -> Sequence[AssetsDefinitionCacheableData]:
-        asset_defn_data: List[AssetsDefinitionCacheableData] = []
+        asset_defn_data: list[AssetsDefinitionCacheableData] = []
         for connector in self._get_connectors():
             if not self._connection_filter or self._connection_filter(connector):
                 table_to_asset_key = partial(self._connector_to_asset_key_fn, connector)
@@ -618,11 +610,11 @@ def load_assets_from_fivetran_instance(
     connector_to_asset_key_fn: Optional[
         Callable[[FivetranConnectionMetadata, str], AssetKey]
     ] = None,
-    destination_ids: Optional[List[str]] = None,
+    destination_ids: Optional[list[str]] = None,
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
     fetch_column_metadata: bool = True,
-    translator: Optional[Type[DagsterFivetranTranslator]] = None,
+    translator: Optional[type[DagsterFivetranTranslator]] = None,
 ) -> CacheableAssetsDefinition:
     """Loads Fivetran connector assets from a configured FivetranResource instance. This fetches information
     about defined connectors at initialization time, and will error on workspace load if the Fivetran
@@ -725,3 +717,115 @@ def load_assets_from_fivetran_instance(
         fetch_column_metadata=fetch_column_metadata,
         translator=translator,
     )
+
+
+# -----------------------
+# Reworked assets factory
+# -----------------------
+
+
+@experimental
+def build_fivetran_assets_definitions(
+    *,
+    workspace: FivetranWorkspace,
+    dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+) -> Sequence[AssetsDefinition]:
+    """The list of AssetsDefinition for all connectors in the Fivetran workspace.
+
+    Args:
+        workspace (FivetranWorkspace): The Fivetran workspace to fetch assets from.
+        dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
+            to convert Fivetran content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterFivetranTranslator`.
+
+    Returns:
+        List[AssetsDefinition]: The list of AssetsDefinition for all connectors in the Fivetran workspace.
+
+    Examples:
+        Sync the tables of a Fivetran connector:
+
+        .. code-block:: python
+
+            from dagster_fivetran import FivetranWorkspace, build_fivetran_assets_definitions
+
+            import dagster as dg
+
+            fivetran_workspace = FivetranWorkspace(
+                account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+                api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+                api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+            )
+
+            fivetran_assets = build_fivetran_assets_definitions(workspace=workspace)
+
+            defs = dg.Definitions(
+                assets=[*fivetran_assets],
+                resources={"fivetran": fivetran_workspace},
+            )
+
+        Sync the tables of a Fivetran connector with a custom translator:
+
+        .. code-block:: python
+
+            from dagster_fivetran import (
+                DagsterFivetranTranslator,
+                FivetranConnectorTableProps,
+                FivetranWorkspace,
+                 build_fivetran_assets_definitions
+            )
+
+            import dagster as dg
+            from dagster._core.definitions.asset_spec import replace_attributes
+
+            class CustomDagsterFivetranTranslator(DagsterFivetranTranslator):
+                def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:
+                    default_spec = super().get_asset_spec(props)
+                    return default_spec.replace_attributes(
+                        key=default_spec.key.with_prefix("my_prefix"),
+                    )
+
+
+            fivetran_workspace = FivetranWorkspace(
+                account_id=dg.EnvVar("FIVETRAN_ACCOUNT_ID"),
+                api_key=dg.EnvVar("FIVETRAN_API_KEY"),
+                api_secret=dg.EnvVar("FIVETRAN_API_SECRET"),
+            )
+
+            fivetran_assets = build_fivetran_assets_definitions(
+                workspace=workspace,
+                dagster_fivetran_translator=CustomDagsterFivetranTranslator()
+            )
+
+            defs = dg.Definitions(
+                assets=[*fivetran_assets],
+                resources={"fivetran": fivetran_workspace},
+            )
+
+    """
+    dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
+    all_asset_specs = workspace.load_asset_specs(
+        dagster_fivetran_translator=dagster_fivetran_translator
+    )
+
+    connector_ids = {
+        check.not_none(FivetranMetadataSet.extract(spec.metadata).connector_id)
+        for spec in all_asset_specs
+    }
+
+    _asset_fns = []
+    for connector_id in connector_ids:
+
+        @fivetran_assets(
+            connector_id=connector_id,
+            workspace=workspace,
+            name=connector_id,
+            group_name=connector_id,
+            dagster_fivetran_translator=dagster_fivetran_translator,
+        )
+        def _asset_fn(context: AssetExecutionContext, fivetran: FivetranWorkspace):
+            yield from fivetran.sync_and_poll(context=context)
+
+        _asset_fns.append(_asset_fn)
+
+    return _asset_fns

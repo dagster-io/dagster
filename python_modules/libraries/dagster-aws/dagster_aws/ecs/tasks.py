@@ -1,5 +1,6 @@
 import os
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, NamedTuple, Optional
 
 import dagster._check as check
 import requests
@@ -61,7 +62,7 @@ class DagsterEcsTaskDefinitionConfig(
         linux_parameters: Optional[Mapping[str, Any]] = None,
         health_check: Optional[Mapping[str, Any]] = None,
     ):
-        return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(family, "family"),
             check.str_param(image, "image"),
@@ -130,13 +131,13 @@ class DagsterEcsTaskDefinitionConfig(
             kwargs.update(dict(taskRoleArn=self.task_role_arn))
 
         if self.runtime_platform:
-            kwargs.update(dict(runtimePlatform=self.runtime_platform))
+            kwargs.update(dict(runtimePlatform=self.runtime_platform))  # pyright: ignore[reportCallIssue,reportArgumentType]
 
         if self.ephemeral_storage:
-            kwargs.update(dict(ephemeralStorage={"sizeInGiB": self.ephemeral_storage}))
+            kwargs.update(dict(ephemeralStorage={"sizeInGiB": self.ephemeral_storage}))  # pyright: ignore[reportCallIssue,reportArgumentType]
 
         if self.volumes:
-            kwargs.update(dict(volumes=self.volumes))
+            kwargs.update(dict(volumes=self.volumes))  # pyright: ignore[reportCallIssue,reportArgumentType]
 
         return kwargs
 
@@ -204,7 +205,7 @@ def get_task_definition_dict_from_current_task(
     ecs,
     family,
     current_task,
-    image,
+    image: str,
     container_name,
     environment,
     command=None,
@@ -328,7 +329,7 @@ class CurrentEcsTaskMetadata(
 
 
 def get_current_ecs_task_metadata() -> CurrentEcsTaskMetadata:
-    task_metadata_uri = _container_metadata_uri() + "/task"
+    task_metadata_uri = _container_metadata_uri() + "/task"  # pyright: ignore[reportOptionalOperand]
     response = requests.get(task_metadata_uri).json()
     cluster = response.get("Cluster")
     task_arn = response.get("TaskARN")
@@ -349,7 +350,7 @@ def _container_metadata_uri():
 
 
 def current_ecs_container_name():
-    return requests.get(_container_metadata_uri()).json()["Name"]
+    return requests.get(_container_metadata_uri()).json()["Name"]  # pyright: ignore[reportArgumentType]
 
 
 def get_current_ecs_task(ecs, task_arn, cluster):

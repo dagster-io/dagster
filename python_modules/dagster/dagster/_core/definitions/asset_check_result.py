@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import PublicAttr

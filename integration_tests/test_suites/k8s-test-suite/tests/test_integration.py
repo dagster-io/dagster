@@ -69,11 +69,13 @@ def test_k8s_run_launcher_default(
     job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher,
+        run_config=run_config,  # pyright: ignore[reportArgumentType]
+        job_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -158,11 +160,13 @@ def test_failing_k8s_run_launcher(
     job_name = "always_fail_job"
 
     run_id = launch_run_over_graphql(
-        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher,
+        run_config=run_config,  # pyright: ignore[reportArgumentType]
+        job_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" not in result, f"no match, result: {result}"
@@ -185,11 +189,13 @@ def test_k8s_run_launcher_terminate(
     )
 
     run_id = launch_run_over_graphql(
-        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher,
+        run_config=run_config,  # pyright: ignore[reportArgumentType]
+        job_name=job_name,
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     _wait_until_job_can_be_terminated(webserver_url_for_k8s_run_launcher, run_id)
@@ -225,11 +231,13 @@ def test_k8s_run_launcher_secret_from_deployment(
     job_name = "demo_job"
 
     run_id = launch_run_over_graphql(
-        webserver_url_for_k8s_run_launcher, run_config=run_config, job_name=job_name
+        webserver_url_for_k8s_run_launcher,
+        run_config=run_config,  # pyright: ignore[reportArgumentType]
+        job_name=job_name,
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"

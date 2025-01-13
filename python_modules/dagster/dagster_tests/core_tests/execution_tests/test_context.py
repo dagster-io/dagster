@@ -162,21 +162,21 @@ def test_context_provided_to_op():
 
 
 def test_context_provided_to_multi_asset():
-    @multi_asset(outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)})
+    @multi_asset(outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)})  # pyright: ignore[reportArgumentType]
     def no_annotation(context):
         assert isinstance(context, AssetExecutionContext)
         return None, None
 
     materialize([no_annotation])
 
-    @multi_asset(outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)})
+    @multi_asset(outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)})  # pyright: ignore[reportArgumentType]
     def asset_annotation(context: AssetExecutionContext):
         assert isinstance(context, AssetExecutionContext)
         return None, None
 
     materialize([asset_annotation])
 
-    @multi_asset(outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)})
+    @multi_asset(outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)})  # pyright: ignore[reportArgumentType]
     def op_annotation(context: OpExecutionContext):
         assert isinstance(context, OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check
@@ -246,7 +246,7 @@ def test_context_provided_to_graph_multi_asset():
         return 1
 
     @graph_multi_asset(
-        outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}
+        outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
     )
     def no_annotation_asset():
         return layered_op(no_annotation_op()), layered_op(no_annotation_op())
@@ -259,7 +259,7 @@ def test_context_provided_to_graph_multi_asset():
         return 1
 
     @graph_multi_asset(
-        outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}
+        outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
     )
     def asset_annotation_asset():
         return layered_op(asset_annotation_op()), layered_op(asset_annotation_op())
@@ -274,7 +274,7 @@ def test_context_provided_to_graph_multi_asset():
         return 1
 
     @graph_multi_asset(
-        outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}
+        outs={"out1": AssetOut(dagster_type=None), "out2": AssetOut(dagster_type=None)}  # pyright: ignore[reportArgumentType]
     )
     def op_annotation_asset():
         return layered_op(op_annotation_op()), layered_op(op_annotation_op())
@@ -334,7 +334,7 @@ def test_context_provided_to_asset_check():
     def to_check():
         return 1
 
-    @asset_check(asset=to_check)
+    @asset_check(asset=to_check)  # pyright: ignore[reportArgumentType]
     def no_annotation(context):
         assert isinstance(context, AssetCheckExecutionContext)
         assert context.check_specs == [
@@ -346,7 +346,7 @@ def test_context_provided_to_asset_check():
 
     execute_assets_and_checks(assets=[to_check], asset_checks=[no_annotation])
 
-    @asset_check(asset=to_check)
+    @asset_check(asset=to_check)  # pyright: ignore[reportArgumentType]
     def asset_annotation(context: AssetExecutionContext):
         pass
 
@@ -356,7 +356,7 @@ def test_context_provided_to_asset_check():
     ):
         execute_assets_and_checks(assets=[to_check], asset_checks=[asset_annotation])
 
-    @asset_check(asset=to_check)
+    @asset_check(asset=to_check)  # pyright: ignore[reportArgumentType]
     def op_annotation(context: OpExecutionContext):
         assert isinstance(context, OpExecutionContext)
         # AssetExecutionContext is an instance of OpExecutionContext, so add this additional check

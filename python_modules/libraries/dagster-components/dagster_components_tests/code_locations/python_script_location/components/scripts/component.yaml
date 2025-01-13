@@ -1,0 +1,17 @@
+type: dagster_components.pipes_subprocess_script_collection
+
+params:
+  scripts:
+    - path: script_one.py
+      assets:
+        - key: a
+          automation_condition: "{{ automation_condition.eager() }}"
+        - key: b
+          automation_condition: "{{ automation_condition.on_cron('@daily') }}"
+          deps: [up1, up2]
+    - path: script_two.py
+      assets:
+        - key: c
+    - path: subdir/script_three.py
+      assets:
+        - key: override_key

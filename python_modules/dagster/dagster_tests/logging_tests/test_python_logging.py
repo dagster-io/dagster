@@ -1,5 +1,6 @@
 import logging
-from typing import Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import Optional, Union
 from unittest import mock
 
 import pytest

@@ -1,6 +1,7 @@
 import glob
 import os
-from typing import Callable, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Callable, Optional, Union
 
 import click
 
@@ -255,14 +256,14 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
                     try:
                         instance.start_schedule(remote_schedule)
                     except DagsterInvariantViolationError as ex:
-                        raise click.UsageError(ex)
+                        raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
 
                 print_fn(f"Started all schedules for repository {repository_name}")
             else:
                 try:
                     instance.start_schedule(repo.get_schedule(schedule_name))
                 except DagsterInvariantViolationError as ex:
-                    raise click.UsageError(ex)
+                    raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
 
                 print_fn(f"Started schedule {schedule_name}")
 
@@ -290,7 +291,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
                     remote_schedule,
                 )
             except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)
+                raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
 
             print_fn(f"Stopped schedule {schedule_name}")
 
@@ -400,7 +401,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                             )
                             instance.start_schedule(remote_schedule)
                         except DagsterInvariantViolationError as ex:
-                            raise click.UsageError(ex)
+                            raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
 
                 print_fn(f"Restarted all running schedules for repository {repository_name}")
             else:
@@ -416,13 +417,13 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
 
                 try:
                     instance.stop_schedule(
-                        schedule_state.instigator_origin_id,
+                        schedule_state.instigator_origin_id,  # pyright: ignore[reportOptionalMemberAccess]
                         remote_schedule.selector_id,
                         remote_schedule,
                     )
                     instance.start_schedule(remote_schedule)
                 except DagsterInvariantViolationError as ex:
-                    raise click.UsageError(ex)
+                    raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
 
                 print_fn(f"Restarted schedule {schedule_name}")
 

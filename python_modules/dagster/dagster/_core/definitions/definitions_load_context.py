@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Mapping, Optional, Sequence, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, cast
 
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.definitions_class import Definitions

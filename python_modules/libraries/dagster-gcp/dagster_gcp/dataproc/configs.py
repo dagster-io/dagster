@@ -1,4 +1,4 @@
-from dagster import Field, StringSource
+from dagster import Field, Permissive, StringSource
 
 from dagster_gcp.dataproc.configs_dataproc_cluster import define_dataproc_cluster_config
 from dagster_gcp.dataproc.configs_dataproc_job import define_dataproc_job_config
@@ -11,12 +11,23 @@ def define_dataproc_create_cluster_config():
         Names of deleted clusters can be reused.""",
         is_required=True,
     )
+    labels = Field(
+        Permissive(),
+        description="""Optional. The labels to associate with this cluster. Label keys must
+        contain 1 to 63 characters, and must conform to RFC 1035
+        (https://www.ietf.org/rfc/rfc1035.txt). Label values may be empty, but, if
+        present, must contain 1 to 63 characters, and must conform to RFC 1035
+        (https://www.ietf.org/rfc/rfc1035.txt). No more than 32 labels can be associated
+        with a cluster.""",
+        is_required=False,
+    )
 
     return {
         "projectId": _define_project_id_config(),
         "region": _define_region_config(),
         "clusterName": cluster_name,
         "cluster_config": define_dataproc_cluster_config(),
+        "labels": labels,
     }
 
 

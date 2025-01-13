@@ -105,7 +105,7 @@ def test_failure_midstream(capsys):
     )
     assert len(failure_events) == 1
 
-    failure_event = failure_events.pop()
+    failure_event = failure_events.pop()  # pyright: ignore[reportAttributeAccessIssue]
 
     assert failure_event.step_failure_data.error.cls_name == "DagsterExecutionStepExecutionError"
 
@@ -172,7 +172,7 @@ def test_failure_propagation(capsys):
     )
     assert len(failure_events) == 1
 
-    failure_event = failure_events.pop()
+    failure_event = failure_events.pop()  # pyright: ignore[reportAttributeAccessIssue]
 
     assert failure_event.step_failure_data.error.cause.cls_name == "CheckError"
 

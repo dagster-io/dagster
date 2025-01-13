@@ -1,5 +1,5 @@
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional  # noqa: F401, UP035
 
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import Self
@@ -24,7 +24,7 @@ class DagsterModel(BaseModel):
         ignored_types=(cached_property,),
     )
 
-    def model_copy(self, *, update: Optional[Dict[str, Any]] = None) -> Self:
+    def model_copy(self, *, update: Optional[dict[str, Any]] = None) -> Self:
         return super().model_copy(update=update)
 
     @classmethod

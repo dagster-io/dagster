@@ -1,15 +1,17 @@
 import os
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 import dagster._seven as seven
-from azure.identity import DefaultAzureCredential
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
 from azure.storage.blob import BlobSasPermissions, BlobServiceClient, UserDelegationKey
 from dagster import (
     Field,
     Noneable,
     Permissive,
+    Shape,
     StringSource,
     _check as check,
 )
@@ -17,7 +19,7 @@ from dagster._core.storage.cloud_storage_compute_log_manager import (
     CloudStorageComputeLogManager,
     PollingComputeLogSubscriptionManager,
 )
-from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.compute_log_manager import CapturedLogContext, ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
@@ -34,8 +36,26 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
 
     This is also compatible with Azure Data Lake Storage.
 
-    Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
-    such as the following:
+    Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``. Examples provided below
+    will show how to configure with various credentialing schemes.
+
+    Args:
+        storage_account (str): The storage account name to which to log.
+        container (str): The container (or ADLS2 filesystem) to which to log.
+        secret_credential (Optional[dict]): Secret credential for the storage account. This should be
+            a dictionary with keys `client_id`, `client_secret`, and `tenant_id`.
+        access_key_or_sas_token (Optional[str]): Access key or SAS token for the storage account.
+        default_azure_credential (Optional[dict]): Use and configure DefaultAzureCredential.
+            Cannot be used with sas token or secret key config.
+        local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
+            ``dagster._seven.get_system_temp_directory()``.
+        prefix (Optional[str]): Prefix for the log file keys.
+        upload_interval: (Optional[int]): Interval in seconds to upload partial log files blob storage. By default, will only upload when the capture is complete.
+        inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
+            log manager when newed up from config.
+
+    Examples:
+    Using an Azure Blob Storage account with an `AzureSecretCredential <https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.clientsecretcredential?view=azure-python>`_:
 
     .. code-block:: YAML
 
@@ -45,49 +65,79 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
           config:
             storage_account: my-storage-account
             container: my-container
-            secret_key: sas-token-or-secret-key
-            default_azure_credential:
-              exclude_environment_credential: true
+            secret_credential:
+              client_id: my-client-id
+              client_secret: my-client-secret
+              tenant_id: my-tenant-id
             prefix: "dagster-test-"
             local_dir: "/tmp/cool"
             upload_interval: 30
 
-    Args:
-        storage_account (str): The storage account name to which to log.
-        container (str): The container (or ADLS2 filesystem) to which to log.
-        secret_key (Optional[str]): Secret key for the storage account. SAS tokens are not
-            supported because we need a secret key to generate a SAS token for a download URL.
-        default_azure_credential (Optional[dict]): Use and configure DefaultAzureCredential.
-            Cannot be used with sas token or secret key config.
-        local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
-            ``dagster._seven.get_system_temp_directory()``.
-        prefix (Optional[str]): Prefix for the log file keys.
-        upload_interval: (Optional[int]): Interval in seconds to upload partial log files blob storage. By default, will only upload when the capture is complete.
-        inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
-            log manager when newed up from config.
+    Using an Azure Blob Storage account with a `DefaultAzureCredential <https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.defaultazurecredential?view=azure-python>`_:
+
+    .. code-block:: YAML
+
+        compute_logs:
+          module: dagster_azure.blob.compute_log_manager
+          class: AzureBlobComputeLogManager
+          config:
+            storage_account: my-storage-account
+            container: my-container
+            default_azure_credential:
+              exclude_environment_credential: false
+            prefix: "dagster-test-"
+            local_dir: "/tmp/cool"
+            upload_interval: 30
+
+    Using an Azure Blob Storage account with an access key:
+
+    .. code-block:: YAML
+
+        compute_logs:
+          module: dagster_azure.blob.compute_log_manager
+          class: AzureBlobComputeLogManager
+            config:
+            storage_account: my-storage-account
+            container: my-container
+            access_key_or_sas_token: my-access-key
+            prefix: "dagster-test-"
+            local_dir: "/tmp/cool"
+            upload_interval: 30
+
     """
 
     def __init__(
         self,
         storage_account,
         container,
-        secret_key=None,
+        secret_credential=None,
         local_dir=None,
         inst_data: Optional[ConfigurableClassData] = None,
         prefix="dagster",
         upload_interval=None,
         default_azure_credential=None,
+        access_key_or_sas_token: Optional[str] = None,
+        show_url_only=True,
     ):
+        self._show_url_only = check.bool_param(show_url_only, "show_url_only")
         self._storage_account = check.str_param(storage_account, "storage_account")
         self._container = check.str_param(container, "container")
         self._blob_prefix = self._clean_prefix(check.str_param(prefix, "prefix"))
         self._default_azure_credential = check.opt_dict_param(
             default_azure_credential, "default_azure_credential"
         )
-        check.opt_str_param(secret_key, "secret_key")
+        self._access_key_or_sas_token = check.opt_str_param(
+            access_key_or_sas_token, "access_key_or_sas_token"
+        )
+        check.opt_dict_param(secret_credential, "secret_credential")
+        check.opt_dict_param(default_azure_credential, "default_azure_credential")
 
-        if secret_key is not None:
-            self._blob_client = create_blob_client(storage_account, secret_key)
+        if secret_credential is not None:
+            self._blob_client = create_blob_client(
+                storage_account, ClientSecretCredential(**secret_credential)
+            )
+        elif self._access_key_or_sas_token:
+            self._blob_client = create_blob_client(storage_account, self._access_key_or_sas_token)
         else:
             credential = DefaultAzureCredential(**self._default_azure_credential)
             self._blob_client = create_blob_client(storage_account, credential)
@@ -104,12 +154,6 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
-    @contextmanager
-    def _watch_logs(self, dagster_run, step_key=None):
-        # proxy watching to the local compute log manager, interacting with the filesystem
-        with self.local_manager._watch_logs(dagster_run, step_key):  # noqa: SLF001
-            yield
-
     @property
     def inst_data(self):
         return self._inst_data
@@ -119,7 +163,19 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         return {
             "storage_account": StringSource,
             "container": StringSource,
-            "secret_key": Field(Noneable(StringSource), is_required=False, default_value=None),
+            "access_key_or_sas_token": Field(Noneable(StringSource), is_required=False),
+            "secret_credential": Field(
+                Noneable(
+                    Shape(
+                        {
+                            "client_id": StringSource,
+                            "client_secret": StringSource,
+                            "tenant_id": StringSource,
+                        }
+                    ),
+                ),
+                is_required=False,
+            ),
             "default_azure_credential": Field(
                 Noneable(Permissive(description="keyword arguments for DefaultAzureCredential")),
                 is_required=False,
@@ -222,6 +278,21 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         url = blob.url + "?" + sas
         self._download_urls[blob_key] = url
         return url
+
+    @contextmanager
+    def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
+        with super().capture_logs(log_key) as local_context:
+            if not self._show_url_only:
+                yield local_context
+            else:
+                out_key = self._blob_key(log_key, ComputeIOType.STDOUT)
+                err_key = self._blob_key(log_key, ComputeIOType.STDERR)
+                azure_base_url = self._container_client.url
+                out_url = f"{azure_base_url}/{out_key}"
+                err_url = f"{azure_base_url}/{err_key}"
+                yield CapturedLogContext(
+                    local_context.log_key, external_stdout_url=out_url, external_stderr_url=err_url
+                )
 
     def _request_user_delegation_key(
         self,

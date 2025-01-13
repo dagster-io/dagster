@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Mapping, Sequence, Set, Union
+from typing import AbstractSet, Union  # noqa: UP035
 
 from dagster import AssetKey, AssetsDefinition, AssetSpec
 from dagster._annotations import public
@@ -56,7 +57,7 @@ class AirflowDefinitionsData:
         return {spec.key: spec for spec in self.all_asset_specs}
 
     @public
-    def task_ids_in_dag(self, dag_id: str) -> Set[str]:
+    def task_ids_in_dag(self, dag_id: str) -> set[str]:
         """Returns the task ids within the given dag_id.
 
         Args:

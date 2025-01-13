@@ -1,14 +1,15 @@
-import {Colors, Icon, TextInputStyles} from '@dagster-io/ui-components';
-import CodeMirror, {Editor, HintFunction} from 'codemirror';
-import {useLayoutEffect, useMemo, useRef} from 'react';
-import styled, {createGlobalStyle} from 'styled-components';
+import {Icons} from '@dagster-io/ui-components';
+import {useMemo} from 'react';
+import styled from 'styled-components';
 
-import {createAssetSelectionHint} from './AssetSelectionAutoComplete';
-import {lintAssetSelection} from './AssetSelectionLinter';
-import {assetSelectionMode} from './AssetSelectionMode';
+import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
-import {useUpdatingRef} from '../../hooks/useUpdatingRef';
+import {SelectionAutoCompleteInput, iconStyle} from '../../selection/SelectionAutoCompleteInput';
+import {createSelectionLinter} from '../../selection/createSelectionLinter';
 import {placeholderTextForItems} from '../../ui/GraphQueryInput';
+import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
+import {AssetSelectionLexer} from '../generated/AssetSelectionLexer';
+import {AssetSelectionParser} from '../generated/AssetSelectionParser';
 
 import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/lib/codemirror.css';
@@ -24,182 +25,106 @@ interface AssetSelectionInputProps {
   onChange: (value: string) => void;
 }
 
+const FUNCTIONS = ['sinks', 'roots'];
+
+const linter = createSelectionLinter({Lexer: AssetSelectionLexer, Parser: AssetSelectionParser});
+
 export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInputProps) => {
-  const editorRef = useRef<HTMLDivElement>(null);
-  const cmInstance = useRef<CodeMirror.Editor | null>(null);
+  const attributesMap = useMemo(() => {
+    const assetNamesSet: Set<string> = new Set();
+    const tagNamesSet: Set<string> = new Set();
+    const ownersSet: Set<string> = new Set();
+    const groupsSet: Set<string> = new Set();
+    const kindsSet: Set<string> = new Set();
+    const codeLocationSet: Set<string> = new Set();
 
-  const currentValueRef = useRef(value);
-
-  const hintRef = useUpdatingRef(useMemo(() => createAssetSelectionHint(assets), [assets]));
-
-  useLayoutEffect(() => {
-    if (editorRef.current && !cmInstance.current) {
-      CodeMirror.defineMode('assetSelection', assetSelectionMode);
-
-      cmInstance.current = CodeMirror(editorRef.current, {
-        value,
-        mode: 'assetSelection',
-        lineNumbers: false,
-        lineWrapping: false,
-        scrollbarStyle: 'native',
-        autoCloseBrackets: true,
-        lint: {
-          getAnnotations: lintAssetSelection,
-          async: false,
-        },
-        placeholder: placeholderTextForItems('Type an asset subset…', assets),
-        extraKeys: {
-          'Ctrl-Space': 'autocomplete',
-          Tab: (cm: Editor) => {
-            cm.replaceSelection('  ', 'end');
-          },
-        },
-      });
-
-      cmInstance.current.setSize('100%', 20);
-
-      // Enforce single line by preventing newlines
-      cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
-        if (change.text.some((line) => line.includes('\n'))) {
-          change.cancel();
+    assets.forEach((asset) => {
+      assetNamesSet.add(asset.name);
+      asset.node.tags.forEach((tag) => {
+        if (tag.key && tag.value) {
+          // We add quotes around the equal sign here because the auto-complete suggestion already wraps the entire value in quotes.
+          // So wer end up with tag:"key"="value" as the final suggestion
+          tagNamesSet.add(`${tag.key}"="${tag.value}`);
+        } else {
+          tagNamesSet.add(tag.key);
         }
       });
-
-      cmInstance.current.on('change', (instance: Editor, change) => {
-        const newValue = instance.getValue();
-        currentValueRef.current = newValue;
-        onChange(newValue);
-
-        if (change.origin === 'complete' && change.text[0]?.endsWith(')')) {
-          // Set cursor inside the right parenthesis
-          const cursor = instance.getCursor();
-          instance.setCursor({...cursor, ch: cursor.ch - 1});
+      asset.node.owners.forEach((owner) => {
+        switch (owner.__typename) {
+          case 'TeamAssetOwner':
+            ownersSet.add(owner.team);
+            break;
+          case 'UserAssetOwner':
+            ownersSet.add(owner.email);
+            break;
+          default:
+            assertUnreachable(owner);
         }
       });
-
-      cmInstance.current.on('inputRead', (instance: Editor) => {
-        showHint(instance, hintRef.current);
+      if (asset.node.groupName) {
+        groupsSet.add(asset.node.groupName);
+      }
+      asset.node.kinds.forEach((kind) => {
+        kindsSet.add(kind);
       });
+      const location = buildRepoPathForHuman(
+        asset.node.repository.name,
+        asset.node.repository.location.name,
+      );
+      codeLocationSet.add(location);
+    });
 
-      cmInstance.current.on('cursorActivity', (instance: Editor) => {
-        showHint(instance, hintRef.current);
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    const assetNames = Array.from(assetNamesSet);
+    const tagNames = Array.from(tagNamesSet);
+    const owners = Array.from(ownersSet);
+    const groups = Array.from(groupsSet);
+    const kinds = Array.from(kindsSet);
+    const codeLocations = Array.from(codeLocationSet);
 
-  // Update CodeMirror when value prop changes
-  useLayoutEffect(() => {
-    const noNewLineValue = value.replace('\n', ' ');
-    if (cmInstance.current && cmInstance.current.getValue() !== noNewLineValue) {
-      const instance = cmInstance.current;
-      const cursor = instance.getCursor();
-      instance.setValue(noNewLineValue);
-      instance.setCursor(cursor);
-      showHint(instance, hintRef.current);
-    }
-  }, [hintRef, value]);
+    return {
+      key: assetNames,
+      tag: tagNames,
+      owner: owners,
+      group: groups,
+      kind: kinds,
+      code_location: codeLocations,
+    };
+  }, [assets]);
 
   return (
-    <>
-      <GlobalHintStyles />
-      <InputDiv
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-          alignItems: 'center',
-        }}
-      >
-        <Icon name="op_selector" />
-        <div ref={editorRef} />
-        <Icon name="info" />
-      </InputDiv>
-    </>
+    <WrapperDiv>
+      <SelectionAutoCompleteInput
+        id="asset-selection-input"
+        nameBase="key"
+        attributesMap={attributesMap}
+        placeholder={placeholderTextForItems('Type an asset subset…', assets)}
+        functions={FUNCTIONS}
+        linter={linter}
+        value={value}
+        onChange={onChange}
+      />
+    </WrapperDiv>
   );
 };
 
-const InputDiv = styled.div`
-  height: 32px;
-  width: 100%;
-  ${TextInputStyles}
-  flex-shrink: 1;
-  overflow: auto;
-
-  .CodeMirror-placeholder.CodeMirror-placeholder.CodeMirror-placeholder {
-    color: ${Colors.textLighter()};
+const WrapperDiv = styled.div`
+  .attribute-owner {
+    ${iconStyle(Icons.owner.src)};
   }
-
-  .CodeMirror-vscrollbar,
-  .CodeMirror-hscrollbar {
-    display: none !important;
+  .attribute-tag {
+    ${iconStyle(Icons.tag.src)};
   }
-
-  .CodeMirror-sizer,
-  .CodeMirror-lines {
-    height: 20px !important;
-    padding: 0;
+  .attribute-key_substring,
+  .attribute-key {
+    ${iconStyle(Icons.asset.src)};
   }
-
-  .CodeMirror-cursor.CodeMirror-cursor {
-    border-color: ${Colors.textLight()};
+  .attribute-group {
+    ${iconStyle(Icons.asset_group.src)};
   }
-
-  .CodeMirror {
-    background: transparent;
-    color: ${Colors.textDefault()};
+  .attribute-code_location {
+    ${iconStyle(Icons.code_location.src)};
   }
-
-  .cm-attribute {
-    color: ${Colors.textCyan()};
-    font-weight: bold;
-  }
-
-  .cm-operator {
-    color: ${Colors.textRed()};
-    font-weight: bold;
-  }
-
-  .cm-string {
-    color: ${Colors.textGreen()};
-  }
-
-  .cm-function {
-    color: ${Colors.textYellow()};
-    font-style: italic;
-  }
-
-  .cm-punctuation {
-    color: ${Colors.textDefault()};
-  }
-
-  .cm-error {
-    text-decoration-line: underline;
-    text-decoration-style: wavy;
-    text-decoration-color: ${Colors.accentRed()};
+  .attribute-kind {
+    ${iconStyle(Icons.compute_kind.src)};
   }
 `;
-
-const GlobalHintStyles = createGlobalStyle`
-  .CodeMirror-hints {
-    background: ${Colors.popoverBackground()};
-    border: none;
-    border-radius: 4px;
-    padding: 8px 4px;
-    .CodeMirror-hint {
-      border-radius: 4px;
-      font-size: 14px;
-      padding: 6px 8px 6px 12px;
-      color: ${Colors.textDefault()};
-      &.CodeMirror-hint-active {
-        background-color: ${Colors.backgroundBlue()};
-        color: ${Colors.textDefault()};
-      }
-    }
-  }
-`;
-
-function showHint(instance: Editor, hint: HintFunction) {
-  requestAnimationFrame(() => {
-    instance.showHint({hint, completeSingle: false, moveOnOverlap: true});
-  });
-}

@@ -1,4 +1,5 @@
-from typing import Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import boto3.session
 import dagster._check as check

@@ -1,4 +1,5 @@
-from typing import Any, Mapping, NamedTuple
+from collections.abc import Mapping
+from typing import Any, NamedTuple
 
 
 class FivetranOutput(

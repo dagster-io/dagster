@@ -46,7 +46,7 @@ def foo_job():
 
 
 def test_generate_dep_graph():
-    graph = generate_dep_graph(foo_job)
+    graph = generate_dep_graph(foo_job)  # pyright: ignore[reportArgumentType]
     assert graph == {
         "upstream": {
             "return_one": set(),
@@ -66,7 +66,7 @@ def test_generate_dep_graph():
 
 
 def test_traverser():
-    graph = generate_dep_graph(foo_job)
+    graph = generate_dep_graph(foo_job)  # pyright: ignore[reportArgumentType]
     traverser = Traverser(graph)
 
     assert traverser.fetch_upstream(item_name="return_one", depth=1) == set()
@@ -81,7 +81,7 @@ def test_traverser():
 
 
 def test_traverser_invalid():
-    graph = generate_dep_graph(foo_job)
+    graph = generate_dep_graph(foo_job)  # pyright: ignore[reportArgumentType]
     traverser = Traverser(graph)
 
     assert traverser.fetch_upstream(item_name="some_solid", depth=1) == set()
@@ -100,15 +100,15 @@ def test_parse_clause_invalid():
 
 
 def test_parse_op_selection_single():
-    op_selection_single = parse_op_queries(foo_job, ["add_nums"])
+    op_selection_single = parse_op_queries(foo_job, ["add_nums"])  # pyright: ignore[reportArgumentType]
     assert len(op_selection_single) == 1
     assert op_selection_single == {"add_nums"}
 
-    op_selection_star = parse_op_queries(foo_job, ["add_nums*"])
+    op_selection_star = parse_op_queries(foo_job, ["add_nums*"])  # pyright: ignore[reportArgumentType]
     assert len(op_selection_star) == 3
     assert set(op_selection_star) == {"add_nums", "multiply_two", "add_one"}
 
-    op_selection_both = parse_op_queries(foo_job, ["*add_nums+"])
+    op_selection_both = parse_op_queries(foo_job, ["*add_nums+"])  # pyright: ignore[reportArgumentType]
     assert len(op_selection_both) == 4
     assert set(op_selection_both) == {
         "return_one",
@@ -119,7 +119,7 @@ def test_parse_op_selection_single():
 
 
 def test_parse_op_selection_multi():
-    op_selection_multi_disjoint = parse_op_queries(foo_job, ["return_one", "add_nums+"])
+    op_selection_multi_disjoint = parse_op_queries(foo_job, ["return_one", "add_nums+"])  # pyright: ignore[reportArgumentType]
     assert len(op_selection_multi_disjoint) == 3
     assert set(op_selection_multi_disjoint) == {
         "return_one",
@@ -127,7 +127,7 @@ def test_parse_op_selection_multi():
         "multiply_two",
     }
 
-    op_selection_multi_overlap = parse_op_queries(foo_job, ["*add_nums", "return_one+"])
+    op_selection_multi_overlap = parse_op_queries(foo_job, ["*add_nums", "return_one+"])  # pyright: ignore[reportArgumentType]
     assert len(op_selection_multi_overlap) == 3
     assert set(op_selection_multi_overlap) == {
         "return_one",
@@ -139,7 +139,7 @@ def test_parse_op_selection_multi():
         DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",
     ):
-        parse_op_queries(foo_job, ["*add_nums", "a"])
+        parse_op_queries(foo_job, ["*add_nums", "a"])  # pyright: ignore[reportArgumentType]
 
 
 def test_parse_op_selection_invalid():
@@ -147,7 +147,7 @@ def test_parse_op_selection_invalid():
         DagsterInvalidSubsetError,
         match="No qualified ops to execute found for op_selection",
     ):
-        parse_op_queries(foo_job, ["some,solid"])
+        parse_op_queries(foo_job, ["some,solid"])  # pyright: ignore[reportArgumentType]
 
 
 step_deps = {
@@ -192,7 +192,7 @@ def test_clause_to_subset(clause, expected_subset):
             "e": {"f"},
         },
     }
-    assert set(clause_to_subset(graph, clause, lambda x: x)) == set(expected_subset.split(","))
+    assert set(clause_to_subset(graph, clause, lambda x: x)) == set(expected_subset.split(","))  # pyright: ignore[reportArgumentType]
 
 
 def test_parse_step_selection_single():

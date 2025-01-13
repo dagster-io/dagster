@@ -1,12 +1,12 @@
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import IO, Any, Generator, Mapping, Optional, Sequence
+from typing import IO, Any, Optional
 
 from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.storage.compute_log_manager import (
     CapturedLogContext,
-    CapturedLogData,
     CapturedLogMetadata,
     CapturedLogSubscription,
     ComputeIOType,
@@ -48,13 +48,14 @@ class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
     ) -> Generator[Optional[IO], None, None]:
         yield None
 
-    def get_log_data(
+    def get_log_data_for_type(
         self,
         log_key: Sequence[str],
-        cursor: Optional[str] = None,
-        max_bytes: Optional[int] = None,
-    ) -> CapturedLogData:
-        return CapturedLogData(log_key=log_key)
+        io_type: ComputeIOType,
+        offset: int,
+        max_bytes: Optional[int],
+    ) -> tuple[Optional[bytes], int]:
+        return None, 0
 
     def get_log_metadata(self, log_key: Sequence[str]) -> CapturedLogMetadata:
         return CapturedLogMetadata()

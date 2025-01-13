@@ -1,4 +1,4 @@
-from typing import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 
 import pandas as pd
 

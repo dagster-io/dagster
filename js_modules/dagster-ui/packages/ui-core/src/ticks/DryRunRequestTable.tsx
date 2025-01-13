@@ -1,13 +1,14 @@
-import {Box, Button, Colors, Icon, Table, Tag} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Icon, Table, Tooltip} from '@dagster-io/ui-components';
+import {useState} from 'react';
 
-import {applyCreateSession, useExecutionSessionStorage} from '../app/ExecutionSessionStorage';
+import {RunConfigDialog} from '../runs/RunConfigDialog';
 import {RunRequestFragment} from './types/RunRequestFragment.types';
-import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
+import {showSharedToaster} from '../app/DomUtils';
+import {useCopyToClipboard} from '../app/browser';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {testId} from '../testing/testId';
 import {useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 type Props = {
   name: string;
@@ -20,13 +21,25 @@ type Props = {
 
 export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}: Props) => {
   const repo = useRepository(repoAddress);
+  const [selectedRequest, setSelectedRequest] = useState<RunRequestFragment | null>(null);
+  const [visibleDialog, setVisibleDialog] = useState<'config' | null>(null);
+  const copy = useCopyToClipboard();
+
+  const copyConfig = async () => {
+    copy(selectedRequest?.runConfigYaml || '');
+    await showSharedToaster({
+      intent: 'success',
+      icon: 'copy_to_clipboard_done',
+      message: 'Copied!',
+    });
+  };
 
   const body = (
     <tbody data-testid={testId('table-body')}>
       {runRequests.map((request, index) => {
         return (
           <tr key={index} data-testid={testId(request.runKey || '')}>
-            <td>
+            <td style={{verticalAlign: 'middle'}}>
               <Box flex={{alignItems: 'center', gap: 8}}>
                 <PipelineReference
                   pipelineName={request.jobName ?? jobName}
@@ -37,25 +50,32 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
                 />
               </Box>
             </td>
-            <td>
-              <Box flex={{direction: 'row', gap: 8, wrap: 'wrap'}}>
-                {filterTags(request.tags).map(({key, value}) => (
-                  <Tag key={key}>{`${key}: ${value}`}</Tag>
-                ))}
-              </Box>
-            </td>
-            <td>
-              <OpenInLaunchpadButton
+            <td style={{width: '7.5%', verticalAlign: 'middle', textAlign: 'center'}}>
+              <PreviewButton
                 request={request}
-                mode={mode}
-                jobName={jobName}
-                repoAddress={repoAddress}
-                isJob={isJob}
+                onClick={() => {
+                  setSelectedRequest(request);
+                  setVisibleDialog('config');
+                }}
               />
             </td>
           </tr>
         );
       })}
+      {selectedRequest && (
+        <RunConfigDialog
+          isOpen={visibleDialog === 'config'}
+          onClose={() => setVisibleDialog(null)}
+          copyConfig={() => copyConfig()}
+          mode={mode || null}
+          runConfigYaml={selectedRequest.runConfigYaml}
+          tags={selectedRequest.tags}
+          isJob={isJob}
+          jobName={jobName}
+          request={selectedRequest}
+          repoAddress={repoAddress}
+        />
+      )}
     </tbody>
   );
   return (
@@ -63,9 +83,8 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
       <Table style={{borderRight: `1px solid ${Colors.keylineDefault()}`, tableLayout: 'fixed'}}>
         <thead>
           <tr>
-            <th>{isJob ? 'Job' : 'Pipeline'} name</th>
-            <th>Tags</th>
-            <th>Configuration</th>
+            <th>Target</th>
+            <th style={{width: '7.5%'}}>Actions</th>
           </tr>
         </thead>
         {body}
@@ -74,55 +93,14 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
   );
 };
 
-// Filter out tags we already display in other ways
-function filterTags(tags: Array<{key: string; value: any}>) {
-  return tags.filter(({key}) => {
-    // Exclude the tag that specifies the schedule if this is a schedule name
-    return !['dagster/schedule_name'].includes(key);
-  });
-}
-
-function OpenInLaunchpadButton({
-  mode,
-  request,
-  jobName,
-  isJob,
-  repoAddress,
-}: {
-  request: RunRequestFragment;
-  jobName?: string;
-  mode?: string;
-  repoAddress: RepoAddress;
-  isJob: boolean;
-}) {
-  const openInNewTab = useOpenInNewTab();
-  const pipelineName = request.jobName ?? jobName;
-  const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName!);
-
+function PreviewButton({request, onClick}: {request: RunRequestFragment; onClick: () => void}) {
   return (
-    <Button
-      icon={<Icon name="edit" />}
-      onClick={() => {
-        onSave((data) =>
-          applyCreateSession(data, {
-            mode,
-            runConfigYaml: request.runConfigYaml,
-            tags: request.tags,
-            assetSelection: request.assetSelection?.map(({path}) => ({
-              assetKey: {path},
-            })),
-          }),
-        );
-
-        openInNewTab(
-          workspacePathFromAddress(
-            repoAddress,
-            `/${isJob ? 'jobs' : 'pipelines'}/${pipelineName}/playground`,
-          ),
-        );
-      }}
-    >
-      Open in Launchpad
-    </Button>
+    <Tooltip content="Preview run config and tags" placement="left-start">
+      <Button
+        icon={<Icon name="data_object" />}
+        onClick={onClick}
+        data-testid={testId(`preview-${request.runKey || ''}`)}
+      />
+    </Tooltip>
   );
 }

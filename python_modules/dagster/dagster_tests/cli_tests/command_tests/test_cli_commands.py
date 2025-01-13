@@ -3,7 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import ContextManager, NoReturn, Optional, Tuple
+from typing import ContextManager, NoReturn, Optional  # noqa: UP035
 from unittest import mock
 
 import pytest
@@ -307,7 +307,7 @@ def grpc_server_bar_kwargs(instance, job_name: Optional[str] = None):
         if job_name:
             args["job_name"] = "foo"
         if client.port:
-            args["grpc_port"] = client.port
+            args["grpc_port"] = client.port  # pyright: ignore[reportArgumentType]
         if client.socket:
             args["grpc_socket"] = client.socket
         yield args
@@ -422,7 +422,7 @@ def sensor_command_contexts():
     ]
 
 
-BackfillCommandTestContext: TypeAlias = ContextManager[Tuple[ClickArgMapping, DagsterInstance]]
+BackfillCommandTestContext: TypeAlias = ContextManager[tuple[ClickArgMapping, DagsterInstance]]
 
 
 # This iterates over a list of contextmanagers that can be used to contruct

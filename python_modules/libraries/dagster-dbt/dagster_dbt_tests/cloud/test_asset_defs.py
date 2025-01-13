@@ -1,6 +1,6 @@
 import json
 from copy import deepcopy
-from typing import List, Optional
+from typing import Optional
 
 import pytest
 import responses
@@ -37,16 +37,16 @@ DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123
 DBT_CLOUD_RUN_ID = 1234
 
-with open(file_relative_path(__file__, "sample_manifest.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_manifest.json"), encoding="utf8") as f:
     MANIFEST_JSON = json.load(f)
 
-with open(file_relative_path(__file__, "sample_run_results.json"), "r", encoding="utf8") as f:
+with open(file_relative_path(__file__, "sample_run_results.json"), encoding="utf8") as f:
     RUN_RESULTS_JSON = json.load(f)
 
 
 def _add_dbt_cloud_job_responses(
     dbt_cloud_service: DbtCloudClient,
-    dbt_commands: List[str],
+    dbt_commands: list[str],
     run_results_json: Optional[dict] = None,
 ):
     run_results_json = run_results_json or RUN_RESULTS_JSON
@@ -152,7 +152,7 @@ def test_load_assets_from_dbt_cloud_job(
 
     mock_run_job_and_poll = mocker.patch(
         "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
-        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
     )
 
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
@@ -269,7 +269,7 @@ def test_load_assets_from_cached_compile_run(
 
     mock_run_job_and_poll = mocker.patch(
         "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
-        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
     )
 
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
@@ -514,7 +514,7 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
 
     mock_run_job_and_poll = mocker.patch(
         "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
-        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
     )
 
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()
@@ -618,7 +618,7 @@ def test_subsetting(
 
     mock_run_job_and_poll = mocker.patch(
         "dagster_dbt.cloud.resources.DbtCloudClient.run_job_and_poll",
-        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001
+        wraps=dbt_cloud_cacheable_assets._dbt_cloud.run_job_and_poll,  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
     )
 
     dbt_assets_definition_cacheable_data = dbt_cloud_cacheable_assets.compute_cacheable_data()

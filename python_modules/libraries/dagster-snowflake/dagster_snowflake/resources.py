@@ -1,9 +1,10 @@
 import base64
 import sys
 import warnings
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import closing, contextmanager
 from datetime import datetime
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 import dagster._check as check
 from cryptography.hazmat.backends import default_backend
@@ -258,6 +259,15 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         default=None,
         description="Optional parameter to specify the authentication mechanism to use.",
     )
+    additional_snowflake_connection_args: Optional[dict[str, Any]] = Field(
+        default=None,
+        description=(
+            "Additional keyword arguments to pass to the snowflake.connector.connect function. For a full list of"
+            " available arguments, see the `Snowflake documentation"
+            " <https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect>`__."
+            " This config will be ignored if using the sqlalchemy connector."
+        ),
+    )
 
     @validator("paramstyle")
     def validate_paramstyle(cls, v: Optional[str]) -> Optional[str]:
@@ -338,12 +348,15 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             conn_args["private_key"] = self._snowflake_private_key(self._resolved_config_dict)
 
         conn_args["application"] = SNOWFLAKE_PARTNER_CONNECTION_IDENTIFIER
+
+        if self._resolved_config_dict.get("additional_snowflake_connection_args") is not None:
+            conn_args.update(self._resolved_config_dict["additional_snowflake_connection_args"])
         return conn_args
 
     @property
     @cached_method
     def _sqlalchemy_connection_args(self) -> Mapping[str, Any]:
-        conn_args: Dict[str, Any] = {
+        conn_args: dict[str, Any] = {
             k: self._resolved_config_dict.get(k)
             for k in (
                 "account",
@@ -566,9 +579,6 @@ class SnowflakeConnection:
 
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
-                if sys.version_info[0] < 3:
-                    sql = sql.encode("utf-8")
-
                 self.log.info("Executing query: " + sql)
                 parameters = dict(parameters) if isinstance(parameters, Mapping) else parameters
                 cursor.execute(sql, parameters)
@@ -619,7 +629,7 @@ class SnowflakeConnection:
         if not fetch_results and use_pandas_result:
             check.failed("If use_pandas_result is True, fetch_results must also be True.")
 
-        results: List[Any] = []
+        results: list[Any] = []
         with self.get_connection() as conn:
             with closing(conn.cursor()) as cursor:
                 for raw_sql in sql_queries:
@@ -757,7 +767,7 @@ def fetch_last_updated_timestamps(
     )
 
     query = f"""
-    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered 
+    SELECT table_name, CONVERT_TIMEZONE('UTC', last_altered) AS last_altered
     FROM {fully_qualified_table_name}
     WHERE table_schema = '{schema}' AND table_name IN ({tables_str});
     """

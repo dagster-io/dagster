@@ -319,10 +319,10 @@ def test_get_stats_from_remote_repo_code_checks(instance):
     @asset
     def my_asset(): ...
 
-    @asset_check(asset=my_asset)
+    @asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
     def my_check(): ...
 
-    @asset_check(asset=my_asset)
+    @asset_check(asset=my_asset)  # pyright: ignore[reportArgumentType]
     def my_check_2(): ...
 
     @asset
@@ -473,11 +473,11 @@ def test_get_stats_from_remote_repo_functional_resources(instance):
 
 def test_get_stats_from_remote_repo_functional_io_managers(instance):
     @dagster_maintained_io_manager
-    @io_manager(config_schema={"foo": str})
+    @io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
     def my_io_manager():
         return 1
 
-    @io_manager(config_schema={"baz": str})
+    @io_manager(config_schema={"baz": str})  # pyright: ignore[reportArgumentType]
     def custom_io_manager():
         return 2
 
@@ -550,7 +550,7 @@ def test_get_stats_from_remote_repo_delayed_resource_configuration(instance):
         return 1
 
     @dagster_maintained_io_manager
-    @io_manager(config_schema={"foo": str})
+    @io_manager(config_schema={"foo": str})  # pyright: ignore[reportArgumentType]
     def my_io_manager():
         return 1
 
@@ -665,7 +665,7 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
     with tempfile.TemporaryDirectory() as temp_dir:
         with environ({"DAGSTER_HOME": temp_dir}):
             write_telemetry_log_line({"foo": "bar"})
-            with open(os.path.join(temp_dir, "logs", "event.log"), "r", encoding="utf8") as f:
+            with open(os.path.join(temp_dir, "logs", "event.log"), encoding="utf8") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
 
@@ -676,7 +676,7 @@ def test_write_telemetry_log_line_writes_to_dagster_home():
             os.rmdir(os.path.join(temp_dir, "logs"))
 
             write_telemetry_log_line({"foo": "bar"})
-            with open(os.path.join(temp_dir, "logs", "event.log"), "r", encoding="utf8") as f:
+            with open(os.path.join(temp_dir, "logs", "event.log"), encoding="utf8") as f:
                 res = json.load(f)
                 assert res == {"foo": "bar"}
 

@@ -3,8 +3,9 @@ import inspect
 import os
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional, Sequence, cast
+from typing import Callable, NamedTuple, Optional, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
@@ -123,7 +124,7 @@ def load_python_module(
 
     # Use the passed in working directory for local imports (sys.path[0] isn't
     # consistently set in the different entry points that Dagster uses to import code)
-    remove_paths: List[str] = (
+    remove_paths: list[str] = (
         list(remove_from_path_fn()) if remove_from_path_fn else []
     )  # hook for tests
     remove_paths.insert(0, sys.path[0])  # remove the script path
@@ -163,7 +164,7 @@ class FileCodePointer(
     CodePointer,
 ):
     def __new__(cls, python_file: str, fn_name: str, working_directory: Optional[str] = None):
-        return super(FileCodePointer, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(python_file, "python_file"),
             check.str_param(fn_name, "fn_name"),
@@ -184,14 +185,15 @@ class FileCodePointer(
 
 
 def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str) -> object:
-    from dagster._core.definitions.load_assets_from_modules import assets_from_modules
+    from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+        load_assets_from_modules,
+    )
     from dagster._core.workspace.autodiscovery import LOAD_ALL_ASSETS
 
     if fn_name == LOAD_ALL_ASSETS:
         # LOAD_ALL_ASSETS is a special symbol that's returned when, instead of loading a particular
         # attribute, we should load all the assets in the module.
-        module_assets, module_source_assets, _ = assets_from_modules([module])
-        return [*module_assets, *module_source_assets]
+        return load_assets_from_modules([module])
     else:
         if not hasattr(module, fn_name):
             raise DagsterInvariantViolationError(f"{fn_name} not found {error_suffix}")
@@ -208,7 +210,7 @@ class ModuleCodePointer(
     CodePointer,
 ):
     def __new__(cls, module: str, fn_name: str, working_directory: Optional[str] = None):
-        return super(ModuleCodePointer, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(module, "module"),
             check.str_param(fn_name, "fn_name"),
@@ -234,7 +236,7 @@ class PackageCodePointer(
     CodePointer,
 ):
     def __new__(cls, module: str, attribute: str, working_directory: Optional[str] = None):
-        return super(PackageCodePointer, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(module, "module"),
             check.str_param(attribute, "attribute"),
@@ -292,7 +294,7 @@ class CustomPointer(
                 f"Bad kwarg of length {len(reconstructable_kwarg)}, should be 2",
             )
 
-        return super(CustomPointer, cls).__new__(
+        return super().__new__(
             cls,
             reconstructor_pointer,
             reconstructable_args,

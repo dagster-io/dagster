@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import kubernetes.config
 import kubernetes.watch
@@ -139,28 +139,28 @@ K8S_JOB_OP_CONFIG = merge_dicts(
 def execute_k8s_job(
     context: OpExecutionContext,
     image: str,
-    command: Optional[List[str]] = None,
-    args: Optional[List[str]] = None,
+    command: Optional[list[str]] = None,
+    args: Optional[list[str]] = None,
     namespace: Optional[str] = None,
     image_pull_policy: Optional[str] = None,
-    image_pull_secrets: Optional[List[Dict[str, str]]] = None,
+    image_pull_secrets: Optional[list[dict[str, str]]] = None,
     service_account_name: Optional[str] = None,
-    env_config_maps: Optional[List[str]] = None,
-    env_secrets: Optional[List[str]] = None,
-    env_vars: Optional[List[str]] = None,
-    volume_mounts: Optional[List[Dict[str, Any]]] = None,
-    volumes: Optional[List[Dict[str, Any]]] = None,
-    labels: Optional[Dict[str, str]] = None,
-    resources: Optional[Dict[str, Any]] = None,
+    env_config_maps: Optional[list[str]] = None,
+    env_secrets: Optional[list[str]] = None,
+    env_vars: Optional[list[str]] = None,
+    volume_mounts: Optional[list[dict[str, Any]]] = None,
+    volumes: Optional[list[dict[str, Any]]] = None,
+    labels: Optional[dict[str, str]] = None,
+    resources: Optional[dict[str, Any]] = None,
     scheduler_name: Optional[str] = None,
     load_incluster_config: bool = True,
     kubeconfig_file: Optional[str] = None,
     timeout: Optional[int] = None,
-    container_config: Optional[Dict[str, Any]] = None,
-    pod_template_spec_metadata: Optional[Dict[str, Any]] = None,
-    pod_spec_config: Optional[Dict[str, Any]] = None,
-    job_metadata: Optional[Dict[str, Any]] = None,
-    job_spec_config: Optional[Dict[str, Any]] = None,
+    container_config: Optional[dict[str, Any]] = None,
+    pod_template_spec_metadata: Optional[dict[str, Any]] = None,
+    pod_spec_config: Optional[dict[str, Any]] = None,
+    job_metadata: Optional[dict[str, Any]] = None,
+    job_spec_config: Optional[dict[str, Any]] = None,
     k8s_job_name: Optional[str] = None,
     merge_behavior: K8sConfigMergeBehavior = K8sConfigMergeBehavior.DEEP,
     delete_failed_k8s_jobs: Optional[bool] = True,
@@ -371,7 +371,10 @@ def execute_k8s_job(
             watch = kubernetes.watch.Watch()  # consider moving in to api_client
 
             api_client.wait_for_pod(
-                pod_to_watch, namespace, wait_timeout=timeout, start_time=start_time
+                pod_to_watch,
+                namespace,  # pyright: ignore[reportArgumentType]
+                wait_timeout=timeout,
+                start_time=start_time,  # pyright: ignore[reportArgumentType]
             )
 
             log_stream = watch.stream(
@@ -416,6 +419,20 @@ def execute_k8s_job(
             num_pods_to_wait_for=num_pods_to_wait_for,
         )
     except (DagsterExecutionInterruptedError, Exception) as e:
+        try:
+            pods = api_client.get_pod_names_in_job(job_name=job_name, namespace=namespace)
+            pod_debug_info = "\n\n".join(
+                [api_client.get_pod_debug_info(pod_name, namespace) for pod_name in pods]
+            )
+        except Exception:
+            context.log.exception(
+                f"Error trying to get pod debug information for failed k8s job {job_name}"
+            )
+        else:
+            context.log.error(
+                f"Debug information for failed k8s job {job_name}:\n\n{pod_debug_info}"
+            )
+
         if delete_failed_k8s_jobs:
             context.log.info(
                 f"Deleting Kubernetes job {job_name} in namespace {namespace} due to exception"

@@ -2,9 +2,9 @@ import re
 import shutil
 import subprocess
 import time
+from collections.abc import Iterator
 from multiprocessing import Process
 from tempfile import NamedTemporaryFile
-from typing import Iterator
 
 import pytest
 from dagster import op

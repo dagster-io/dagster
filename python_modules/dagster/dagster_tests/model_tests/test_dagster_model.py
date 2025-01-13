@@ -69,10 +69,10 @@ def test_non_model_param():
     assert MyModel(some_class=SomeClass())
 
     with pytest.raises(ValidationError):
-        MyModel(some_class=OtherClass())  # wrong class
+        MyModel(some_class=OtherClass())  # wrong class  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(ValidationError):
-        MyModel(some_class=SomeClass)  # forgot ()
+        MyModel(some_class=SomeClass)  # forgot ()  # pyright: ignore[reportArgumentType]
 
 
 def test_cached_method() -> None:

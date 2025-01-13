@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 
 from dagster import (
     AssetKey,
@@ -64,7 +65,7 @@ class DefinitionsRunner:
 
     def get_last_5000_asset_materialization_event_records(
         self, asset_key: CoercibleToAssetKey
-    ) -> List[EventLogRecord]:
+    ) -> list[EventLogRecord]:
         return [
             *self.instance.fetch_materializations(
                 AssetKey.from_coercible(asset_key), limit=5000
@@ -109,7 +110,7 @@ class AssetBasedInMemoryIOManager(IOManager):
 
     def _keys_from_context(
         self, context: Union[InputContext, OutputContext]
-    ) -> Optional[Sequence[Tuple[str, ...]]]:
+    ) -> Optional[Sequence[tuple[str, ...]]]:
         if not context.has_asset_key:
             return None
 
@@ -129,7 +130,7 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
     """
 
     name: str
-    _values: Dict = PrivateAttr(default={})
+    _values: dict = PrivateAttr(default={})
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._values = {}
@@ -167,7 +168,7 @@ class ConfigurableAssetBasedInMemoryIOManager(ConfigurableIOManager):
 
     def _keys_from_context(
         self, context: Union[InputContext, OutputContext]
-    ) -> Optional[Sequence[Tuple[str, ...]]]:
+    ) -> Optional[Sequence[tuple[str, ...]]]:
         if not context.has_asset_key:
             return None
 

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import wandb
 from dagster import Field, InitResourceContext, String, StringSource, resource
@@ -27,7 +27,7 @@ WANDB_CLOUD_HOST: str = "https://api.wandb.ai"
     },
     description="Resource for interacting with Weights & Biases",
 )
-def wandb_resource(context: InitResourceContext) -> Dict[str, Any]:
+def wandb_resource(context: InitResourceContext) -> dict[str, Any]:
     """Dagster resource used to communicate with the W&B API. It's useful when you want to use the
     wandb client within your ops and assets. It's a required resources if you are using the W&B IO
     Manager.

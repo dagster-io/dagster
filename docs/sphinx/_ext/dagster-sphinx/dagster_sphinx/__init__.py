@@ -1,16 +1,20 @@
-from typing import List, Tuple, Type, TypeVar
+from typing import List, Tuple, Type, TypeVar  # noqa: F401, UP035
 
 import docutils.nodes as nodes
 from dagster._annotations import (
+    get_beta_info,
     get_deprecated_info,
     get_deprecated_params,
     get_experimental_info,
     get_experimental_params,
+    get_preview_info,
     get_superseded_info,
     has_deprecated_params,
     has_experimental_params,
+    is_beta,
     is_deprecated,
     is_experimental,
+    is_preview,
     is_public,
     is_superseded,
 )
@@ -84,7 +88,7 @@ class DagsterClassDocumenter(ClassDocumenter):
 
     objtype = "class"
 
-    def get_object_members(self, want_all: bool) -> Tuple[bool, List[ObjectMember]]:
+    def get_object_members(self, want_all: bool) -> tuple[bool, list[ObjectMember]]:
         # the @record transform creates a new outer class, so redirect
         # sphinx to target the original class for scraping members out of __dict__
         if is_record(self.object):
@@ -116,7 +120,7 @@ def process_docstring(
     name: str,
     obj: object,
     options: AutodocOptions,
-    lines: List[str],
+    lines: list[str],
 ) -> None:
     assert app.env is not None
 
@@ -125,6 +129,12 @@ def process_docstring(
 
     if is_superseded(obj):
         inject_object_flag(obj, get_superseded_info(obj), lines)
+
+    if is_preview(obj):
+        inject_object_flag(obj, get_preview_info(obj), lines)
+
+    if is_beta(obj):
+        inject_object_flag(obj, get_beta_info(obj), lines)
 
     if has_deprecated_params(obj):
         params = get_deprecated_params(obj)
@@ -143,7 +153,7 @@ def process_docstring(
 T_Node = TypeVar("T_Node", bound=nodes.Node)
 
 
-def get_child_as(node: nodes.Node, index: int, node_type: Type[T_Node]) -> T_Node:
+def get_child_as(node: nodes.Node, index: int, node_type: type[T_Node]) -> T_Node:
     child = node.children[index]
     assert isinstance(
         child, node_type

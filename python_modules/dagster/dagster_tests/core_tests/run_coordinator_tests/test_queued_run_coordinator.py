@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
@@ -189,4 +189,4 @@ def test_thread_config():
             }
         }
     ) as instance:
-        assert instance.run_coordinator.dequeue_num_workers == num
+        assert instance.run_coordinator.dequeue_num_workers == num  # pyright: ignore[reportAttributeAccessIssue]

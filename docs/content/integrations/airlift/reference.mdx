@@ -3,14 +3,25 @@ title: "dagster-airlift integration reference"
 description: "dagster-airlift is a toolkit for observing and migrating Airflow DAGs within Dagster."
 ---
 
-# `dagster-airlift` integration reference
+# dagster-airlift integration reference
 
 `dagster-airlift` is a toolkit for observing and migrating Airflow DAGs within Dagster. This reference page provides additional information for working with `dagster-airlift` that is not provided within the tutorial. You should start by reading the [dagster-airlift tutorial](/integrations/airlift/tutorial/overview) before using this reference page.
 
+- [Migration best practices](#migration-best-practices)
 - [Supporting custom authorization](#supporting-custom-authorization)
 - [Dagster Plus Authorization](#dagster-plus-authorization)
 - [Dealing with changing Airflow](#dealing-with-changing-airflow)
 - [Automating changes to code locations](#automating-changes-to-code-locations)
+- [Peering to multiple Airflow instances](#peering-to-multiple-airflow-instances)
+- [Customizing DAG proxying operator](#customizing-dag-proxying-operator)
+
+### Migration best practices
+
+When migrating Airflow DAGs to Dagster, we recommend a few best practices:
+
+- **Create separate packages for the Airflow and Dagster deployments.** Airflow has complex dependencies and can be difficult to install in the same environment as Dagster.
+- **Create user acceptance tests in Dagster before migrating.** This will help you catch issues easily during migration.
+- **Understand the rollback procedure for your migration.** When proxying execution to Dagster from Airflow, you can always rollback with a single line-of-code change in the Airflow DAG.
 
 ### Supporting custom authorization
 
@@ -79,7 +90,7 @@ class DagsterCloudProxyOperator(BaseProxyTaskToDagsterOperator):
         return f"https://{org_name}.dagster.plus/{deployment_name}"
 ```
 
-## Dealing with changing Airflow
+### Dealing with changing Airflow
 
 In order to make spin-up more efficient, `dagster-airlift` caches the state of the Airflow instance in the dagster database, so that repeat fetches of the code location don't require additional calls to Airflow's rest API. However, this means that the Dagster definitions can potentially fall out of sync with Airflow. Here are a few different ways this can manifest:
 

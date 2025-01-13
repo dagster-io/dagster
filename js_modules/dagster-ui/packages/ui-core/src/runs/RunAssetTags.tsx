@@ -1,3 +1,5 @@
+import {useMemo} from 'react';
+
 import {AssetKeyTagCollection} from './AssetTagCollections';
 import {assetKeysForRun} from './RunUtils';
 import {gql, useQuery} from '../apollo-client';
@@ -13,13 +15,15 @@ export const RunAssetTags = (props: {run: RunFragment}) => {
     skip,
     fetchPolicy: 'no-cache',
   });
-  const {data, loading} = queryResult;
 
-  if (loading || !data || data.pipelineRunOrError.__typename !== 'Run') {
-    return null;
-  }
+  const assetKeys = useMemo(() => {
+    const {data, loading} = queryResult;
+    if (loading || !data || data.pipelineRunOrError.__typename !== 'Run') {
+      return null;
+    }
 
-  const assetKeys = skip ? assetKeysForRun(run) : data.pipelineRunOrError.assets.map((a) => a.key);
+    return skip ? assetKeysForRun(run) : data.pipelineRunOrError.assets.map((a) => a.key);
+  }, [queryResult, run, skip]);
 
   return <AssetKeyTagCollection useTags assetKeys={assetKeys} />;
 };

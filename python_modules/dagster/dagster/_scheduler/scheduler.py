@@ -5,20 +5,10 @@ import random
 import sys
 import threading
 from collections import defaultdict
+from collections.abc import Generator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager, ExitStack
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Generator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
 from typing_extensions import Self
 
@@ -41,7 +31,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
+from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
@@ -51,7 +41,7 @@ from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.log import default_date_format_string
 from dagster._utils.merger import merge_dicts
 
@@ -194,11 +184,11 @@ def execute_scheduler_iteration_loop(
 ) -> "DaemonIterator":
     from dagster._daemon.daemon import SpanMarker
 
-    scheduler_run_futures: Dict[str, Future] = {}
-    iteration_times: Dict[str, ScheduleIterationTimes] = {}
+    scheduler_run_futures: dict[str, Future] = {}
+    iteration_times: dict[str, ScheduleIterationTimes] = {}
 
-    submit_threadpool_executor = None
     threadpool_executor = None
+    submit_threadpool_executor = None
 
     with ExitStack() as stack:
         settings = workspace_process_context.instance.get_scheduler_settings()
@@ -225,6 +215,7 @@ def execute_scheduler_iteration_loop(
             next_interval_time = _get_next_scheduler_iteration_time(start_time)
 
             yield SpanMarker.START_SPAN
+
             try:
                 yield from launch_scheduled_runs(
                     workspace_process_context,
@@ -238,7 +229,7 @@ def execute_scheduler_iteration_loop(
                     max_tick_retries=max_tick_retries,
                 )
             except Exception:
-                error_info = DaemonErrorCapture.on_exception(
+                error_info = DaemonErrorCapture.process_exception(
                     exc_info=sys.exc_info(),
                     logger=logger,
                     log_message="SchedulerDaemon caught an error",
@@ -248,8 +239,8 @@ def execute_scheduler_iteration_loop(
                 next_interval_time = min(start_time + ERROR_INTERVAL_TIME, next_interval_time)
 
             yield SpanMarker.END_SPAN
-            end_time = get_current_timestamp()
 
+            end_time = get_current_timestamp()
             if next_interval_time > end_time:
                 # Sleep until the beginning of the next minute, plus a small epsilon to
                 # be sure that we're past the start of the minute
@@ -261,10 +252,10 @@ def launch_scheduled_runs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     end_datetime_utc: datetime.datetime,
-    iteration_times: Dict[str, ScheduleIterationTimes],
+    iteration_times: dict[str, ScheduleIterationTimes],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    scheduler_run_futures: Optional[Dict[str, Future]] = None,
+    scheduler_run_futures: Optional[dict[str, Future]] = None,
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
@@ -285,7 +276,7 @@ def launch_scheduled_runs(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SCHEDULE)
 
-    running_schedules: Dict[str, RemoteSchedule] = {}
+    running_schedules: dict[str, RemoteSchedule] = {}
     all_workspace_schedule_selector_ids = set()
     error_locations = set()
 
@@ -392,8 +383,11 @@ def launch_scheduled_runs(
                             iteration_times[schedule.selector_id] = result
                         except Exception:
                             # Log exception and continue on rather than erroring the whole scheduler loop
-                            logger.exception(
-                                f"Error getting tick result for schedule {schedule.name}"
+
+                            DaemonErrorCapture.process_exception(
+                                exc_info=sys.exc_info(),
+                                logger=logger,
+                                log_message=f"Error getting tick result for schedule {schedule.name}",
                             )
                         del scheduler_run_futures[schedule.selector_id]
                     else:
@@ -476,8 +470,12 @@ def launch_scheduled_runs(
                     "launch_scheduled_runs_for_schedule_iterator did not yield a ScheduleIterationTimes",
                 )
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.exception(f"Scheduler caught an error for schedule {schedule.name}")
+            error_info = DaemonErrorCapture.process_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message=f"Scheduler caught an error for schedule {schedule.name}",
+            )
+
         yield error_info
 
 
@@ -572,7 +570,7 @@ def launch_scheduled_runs_for_schedule_iterator(
     if not timezone_str:
         timezone_str = "UTC"
 
-    tick_times: List[datetime.datetime] = []
+    tick_times: list[datetime.datetime] = []
 
     now_timestamp = end_datetime_utc.timestamp()
 
@@ -664,18 +662,16 @@ def launch_scheduled_runs_for_schedule_iterator(
             except Exception as e:
                 if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
                     try:
-                        raise DagsterSchedulerError(
+                        raise DagsterUserCodeUnreachableError(
                             f"Unable to reach the user code server for schedule {schedule_name}."
                             " Schedule will resume execution once the server is available."
                         ) from e
                     except:
-                        error_data = serializable_error_info_from_exc_info(sys.exc_info())
-
-                        logger.exception(
-                            "Scheduler daemon caught an error for schedule "
-                            f"{remote_schedule.name}"
+                        error_data = DaemonErrorCapture.process_exception(
+                            sys.exc_info(),
+                            logger=logger,
+                            log_message=f"Scheduler daemon caught an error for schedule {remote_schedule.name}",
                         )
-
                         tick_context.update_state(
                             TickStatus.FAILURE,
                             error=error_data,
@@ -685,7 +681,11 @@ def launch_scheduled_runs_for_schedule_iterator(
                         )
                         yield error_data
                 else:
-                    error_data = serializable_error_info_from_exc_info(sys.exc_info())
+                    error_data = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=logger,
+                        log_message=f"Scheduler daemon caught an error for schedule {remote_schedule.name}",
+                    )
                     tick_context.update_state(
                         TickStatus.FAILURE,
                         error=error_data,
@@ -791,8 +791,11 @@ def _submit_run_request(
                 f"Completed scheduled launch of run {run.run_id} for {remote_schedule.name}"
             )
         except Exception:
-            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-            logger.exception(f"Run {run.run_id} created successfully but failed to launch")
+            error_info = DaemonErrorCapture.process_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message=f"Run {run.run_id} created successfully but failed to launch",
+            )
 
     return SubmitRunRequestResult(
         run_key=run_request.run_key,

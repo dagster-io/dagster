@@ -92,19 +92,19 @@ def test_hook_user_error():
         lambda event: event.event_type == DagsterEventType.HOOK_ERRORED
     )
     assert len(hook_errored_events) == 1
-    assert hook_errored_events[0].node_handle.name == "a_op_with_hook"
+    assert hook_errored_events[0].node_handle.name == "a_op_with_hook"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_hook_decorator_arg_error():
     with pytest.raises(DagsterInvalidDefinitionError, match="does not have required positional"):
 
-        @success_hook
+        @success_hook  # pyright: ignore[reportArgumentType]
         def _():
             pass
 
     with pytest.raises(DagsterInvalidDefinitionError, match="does not have required positional"):
 
-        @failure_hook
+        @failure_hook  # pyright: ignore[reportCallIssue,reportArgumentType]
         def _():
             pass
 

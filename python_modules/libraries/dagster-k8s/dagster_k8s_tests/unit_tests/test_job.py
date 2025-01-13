@@ -798,7 +798,9 @@ def test_construct_dagster_k8s_job_with_user_defined_image():
     expected_image = "different_image:tag"
     user_defined_k8s_config = get_user_defined_k8s_config(
         user_defined_k8s_env_tags_graph.to_job(
-            tags={USER_DEFINED_K8S_CONFIG_KEY: {"container_config": {"image": expected_image}}}
+            tags={
+                USER_DEFINED_K8S_CONFIG_KEY: {"container_config": {"image": expected_image}},
+            }
         ).tags
     )
 

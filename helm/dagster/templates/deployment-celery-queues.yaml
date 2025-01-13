@@ -40,12 +40,14 @@ spec:
       securityContext:
         {{- toYaml $celeryK8sRunLauncherConfig.podSecurityContext | nindent 8 }}
       initContainers:
+        {{- if $celeryK8sRunLauncherConfig.checkDbReadyInitContainer }}
         - name: check-db-ready
-          image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
+          image: {{ include "dagster.externalPostgresImage.name" $.Values.postgresql.image | quote }}
           imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" $ | squote }}]
           securityContext:
             {{- toYaml $celeryK8sRunLauncherConfig.securityContext | nindent 12 }}
+        {{- end }}
         {{- if $.Values.rabbitmq.enabled }}
         - name: check-rabbitmq-ready
           image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}

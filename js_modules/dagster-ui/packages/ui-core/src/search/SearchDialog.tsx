@@ -72,6 +72,14 @@ const initialState: State = {
 
 const DEBOUNCE_MSEC = 100;
 
+// sort by Fuse score ascending, lower is better
+const sortResultsByFuseScore = (
+  a: Fuse.FuseResult<SearchResult>,
+  b: Fuse.FuseResult<SearchResult>,
+) => {
+  return (a.score ?? 0) - (b.score ?? 0);
+};
+
 export const SearchDialog = () => {
   const history = useHistory();
   const {initialize, loading, searchPrimary, searchSecondary} = useGlobalSearch({
@@ -82,9 +90,11 @@ export const SearchDialog = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, primaryResults, secondaryResults, highlight} = state;
 
-  const results = [...primaryResults, ...secondaryResults];
-  const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
-  const numRenderedResults = renderedResults.length;
+  const {renderedResults, numRenderedResults} = React.useMemo(() => {
+    const results = [...primaryResults, ...secondaryResults].sort(sortResultsByFuseScore);
+    const renderedResults = results.slice(0, MAX_DISPLAYED_RESULTS);
+    return {renderedResults, numRenderedResults: renderedResults.length};
+  }, [primaryResults, secondaryResults]);
 
   const openSearch = React.useCallback(() => {
     trackEvent('open-global-search');

@@ -6,10 +6,11 @@ import sys
 import threading
 import zlib
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
-from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, cast
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import (
@@ -72,7 +73,7 @@ from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
-from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
+from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash, return_as_list
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
@@ -271,7 +272,7 @@ class AutoMaterializeLaunchContext:
 
     def __exit__(
         self,
-        exception_type: Type[BaseException],
+        exception_type: type[BaseException],
         exception_value: Exception,
         traceback: TracebackType,
     ) -> None:
@@ -284,11 +285,15 @@ class AutoMaterializeLaunchContext:
                 exception_value, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
             ):
                 try:
-                    raise Exception(
+                    raise DagsterUserCodeUnreachableError(
                         "Unable to reach the code server. Automation condition evaluation will resume once the code server is available."
                     ) from exception_value
                 except:
-                    error_data = DaemonErrorCapture.on_exception(sys.exc_info())
+                    error_data = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=self.logger,
+                        log_message="Asset daemon tick caught an error",
+                    )
                     self.update_state(
                         TickStatus.FAILURE,
                         error=error_data,
@@ -296,7 +301,11 @@ class AutoMaterializeLaunchContext:
                         failure_count=self._tick.failure_count,
                     )
             else:
-                error_data = DaemonErrorCapture.on_exception(sys.exc_info())
+                error_data = DaemonErrorCapture.process_exception(
+                    sys.exc_info(),
+                    logger=self.logger,
+                    log_message="Asset daemon tick caught an error",
+                )
                 self.update_state(
                     TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
                 )
@@ -378,7 +387,7 @@ class AssetDaemon(DagsterDaemon):
                 " migrate` to enable."
             )
 
-        amp_tick_futures: Dict[Optional[str], Future] = {}
+        amp_tick_futures: dict[Optional[str], Future] = {}
         threadpool_executor = None
         submit_threadpool_executor = None
         with ExitStack() as stack:
@@ -410,7 +419,7 @@ class AssetDaemon(DagsterDaemon):
                         debug_crash_flags={},
                     )
                 except Exception:
-                    error_info = DaemonErrorCapture.on_exception(
+                    error_info = DaemonErrorCapture.process_exception(
                         exc_info=sys.exc_info(),
                         logger=self._logger,
                         log_message="AssetDaemon caught an error",
@@ -428,7 +437,7 @@ class AssetDaemon(DagsterDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         threadpool_executor: Optional[ThreadPoolExecutor],
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
-        amp_tick_futures: Dict[Optional[str], Future],
+        amp_tick_futures: dict[Optional[str], Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
     ):
         instance: DagsterInstance = workspace_process_context.instance
@@ -442,7 +451,7 @@ class AssetDaemon(DagsterDaemon):
 
         workspace = workspace_process_context.create_request_context()
 
-        sensors_and_repos: Sequence[Tuple[Optional[RemoteSensor], Optional[RemoteRepository]]] = []
+        sensors_and_repos: Sequence[tuple[Optional[RemoteSensor], Optional[RemoteRepository]]] = []
 
         if use_auto_materialize_sensors:
             workspace_snapshot = {
@@ -580,7 +589,7 @@ class AssetDaemon(DagsterDaemon):
     def _create_initial_sensor_cursors_from_raw_cursor(
         self,
         instance: DagsterInstance,
-        sensors_and_repos: Sequence[Tuple[RemoteSensor, RemoteRepository]],
+        sensors_and_repos: Sequence[tuple[RemoteSensor, RemoteRepository]],
         all_sensor_states: Mapping[str, InstigatorState],
         pre_sensor_cursor: AssetDaemonCursor,
     ) -> Mapping[str, InstigatorState]:
@@ -654,24 +663,6 @@ class AssetDaemon(DagsterDaemon):
                 instance.add_instigator_state(new_auto_materialize_state)
 
         return result
-
-    def _process_auto_materialize_tick(
-        self,
-        workspace_process_context: IWorkspaceProcessContext,
-        repository: Optional[RemoteRepository],
-        sensor: Optional[RemoteSensor],
-        debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    ):
-        return list(
-            self._process_auto_materialize_tick_generator(
-                workspace_process_context,
-                repository,
-                sensor,
-                debug_crash_flags,
-                submit_threadpool_executor=submit_threadpool_executor,
-            )
-        )
 
     def _process_auto_materialize_tick_generator(
         self,
@@ -870,13 +861,15 @@ class AssetDaemon(DagsterDaemon):
                     submit_threadpool_executor=submit_threadpool_executor,
                 )
         except Exception:
-            error_info = DaemonErrorCapture.on_exception(
+            error_info = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=self._logger,
                 log_message="Automation condition daemon caught an error",
             )
 
         yield error_info
+
+    _process_auto_materialize_tick = return_as_list(_process_auto_materialize_tick_generator)
 
     def _evaluate_auto_materialize_tick(
         self,
@@ -885,9 +878,9 @@ class AssetDaemon(DagsterDaemon):
         sensor: Optional[RemoteSensor],
         workspace_process_context: IWorkspaceProcessContext,
         asset_graph: RemoteAssetGraph,
-        auto_materialize_entity_keys: Set[EntityKey],
+        auto_materialize_entity_keys: set[EntityKey],
         stored_cursor: AssetDaemonCursor,
-        auto_observe_asset_keys: Set[AssetKey],
+        auto_observe_asset_keys: set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         is_retry: bool,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
@@ -1042,9 +1035,9 @@ class AssetDaemon(DagsterDaemon):
         evaluation_id: int,
         run_request: RunRequest,
         reserved_run_id: str,
-        run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
+        run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-    ) -> Tuple[str, AbstractSet[EntityKey]]:
+    ) -> tuple[str, AbstractSet[EntityKey]]:
         # check that the run_request requires the backfill daemon rather than if the setting is enabled to
         # account for the setting changing between tick retries
         if run_request.requires_backfill_daemon():
@@ -1100,7 +1093,7 @@ class AssetDaemon(DagsterDaemon):
         instance: DagsterInstance,
         tick_context: AutoMaterializeLaunchContext,
         workspace_process_context: IWorkspaceProcessContext,
-        evaluations_by_key: Dict[EntityKey, AutomationConditionEvaluationWithRunIds],
+        evaluations_by_key: dict[EntityKey, AutomationConditionEvaluationWithRunIds],
         evaluation_id: int,
         run_requests: Sequence[RunRequest],
         reserved_run_ids: Sequence[str],
@@ -1114,8 +1107,8 @@ class AssetDaemon(DagsterDaemon):
         to_submit = zip(range(len(run_requests)), reserved_run_ids, run_requests)
 
         def submit_run_request(
-            run_id_with_run_request: Tuple[int, str, RunRequest],
-        ) -> Tuple[str, AbstractSet[EntityKey]]:
+            run_id_with_run_request: tuple[int, str, RunRequest],
+        ) -> tuple[str, AbstractSet[EntityKey]]:
             i, run_id, run_request = run_id_with_run_request
             return self._submit_run_request(
                 i=i,

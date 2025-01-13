@@ -57,7 +57,7 @@ def test_compute_log_manager(
                 container=container,
                 prefix="my_prefix",
                 local_dir=temp_dir,
-                secret_key=credential,
+                secret_credential=credential,
             )
             instance = DagsterInstance(
                 instance_type=InstanceType.PERSISTENT,
@@ -83,9 +83,9 @@ def test_compute_log_manager(
 
             # Capture API
             log_data = manager.get_log_data(log_key)
-            stdout = log_data.stdout.decode("utf-8")
+            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             assert stdout == HELLO_WORLD + SEPARATOR
-            stderr = log_data.stderr.decode("utf-8")
+            stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
@@ -105,9 +105,9 @@ def test_compute_log_manager(
 
             # Capture API
             log_data = manager.get_log_data(log_key)
-            stdout = log_data.stdout.decode("utf-8")
+            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             assert stdout == HELLO_WORLD + SEPARATOR
-            stderr = log_data.stderr.decode("utf-8")
+            stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
@@ -122,7 +122,10 @@ compute_logs:
   config:
     storage_account: "{storage_account}"
     container: {container}
-    secret_key: {credential}
+    secret_credential:
+        client_id: "{credential['client_id']}"
+        client_secret: "{credential['client_secret']}"
+        tenant_id: "{credential['tenant_id']}"
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
 """
@@ -132,9 +135,9 @@ compute_logs:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001
-    assert instance.compute_log_manager._container == container  # noqa: SLF001
-    assert instance.compute_log_manager._blob_prefix == prefix  # noqa: SLF001
+    assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert instance.compute_log_manager._container == container  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert instance.compute_log_manager._blob_prefix == prefix  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
@@ -149,11 +152,11 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
             container=container,
             prefix=blob_prefix,
             local_dir=temp_dir,
-            secret_key=credential,
+            secret_credential=credential,
         )
         log_key = ["arbitrary", "log", "key"]
         with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
-            write_stream.write("hello hello")
+            write_stream.write("hello hello")  # pyright: ignore[reportOptionalMemberAccess]
 
         adls2_object = fake_client.get_blob_client(
             container=container,
@@ -178,14 +181,14 @@ def test_get_log_keys_for_log_key_prefix(
             container=container,
             prefix=blob_prefix,
             local_dir=temp_dir,
-            secret_key=credential,
+            secret_credential=credential,
         )
         log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
 
         def write_log_file(file_id: int, io_type: ComputeIOType):
             full_log_key = [*log_key_prefix, f"{file_id}"]
             with manager.open_log_stream(full_log_key, io_type) as f:
-                f.write("foo")
+                f.write("foo")  # pyright: ignore[reportOptionalMemberAccess]
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
     assert len(log_keys) == 0
@@ -194,7 +197,7 @@ def test_get_log_keys_for_log_key_prefix(
         write_log_file(i, ComputeIOType.STDERR)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
-    assert sorted(log_keys) == [
+    assert sorted(log_keys) == [  # pyright: ignore[reportArgumentType]
         [*log_key_prefix, "0"],
         [*log_key_prefix, "1"],
         [*log_key_prefix, "2"],
@@ -206,7 +209,7 @@ def test_get_log_keys_for_log_key_prefix(
 
     log_key = [*log_key_prefix, "4"]
     with manager.local_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as f:
-        f.write("foo")
+        f.write("foo")  # pyright: ignore[reportOptionalMemberAccess]
     blob_key = manager._blob_key(log_key, ComputeIOType.STDOUT)  # noqa: SLF001
     with open(
         manager.local_manager.get_captured_local_path(
@@ -218,7 +221,7 @@ def test_get_log_keys_for_log_key_prefix(
         blob.upload_blob(data)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
-    assert sorted(log_keys) == [
+    assert sorted(log_keys) == [  # pyright: ignore[reportArgumentType]
         [*log_key_prefix, "0"],
         [*log_key_prefix, "1"],
         [*log_key_prefix, "2"],
@@ -254,7 +257,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
                 container=container,
                 prefix="my_prefix",
                 local_dir=temp_dir,
-                secret_key=credential,
+                secret_credential=credential,
             )
 
     # for streaming tests
@@ -283,7 +286,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
                 container=container,
                 prefix="my_prefix",
                 local_dir=temp_dir,
-                secret_key=credential,
+                secret_credential=credential,
                 upload_interval=1,
             )
 
@@ -352,9 +355,9 @@ def test_compute_log_manager_default_azure_credential(
 
             # Capture API
             log_data = manager.get_log_data(log_key)
-            stdout = log_data.stdout.decode("utf-8")
+            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             assert stdout == HELLO_WORLD + SEPARATOR
-            stderr = log_data.stderr.decode("utf-8")
+            stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
@@ -374,9 +377,9 @@ def test_compute_log_manager_default_azure_credential(
 
             # Capture API
             log_data = manager.get_log_data(log_key)
-            stdout = log_data.stdout.decode("utf-8")
+            stdout = log_data.stdout.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             assert stdout == HELLO_WORLD + SEPARATOR
-            stderr = log_data.stderr.decode("utf-8")
+            stderr = log_data.stderr.decode("utf-8")  # pyright: ignore[reportOptionalMemberAccess]
             for expected in EXPECTED_LOGS:
                 assert expected in stderr
 
@@ -402,9 +405,9 @@ compute_logs:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001
-    assert instance.compute_log_manager._container == container  # noqa: SLF001
-    assert instance.compute_log_manager._blob_prefix == prefix  # noqa: SLF001
-    assert instance.compute_log_manager._default_azure_credential == {  # noqa: SLF001
+    assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert instance.compute_log_manager._container == container  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert instance.compute_log_manager._blob_prefix == prefix  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+    assert instance.compute_log_manager._default_azure_credential == {  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
         "exclude_environment_credentials": True
     }

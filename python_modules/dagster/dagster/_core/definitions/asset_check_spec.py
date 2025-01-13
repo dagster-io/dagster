@@ -1,5 +1,6 @@
+from collections.abc import Iterable, Mapping
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -116,3 +117,6 @@ class AssetCheckSpec(
     @property
     def key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.name)
+
+    def replace_key(self, key: AssetCheckKey) -> "AssetCheckSpec":
+        return self._replace(asset_key=key.asset_key, name=key.name)

@@ -16,7 +16,6 @@ export type Scalars = {
   Boolean: {input: boolean; output: boolean};
   Int: {input: number; output: number};
   Float: {input: number; output: number};
-  Cursor: {input: any; output: any};
   GenericScalar: {input: any; output: any};
   RunConfigData: {input: any; output: any};
 };
@@ -146,6 +145,7 @@ export type AssetCheck = {
   __typename: 'AssetCheck';
   additionalAssetKeys: Array<AssetKey>;
   assetKey: AssetKey;
+  automationCondition: Maybe<AutomationCondition>;
   blocking: Scalars['Boolean']['output'];
   canExecuteIndividually: AssetCheckCanExecuteIndividually;
   description: Maybe<Scalars['String']['output']>;
@@ -222,7 +222,7 @@ export type AssetCheckEvaluationPlannedEvent = MessageEvent &
 export type AssetCheckEvaluationTargetMaterializationData = {
   __typename: 'AssetCheckEvaluationTargetMaterializationData';
   runId: Scalars['String']['output'];
-  storageId: Scalars['Int']['output'];
+  storageId: Scalars['ID']['output'];
   timestamp: Scalars['Float']['output'];
 };
 
@@ -299,8 +299,9 @@ export type AssetConditionEvaluationNode =
 
 export type AssetConditionEvaluationRecord = {
   __typename: 'AssetConditionEvaluationRecord';
-  assetKey: AssetKey;
+  assetKey: Maybe<AssetKey>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
+  entityKey: EntityKey;
   evaluation: AssetConditionEvaluation;
   evaluationId: Scalars['ID']['output'];
   evaluationNodes: Array<AutomationConditionEvaluationNode>;
@@ -1257,6 +1258,8 @@ export type EngineEvent = DisplayableEvent &
     timestamp: Scalars['String']['output'];
   };
 
+export type EntityKey = AssetCheckhandle | AssetKey;
+
 export type EnumConfigType = ConfigType & {
   __typename: 'EnumConfigType';
   description: Maybe<Scalars['String']['output']>;
@@ -2206,6 +2209,18 @@ export type LaunchBackfillSuccess = {
   launchedRunIds: Maybe<Array<Maybe<Scalars['String']['output']>>>;
 };
 
+export type LaunchMultipleRunsMutation = {
+  __typename: 'LaunchMultipleRunsMutation';
+  Output: LaunchMultipleRunsResultOrError;
+};
+
+export type LaunchMultipleRunsResult = {
+  __typename: 'LaunchMultipleRunsResult';
+  launchMultipleRunsResult: Array<LaunchRunResult>;
+};
+
+export type LaunchMultipleRunsResultOrError = LaunchMultipleRunsResult | PythonError;
+
 export type LaunchPipelineRunSuccess = {
   run: Run;
 };
@@ -2614,6 +2629,7 @@ export type Mutation = {
   deleteRun: DeletePipelineRunResult;
   freeConcurrencySlots: Scalars['Boolean']['output'];
   freeConcurrencySlotsForRun: Scalars['Boolean']['output'];
+  launchMultipleRuns: LaunchMultipleRunsResultOrError;
   launchPartitionBackfill: LaunchBackfillResult;
   launchPipelineExecution: LaunchRunResult;
   launchPipelineReexecution: LaunchRunReexecutionResult;
@@ -2679,6 +2695,10 @@ export type MutationFreeConcurrencySlotsArgs = {
 
 export type MutationFreeConcurrencySlotsForRunArgs = {
   runId: Scalars['String']['input'];
+};
+
+export type MutationLaunchMultipleRunsArgs = {
+  executionParamsList: Array<ExecutionParams>;
 };
 
 export type MutationLaunchPartitionBackfillArgs = {
@@ -3796,13 +3816,14 @@ export type QueryAssetCheckExecutionsArgs = {
 };
 
 export type QueryAssetConditionEvaluationForPartitionArgs = {
-  assetKey: AssetKeyInput;
+  assetKey?: InputMaybe<AssetKeyInput>;
   evaluationId: Scalars['ID']['input'];
   partition: Scalars['String']['input'];
 };
 
 export type QueryAssetConditionEvaluationRecordsOrErrorArgs = {
-  assetKey: AssetKeyInput;
+  assetCheckKey?: InputMaybe<AssetCheckHandleInput>;
+  assetKey?: InputMaybe<AssetKeyInput>;
   cursor?: InputMaybe<Scalars['String']['input']>;
   limit: Scalars['Int']['input'];
 };
@@ -3984,14 +4005,14 @@ export type QueryRunTagsOrErrorArgs = {
 
 export type QueryRunsFeedCountOrErrorArgs = {
   filter?: InputMaybe<RunsFilter>;
-  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
+  view: RunsFeedView;
 };
 
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   filter?: InputMaybe<RunsFilter>;
-  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
   limit: Scalars['Int']['input'];
+  view: RunsFeedView;
 };
 
 export type QueryRunsOrErrorArgs = {
@@ -4023,7 +4044,7 @@ export type QueryTopLevelResourceDetailsOrErrorArgs = {
 };
 
 export type QueryTruePartitionsForAutomationConditionEvaluationNodeArgs = {
-  assetKey: AssetKeyInput;
+  assetKey?: InputMaybe<AssetKeyInput>;
   evaluationId: Scalars['ID']['input'];
   nodeUniqueId?: InputMaybe<Scalars['String']['input']>;
 };
@@ -4818,6 +4839,12 @@ export type RunsFeedEntry = {
   startTime: Maybe<Scalars['Float']['output']>;
   tags: Array<PipelineTag>;
 };
+
+export enum RunsFeedView {
+  BACKFILLS = 'BACKFILLS',
+  ROOTS = 'ROOTS',
+  RUNS = 'RUNS',
+}
 
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
@@ -5984,6 +6011,12 @@ export const buildAssetCheck = (
         : relationshipsToOmit.has('AssetKey')
           ? ({} as AssetKey)
           : buildAssetKey({}, relationshipsToOmit),
+    automationCondition:
+      overrides && overrides.hasOwnProperty('automationCondition')
+        ? overrides.automationCondition!
+        : relationshipsToOmit.has('AutomationCondition')
+          ? ({} as AutomationCondition)
+          : buildAutomationCondition({}, relationshipsToOmit),
     blocking: overrides && overrides.hasOwnProperty('blocking') ? overrides.blocking! : true,
     canExecuteIndividually:
       overrides && overrides.hasOwnProperty('canExecuteIndividually')
@@ -6105,7 +6138,10 @@ export const buildAssetCheckEvaluationTargetMaterializationData = (
   return {
     __typename: 'AssetCheckEvaluationTargetMaterializationData',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'exercitationem',
-    storageId: overrides && overrides.hasOwnProperty('storageId') ? overrides.storageId! : 3254,
+    storageId:
+      overrides && overrides.hasOwnProperty('storageId')
+        ? overrides.storageId!
+        : '48345232-8586-483c-9958-ca65cb4208cd',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 3.87,
   };
 };
@@ -6249,6 +6285,12 @@ export const buildAssetConditionEvaluationRecord = (
           : buildAssetKey({}, relationshipsToOmit),
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.33,
+    entityKey:
+      overrides && overrides.hasOwnProperty('entityKey')
+        ? overrides.entityKey!
+        : relationshipsToOmit.has('AssetCheckhandle')
+          ? ({} as AssetCheckhandle)
+          : buildAssetCheckhandle({}, relationshipsToOmit),
     evaluation:
       overrides && overrides.hasOwnProperty('evaluation')
         ? overrides.evaluation!
@@ -9441,6 +9483,38 @@ export const buildLaunchBackfillSuccess = (
   };
 };
 
+export const buildLaunchMultipleRunsMutation = (
+  overrides?: Partial<LaunchMultipleRunsMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LaunchMultipleRunsMutation'} & LaunchMultipleRunsMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchMultipleRunsMutation');
+  return {
+    __typename: 'LaunchMultipleRunsMutation',
+    Output:
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('LaunchMultipleRunsResult')
+          ? ({} as LaunchMultipleRunsResult)
+          : buildLaunchMultipleRunsResult({}, relationshipsToOmit),
+  };
+};
+
+export const buildLaunchMultipleRunsResult = (
+  overrides?: Partial<LaunchMultipleRunsResult>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LaunchMultipleRunsResult'} & LaunchMultipleRunsResult => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchMultipleRunsResult');
+  return {
+    __typename: 'LaunchMultipleRunsResult',
+    launchMultipleRunsResult:
+      overrides && overrides.hasOwnProperty('launchMultipleRunsResult')
+        ? overrides.launchMultipleRunsResult!
+        : [],
+  };
+};
+
 export const buildLaunchPipelineRunSuccess = (
   overrides?: Partial<LaunchPipelineRunSuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -10222,6 +10296,12 @@ export const buildMutation = (
       overrides && overrides.hasOwnProperty('freeConcurrencySlotsForRun')
         ? overrides.freeConcurrencySlotsForRun!
         : false,
+    launchMultipleRuns:
+      overrides && overrides.hasOwnProperty('launchMultipleRuns')
+        ? overrides.launchMultipleRuns!
+        : relationshipsToOmit.has('LaunchMultipleRunsResult')
+          ? ({} as LaunchMultipleRunsResult)
+          : buildLaunchMultipleRunsResult({}, relationshipsToOmit),
     launchPartitionBackfill:
       overrides && overrides.hasOwnProperty('launchPartitionBackfill')
         ? overrides.launchPartitionBackfill!

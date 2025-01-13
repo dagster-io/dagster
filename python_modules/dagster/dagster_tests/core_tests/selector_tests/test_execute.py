@@ -57,7 +57,7 @@ def test_reexecute_asset_subset():
         assert materializations[0].asset_key == AssetKey("my_asset")
 
         run = instance.get_run_by_id(result.run_id)
-        assert run.asset_selection == {AssetKey("my_asset")}
+        assert run.asset_selection == {AssetKey("my_asset")}  # pyright: ignore[reportOptionalMemberAccess]
 
         reexecution_result = execute_job(
             reconstructable(get_asset_selection_job),
@@ -70,7 +70,7 @@ def test_reexecute_asset_subset():
         assert len(materializations) == 1
         assert materializations[0].asset_key == AssetKey("my_asset")
         run = instance.get_run_by_id(reexecution_result.run_id)
-        assert run.asset_selection == {AssetKey("my_asset")}
+        assert run.asset_selection == {AssetKey("my_asset")}  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_execute_job_with_op_selection_single_clause():

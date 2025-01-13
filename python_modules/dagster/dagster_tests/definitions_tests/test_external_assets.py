@@ -1,4 +1,5 @@
-from typing import AbstractSet, Iterable
+from collections.abc import Iterable
+from typing import AbstractSet  # noqa: UP035
 
 import pytest
 from dagster import (

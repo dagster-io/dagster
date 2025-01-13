@@ -472,7 +472,7 @@ def test_deserialize_node_def_snaps_multi_type_config(snapshot):
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("fancy_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
+    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))  # pyright: ignore[reportArgumentType]
     _dict_has_stable_hashes(
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,
@@ -492,7 +492,7 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("fancy_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
+    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))  # pyright: ignore[reportArgumentType]
     _array_has_stable_hashes(
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,
@@ -511,7 +511,7 @@ def test_multi_type_config_array_map(snapshot):
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("fancy_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
+    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))  # pyright: ignore[reportArgumentType]
     _array_has_stable_hashes(
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,
@@ -536,7 +536,7 @@ def test_multi_type_config_nested_dicts(nested_dict_types, snapshot):
     job_snapshot = JobSnap.from_job_def(noop_job)
     node_def_snap = job_snapshot.get_node_def_snap("fancy_op")
     recevied_config_type = job_snapshot.get_config_type_from_node_def_snap(node_def_snap)
-    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
+    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))  # pyright: ignore[reportArgumentType]
     _dict_has_stable_hashes(
         recevied_config_type,
         job_snapshot.config_schema_snapshot.all_config_snaps_by_key,

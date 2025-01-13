@@ -1,6 +1,7 @@
 import textwrap
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 from dagster import (
     AssetCheckKey,
@@ -160,12 +161,12 @@ def get_table_path_from_parts(catalog_name: str, schema_name: str, table_name: s
 
 
 def _read_sql_file(path_to_file: Path) -> str:
-    with open(path_to_file, "r") as file:
+    with open(path_to_file) as file:
         return textwrap.indent(file.read().strip(), "    ")
 
 
 def default_description_fn(
-    table_row: Dict[str, Any],
+    table_row: dict[str, Any],
     workspace_dir: Optional[Path] = None,
     output_dir: Optional[Path] = None,
     enable_raw_sql_description: bool = True,

@@ -13,14 +13,19 @@ export const useAssetSelectionInput = <
     key: {path: Array<string>};
     definition?: FilterableAssetDefinition | null;
   },
->(
-  assets: T[],
-) => {
+>({
+  assets,
+  assetsLoading,
+}: {
+  assets: T[];
+  assetsLoading?: boolean;
+}) => {
   const [assetSelection, setAssetSelection] = useAssetSelectionState();
 
-  const {graphQueryItems, fetchResult, filtered} = useAssetSelectionFiltering({
+  const {graphQueryItems, loading, filtered} = useAssetSelectionFiltering({
     assetSelection,
     assets,
+    loading: !!assetsLoading,
   });
 
   let filterInput = (
@@ -33,7 +38,7 @@ export const useAssetSelectionInput = <
     />
   );
 
-  if (featureEnabled(FeatureFlag.flagAssetSelectionSyntax)) {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     filterInput = (
       <AssetSelectionInput
         value={assetSelection}
@@ -43,5 +48,5 @@ export const useAssetSelectionInput = <
     );
   }
 
-  return {filterInput, fetchResult, filtered, assetSelection, setAssetSelection};
+  return {filterInput, loading, filtered, assetSelection, setAssetSelection};
 };

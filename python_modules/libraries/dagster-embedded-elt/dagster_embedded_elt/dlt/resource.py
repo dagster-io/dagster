@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Mapping
 from datetime import datetime, timezone
-from typing import Any, Iterator, Mapping, Optional, Union
+from typing import Any, Optional, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -50,7 +51,7 @@ class DagsterDltResource(ConfigurableResource):
         """
         try:
             # zoneinfo is python >= 3.9
-            from zoneinfo import ZoneInfo  # type: ignore
+            from zoneinfo import ZoneInfo
 
             casted_instance_types = (datetime, timezone, ZoneInfo)
         except:

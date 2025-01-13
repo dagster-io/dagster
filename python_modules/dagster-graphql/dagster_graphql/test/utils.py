@@ -1,8 +1,9 @@
 import asyncio
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 import dagster._check as check
 import graphene
@@ -25,7 +26,7 @@ class GqlResult(Protocol):
     def errors(self) -> Optional[Sequence[str]]: ...
 
 
-Selector: TypeAlias = Dict[str, Any]
+Selector: TypeAlias = dict[str, Any]
 
 GqlVariables: TypeAlias = Mapping[str, Any]
 
