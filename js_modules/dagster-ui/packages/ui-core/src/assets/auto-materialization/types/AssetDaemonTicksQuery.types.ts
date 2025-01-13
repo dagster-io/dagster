@@ -10,6 +10,7 @@ export type AssetDaemonTickFragment = {
   status: Types.InstigationTickStatus;
   instigationType: Types.InstigationType;
   requestedAssetMaterializationCount: number;
+  submittedAssetMaterializationCount: number;
   autoMaterializeAssetEvaluationId: string | null;
   error: {
     __typename: 'PythonError';
@@ -23,6 +24,11 @@ export type AssetDaemonTickFragment = {
   } | null;
   requestedAssetKeys: Array<{__typename: 'AssetKey'; path: Array<string>}>;
   requestedMaterializationsForAssets: Array<{
+    __typename: 'RequestedMaterializationsForAsset';
+    partitionKeys: Array<string>;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }>;
+  submittedMaterializationsForAssets: Array<{
     __typename: 'RequestedMaterializationsForAsset';
     partitionKeys: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -49,6 +55,7 @@ export type AssetDaemonTicksQuery = {
     status: Types.InstigationTickStatus;
     instigationType: Types.InstigationType;
     requestedAssetMaterializationCount: number;
+    submittedAssetMaterializationCount: number;
     autoMaterializeAssetEvaluationId: string | null;
     error: {
       __typename: 'PythonError';
@@ -66,7 +73,12 @@ export type AssetDaemonTicksQuery = {
       partitionKeys: Array<string>;
       assetKey: {__typename: 'AssetKey'; path: Array<string>};
     }>;
+    submittedMaterializationsForAssets: Array<{
+      __typename: 'RequestedMaterializationsForAsset';
+      partitionKeys: Array<string>;
+      assetKey: {__typename: 'AssetKey'; path: Array<string>};
+    }>;
   }>;
 };
 
-export const AssetDaemonTicksQueryVersion = '399ac77e660d40eba32c2ab06db2a2936a71e660d93ec108364eec1fdfc16788';
+export const AssetDaemonTicksQueryVersion = '24fabd2b9330465bfe6d349616d2cbc0f117227d02fb19f701921db0a0e410d8';

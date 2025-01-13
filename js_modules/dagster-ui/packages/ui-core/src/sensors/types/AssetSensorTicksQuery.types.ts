@@ -40,6 +40,7 @@ export type AssetSensorTicksQuery = {
             status: Types.InstigationTickStatus;
             instigationType: Types.InstigationType;
             requestedAssetMaterializationCount: number;
+            submittedAssetMaterializationCount: number;
             autoMaterializeAssetEvaluationId: string | null;
             error: {
               __typename: 'PythonError';
@@ -57,6 +58,11 @@ export type AssetSensorTicksQuery = {
               partitionKeys: Array<string>;
               assetKey: {__typename: 'AssetKey'; path: Array<string>};
             }>;
+            submittedMaterializationsForAssets: Array<{
+              __typename: 'RequestedMaterializationsForAsset';
+              partitionKeys: Array<string>;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
           }>;
         };
       }
@@ -64,4 +70,4 @@ export type AssetSensorTicksQuery = {
     | {__typename: 'UnauthorizedError'};
 };
 
-export const AssetSensorTicksQueryVersion = 'ee952c7c0076a23f9d5940ad472a6b580989c0d241dc598dbefa5bf3734673d0';
+export const AssetSensorTicksQueryVersion = '857ac12c4b6e1e86eba493cbae9cd6fba0c7851a1ce12a40424c9920dcd8c45d';

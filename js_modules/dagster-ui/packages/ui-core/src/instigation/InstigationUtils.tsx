@@ -116,6 +116,7 @@ export const HISTORY_TICK_FRAGMENT = gql`
     instigationType
     skipReason
     requestedAssetMaterializationCount
+    submittedAssetMaterializationCount
     runIds
     runs {
       id

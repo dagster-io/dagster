@@ -20,7 +20,7 @@ import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
 export type TickResultType = 'runs' | 'materializations';
 
 type PropsForMaterializations = {
-  tick: Pick<HistoryTickFragment, 'status' | 'requestedAssetMaterializationCount' | 'error'>;
+  tick: Pick<HistoryTickFragment, 'status' | 'requestedAssetMaterializationCount' | 'submittedAssetMaterializationCount' | 'error'>;
   tickResultType: 'materializations';
   isStuckStarted?: boolean;
 };
@@ -39,6 +39,10 @@ export const TickStatusTag = ({
   const [showErrors, setShowErrors] = useState(false);
   const tag = useMemo(() => {
     const requestedItem = tickResultType === 'materializations' ? 'materialization' : 'run';
+    const requestedCount =
+      tickResultType === 'materializations'
+        ? tick.requestedAssetMaterializationCount
+        : tick.runIds.length;
     switch (tick.status) {
       case InstigationTickStatus.STARTED:
         return (
@@ -47,14 +51,14 @@ export const TickStatusTag = ({
           </Tag>
         );
       case InstigationTickStatus.SKIPPED:
+        const submittedCount =
+          tickResultType === 'materializations'
+            ? tick.submittedAssetMaterializationCount
+            : tick.runIds.length;
         const tag = (
           <BaseTag
             fillColor={Colors.backgroundLighter()}
-            label={
-              tickResultType === 'materializations'
-                ? '0 materializations requested'
-                : '0 runs requested'
-            }
+            label={`${submittedCount}/${requestedCount} requested ${requestedItem}${ifPlural(requestedCount, '', 's')} submitted`}
           />
         );
         if ('runKeys' in tick && tick.runKeys.length) {
@@ -89,14 +93,10 @@ export const TickStatusTag = ({
           </Box>
         );
       case InstigationTickStatus.SUCCESS:
-        const count =
-          tickResultType === 'materializations'
-            ? tick.requestedAssetMaterializationCount
-            : tick.runIds.length;
         const successTag = (
           <Tag intent="success">
-            {count} {requestedItem}
-            {ifPlural(count, '', 's')} requested
+            {requestedCount} {requestedItem}
+            {ifPlural(requestedCount, '', 's')} requested
           </Tag>
         );
         if ('runKeys' in tick && tick.runKeys.length > tick.runIds.length) {
