@@ -1,7 +1,7 @@
 ---
 title: "Replicate CSV Files in S3 to Snowflake with Sling"
 description: "This use case demonstrates how to transfer data from Snowflake to Amazon S3 using Dagster. The objective is to automate the extraction of data from Snowflake and store it in S3 for further processing or archival."
-tags: ["snowflake", "s3", "embedded-elt", "sling"]
+tags: ["snowflake", "s3", "sling"]
 ---
 
 # Replicate CSV Files in S3 to Snowflake with Sling
@@ -133,6 +133,6 @@ By implementing this use case, you will have an automated pipeline that replicat
 ## Additional Resources
 
 - [Dagster Documentation](https://docs.dagster.io/)
-- [Dagster Sling Documentation](https://docs.dagster.io/integrations/embedded-elt/sling)
+- [Dagster Sling Documentation](https://docs.dagster.io/integrations/sling)
 - [Sling Documentation](https://docs.slingdata.io/)
 - [Snowflake Documentation](https://docs.snowflake.com/)
