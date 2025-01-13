@@ -1180,19 +1180,8 @@ class AssetDaemon(DagsterDaemon):
                     updated_evaluation_keys.add(entity_key)
 
             # check if the sensor is still enabled:
-            if num_submitted >= batch_size:
-                num_submitted = 0
-                should_terminate = False
-                use_auto_materialize_sensors = instance.auto_materialize_use_sensors
-                if not use_auto_materialize_sensors and get_auto_materialize_paused(instance):
-                    should_terminate = True
-                if use_auto_materialize_sensors and remote_sensor:
-                    instigator_state = instance.get_instigator_state(
-                        remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
-                    )
-                    if instigator_state and not instigator_state.is_running:
-                        should_terminate = True
-                if should_terminate:
+            if num_submitted % batch_size == 0:
+                if not self._sensor_is_enabled(instance, remote_sensor):
                     # The user has manually stopped the sensor mid-iteration. In this case we assume
                     # the user has a good reason for stopping the sensor (e.g. the sensor is submitting
                     # many unintentional runs) so we stop submitting runs and will mark the tick as
@@ -1223,3 +1212,16 @@ class AssetDaemon(DagsterDaemon):
             tick_context.update_state(
                 TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
             )
+
+    def _sensor_is_enabled(self, instance: DagsterInstance, remote_sensor: Optional[RemoteSensor]):
+        use_auto_materialize_sensors = instance.auto_materialize_use_sensors
+        if (not use_auto_materialize_sensors) and get_auto_materialize_paused(instance):
+            return False
+        if use_auto_materialize_sensors and remote_sensor:
+            instigator_state = instance.get_instigator_state(
+                remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
+            )
+            if instigator_state and not instigator_state.is_running:
+                return False
+
+        return True
