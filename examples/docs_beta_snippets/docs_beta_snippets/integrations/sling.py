@@ -1,4 +1,4 @@
-from dagster_embedded_elt.sling import (
+from dagster_sling import (
     SlingConnectionResource,
     SlingResource,
     sling_assets,

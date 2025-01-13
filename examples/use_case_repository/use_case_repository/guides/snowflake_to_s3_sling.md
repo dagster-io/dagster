@@ -50,7 +50,7 @@ Define the connections to S3 and Snowflake using SlingConnectionResource. Use en
 
 ```python
 from dagster import EnvVar
-from dagster_embedded_elt.sling import SlingConnectionResource, SlingResource
+from dagster_sling import SlingConnectionResource, SlingResource
 
 s3_connection = SlingConnectionResource(
     name="MY_S3",
@@ -79,7 +79,7 @@ Use the `@sling_assets` decorator to define an asset that runs the Sling replica
 
 ```python
 from dagster import Definitions
-from dagster_embedded_elt.sling import sling_assets
+from dagster_sling import sling_assets
 
 replication_config = {
     "SOURCE": "MY_S3",

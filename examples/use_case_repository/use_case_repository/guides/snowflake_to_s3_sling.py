@@ -2,7 +2,7 @@
 # pyright: reportOptionalMemberAccess=none
 
 from dagster import Definitions, EnvVar
-from dagster_embedded_elt.sling import SlingConnectionResource, SlingResource, sling_assets
+from dagster_sling import SlingConnectionResource, SlingResource, sling_assets
 
 # Step 2: Define Sling Connections
 s3_connection = SlingConnectionResource(
