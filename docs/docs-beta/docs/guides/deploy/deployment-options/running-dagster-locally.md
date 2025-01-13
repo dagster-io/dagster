@@ -72,5 +72,5 @@ For example, to have your local instance limit the number of concurrent runs, yo
     <CodeExample filePath="guides/tbd/dagster.yaml" language="yaml" title="~/.dagster_home/dagster.yaml" />
 
 
-For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/todo).
+For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/guides/deploy/dagster-instance-configuration).
 

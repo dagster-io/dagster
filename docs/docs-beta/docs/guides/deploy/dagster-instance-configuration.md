@@ -257,8 +257,6 @@ storage:
       env: SQLITE_STORAGE_BASE_DIR
 ```
 
----
-
 </TabItem>
 <TabItem name="Postgres storage">
 
@@ -310,8 +308,6 @@ storage:
     postgres_url:
       env: PG_DB_CONN_STRING
 ```
-
----
 
 </TabItem>
 <TabItem name="MySQL storage">
@@ -366,8 +362,6 @@ storage:
       env: MYSQL_DB_CONN_STRING
 ```
 
----
-
 </TabItem>
 </TabGroup>
 
@@ -389,8 +383,6 @@ run_launcher:
   module: dagster.core.launcher
   class: DefaultRunLauncher
 ```
-
----
 
 </TabItem>
 <TabItem name="DockerRunLauncher">
@@ -442,8 +434,6 @@ run_launcher:
       env: DAGSTER_POSTGRES_SECRET
 ```
 
----
-
 </TabItem>
 </TabGroup>
 
@@ -467,8 +457,6 @@ run_coordinator:
   module: dagster.core.run_coordinator
   class: DefaultRunCoordinator
 ```
-
----
 
 </TabItem>
 <TabItem name="QueuedRunCoordinator">
@@ -525,8 +513,6 @@ run_coordinator:
     dequeue_num_workers: 8
 ```
 
----
-
 </TabItem>
 </TabGroup>
 
@@ -563,8 +549,6 @@ compute_logs:
       env: LOCAL_COMPUTE_LOG_MANAGER_DIRECTORY
 ```
 
----
-
 </TabItem>
 <TabItem name="NoOpComputeLogManager">
 
@@ -577,8 +561,6 @@ compute_logs:
   module: dagster.core.storage.noop_compute_log_manager
   class: NoOpComputeLogManager
 ```
-
----
 
 </TabItem>
 <TabItem name="AzureBlobComputeLogManager">
@@ -623,8 +605,6 @@ compute_logs:
       env: DAGSTER_COMPUTE_LOG_PREFIX
 ```
 
----
-
 </TabItem>
 <TabItem name="GCSComputeLogManager">
 
@@ -654,8 +634,6 @@ compute_logs:
       env: DAGSTER_COMPUTE_LOG_PREFIX
 ```
 
----
-
 </TabItem>
 <TabItem name="S3ComputeLogManager">
 
@@ -684,8 +662,6 @@ compute_logs:
     prefix:
       env: DAGSTER_COMPUTE_LOG_PREFIX
 ```
-
----
 
 </TabItem>
 </TabGroup>
