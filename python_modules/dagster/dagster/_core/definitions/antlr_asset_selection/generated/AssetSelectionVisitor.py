@@ -63,8 +63,12 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     ):
         return self.visitChildren(ctx)
 
-    # Visit a parse tree produced by AssetSelectionParser#traversal.
-    def visitTraversal(self, ctx: AssetSelectionParser.TraversalContext):
+    # Visit a parse tree produced by AssetSelectionParser#upTraversal.
+    def visitUpTraversal(self, ctx: AssetSelectionParser.UpTraversalContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#downTraversal.
+    def visitDownTraversal(self, ctx: AssetSelectionParser.DownTraversalContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by AssetSelectionParser#functionName.

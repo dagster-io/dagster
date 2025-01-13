@@ -14,10 +14,10 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component_type
 from dagster_components.core.component_generator import ComponentGenerator
-from dagster_components.core.component_rendering import ResolvedFieldInfo
-from dagster_components.core.dsl_schema import (
+from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.objects import (
     AssetAttributesModel,
-    AssetSpecTransform,
+    AssetSpecTransformModel,
     OpSpecBaseModel,
 )
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
@@ -27,14 +27,14 @@ class SlingReplicationParams(BaseModel):
     path: str
     op: Optional[OpSpecBaseModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvedFieldInfo(additional_scope={"stream_definition"})
+        Optional[AssetAttributesModel], ResolvableFieldInfo(additional_scope={"stream_definition"})
     ] = None
 
 
 class SlingReplicationCollectionParams(BaseModel):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationParams]
-    transforms: Optional[Sequence[AssetSpecTransform]] = None
+    transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
 
 @component_type(name="sling_replication_collection")
@@ -44,7 +44,7 @@ class SlingReplicationCollectionComponent(Component):
         dirpath: Path,
         resource: SlingResource,
         sling_replications: Sequence[SlingReplicationParams],
-        transforms: Sequence[AssetSpecTransform],
+        transforms: Sequence[AssetSpecTransformModel],
     ):
         self.dirpath = dirpath
         self.resource = resource

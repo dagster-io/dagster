@@ -14,6 +14,7 @@ import {
   DownTraversalContext,
   DownTraversalExprContext,
   DownTraversalExpressionContext,
+  DownTraversalTokenContext,
   ExprContext,
   ExpressionLessParenthesizedExprContext,
   ExpressionlessFunctionExpressionContext,
@@ -52,7 +53,6 @@ import {
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
   TraversalAllowedParenthesizedExpressionContext,
-  TraversalContext,
   UnclosedExpressionlessFunctionExpressionContext,
   UnclosedExpressionlessParenthesizedExpressionContext,
   UnclosedFunctionExpressionContext,
@@ -63,6 +63,7 @@ import {
   UpTraversalContext,
   UpTraversalExprContext,
   UpTraversalExpressionContext,
+  UpTraversalTokenContext,
   ValueContext,
 } from './SelectionAutoCompleteParser';
 
@@ -421,11 +422,18 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitDownTraversalExpr?: (ctx: DownTraversalExprContext) => Result;
 
   /**
-   * Visit a parse tree produced by `SelectionAutoCompleteParser.traversal`.
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.upTraversalToken`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitTraversal?: (ctx: TraversalContext) => Result;
+  visitUpTraversalToken?: (ctx: UpTraversalTokenContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.downTraversalToken`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitDownTraversalToken?: (ctx: DownTraversalTokenContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.attributeName`.

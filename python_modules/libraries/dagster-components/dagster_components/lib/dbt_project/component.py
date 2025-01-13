@@ -15,11 +15,12 @@ from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component_type
-from dagster_components.core.component_rendering import ResolvedFieldInfo, TemplatedValueResolver
-from dagster_components.core.dsl_schema import (
+from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.objects import (
     AssetAttributesModel,
-    AssetSpecTransform,
+    AssetSpecTransformModel,
     OpSpecBaseModel,
+    TemplatedValueResolver,
 )
 from dagster_components.lib.dbt_project.generator import DbtProjectComponentGenerator
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
@@ -29,9 +30,9 @@ class DbtProjectParams(BaseModel):
     dbt: DbtCliResource
     op: Optional[OpSpecBaseModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvedFieldInfo(additional_scope={"node"})
+        Optional[AssetAttributesModel], ResolvableFieldInfo(additional_scope={"node"})
     ] = None
-    transforms: Optional[Sequence[AssetSpecTransform]] = None
+    transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
 
 @component_type(name="dbt_project")
@@ -41,7 +42,7 @@ class DbtProjectComponent(Component):
         dbt_resource: DbtCliResource,
         op_spec: Optional[OpSpecBaseModel],
         asset_attributes: Optional[AssetAttributesModel],
-        transforms: Sequence[AssetSpecTransform],
+        transforms: Sequence[AssetSpecTransformModel],
         value_resolver: TemplatedValueResolver,
     ):
         self.dbt_resource = dbt_resource

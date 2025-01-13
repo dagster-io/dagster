@@ -2,13 +2,8 @@ from collections.abc import Sequence, Set
 from typing import Annotated, Optional
 
 import pytest
-from dagster_components.core.component_rendering import (
-    ComponentSchemaBaseModel,
-    ResolvedFieldInfo,
-    TemplatedValueResolver,
-    allow_render,
-    get_available_scope,
-)
+from dagster_components import ComponentSchemaBaseModel, ResolvableFieldInfo, TemplatedValueResolver
+from dagster_components.core.schema.metadata import allow_render, get_available_scope
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
@@ -19,8 +14,8 @@ class InnerRendered(ComponentSchemaBaseModel):
 class Container(BaseModel):
     a: str
     inner: InnerRendered
-    inner_scoped: Annotated[InnerRendered, ResolvedFieldInfo(additional_scope={"c", "d"})] = Field(
-        default_factory=InnerRendered
+    inner_scoped: Annotated[InnerRendered, ResolvableFieldInfo(additional_scope={"c", "d"})] = (
+        Field(default_factory=InnerRendered)
     )
 
 
@@ -30,7 +25,7 @@ class Outer(BaseModel):
     container: Container
     container_optional: Optional[Container] = None
     container_optional_scoped: Annotated[
-        Optional[Container], ResolvedFieldInfo(additional_scope={"a", "b"})
+        Optional[Container], ResolvableFieldInfo(additional_scope={"a", "b"})
     ] = None
     inner_seq: Sequence[InnerRendered]
     inner_optional: Optional[InnerRendered] = None
@@ -117,11 +112,11 @@ def test_render() -> None:
 
 
 class RM(ComponentSchemaBaseModel):
-    the_renderable_int: Annotated[str, ResolvedFieldInfo(output_type=int)]
+    the_renderable_int: Annotated[str, ResolvableFieldInfo(output_type=int)]
     the_unrenderable_int: int
 
     the_str: str
-    the_opt_int: Annotated[Optional[str], ResolvedFieldInfo(output_type=Optional[int])] = None
+    the_opt_int: Annotated[Optional[str], ResolvableFieldInfo(output_type=Optional[int])] = None
 
 
 def test_valid_rendering() -> None:
