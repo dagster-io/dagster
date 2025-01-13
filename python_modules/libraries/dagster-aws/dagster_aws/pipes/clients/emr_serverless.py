@@ -164,17 +164,10 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         params: "StartJobRunRequestRequestTypeDef",
     ) -> "StartJobRunResponseTypeDef":
         response = self.client.start_job_run(**params)
-        application_id = response["applicationId"]
         job_run_id = response["jobRunId"]
 
-        # this URL is only valid for an hour
-        # so we don't include it in the output metadata
-        dashboard_url = self.client.get_dashboard_for_job_run(
-            applicationId=application_id, jobRunId=job_run_id
-        )
-
         context.log.info(
-            f"[pipes] {self.AWS_SERVICE_NAME} job started with job_run_id {job_run_id}. Dashboard URL: {dashboard_url}"
+            f"[pipes] {self.AWS_SERVICE_NAME} job started with job_run_id {job_run_id}."
         )
 
         return response
@@ -185,6 +178,10 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         start_response: "StartJobRunResponseTypeDef",
     ) -> "GetJobRunResponseTypeDef":  # pyright: ignore[reportReturnType]
         job_run_id = start_response["jobRunId"]
+        application_id = start_response["applicationId"]
+
+        running_dashboard_url = None
+        completed_dashboard_url = None
 
         while response := self.client.get_job_run(
             applicationId=start_response["applicationId"],
@@ -192,6 +189,24 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         ):
             state: JobRunStateType = response["jobRun"]["state"]
 
+            # get dashboard url when it's ready (but only once)
+            if state == "RUNNING" and running_dashboard_url is None:
+                running_dashboard_url = self.client.get_dashboard_for_job_run(
+                    applicationId=application_id, jobRunId=job_run_id
+                )
+                context.log.info(
+                    f"[pipes] {self.AWS_SERVICE_NAME} job is running. Dashboard URL: {running_dashboard_url}"
+                )
+            # completed jobs have a different dashboard url
+            elif state in ["SUCCEEDED", "FAILED", "CANCELLED"] and completed_dashboard_url is None:
+                completed_dashboard_url = self.client.get_dashboard_for_job_run(
+                    applicationId=application_id, jobRunId=job_run_id
+                )
+                context.log.info(
+                    f"[pipes] {self.AWS_SERVICE_NAME} job is completed. Dashboard URL: {completed_dashboard_url}"
+                )
+
+            # check if the job is in a terminal state
             if state in ["FAILED", "CANCELLED", "CANCELLING"]:
                 context.log.error(
                     f"[pipes] {self.AWS_SERVICE_NAME} job {job_run_id} terminated with state: {state}. Details:\n{response['jobRun'].get('stateDetails')}"
