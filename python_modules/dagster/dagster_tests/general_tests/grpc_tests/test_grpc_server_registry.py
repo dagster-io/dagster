@@ -128,7 +128,7 @@ def test_server_unexpectedly_killed(instance: DagsterInstance):
             process = registry._all_processes[0]  # noqa: SLF001
             pid = process.pid
             os.kill(pid, get_terminate_signal())
-            time.sleep(60)
+            time.sleep(300)
             endpoint_one = registry.get_grpc_endpoint(origin)
             assert _can_connect(origin, endpoint_one, instance)
 

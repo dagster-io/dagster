@@ -1553,6 +1553,8 @@ class GrpcServerProcess:
             self.__auto_restart_thread.start()
 
     def start_server_process(self):
+        print("HERE WE GO STARTING")
+
         if (seven.IS_WINDOWS or self._force_port) and self.port is None:
             logging.getLogger(__name__).info("Attempting to start server process on dynamic port")
             server_process, self.port = _open_server_process_on_dynamic_port(
@@ -1574,9 +1576,12 @@ class GrpcServerProcess:
                 additional_timeout_msg=self._additional_timeout_msg,
             )
         else:
+            print("DID I MAKE A SOCKET")
             if self.socket is None:
                 self.socket = safe_tempfile_path_unmanaged()
+            print("YES I MADE A SOCKET")
 
+            print("HERE WE GO OPENING")
             server_process = open_server_process(
                 instance_ref=self._instance_ref,
                 location_name=self._location_name,

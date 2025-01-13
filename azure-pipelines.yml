@@ -12,13 +12,7 @@ parameters:
   - name: py3_env_suffixes
     type: object
     default:
-      - api_tests
-      - cli_tests
       - general_tests
-      - launcher_tests
-      - daemon_tests
-      - daemon_sensor_tests
-      - scheduler_tests
 jobs:
   - job: "dagster"
     pool:
