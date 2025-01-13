@@ -1,20 +1,14 @@
 import React, {type ReactNode} from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
-import {
-  useDocById,
-  findFirstSidebarItemLink,
-} from '@docusaurus/plugin-content-docs/client';
+import {useDocById, findFirstSidebarItemLink} from '@docusaurus/plugin-content-docs/client';
 import {usePluralForm} from '@docusaurus/theme-common';
 import isInternalUrl from '@docusaurus/isInternalUrl';
 import {translate} from '@docusaurus/Translate';
 
 import type {Props} from '@theme/DocCard';
 import Heading from '@theme/Heading';
-import type {
-  PropSidebarItemCategory,
-  PropSidebarItemLink,
-} from '@docusaurus/plugin-content-docs';
+import type {PropSidebarItemCategory, PropSidebarItemLink} from '@docusaurus/plugin-content-docs';
 
 import styles from './styles.module.css';
 import useBaseUrl from '@docusaurus/useBaseUrl';
@@ -47,7 +41,6 @@ function CardContainer({href, children}: {href: string; children: ReactNode}): R
   );
 }
 
-
 function truncate(text: string, max: number) {
   return text.length > max ? text.slice(0, max).split(' ').slice(0, -1).join(' ') + ' ...' : text;
 }
@@ -63,15 +56,13 @@ function CardLayout({
   logo?: string;
   description?: string;
 }): ReactNode {
-  const logoUrl = logo || 'images/integrations/placeholder_64x64.svg';
-
   return (
     <CardContainer href={href}>
       <div style={{display: 'flex', flexDirection: 'row', gap: '12px'}}>
-        <div style={{flex: '0 0 64px'}}>
-          <img src={useBaseUrl(logoUrl)} style={{display: 'block', width: '64px', height: '64px'}} />
+        <div style={{flex: '0 0 64px', display: logo ? 'block' : 'none'}}>
+          <img src={useBaseUrl(logo)} style={{display: 'block', width: '64px', height: '64px'}} />
         </div>
-        <div style={{}}>
+        <div>
           <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
             {title}
           </Heading>
@@ -85,7 +76,6 @@ function CardLayout({
     </CardContainer>
   );
 }
-
 
 function CardCategory({item}: {item: PropSidebarItemCategory}): ReactNode {
   const href = findFirstSidebarItemLink(item);
