@@ -157,7 +157,7 @@ export const AssetTable = ({
             top: 0,
             zIndex: 1,
             background: Colors.backgroundDefault(),
-            alignItems: 'center',
+            alignItems: 'flex-start',
             gap: 12,
             display: 'grid',
             gridTemplateColumns: 'minmax(0, 1fr) auto',
@@ -165,7 +165,7 @@ export const AssetTable = ({
         >
           <div>{actionBarComponents}</div>
           <Box
-            style={{alignSelf: 'end'}}
+            style={{justifySelf: 'flex-end'}}
             flex={{gap: 12, direction: 'row-reverse', alignItems: 'center'}}
           >
             <QueryRefreshCountdown refreshState={refreshState} />

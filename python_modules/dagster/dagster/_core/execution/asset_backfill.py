@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import sys
 import time
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
@@ -720,6 +721,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[None]:
     from dagster._core.execution.backfill import BulkActionStatus
+    from dagster._daemon.utils import DaemonErrorCapture
 
     run_requests = asset_backfill_iteration_result.run_requests
 
@@ -757,8 +759,10 @@ def _submit_runs_and_update_backfill_in_chunks(
                 logger,
             )
         except Exception:
-            logger.exception(
-                "Error while submitting run - updating the backfill data before re-raising"
+            DaemonErrorCapture.process_exception(
+                sys.exc_info(),
+                logger=logger,
+                log_message="Error while submitting run - updating the backfill data before re-raising",
             )
             # Write the runs that we submitted before hitting an error
             _write_updated_backfill_data(
