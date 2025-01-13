@@ -274,6 +274,9 @@ class AutoMaterializeLaunchContext:
     def set_user_interrupted(self, user_interrupted: bool):
         self._tick = self._tick.with_user_interrupted(user_interrupted)
 
+    def set_skip_reason(self, skip_reason: str):
+        self._tick = self._tick.with_reason(skip_reason)
+
     def __enter__(self):
         return self
 
@@ -1208,6 +1211,7 @@ class AssetDaemon(DagsterDaemon):
         if tick_context.tick.tick_data.user_interrupted:
             # mark as skipped so that we don't request any remaining runs when the sensor is started again
             tick_context.update_state(TickStatus.SKIPPED)
+            tick_context.set_skip_reason("Sensor manually stopped mid-iteration.")
         else:
             tick_context.update_state(
                 TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
