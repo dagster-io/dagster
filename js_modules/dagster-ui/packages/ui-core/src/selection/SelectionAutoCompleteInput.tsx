@@ -1,5 +1,4 @@
 import {Colors, Icon} from '@dagster-io/ui-components';
-import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor, HintFunction} from 'codemirror';
 import {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
@@ -89,7 +88,6 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     }
   }, [hintRef]);
 
-  const linesRef = useRef<HTMLDivElement | null>(null);
   const focusRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -188,9 +186,6 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         }
 
         applyStaticSyntaxHighlighting(cmInstance.current);
-        linesRef.current = cmInstance.current
-          .getWrapperElement()
-          .querySelector('.CodeMirror-lines');
       });
     }
 
@@ -217,8 +212,6 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
       }
     });
   }, []);
-
-  useResizeObserver(linesRef, adjustHeight);
 
   // Update CodeMirror when value prop changes
   useLayoutEffect(() => {
