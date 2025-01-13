@@ -159,7 +159,7 @@ def code_server_cli():
     type=click.INT,
     required=False,
     default=DEFAULT_HEARTBEAT_TIMEOUT,
-    help="How long to wait for a heartbeat from the caller before timing out. Defaults to 30 seconds.",
+    help="How long to wait for a heartbeat from the caller before timing out. Only comes into play if --heartbeat is set. Defaults to 30 seconds.",
 )
 @click.option(
     "--instance-ref",

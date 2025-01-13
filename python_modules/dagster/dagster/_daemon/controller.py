@@ -27,7 +27,7 @@ from dagster._daemon.daemon import (
 )
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
-from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG
+from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils.interrupts import raise_interrupts_as
 from dagster._utils.log import configure_loggers
@@ -75,6 +75,7 @@ def create_daemon_grpc_server_registry(
 ) -> GrpcServerRegistry:
     return GrpcServerRegistry(
         instance_ref=instance.get_ref(),
+        server_command=GrpcServerCommand.API_GRPC,
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
         additional_timeout_msg=INCREASE_TIMEOUT_DAGSTER_YAML_MSG,
