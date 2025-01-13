@@ -129,7 +129,7 @@ Motivations for utilizing this approach could include:
 Multiple deployments are only available in Dagster+ Pro.
 :::
 
-Of the approaches outlined in this guide, multiple deployments are the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments. It may be considered to satisfy other organization specific requirements.
+Of the approaches outlined in this guide, multiple deployments are the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments.
 
 ![Diagram of isolation at the Dagster+ deployment level](/images/dagster-cloud/managing-deployments/isolation-level-deployments.png)
 
