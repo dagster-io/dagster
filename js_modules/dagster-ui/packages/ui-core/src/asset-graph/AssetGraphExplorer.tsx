@@ -741,7 +741,7 @@ const AssetGraphExplorerWithData = ({
             <TopbarWrapper>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 <Box
-                  flex={{gap: 12, alignItems: 'center'}}
+                  flex={{gap: 12, alignItems: 'flex-start'}}
                   padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
                 >
                   {showSidebar ? undefined : (

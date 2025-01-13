@@ -88,13 +88,15 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     }
   }, [hintRef]);
 
+  const focusRef = useRef(false);
+
   useLayoutEffect(() => {
     if (editorRef.current && !cmInstance.current) {
       cmInstance.current = CodeMirror(editorRef.current, {
         value,
         mode: 'assetSelection',
         lineNumbers: false,
-        lineWrapping: false,
+        lineWrapping: false, // Initially false; enable during focus
         scrollbarStyle: 'native',
         autoCloseBrackets: true,
         lint: {
@@ -141,13 +143,17 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         requestAnimationFrame(() => {
           _showHint();
         });
+        adjustHeight();
       });
 
       cmInstance.current.on('inputRead', (_instance: Editor) => {
         _showHint();
       });
 
-      cmInstance.current.on('focus', (_instance: Editor) => {
+      cmInstance.current.on('focus', (instance: Editor) => {
+        focusRef.current = true;
+        instance.setOption('lineWrapping', true);
+        adjustHeight();
         _showHint();
       });
 
@@ -156,7 +162,10 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         _showHint();
       });
 
-      cmInstance.current.on('blur', () => {
+      cmInstance.current.on('blur', (instance: Editor) => {
+        focusRef.current = false;
+        instance.setOption('lineWrapping', false);
+        instance.setSize('100%', '20px');
         const current = document.activeElement;
         const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
         if (
@@ -191,6 +200,19 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const adjustHeight = useCallback(() => {
+    const lines = cmInstance.current?.getWrapperElement().querySelector('.CodeMirror-lines');
+    if (!lines || !cmInstance.current || !focusRef.current) {
+      return;
+    }
+    requestAnimationFrame(() => {
+      const linesHeight = lines?.clientHeight;
+      if (linesHeight && focusRef.current) {
+        cmInstance.current?.setSize('100%', `${linesHeight}px`);
+      }
+    });
+  }, []);
+
   // Update CodeMirror when value prop changes
   useLayoutEffect(() => {
     const noNewLineValue = value.replace('\n', ' ');
@@ -210,10 +232,10 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         style={{
           display: 'grid',
           gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-          alignItems: 'center',
+          alignItems: 'flex-start',
         }}
       >
-        <Icon name="op_selector" />
+        <Icon name="op_selector" style={{marginTop: 2}} />
         <div ref={editorRef} />
       </InputDiv>
       {ReactDOM.createPortal(<div ref={hintContainerRef} />, document.body)}

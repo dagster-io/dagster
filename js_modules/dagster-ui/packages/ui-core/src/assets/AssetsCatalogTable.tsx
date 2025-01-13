@@ -266,7 +266,7 @@ export const AssetsCatalogTable = ({
             display: 'grid',
             gridTemplateColumns: 'auto auto minmax(0, 1fr)',
             gap: 12,
-            alignItems: 'center',
+            alignItems: 'flex-start',
           }}
         >
           <ButtonGroup<AssetViewType>
