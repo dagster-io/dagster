@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, cast
 
 import click
-import typer
 from pydantic import ValidationError
 from pydantic_core import ErrorDetails
 
@@ -40,11 +39,27 @@ def check_cli():
 def prepend_lines_with_line_numbers(
     lines_with_numbers: Sequence[tuple[Optional[int], str]],
 ) -> Sequence[str]:
+    """Prepend each line with a line number, right-justified to the maximum line number length.
+
+    Args:
+        lines_with_numbers: A sequence of tuples, where the first element is the line number and the
+            second element is the line content. Some lines may have a `None` line number, which
+            will be rendered as an empty string, used for e.g. inserted error message lines.
+    """
     max_line_number_length = max([len(str(n)) for n, _ in lines_with_numbers])
     return [
         f"{(str(n) if n else '').rjust(max_line_number_length)} | {line.rstrip()}"
         for n, line in lines_with_numbers
     ]
+
+
+def format_indented_error_msg(col: int, msg: str) -> str:
+    """Format an error message with a caret pointing to the column where the error occurred."""
+    return " " * col + f"^ {msg}"
+
+
+OFFSET_LINES_BEFORE = 2
+OFFSET_LINES_AFTER = 3
 
 
 def error_dict_to_formatted_error(
@@ -69,27 +84,26 @@ def error_dict_to_formatted_error(
     with open(source_position.filename) as f:
         lines = f.readlines()
         lines_with_line_numbers = list(zip(range(1, len(lines) + 1), lines))
+
         filtered_lines_with_line_numbers = (
             lines_with_line_numbers[
-                preceding_source_position.start.line - 2 : source_position.start.line
+                preceding_source_position.start.line
+                - OFFSET_LINES_BEFORE : source_position.start.line
             ]
-            + [
-                (
-                    None,
-                    typer.style(
-                        " " * source_position.start.col + f"^ {error_details['msg']}",
-                        fg=typer.colors.YELLOW,
-                    ),
-                )
+            + [(None, format_indented_error_msg(source_position.start.col, error_details["msg"]))]
+            + lines_with_line_numbers[
+                source_position.start.line : source_position.end.line + OFFSET_LINES_AFTER
             ]
-            + lines_with_line_numbers[source_position.start.line : source_position.end.line + 3]
         )
 
+        # Combine the filtered lines with the line numbers, and add empty lines before and after
         lines_with_line_numbers = prepend_lines_with_line_numbers(
             [(None, ""), *filtered_lines_with_line_numbers, (None, "")]
         )
         code_snippet = "\n".join(lines_with_line_numbers)
 
+    # Retrieves dotted path representation of the location of the error in the YAML file, e.g.
+    # params.nested.foo.an_int
     location = cast(str, error_details["loc"])[0].split(" at ")[0]
 
     # TODO: use typer, when ready, to color-format the output
@@ -104,6 +118,9 @@ def error_dict_to_formatted_error(
 @click.pass_context
 def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
     """Check component files against their schemas, showing validation errors."""
+    # Resolve paths to check against, defaulting to the current working directory
+    # Any files (e.g. component yaml files) are resolved to their parent component
+    # directory, so that we check the corresponding component
     path_objs = [Path(p).resolve() for p in paths] or [Path.cwd().resolve()]
     path_objs = [p.parent if p.is_file() else p for p in path_objs]
 
