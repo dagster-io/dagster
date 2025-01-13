@@ -77,15 +77,15 @@ def stacktrace_to_formatted_error(path: str, exception_msg: str, trace: list[str
 
     idx_of_type_error = next(
         (
-            idx + 2
+            idx + 3
             for idx, line in enumerate(trace)
             if "validate_python" in line and "type_adapter.py" in line
         ),
         0,
     )
-    trace_str = "\n".join(trace[idx_of_type_error:])
-
-    return f"{path} - {exception_msg}\n{trace_str}\n{exception_msg}\n"
+    trace_str = typer.style("\n".join(trace[idx_of_type_error:]), fg=typer.colors.RED)
+    fmt_exception_msg = typer.style(exception_msg, fg=typer.colors.RED, bold=True)
+    return f"{path} - {fmt_exception_msg}\n\n{trace_str}\n{fmt_exception_msg}\n"
 
 
 def error_dict_to_formatted_error(
