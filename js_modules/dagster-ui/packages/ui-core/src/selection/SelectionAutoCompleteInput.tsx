@@ -1,4 +1,5 @@
 import {Colors, Icon} from '@dagster-io/ui-components';
+import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor, HintFunction} from 'codemirror';
 import {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
@@ -88,13 +89,16 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     }
   }, [hintRef]);
 
+  const linesRef = useRef<HTMLDivElement | null>(null);
+  const focusRef = useRef(false);
+
   useLayoutEffect(() => {
     if (editorRef.current && !cmInstance.current) {
       cmInstance.current = CodeMirror(editorRef.current, {
         value,
         mode: 'assetSelection',
         lineNumbers: false,
-        lineWrapping: false,
+        lineWrapping: false, // Initially false; enable during focus
         scrollbarStyle: 'native',
         autoCloseBrackets: true,
         lint: {
@@ -141,13 +145,17 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         requestAnimationFrame(() => {
           _showHint();
         });
+        adjustHeight();
       });
 
       cmInstance.current.on('inputRead', (_instance: Editor) => {
         _showHint();
       });
 
-      cmInstance.current.on('focus', (_instance: Editor) => {
+      cmInstance.current.on('focus', (instance: Editor) => {
+        focusRef.current = true;
+        instance.setOption('lineWrapping', true);
+        adjustHeight();
         _showHint();
       });
 
@@ -156,7 +164,10 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         _showHint();
       });
 
-      cmInstance.current.on('blur', () => {
+      cmInstance.current.on('blur', (instance: Editor) => {
+        focusRef.current = false;
+        instance.setOption('lineWrapping', false);
+        instance.setSize('100%', '20px');
         const current = document.activeElement;
         const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
         if (
@@ -177,6 +188,9 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         }
 
         applyStaticSyntaxHighlighting(cmInstance.current);
+        linesRef.current = cmInstance.current
+          .getWrapperElement()
+          .querySelector('.CodeMirror-lines');
       });
     }
 
@@ -190,6 +204,21 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const adjustHeight = useCallback(() => {
+    const lines = cmInstance.current?.getWrapperElement().querySelector('.CodeMirror-lines');
+    if (!lines || !cmInstance.current || !focusRef.current) {
+      return;
+    }
+    requestAnimationFrame(() => {
+      const linesHeight = lines?.clientHeight;
+      if (linesHeight && focusRef.current) {
+        cmInstance.current?.setSize('100%', `${linesHeight}px`);
+      }
+    });
+  }, []);
+
+  useResizeObserver(linesRef, adjustHeight);
 
   // Update CodeMirror when value prop changes
   useLayoutEffect(() => {
