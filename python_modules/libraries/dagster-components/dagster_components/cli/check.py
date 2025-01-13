@@ -54,6 +54,14 @@ def prepend_lines_with_line_numbers(
     ]
 
 
+def augment_inline_error_message(location: str, msg: str):
+    """Improves a subset of Pyright error messages by including location information."""
+    last_location_part = location.split(".")[-1]
+    if msg == "Field required":
+        return f"Field `{last_location_part}` is required but not provided"
+    return msg
+
+
 def format_indented_error_msg(col: int, msg: str) -> str:
     """Format an error message with a caret pointing to the column where the error occurred."""
     return typer.style(" " * (col - 1) + f"^ {msg}", fg=typer.colors.YELLOW)
@@ -69,6 +77,10 @@ def error_dict_to_formatted_error(
     ctx = error_details.get("ctx", {})
     source_position: SourcePosition = ctx["source_position"]
     source_position_path: Sequence[SourcePosition] = ctx["source_position_path"]
+
+    # Retrieves dotted path representation of the location of the error in the YAML file, e.g.
+    # params.nested.foo.an_int
+    location = cast(str, error_details["loc"])[0].split(" at ")[0]
 
     # Find the first source position that has a different start line than the current source position
     # This is e.g. the parent json key of the current source position
@@ -91,7 +103,15 @@ def error_dict_to_formatted_error(
                 preceding_source_position.start.line
                 - OFFSET_LINES_BEFORE : source_position.start.line
             ]
-            + [(None, format_indented_error_msg(source_position.start.col, error_details["msg"]))]
+            + [
+                (
+                    None,
+                    format_indented_error_msg(
+                        source_position.start.col,
+                        augment_inline_error_message(location, error_details["msg"]),
+                    ),
+                )
+            ]
             + lines_with_line_numbers[
                 source_position.start.line : source_position.end.line + OFFSET_LINES_AFTER
             ]
@@ -102,10 +122,6 @@ def error_dict_to_formatted_error(
             [(None, ""), *filtered_lines_with_line_numbers, (None, "")]
         )
         code_snippet = "\n".join(lines_with_line_numbers)
-
-    # Retrieves dotted path representation of the location of the error in the YAML file, e.g.
-    # params.nested.foo.an_int
-    location = cast(str, error_details["loc"])[0].split(" at ")[0]
 
     fmt_filename = (
         f"{source_position.filename}"
