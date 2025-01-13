@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from click.testing import CliRunner
 from dagster._core.test_utils import new_cwd
@@ -105,3 +107,36 @@ def test_validation_cli_multiple_components() -> None:
             assert BASIC_INVALID_VALUE.validate_error_msg and BASIC_MISSING_VALUE.validate_error_msg
             BASIC_INVALID_VALUE.validate_error_msg(str(result.stdout))
             BASIC_MISSING_VALUE.validate_error_msg(str(result.stdout))
+
+
+def test_validation_cli_multiple_components_filter() -> None:
+    """Ensure that the check CLI can validate multiple components in a single code location, and
+    that error messages from all components are displayed.
+    """
+    runner = CliRunner()
+
+    with create_code_location_from_components(
+        BASIC_MISSING_VALUE.component_path,
+        BASIC_INVALID_VALUE.component_path,
+        local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+    ) as tmpdir:
+        with new_cwd(str(tmpdir)):
+            result = runner.invoke(
+                cli,
+                [
+                    "--builtin-component-lib",
+                    "dagster_components.test",
+                    "check",
+                    "component",
+                    str(Path("my_location") / "components" / "basic_component_missing_value"),
+                ],
+                catch_exceptions=False,
+            )
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_INVALID_VALUE.validate_error_msg and BASIC_MISSING_VALUE.validate_error_msg
+
+            BASIC_MISSING_VALUE.validate_error_msg(str(result.stdout))
+            # We exclude the invalid value test case
+            with pytest.raises(AssertionError):
+                BASIC_INVALID_VALUE.validate_error_msg(str(result.stdout))
