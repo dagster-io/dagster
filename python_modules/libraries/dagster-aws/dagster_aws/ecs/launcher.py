@@ -98,12 +98,20 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         run_resources: Optional[dict[str, Any]] = None,
         run_ecs_tags: Optional[list[dict[str, Optional[str]]]] = None,
         propagate_tags: Optional[dict[str, Any]] = None,
+        task_definition_prefix: str = "run",
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
         self.ec2 = boto3.resource("ec2")
         self.secrets_manager = boto3.client("secretsmanager")
         self.logs = boto3.client("logs")
+
+        self._task_definition_prefix = task_definition_prefix
+
+        check.invariant(
+            len(self._task_definition_prefix) <= 16,
+            "Task definition prefix must be no more than 16 characters",
+        )
 
         self.task_definition = None
         self.task_definition_dict = {}
@@ -375,6 +383,14 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                 is_required=False,
                 description="Configuration for propagating tags from Dagster runs to ECS tasks. Currently only exposes an allow list.",
             ),
+            "task_definition_prefix": Field(
+                StringSource,
+                is_required=False,
+                default_value="run",
+                description=(
+                    "A prefix that is applied to all task definitions created by the EcsRunLauncher. Defaults to 'run'."
+                ),
+            ),
             **SHARED_ECS_SCHEMA,
         }
 
@@ -631,7 +647,9 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self._current_task
 
     def _get_run_task_definition_family(self, run: DagsterRun) -> str:
-        return get_task_definition_family("run", check.not_none(run.remote_job_origin))
+        return get_task_definition_family(
+            self._task_definition_prefix, check.not_none(run.remote_job_origin)
+        )
 
     def get_container_name(self, container_context: EcsContainerContext) -> str:
         return container_context.container_name or self.container_name
