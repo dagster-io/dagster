@@ -85,7 +85,7 @@ Separating execution context between projects can have several motivations:
 
 - Facilitating separation of duty between teams to prevent access to sensitive data
 - Differing compute environments and requirements, such as different architecture, cloud provider, etc.
-- Reducing impact on other projects. For example, a project with a large number of runs can impact the performance of other projects.
+- Reducing impact on other projects. For example, a project with a large number of runs can impact the performance of other projects
 
 In order from least to most isolated, there are three levels of isolation:
 
