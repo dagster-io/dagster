@@ -100,13 +100,13 @@ def reconcile_connectors(
         if not should_delete and existing_connector and not configured_connector:
             continue
 
-        diff = diff.join(
-            diff_connectors(  # type: ignore
-                configured_connector,
-                existing_connector.connector if existing_connector else None,
-                ignore_secrets,
-            )
+        connectors_diff = diff_connectors(
+            configured_connector,
+            existing_connector.connector if existing_connector else None,
+            ignore_secrets,
         )
+        assert isinstance(connectors_diff, ManagedElementDiff)
+        diff = diff.join(connectors_diff)
 
         if existing_connector and (
             not configured_connector
@@ -180,13 +180,13 @@ def reconcile_destinations(
             initialized_destinations[destination_name] = existing_destination
             continue
 
-        diff = diff.join(
-            diff_destinations(  # type: ignore
-                configured_destination,
-                existing_destination.destination if existing_destination else None,
-                ignore_secrets,
-            )
+        destinations_diff = diff_destinations(
+            configured_destination,
+            existing_destination.destination if existing_destination else None,
+            ignore_secrets,
         )
+        assert isinstance(destinations_diff, ManagedElementDiff)
+        diff = diff.join(destinations_diff)
 
         if existing_destination and (
             not configured_destination
@@ -329,7 +329,9 @@ def reconcile_config(
         ignore_secrets,
     )
 
-    return ManagedElementDiff().join(dests_diff).join(connectors_diff)  # type: ignore
+    assert isinstance(connectors_diff, ManagedElementDiff)
+    assert isinstance(dests_diff, ManagedElementDiff)
+    return ManagedElementDiff().join(dests_diff).join(connectors_diff)
 
 
 @experimental
