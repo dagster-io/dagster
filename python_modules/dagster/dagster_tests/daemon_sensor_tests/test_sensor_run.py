@@ -234,6 +234,17 @@ def error_sensor(context):
     raise Exception("womp womp")
 
 
+NUM_CALLS = {"calls": 0}
+
+
+@sensor(job_name="the_job")
+def passes_on_retry_sensor(context):
+    NUM_CALLS["calls"] = NUM_CALLS["calls"] + 1
+    if NUM_CALLS["calls"] > 1:
+        return RunRequest()
+    raise Exception("womp womp")
+
+
 @sensor(job_name="the_job")
 def wrong_config_sensor(_context):
     return RunRequest(run_key="bad_config_key", run_config={"bad_key": "bad_val"}, tags={})
@@ -839,6 +850,7 @@ def the_repo():
         many_request_sensor,
         simple_sensor,
         error_sensor,
+        passes_on_retry_sensor,
         wrong_config_sensor,
         always_on_sensor,
         run_key_sensor,
@@ -1351,6 +1363,8 @@ def test_error_sensor(caplog, executor, instance, workspace_context, remote_repo
             [],
             "Error occurred during the execution of evaluation_fn for sensor error_sensor",
         )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 1
 
         assert (
             "Error occurred during the execution of evaluation_fn for sensor error_sensor"
@@ -1362,6 +1376,87 @@ def test_error_sensor(caplog, executor, instance, workspace_context, remote_repo
         assert state.instigator_data.sensor_type == SensorType.STANDARD
         assert state.instigator_data.cursor is None
         assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [],
+            "Error occurred during the execution of evaluation_fn for sensor error_sensor",
+        )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 2
+
+
+def test_passes_on_retry_sensor(caplog, instance, workspace_context, remote_repo):
+    freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
+    with freeze_time(freeze_datetime):
+        sensor = remote_repo.get_sensor("passes_on_retry_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                sensor.get_remote_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+
+        state = instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert state.instigator_data is None
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, None)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [],
+            "Error occurred during the execution of evaluation_fn for sensor passes_on_retry_sensor",
+        )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 1
+
+        assert (
+            "Error occurred during the execution of evaluation_fn for sensor passes_on_retry_sensor"
+            in caplog.text
+        )
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, None)
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        assert ticks[0].status == TickStatus.SUCCESS
+        assert ticks[0].tick_data.failure_count == 0
+        assert ticks[0].tick_data.consecutive_failure_count == 0
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, None)
+        assert instance.get_runs_count() == 2
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 3
+        assert ticks[0].status == TickStatus.SUCCESS
+        assert ticks[0].tick_data.failure_count == 0
+        assert ticks[0].tick_data.consecutive_failure_count == 0
 
 
 def test_wrong_config_sensor(caplog, executor, instance, workspace_context, remote_repo):
