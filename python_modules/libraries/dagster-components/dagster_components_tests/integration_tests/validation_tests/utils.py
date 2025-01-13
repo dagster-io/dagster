@@ -3,6 +3,7 @@ import shutil
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
+from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 
@@ -14,17 +15,18 @@ from dagster_components_tests.utils import generate_component_lib_pyproject_toml
 
 
 def _setup_component_in_folder(
-    src_path: str, dst_path: str, local_component_defn_to_inject: Path
+    src_path: str, dst_path: str, local_component_defn_to_inject: Optional[Path]
 ) -> None:
     origin_path = Path(__file__).parent.parent / "components" / src_path
 
     shutil.copytree(origin_path, dst_path, dirs_exist_ok=True)
-    shutil.copy(local_component_defn_to_inject, Path(dst_path) / "__init__.py")
+    if local_component_defn_to_inject:
+        shutil.copy(local_component_defn_to_inject, Path(dst_path) / "__init__.py")
 
 
 @contextlib.contextmanager
 def inject_component(
-    src_path: str, local_component_defn_to_inject: Path
+    src_path: str, local_component_defn_to_inject: Optional[Path]
 ) -> Generator[str, None, None]:
     with tempfile.TemporaryDirectory() as tmpdir:
         _setup_component_in_folder(src_path, tmpdir, local_component_defn_to_inject)
@@ -33,7 +35,7 @@ def inject_component(
 
 @contextlib.contextmanager
 def create_code_location_from_components(
-    *src_paths: str, local_component_defn_to_inject: Path
+    *src_paths: str, local_component_defn_to_inject: Optional[Path]
 ) -> Generator[Path, None, None]:
     """Scaffolds a code location with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
@@ -60,7 +62,7 @@ def create_code_location_from_components(
 
 
 def load_test_component_defs_inject_component(
-    src_path: str, local_component_defn_to_inject: Path
+    src_path: str, local_component_defn_to_inject: Optional[Path]
 ) -> Definitions:
     """Loads a component from a test component project, making the provided local component defn
     available in that component's __init__.py.

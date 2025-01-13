@@ -218,6 +218,16 @@ def conditional_assets_repository():
 
 @repository
 def data_versions_repository():
+    from dagster import job, op
+
     from dagster_test.toys import data_versions
 
-    return cast(Sequence[AssetsDefinition], load_assets_from_modules([data_versions]))
+    @op
+    def my_op():
+        pass
+
+    @job
+    def branch():
+        pass
+
+    return cast(Sequence[AssetsDefinition], [*load_assets_from_modules([data_versions]), branch])

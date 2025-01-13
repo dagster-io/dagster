@@ -10,8 +10,8 @@ class ComponentValidationTestCase:
     """
 
     component_path: str
-    component_type_filepath: Path
     should_error: bool
+    local_component_defn_to_inject: Optional[Path] = None
     validate_error_msg: Optional[Callable[[str], None]] = None
     validate_error_msg_additional_cli: Optional[Callable[[str], None]] = None
 
@@ -26,7 +26,7 @@ def msg_includes_all_of(*substrings: str) -> Callable[[str], None]:
 
 BASIC_INVALID_VALUE = ComponentValidationTestCase(
     component_path="validation/basic_component_invalid_value",
-    component_type_filepath=Path(__file__).parent / "basic_components.py",
+    local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
     should_error=True,
     validate_error_msg=msg_includes_all_of(
         "component.yaml:5", "params.an_int", "Input should be a valid integer"
@@ -35,7 +35,7 @@ BASIC_INVALID_VALUE = ComponentValidationTestCase(
 
 BASIC_MISSING_VALUE = ComponentValidationTestCase(
     component_path="validation/basic_component_missing_value",
-    component_type_filepath=Path(__file__).parent / "basic_components.py",
+    local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
     should_error=True,
     validate_error_msg=msg_includes_all_of("component.yaml:4", "params.an_int", "required"),
     validate_error_msg_additional_cli=msg_includes_all_of(
@@ -46,14 +46,14 @@ BASIC_MISSING_VALUE = ComponentValidationTestCase(
 COMPONENT_VALIDATION_TEST_CASES = [
     ComponentValidationTestCase(
         component_path="validation/basic_component_success",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
         should_error=False,
     ),
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
     ComponentValidationTestCase(
         component_path="validation/basic_component_extra_value",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:7", "params.a_bool", "Extra inputs are not permitted"
@@ -61,7 +61,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
     ),
     ComponentValidationTestCase(
         component_path="validation/nested_component_invalid_values",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:7",
@@ -74,7 +74,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
     ),
     ComponentValidationTestCase(
         component_path="validation/nested_component_missing_values",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:6", "params.nested.foo.an_int", "required"
@@ -85,7 +85,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
     ),
     ComponentValidationTestCase(
         component_path="validation/nested_component_extra_values",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:8",
@@ -97,7 +97,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
     ),
     ComponentValidationTestCase(
         component_path="validation/invalid_component_file_model",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        local_component_defn_to_inject=Path(__file__).parent / "basic_components.py",
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:1",
@@ -107,5 +107,14 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "params",
             "Input should be an object",
         ),
+    ),
+    # Handle that we can provide some extra context to non-ValidationError exception which occur
+    # in the user's load() implementation
+    ComponentValidationTestCase(
+        component_path="validation/load_error_component",
+        should_error=True,
+        validate_error_msg=msg_includes_all_of("uh oh, something unexpected happened"),
+        # The CLI is able to link the error to the component file
+        validate_error_msg_additional_cli=msg_includes_all_of("component.yaml"),
     ),
 ]

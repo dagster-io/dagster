@@ -1,7 +1,8 @@
 import sys
+import traceback
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import click
 import typer
@@ -69,6 +70,22 @@ def format_indented_error_msg(col: int, msg: str) -> str:
 
 OFFSET_LINES_BEFORE = 2
 OFFSET_LINES_AFTER = 3
+
+
+def stacktrace_to_formatted_error(path: str, exception_msg: str, trace: list[str]) -> str:
+    # We try to filter out the stacktrace lines that are part of the Dagster component loading framework
+
+    idx_of_type_error = next(
+        (
+            idx + 2
+            for idx, line in enumerate(trace)
+            if "validate_python" in line and "type_adapter.py" in line
+        ),
+        0,
+    )
+    trace_str = "\n".join(trace[idx_of_type_error:])
+
+    return f"{path} - {exception_msg}\n{trace_str}\n{exception_msg}\n"
 
 
 def error_dict_to_formatted_error(
@@ -154,7 +171,8 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
         )
         sys.exit(1)
 
-    validation_errors: list[tuple[Union[type[Component], None], ValidationError]] = []
+    errors: list[str] = []
+    error_paths: set[Path] = set()
 
     context = CodeLocationProjectContext.from_code_location_path(
         find_enclosing_code_location_root_path(Path.cwd()),
@@ -167,7 +185,9 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
         try:
             decl_node = path_to_decl_node(path=instance_path)
         except ValidationError as e:
-            validation_errors.append((None, e))
+            for error_dict in e.errors():
+                errors.append(error_dict_to_formatted_error(None, error_dict))
+            error_paths.add(instance_path)
             continue
 
         if not decl_node:
@@ -191,16 +211,26 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
                 component_type = component_type_from_yaml_decl(
                     context.component_registry, yaml_decl
                 )
-                validation_errors.append((component_type, e))
+                for error_dict in e.errors():
+                    errors.append(error_dict_to_formatted_error(component_type, error_dict))
+                error_paths.add(decl_path)
+            except Exception:
+                exc = traceback.format_exc().strip().split("\n")
+                exc_msg = exc[-1]
+                tb = exc[:-1]
 
-    if validation_errors:
-        errs = 0
-        for component_type, e in validation_errors:
-            for error_dict in e.errors():
-                errs += 1
-                click.echo(error_dict_to_formatted_error(component_type, error_dict))
+                errors.append(
+                    stacktrace_to_formatted_error(str(decl_path / "component.yaml"), exc_msg, tb)
+                )
+                error_paths.add(decl_path)
 
-        click.echo(f"Found {errs} validation errors in {len(validation_errors)} components.")
+    if errors:
+        for error in errors:
+            click.echo(error)
+
+        click.echo(
+            f"Found {len(errors)} validation errors in {len(error_paths)} component{'s' if len(error_paths) > 1 else ''}."
+        )
         sys.exit(1)
     else:
         click.echo("All components validated successfully.")
