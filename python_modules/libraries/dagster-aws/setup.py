@@ -46,6 +46,7 @@ setup(
         "pyspark": ["dagster-pyspark"],
         "stubs": [
             "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr]",
+            "mypy-boto3-stepfunctions",
         ],
         "test": [
             "botocore!=1.32.1",

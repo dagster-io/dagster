@@ -16,7 +16,7 @@ from dagster._core.pipes.client import (
     PipesContextInjector,
     PipesMessageReader,
 )
-from dagster._core.pipes.utils import open_pipes_session
+from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 
 from dagster_aws.pipes.message_readers import PipesCloudWatchMessageReader
 
@@ -43,13 +43,13 @@ class PipesSFNClient(PipesClient, TreatAsResourceParam):
 
     def __init__(
         self,
-        context_injector: PipesContextInjector,
+        context_injector: Optional[PipesContextInjector] = None,
         message_reader: Optional[PipesMessageReader] = None,
         client: Optional["SFNClient"] = None,
         forward_termination: bool = True,
     ):
         self._client: SFNClient = client or boto3.client("stepfunctions")
-        self._context_injector = context_injector
+        self._context_injector = context_injector or PipesEnvContextInjector()
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
 
@@ -88,8 +88,6 @@ class PipesSFNClient(PipesClient, TreatAsResourceParam):
             context_injector=self._context_injector,
             extras=extras,
         ) as session:
-            _ = session.get_bootstrap_cli_arguments()
-
             try:
                 execution_arn = self._client.start_execution(**params)["executionArn"]
 
@@ -142,9 +140,7 @@ class PipesSFNClient(PipesClient, TreatAsResourceParam):
         self, response: "DescribeExecutionOutputTypeDef"
     ) -> RawMetadataMapping:
         metadata: RawMetadataMapping = {}
-        for key, value in response.items():
-            metadata[key] = MetadataValue.text(str(value))
-
+        metadata["executionArn"] = MetadataValue.text(response["executionArn"])
         return metadata
 
     def _terminate_execution(

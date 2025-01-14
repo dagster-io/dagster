@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional
@@ -14,7 +15,7 @@ from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.launcher.base import LaunchRunContext, RunLauncher
 from dagster._serdes import ConfigurableClass
-from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_fixed
+from dagster._utils.backoff import backoff
 
 if TYPE_CHECKING:
     from dagster._serdes.config_class import ConfigurableClassData
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 
 
 SFN_FINISHED_STATUSES = ["FAILED", "SUCCEEDED", "TIMED_OUT", "ABORTED"]
+DEFAULT_RUN_TASK_RETRIES = 3
 
 
 class SFNFinishedExecutioinError(Exception):
@@ -82,7 +84,14 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             response = self._wait_for_execution_completion(execution_arn)
         except DagsterExecutionInterruptedError as e:
             logging.error(f"Error waiting for execution completion: {e}")
-            _ = self._stop_execution(execution_arn)
+            _ = backoff(
+                self._stop_execution,
+                retry_on=(ClientError,),
+                kwargs={"execution_arn": execution_arn},
+                max_retries=int(
+                    os.getenv("RUN_TASK_RETRIES", DEFAULT_RUN_TASK_RETRIES),
+                ),
+            )
             raise
         else:
             logging.info(
@@ -93,11 +102,6 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     f"Step Function execution {self._sfn_arn} run {execution_arn} completed with status {response['status']} :\n{response.get('errorMessage')}",
                 )
 
-    @retry(
-        retry=retry_if_exception_type(ClientError),
-        stop=stop_after_delay(5),
-        wait=wait_fixed(5),
-    )
     def _stop_execution(self, execution_arn: str) -> "StopExecutionOutputTypeDef":
         logging.info(f"Terminating execution {execution_arn}")
         try:
@@ -118,16 +122,18 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         self, execution_arn: str
     ) -> "DescribeExecutionOutputTypeDef":
         while True:
-            response = self._describe_execution(execution_arn)
+            response = backoff(
+                self._describe_execution,
+                retry_on=(ClientError,),
+                kwargs={"execution_arn": execution_arn},
+                max_retries=int(
+                    os.getenv("RUN_TASK_RETRIES", DEFAULT_RUN_TASK_RETRIES),
+                ),
+            )
             if response["status"] in SFN_FINISHED_STATUSES:
                 return response
             time.sleep(5)
 
-    @retry(
-        retry=retry_if_exception_type(ClientError),
-        stop=stop_after_delay(5),
-        wait=wait_fixed(5),
-    )
     def _describe_execution(self, execution_arn: str) -> "DescribeExecutionOutputTypeDef":
         try:
             response = self._client.describe_execution(executionArn=execution_arn)
