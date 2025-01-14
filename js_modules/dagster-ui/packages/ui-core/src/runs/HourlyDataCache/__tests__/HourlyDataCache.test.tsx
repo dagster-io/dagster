@@ -3,9 +3,9 @@ import {waitFor} from '@testing-library/dom';
 import {HourlyDataCache, ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache';
 
 const mockedCache = {
-  has: jest.fn(() => false),
-  get: jest.fn(),
-  set: jest.fn(),
+  has: jest.fn<any, any, any>(() => false),
+  get: jest.fn<any, any, any>(),
+  set: jest.fn<any, any, any>(),
 };
 let mockShouldThrowError = false;
 jest.mock('idb-lru-cache', () => {
