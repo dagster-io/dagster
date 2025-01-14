@@ -1,7 +1,7 @@
 from typing import Optional
 
 import dlt
-from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
+from dagster_dlt import DagsterDltResource, dlt_assets
 
 from dagster import AssetExecutionContext, StaticPartitionsDefinition
 
