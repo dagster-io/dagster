@@ -2,14 +2,14 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import graphene
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.remote_representation.handle import RepositoryHandle
 
 from dagster_graphql.implementation.fetch_assets import get_asset
 from dagster_graphql.implementation.utils import capture_error
-from dagster_graphql.schema.entity_key import GrapheneAssetKey, GrapheneAssetCheckHandle
+from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle, GrapheneAssetKey
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
@@ -70,11 +70,15 @@ class GrapheneAssetSelection(graphene.ObjectType):
 
         return self._resolved_keys
 
-    def _get_resolved_and_sorted_checks(self, graphene_info: ResolveInfo) -> Sequence[AssetCheckKey]:
+    def _get_resolved_and_sorted_checks(
+        self, graphene_info: ResolveInfo
+    ) -> Sequence[AssetCheckKey]:
         """Use this to maintain stability in ordering."""
         if self._resolved_checks is None:
             repo = graphene_info.context.get_repository(self._repository_handle)
-            self._resolved_checks = sorted(self._asset_selection.resolve_checks(repo.asset_graph), key=str)
+            self._resolved_checks = sorted(
+                self._asset_selection.resolve_checks(repo.asset_graph), key=str
+            )
 
         return self._resolved_checks
 
