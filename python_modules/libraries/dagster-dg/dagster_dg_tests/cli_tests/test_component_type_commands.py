@@ -2,7 +2,8 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dagster_dg.context import CodeLocationDirectoryContext, DgContext
+from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.context import DgContext
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
@@ -26,8 +27,9 @@ def test_component_type_generate_success(in_deployment: bool) -> None:
         result = runner.invoke("component-type", "generate", "baz")
         assert_runner_result(result)
         assert Path("bar/lib/baz.py").exists()
-        context = CodeLocationDirectoryContext.from_path(Path.cwd(), DgContext.default())
-        assert context.has_component_type("bar.baz")
+        dg_context = DgContext.default()
+        registry = RemoteComponentRegistry.from_dg_context(dg_context)
+        assert registry.has("bar.baz")
 
 
 def test_component_type_generate_outside_code_location_fails() -> None:
@@ -52,7 +54,7 @@ def test_component_type_generate_succeeds_non_default_component_lib_package() ->
         alt_lib_path = Path("bar/_lib")
         alt_lib_path.mkdir(parents=True)
         with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["components_lib_package"] = "bar._lib"
+            pyproject_toml["tool"]["dg"]["component_lib_package"] = "bar._lib"
             pyproject_toml["project"]["entry-points"]["dagster.components"]["bar"] = "bar._lib"
         result = runner.invoke(
             "component-type",
@@ -61,14 +63,15 @@ def test_component_type_generate_succeeds_non_default_component_lib_package() ->
         )
         assert_runner_result(result)
         assert Path("bar/_lib/baz.py").exists()
-        context = CodeLocationDirectoryContext.from_path(Path.cwd(), DgContext.default())
-        assert context.has_component_type("bar.baz")
+        dg_context = DgContext.default()
+        registry = RemoteComponentRegistry.from_dg_context(dg_context)
+        assert registry.has("bar.baz")
 
 
 def test_component_type_generate_fails_components_lib_package_does_not_exist() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["components_lib_package"] = "bar._lib"
+            pyproject_toml["tool"]["dg"]["component_lib_package"] = "bar._lib"
             pyproject_toml["project"]["entry-points"]["dagster.components"]["bar"] = "bar._lib"
         result = runner.invoke(
             "component-type",

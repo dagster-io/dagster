@@ -10,6 +10,7 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
+    clear_module_from_cache,
     isolated_example_deployment_foo,
 )
 
@@ -56,6 +57,7 @@ def test_code_location_generate_inside_deployment_success(monkeypatch) -> None:
         # Check cache was populated
         with pushd("code_locations/bar"):
             result = runner.invoke("component-type", "list", "--verbose")
+            assert_runner_result(result)
             assert "CACHE [hit]" in result.output
 
 
@@ -64,7 +66,7 @@ def test_code_location_generate_outside_deployment_success(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem(), clear_module_from_cache("bar"):
         result = runner.invoke("code-location", "generate", "bar", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("bar").exists()

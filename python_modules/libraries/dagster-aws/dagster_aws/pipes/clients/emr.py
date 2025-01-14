@@ -20,6 +20,7 @@ from dagster._core.pipes.client import (
 from dagster._core.pipes.utils import PipesEnvContextInjector, PipesSession, open_pipes_session
 
 from dagster_aws.emr.emr import EMR_CLUSTER_TERMINATED_STATES
+from dagster_aws.pipes.clients.utils import emr_inject_pipes_env_vars
 from dagster_aws.pipes.message_readers import (
     PipesS3LogReader,
     PipesS3MessageReader,
@@ -35,38 +36,6 @@ if TYPE_CHECKING:
         RunJobFlowInputRequestTypeDef,
         RunJobFlowOutputTypeDef,
     )
-
-
-def add_configuration(
-    configurations: list["ConfigurationUnionTypeDef"],
-    configuration: "ConfigurationUnionTypeDef",
-):
-    """Add a configuration to a list of EMR configurations, merging configurations with the same classification.
-
-    This is necessary because EMR doesn't accept multiple configurations with the same classification.
-    """
-    for existing_configuration in configurations:
-        if existing_configuration.get("Classification") is not None and existing_configuration.get(
-            "Classification"
-        ) == configuration.get("Classification"):
-            properties = {**existing_configuration.get("Properties", {})}
-            properties.update(properties)
-
-            inner_configurations = cast(
-                list["ConfigurationUnionTypeDef"], existing_configuration.get("Configurations", [])
-            )
-
-            for inner_configuration in cast(
-                list["ConfigurationUnionTypeDef"], configuration.get("Configurations", [])
-            ):
-                add_configuration(inner_configurations, inner_configuration)
-
-            existing_configuration["Properties"] = properties
-            existing_configuration["Configurations"] = inner_configurations  # type: ignore
-
-            break
-    else:
-        configurations.append(configuration)
 
 
 @public
@@ -162,38 +131,9 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
     def _enrich_params(
         self, session: PipesSession, params: "RunJobFlowInputRequestTypeDef"
     ) -> "RunJobFlowInputRequestTypeDef":
-        # add Pipes env variables
-        pipes_env_vars = session.get_bootstrap_env_vars()
-
-        configurations = cast(list["ConfigurationUnionTypeDef"], params.get("Configurations", []))
-
-        # add all possible env vars to spark-defaults, spark-env, yarn-env, hadoop-env
-        # since we can't be sure which one will be used by the job
-        add_configuration(
-            configurations,
-            {
-                "Classification": "spark-defaults",
-                "Properties": {
-                    f"spark.yarn.appMasterEnv.{var}": value for var, value in pipes_env_vars.items()
-                },
-            },
+        params["Configurations"] = emr_inject_pipes_env_vars(
+            session, cast(list["ConfigurationUnionTypeDef"], params.get("Configurations", []))
         )
-
-        for classification in ["spark-env", "yarn-env", "hadoop-env"]:
-            add_configuration(
-                configurations,
-                {
-                    "Classification": classification,
-                    "Configurations": [
-                        {
-                            "Classification": "export",
-                            "Properties": pipes_env_vars,
-                        }
-                    ],
-                },
-            )
-
-        params["Configurations"] = configurations
 
         tags = list(params.get("Tags", []))
 

@@ -5,7 +5,7 @@ bluesky:
       type: duckdb
       schema: bluesky_dev
       path: "local.duckdb"
-      threads: 16
+      threads: 1
       extensions: 
         - httpfs
       settings:
@@ -16,8 +16,8 @@ bluesky:
     prod:
       type: duckdb
       schema: bluesky
-      path: "md:prod_bluesky?MOTHERDUCK_TOKEN={{ env_var('MOTHERDUCK_TOKEN') }}"
-      threads: 16
+      path: "md:prod_bluesky"
+      threads: 1
       extensions: 
         - httpfs
       settings:

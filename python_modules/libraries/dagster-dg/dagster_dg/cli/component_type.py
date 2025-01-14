@@ -8,12 +8,8 @@ import click
 
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.context import (
-    CodeLocationDirectoryContext,
-    DgContext,
-    fetch_component_registry,
-    is_inside_code_location_directory,
-)
+from dagster_dg.config import normalize_cli_config
+from dagster_dg.context import DgContext
 from dagster_dg.generate import generate_component_type
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 
@@ -31,27 +27,31 @@ def component_type_group():
 @component_type_group.command(name="generate", cls=DgClickCommand)
 @click.argument("name", type=str)
 @dg_global_options
-def component_type_generate_command(name: str, **global_options: object) -> None:
+@click.pass_context
+def component_type_generate_command(
+    context: click.Context, name: str, **global_options: object
+) -> None:
     """Generate a scaffold of a custom Dagster component type.
 
     This command must be run inside a Dagster code location directory. The component type scaffold
     will be generated in submodule `<code_location_name>.lib.<name>`.
     """
-    dg_context = DgContext.from_cli_global_options(global_options)
-    if not is_inside_code_location_directory(Path.cwd()):
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    if not dg_context.is_code_location:
         click.echo(
             click.style(
                 "This command must be run inside a Dagster code location directory.", fg="red"
             )
         )
         sys.exit(1)
-    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
-    full_component_name = f"{context.name}.{name}"
-    if context.has_component_type(full_component_name):
+    registry = RemoteComponentRegistry.from_dg_context(dg_context)
+    full_component_name = f"{dg_context.root_package_name}.{name}"
+    if registry.has(full_component_name):
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
         sys.exit(1)
 
-    generate_component_type(context, name)
+    generate_component_type(dg_context, name)
 
 
 # ########################
@@ -65,7 +65,9 @@ def component_type_generate_command(name: str, **global_options: object) -> None
 @click.option("--generate-params-schema", is_flag=True, default=False)
 @click.option("--component-params-schema", is_flag=True, default=False)
 @dg_global_options
+@click.pass_context
 def component_type_info_command(
+    context: click.Context,
     component_type: str,
     description: bool,
     generate_params_schema: bool,
@@ -73,8 +75,9 @@ def component_type_info_command(
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
-    dg_context = DgContext.from_cli_global_options(global_options)
-    registry = _get_component_type_registry(Path.cwd(), dg_context)
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    registry = RemoteComponentRegistry.from_dg_context(dg_context)
     if not registry.has(component_type):
         click.echo(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
@@ -132,25 +135,14 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 
 @component_type_group.command(name="list", cls=DgClickCommand)
 @dg_global_options
-def component_type_list(**global_options: object) -> None:
+@click.pass_context
+def component_type_list(context: click.Context, **global_options: object) -> None:
     """List registered Dagster components in the current code location environment."""
-    dg_context = DgContext.from_cli_global_options(global_options)
-    registry = _get_component_type_registry(Path.cwd(), dg_context)
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    registry = RemoteComponentRegistry.from_dg_context(dg_context)
     for key in sorted(registry.keys()):
         click.echo(key)
         component_type = registry.get(key)
         if component_type.summary:
             click.echo(f"    {component_type.summary}")
-
-
-# ########################
-# ##### HELPERS
-# ########################
-
-
-def _get_component_type_registry(path: Path, dg_context: DgContext) -> RemoteComponentRegistry:
-    if not is_inside_code_location_directory(path):
-        return fetch_component_registry(path, dg_context)
-    else:
-        context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
-        return context.component_registry

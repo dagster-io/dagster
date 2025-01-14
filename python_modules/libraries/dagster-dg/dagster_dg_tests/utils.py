@@ -22,7 +22,7 @@ from typing_extensions import Self
 @contextmanager
 def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(), clear_module_from_cache("bar"):
         runner.invoke("deployment", "generate", "foo")
         with pushd("foo"):
             yield
