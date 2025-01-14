@@ -1118,7 +1118,7 @@
         "children": [
           {
             "title": "dlt & Dagster",
-            "path": "/integrations/dlt"
+            "path": "/integrations/embedded-elt/dlt"
           },
           {
             "title": "Sling & Dagster",
@@ -1569,10 +1569,6 @@
           {
             "title": "Delta Lake (dagster-deltalake)",
             "path": "/_apidocs/libraries/dagster-deltalake"
-          },
-          {
-            "title": "dlt (dagster-dlt)",
-            "path": "/_apidocs/libraries/dagster-dlt"
           },
           {
             "title": "Docker (dagster-docker)",

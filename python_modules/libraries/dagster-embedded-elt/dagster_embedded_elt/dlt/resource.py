@@ -21,9 +21,13 @@ from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
-from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
-from dagster_dlt.dlt_event_iterator import DltEventIterator, DltEventType
-from dagster_dlt.translator import DagsterDltTranslator
+from dagster_embedded_elt.dlt.constants import (
+    META_KEY_PIPELINE,
+    META_KEY_SOURCE,
+    META_KEY_TRANSLATOR,
+)
+from dagster_embedded_elt.dlt.dlt_event_iterator import DltEventIterator, DltEventType
+from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 
 @experimental

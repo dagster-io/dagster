@@ -1,7 +1,11 @@
 from collections.abc import Iterable
 
 import dlt
-from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dagster_embedded_elt.dlt import (
+    DagsterDltResource,
+    DagsterDltTranslator,
+    dlt_assets,
+)
 from dlt.extract.resource import DltResource
 
 from dagster import AssetExecutionContext, AssetKey

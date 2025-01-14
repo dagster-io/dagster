@@ -86,7 +86,6 @@ def test_components_from_dagster():
     components_root = _get_editable_package_root("dagster-components")
     dbt_root = _get_editable_package_root("dagster-dbt")
     embedded_elt_root = _get_editable_package_root("dagster-embedded-elt")
-    dlt_root = _get_editable_package_root("dagster-dlt")
 
     # No extras
     with _temp_venv([*common_deps, "-e", components_root]) as python_executable:
@@ -104,7 +103,7 @@ def test_components_from_dagster():
         assert "dagster_components.sling_replication_collection" not in component_types
 
     with _temp_venv(
-        [*common_deps, "-e", f"{components_root}[sling]", "-e", embedded_elt_root, "-e", dlt_root]
+        [*common_deps, "-e", f"{components_root}[sling]", "-e", embedded_elt_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
         assert "dagster_components.pipes_subprocess_script_collection" in component_types

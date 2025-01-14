@@ -3,10 +3,10 @@ from unittest import mock
 
 from dagster import AssetExecutionContext, AssetKey, MonthlyPartitionsDefinition
 from dagster._core.definitions.materialize import materialize
-from dagster_dlt import DagsterDltResource, dlt_assets
+from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 from dlt import Pipeline
 
-from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline
+from dagster_embedded_elt_tests.dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline
 
 
 def test_fetch_row_count(dlt_pipeline: Pipeline) -> None:
@@ -102,7 +102,7 @@ def test_fetch_row_count_partitioned(dlt_pipeline: Pipeline) -> None:
 
 def test_fetch_row_count_failure(dlt_pipeline: Pipeline):
     with mock.patch(
-        "dagster_dlt.dlt_event_iterator._fetch_row_count",
+        "dagster_embedded_elt.dlt.dlt_event_iterator._fetch_row_count",
         side_effect=Exception("test error"),
     ):
 
