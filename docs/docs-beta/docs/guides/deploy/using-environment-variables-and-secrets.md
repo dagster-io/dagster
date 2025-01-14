@@ -1,6 +1,6 @@
 ---
 title: Using environment variables and secrets
-sidebar_position: 100
+sidebar_position: 400
 ---
 
 ---

@@ -6,19 +6,12 @@ sidebar_position: 100
 
 A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools, such as the CLI, UI, and Dagster+. A code location comprises:
 
-- A reference to a Python module that has an instance of <PyObject object="Definitions" /> in a top-level variable
+- A reference to a Python module that has an instance of <PyObject section="definitions" module="dagster" object="Definitions" /> in a top-level variable
 - A Python environment that can successfully load that module
 
 Definitions within a code location have a common namespace and must have unique names. This allows them to be grouped and organized by code location in tools.
 
-<center>
-  <Image
-    alt="Code locations"
-    src="/images/concepts/code-locations/code-locations-diagram.png"
-    width={601}
-    height={431}
-  />
-</center>
+![Code locations](/images/guides/deploy/code-locations/code-locations-diagram.png)
 
 A single deployment can have one or multiple code locations.
 
@@ -33,11 +26,11 @@ Code locations are loaded in a different process and communicate with Dagster sy
 
 | Name                              | Description                                                                                                                                       |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <PyObject object="Definitions" /> | The object that contains all the definitions defined within a code location. Definitions include assets, jobs, resources, schedules, and sensors. |
+| <PyObject section="definitions" module="dagster" object="Definitions" /> | The object that contains all the definitions defined within a code location. Definitions include assets, jobs, resources, schedules, and sensors. |
 
 ## Defining code locations
 
-To define a code location, create a top-level variable that contains a <PyObject object="Definitions"/> object in a Python module. For example:
+To define a code location, create a top-level variable that contains a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module. For example:
 
 ```python
 # definitions.py
@@ -61,213 +54,87 @@ It is recommenced to include definitions in a Python module named `definitions.p
 
 ### Local development
 
-<!-- Lives in /next/components/mdx/includes/dagster/DagsterDevTabs.mdx -->
-
-<DagsterDevTabs />
-
-Refer to the [Running Dagster locally guide](/guides/running-dagster-locally) for more info about local development, including how to configure your local instance.
-
-### Dagster+ deployment
-
-{/* TODO remove this and incorporate OS deployment section below into rest of doc */}
-
-The [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) file is used to create and deploy code locations for Dagster+ deployments. Each code location entry in this file has a `code_source` property, which is used to specify how a code location is sourced. Code locations can be sourced from a Python file or module:
-
 <TabGroup>
-<TabItem name="Using a Python file">
+<TabItem name="From a file">
 
-To load a code location from a Python file, use the `python_file` property in your `dagster_cloud.yaml`:
+Dagster can load a file directly as a code location. In the following example, we used the `-f` argument to supply the name of the file:
 
-```yaml
-# dagster_cloud.yaml
+```shell
+dagster dev -f my_file.py
+```
 
-locations:
-  - location_name: my-code-location
-    code_source:
-      python_file: my_file.py
+This command loads the definitions in `my_file.py` as a code location in the current Python environment.
+
+You can also include multiple files at a time, where each file will be loaded as a code location:
+
+```shell
+dagster dev -f my_file.py -f my_second_file.py
 ```
 
 </TabItem>
-<TabItem name="Using a Python module">
+<TabItem name="From a module">
 
-To load a code location from a Python module, use the `module_name` property in your `dagster_cloud.yaml`:
+Dagster can also load Python modules as [code locations](/concepts/code-locations). When this approach is used, Dagster loads the definitions defined in the module passed to the command line.
 
-```yaml
-# dagster_cloud.yaml
+We recommend defining a variable containing the <PyObject section="definitions" module="dagster" object="Definitions" /> object in a submodule named `definitions` inside the Python module. In practice, the submodule can be created by adding a file named `definitions.py` at the root level of the Python module.
 
-locations:
-  - location_name: my-code-location
-    code_source:
-      module_name: my_module_name.definitions
+As this style of development eliminates an entire class of Python import errors, we strongly recommend it for Dagster projects deployed to production.
+
+In the following example, we used the `-m` argument to supply the name of the module and where to find the definitions:
+
+```shell
+dagster dev -m your_module_name.definitions
+```
+
+This command loads the definitions in the variable containing the <PyObject section="definitions" module="dagster" object="Definitions" /> object in the `definitions` submodule in the current Python environment.
+
+You can also include multiple modules at a time, where each module will be loaded as a code location:
+
+```shell
+dagster dev -m your_module_name.definitions -m your_second_module.definitions
+```
+
+</TabItem>
+<TabItem name="Without command line arguments">
+
+To load definitions without supplying command line arguments, you can use the `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section with a `module_name` variable:
+
+```toml
+[tool.dagster]
+module_name = "your_module_name.definitions"  ## name of project's Python module and where to find the definitions
+code_location_name = "your_code_location_name"  ## optional, name of code location to display in the Dagster UI
+```
+
+When defined, you can run this in the same directory as the `pyproject.toml` file:
+
+```shell
+dagster dev
+```
+
+Instead of this:
+
+```shell
+dagster dev -m your_module_name.definitions
+```
+
+You can also include multiple modules at a time using the `pyproject.toml` file, where each module will be loaded as a code location:
+
+```toml
+[tool.dagster]
+modules = [{ type = "module", name = "foo" }, { type = "module", name = "bar" }]
 ```
 
 </TabItem>
 </TabGroup>
 
+Fore more information about local development, including how to configure your local instance, see "[Running Dagster locally](/guides/deploy/running-dagster-locally)".
+
 ### Open source deployment
 
-The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. Refer to the [Workspace files page](/concepts/code-locations/workspace-files) for more info.
-
-## Definitions versus repositories
-
-If you used <PyObject object="repository" decorator /> in previous Dagster versions, you might be interested in how `Definitions` and repositories differ. Check out the following table for a high-level comparison:
-
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th></th>
-      <th
-        style={{
-          width: "40%",
-        }}
-      >
-        Definitions (Recommended)
-      </th>
-      <th
-        style={{
-          width: "40%",
-        }}
-      >
-        Repositories
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <strong>Minimum Dagster version</strong>
-      </td>
-      <td>1.1.7</td>
-      <td>0.6</td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Description</strong>
-      </td>
-      <td>
-        <ul
-          style={{
-            marginTop: "0px",
-          }}
-        >
-          <li
-            style={{
-              marginTop: "0px",
-            }}
-          >
-            Created by using the <PyObject object="Definitions" /> object
-            assigned to a top-level variable
-          </li>
-          <li>
-            One <PyObject object="Definitions" /> object allowed per code
-            location
-          </li>
-        </ul>
-      </td>
-      <td>
-        <ul
-          style={{
-            marginTop: "0px",
-          }}
-        >
-          <li
-            style={{
-              marginTop: "0px",
-            }}
-          >
-            Created by using the <PyObject object="repository" decorator />{" "}
-            decorator
-          </li>
-          <li>
-            Multiple <PyObject object="repository" decorator /> definitions
-            allowed per code location
-          </li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Arguments</strong>
-      </td>
-      <td>Enforced typing and naming</td>
-      <td>No enforced typing and naming</td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Resources</strong>
-      </td>
-      <td>
-        <ul
-          style={{
-            marginTop: "0px",
-          }}
-        >
-          <li
-            style={{
-              marginTop: "0px",
-            }}
-          >
-            <code>resources</code> argument can accept definitions and raw
-            objects
-          </li>
-          <li>Top-level resources are automatically bound to all assets</li>
-        </ul>
-      </td>
-      <td>
-        Resources are manually bound to assets (<code>with_resources</code>)
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Multiple Python environments</strong>
-      </td>
-      <td>
-        Supported for <a href="#open-source-deployments">OSS deployments</a>{" "}
-        (via
-        <code>workspace.yaml</code>)
-      </td>
-      <td>Supported</td>
-    </tr>
-  </tbody>
-</table>
+The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](workspace-yaml.md)".
 
 ## Troubleshooting
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "30%",
-        }}
-      >
-        Error
-      </th>
-      <th>Description and resolution</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <strong>
-          Cannot have more than one Definitions object defined at module scope
-        </strong>
-      </td>
-      <td>
-        Dagster found multiple <PyObject object="Definitions" /> objects in a
-        single Python module. Only one <PyObject object="Definitions" /> object
-        may be in a single code location.
-      </td>
-    </tr>
-  </tbody>
-</table>
+| Error | Description and resolution |
+|-------|----------------------------|
+| Cannot have more than one Definitions object defined at module scope | Dagster found multiple <PyObject section="definitions" module="dagster" object="Definitions" /> objects in a single Python module. Only one <PyObject section="definitions" module="dagster" object="Definitions" /> object may be in a single code location. |

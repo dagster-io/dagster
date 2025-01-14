@@ -1,7 +1,6 @@
 ---
 title: "Configuring run retries"
-description: Automatically retry failed Dagster runs
-sidebar_position: 500
+sidebar_position: 600
 ---
 
 If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op retries](/concepts/ops-jobs-graphs/op-retries), the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.

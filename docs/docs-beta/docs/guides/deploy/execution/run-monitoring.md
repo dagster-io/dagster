@@ -1,7 +1,6 @@
 ---
 title: "Detect and restart crashed workers with run monitoring"
-description: Features for managing run failures in Dagster.
-sidebar_position: 400
+sidebar_position: 500
 ---
 
 Dagster can detect hanging runs and restart crashed [run workers](/deployment/overview#job-execution-flow). Using run monitoring requires:

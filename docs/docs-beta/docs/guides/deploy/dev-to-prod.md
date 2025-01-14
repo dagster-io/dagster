@@ -1,6 +1,6 @@
 ---
 title: "Transitioning from development to production"
-description: This guide walks through how to transition your data pipelines from local development to production
+sidebar_position: 500
 ---
 
 In this article, we'll walk through how to transition your data pipelines from local development to staging and production deployments.
@@ -45,6 +45,7 @@ In this section we will:
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/assets.py startafter=start_assets endbefore=end_assets
 # assets.py
 import pandas as pd
@@ -93,8 +94,9 @@ def stories(items: pd.DataFrame) -> pd.DataFrame:
     return items[items["type"] == "story"]
 ```
 
-Now we can add these assets to our <PyObject object="Definitions" /> object and materialize them via the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
+Now we can add these assets to our <PyObject section="definitions" module="dagster" object="Definitions" /> object and materialize them via the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
 # definitions.py
 from dagster_snowflake_pandas import SnowflakePandasIOManager
@@ -121,21 +123,11 @@ Note that we have passwords in our configuration in this code snippet. This is b
 
 This results in an asset graph that looks like this:
 
-<Image
-alt="alt"
-src="/images/guides/development_to_production/hacker_news_asset_graph.png"
-width={1538}
-height={730}
-/>
+![Hacker News asset graph](/images/guides/deploy/hacker_news_asset_graph.png)
 
 We can materialize the assets in the UI and ensure that the data appears in Snowflake as we expect:
 
-<Image
-alt="alt"
-src="/images/guides/development_to_production/snowflake_data.png"
-width={2304}
-height={1064}
-/>
+![Snowflake data](/images/guides/deploy/snowflake_data.png)
 
 While we define our assets as Pandas DataFrames, the Snowflake I/O manager automatically translates the data to and from Snowflake tables. The Python asset name determines the Snowflake table name. In this case three tables will be created: `ITEMS`, `COMMENTS` and `STORIES`.
 
@@ -154,6 +146,7 @@ We want to store the assets in a production Snowflake database, so we need to up
 
 Instead, we can determine the configuration for resources based on the environment:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/repository/repository_v2.py startafter=start endbefore=end
 # definitions.py
 
@@ -198,6 +191,7 @@ We still have some problems with this setup:
 
 We can easily solve these problems using <PyObject object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the I/O manager to those environment variables:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start endbefore=end
 # definitions.py
 
@@ -233,10 +227,11 @@ defs = Definitions(
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-- **For Dagster+ users**, we recommend using [Branch Deployments](/dagster-plus/managing-deployments/branch-deployments) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch. Check out our [comprehensive guide to branch deployments](/guides/dagster/branch_deployments) to learn how to use branch deployments to verify data pipelines before deploying them to production.
+- **For Dagster+ users**, we recommend using [Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/managing-deployments/) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch, and can be used to verify data pipelines before deploying them to production.
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_staging endbefore=end_staging
 resources = {
     "local": {...},
@@ -274,6 +269,7 @@ Determining when it makes sense to stub a resource for a unit test can be a topi
 
 We'll start by writing the "real" Hacker News API Client:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/resources/resources_v1.py startafter=start_resource endbefore=end_resource
 # resources.py
 from typing import Any, Dict, Optional
@@ -305,6 +301,7 @@ class HNAPIClient(ConfigurableResource):
 
 We'll also need to update the `items` asset to use this client as a resource:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/assets_v2.py startafter=start_items endbefore=end_items
 # assets.py
 
@@ -333,11 +330,7 @@ def items(config: ItemsConfig, hn_client: HNAPIClient) -> pd.DataFrame:
 
 :::note
 
-For the sake of brevity, we've omitted the implementation of the property
-<code>item_field_names</code> in <code>HNAPIClient</code>. You can find the full
-implementation of this resource in the <a href="https://github.com/dagster-io/dagster/tree/master/examples/development_to_production">
-full code example
-</a> on GitHub.
+For the sake of brevity, we've omitted the implementation of the property `item_field_names` in `HNAPIClient`. You can find the full implementation of this resource in the [full code example](https://github.com/dagster-io/dagster/tree/master/examples/development_to_production) on GitHub.
 
 :::
 
@@ -353,6 +346,7 @@ resource_defs = {
 
 Now we can write a stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method `HNAPIClient` implements.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/resources/resources_v2.py startafter=start_mock endbefore=end_mock
 # resources.py
 
@@ -386,16 +380,13 @@ class StubHNClient:
 
   Since the stub Hacker News resource and the real Hacker News resource need to
   implement the same methods, this would be a great time to write an interface.
-  We’ll skip the implementation in this guide, but you can find it in the{" "}
-  <a href="https://github.com/dagster-io/dagster/tree/master/examples/development_to_production">
-    full code example
-  </a>
-  .
+  We’ll skip the implementation in this guide, but you can find it in the [full code example](https://github.com/dagster-io/dagster/tree/master/examples/development_to_production).
 
 :::
 
 Now we can use the stub Hacker News resource to test that the `items` asset transforms the data in the way we expect:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/test_assets.py startafter=start endbefore=end
 # test_assets.py
 
@@ -414,8 +405,8 @@ def test_items():
     assert (hn_dataset == expected_data).all().all()
 ```
 
----
+:::note
 
-## Conclusion
+While we focused on assets in this article, the same concepts and APIs can be used to swap out run configuration for jobs.
 
-This guide demonstrates how we recommend writing your assets and jobs so that they transition from local development to staging and production environments without requiring code changes at each step. While we focused on assets in this guide, the same concepts and APIs can be used to swap out run configuration for jobs.
+:::

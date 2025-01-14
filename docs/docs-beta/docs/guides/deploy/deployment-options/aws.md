@@ -4,12 +4,11 @@ description: To deploy Dagster to AWS, EC2 or ECS can host the Dagster webserver
 sidebar_position: 50
 ---
 
-
 This guide provides instructions for deploying Dagster on Amazon Web Services (AWS). You can use EC2 or ECS to host the Dagster webserver and the Dagster daemon, RDS to store runs and events, and S3 as an I/O manager to store op inputs and outputs.
 
 ## Hosting Dagster on EC2
 
-To host Dagster on a bare VM or in Docker on EC2, refer to the [Running Dagster as a service](/deployment/guides/service) guide.
+To host Dagster on a bare VM or in Docker on EC2, see "[Running Dagster as a service](/guides/deploy/deployment-options/running-dagster-as-a-service).
 
 ## Using RDS for run and event log storage
 
@@ -33,7 +32,11 @@ In this case, you'll want to ensure that:
 
 Be sure that this file is present and `DAGSTER_HOME` is set on the node where the webserver is running.
 
-**Note**: Using RDS for run and event log storage doesn't require that the webserver be running in the cloud. If you're connecting a local webserver instance to a remote RDS storage, verify that your local node is able to connect to RDS.
+:::note
+
+Using RDS for run and event log storage doesn't require that the webserver be running in the cloud. If you're connecting a local webserver instance to a remote RDS storage, verify that your local node is able to connect to RDS.
+
+:::
 
 ## Deploying in ECS
 
@@ -46,15 +49,15 @@ The Deploying on ECS example on GitHub demonstrates how to configure the [Docker
 - A Postgres container for persistent storage
 - A container with user job code
 
-The [Dagster instance](/deployment/dagster-instance) uses the <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> to launch each run in its own ECS task.
+The [Dagster instance](/guides/deploy/dagster-instance-configuration) uses the <PyObject section="libraries" module="dagster_aws.ecs" object="EcsRunLauncher" /> to launch each run in its own ECS task.
 
 ### Launching runs in ECS
 
-The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of your Dagster deployment is also running in ECS.
+The <PyObject section="libraries" module="dagster_aws.ecs" object="EcsRunLauncher" /> launches an ECS task per run. It assumes that the rest of your Dagster deployment is also running in ECS.
 
 By default, each run's task registers its own task definition. To simplify configuration, these task definitions inherit most of their configuration (networking, cpu, memory, environment, etc.) from the task that launches the run but overrides its container definition with a new command to launch a Dagster run.
 
-When using the <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via the Dagster UI or GraphQL inherit their task definitions from the webserver task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
+When using the <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" />, runs launched via the Dagster UI or GraphQL inherit their task definitions from the webserver task while runs launched from a sensor or schedule inherit their task definitions from the daemon task.
 
 Alternatively, you can define your own task definition in your `dagster.yaml`:
 
@@ -112,7 +115,7 @@ If these tags are set, they will override any defaults set on the run launcher.
 
 ### Customizing the launched run's task
 
-The <PyObject module="dagster_aws.ecs" object="EcsRunLauncher" /> creates a new task for each run, using the current ECS task to determine network configuration. For example, the launched run will use the same ECS cluster, subnets, security groups, and launch type (e.g. Fargate or EC2).
+The <PyObject section="libraries" module="dagster_aws.ecs" object="EcsRunLauncher" /> creates a new task for each run, using the current ECS task to determine network configuration. For example, the launched run will use the same ECS cluster, subnets, security groups, and launch type (e.g. Fargate or EC2).
 
 To adjust the configuration of the launched run's task, set the `run_launcher.config.run_task_kwargs` field to a dictionary with additional key-value pairs that should be passed into the `run_task` boto3 API call. For example, to launch new runs in EC2 from a task running in Fargate, you could apply this configuration:
 
@@ -198,14 +201,13 @@ run_launcher:
 
 In this example, any secret tagged with `dagster` will be included in the environment. `MY_API_TOKEN` and `MY_PASSWORD` will also be included in the environment.
 
-
-
 ## Using S3 for I/O management
 
-To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/concepts/io-management/io-managers). For example, using an S3 bucket to store data passed between ops.
+To enable parallel computation (e.g., with the multiprocessing or Dagster celery executors), you'll need to configure persistent [I/O managers](/guides/build/io-managers). For example, using an S3 bucket to store data passed between ops.
 
-You'll need to use <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/concepts/io-management/io-managers#defining-an-io-manager) for an example.
+You'll need to use <PyObject section="libraries" module="dagster_aws.s3" object="s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers) for an example.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/aws/io_manager.py
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.resources import s3_resource
@@ -230,6 +232,7 @@ def my_job():
 
 Then, add the following YAML block in your job's config:
 
+{/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/aws/io_manager.yaml
 resources:
   io_manager:

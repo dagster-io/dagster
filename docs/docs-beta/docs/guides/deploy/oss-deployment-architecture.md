@@ -1,6 +1,6 @@
 ---
 title: "Open Source deployment architecture overview"
-description: "Learn about the architecture of an Open Source Dagster deployment."
+sidebar_position: 100
 ---
 
 
