@@ -7,18 +7,14 @@ import click
 from click.core import ParameterSource
 
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.component import RemoteComponentType
+from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import (
-    DgConfig,
     get_config_from_cli_context,
     has_config_on_cli_context,
+    normalize_cli_config,
     set_config_on_cli_context,
 )
-from dagster_dg.context import (
-    CodeLocationDirectoryContext,
-    DgContext,
-    is_inside_code_location_directory,
-)
+from dagster_dg.context import DgContext
 from dagster_dg.generate import generate_component_instance
 from dagster_dg.utils import (
     DgClickCommand,
@@ -67,9 +63,9 @@ class ComponentGenerateGroup(DgClickGroup):
         if not has_config_on_cli_context(cli_context):
             cli_context.invoke(not_none(self.callback), **cli_context.params)
         config = get_config_from_cli_context(cli_context)
-        dg_context = DgContext.from_config(config)
+        dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), config)
 
-        if not is_inside_code_location_directory(Path.cwd()):
+        if not dg_context.is_code_location:
             click.echo(
                 click.style(
                     "This command must be run inside a Dagster code location directory.", fg="red"
@@ -77,8 +73,8 @@ class ComponentGenerateGroup(DgClickGroup):
             )
             sys.exit(1)
 
-        context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
-        for key, component_type in context.iter_component_types():
+        registry = RemoteComponentRegistry.from_dg_context(dg_context)
+        for key, component_type in registry.items():
             command = _create_component_generate_subcommand(key, component_type)
             self.add_command(command)
 
@@ -132,7 +128,8 @@ def component_generate_group(context: click.Context, help_: bool, **global_optio
     # it runs first. It will be invoked again later by Click. We make it idempotent to deal with
     # that.
     if not has_config_on_cli_context(context):
-        set_config_on_cli_context(context, DgConfig.from_cli_global_options(global_options))
+        cli_config = normalize_cli_config(global_options, context)
+        set_config_on_cli_context(context, cli_config)
     if help_:
         click.echo(context.get_help())
         context.exit(0)
@@ -180,9 +177,9 @@ def _create_component_generate_subcommand(
 
         It is an error to pass both --json-params and key-value pairs as options.
         """
-        config = get_config_from_cli_context(cli_context)
-        dg_context = DgContext.from_config(config)
-        if not is_inside_code_location_directory(Path.cwd()):
+        cli_config = get_config_from_cli_context(cli_context)
+        dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+        if not dg_context.is_code_location:
             click.echo(
                 click.style(
                     "This command must be run inside a Dagster code location directory.", fg="red"
@@ -190,13 +187,13 @@ def _create_component_generate_subcommand(
             )
             sys.exit(1)
 
-        context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
-        if not context.has_component_type(component_key):
+        registry = RemoteComponentRegistry.from_dg_context(dg_context)
+        if not registry.has(component_key):
             click.echo(
                 click.style(f"No component type `{component_key}` could be resolved.", fg="red")
             )
             sys.exit(1)
-        elif context.has_component_instance(component_name):
+        elif dg_context.has_component(component_name):
             click.echo(
                 click.style(
                     f"A component instance named `{component_name}` already exists.", fg="red"
@@ -229,7 +226,7 @@ def _create_component_generate_subcommand(
             generate_params = None
 
         generate_component_instance(
-            Path(context.components_path),
+            Path(dg_context.components_path),
             component_name,
             component_key,
             generate_params,
@@ -255,10 +252,12 @@ def _create_component_generate_subcommand(
 
 @component_group.command(name="list", cls=DgClickCommand)
 @dg_global_options
-def component_list_command(**global_options: object) -> None:
+@click.pass_context
+def component_list_command(context: click.Context, **global_options: object) -> None:
     """List Dagster component instances defined in the current code location."""
-    dg_context = DgContext.from_cli_global_options(global_options)
-    if not is_inside_code_location_directory(Path.cwd()):
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    if not dg_context.is_code_location:
         click.echo(
             click.style(
                 "This command must be run inside a Dagster code location directory.", fg="red"
@@ -266,6 +265,5 @@ def component_list_command(**global_options: object) -> None:
         )
         sys.exit(1)
 
-    context = CodeLocationDirectoryContext.from_path(Path.cwd(), dg_context)
-    for component_name in context.get_component_instance_names():
+    for component_name in dg_context.get_component_names():
         click.echo(component_name)

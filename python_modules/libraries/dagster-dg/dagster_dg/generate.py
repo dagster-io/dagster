@@ -6,13 +6,9 @@ from typing import Any, Optional
 
 import click
 
-from dagster_dg.context import (
-    CodeLocationDirectoryContext,
-    DgContext,
-    ensure_uv_lock,
-    fetch_component_registry,
-)
-from dagster_dg.utils import camelcase, execute_code_location_command, generate_subtree
+from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.context import DgContext
+from dagster_dg.utils import camelcase, generate_subtree
 
 # ########################
 # ##### DEPLOYMENT
@@ -125,9 +121,10 @@ def generate_code_location(
     )
 
     # Build the venv
-    if dg_context.config.use_dg_managed_environment and not skip_venv:
-        ensure_uv_lock(path)
-        fetch_component_registry(path, dg_context)  # Populate the cache
+    cl_dg_context = dg_context.with_root_path(path)
+    if cl_dg_context.config.use_dg_managed_environment and not skip_venv:
+        cl_dg_context.ensure_uv_lock()
+        RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
 
 # ########################
@@ -135,8 +132,8 @@ def generate_code_location(
 # ########################
 
 
-def generate_component_type(context: CodeLocationDirectoryContext, name: str) -> None:
-    root_path = Path(context.components_lib_path)
+def generate_component_type(dg_context: DgContext, name: str) -> None:
+    root_path = Path(dg_context.components_lib_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
 
     generate_subtree(
@@ -149,7 +146,7 @@ def generate_component_type(context: CodeLocationDirectoryContext, name: str) ->
     )
 
     with open(root_path / "__init__.py", "a") as f:
-        f.write(f"from {context.components_lib_package_name}.{name} import {camelcase(name)}\n")
+        f.write(f"from {dg_context.components_lib_package_name}.{name} import {camelcase(name)}\n")
 
 
 # ########################
@@ -167,15 +164,11 @@ def generate_component_instance(
     component_instance_root_path = root_path / name
     click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
     os.makedirs(component_instance_root_path, exist_ok=True)
-    code_location_command = (
+    code_location_command = [
         "generate",
         "component",
         component_type,
         name,
         *(["--json-params", json.dumps(generate_params)] if generate_params else []),
-    )
-    execute_code_location_command(
-        Path(component_instance_root_path),
-        code_location_command,
-        dg_context,
-    )
+    ]
+    dg_context.external_components_command(code_location_command)

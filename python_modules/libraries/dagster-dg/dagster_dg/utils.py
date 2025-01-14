@@ -4,12 +4,11 @@ import json
 import os
 import posixpath
 import re
-import subprocess
 import sys
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 import click
 import jinja2
@@ -23,31 +22,8 @@ from dagster_dg.version import __version__ as dagster_version
 # versions, so for nowe we avoid trying to import it and just alias the type to Any.
 Hash: TypeAlias = Any
 
-if TYPE_CHECKING:
-    from dagster_dg.context import DgContext
 
 CLI_CONFIG_KEY = "config"
-
-
-def execute_code_location_command(path: Path, cmd: Sequence[str], dg_context: "DgContext") -> str:
-    if dg_context.config.use_dg_managed_environment:
-        code_location_command_prefix = ["uv", "run", "dagster-components"]
-        env = get_uv_command_env()
-    else:
-        code_location_command_prefix = ["dagster-components"]
-        env = None
-    full_cmd = [
-        *code_location_command_prefix,
-        *(
-            ["--builtin-component-lib", dg_context.config.builtin_component_lib]
-            if dg_context.config.builtin_component_lib
-            else []
-        ),
-        *cmd,
-    ]
-    with pushd(path):
-        result = subprocess.run(full_cmd, stdout=subprocess.PIPE, env=env, check=True)
-        return result.stdout.decode("utf-8")
 
 
 # Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
@@ -75,6 +51,14 @@ def get_path_for_package(package_name: str) -> str:
     if not submodule_search_locations:
         raise DgError(f"Package does not have any locations for submodules: {package_name}")
     return submodule_search_locations[0]
+
+
+def is_valid_json(value: str) -> bool:
+    try:
+        json.loads(value)
+        return True
+    except json.JSONDecodeError:
+        return False
 
 
 # uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
