@@ -11,8 +11,12 @@ from dagster import (
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
-from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
-from dagster_dlt.translator import DagsterDltTranslator
+from dagster_embedded_elt.dlt.constants import (
+    META_KEY_PIPELINE,
+    META_KEY_SOURCE,
+    META_KEY_TRANSLATOR,
+)
+from dagster_embedded_elt.dlt.translator import DagsterDltTranslator
 
 
 def build_dlt_asset_specs(
@@ -82,7 +86,7 @@ def dlt_assets(
 
         .. code-block:: python
 
-            from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+            from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 
 
             class HubspotDagsterDltTranslator(DagsterDltTranslator):
@@ -112,7 +116,7 @@ def dlt_assets(
 
         .. code-block:: python
 
-            from dagster_dlt import DagsterDltResource, dlt_assets
+            from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 
 
             @dlt_assets(

@@ -1,9 +1,9 @@
 import duckdb
 from dagster import OpExecutionContext, job, op
-from dagster_dlt import DagsterDltResource
+from dagster_embedded_elt.dlt import DagsterDltResource
 from dlt import Pipeline
 
-from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline
+from dagster_embedded_elt_tests.dlt_tests.dlt_test_sources.duckdb_with_transformer import pipeline
 
 
 def test_base_dlt_op(dlt_pipeline: Pipeline) -> None:
