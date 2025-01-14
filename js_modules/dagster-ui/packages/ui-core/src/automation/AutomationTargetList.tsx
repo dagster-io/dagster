@@ -5,6 +5,8 @@ import {
   Colors,
   Dialog,
   DialogFooter,
+  Mono,
+  Subtitle2,
   Tab,
   Tabs,
   Tag,
@@ -153,6 +155,17 @@ const AssetSelectionTag = ({
         canOutsideClickClose
         canEscapeKeyClose
       >
+        <Box
+          flex={{direction: 'column', gap: 16}}
+          padding={{horizontal: 20, vertical: 16}}
+          border="bottom"
+        >
+          <Box flex={{direction: 'column', gap: 4}}>
+            <Subtitle2>Asset selection</Subtitle2>
+            <Mono>{assetSelectionString}</Mono>
+          </Box>
+        </Box>
+
         <Box padding={{horizontal: 20, top: 8}} border="bottom">
           <Tabs size="small" selectedTabId={selectedTab}>
             {splitConditioned ? (
