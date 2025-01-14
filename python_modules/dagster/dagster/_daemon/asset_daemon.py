@@ -425,7 +425,7 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
 
-            batch_size = self._settings.get("run_submission_batch_size", 25)
+            batch_size = self._settings.get("tick_termination_check_interval", 25)
 
             while True:
                 start_time = get_current_timestamp()
