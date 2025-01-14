@@ -763,5 +763,10 @@
     "source": "/integrations/embedded-elt/dlt",
     "destination": "/integrations/dlt",
     "statusCode": 302
+  },
+  {
+    "source": "/integrations/embedded-elt/sling",
+    "destination": "/integrations/sling",
+    "statusCode": 302
   }
 ]
