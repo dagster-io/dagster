@@ -95,4 +95,17 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "params.nested.baz.another_bool",
         ),
     ),
+    ComponentValidationTestCase(
+        component_path="validation/invalid_component_file_model",
+        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "component.yaml:1",
+            "type",
+            "Input should be a valid string",
+            "component.yaml:3",
+            "params",
+            "Input should be an object",
+        ),
+    ),
 ]
