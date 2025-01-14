@@ -2,6 +2,7 @@ from datetime import datetime
 
 import polars as pl
 import polars.testing as pl_testing
+import pytest
 from dagster import (
     AssetExecutionContext,
     AssetIn,
@@ -224,8 +225,9 @@ def test_polars_delta_io_manager_overwrite_schema_lazy(
     )
 
 
+@pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_partitioning(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -237,7 +239,7 @@ def test_polars_delta_native_partitioning(
         partitions_def=partitions_def,
         metadata={
             "partition_by": "partition",
-            "delta_write_options": {"engine": "pyarrow"},
+            "delta_write_options": {"engine": engine},
         },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
@@ -268,8 +270,9 @@ def test_polars_delta_native_partitioning(
     )
 
 
+@pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_multi_partitions(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -286,7 +289,7 @@ def test_polars_delta_native_multi_partitions(
         partitions_def=partitions_def,
         metadata={
             "partition_by": {"time": "date", "category": "category"},
-            "delta_write_options": {"engine": "pyarrow"},
+            "delta_write_options": {"engine": engine},
         },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
@@ -321,8 +324,9 @@ def test_polars_delta_native_multi_partitions(
     )
 
 
+@pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_partitioning_loading_single_partition(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -334,7 +338,7 @@ def test_polars_delta_native_partitioning_loading_single_partition(
         partitions_def=partitions_def,
         metadata={
             "partition_by": "partition",
-            "delta_write_options": {"engine": "pyarrow"},
+            "delta_write_options": {"engine": engine},
         },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
