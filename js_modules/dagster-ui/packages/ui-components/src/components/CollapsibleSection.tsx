@@ -5,14 +5,12 @@ import {Icon} from './Icon';
 
 export const CollapsibleSection = ({
   header,
-  containerProps,
   headerWrapperProps,
   children,
   isInitiallyCollapsed = false,
   arrowSide = 'left',
 }: {
   header: React.ReactNode;
-  containerProps?: React.ComponentProps<typeof Box>;
   headerWrapperProps?: React.ComponentProps<typeof Box>;
   children: React.ReactNode;
   isInitiallyCollapsed?: boolean;
@@ -20,7 +18,7 @@ export const CollapsibleSection = ({
 }) => {
   const [isCollapsed, setIsCollapsed] = React.useState(isInitiallyCollapsed);
   return (
-    <Box flex={{direction: 'column'}} {...containerProps}>
+    <Box flex={{direction: 'column'}}>
       <Box
         {...headerWrapperProps}
         flex={{
