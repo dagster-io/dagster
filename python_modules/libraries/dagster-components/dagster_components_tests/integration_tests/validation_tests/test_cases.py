@@ -103,7 +103,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "component.yaml:1",
             "type",
             "Input should be a valid string",
-            "component.yaml:4",
+            "component.yaml:3",
             "params",
             "Input should be an object",
         ),
