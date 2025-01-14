@@ -96,7 +96,7 @@ replication_config = {
 Next, you'll create a <PyObject module="dagster_sling" object="SlingResource" /> object that contains references to the connections specified in the replication configuration:
 
 ```python file=/integrations/sling/sling_connection_resources.py
-from dagster_sling.resources import SlingConnectionResource, SlingResource
+from dagster_sling import SlingConnectionResource, SlingResource
 
 from dagster import EnvVar
 
