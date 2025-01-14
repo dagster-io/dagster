@@ -100,12 +100,20 @@ def enrich_validation_errors_with_source_position(
         line_errors = []
         for error in e.errors():
             key_path_in_obj = list(error["loc"])
-            source_position = source_position_tree.lookup_nearest(key_path_in_obj)
+            source_position, source_position_path = source_position_tree.lookup_closest_and_path(
+                key_path_in_obj, None
+            )
 
             file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
             file_key_path_str = ".".join(str(part) for part in file_key_path)
+
+            ctx = {
+                **error.get("ctx", {}),
+                "source_position": source_position,
+                "source_position_path": source_position_path,
+            }
             line_errors.append(
-                {**error, "loc": [file_key_path_str + " at " + str(source_position)]}
+                {**error, "loc": [file_key_path_str + " at " + str(source_position)], "ctx": ctx}
             )
 
         err = ValidationError.from_exception_data(

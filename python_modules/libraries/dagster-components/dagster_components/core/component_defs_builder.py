@@ -17,6 +17,7 @@ from dagster_components.core.component import (
     is_registered_component_type,
 )
 from dagster_components.core.component_decl_builder import (
+    ComponentDeclNode,
     ComponentFolder,
     YamlComponentDecl,
     path_to_decl_node,
@@ -38,6 +39,18 @@ def load_module_from_path(module_name, path) -> ModuleType:
     assert spec.loader, "Must have a loader"
     spec.loader.exec_module(module)
     return module
+
+
+def resolve_decl_node_to_yaml_decls(decl: ComponentDeclNode) -> list[YamlComponentDecl]:
+    if isinstance(decl, YamlComponentDecl):
+        return [decl]
+    elif isinstance(decl, ComponentFolder):
+        leaf_decls = []
+        for sub_decl in decl.sub_decls:
+            leaf_decls.extend(resolve_decl_node_to_yaml_decls(sub_decl))
+        return leaf_decls
+
+    raise NotImplementedError(f"Unknown component type {decl}")
 
 
 def load_components_from_context(context: ComponentLoadContext) -> Sequence[Component]:

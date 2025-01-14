@@ -34,10 +34,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_components_tests*", "examples*"]),
-    install_requires=[
-        "dagster>=1.9.5",
-        "tomli",
-    ],
+    install_requires=["dagster>=1.9.5", "tomli", "typer"],
     zip_safe=False,
     entry_points={
         "console_scripts": [
