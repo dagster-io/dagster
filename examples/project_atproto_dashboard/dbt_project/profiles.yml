@@ -16,7 +16,7 @@ bluesky:
     prod:
       type: duckdb
       schema: bluesky
-      path: "md:prod_bluesky?MOTHERDUCK_TOKEN={{ env_var('MOTHERDUCK_TOKEN') }}"
+      path: "md:prod_bluesky"
       threads: 1
       extensions: 
         - httpfs
