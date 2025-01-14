@@ -1,6 +1,7 @@
 ---
 title: "Customizing your Kubernetes deployment"
 description: This section covers common ways to customize your Dagster Kubernetes deployment.
+sidebar_position: 200
 ---
 
 This guide covers common ways to customize your Dagster Helm deployment.
