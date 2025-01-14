@@ -233,7 +233,7 @@ describe('HourlyDataCache Subscriptions', () => {
 
           const callback = jest.fn();
           cache.subscribe(0, callback);
-          res();
+          res(true);
 
           waitFor(() => {
             expect(callback).toHaveBeenCalledWith([1, 2, 3]);
