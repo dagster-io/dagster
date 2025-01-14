@@ -195,7 +195,7 @@ const EvaluationDetailDialogContents = ({
   );
 };
 
-const DialogHeader = ({
+export const DialogHeader = ({
   assetKeyPath,
   assetCheckName,
   timestamp,
@@ -246,7 +246,7 @@ interface BasicContentProps {
 }
 
 // Dialog contents for which the body container is scrollable and expands to fill the height.
-const DialogContents = ({header, body, onDone, viewAllButton}: BasicContentProps) => {
+export const DialogContents = ({header, body, onDone, viewAllButton}: BasicContentProps) => {
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%'}}>
       {header}

@@ -32,6 +32,7 @@ import {AssetKeyInput} from '../graphql/types';
 import {Container, HeaderRow} from '../ui/VirtualizedTable';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+import {SubmissionDetailDialog} from '../assets/AutoMaterializePolicyPage/SubmissionDetailDialog';
 
 const TEMPLATE_COLUMNS = '30% 17% 53%';
 
@@ -165,8 +166,9 @@ const AssetDetailRow = ({
   evaluationId: string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [submissionDialogIsOpen, setSubmissionDialogIsOpen] = useState(false);
   const numMaterializations = requestedPartitionKeys?.length || 1;
-  const numSubmittedMaterializations = submittedPartitionKeys?.length || 0;
+  const numSubmittedMaterializations = submittedPartitionKeys?.length || 1;
   const queryResult = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
     ASSET_GROUP_QUERY,
     {
@@ -221,11 +223,22 @@ const AssetDetailRow = ({
                 evaluationID={evaluationId}
                 assetKeyPath={assetKey.path}
               />
-              {/*  need to get the instigator name too */}
-              <Link to={runsPathWithFilters([{token: 'tag', value: `dagster/tick=${evaluationId}`}])}>
+              <ButtonLink onClick={() => setSubmissionDialogIsOpen(true)}>
                 {numSubmittedMaterializations} materialization
                 {numSubmittedMaterializations === 1 ? '' : 's'} submitted
-              </Link>
+              </ButtonLink>
+              <SubmissionDetailDialog
+                isOpen={submissionDialogIsOpen}
+                onClose={() => setSubmissionDialogIsOpen(false)}
+                assetKeyPath={assetKey.path}
+                requestedPartitionKeys={requestedPartitionKeys}
+                submittedPartitionKeys={submittedPartitionKeys}
+              />
+              {/*  need to get the instigator name too */}
+              {/* <Link to={runsPathWithFilters([{token: 'tag', value: `dagster/tick=${evaluationId}`}])}>
+                {numSubmittedMaterializations} materialization
+                {numSubmittedMaterializations === 1 ? '' : 's'} submitted
+              </Link> */}
             </>
           ) : null}
         </RowCell>
