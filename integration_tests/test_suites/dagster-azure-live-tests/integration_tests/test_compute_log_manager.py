@@ -11,6 +11,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.event_api import EventLogRecord
+from dagster._core.events import ComputeLogsCaptureData
 
 YAMLS_NOT_CAPTURED = ["default-capture-behavior.yaml"]
 
@@ -58,13 +59,35 @@ def test_compute_log_manager(
     assert stdout.count("Printing without context") == 10
     assert stderr.count("Logging using context") == 10
 
+    logs_captured_data = get_logs_captured_data(logs_captured_record)
+    (stdout_filename, stderr_filename) = get_filenames_from_log_data(logs_captured_data)
+    assert (
+        logs_captured_data.shell_cmd
+        and logs_captured_data.shell_cmd.stdout
+        and logs_captured_data.shell_cmd.stderr
+    )
+    assert logs_captured_data.shell_cmd.stdout.endswith(stdout_filename)
+    assert logs_captured_data.shell_cmd.stderr.endswith(stderr_filename)
+
+
+def get_logs_captured_data(log_record: EventLogRecord) -> ComputeLogsCaptureData:
+    return check.not_none(log_record.event_log_entry.dagster_event).logs_captured_data
+
+
+def get_filenames_from_log_data(logs_captured_data: ComputeLogsCaptureData) -> tuple[str, str]:
+    assert logs_captured_data.external_stdout_url is not None
+    assert logs_captured_data.external_stderr_url is not None
+
+    return (
+        logs_captured_data.external_stdout_url.split("/")[-1],
+        logs_captured_data.external_stderr_url.split("/")[-1],
+    )
+
 
 def get_captured_logs_from_urls(
     captured_logs_event: EventLogRecord, credentials: ClientSecretCredential
 ) -> tuple[str, str]:
-    logs_captured_data = check.not_none(
-        captured_logs_event.event_log_entry.dagster_event
-    ).logs_captured_data
+    logs_captured_data = get_logs_captured_data(captured_logs_event)
 
     assert logs_captured_data.external_stderr_url is not None
     assert logs_captured_data.external_stdout_url is not None
