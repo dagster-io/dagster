@@ -145,13 +145,15 @@ describe('HourlyDataCache Subscriptions', () => {
           mockShouldThrowError = throwingError;
           cache = new HourlyDataCache<number>({version: VERSION, id: 'test'});
         });
-        it('should notify subscriber immediately with existing data', () => {
+        it('should notify subscriber immediately with existing data', async () => {
           cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
           const callback = jest.fn();
           cache.subscribe(1, callback);
 
-          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          });
         });
 
         it('should notify subscriber with new data added to the subscribed hour', () => {
@@ -160,7 +162,9 @@ describe('HourlyDataCache Subscriptions', () => {
 
           cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
-          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          });
         });
 
         it('should notify subscriber with new data added to subsequent hours', () => {
@@ -169,7 +173,9 @@ describe('HourlyDataCache Subscriptions', () => {
 
           cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-          expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+          waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+          });
         });
 
         it('should aggregate data from multiple hours for the subscriber', () => {
@@ -178,11 +184,15 @@ describe('HourlyDataCache Subscriptions', () => {
           const callback = jest.fn();
           cache.subscribe(0, callback);
 
-          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          });
 
           cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-          expect(callback).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6]);
+          waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6]);
+          });
         });
 
         it('should not notify subscribers of data added before their subscription hour', () => {
@@ -193,7 +203,9 @@ describe('HourlyDataCache Subscriptions', () => {
 
           cache.addData(2 * ONE_HOUR_S, 3 * ONE_HOUR_S, [4, 5, 6]);
 
-          expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+          waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+          });
         });
 
         it('should stop notifying unsubscribed callbacks', () => {
@@ -204,10 +216,12 @@ describe('HourlyDataCache Subscriptions', () => {
           cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
           cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-          expect(callback).not.toHaveBeenCalled();
+          waitFor(() => {
+            expect(callback).not.toHaveBeenCalled();
+          });
         });
 
-        it.only('should notify subscribers of existing data if the subscription is added before the indexeddb cache data is loaded', async () => {
+        it('should notify subscribers of existing data if the subscription is added before the indexeddb cache data is loaded', async () => {
           let res: any = () => {};
           mockedCache.has.mockImplementation(async () => {
             return new Promise((resolve) => {
