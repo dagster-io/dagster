@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+from typing import Callable
 
 import pytest
 from azure.identity import ClientSecretCredential
@@ -59,6 +60,32 @@ def test_compute_log_manager(
     assert stdout.count("Printing without context") == 10
     assert stderr.count("Logging using context") == 10
 
+
+@pytest.mark.parametrize(
+    "dagster_yaml",
+    [
+        "secret-credential.yaml",
+    ],
+    indirect=True,
+)
+def test_compute_log_manager_shell_cmd(
+    dagster_dev: subprocess.Popen,
+    container_client: ContainerClient,
+    prefix_env: str,
+    credentials: ClientSecretCredential,
+    dagster_yaml: Path,
+    call_azure_cli: Callable[[list[str]], subprocess.CompletedProcess[str]],
+) -> None:
+    subprocess.run(
+        ["dagster", "asset", "materialize", "--select", "my_asset", "-m", "azure_test_proj.defs"],
+        check=True,
+    )
+    logs_captured_record = DagsterInstance.get().get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.LOGS_CAPTURED,
+        )
+    )[0]
+
     logs_captured_data = get_logs_captured_data(logs_captured_record)
     (stdout_filename, stderr_filename) = get_filenames_from_log_data(logs_captured_data)
     assert (
@@ -68,6 +95,12 @@ def test_compute_log_manager(
     )
     assert logs_captured_data.shell_cmd.stdout.endswith(stdout_filename)
     assert logs_captured_data.shell_cmd.stderr.endswith(stderr_filename)
+
+    stdout_result = call_azure_cli(logs_captured_data.shell_cmd.stdout.split())
+    assert stdout_result.stdout.count("Printing without context") == 10
+
+    stderr_result = call_azure_cli(logs_captured_data.shell_cmd.stderr.split())
+    assert stderr_result.stdout.count("Logging using context") == 10
 
 
 def get_logs_captured_data(log_record: EventLogRecord) -> ComputeLogsCaptureData:
