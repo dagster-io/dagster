@@ -1,11 +1,11 @@
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_components import Component, component_type
 from dagster_components.core.component import ComponentLoadContext
-from pydantic import BaseModel
+from dagster_components.core.schema.base import ComponentSchemaBaseModel
 from typing_extensions import Self
 
 
-class MyComponentSchema(BaseModel):
+class MyComponentSchema(ComponentSchemaBaseModel):
     a_string: str
     an_int: int
 
@@ -24,12 +24,12 @@ class MyComponent(Component):
         return Definitions()
 
 
-class MyNestedModel(BaseModel):
+class MyNestedModel(ComponentSchemaBaseModel):
     a_string: str
     an_int: int
 
 
-class MyNestedComponentSchema(BaseModel):
+class MyNestedComponentSchema(ComponentSchemaBaseModel):
     nested: dict[str, MyNestedModel]
 
 
