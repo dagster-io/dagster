@@ -48,6 +48,14 @@ COMPONENT_VALIDATION_TEST_CASES = [
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
     ComponentValidationTestCase(
+        component_path="validation/basic_component_extra_value",
+        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "component.yaml:7", "params.a_bool", "Extra inputs are not permitted"
+        ),
+    ),
+    ComponentValidationTestCase(
         component_path="validation/nested_component_invalid_values",
         component_type_filepath=Path(__file__).parent / "basic_components.py",
         should_error=True,
@@ -66,6 +74,18 @@ COMPONENT_VALIDATION_TEST_CASES = [
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:6", "params.nested.foo.an_int", "Field required"
+        ),
+    ),
+    ComponentValidationTestCase(
+        component_path="validation/nested_component_extra_values",
+        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "component.yaml:8",
+            "params.nested.foo.a_bool",
+            "Extra inputs are not permitted",
+            "component.yaml:15",
+            "params.nested.baz.another_bool",
         ),
     ),
 ]
