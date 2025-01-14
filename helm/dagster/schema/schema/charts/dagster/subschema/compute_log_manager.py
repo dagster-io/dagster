@@ -12,6 +12,7 @@ class ComputeLogManagerType(str, Enum):
     AZURE = "AzureBlobComputeLogManager"
     GCS = "GCSComputeLogManager"
     S3 = "S3ComputeLogManager"
+    LOCAL = "LocalComputeLogManager"
     CUSTOM = "CustomComputeLogManager"
 
 
@@ -51,10 +52,16 @@ class S3ComputeLogManager(BaseModel):
     region: Optional[StringSource] = None
 
 
+class LocalComputeLogManager(BaseModel):
+    baseDir: StringSource
+    pollingTimeout: Optional[int] = None
+
+
 class ComputeLogManagerConfig(BaseModel, extra="forbid"):
     azureBlobComputeLogManager: Optional[AzureBlobComputeLogManager] = None
     gcsComputeLogManager: Optional[GCSComputeLogManager] = None
     s3ComputeLogManager: Optional[S3ComputeLogManager] = None
+    localComputeLogManager: Optional[LocalComputeLogManager] = None
     customComputeLogManager: Optional[ConfigurableClass] = None
 
 
@@ -74,6 +81,7 @@ class ComputeLogManager(BaseModel):
                 ComputeLogManagerType.AZURE: "azureBlobComputeLogManager",
                 ComputeLogManagerType.GCS: "gcsComputeLogManager",
                 ComputeLogManagerType.S3: "s3ComputeLogManager",
+                ComputeLogManagerType.LOCAL: "localComputeLogManager",
                 ComputeLogManagerType.CUSTOM: "customComputeLogManager",
             }
         )

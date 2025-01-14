@@ -234,6 +234,7 @@ computeLogManager:
   #   AzureBlobComputeLogManager,
   #   GCSComputeLogManager,
   #   S3ComputeLogManager,
+  #   LocalComputeLogManager,
   #   CustomComputeLogManager,
   # ]
   type: NoOpComputeLogManager
@@ -268,6 +269,10 @@ computeLogManager:
   #     skipEmptyFiles: ~
   #     uploadInterval: ~
   #     uploadExtraArgs: {}
+  ##  Uncomment this configuration if the LocalComputeLogManager is selected
+  #   localComputeLogManager:
+  #     baseDir: ~
+  #     pollingTimeout: ~
   ##  Uncomment this configuration if the CustomComputeLogManager is selected.
   ##  Using this setting requires a custom webserver image that defines the user specified
   ##  compute log manager in an installed python module.

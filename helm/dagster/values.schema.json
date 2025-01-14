@@ -476,6 +476,24 @@
                     "if": {
                         "properties": {
                             "type": {
+                                "const": "LocalComputeLogManager"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "localComputeLogManager"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
                                 "const": "CustomComputeLogManager"
                             }
                         }
@@ -542,6 +560,17 @@
                     ],
                     "default": null
                 },
+                "localComputeLogManager": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/LocalComputeLogManager"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
                 "customComputeLogManager": {
                     "anyOf": [
                         {
@@ -563,6 +592,7 @@
                 "AzureBlobComputeLogManager",
                 "GCSComputeLogManager",
                 "S3ComputeLogManager",
+                "LocalComputeLogManager",
                 "CustomComputeLogManager"
             ],
             "title": "ComputeLogManagerType",
@@ -1467,6 +1497,38 @@
             "additionalProperties": true,
             "properties": {},
             "title": "LivenessProbe",
+            "type": "object"
+        },
+        "LocalComputeLogManager": {
+            "properties": {
+                "baseDir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        }
+                    ],
+                    "title": "Basedir"
+                },
+                "pollingTimeout": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Pollingtimeout"
+                }
+            },
+            "required": [
+                "baseDir"
+            ],
+            "title": "LocalComputeLogManager",
             "type": "object"
         },
         "Migrate": {

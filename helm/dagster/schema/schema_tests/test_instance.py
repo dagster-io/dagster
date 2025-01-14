@@ -20,6 +20,7 @@ from schema.charts.dagster.subschema.compute_log_manager import (
     ComputeLogManagerConfig,
     ComputeLogManagerType,
     GCSComputeLogManager as GCSComputeLogManagerModel,
+    LocalComputeLogManager as LocalComputeLogManagerModel,
     S3ComputeLogManager as S3ComputeLogManagerModel,
 )
 from schema.charts.dagster.subschema.daemon import (
@@ -882,6 +883,34 @@ def test_s3_compute_log_manager_no_verify(template: HelmTemplate):
         "bucket": bucket,
         "local_dir": local_dir,
         "verify": False,
+    }
+
+
+def test_local_compute_log_manager(template: HelmTemplate):
+    base_dir = "/dir"
+    polling_timeout = 10
+
+    helm_values = DagsterHelmValues.construct(
+        computeLogManager=ComputeLogManager.construct(
+            type=ComputeLogManagerType.LOCAL,
+            config=ComputeLogManagerConfig.construct(
+                localComputeLogManager=LocalComputeLogManagerModel(
+                    baseDir=base_dir,
+                    pollingTimeout=polling_timeout,
+                ),
+            ),
+        )
+    )
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    compute_logs_config = instance["compute_logs"]
+
+    assert compute_logs_config["module"] == "dagster.core.storage.local_compute_log_manager"
+    assert compute_logs_config["class"] == "LocalComputeLogManager"
+    assert compute_logs_config["config"] == {
+        "base_dir": base_dir,
+        "polling_timeout": polling_timeout,
     }
 
 
