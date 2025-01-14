@@ -763,5 +763,5 @@
     "source": "/integrations/embedded-elt/dlt",
     "destination": "/integrations/dlt",
     "statusCode": 302
-  },
+  }
 ]
