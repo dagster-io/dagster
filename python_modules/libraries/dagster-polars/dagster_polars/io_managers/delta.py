@@ -209,11 +209,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                     raise NotImplementedError(f"Invalid engine: {engine}")
 
         if delta_write_options is not None:
-            # Very basic removal of possible secrets.
-            cleaned_options = {
-                k: v if "secret" not in k.lower() else "***" for k, v in delta_write_options.items()
-            }
-            context.log.debug(f"Writing with delta_write_options: {pformat(cleaned_options)}")
+            context.log.debug(f"Writing with delta_write_options: {pformat(delta_write_options)}")
 
         storage_options = self.storage_options
         try:
@@ -397,6 +393,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         else:
             raise DagsterInvariantViolationError(f"Invalid context type: {type(context)}")
 
+        def key_to_predicate(key):
+            return f"'{key}'"
+
         if partition_by is None or not context.has_asset_partitions:
             return
 
@@ -404,18 +403,15 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             all_keys_by_dim = defaultdict(list)
             for partition_key in context.asset_partition_keys:
                 assert isinstance(partition_key, MultiPartitionKey), (
-                    f"Received dict `partition_by` metadata value {partition_by}, "
-                    f"but the partition_key is not a `MultiPartitionKey`: {partition_key}"
+                    f"Received dict `partition_by` metadata value `{partition_by}`, "
+                    f"but the partition_key is not a `MultiPartitionKey`: `{partition_key}`."
                 )
                 for dim, key in partition_key.keys_by_dimension.items():
                     all_keys_by_dim[dim].append(key)
 
-            def key_to_predicate(key):
-                return f"'{key}'"
-
             predicate = " AND ".join(
                 [
-                    f"{partition_by[dim]} in ({', '.join(key_to_predicate(k) for k in keys)})"
+                    f"{partition_by[dim]} in ({', '.join(map(key_to_predicate,  keys))})"
                     for dim, keys in all_keys_by_dim.items()
                 ]
             )
@@ -425,7 +421,11 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 f"Received string `partition_by` metadata value `{partition_by}`, "
                 f"but the partition_key is not a `MultiPartitionKey`: {context.asset_partition_keys[0]}"
             )
-            predicate = f"{partition_by} = '{context.asset_partition_keys[0]}'"
+
+            if len(context.asset_partition_keys) == 1:
+                predicate = f"{partition_by} = '{context.asset_partition_keys[0]}'"
+            else:
+                predicate = f"{partition_by} in ({', '.join(map(key_to_predicate, context.asset_partition_keys))})"
 
         else:
             raise NotImplementedError(f"Unsupported `partition_by` metadata value: {partition_by}")
