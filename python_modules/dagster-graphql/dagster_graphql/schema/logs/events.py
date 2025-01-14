@@ -641,7 +641,7 @@ class GrapheneRunStepStats(graphene.ObjectType):
         super().__init__(
             runId=stats.run_id,
             stepKey=stats.step_key,
-            status=stats.status.value,
+            status=stats.status.value if stats.status else None,
             startTime=stats.start_time,
             endTime=stats.end_time,
             materializations=[
