@@ -175,3 +175,6 @@ scripts/.build
 
 # dbt .user files
 .user.yml
+
+# exponent config
+exponent.txt
