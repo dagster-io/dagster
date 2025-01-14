@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import click
 import typer
@@ -154,7 +154,7 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
         )
         sys.exit(1)
 
-    validation_errors: list[tuple[type[Component], ValidationError]] = []
+    validation_errors: list[tuple[Union[type[Component], None], ValidationError]] = []
 
     context = CodeLocationProjectContext.from_code_location_path(
         find_enclosing_code_location_root_path(Path.cwd()),
