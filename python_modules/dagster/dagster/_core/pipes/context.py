@@ -35,6 +35,14 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
+from dagster._core.definitions.metadata.table import (
+    TableColumn,
+    TableColumnConstraints,
+    TableColumnDep,
+    TableColumnLineage,
+    TableRecord,
+    TableSchema,
+)
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.definitions.time_window_partitions import (
@@ -148,7 +156,53 @@ class PipesMessageHandler:
         elif metadata_type == "asset":
             return MetadataValue.asset(AssetKey.from_user_string(value))
         elif metadata_type == "table":
-            return MetadataValue.table(value)
+            value = check.mapping_param(value, "table_value", key_type=str)
+            return MetadataValue.table(
+                records=[TableRecord(record) for record in value["records"]],
+                schema=TableSchema(
+                    columns=[
+                        TableColumn(
+                            name=column["name"],
+                            type=column["type"],
+                            description=column.get("description"),
+                            tags=column.get("tags"),
+                            constraints=TableColumnConstraints(**column["constraints"])
+                            if column.get("constraints")
+                            else None,
+                        )
+                        for column in value["schema"]
+                    ]
+                ),
+            )
+        elif metadata_type == "table_schema":
+            value = check.mapping_param(value, "table_schema_value", key_type=str)
+            return MetadataValue.table_schema(
+                schema=TableSchema(
+                    columns=[
+                        TableColumn(
+                            name=column["name"],
+                            type=column["type"],
+                            description=column.get("description"),
+                            tags=column.get("tags"),
+                            constraints=TableColumnConstraints(**column["constraints"])
+                            if column.get("constraints")
+                            else None,
+                        )
+                        for column in value["columns"]
+                    ]
+                )
+            )
+        elif metadata_type == "table_column_lineage":
+            value = check.mapping_param(value, "table_column_value", key_type=str)
+            return MetadataValue.column_lineage(
+                lineage=TableColumnLineage(
+                    deps_by_column={
+                        column: [TableColumnDep(**dep) for dep in deps]
+                        for column, deps in value["deps_by_column"].items()
+                    }
+                )
+            )
+
         elif metadata_type == "null":
             return MetadataValue.null()
         else:
