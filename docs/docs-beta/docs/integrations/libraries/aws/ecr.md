@@ -9,15 +9,14 @@ date: 2024-06-21
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
 docslink:
 partnerlink: https://aws.amazon.com/
-logo: /integrations/aws-ecr.svg
 categories:
   - Other
 enabledBy:
 enables:
 tags: [dagster-supported]
+sidebar_custom_props: 
+  logo: images/integrations/aws-ecr.svg
 ---
-
-
 
 This integration allows you to connect to AWS Elastic Container Registry (ECR). It provides resources to interact with AWS ECR, enabling you to manage your container images.
 

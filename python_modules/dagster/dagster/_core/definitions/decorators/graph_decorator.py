@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from functools import update_wrapper
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
+from typing import Any, Callable, Optional, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description

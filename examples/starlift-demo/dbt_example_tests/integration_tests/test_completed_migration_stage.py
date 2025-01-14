@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 import pytest
 from dagster import (
@@ -18,7 +17,7 @@ def dagster_home_fixture(local_env: None) -> str:
 
 
 @pytest.fixture(name="dagster_dev_cmd")
-def dagster_dev_cmd_fixture() -> List[str]:
+def dagster_dev_cmd_fixture() -> list[str]:
     return ["make", "run_complete", "-C", str(makefile_dir())]
 
 

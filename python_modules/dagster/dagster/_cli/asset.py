@@ -1,11 +1,13 @@
-from typing import Mapping
+from collections.abc import Mapping
 
 import click
 
 import dagster._check as check
+from dagster._cli.job import get_config_from_args
 from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     get_repository_python_origin_from_kwargs,
+    python_job_config_argument,
     python_origin_target_argument,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -38,6 +40,12 @@ def asset_cli():
     help="Asset partition range to target i.e. <start>...<end>",
     required=False,
 )
+@python_job_config_argument("materialize")
+@click.option(
+    "--config-json",
+    type=click.STRING,
+    help="JSON string of run config to use for this job run. Cannot be used with -c / --config.",
+)
 def asset_materialize_command(**kwargs):
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli(
@@ -48,6 +56,7 @@ def asset_materialize_command(**kwargs):
 
 @telemetry_wrapper
 def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, str]) -> None:
+    config = get_config_from_args(kwargs)
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)
 
     recon_repo = recon_repository_from_origin(repository_origin)
@@ -137,7 +146,11 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
         tags = {}
 
     result = execute_job(
-        job=reconstructable_job, asset_selection=list(asset_keys), instance=instance, tags=tags
+        job=reconstructable_job,
+        asset_selection=list(asset_keys),
+        instance=instance,
+        tags=tags,
+        run_config=config,
     )
     if not result.success:
         raise click.ClickException("Materialization failed.")

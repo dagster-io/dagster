@@ -1,14 +1,5 @@
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    Mapping,
-    Optional,
-    cast,
-)
+from collections.abc import Iterator, Mapping
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, cast  # noqa: UP035
 
 from typing_extensions import TypeAlias
 
@@ -211,7 +202,7 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     description: PublicAttr[Optional[str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
     group_name: PublicAttr[str]
-    resource_defs: PublicAttr[Dict[str, ResourceDefinition]]
+    resource_defs: PublicAttr[dict[str, ResourceDefinition]]
     observe_fn: PublicAttr[Optional[SourceAssetObserveFunction]]
     op_tags: Optional[Mapping[str, Any]]
     _node_def: Optional[OpDefinition]  # computed lazily
@@ -460,9 +451,13 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
     def with_attributes(
         self, group_name: Optional[str] = None, key: Optional[AssetKey] = None
     ) -> "SourceAsset":
-        if group_name is not None and self.group_name != DEFAULT_GROUP_NAME:
+        if (
+            group_name is not None
+            and self.group_name != DEFAULT_GROUP_NAME
+            and self.group_name != group_name
+        ):
             raise DagsterInvalidDefinitionError(
-                "A group name has already been provided to source asset"
+                f"Attempted to override group name to {group_name} for SourceAsset {self.key.to_user_string()}, which already has group name {self.group_name}."
                 f" {self.key.to_user_string()}"
             )
 

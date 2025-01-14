@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 from dagster import (
     DagsterInvariantViolationError,
@@ -304,7 +302,7 @@ def test_dataframe_annotations():
     assert execute_op_in_job(op_returns_output).success
 
     @op
-    def op_returns_dynamic_output() -> List[DynamicOutput[DataFrame]]:
+    def op_returns_dynamic_output() -> list[DynamicOutput[DataFrame]]:
         return [DynamicOutput(DataFrame(), "1")]
 
     assert execute_op_in_job(op_returns_dynamic_output).success

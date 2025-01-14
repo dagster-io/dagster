@@ -1,11 +1,15 @@
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeVar
 
 import click
 from typing_extensions import Self
 
 from dagster_dg.error import DgError
+
+T = TypeVar("T")
 
 DEFAULT_BUILTIN_COMPONENT_LIB = "dagster_components"
 
@@ -32,24 +36,44 @@ class DgConfig:
             be used.
         verbose (bool): If True, log debug information.
         builitin_component_lib (str): The name of the builtin component library to load.
+        use_dg_managed_environment (bool): If True, `dg` will build and manage a virtual environment
+            using `uv`. Note that disabling the managed enviroment will also disable caching.
     """
 
     disable_cache: bool = False
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     builtin_component_lib: str = DEFAULT_BUILTIN_COMPONENT_LIB
+    use_dg_managed_environment: bool = True
 
     @classmethod
-    def from_cli_context(cls, cli_context: click.Context) -> Self:
-        if _CLI_CONTEXT_CONFIG_KEY not in cli_context.obj:
-            raise DgError(
-                "Attempted to extract DgConfig from CLI context but nothing stored under designated key `{_CLI_CONTEXT_CONFIG_KEY}`."
-            )
-        return cli_context.obj[_CLI_CONTEXT_CONFIG_KEY]
+    def from_cli_global_options(cls, global_options: Mapping[str, object]) -> Self:
+        return cls(
+            disable_cache=_validate_global_option(global_options, "disable_cache", bool),
+            cache_dir=_validate_global_option(global_options, "cache_dir", Path),
+            verbose=_validate_global_option(global_options, "verbose", bool),
+            builtin_component_lib=_validate_global_option(
+                global_options, "builtin_component_lib", str
+            ),
+            use_dg_managed_environment=_validate_global_option(
+                global_options, "use_dg_managed_environment", bool
+            ),
+        )
 
     @classmethod
     def default(cls) -> "DgConfig":
         return cls()
+
+
+# This validation will generally already be done by click, but this internal validation routine
+# provides insurance and satisfies the type checker.
+def _validate_global_option(
+    global_options: Mapping[str, object], key: str, expected_type: type[T]
+) -> T:
+    value = global_options.get(key, getattr(DgConfig, key))
+    if not isinstance(value, expected_type):
+        raise DgError(f"Global option {key} must be of type {expected_type}.")
+    return value
 
 
 _CLI_CONTEXT_CONFIG_KEY = "config"
@@ -58,3 +82,12 @@ _CLI_CONTEXT_CONFIG_KEY = "config"
 def set_config_on_cli_context(cli_context: click.Context, config: DgConfig) -> None:
     cli_context.ensure_object(dict)
     cli_context.obj[_CLI_CONTEXT_CONFIG_KEY] = config
+
+
+def has_config_on_cli_context(cli_context: click.Context) -> bool:
+    return _CLI_CONTEXT_CONFIG_KEY in cli_context.ensure_object(dict)
+
+
+def get_config_from_cli_context(cli_context: click.Context) -> DgConfig:
+    cli_context.ensure_object(dict)
+    return cli_context.obj[_CLI_CONTEXT_CONFIG_KEY]

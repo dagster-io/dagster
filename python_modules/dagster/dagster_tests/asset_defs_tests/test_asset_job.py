@@ -1,6 +1,5 @@
 import hashlib
 import os
-from typing import Dict
 
 import pytest
 from dagster import (
@@ -43,7 +42,6 @@ from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.load_assets_from_modules import prefix_assets
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
@@ -2319,7 +2317,7 @@ def test_simple_graph_backed_asset_subset(
 
     result = job.execute_in_process()
 
-    expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))
+    expected_asset_keys = set(AssetKey(a) for a in expected_assets.split(","))
 
     # make sure we've generated the correct set of keys
     assert _all_asset_keys(result) == expected_asset_keys
@@ -2362,7 +2360,15 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
     all_assets = _get_assets_defs(use_multi=use_multi, allow_subset=use_multi)
     # apply prefixes
     for prefix in reversed(prefixes or []):
-        all_assets, _ = prefix_assets(all_assets, prefix, [], None)
+        all_assets = [
+            assets_def.with_attributes(
+                asset_key_replacements={
+                    k: k.with_prefix(prefix)
+                    for k in set(assets_def.keys_by_input_name.values()) | set(assets_def.keys)
+                },
+            )
+            for assets_def in all_assets
+        ]
 
     defs = Definitions(
         # for these, if we have multi assets, we'll always allow them to be subset
@@ -2387,9 +2393,7 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
             ).records
         }
 
-    expected_asset_keys = set(
-        (AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
-    )
+    expected_asset_keys = set(AssetKey([*(prefixes or []), a]) for a in expected_assets.split(","))
     # make sure we've planned on the correct set of keys
     assert planned_asset_keys == expected_asset_keys
 
@@ -2876,7 +2880,7 @@ def test_mixed_asset_job():
 def test_partial_dependency_on_upstream_multi_asset():
     class MyIOManager(IOManager):
         def __init__(self):
-            self.values: Dict[AssetKey, int] = {}
+            self.values: dict[AssetKey, int] = {}
 
         def handle_output(self, context: OutputContext, obj: object):
             self.values[context.asset_key] = obj  # pyright: ignore[reportArgumentType]

@@ -1,7 +1,8 @@
 import os
 import re
 import tempfile
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest

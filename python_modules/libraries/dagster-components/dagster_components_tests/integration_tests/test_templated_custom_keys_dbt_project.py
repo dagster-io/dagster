@@ -1,8 +1,9 @@
 import shutil
 import tempfile
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
 
 import pytest
 from dagster import AssetKey
@@ -13,7 +14,7 @@ from dagster_components.core.component_defs_builder import (
     build_components_from_component_folder,
     defs_from_components,
 )
-from dagster_components.lib.dbt_project import DbtProjectComponent
+from dagster_components.lib.dbt_project.component import DbtProjectComponent
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
@@ -22,9 +23,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 STUB_LOCATION_PATH = (
-    Path(__file__).parent.parent
-    / "stub_code_locations"
-    / "templated_custom_keys_dbt_project_location"
+    Path(__file__).parent.parent / "code_locations" / "templated_custom_keys_dbt_project_location"
 )
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
 
@@ -69,7 +68,7 @@ def test_python_params_node_rename(dbt_path: Path) -> None:
             type="dbt_project",
             params={
                 "dbt": {"project_dir": "jaffle_shop"},
-                "translator": {
+                "asset_attributes": {
                     "key": "some_prefix/{{ node.name }}",
                 },
             },
@@ -88,8 +87,8 @@ def test_python_params_group(dbt_path: Path) -> None:
             type="dbt_project",
             params={
                 "dbt": {"project_dir": "jaffle_shop"},
-                "translator": {
-                    "group": "some_group",
+                "asset_attributes": {
+                    "group_name": "some_group",
                 },
             },
         ),
@@ -127,8 +126,8 @@ def test_render_vars_root(dbt_path: Path) -> None:
                 type="dbt_project",
                 params={
                     "dbt": {"project_dir": "jaffle_shop"},
-                    "translator": {
-                        "group": "{{ env('GROUP_AS_ENV') }}",
+                    "asset_attributes": {
+                        "group_name": "{{ env('GROUP_AS_ENV') }}",
                     },
                 },
             ),
@@ -148,7 +147,7 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
                 type="dbt_project",
                 params={
                     "dbt": {"project_dir": "jaffle_shop"},
-                    "translator": {
+                    "asset_attributes": {
                         "key": "{{ env('ASSET_KEY_PREFIX') }}/{{ node.name }}",
                     },
                 },

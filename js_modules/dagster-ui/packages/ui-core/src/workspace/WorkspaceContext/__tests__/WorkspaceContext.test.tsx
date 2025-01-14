@@ -510,4 +510,37 @@ describe('WorkspaceContext', () => {
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
   });
+
+  it("Doesn't overfetch the same code location version on cascading location query responses", async () => {
+    const {location1, location2, location3, caches} = getLocationMocks(-1);
+
+    caches.codeLocationStatusQuery.has.mockResolvedValue(false);
+    caches.location1.has.mockResolvedValue(false);
+
+    const mocks = buildWorkspaceMocks([location1, location2, location3], {
+      cascadingUpdates: true,
+      maxUsageCount: 9999,
+    });
+    const mockCbs = mocks.map(getMockResultFn);
+
+    const {result} = renderWithMocks([...mocks, mocks[0]!]);
+
+    expect(result.current.allRepos).toEqual([]);
+    expect(result.current.data).toEqual({});
+    expect(result.current.loading).toEqual(true);
+
+    await waitFor(() => {
+      expect(result.current.loading).toEqual(false);
+    });
+
+    // Ensure no additional fetches were made
+    expect(mockCbs[1]).toHaveBeenCalledTimes(1);
+    expect(mockCbs[2]).toHaveBeenCalledTimes(1);
+    expect(mockCbs[3]).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      // Exhaust any remaining tasks so they don't affect the next test.
+      await jest.runAllTicks();
+    });
+  });
 });

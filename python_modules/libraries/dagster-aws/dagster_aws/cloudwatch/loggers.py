@@ -62,7 +62,7 @@ class CloudwatchLogsHandler(logging.Handler):
         self.check_log_group()
         self.check_log_stream()
 
-        super(CloudwatchLogsHandler, self).__init__()
+        super().__init__()
 
     def check_log_group(self):
         # Check that log group exists

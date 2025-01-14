@@ -1,5 +1,6 @@
 import random
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 from unittest.mock import PropertyMock, patch
 
 import dagster._check as check

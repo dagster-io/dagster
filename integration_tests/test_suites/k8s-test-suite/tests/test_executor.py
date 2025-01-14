@@ -1,7 +1,8 @@
 import datetime
 import os
 import time
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import dagster._check as check
 import pytest
@@ -213,7 +214,7 @@ def _launch_executor_run(
     run_id = launch_run_over_graphql(webserver_url, run_config=run_config, job_name=job_name)
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -261,7 +262,7 @@ def test_k8s_run_launcher_image_from_origin(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -299,7 +300,7 @@ def test_k8s_run_launcher_terminate(
     )
 
     DagsterKubernetesClient.production_client().wait_for_job(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
     timeout = datetime.timedelta(0, 30)
     start_time = datetime.datetime.now()
@@ -365,7 +366,7 @@ def test_k8s_executor_resource_requirements(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"
@@ -403,7 +404,7 @@ def test_execute_on_k8s_retry_job(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id, namespace=user_code_namespace_for_k8s_run_launcher
+        job_name=f"dagster-run-{run_id}", namespace=user_code_namespace_for_k8s_run_launcher
     )
 
     assert "RUN_SUCCESS" in result, f"no match, result: {result}"

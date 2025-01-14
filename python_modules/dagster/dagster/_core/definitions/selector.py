@@ -1,4 +1,5 @@
-from typing import AbstractSet, Any, Iterable, Mapping, Optional, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -130,7 +131,7 @@ class JobSelector(IHaveNew):
 
 @whitelist_for_serdes
 @record
-class RepositorySelector(IHaveNew):
+class RepositorySelector:
     location_name: str
     repository_name: str
 
@@ -167,16 +168,9 @@ class AssetGroupSelector:
         )
 
 
-@record_custom
-class CodeLocationSelector(IHaveNew):
+@record(kw_only=False)
+class CodeLocationSelector:
     location_name: str
-
-    # allow posargs to avoid breaking change
-    def __new__(cls, location_name: str):
-        return super().__new__(
-            cls,
-            location_name=location_name,
-        )
 
     def to_repository_selector(self) -> RepositorySelector:
         return RepositorySelector(
@@ -318,20 +312,12 @@ class PartitionSetSelector:
         }
 
 
-@record_custom
-class PartitionRangeSelector(IHaveNew):
+@record(kw_only=False)
+class PartitionRangeSelector:
     """The information needed to resolve a partition range."""
 
     start: str
     end: str
-
-    # allow posargs
-    def __new__(cls, start: str, end: str):
-        return super().__new__(
-            cls,
-            start=start,
-            end=end,
-        )
 
     def to_graphql_input(self):
         return {
@@ -347,18 +333,11 @@ class PartitionRangeSelector(IHaveNew):
         )
 
 
-@record_custom
-class PartitionsSelector(IHaveNew):
+@record(kw_only=False)
+class PartitionsSelector:
     """The information needed to define selection partitions."""
 
     ranges: Sequence[PartitionRangeSelector]
-
-    # allow posargs
-    def __new__(cls, ranges: Sequence[PartitionRangeSelector]):
-        return super().__new__(
-            cls,
-            ranges=ranges,
-        )
 
     def to_graphql_input(self):
         return {"ranges": [partition_range.to_graphql_input() for partition_range in self.ranges]}

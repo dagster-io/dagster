@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 from dagster import (
     AssetKey,
@@ -200,7 +200,7 @@ GET_PARTITION_BACKFILLS_QUERY = """
 
 def _seed_runs(
     graphql_context,
-    partition_runs: List[Tuple[DagsterRunStatus, Union[str, PartitionKeyRange]]],
+    partition_runs: list[tuple[DagsterRunStatus, Union[str, PartitionKeyRange]]],
     backfill_id: str,
 ) -> None:
     for status, partition_or_range in partition_runs:

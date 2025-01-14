@@ -1,8 +1,8 @@
 import shutil
 import tempfile
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
 import pytest
 from dagster import AssetKey
@@ -12,12 +12,12 @@ from dagster_components.core.component_defs_builder import (
     build_components_from_component_folder,
     defs_from_components,
 )
-from dagster_components.lib.dbt_project import DbtProjectComponent
+from dagster_components.lib.dbt_project.component import DbtProjectComponent
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
-STUB_LOCATION_PATH = Path(__file__).parent.parent / "stub_code_locations" / "dbt_project_location"
+STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
 
 JAFFLE_SHOP_KEYS = {
@@ -80,4 +80,5 @@ def test_load_from_path(dbt_path: Path) -> None:
 
     for asset_node in defs.get_asset_graph().asset_nodes:
         assert asset_node.tags["foo"] == "bar"
+        assert asset_node.tags["another"] == "one"
         assert asset_node.metadata["something"] == 1

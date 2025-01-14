@@ -101,7 +101,9 @@ export const GROUPS_ONLY_SCALE = 0.15;
 const DEFAULT_SET_HIDE_NODES_MATCH = (_node: AssetNodeForGraphQueryFragment) => true;
 
 export const AssetGraphExplorer = (props: Props) => {
-  const fullAssetGraphData = useFullAssetGraphData(props.fetchOptions);
+  const {fullAssetGraphData, loading: fullAssetGraphDataLoading} = useFullAssetGraphData(
+    props.fetchOptions,
+  );
   const [hideNodesMatching, setHideNodesMatching] = useState(() => DEFAULT_SET_HIDE_NODES_MATCH);
 
   const {
@@ -152,7 +154,7 @@ export const AssetGraphExplorer = (props: Props) => {
   return (
     <Loading allowStaleData queryResult={fetchResult}>
       {() => {
-        if (graphDataLoading || filteredAssetsLoading) {
+        if (graphDataLoading || filteredAssetsLoading || fullAssetGraphDataLoading) {
           return <LoadingSpinner purpose="page" />;
         }
         if (!assetGraphData || !allAssetKeys || !fullAssetGraphData) {
@@ -739,7 +741,7 @@ const AssetGraphExplorerWithData = ({
             <TopbarWrapper>
               <Box flex={{direction: 'column'}} style={{width: '100%'}}>
                 <Box
-                  flex={{gap: 12, alignItems: 'center'}}
+                  flex={{gap: 12, alignItems: 'flex-start'}}
                   padding={{left: showSidebar ? 12 : 24, vertical: 12, right: 12}}
                 >
                   {showSidebar ? undefined : (
@@ -754,7 +756,7 @@ const AssetGraphExplorerWithData = ({
                   )}
                   <div>{filterButton}</div>
                   <GraphQueryInputFlexWrap>
-                    {featureEnabled(FeatureFlag.flagAssetSelectionSyntax) ? (
+                    {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
                       <AssetSelectionInput
                         assets={graphQueryItems}
                         value={explorerPath.opsQuery}

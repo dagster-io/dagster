@@ -29,7 +29,7 @@ export const QueryfulEvaluationDetailTable = ({
       evaluationId: evaluation.evaluationId,
       partition: selectedPartition!,
     },
-    skip: !selectedPartition,
+    skip: !selectedPartition || !evaluation.isLegacy,
   });
 
   const {data: specificPartitionData} = partitionQuery;

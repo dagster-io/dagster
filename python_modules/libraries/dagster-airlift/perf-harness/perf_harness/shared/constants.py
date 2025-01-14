@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Dict
 
 CONSTANTS_FILE = Path(__file__).parent / "constants.txt"
 
 
-def read_constants() -> Dict[str, int]:
+def read_constants() -> dict[str, int]:
     constants = {}
-    with open(CONSTANTS_FILE, "r") as f:
+    with open(CONSTANTS_FILE) as f:
         for line in f.readlines():
             key, value = line.strip().split(None, 1)
             constants[key] = int(value)

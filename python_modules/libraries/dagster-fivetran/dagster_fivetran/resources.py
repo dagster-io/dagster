@@ -2,9 +2,10 @@ import json
 import logging
 import os
 import time
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
 
 import requests
@@ -16,13 +17,12 @@ from dagster import (
     InitResourceContext,
     MaterializeResult,
     MetadataValue,
-    OpExecutionContext,
     __version__,
     _check as check,
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import experimental
+from dagster._annotations import experimental, public
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -47,6 +47,7 @@ from dagster_fivetran.translator import (
 )
 from dagster_fivetran.types import FivetranOutput
 from dagster_fivetran.utils import (
+    DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY,
     get_fivetran_connector_table_name,
     get_fivetran_connector_url,
     get_fivetran_logs_url,
@@ -184,7 +185,7 @@ class FivetranResource(ConfigurableResource):
         if connector_details["status"]["setup_state"] != "connected":
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
-    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime, bool, str]:
+    def get_connector_sync_status(self, connector_id: str) -> tuple[datetime, bool, str]:
         """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 
@@ -1013,15 +1014,17 @@ class FivetranWorkspace(ConfigurableResource):
                     },
                 )
 
+    @public
+    @experimental
     def sync_and_poll(
-        self, context: Union[OpExecutionContext, AssetExecutionContext]
+        self, context: AssetExecutionContext
     ) -> FivetranEventIterator[Union[AssetMaterialization, MaterializeResult]]:
         """Executes a sync and poll process to materialize Fivetran assets.
+            This method can only be used in the context of an asset execution.
 
         Args:
-            context (Union[OpExecutionContext, AssetExecutionContext]): The execution context
-                from within `@fivetran_assets`. If an AssetExecutionContext is passed,
-                its underlying OpExecutionContext will be used.
+            context (AssetExecutionContext): The execution context
+                from within `@fivetran_assets`.
 
         Returns:
             Iterator[Union[AssetMaterialization, MaterializeResult]]: An iterator of MaterializeResult
@@ -1031,7 +1034,7 @@ class FivetranWorkspace(ConfigurableResource):
             events=self._sync_and_poll(context=context), fivetran_workspace=self, context=context
         )
 
-    def _sync_and_poll(self, context: Union[OpExecutionContext, AssetExecutionContext]):
+    def _sync_and_poll(self, context: AssetExecutionContext):
         assets_def = context.assets_def
         dagster_fivetran_translator = get_translator_from_fivetran_assets(assets_def)
         connector_id = next(
@@ -1101,16 +1104,23 @@ def load_fivetran_asset_specs(
             fivetran_specs = load_fivetran_asset_specs(fivetran_workspace)
             defs = dg.Definitions(assets=[*fivetran_specs], resources={"fivetran": fivetran_workspace}
     """
+    dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+
     with workspace.process_config_and_initialize_cm() as initialized_workspace:
-        return check.is_list(
-            FivetranWorkspaceDefsLoader(
-                workspace=initialized_workspace,
-                translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
+        return [
+            spec.merge_attributes(
+                metadata={DAGSTER_FIVETRAN_TRANSLATOR_METADATA_KEY: dagster_fivetran_translator}
             )
-            .build_defs()
-            .assets,
-            AssetSpec,
-        )
+            for spec in check.is_list(
+                FivetranWorkspaceDefsLoader(
+                    workspace=initialized_workspace,
+                    translator=dagster_fivetran_translator,
+                )
+                .build_defs()
+                .assets,
+                AssetSpec,
+            )
+        ]
 
 
 @record

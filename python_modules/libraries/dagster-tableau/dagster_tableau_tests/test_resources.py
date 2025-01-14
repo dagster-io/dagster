@@ -1,5 +1,5 @@
 import uuid
-from typing import Type, Union
+from typing import Union
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,7 +15,7 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace
     ],
 )
 def test_basic_resource_request(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -68,7 +68,7 @@ def test_basic_resource_request(
     ],
 )
 def test_add_data_quality_warning(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,

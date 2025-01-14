@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Sequence, Type, Union
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import (
@@ -22,6 +23,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import resolve_automation_condition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
@@ -51,7 +53,7 @@ class AssetOut:
 
     _spec: AssetSpec
     key_prefix: Optional[Sequence[str]]
-    dagster_type: Union[Type, DagsterType]
+    dagster_type: Union[type, DagsterType]
     is_required: bool
     io_manager_key: Optional[str]
     backfill_policy: Optional[BackfillPolicy]
@@ -60,7 +62,7 @@ class AssetOut:
         self,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         key: Optional[CoercibleToAssetKey] = None,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
@@ -217,19 +219,24 @@ class AssetOut:
         )
 
     def to_spec(
-        self, key: AssetKey, deps: Sequence[AssetDep], additional_tags: Mapping[str, str] = {}
+        self,
+        key: AssetKey,
+        deps: Sequence[AssetDep],
+        additional_tags: Mapping[str, str] = {},
+        partitions_def: Optional[PartitionsDefinition] = ...,
     ) -> AssetSpec:
         return self._spec.replace_attributes(
             key=key,
             tags={**additional_tags, **self.tags} if self.tags else additional_tags,
             deps=[*self._spec.deps, *deps],
+            partitions_def=partitions_def if partitions_def is not None else ...,
         )
 
     @public
     @staticmethod
     def from_spec(
         spec: AssetSpec,
-        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
+        dagster_type: Union[type, DagsterType] = NoValueSentinel,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
         backfill_policy: Optional[BackfillPolicy] = None,

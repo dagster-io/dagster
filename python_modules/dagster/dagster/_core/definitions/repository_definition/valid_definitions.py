@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Dict, Sequence, TypeVar, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, TypeVar, Union
 
 from typing_extensions import TypeAlias
 
@@ -42,7 +43,7 @@ RepositoryElementDefinition: TypeAlias = Union[
     "UnresolvedPartitionedAssetScheduleDefinition",
 ]
 
-RepositoryDictSpec: TypeAlias = Dict[str, Dict[str, RepositoryElementDefinition]]
+RepositoryDictSpec: TypeAlias = dict[str, dict[str, RepositoryElementDefinition]]
 
 RepositoryListSpec: TypeAlias = Sequence[
     Union[RepositoryElementDefinition, "CacheableAssetsDefinition"]

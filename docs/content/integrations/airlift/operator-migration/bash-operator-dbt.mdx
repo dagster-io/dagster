@@ -1,4 +1,4 @@
-# Operator migration guides: Migrating usage of `BashOperator` for `dbt`
+# Operator migration guides: Migrating usage of BashOperator for dbt
 
 In this page, we'll explain migrating an Airflow `BashOperator` that runs a `dbt` command to Dagster.
 
@@ -34,7 +34,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 Migrating the operator breaks down into a few steps:
 
 1. Making the dbt project available to both your Airflow and Dagster deployments.
-2. Writing a `@dbt_asset`-decorated function which runs your dbt commands.
+2. Writing a @dbt_asset-decorated function which runs your dbt commands.
 3. Using `dagster-airlift` to proxy execution of the original task to Dagster.
 
 ### Step 1: Making the dbt project available & building manifest
@@ -44,10 +44,10 @@ First, you'll need to make the dbt project available to the Dagster runtime and 
 - If you're building your Dagster deployment in a monorepo alongside your dbt and Airflow projects, you can follow this guide: [Monorepo setup](/integrations/dbt/reference#deploying-a-dagster-project-with-a-dbt-project).
 - If you're deploying within a separate repository, you can follow this guide: [Separate repository setup](/integrations/dbt/reference#deploying-a-dbt-project-from-a-separate-git-repository).
 
-### Step 2: Writing a `@dbt_asset`-decorated function
+### Step 2: Writing a @dbt_asset-decorated function
 
 Once your dbt project is available, you can write a function that runs your dbt commands using the <PyObject object="dbt_assets" module="dagster_dbt"/> decorator and <PyObject object="DbtCliResource" module="dagster_dbt"/>. Most dbt CLI commands and flags are supported - to learn more about using `@dbt_assets`, check out the [dagster-dbt quickstart](/integrations/dbt/quickstart) and [reference](/integrations/dbt/reference).
 
-### Step 3: Using `dagster-airlift` to proxy execution
+### Step 3: Using dagster-airlift to proxy execution
 
 Finally, you can use `dagster-airlift` to proxy the execution of the original task to Dagster. The [dagster-airlift migration guide](/integrations/airlift/tutorial/overview) details this process.

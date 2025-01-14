@@ -1,17 +1,7 @@
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import (
-    AbstractSet,
-    Any,
-    Generic,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import AbstractSet, Any, Generic, NamedTuple, Optional, Union  # noqa: UP035
 
 from typing_extensions import TypeAlias
 
@@ -91,7 +81,7 @@ class DynamicPartitionsRequestResult(
         if not xor(added_partitions is None, deleted_partitions is None):
             check.failed("Exactly one of added_partitions and deleted_partitions must be provided")
 
-        return super(DynamicPartitionsRequestResult, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(partitions_def_name, "partitions_def_name"),
             added_partitions,
@@ -133,7 +123,7 @@ class SensorInstigatorData(
         sensor_type: Optional[SensorType] = None,
         last_tick_success_timestamp: Optional[float] = None,
     ):
-        return super(SensorInstigatorData, cls).__new__(
+        return super().__new__(
             cls,
             check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
             check.opt_str_param(last_run_key, "last_run_key"),
@@ -181,7 +171,7 @@ class ScheduleInstigatorData(
         if not isinstance(cron_schedule, str):
             cron_schedule = check.sequence_param(cron_schedule, "cron_schedule", of_type=str)
 
-        return super(ScheduleInstigatorData, cls).__new__(
+        return super().__new__(
             cls,
             cron_schedule,
             # Time in UTC at which the user started running the schedule (distinct from
@@ -236,7 +226,7 @@ class InstigatorState(
         status: InstigatorStatus,
         instigator_data: Optional[InstigatorData] = None,
     ):
-        return super(InstigatorState, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(origin, "origin", RemoteInstigatorOrigin),
             check.inst_param(instigator_type, "instigator_type", InstigatorType),
@@ -323,7 +313,7 @@ class TickStatus(Enum):
 )
 class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_data", "TickData")])):
     def __new__(cls, tick_id: int, tick_data: "TickData"):
-        return super(InstigatorTick, cls).__new__(
+        return super().__new__(
             cls,
             check.int_param(tick_id, "tick_id"),
             check.inst_param(tick_data, "tick_data", TickData),
@@ -423,8 +413,12 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.failure_count
 
     @property
-    def log_key(self) -> Optional[List[str]]:
+    def log_key(self) -> Optional[list[str]]:
         return self.tick_data.log_key
+
+    @property
+    def consecutive_failure_count(self) -> int:
+        return self.tick_data.consecutive_failure_count
 
     @property
     def is_completed(self) -> bool:
@@ -519,7 +513,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.run_requests
 
     @property
-    def unsubmitted_run_ids_with_requests(self) -> Sequence[Tuple[str, RunRequest]]:
+    def unsubmitted_run_ids_with_requests(self) -> Sequence[tuple[str, RunRequest]]:
         reserved_run_ids = self.tick_data.reserved_run_ids or []
         unrequested_run_ids = set(reserved_run_ids) - set(self.tick_data.run_ids)
         return [
@@ -565,7 +559,7 @@ class TickData(
             ("origin_run_ids", Sequence[str]),
             ("failure_count", int),
             ("selector_id", Optional[str]),
-            ("log_key", Optional[List[str]]),
+            ("log_key", Optional[list[str]]),
             (
                 "dynamic_partitions_request_results",
                 Sequence[DynamicPartitionsRequestResult],
@@ -574,6 +568,7 @@ class TickData(
             ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
+            ("consecutive_failure_count", int),
         ],
     )
 ):
@@ -595,8 +590,11 @@ class TickData(
         skip_reason (str): message for why the tick was skipped
         cursor (Optional[str]): Cursor output by this tick.
         origin_run_ids (List[str]): The runs originated from the schedule/sensor.
-        failure_count (int): The number of times this tick has failed. If the status is not
-            FAILED, this is the number of previous failures before it reached the current state.
+        failure_count (int): The number of times this particular tick has failed (to determine
+            whether the next tick should be a retry of that tick).
+            For example, for a schedule, this tracks the number of attempts we have made for a
+            particular scheduled execution time. The next tick will attempt to retry the most recent
+            tick if it failed and its failure count is less than the configured retry limit.
         dynamic_partitions_request_results (Sequence[DynamicPartitionsRequestResult]): The results
             of the dynamic partitions requests evaluated within the tick.
         end_timestamp (Optional[float]) Time that this tick finished.
@@ -607,6 +605,12 @@ class TickData(
         reserved_run_ids (Optional[Sequence[str]]): A list of run IDs to use for each of the
             run_requests. Used to ensure that if the tick fails partway through, we don't create
             any duplicate runs for the tick. Currently only used by AUTO_MATERIALIZE ticks.
+        consecutive_failure_count (Optional[int]): The number of times this instigator has failed
+            consecutively. Differs from failure_count in that it spans multiple executions, whereas
+            failure_count measures the number of times that a particular tick should retry. For
+            example, if a daily schedule fails on 3 consecutive days, failure_count tracks the
+            number of failures for each day, and consecutive_failure_count tracks the total
+            number of consecutive failures across all days.
     """
 
     def __new__(
@@ -624,7 +628,7 @@ class TickData(
         origin_run_ids: Optional[Sequence[str]] = None,
         failure_count: Optional[int] = None,
         selector_id: Optional[str] = None,
-        log_key: Optional[List[str]] = None,
+        log_key: Optional[list[str]] = None,
         dynamic_partitions_request_results: Optional[
             Sequence[DynamicPartitionsRequestResult]
         ] = None,
@@ -632,10 +636,11 @@ class TickData(
         run_requests: Optional[Sequence[RunRequest]] = None,
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
+        consecutive_failure_count: Optional[int] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
-        return super(TickData, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(instigator_origin_id, "instigator_origin_id"),
             check.str_param(instigator_name, "instigator_name"),
@@ -660,6 +665,9 @@ class TickData(
             run_requests=check.opt_sequence_param(run_requests, "run_requests"),
             auto_materialize_evaluation_id=auto_materialize_evaluation_id,
             reserved_run_ids=check.opt_sequence_param(reserved_run_ids, "reserved_run_ids"),
+            consecutive_failure_count=check.opt_int_param(
+                consecutive_failure_count, "consecutive_failure_count", 0
+            ),
         )
 
     def with_status(
@@ -713,16 +721,6 @@ class TickData(
                     "run_requests": run_requests,
                     "reserved_run_ids": reserved_run_ids,
                     "cursor": cursor,
-                },
-            )
-        )
-
-    def with_failure_count(self, failure_count: int) -> "TickData":
-        return TickData(
-            **merge_dicts(
-                self._asdict(),
-                {
-                    "failure_count": failure_count,
                 },
             )
         )

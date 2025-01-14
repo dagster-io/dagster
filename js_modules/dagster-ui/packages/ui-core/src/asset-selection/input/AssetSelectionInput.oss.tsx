@@ -27,6 +27,8 @@ interface AssetSelectionInputProps {
 
 const FUNCTIONS = ['sinks', 'roots'];
 
+const linter = createSelectionLinter({Lexer: AssetSelectionLexer, Parser: AssetSelectionParser});
+
 export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInputProps) => {
   const attributesMap = useMemo(() => {
     const assetNamesSet: Set<string> = new Set();
@@ -40,7 +42,9 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
       assetNamesSet.add(asset.name);
       asset.node.tags.forEach((tag) => {
         if (tag.key && tag.value) {
-          tagNamesSet.add(`${tag.key}=${tag.value}`);
+          // We add quotes around the equal sign here because the auto-complete suggestion already wraps the entire value in quotes.
+          // So wer end up with tag:"key"="value" as the final suggestion
+          tagNamesSet.add(`${tag.key}"="${tag.value}`);
         } else {
           tagNamesSet.add(tag.key);
         }
@@ -87,13 +91,10 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
     };
   }, [assets]);
 
-  const linter = useMemo(
-    () => createSelectionLinter({Lexer: AssetSelectionLexer, Parser: AssetSelectionParser}),
-    [],
-  );
   return (
     <WrapperDiv>
       <SelectionAutoCompleteInput
+        id="asset-selection-input"
         nameBase="key"
         attributesMap={attributesMap}
         placeholder={placeholderTextForItems('Type an asset subset…', assets)}
@@ -108,6 +109,22 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
 
 const WrapperDiv = styled.div`
   .attribute-owner {
-    ${iconStyle(Icons.owner.src)}
+    ${iconStyle(Icons.owner.src)};
+  }
+  .attribute-tag {
+    ${iconStyle(Icons.tag.src)};
+  }
+  .attribute-key_substring,
+  .attribute-key {
+    ${iconStyle(Icons.asset.src)};
+  }
+  .attribute-group {
+    ${iconStyle(Icons.asset_group.src)};
+  }
+  .attribute-code_location {
+    ${iconStyle(Icons.code_location.src)};
+  }
+  .attribute-kind {
+    ${iconStyle(Icons.compute_kind.src)};
   }
 `;

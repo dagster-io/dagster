@@ -3,7 +3,7 @@ import pickle
 import shutil
 import tempfile
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional
 
 import pytest
 from dagster import (
@@ -270,7 +270,10 @@ def test_fs_io_manager_partitioned_no_partitions():
                 current_time: Optional[datetime] = None,
                 dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
             ) -> UpstreamPartitionsResult:
-                return UpstreamPartitionsResult(upstream_partitions_def.empty_subset(), [])
+                return UpstreamPartitionsResult(
+                    partitions_subset=upstream_partitions_def.empty_subset(),
+                    required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
+                )
 
             def get_downstream_partitions_for_partitions(
                 self,
@@ -318,7 +321,7 @@ def test_fs_io_manager_partitioned_multi_asset():
                 "out_2": AssetOut(key=AssetKey("upstream_asset_2")),
             },
         )
-        def upstream_asset() -> Tuple[Output[int], Output[int]]:
+        def upstream_asset() -> tuple[Output[int], Output[int]]:
             return (Output(1, output_name="out_1"), Output(2, output_name="out_2"))
 
         @asset(

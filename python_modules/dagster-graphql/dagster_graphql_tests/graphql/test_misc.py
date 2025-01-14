@@ -21,7 +21,7 @@ from dagster_graphql_tests.graphql.production_query import PRODUCTION_QUERY
 
 @dagster_type_loader(str)
 def df_input_schema(_context, path):
-    with open(path, "r", encoding="utf8") as fd:
+    with open(path, encoding="utf8") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 

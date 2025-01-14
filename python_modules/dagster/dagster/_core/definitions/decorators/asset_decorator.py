@@ -1,18 +1,5 @@
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    overload,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import (
@@ -40,7 +27,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilder,
     DecoratorAssetsDefinitionBuilderArgs,
-    build_named_ins,
+    build_and_validate_named_ins,
     build_named_outs,
     create_check_specs_by_output_name,
     validate_and_assign_output_names_to_check_specs,
@@ -112,7 +99,7 @@ def asset(
 
 def _validate_hidden_non_argument_dep_param(
     non_argument_deps: Any,
-) -> Optional[Union[Set[AssetKey], Set[str]]]:
+) -> Optional[Union[set[AssetKey], set[str]]]:
     if non_argument_deps is None:
         return non_argument_deps
 
@@ -241,8 +228,9 @@ def asset(
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         output_required (bool): Whether the decorated function will always materialize an asset.
-            Defaults to True. If False, the function can return None, which will not be materialized to
-            storage and will halt execution of downstream assets.
+            Defaults to True. If False, the function can conditionally not yield a result. If
+            no result is yielded, no output will be materialized to storage and downstream
+            assets will not be materialized.
         automation_condition (AutomationCondition): A condition describing when Dagster should materialize this asset.
         backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
             BackfillPolicy.
@@ -341,7 +329,7 @@ def resolve_asset_key_and_name_for_decorator(
     name: Optional[str],
     decorator_name: str,
     fn: Callable[..., Any],
-) -> Tuple[AssetKey, str]:
+) -> tuple[AssetKey, str]:
     if (name or key_prefix) and key:
         raise DagsterInvalidDefinitionError(
             f"Cannot specify a name or key prefix for {decorator_name} when the key"
@@ -373,7 +361,7 @@ class AssetDecoratorArgs(NamedTuple):
     tags: Optional[Mapping[str, str]]
     description: Optional[str]
     config_schema: Optional[UserConfigSchema]
-    resource_defs: Dict[str, object]
+    resource_defs: dict[str, object]
     io_manager_key: Optional[str]
     io_manager_def: Optional[object]
     compute_kind: Optional[str]
@@ -549,7 +537,7 @@ def multi_asset(
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-    internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+    internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -911,7 +899,7 @@ def graph_asset_no_defaults(
     kinds: Optional[AbstractSet[str]],
 ) -> AssetsDefinition:
     ins = ins or {}
-    named_ins = build_named_ins(compose_fn, ins or {}, set())
+    named_ins = build_and_validate_named_ins(compose_fn, ins or {}, set())
     out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
@@ -1030,7 +1018,7 @@ def graph_multi_asset(
             if asset_in.partition_mapping
         }
 
-        named_ins = build_named_ins(fn, ins or {}, set())
+        named_ins = build_and_validate_named_ins(fn, ins or {}, set())
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in named_ins.items()
         }
@@ -1129,7 +1117,7 @@ def graph_multi_asset(
 
 def _deps_and_non_argument_deps_to_asset_deps(
     deps: Optional[Iterable[CoercibleToAssetDep]],
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
+    non_argument_deps: Optional[Union[set[AssetKey], set[str]]],
 ) -> Optional[Iterable[AssetDep]]:
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
     Ensures only one of deps and non_argument_deps is provided, then converts the deps to AssetDeps.

@@ -25,6 +25,10 @@ config:
   secret_credential: {{ $azureBlobComputeLogManagerConfig.secretCredential | toYaml | nindent 4 }}
   {{- end }}
 
+  {{- if $azureBlobComputeLogManagerConfig.accessKeyOrSasToken }}
+  access_key_or_sas_token: {{ include "stringSource" $azureBlobComputeLogManagerConfig.accessKeyOrSasToken }}
+  {{- end }}
+
   {{- if $azureBlobComputeLogManagerConfig.localDir }}
   local_dir: {{ include "stringSource" $azureBlobComputeLogManagerConfig.localDir }}
   {{- end }}
@@ -40,6 +44,11 @@ config:
   {{- if $azureBlobComputeLogManagerConfig.defaultAzureCredential }}
   default_azure_credential: {{ $azureBlobComputeLogManagerConfig.defaultAzureCredential | toYaml | nindent 4 }}
   {{- end }}
+
+  {{- if $azureBlobComputeLogManagerConfig.showUrlOnly }}
+  show_url_only: {{ $azureBlobComputeLogManagerConfig.showUrlOnly }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.gcs" }}

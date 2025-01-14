@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Optional
 
 from celery import Celery
 from dagster import (
@@ -50,7 +51,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
         default_queue: str,
         broker: Optional[str] = None,
         backend: Optional[str] = None,
-        include: Optional[List[str]] = None,
+        include: Optional[list[str]] = None,
         config_source: Optional[dict] = None,
         inst_data: Optional[ConfigurableClassData] = None,
     ) -> None:

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator
+from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 from dagster import _check as check
 from dagster._annotations import public

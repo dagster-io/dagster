@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Mapping, Sequence
 from math import isnan
-from typing import Any, Iterator, Mapping, Sequence, cast, no_type_check
+from typing import Any, cast, no_type_check
 
 import dagster._check as check
 import dagster._seven as seven

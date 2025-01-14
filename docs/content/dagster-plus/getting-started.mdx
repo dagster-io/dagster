@@ -280,11 +280,7 @@ When finished, [continue to Step 5](#step-5-set-up-environment-variables-and-sec
   recent version of Python 3 and Docker.
 </Note>
 
-To complete this step using the CLI, you can use your own Dagster code or the [Dagster starter kit](https://github.com/dagster-io/quickstart-etl). The starter kit is a template with everything you need to get started using Serverless in Dagster+, including CI/CD configuration and the required [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml).
-
-- **If using the template**, [clone the repository](https://github.com/dagster-io/quickstart-etl) to your local environment.
-
-- **If not using the template**, add `dagster-cloud` as a dependency in `setup.py`. [Click here for an example](https://github.com/dagster-io/quickstart-etl/blob/main/setup.py). This is already done for you if using the starter kit.
+To complete this step using the CLI, add `dagster-cloud` as a dependency in `setup.py` in your Dagster code. For an example, see the [dagster-quickstart project](https://github.com/dagster-io/dagster-quickstart/blob/main/setup.py).
 
 After you've finished setting up your local project, move on to deploying using the CLI:
 

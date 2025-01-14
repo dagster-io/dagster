@@ -211,7 +211,10 @@ export const AssetsCatalogTable = ({
     kindFilter,
   } = useAssetCatalogFiltering({assets});
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
-    useAssetSelectionInput(partiallyFiltered, !assets);
+    useAssetSelectionInput({
+      assets: partiallyFiltered,
+      assetsLoading: !assets || filteredAssetsLoading,
+    });
 
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !loading);
 
@@ -263,7 +266,7 @@ export const AssetsCatalogTable = ({
             display: 'grid',
             gridTemplateColumns: 'auto auto minmax(0, 1fr)',
             gap: 12,
-            alignItems: 'center',
+            alignItems: 'flex-start',
           }}
         >
           <ButtonGroup<AssetViewType>

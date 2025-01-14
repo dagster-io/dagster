@@ -22,7 +22,7 @@ def _ensure_env_variable(var):
 
 class StringSourceType(ScalarUnion):
     def __init__(self):
-        super(StringSourceType, self).__init__(
+        super().__init__(
             scalar_type=str,
             non_scalar_schema=Selector({"env": str}),
             _key="StringSourceType",
@@ -41,7 +41,7 @@ class StringSourceType(ScalarUnion):
 
 class IntSourceType(ScalarUnion):
     def __init__(self):
-        super(IntSourceType, self).__init__(
+        super().__init__(
             scalar_type=int,
             non_scalar_schema=Selector({"env": str}),
             _key="IntSourceType",
@@ -68,7 +68,7 @@ class IntSourceType(ScalarUnion):
 
 class BoolSourceType(ScalarUnion):
     def __init__(self):
-        super(BoolSourceType, self).__init__(
+        super().__init__(
             scalar_type=bool,
             non_scalar_schema=Selector({"env": str}),
             _key="BoolSourceType",
@@ -89,7 +89,7 @@ class BoolSourceType(ScalarUnion):
             return bool(value)
         except ValueError as e:
             raise PostProcessingError(
-                (f'Value "{value}" stored in env variable "{cfg}" cannot be coerced into an bool.')
+                f'Value "{value}" stored in env variable "{cfg}" cannot be coerced into an bool.'
             ) from e
 
 

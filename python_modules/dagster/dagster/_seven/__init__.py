@@ -5,8 +5,9 @@ import os
 import shlex
 import sys
 import time
+from collections.abc import Sequence
 from types import ModuleType
-from typing import Any, Callable, List, Sequence, Type
+from typing import Any, Callable, List, Type  # noqa: F401, UP035
 
 from typing_extensions import TypeGuard
 
@@ -47,6 +48,21 @@ def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
     return module
 
 
+def import_uncached_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(module_name, path_to_file)
+    if spec is None:
+        raise Exception(
+            f"Can not import module {module_name} from path {path_to_file}, unable to load spec."
+        )
+
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader
+    spec.loader.exec_module(module)
+    return module
+
+
 time_fn = time.perf_counter
 
 
@@ -73,7 +89,7 @@ def is_lambda(target: object) -> TypeGuard[Callable[..., Any]]:
 
 
 def is_function_or_decorator_instance_of(
-    target: object, kls: Type[Any]
+    target: object, kls: type[Any]
 ) -> TypeGuard[Callable[..., Any]]:
     return inspect.isfunction(target) or (isinstance(target, kls) and hasattr(target, "__name__"))
 
@@ -84,7 +100,7 @@ def qualname_differs(target: object) -> bool:
     )
 
 
-def xplat_shlex_split(s: str) -> List[str]:
+def xplat_shlex_split(s: str) -> list[str]:
     if IS_WINDOWS:
         return shlex.split(s, posix=False)
 
@@ -95,7 +111,7 @@ def get_import_error_message(import_error: ImportError) -> str:
     return import_error.msg
 
 
-def is_subclass(child_type: Type[Any], parent_type: Type[Any]):
+def is_subclass(child_type: type[Any], parent_type: type[Any]):
     """Due to some pathological interactions betwen bugs in the Python typing library
     (https://github.com/python/cpython/issues/88459 and
     https://github.com/python/cpython/issues/89010), some types (list[str] in Python 3.9, for

@@ -110,12 +110,12 @@ TODO: add picture previously at "/images/dagster-cloud/user-token-management/cod
 
 |                                                                          | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
-| View runs of [jobs](/guides/build/ops-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| View runs of [jobs](/guides/build/assets/asset-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Launch, re-execute, terminate, and delete runs of jobs                   | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/schedules)                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/sensors)                            | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Wipe assets                                                              | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Launch and cancel [schedules](/guides/build/backfill) | ❌     | ✅       | ✅     | ✅    | ✅                       |
+| Launch and cancel [schedules](/guides/automate/schedules) | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Add dynamic partitions                                                   | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Deployments
@@ -195,7 +195,8 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 | ------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
 | Manage [alerts](/dagster-plus/features/alerts)       | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Edit workspace                                         | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| [Administer SAML](/dagster-plus/features/authentication-and-access-control/sso/authentication) | ❌     | ❌       | ❌     | ❌    | ✅                       |
+{/* | [Administer SAML](/dagster-plus/features/authentication-and-access-control/sso/authentication) | ❌     | ❌       | ❌     | ❌    | ✅                       | */}
+| [Administer SAML](/todo) | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | [Manage SCIM](/todo)                                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | View usage                                             | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Manage billing                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
@@ -206,4 +207,5 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 - Learn more about how to manage users in Dagster+ in [Understanding User Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/users)
 - Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)
 - Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/dagster-plus/features/authentication-and-access-control/scim/index.md)
-- Learn more about authentication in [Understanding Authentication](/dagster-plus/features/authentication-and-access-control/sso/authentication)
+{/* - Learn more about authentication in [Understanding Authentication](/dagster-plus/features/authentication-and-access-control/sso/authentication) */}
+- Learn more about authentication in [Understanding Authentication](/todo)

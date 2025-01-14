@@ -76,7 +76,7 @@ module.exports = {
     'no-unused-vars': 'off', // or "@typescript-eslint/no-unused-vars": "off",
     'unused-imports/no-unused-imports': 'error',
     'unused-imports/no-unused-vars': [
-      'warn',
+      'error',
       {vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_'},
     ],
     'no-restricted-imports': [
@@ -156,7 +156,7 @@ module.exports = {
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-empty-object-type': ['error', {allowInterfaces: 'with-single-extends'}],
     'react-hooks/rules-of-hooks': 'error',
-    'react-hooks/exhaustive-deps': 'warn',
+    'react-hooks/exhaustive-deps': 'error',
   },
   settings: {
     react: {

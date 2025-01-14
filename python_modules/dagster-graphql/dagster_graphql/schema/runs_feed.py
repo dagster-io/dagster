@@ -1,8 +1,24 @@
 import graphene
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.schema.util import non_null_list
+
+
+class GrapheneRunsFeedView(graphene.Enum):
+    """Configure how runs and backfills are represented in the feed.
+
+    ROOTS: Return root-level runs and backfills
+    RUNS: Return runs only, including runs within backfills
+    BACKFILLS: Return backfills only
+    """
+
+    ROOTS = "ROOTS"
+    RUNS = "RUNS"
+    BACKFILLS = "BACKFILLS"
+
+    class Meta:
+        name = "RunsFeedView"
 
 
 class GrapheneRunsFeedEntry(graphene.Interface):
@@ -15,7 +31,7 @@ class GrapheneRunsFeedEntry(graphene.Interface):
     jobName = graphene.String()
     assetSelection = graphene.List(graphene.NonNull(GrapheneAssetKey))
     assetCheckSelection = graphene.List(
-        graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
+        graphene.NonNull("dagster_graphql.schema.entity_key.GrapheneAssetCheckHandle")
     )
 
     class Meta:

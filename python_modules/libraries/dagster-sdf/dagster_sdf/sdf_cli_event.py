@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import AbstractSet, Any, Dict, Iterator, Optional, Union
+from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from dagster import (
     AssetCheckResult,
@@ -32,7 +33,7 @@ class SdfCliEventMessage:
         raw_event (Dict[str, Any]): The raw event dictionary.
     """
 
-    raw_event: Dict[str, Any]
+    raw_event: dict[str, Any]
 
     @property
     def is_result_event(self) -> bool:

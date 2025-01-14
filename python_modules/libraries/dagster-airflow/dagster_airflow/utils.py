@@ -1,8 +1,9 @@
 import logging
 import os
 import sys
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
-from typing import Generator, List, Mapping, Optional
+from typing import Optional
 
 from airflow import __version__ as airflow_version
 from airflow.models.connection import Connection
@@ -29,7 +30,7 @@ class DagsterAirflowError(Exception):
     pass
 
 
-def create_airflow_connections(connections: List[Connection] = []) -> None:
+def create_airflow_connections(connections: list[Connection] = []) -> None:
     with create_session() as session:
         for connection in connections:
             if session.query(Connection).filter(Connection.conn_id == connection.conn_id).first():
@@ -69,7 +70,7 @@ def replace_airflow_logger_handlers() -> Generator[None, None, None]:
         logging.getLogger("airflow.task").handlers = prev_airflow_handlers
 
 
-def serialize_connections(connections: List[Connection] = []) -> List[Mapping[str, Optional[str]]]:
+def serialize_connections(connections: list[Connection] = []) -> list[Mapping[str, Optional[str]]]:
     serialized_connections = []
     for c in connections:
         serialized_connection = {

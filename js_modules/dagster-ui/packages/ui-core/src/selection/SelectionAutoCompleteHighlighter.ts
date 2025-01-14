@@ -210,7 +210,16 @@ const lastElementInTokenStyle = css`
 `;
 
 export const SelectionAutoCompleteInputCSS = css`
-  height: 32px;
+  .CodeMirror:not(.CodeMirror-focused) {
+    .CodeMirror-sizer,
+    .CodeMirror-lines {
+      height: 20px !important;
+    }
+  }
+  .CodeMirror-sizer,
+  .CodeMirror-lines {
+    padding: 0;
+  }
   width: 100%;
   ${TextInputStyles}
   flex-shrink: 1;
@@ -227,12 +236,6 @@ export const SelectionAutoCompleteInputCSS = css`
   .CodeMirror-vscrollbar,
   .CodeMirror-hscrollbar {
     display: none !important;
-  }
-
-  .CodeMirror-sizer,
-  .CodeMirror-lines {
-    height: 20px !important;
-    padding: 0;
   }
 
   .CodeMirror-cursor.CodeMirror-cursor {

@@ -23,9 +23,18 @@ def test_import_perf():
     import_profile = result.stderr.decode("utf-8")
 
     # ensure expensive libraries which should not be needed for basic definitions are not imported
-    assert "grpc" not in import_profile
-    assert "sqlalchemy" not in import_profile
-    assert "upath." not in import_profile  # dont conflate with import of upath_io_manager
+    expensive_library = [
+        "grpc",
+        "sqlalchemy",
+        "upath.",  # don't conflate with import of upath_io_manager
+    ]
+    expensive_imports = [f"`{lib}`" for lib in expensive_library if lib in import_profile]
 
-    # one way to debug imports is to `pip install tuna` then run
-    # python -X importtime python_modules/dagster/dagster_tests/general_tests/simple.py &> /tmp/import.txt && tuna /tmp/import.txt
+    # if `tuna` output is unfriendly, another way to debug imports is to open `/tmp/import.txt`
+    # using https://kmichel.github.io/python-importtime-graph/
+    assert not expensive_imports, (
+        "The following expensive libraries were imported with the top-level `dagster` module, "
+        f"slowing down any process that imports Dagster: {', '.join(expensive_imports)}; to debug, "
+        "`pip install tuna`, then run "
+        "`python -X importtime python_modules/dagster/dagster_tests/general_tests/simple.py &> /tmp/import.txt && tuna /tmp/import.txt`."
+    )

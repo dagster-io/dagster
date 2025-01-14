@@ -1,9 +1,7 @@
 ---
-title: "Setting up custom logging"
-sidebar_position: 100
+title: "Custom loggers"
+sidebar_position: 200
 ---
-
-# Custom loggers
 
 Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems.
 
@@ -40,7 +38,7 @@ Configuring a ops job to use the custom logger slightly differs from the asset j
 
 ### Expected `json_console_logger` output
 
-The `json_console_logger` will emit an exhaustive single line JSON document containing the full log record, including the dagster metadata fields.
+The `json_console_logger` will emit an exhaustive single line JSON document containing the full log record, including the Dagster metadata fields.
 
 Here's an example of the output for reference, formatted for readability:
 

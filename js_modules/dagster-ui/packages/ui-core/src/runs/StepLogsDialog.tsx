@@ -76,7 +76,7 @@ export const StepLogsDialog = ({
           {(logs) => (
             <RunMetadataProvider logs={logs}>
               {(metadata) => (
-                <StepLogsModalContent
+                <StepLogsDialogContent
                   runId={runId}
                   metadata={metadata}
                   stepKeys={stepKeys}
@@ -100,7 +100,7 @@ export const StepLogsDialog = ({
   );
 };
 
-export const StepLogsModalContent = ({
+export const StepLogsDialogContent = ({
   runId,
   stepKeys,
   metadata,
@@ -116,8 +116,10 @@ export const StepLogsModalContent = ({
 
   const flatLogs = useMemo(() => flattenOneLevel(logs.allNodeChunks), [logs]);
 
+  const stepKeysSet = useMemo(() => new Set(stepKeys), [stepKeys]);
+
   const firstLogForStep = flatLogs.find(
-    (l) => l.eventType === DagsterEventType.STEP_START && l.stepKey && stepKeys.includes(l.stepKey),
+    (l) => l.eventType === DagsterEventType.STEP_START && l.stepKey && stepKeysSet.has(l.stepKey),
   );
 
   const firstLogForStepTime = firstLogForStep ? Number(firstLogForStep.timestamp) : 0;

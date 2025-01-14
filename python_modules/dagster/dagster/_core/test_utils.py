@@ -7,23 +7,20 @@ import time
 import unittest.mock
 import warnings
 from collections import defaultdict
+from collections.abc import Iterator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
-from typing import (
+from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    Mapping,
     NamedTuple,
     NoReturn,
     Optional,
-    Sequence,
     TypeVar,
     Union,
     cast,
@@ -90,6 +87,7 @@ def assert_namedtuple_lists_equal(
     t2_list: Sequence[T_NamedTuple],
     exclude_fields: Optional[Sequence[str]] = None,
 ) -> None:
+    assert len(t1_list) == len(t2_list)
     for t1, t2 in zip(t1_list, t2_list):
         assert_namedtuples_equal(t1, t2, exclude_fields)
 
@@ -124,17 +122,17 @@ def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> 
         @graph(name=name)
         def wrap():
             for i in range(num_children):
-                op_alias = "%s_node_%d" % (name, i)
+                op_alias = "%s_node_%d" % (name, i)  # noqa: UP031
                 inner.alias(op_alias)()
 
         return wrap
 
     @graph(name=name)
     def nested_graph():
-        graph_def = create_wrap(leaf_node, "layer_%d" % depth)
+        graph_def = create_wrap(leaf_node, "layer_%d" % depth)  # noqa: UP031
 
         for i in range(depth):
-            graph_def = create_wrap(graph_def, "layer_%d" % (depth - (i + 1)))
+            graph_def = create_wrap(graph_def, "layer_%d" % (depth - (i + 1)))  # noqa: UP031
 
         graph_def.alias("outer")()
 
@@ -456,11 +454,11 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
 
 class TestSecretsLoader(SecretsLoader, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData], env_vars: Dict[str, str]):
+    def __init__(self, inst_data: Optional[ConfigurableClassData], env_vars: dict[str, str]):
         self._inst_data = inst_data
         self.env_vars = env_vars
 
-    def get_secrets_for_environment(self, location_name: str) -> Dict[str, str]:
+    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:
         return self.env_vars.copy()
 
     @property
@@ -631,7 +629,7 @@ def test_counter():
     assert counts["bar"] == 10
 
 
-def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None):
+def wait_for_futures(futures: dict[str, Future], timeout: Optional[float] = None):
     start_time = time.time()
     results = {}
     for target_id, future in futures.copy().items():

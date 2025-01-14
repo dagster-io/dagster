@@ -1,18 +1,7 @@
 from abc import abstractmethod
+from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.assets import AssetsDefinition
@@ -143,7 +132,7 @@ class PerInvocationProperties(
         op_config: Any,
         step_description: str,
     ):
-        return super(PerInvocationProperties, cls).__new__(
+        return super().__new__(
             cls,
             op_def=check.inst_param(op_def, "op_def", OpDefinition),
             tags=check.dict_param(tags, "tags"),
@@ -166,9 +155,9 @@ class DirectExecutionProperties:
     """
 
     def __init__(self):
-        self.user_events: List[UserEvent] = []
-        self.seen_outputs: Dict[str, Union[str, Set[str]]] = {}
-        self.output_metadata: Dict[str, Dict[str, Union[Any, Mapping[str, Any]]]] = {}
+        self.user_events: list[UserEvent] = []
+        self.seen_outputs: dict[str, Union[str, set[str]]] = {}
+        self.output_metadata: dict[str, dict[str, Union[Any, Mapping[str, Any]]]] = {}
         self.requires_typed_event_stream: bool = False
         self.typed_event_stream_error_message: Optional[str] = None
 
@@ -432,7 +421,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
             fn_name="run_config", fn_type="property"
         )
 
-        run_config: Dict[str, object] = {}
+        run_config: dict[str, object] = {}
         if self._op_config and per_invocation_properties.op_def:
             run_config["ops"] = {
                 per_invocation_properties.op_def.name: {
@@ -506,6 +495,20 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         if self._partition_key:
             return self._partition_key
         check.failed("Tried to access partition_key for a non-partitioned run")
+
+    @property
+    def partition_keys(self) -> Sequence[str]:
+        key_range = self.partition_key_range
+        partitions_def = self.assets_def.partitions_def
+        if partitions_def is None:
+            raise DagsterInvariantViolationError(
+                "Cannot access partition_keys for a non-partitioned run"
+            )
+
+        return partitions_def.get_partition_keys_in_range(
+            key_range,
+            dynamic_partitions_store=self.instance,
+        )
 
     @property
     def partition_key_range(self) -> PartitionKeyRange:
@@ -619,7 +622,7 @@ class DirectOpExecutionContext(OpExecutionContext, BaseDirectExecutionContext):
         if mapping_key:
             if output_name not in self._execution_properties.seen_outputs:
                 self._execution_properties.seen_outputs[output_name] = set()
-            cast(Set[str], self._execution_properties.seen_outputs[output_name]).add(mapping_key)
+            cast(set[str], self._execution_properties.seen_outputs[output_name]).add(mapping_key)
         else:
             self._execution_properties.seen_outputs[output_name] = "seen"
 

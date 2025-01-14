@@ -1,9 +1,10 @@
 import signal
 import sys
 import threading
+from collections.abc import Iterator
 from contextlib import contextmanager
 from types import FrameType
-from typing import Any, Iterator, Optional, Type
+from typing import Any, Optional
 
 from typing_extensions import TypeAlias
 
@@ -70,7 +71,7 @@ def pop_captured_interrupt() -> bool:
 # During execution, enter this context during a period when interrupts should be raised immediately
 # (as a DagsterExecutionInterruptedError instead of a KeyboardInterrupt)
 @contextmanager
-def raise_interrupts_as(error_cls: Type[BaseException]) -> Iterator[None]:
+def raise_interrupts_as(error_cls: type[BaseException]) -> Iterator[None]:
     if threading.current_thread() != threading.main_thread():
         # Can't replace signal handlers when not on the main thread, ignore
         yield

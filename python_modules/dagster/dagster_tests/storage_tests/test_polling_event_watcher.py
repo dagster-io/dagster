@@ -1,7 +1,8 @@
 import tempfile
 import time
+from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Optional
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -22,7 +23,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        super(SqlitePollingEventLogStorage, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._watcher: Optional[SqlPollingEventWatcher] = None
 
     @classmethod

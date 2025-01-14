@@ -1,10 +1,10 @@
 import collections.abc
 import inspect
+from collections.abc import Mapping, Sequence
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.events import AssetKey
@@ -42,7 +42,7 @@ def sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     asset_selection: Optional[CoercibleToAssetSelection] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, object]] = None,
     target: Optional[
@@ -129,7 +129,7 @@ def asset_sensor(
     job: Optional[ExecutableDefinition] = None,
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, object]] = None,
 ) -> Callable[
@@ -205,8 +205,7 @@ def asset_sensor(
             result = fn(*args, **kwargs)
 
             if inspect.isgenerator(result) or isinstance(result, list):
-                for item in result:
-                    yield item
+                yield from result
             elif isinstance(result, (RunRequest, SkipReason)):
                 yield result
 
@@ -248,7 +247,6 @@ def asset_sensor(
     return inner
 
 
-@deprecated(breaking_version="2.0.0", additional_warn_text="use `AutomationConditions` instead")
 def multi_asset_sensor(
     monitored_assets: Union[Sequence[AssetKey], AssetSelection],
     *,
@@ -260,7 +258,7 @@ def multi_asset_sensor(
     jobs: Optional[Sequence[ExecutableDefinition]] = None,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     request_assets: Optional[AssetSelection] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
     metadata: Optional[Mapping[str, object]] = None,
 ) -> Callable[

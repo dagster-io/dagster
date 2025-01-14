@@ -1,3 +1,5 @@
+# ruff: noqa: UP006, UP035
+
 from typing import Tuple
 
 import pytest

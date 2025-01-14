@@ -1,6 +1,5 @@
 import random
 from collections import defaultdict
-from typing import Dict
 
 from dagster import (
     DependencyDefinition,
@@ -40,7 +39,7 @@ def generate_job(name, size, connect_factor=1.0):
     random.seed(name)
 
     # generate nodes
-    ops: Dict[str, OpDefinition] = {}
+    ops: dict[str, OpDefinition] = {}
     for i in range(size):
         num_inputs = random.randint(1, 3)
         num_outputs = random.randint(1, 3)

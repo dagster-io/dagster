@@ -1,8 +1,9 @@
 import dataclasses
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph

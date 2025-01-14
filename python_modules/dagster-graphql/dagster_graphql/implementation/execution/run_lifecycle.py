@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Tuple, cast
+from collections.abc import Sequence
+from typing import Optional, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterRunNotFoundError
@@ -28,7 +29,7 @@ def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:
 
 def compute_step_keys_to_execute(
     graphql_context: BaseWorkspaceRequestContext, execution_params: ExecutionParams
-) -> Tuple[Optional[Sequence[str]], Optional[KnownExecutionState]]:
+) -> tuple[Optional[Sequence[str]], Optional[KnownExecutionState]]:
     check.inst_param(execution_params, "execution_params", ExecutionParams)
 
     instance = graphql_context.instance

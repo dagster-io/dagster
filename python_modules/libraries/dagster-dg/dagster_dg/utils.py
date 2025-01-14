@@ -1,17 +1,22 @@
 import contextlib
+import importlib.util
+import json
 import os
 import posixpath
 import re
 import subprocess
 import sys
+from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 
 import click
 import jinja2
+from click.formatting import HelpFormatter
 from typing_extensions import TypeAlias
 
+from dagster_dg.error import DgError
 from dagster_dg.version import __version__ as dagster_version
 
 # There is some weirdness concerning the availabilty of hashlib.HASH between different Python
@@ -24,12 +29,15 @@ if TYPE_CHECKING:
 CLI_CONFIG_KEY = "config"
 
 
-_CODE_LOCATION_COMMAND_PREFIX: Final = ["uv", "run", "dagster-components"]
-
-
 def execute_code_location_command(path: Path, cmd: Sequence[str], dg_context: "DgContext") -> str:
+    if dg_context.config.use_dg_managed_environment:
+        code_location_command_prefix = ["uv", "run", "dagster-components"]
+        env = get_uv_command_env()
+    else:
+        code_location_command_prefix = ["dagster-components"]
+        env = None
     full_cmd = [
-        *_CODE_LOCATION_COMMAND_PREFIX,
+        *code_location_command_prefix,
         *(
             ["--builtin-component-lib", dg_context.config.builtin_component_lib]
             if dg_context.config.builtin_component_lib
@@ -38,10 +46,35 @@ def execute_code_location_command(path: Path, cmd: Sequence[str], dg_context: "D
         *cmd,
     ]
     with pushd(path):
-        result = subprocess.run(
-            full_cmd, stdout=subprocess.PIPE, env=get_uv_command_env(), check=True
-        )
+        result = subprocess.run(full_cmd, stdout=subprocess.PIPE, env=env, check=True)
         return result.stdout.decode("utf-8")
+
+
+# Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
+# importable.
+@contextlib.contextmanager
+def ensure_loadable_path(path: Path) -> Iterator[None]:
+    orig_path = sys.path.copy()
+    sys.path.insert(0, str(path))
+    try:
+        yield
+    finally:
+        sys.path = orig_path
+
+
+def is_package_installed(package_name: str) -> bool:
+    return bool(importlib.util.find_spec(package_name))
+
+
+def get_path_for_package(package_name: str) -> str:
+    spec = importlib.util.find_spec(package_name)
+    if not spec:
+        raise DgError(f"Cannot find package: {package_name}")
+    # file_path = spec.origin
+    submodule_search_locations = spec.submodule_search_locations
+    if not submodule_search_locations:
+        raise DgError(f"Package does not have any locations for submodules: {package_name}")
+    return submodule_search_locations[0]
 
 
 # uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
@@ -86,7 +119,7 @@ def snakecase(string: str) -> str:
     return string
 
 
-_DEFAULT_EXCLUDES: List[str] = [
+_DEFAULT_EXCLUDES: list[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
@@ -103,7 +136,7 @@ PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 # Copied from dagster._generate.generate
 def generate_subtree(
     path: Path,
-    excludes: Optional[List[str]] = None,
+    excludes: Optional[list[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
     templates_path: str = PROJECT_NAME_PLACEHOLDER,
     project_name: Optional[str] = None,
@@ -174,7 +207,7 @@ def generate_subtree(
     click.echo(f"Generated files for Dagster project in {path}.")
 
 
-def _should_skip_file(path: str, excludes: List[str] = _DEFAULT_EXCLUDES):
+def _should_skip_file(path: str, excludes: list[str] = _DEFAULT_EXCLUDES):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 
@@ -211,3 +244,119 @@ def hash_file_metadata(hasher: Hash, path: Union[str, Path]) -> None:
     hasher.update(str(path).encode())
     hasher.update(str(stat.st_mtime).encode())  # Last modified time
     hasher.update(str(stat.st_size).encode())  # File size
+
+
+T = TypeVar("T")
+
+
+def not_none(value: Optional[T]) -> T:
+    if value is None:
+        raise DgError("Expected non-none value.")
+    return value
+
+
+# ########################
+# ##### CUSTOM CLICK SUBCLASSES
+# ########################
+
+# Here we subclass click.Command and click.Group to customize the help output. We do this in order
+# to visually separate global from command-specific options. The form of the output can be seen in
+# dagster_dg_tests.test_custom_help_format.
+
+
+class DgClickHelpMixin:
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self._commands: list[str] = []
+
+    def format_help(self, context: click.Context, formatter: click.HelpFormatter):
+        """Customizes the help to include hierarchical usage."""
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+        self.format_usage(context, formatter)
+        self.format_help_text(context, formatter)
+        if isinstance(self, click.MultiCommand):
+            self.format_commands(context, formatter)
+        self.format_options(context, formatter)
+
+    def get_partitioned_opts(
+        self, ctx: click.Context
+    ) -> tuple[Sequence[click.Parameter], Sequence[click.Parameter]]:
+        from dagster_dg.cli.global_options import GLOBAL_OPTIONS
+
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+
+        # Filter out arguments
+        opts = [p for p in self.get_params(ctx) if p.get_help_record(ctx) is not None]
+        command_opts = [opt for opt in opts if opt.name not in GLOBAL_OPTIONS]
+        global_opts = [opt for opt in self.get_params(ctx) if opt.name in GLOBAL_OPTIONS]
+        return command_opts, global_opts
+
+    def format_options(self, ctx: click.Context, formatter: HelpFormatter) -> None:
+        """Writes all the options into the formatter if they exist."""
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+
+        # Filter out arguments
+        command_opts, global_opts = self.get_partitioned_opts(ctx)
+
+        if command_opts:
+            records = [not_none(p.get_help_record(ctx)) for p in command_opts]
+            with formatter.section("Options"):
+                formatter.write_dl(records)
+
+        if global_opts:
+            with formatter.section("Global options"):
+                records = [not_none(p.get_help_record(ctx)) for p in global_opts]
+                formatter.write_dl(records)
+
+
+class DgClickCommand(DgClickHelpMixin, click.Command): ...
+
+
+class DgClickGroup(DgClickHelpMixin, click.Group): ...
+
+
+# ########################
+# ##### JSON SCHEMA
+# ########################
+
+_JSON_SCHEMA_TYPE_TO_CLICK_TYPE = {"string": str, "integer": int, "number": float, "boolean": bool}
+
+
+def json_schema_property_to_click_option(
+    key: str, field_info: Mapping[str, Any], required: bool
+) -> click.Option:
+    field_type = field_info.get("type", "string")
+    option_name = f"--{key.replace('_', '-')}"
+
+    # Handle object type fields as JSON strings
+    if field_type == "object":
+        option_type = str  # JSON string input
+        help_text = f"{key} (JSON string)"
+        callback = parse_json_option
+
+    # Handle other basic types
+    else:
+        option_type = _JSON_SCHEMA_TYPE_TO_CLICK_TYPE[field_type]
+        help_text = key
+        callback = None
+
+    return click.Option(
+        [option_name],
+        type=option_type,
+        required=required,
+        help=help_text,
+        callback=callback,
+    )
+
+
+def parse_json_option(context: click.Context, param: click.Option, value: str):
+    """Callback to parse JSON string options into Python objects."""
+    if value:
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            raise click.BadParameter(f"Invalid JSON string for '{param.name}'.")
+    return value

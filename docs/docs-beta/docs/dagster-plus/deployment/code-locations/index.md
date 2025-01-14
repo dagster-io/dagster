@@ -13,7 +13,7 @@ This guide will cover three options for adding a new code location:
 <details>
 <summary>Prerequisites</summary>
 
-1. An existing Dagster project. Refer to the [recommended project structure](/tutorial/create-new-project) and [code requirements](/dagster-plus/deployment/code-requirements) pages for more information.
+1. An existing Dagster project. Refer to the [recommended project structure](/guides/build/project-structure) and [code requirements](/dagster-plus/deployment/code-requirements) pages for more information.
 
 2. Editor, Admin, or Organization Admin permissions in Dagster+.
 

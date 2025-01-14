@@ -121,8 +121,8 @@ class RetryWrapper:
                     if self.__retry_if(ex) and (
                         tries < self.__max_tries - 1 or not self.__max_tries
                     ):
-                        log.info("Got retriable error: %r" % ex)
-                        log.info("Backing off for %.1f seconds" % backoff)
+                        log.info(f"Got retriable error: {ex!r}")
+                        log.info(f"Backing off for {backoff:.1f} seconds")
                         time.sleep(backoff)
                         tries += 1
                         backoff *= self.__multiplier

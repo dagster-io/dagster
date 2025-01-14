@@ -250,18 +250,6 @@ from dagster._core.definitions.input import (
     InputMapping as InputMapping,
 )
 from dagster._core.definitions.job_definition import JobDefinition as JobDefinition
-from dagster._core.definitions.load_asset_checks_from_modules import (
-    load_asset_checks_from_current_module as load_asset_checks_from_current_module,
-    load_asset_checks_from_modules as load_asset_checks_from_modules,
-    load_asset_checks_from_package_module as load_asset_checks_from_package_module,
-    load_asset_checks_from_package_name as load_asset_checks_from_package_name,
-)
-from dagster._core.definitions.load_assets_from_modules import (
-    load_assets_from_current_module as load_assets_from_current_module,
-    load_assets_from_modules as load_assets_from_modules,
-    load_assets_from_package_module as load_assets_from_package_module,
-    load_assets_from_package_name as load_assets_from_package_name,
-)
 from dagster._core.definitions.logger_definition import (
     LoggerDefinition as LoggerDefinition,
     build_init_logger_context as build_init_logger_context,
@@ -308,6 +296,25 @@ from dagster._core.definitions.metadata.table import (
     TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
+)
+from dagster._core.definitions.module_loaders.load_asset_checks_from_modules import (
+    load_asset_checks_from_current_module as load_asset_checks_from_current_module,
+    load_asset_checks_from_modules as load_asset_checks_from_modules,
+    load_asset_checks_from_package_module as load_asset_checks_from_package_module,
+    load_asset_checks_from_package_name as load_asset_checks_from_package_name,
+)
+from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+    load_assets_from_current_module as load_assets_from_current_module,
+    load_assets_from_modules as load_assets_from_modules,
+    load_assets_from_package_module as load_assets_from_package_module,
+    load_assets_from_package_name as load_assets_from_package_name,
+)
+from dagster._core.definitions.module_loaders.load_defs_from_module import (
+    load_definitions_from_current_module as load_definitions_from_current_module,
+    load_definitions_from_module as load_definitions_from_module,
+    load_definitions_from_modules as load_definitions_from_modules,
+    load_definitions_from_package_module as load_definitions_from_package_module,
+    load_definitions_from_package_name as load_definitions_from_package_name,
 )
 from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorDefinition as MultiAssetSensorDefinition,
@@ -631,16 +638,14 @@ from dagster.version import __version__ as __version__
 # ########################
 
 import importlib
-from typing import (
+from collections.abc import Mapping, Sequence
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any as TypingAny,
     Callable,
-    Mapping,
-    Sequence,
-    Tuple as TypingTuple,
+    Final,
+    Tuple as TypingTuple,  # noqa: F401
 )
-
-from typing_extensions import Final
 
 from dagster._utils.warnings import deprecation_warning
 
@@ -653,10 +658,10 @@ if TYPE_CHECKING:
     # from dagster.some.module import (
     #     Foo as Foo,
     # )
-    pass  # noqa: TCH005
+    pass  # noqa: TC005
 
 
-_DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
+_DEPRECATED: Final[Mapping[str, tuple[str, str, str]]] = {
     ##### EXAMPLE
     # "Foo": (
     #     "dagster.some.module",
@@ -665,7 +670,7 @@ _DEPRECATED: Final[Mapping[str, TypingTuple[str, str, str]]] = {
     # ),
 }
 
-_DEPRECATED_RENAMED: Final[Mapping[str, TypingTuple[Callable, str]]] = {
+_DEPRECATED_RENAMED: Final[Mapping[str, tuple[Callable, str]]] = {
     ##### EXAMPLE
     # "Foo": (Bar, "1.1.0"),
 }

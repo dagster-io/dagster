@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import Mapping, Optional, Sequence, Union
+from typing import Optional, Union
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
@@ -208,7 +209,7 @@ class OpDefSnap:
     },
 )
 @record
-class NodeDefsSnapshot(IHaveNew):
+class NodeDefsSnapshot:
     op_def_snaps: Sequence[OpDefSnap]
     graph_def_snaps: Sequence[GraphDefSnap]
 

@@ -1,9 +1,10 @@
 import inspect
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import experimental, public
@@ -16,7 +17,7 @@ from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+    from dagster._core.definitions.assets import AssetsDefinition, AssetSpec, SourceAsset
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 DEFAULT_SOURCE_FILE_KEY = "asset_definition"
@@ -56,7 +57,7 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
             references to source control.
     """
 
-    code_references: List[Union[LocalFileCodeReference, UrlCodeReference]]
+    code_references: list[Union[LocalFileCodeReference, UrlCodeReference]]
 
     @property
     def value(self) -> "CodeReferencesMetadataValue":
@@ -86,11 +87,11 @@ class CodeReferencesMetadataSet(NamespacedMetadataSet):
 
 
 def _with_code_source_single_definition(
-    assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"],
-) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:
+    assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"],
+) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]:
     from dagster._core.definitions.assets import AssetsDefinition
 
-    # SourceAsset doesn't have an op definition to point to - cacheable assets
+    # SourceAsset and AssetSpec don't have an op definition to point to - cacheable assets
     # will be supported eventually but are a bit trickier
     if not isinstance(assets_def, AssetsDefinition):
         return assets_def
@@ -131,7 +132,7 @@ def _with_code_source_single_definition(
                 if existing_source_code_metadata.code_references
                 else []
             )
-            sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
+            sources_for_asset: list[Union[LocalFileCodeReference, UrlCodeReference]] = [
                 *existing_code_references,
                 *sources,
             ]
@@ -242,8 +243,8 @@ def convert_local_path_to_git_path(
 def _convert_local_path_to_git_path_single_definition(
     base_git_url: str,
     file_path_mapping: FilePathMapping,
-    assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"],
-) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:
+    assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"],
+) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]:
     from dagster._core.definitions.assets import AssetsDefinition
 
     # SourceAsset doesn't have an op definition to point to - cacheable assets
@@ -260,7 +261,7 @@ def _convert_local_path_to_git_path_single_definition(
         if not existing_source_code_metadata.code_references:
             continue
 
-        sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
+        sources_for_asset: list[Union[LocalFileCodeReference, UrlCodeReference]] = [
             convert_local_path_to_git_path(
                 base_git_url,
                 file_path_mapping,
@@ -293,11 +294,13 @@ def _build_gitlab_url(url: str, branch: str) -> str:
 
 @experimental
 def link_code_references_to_git(
-    assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
+    assets_defs: Sequence[
+        Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]
+    ],
     git_url: str,
     git_branch: str,
     file_path_mapping: FilePathMapping,
-) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
+) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.
 
@@ -353,8 +356,10 @@ def link_code_references_to_git(
 
 @experimental
 def with_source_code_references(
-    assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
-) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
+    assets_defs: Sequence[
+        Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]
+    ],
+) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition", "AssetSpec"]]:
     """Wrapper function which attaches local code reference metadata to the provided asset definitions.
     This points to the filepath and line number where the asset body is defined.
 

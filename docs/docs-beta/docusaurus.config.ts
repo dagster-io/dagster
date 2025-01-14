@@ -1,7 +1,7 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
-import { groupCollapsed } from 'console';
+import {groupCollapsed} from 'console';
 
 const config: Config = {
   title: 'Dagster Docs - Beta',
@@ -81,6 +81,12 @@ const config: Config = {
           type: 'doc',
           docId: 'intro',
           position: 'left',
+        },
+        {
+          label: 'Tutorials',
+          type: 'doc',
+          docId: 'tutorials/index',
+          position: 'left'
         },
         {
           label: 'Integrations',

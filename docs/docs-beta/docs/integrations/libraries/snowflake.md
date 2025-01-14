@@ -9,15 +9,14 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-snowflake
 docslink: https://docs.dagster.io/integrations/snowflake
 partnerlink: https://www.snowflake.com/en/
-logo: /integrations/Snowflake.svg
 categories:
   - Storage
 enabledBy:
 enables:
 tags: [dagster-supported, storage]
+sidebar_custom_props:
+  logo: images/integrations/snowflake.svg
 ---
-
-
 
 This library provides an integration with the Snowflake data warehouse. Connect to Snowflake as a resource, then use the integration-provided functions to construct an op to establish connections and execute Snowflake queries. Read and write natively to Snowflake from Dagster assets.
 

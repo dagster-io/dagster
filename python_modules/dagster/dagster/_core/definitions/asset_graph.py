@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
@@ -90,11 +91,11 @@ class AssetNode(BaseAssetNode):
 
     @property
     def is_partitioned(self) -> bool:
-        return self.assets_def.partitions_def is not None
+        return self.partitions_def is not None
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        return self.assets_def.partitions_def
+        return self.assets_def.specs_by_key[self.key].partitions_def
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
@@ -204,7 +205,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # AssetKey not subject to any further manipulation.
         resolved_deps = ResolvedAssetDependencies(assets_defs, [])
 
-        input_asset_key_replacements = [
+        asset_key_replacements = [
             {
                 raw_key: normalized_key
                 for input_name, raw_key in ad.keys_by_input_name.items()
@@ -218,8 +219,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
         # Only update the assets defs if we're actually replacing input asset keys
         assets_defs = [
-            ad.with_attributes(input_asset_key_replacements=reps) if reps else ad
-            for ad, reps in zip(assets_defs, input_asset_key_replacements)
+            ad.with_attributes(asset_key_replacements=reps) if reps else ad
+            for ad, reps in zip(assets_defs, asset_key_replacements)
         ]
 
         # Create unexecutable external assets definitions for any referenced keys for which no
@@ -252,8 +253,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # and child nodes.
         dep_graph = generate_asset_dep_graph(assets_defs)
 
-        assets_defs_by_check_key: Dict[AssetCheckKey, AssetsDefinition] = {}
-        check_keys_by_asset_key: DefaultDict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        assets_defs_by_check_key: dict[AssetCheckKey, AssetsDefinition] = {}
+        check_keys_by_asset_key: defaultdict[AssetKey, set[AssetCheckKey]] = defaultdict(set)
         for ad in assets_defs:
             for ck in ad.check_keys:
                 check_keys_by_asset_key[ck.asset_key].add(ck)

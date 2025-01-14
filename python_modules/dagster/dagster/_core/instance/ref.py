@@ -1,5 +1,6 @@
 import os
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 import yaml
 
@@ -451,6 +452,7 @@ class InstanceRef(
             "run_retries",
             "code_servers",
             "retention",
+            "backfills",
             "sensors",
             "schedules",
             "nux",
@@ -571,7 +573,7 @@ class InstanceRef(
         )
 
     @property
-    def custom_instance_class(self) -> Type["DagsterInstance"]:
+    def custom_instance_class(self) -> type["DagsterInstance"]:
         return (  # type: ignore  # (ambiguous return type)
             class_from_code_pointer(
                 self.custom_instance_class_data.module_name,

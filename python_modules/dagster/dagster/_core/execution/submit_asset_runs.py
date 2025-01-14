@@ -1,7 +1,8 @@
 import logging
 import sys
 import time
-from typing import AbstractSet, Dict, NamedTuple, Optional, Sequence
+from collections.abc import Sequence
+from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
@@ -58,7 +59,7 @@ def _get_job_execution_data_from_run_request(
     run_request: RunRequest,
     instance: DagsterInstance,
     workspace: BaseWorkspaceRequestContext,
-    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
+    run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
 ) -> RunRequestExecutionData:
     check.invariant(
         len(run_request.entity_keys) > 0,
@@ -113,7 +114,7 @@ def _create_asset_run(
     run_request: RunRequest,
     run_request_index: int,
     instance: DagsterInstance,
-    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
+    run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     workspace_process_context: IWorkspaceProcessContext,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
@@ -243,7 +244,7 @@ def submit_asset_run(
     run_request_index: int,
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
-    run_request_execution_data_cache: Dict[JobSubsetSelector, RunRequestExecutionData],
+    run_request_execution_data_cache: dict[JobSubsetSelector, RunRequestExecutionData],
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
 ) -> DagsterRun:

@@ -3,13 +3,13 @@ import datetime
 import functools
 import math
 import re
-from typing import Iterator, Optional, Sequence, Union
-
-from croniter import croniter as _croniter
+from collections.abc import Iterator, Sequence
+from typing import Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
 from dagster._time import get_timezone
+from dagster._vendored.croniter import croniter as _croniter
 from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster._vendored.dateutil.tz import datetime_ambiguous, datetime_exists
 
@@ -579,12 +579,14 @@ def _has_out_of_range_cron_interval_str(cron_string: str):
             while len(expr_parts) > 0:
                 expr = expr_parts.pop()
                 t = re.sub(
-                    r"^\*(\/.+)$", r"%d-%d\1" % (CRON_RANGES[i][0], CRON_RANGES[i][1]), str(expr)
+                    r"^\*(\/.+)$",
+                    r"%d-%d\1" % (CRON_RANGES[i][0], CRON_RANGES[i][1]),  # noqa: UP031
+                    str(expr),
                 )
                 m = CRON_STEP_SEARCH_REGEX.search(t)
                 if not m:
                     # try normalizing "{start}/{step}" to "{start}-{max}/{step}".
-                    t = re.sub(r"^(.+)\/(.+)$", r"\1-%d/\2" % (CRON_RANGES[i][1]), str(expr))
+                    t = re.sub(r"^(.+)\/(.+)$", r"\1-%d/\2" % (CRON_RANGES[i][1]), str(expr))  # noqa: UP031
                     m = CRON_STEP_SEARCH_REGEX.search(t)
                 if m:
                     (low, high, step) = m.group(1), m.group(2), m.group(4) or 1

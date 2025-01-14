@@ -1,5 +1,6 @@
 ---
-title: "Deploying with Docker Compose"
+title: Deploying Dagster using Docker Compose
+sidebar_label: "Docker Compose"
 description: A guide to deploying Dagster with Docker Compose.
 sidebar_position: 400
 ---
@@ -27,8 +28,8 @@ RUN pip install \
     dagster \
     dagster-graphql \
     dagster-webserver \
-    dagster-postgres \   # Database for Dagster storage
-    dagster-docker       # Enables the Docker run launcher
+    dagster-postgres \
+    dagster-docker
 
 # Set $DAGSTER_HOME and copy dagster.yaml and workspace.yaml there
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/

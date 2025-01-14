@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import dagster._check as check
 from dagster import ConfigurableResource, resource
@@ -45,7 +45,7 @@ class PySparkResource(ConfigurableResource):
                 my_op()
     """
 
-    spark_config: Dict[str, Any]
+    spark_config: dict[str, Any]
     _spark_session = PrivateAttr(default=None)
 
     @classmethod
@@ -118,7 +118,7 @@ class LazyPySparkResource(ConfigurableResource):
                 my_op()
     """
 
-    spark_config: Dict[str, Any]
+    spark_config: dict[str, Any]
     _spark_session = PrivateAttr(default=None)
 
     @classmethod

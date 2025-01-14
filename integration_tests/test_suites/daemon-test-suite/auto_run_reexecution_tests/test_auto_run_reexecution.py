@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Sequence, cast
+from collections.abc import Sequence
+from typing import cast
 from unittest.mock import PropertyMock, patch
 
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEntry
@@ -14,6 +15,7 @@ from dagster._core.storage.tags import (
     AUTO_RETRY_RUN_ID_TAG,
     MAX_RETRIES_TAG,
     PARENT_RUN_ID_TAG,
+    RESUME_RETRY_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
     ROOT_RUN_ID_TAG,
@@ -28,6 +30,8 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
 
 from auto_run_reexecution_tests.utils import foo, get_foo_job_handle
+
+logger = logging.getLogger("dagster.test_auto_run_reexecution")
 
 
 def create_run(instance, **kwargs):
@@ -389,13 +393,22 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
     assert len(instance.run_coordinator.queue()) == 0
 
     # retries failure
-    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={
+            MAX_RETRIES_TAG: "2",
+            RESUME_RETRY_TAG: "true",
+            RETRY_STRATEGY_TAG: "ALL_STEPS",
+        },
+    )
     dagster_event = DagsterEvent(
         event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
         job_name="foo",
@@ -419,6 +432,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -427,11 +441,16 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
     run = instance.get_run_by_id(run.run_id)
     assert run.tags.get(AUTO_RETRY_RUN_ID_TAG) == first_retry.run_id
 
+    # retry strategy is copied, "is_resume_retry" is not since the retry strategy is ALL_STEPS
+    assert RESUME_RETRY_TAG not in first_retry.tags
+    assert first_retry.tags.get(RETRY_STRATEGY_TAG) == "ALL_STEPS"
+
     # doesn't retry again
     list(
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -460,6 +479,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
@@ -492,6 +512,7 @@ def test_consume_new_runs_for_automatic_reexecution(instance, workspace_context)
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 2
@@ -514,6 +535,7 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_ru
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -543,6 +565,7 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_ru
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -559,6 +582,7 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_ru
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -583,6 +607,7 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_re
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -612,6 +637,7 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_re
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -636,6 +662,7 @@ def test_consume_new_runs_for_automatic_reexecution_mimic_daemon_fails_before_re
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -663,6 +690,7 @@ def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, 
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -692,6 +720,7 @@ def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, 
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(instance.run_coordinator.queue()) == 1
@@ -709,6 +738,7 @@ def test_consume_new_runs_for_automatic_reexecution_retry_run_deleted(instance, 
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -734,6 +764,7 @@ def test_code_location_unavailable(instance, workspace_context):
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -770,6 +801,7 @@ def test_code_location_unavailable(instance, workspace_context):
             consume_new_runs_for_automatic_reexecution(
                 workspace_context,
                 instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                logger,
             )
         )
 
@@ -790,6 +822,7 @@ def test_consume_new_runs_for_automatic_reexecution_with_manual_retry(instance, 
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
 
@@ -825,6 +858,7 @@ def test_consume_new_runs_for_automatic_reexecution_with_manual_retry(instance, 
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     # the daemon can distinguish between a manual retry of a run and an auto-retry of a run and still
@@ -912,6 +946,7 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
         consume_new_runs_for_automatic_reexecution(
             workspace_context,
             instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
         )
     )
     assert len(run_coordinator.queue()) == 1

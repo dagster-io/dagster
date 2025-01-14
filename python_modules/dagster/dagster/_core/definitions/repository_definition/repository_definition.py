@@ -1,15 +1,5 @@
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Type,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
@@ -65,7 +55,7 @@ class RepositoryLoadData(
             Mapping[str, CodeLocationReconstructionMetadataValue]
         ] = None,
     ):
-        return super(RepositoryLoadData, cls).__new__(
+        return super().__new__(
             cls,
             cacheable_asset_data=(
                 check.opt_mapping_param(
@@ -347,10 +337,10 @@ class RepositoryDefinition:
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type] = None,
+        python_type: Optional[type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         resource_config: Optional[Any] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.

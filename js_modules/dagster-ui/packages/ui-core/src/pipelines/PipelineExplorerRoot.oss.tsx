@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import React, {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
@@ -26,7 +26,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {Loading} from '../ui/Loading';
-import {buildPipelineSelector} from '../workspace/WorkspaceContext/util';
+import {buildPipelineSelector, useJob} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
 export const PipelineExplorerSnapshotRoot = () => {
@@ -58,13 +58,7 @@ export const PipelineExplorerSnapshotRoot = () => {
   );
 };
 
-export const PipelineExplorerContainer = ({
-  explorerPath,
-  repoAddress,
-  onChangeExplorerPath,
-  onNavigateToSourceAssetNode,
-  isGraph = false,
-}: {
+export const PipelineExplorerContainer = (props: {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   onNavigateToSourceAssetNode: (
@@ -74,11 +68,50 @@ export const PipelineExplorerContainer = ({
   repoAddress?: RepoAddress;
   isGraph?: boolean;
 }) => {
+  const {explorerPath, repoAddress} = props;
   const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
   });
+  const job = useJob(repoAddress, explorerPath.pipelineName);
+  if (job && job.isAssetJob && options.preferAssetRendering) {
+    const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
+    return (
+      <AssetGraphExplorer
+        options={options}
+        setOptions={setOptions}
+        fetchOptions={{pipelineSelector}}
+        explorerPath={explorerPath}
+        onChangeExplorerPath={props.onChangeExplorerPath}
+        onNavigateToSourceAssetNode={props.onNavigateToSourceAssetNode}
+        viewType={AssetGraphViewType.JOB}
+      />
+    );
+  }
 
+  return <PipelineOpGraphExplorer {...props} options={options} setOptions={setOptions} />;
+};
+
+const PipelineOpGraphExplorer = ({
+  explorerPath,
+  repoAddress,
+  onChangeExplorerPath,
+  onNavigateToSourceAssetNode,
+  isGraph = false,
+  options,
+  setOptions,
+}: {
+  explorerPath: ExplorerPath;
+  onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
+  onNavigateToSourceAssetNode: (
+    e: Pick<React.MouseEvent<any>, 'metaKey'>,
+    node: AssetLocation,
+  ) => void;
+  repoAddress?: RepoAddress;
+  isGraph?: boolean;
+  options: GraphExplorerOptions;
+  setOptions: React.Dispatch<React.SetStateAction<GraphExplorerOptions>>;
+}) => {
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
 

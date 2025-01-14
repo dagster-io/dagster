@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from dagster import AssetCheckKey, AssetKey, AssetsDefinition
@@ -10,7 +10,7 @@ pytest.importorskip("dbt.version", "1.6")
 
 
 @pytest.fixture(name="my_dbt_assets", scope="module")
-def my_dbt_assets_fixture(test_asset_checks_manifest: Dict[str, Any]) -> AssetsDefinition:
+def my_dbt_assets_fixture(test_asset_checks_manifest: dict[str, Any]) -> AssetsDefinition:
     @dbt_assets(manifest=test_asset_checks_manifest)
     def my_dbt_assets(): ...
 

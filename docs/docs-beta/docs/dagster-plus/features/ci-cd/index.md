@@ -1,6 +1,6 @@
 ---
-title: "CI/CD"
-sidebar_position: 30
+title: "CI/CD (branch deployments)"
+sidebar_position: 50
 ---
 
 import DocCardList from '@theme/DocCardList';

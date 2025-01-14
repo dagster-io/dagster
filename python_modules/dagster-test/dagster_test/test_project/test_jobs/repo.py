@@ -3,8 +3,9 @@ import os
 import random
 import time
 from collections import defaultdict
+from collections.abc import Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Mapping, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import boto3
 from dagster import (
@@ -284,7 +285,7 @@ def long_running_task(context):
     iterations = 20 * 30  # 20 minutes
     for i in range(iterations):
         context.log.info(
-            "task in progress [%d/100]%% complete" % math.floor(100.0 * float(i) / iterations)
+            "task in progress [%d/100]%% complete" % math.floor(100.0 * float(i) / iterations)  # noqa: UP031
         )
         time.sleep(2)
     return random.randint(0, iterations)
@@ -292,11 +293,11 @@ def long_running_task(context):
 
 @op
 def post_process(context, input_count):
-    context.log.info("received input %d" % input_count)
+    context.log.info("received input %d" % input_count)  # noqa: UP031
     iterations = 60 * 2  # 2 hours
     for i in range(iterations):
         context.log.info(
-            "post-process task in progress [%d/100]%% complete"
+            "post-process task in progress [%d/100]%% complete"  # noqa: UP031
             % math.floor(100.0 * float(i) / iterations)
         )
         time.sleep(60)
@@ -305,8 +306,8 @@ def post_process(context, input_count):
 @graph
 def long_running_graph():
     for i in range(10):
-        t = long_running_task.alias("first_%d" % i)()
-        post_process.alias("post_process_%d" % i)(t)
+        t = long_running_task.alias("first_%d" % i)()  # noqa: UP031
+        post_process.alias("post_process_%d" % i)(t)  # noqa: UP031
 
 
 large_graph = nesting_graph(depth=1, num_children=6, name="large_graph")
@@ -506,7 +507,7 @@ def hard_failer_graph():
 @op
 def check_volume_mount(context):
     with open(
-        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", "r", encoding="utf8"
+        "/opt/dagster/test_mount_path/volume_mounted_file.yaml", encoding="utf8"
     ) as mounted_file:
         contents = mounted_file.read()
         context.log.info(f"Contents of mounted file: {contents}")

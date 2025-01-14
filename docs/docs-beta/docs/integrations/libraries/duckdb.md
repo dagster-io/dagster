@@ -9,17 +9,16 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-duckdb
 docslink: https://dagster.io/blog/duckdb-data-lake
 partnerlink: https://duckdb.org/
-logo: /integrations/Duckdb.svg
 categories:
   - Storage
 enabledBy:
 enables:
 tags: [dagster-supported, storage]
+sidebar_custom_props: 
+  logo: images/integrations/duckdb.svg
 ---
 
-
-
-This library provides an integration with the DuckDB database, and allows for an out-of-the-box [I/O Manager](https://docs.dagster.io/concepts/io-management/io-managers) so that you can make DuckDB your storage of choice.
+This library provides an integration with the DuckDB database, and allows for an out-of-the-box [I/O Manager](/todo) so that you can make DuckDB your storage of choice.
 
 ### Installation
 

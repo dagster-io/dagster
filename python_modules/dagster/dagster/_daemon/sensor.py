@@ -4,22 +4,11 @@ import logging
 import sys
 import threading
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
 from typing_extensions import Self
 
@@ -66,7 +55,12 @@ from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
 from dagster._time import get_current_datetime, get_current_timestamp
-from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
+from dagster._utils import (
+    DebugCrashFlags,
+    SingleInstigatorDebugCrashFlags,
+    check_for_debug_crash,
+    return_as_list,
+)
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -148,6 +142,10 @@ class SensorLaunchContext(AbstractContextManager):
         ]
 
     def update_state(self, status: TickStatus, **kwargs: object):
+        if status in {TickStatus.SKIPPED, TickStatus.SUCCESS}:
+            kwargs["failure_count"] = 0
+            kwargs["consecutive_failure_count"] = 0
+
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
         cursor = cast(Optional[str], kwargs.get("cursor"))
         origin_run_id = cast(Optional[str], kwargs.get("origin_run_id"))
@@ -256,7 +254,7 @@ class SensorLaunchContext(AbstractContextManager):
 
     def __exit__(
         self,
-        exception_type: Type[BaseException],
+        exception_type: type[BaseException],
         exception_value: Exception,
         traceback: TracebackType,
     ) -> None:
@@ -269,22 +267,34 @@ class SensorLaunchContext(AbstractContextManager):
                 exception_value, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
             ):
                 try:
-                    raise DagsterSensorDaemonError(
+                    raise DagsterUserCodeUnreachableError(
                         f"Unable to reach the user code server for sensor {self._remote_sensor.name}."
                         " Sensor will resume execution once the server is available."
                     ) from exception_value
                 except:
-                    error_data = DaemonErrorCapture.on_exception(sys.exc_info())
+                    error_data = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=self.logger,
+                        log_message="Sensor tick caught an error",
+                    )
                     self.update_state(
                         TickStatus.FAILURE,
                         error=error_data,
                         # don't increment the failure count - retry until the server is available again
                         failure_count=self._tick.failure_count,
+                        consecutive_failure_count=self._tick.consecutive_failure_count + 1,
                     )
             else:
-                error_data = DaemonErrorCapture.on_exception(sys.exc_info())
+                error_data = DaemonErrorCapture.process_exception(
+                    sys.exc_info(),
+                    logger=self.logger,
+                    log_message="Sensor tick caught an error",
+                )
                 self.update_state(
-                    TickStatus.FAILURE, error=error_data, failure_count=self._tick.failure_count + 1
+                    TickStatus.FAILURE,
+                    error=error_data,
+                    failure_count=self._tick.failure_count + 1,
+                    consecutive_failure_count=self._tick.consecutive_failure_count + 1,
                 )
 
         self._write()
@@ -315,7 +325,7 @@ def execute_sensor_iteration_loop(
     """
     from dagster._daemon.daemon import SpanMarker
 
-    sensor_tick_futures: Dict[str, Future] = {}
+    sensor_tick_futures: dict[str, Future] = {}
     while True:
         start_time = get_current_timestamp()
         if until and start_time >= until:
@@ -333,7 +343,7 @@ def execute_sensor_iteration_loop(
                 sensor_tick_futures=sensor_tick_futures,
             )
         except Exception:
-            error_info = DaemonErrorCapture.on_exception(
+            error_info = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=logger,
                 log_message="SensorDaemon caught an error",
@@ -344,7 +354,6 @@ def execute_sensor_iteration_loop(
         yield SpanMarker.END_SPAN
 
         end_time = get_current_timestamp()
-
         loop_duration = end_time - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
         shutdown_event.wait(sleep_time)
@@ -357,7 +366,7 @@ def execute_sensor_iteration(
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor],
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
-    sensor_tick_futures: Optional[Dict[str, Future]] = None,
+    sensor_tick_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
 ):
     instance = workspace_process_context.instance
@@ -376,7 +385,7 @@ def execute_sensor_iteration(
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
 
-    sensors: Dict[str, RemoteSensor] = {}
+    sensors: dict[str, RemoteSensor] = {}
     for location_entry in workspace_snapshot.values():
         code_location = location_entry.code_location
         if code_location:
@@ -453,30 +462,6 @@ def execute_sensor_iteration(
             )
 
 
-def _process_tick(
-    workspace_process_context: IWorkspaceProcessContext,
-    logger: logging.Logger,
-    remote_sensor: RemoteSensor,
-    sensor_state: InstigatorState,
-    sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags],
-    tick_retention_settings,
-    submit_threadpool_executor: Optional[ThreadPoolExecutor],
-):
-    # evaluate the tick immediately, but from within a thread.  The main thread should be able to
-    # heartbeat to keep the daemon alive
-    return list(
-        _process_tick_generator(
-            workspace_process_context,
-            logger,
-            remote_sensor,
-            sensor_state,
-            sensor_debug_crash_flags,
-            tick_retention_settings,
-            submit_threadpool_executor,
-        )
-    )
-
-
 def _get_evaluation_tick(
     instance: DagsterInstance,
     sensor: RemoteSensor,
@@ -490,51 +475,49 @@ def _get_evaluation_tick(
     origin_id = sensor.get_remote_origin_id()
     selector_id = sensor.get_remote_origin().get_selector().get_id()
 
+    consecutive_failure_count = 0
+
     if instigator_data and instigator_data.last_tick_success_timestamp:
-        # if a last tick end timestamp was set, then the previous tick could not have been
+        # if a last tick success timestamp was set, then the previous tick could not have been
         # interrupted, so there is no need to fetch the previous tick
-        potentially_interrupted_tick = None
+        most_recent_tick = None
     else:
-        potentially_interrupted_tick = next(
-            iter(instance.get_ticks(origin_id, selector_id, limit=1)), None
-        )
+        most_recent_tick = next(iter(instance.get_ticks(origin_id, selector_id, limit=1)), None)
 
     # check for unfinished work on the previous tick
-    if potentially_interrupted_tick is not None:
-        has_unrequested_runs = (
-            len(potentially_interrupted_tick.unsubmitted_run_ids_with_requests) > 0
-        )
-        if potentially_interrupted_tick.status == TickStatus.STARTED:
+    if most_recent_tick is not None:
+        if most_recent_tick.status in {TickStatus.FAILURE, TickStatus.STARTED}:
+            consecutive_failure_count = (
+                most_recent_tick.consecutive_failure_count or most_recent_tick.failure_count
+            )
+
+        has_unrequested_runs = len(most_recent_tick.unsubmitted_run_ids_with_requests) > 0
+        if most_recent_tick.status == TickStatus.STARTED:
             # if the previous tick was interrupted before it was able to request all of its runs,
             # and it hasn't been too long, then resume execution of that tick
             if (
-                evaluation_timestamp - potentially_interrupted_tick.timestamp
-                <= MAX_TIME_TO_RESUME_TICK_SECONDS
+                evaluation_timestamp - most_recent_tick.timestamp <= MAX_TIME_TO_RESUME_TICK_SECONDS
                 and has_unrequested_runs
             ):
                 logger.warn(
-                    f"Tick {potentially_interrupted_tick.tick_id} was interrupted part-way through, resuming"
+                    f"Tick {most_recent_tick.tick_id} was interrupted part-way through, resuming"
                 )
-                return potentially_interrupted_tick
+                return most_recent_tick
+
             else:
                 # previous tick won't be resumed - move it into a SKIPPED state so it isn't left
                 # dangling in STARTED, but don't return it
-                logger.warn(
-                    f"Moving dangling STARTED tick {potentially_interrupted_tick.tick_id} into SKIPPED"
-                )
-                potentially_interrupted_tick = potentially_interrupted_tick.with_status(
-                    status=TickStatus.SKIPPED
-                )
-                instance.update_tick(potentially_interrupted_tick)
+                logger.warn(f"Moving dangling STARTED tick {most_recent_tick.tick_id} into SKIPPED")
+                most_recent_tick = most_recent_tick.with_status(status=TickStatus.SKIPPED)
+                instance.update_tick(most_recent_tick)
         elif (
-            potentially_interrupted_tick.status == TickStatus.FAILURE
-            and potentially_interrupted_tick.tick_data.failure_count
-            <= MAX_FAILURE_RESUBMISSION_RETRIES
+            most_recent_tick.status == TickStatus.FAILURE
+            and most_recent_tick.tick_data.failure_count <= MAX_FAILURE_RESUBMISSION_RETRIES
             and has_unrequested_runs
         ):
-            logger.info(f"Retrying failed tick {potentially_interrupted_tick.tick_id}")
+            logger.info(f"Retrying failed tick {most_recent_tick.tick_id}")
             return instance.create_tick(
-                potentially_interrupted_tick.tick_data.with_status(
+                most_recent_tick.tick_data.with_status(
                     TickStatus.STARTED,
                     error=None,
                     timestamp=evaluation_timestamp,
@@ -551,6 +534,7 @@ def _get_evaluation_tick(
             status=TickStatus.STARTED,
             timestamp=evaluation_timestamp,
             selector_id=selector_id,
+            consecutive_failure_count=consecutive_failure_count,
         )
     )
 
@@ -621,13 +605,18 @@ def _process_tick_generator(
                 )
 
     except Exception:
-        error_info = DaemonErrorCapture.on_exception(
+        error_info = DaemonErrorCapture.process_exception(
             exc_info=sys.exc_info(),
             logger=logger,
             log_message=f"Sensor daemon caught an error for sensor {remote_sensor.name}",
         )
 
     yield error_info
+
+
+# evaluate the tick immediately, but from within a thread.  The main thread should be able to
+# heartbeat to keep the daemon alive
+_process_tick = return_as_list(_process_tick_generator)
 
 
 def _sensor_instigator_data(state: InstigatorState) -> Optional[SensorInstigatorData]:
@@ -722,7 +711,7 @@ def _submit_run_request(
         instance.submit_run(run.run_id, workspace_process_context.create_request_context())
         logger.info(f"Completed launch of run {run.run_id} for {remote_sensor.name}")
     except Exception:
-        error_info = DaemonErrorCapture.on_exception(
+        error_info = DaemonErrorCapture.process_exception(
             exc_info=sys.exc_info(),
             logger=logger,
             log_message=f"Run {run.run_id} created successfully but failed to launch",
@@ -955,7 +944,7 @@ def _handle_run_reactions(
     for run_reaction in dagster_run_reactions:
         origin_run_id = check.not_none(run_reaction.dagster_run).run_id
         if run_reaction.error:
-            context.logger.error(
+            context.logger.warning(
                 f"Got a reaction request for run {origin_run_id} but execution errorred:"
                 f" {run_reaction.error}"
             )
@@ -994,9 +983,9 @@ def _resolve_run_requests(
     workspace_process_context: IWorkspaceProcessContext,
     context: SensorLaunchContext,
     remote_sensor: RemoteSensor,
-    run_ids_with_requests: Sequence[Tuple[str, RunRequest]],
+    run_ids_with_requests: Sequence[tuple[str, RunRequest]],
     has_evaluations: bool,
-) -> Sequence[Tuple[str, RunRequest]]:
+) -> Sequence[tuple[str, RunRequest]]:
     resolved_run_ids_with_requests = []
 
     for run_id, raw_run_request in run_ids_with_requests:
@@ -1080,7 +1069,7 @@ def _handle_run_requests_and_automation_condition_evaluations(
 
 
 def _submit_run_requests(
-    raw_run_ids_with_requests: Sequence[Tuple[str, RunRequest]],
+    raw_run_ids_with_requests: Sequence[tuple[str, RunRequest]],
     automation_condition_evaluations: Sequence[AutomationConditionEvaluationWithRunIds],
     instance: DagsterInstance,
     context: SensorLaunchContext,
@@ -1101,7 +1090,7 @@ def _submit_run_requests(
     )
 
     def submit_run_request(
-        run_id_with_run_request: Tuple[str, RunRequest],
+        run_id_with_run_request: tuple[str, RunRequest],
     ) -> SubmitRunRequestResult:
         run_id, run_request = run_id_with_run_request
         if run_request.requires_backfill_daemon():
@@ -1124,7 +1113,7 @@ def _submit_run_requests(
     else:
         gen_run_request_results = map(submit_run_request, resolved_run_ids_with_requests)
 
-    skipped_runs: List[SkippedSensorRun] = []
+    skipped_runs: list[SkippedSensorRun] = []
     evaluations_by_key = {
         evaluation.key: evaluation for evaluation in automation_condition_evaluations
     }
@@ -1234,7 +1223,7 @@ def _fetch_existing_runs(
         )
 
     # filter down to runs with run_key that match the sensor name and its namespace (repository)
-    valid_runs: List[DagsterRun] = []
+    valid_runs: list[DagsterRun] = []
     for run in runs_with_run_keys:
         # if the run doesn't have a set origin, just match on sensor name
         if run.remote_job_origin is None and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name:

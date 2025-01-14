@@ -1,6 +1,9 @@
 import warnings
+from collections.abc import Sequence
+from typing import cast
 
 from dagster import ExperimentalWarning
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._time import get_current_timestamp
 
 # squelch experimental warnings since we often include experimental things in toys for development
@@ -164,19 +167,21 @@ def column_schema_repository():
 def table_metadata_repository():
     from dagster_test.toys import table_metadata
 
-    return load_assets_from_modules([table_metadata])
+    return cast(Sequence[AssetsDefinition], load_assets_from_modules([table_metadata]))
 
 
 @repository
 def long_asset_keys_repository():
     from dagster_test.toys import long_asset_keys
 
-    return load_assets_from_modules([long_asset_keys])
+    return cast(Sequence[AssetsDefinition], load_assets_from_modules([long_asset_keys]))
 
 
-@repository  # pyright: ignore[reportArgumentType]
+@repository
 def big_honkin_assets_repository():
-    return [load_assets_from_modules([big_honkin_asset_graph_module])]
+    return cast(
+        Sequence[AssetsDefinition], [load_assets_from_modules([big_honkin_asset_graph_module])]
+    )
 
 
 @repository
@@ -208,11 +213,11 @@ def assets_with_sensors_repository():
 def conditional_assets_repository():
     from dagster_test.toys import conditional_assets
 
-    return load_assets_from_modules([conditional_assets])
+    return cast(Sequence[AssetsDefinition], load_assets_from_modules([conditional_assets]))
 
 
 @repository
 def data_versions_repository():
     from dagster_test.toys import data_versions
 
-    return load_assets_from_modules([data_versions])
+    return cast(Sequence[AssetsDefinition], load_assets_from_modules([data_versions]))

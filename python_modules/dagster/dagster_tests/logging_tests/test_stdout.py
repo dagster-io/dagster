@@ -83,7 +83,7 @@ def test_compute_log_to_disk():
             log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
         )
         assert os.path.exists(local_path)
-        with open(local_path, "r", encoding="utf8") as stdout_file:
+        with open(local_path, encoding="utf8") as stdout_file:
             assert normalize_file_content(stdout_file.read()) == f"{HELLO_FROM_OP}\n{HELLO_FROM_OP}"
 
 
@@ -114,7 +114,7 @@ def test_compute_log_to_disk_multiprocess():
             log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
         )
         assert os.path.exists(local_path)
-        with open(local_path, "r", encoding="utf8") as stdout_file:
+        with open(local_path, encoding="utf8") as stdout_file:
             assert normalize_file_content(stdout_file.read()) == HELLO_FROM_OP
 
 

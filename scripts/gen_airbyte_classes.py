@@ -7,8 +7,9 @@ import subprocess
 import sys
 import textwrap
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Optional
 
 import click
 import dagster._check as check
@@ -186,20 +187,20 @@ class UnionType(SchemaType):
         )
 
 
-def _union_or_singular(inner: List[SchemaType]) -> SchemaType:
+def _union_or_singular(inner: list[SchemaType]) -> SchemaType:
     if len(inner) == 1:
         return inner[0]
     return UnionType(inner)
 
 
-def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, SchemaType]]:
+def get_class_definitions(name: str, schema: dict) -> dict[str, dict[str, SchemaType]]:
     """Parses an Airbyte source or destination schema, turning it into a representation of the
     corresponding Python class structure - a dictionary mapping class names with the fields
     that the new classes should have.
 
     Each class will be turned into a Python class definition with the given name and fields.
     """
-    class_definitions: Dict[str, Dict[str, SchemaType]] = {}
+    class_definitions: dict[str, dict[str, SchemaType]] = {}
 
     fields = {}
 
@@ -212,7 +213,7 @@ def get_class_definitions(name: str, schema: dict) -> Dict[str, Dict[str, Schema
 
         if "oneOf" in field:
             # Union type, parse all subfields
-            union_type: List[SchemaType] = []
+            union_type: list[SchemaType] = []
             for sub_field in field["oneOf"]:
                 title = sub_field.get("properties", {}).get("option_title", {}).get("const")
                 if not title:
@@ -313,7 +314,7 @@ class {cls_name}(GeneratedAirbyteDestination): {nested_defs}
 def create_nested_class_definition(
     base_cls_name: str,
     cls_name: str,
-    cls_def: Dict[str, SchemaType],
+    cls_def: dict[str, SchemaType],
 ):
     nested_defs = ""
     fields_in = ", ".join(
@@ -349,8 +350,8 @@ def create_nested_class_definition(
 def create_connector_class_definition(
     connector_name_human_readable: str,
     cls_name: str,
-    cls_def: Dict[str, SchemaType],
-    nested: Optional[List[str]],
+    cls_def: dict[str, SchemaType],
+    nested: Optional[list[str]],
     is_source: bool,
     docs_url: str,
 ):
@@ -408,7 +409,7 @@ def load_from_spec_file(
     connector_name: str,
     filepath: str,
     is_source: bool,
-    injected_props: Dict[str, Any],
+    injected_props: dict[str, Any],
 ):
     """Loads a connector spec file and generates a python class definition for it."""
     with open(filepath, encoding="utf8") as f:
@@ -532,7 +533,7 @@ from dagster._annotations import public
                         with open(os.path.join(airbyte_dir, SSH_TUNNEL_SPEC), encoding="utf8") as f:
                             injected_props["tunnel_method"] = json.loads(f.read())
 
-                    files: List[Tuple[str, str]] = list(
+                    files: list[tuple[str, str]] = list(
                         itertools.chain.from_iterable(
                             [
                                 [(root, file) for file in files]

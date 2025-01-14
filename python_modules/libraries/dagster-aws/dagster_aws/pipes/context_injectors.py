@@ -2,8 +2,9 @@ import json
 import os
 import random
 import string
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING
 
 import boto3
 import dagster._check as check

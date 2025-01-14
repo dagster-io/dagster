@@ -9,15 +9,14 @@ date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-twilio
 docslink:
 partnerlink: https://www.twilio.com/
-logo: /integrations/Twilio.svg
 categories:
   - Alerting
 enabledBy:
 enables:
 tags: [dagster-supported, alerting]
+sidebar_custom_props:
+  logo: images/integrations/twilio.svg
 ---
-
-
 
 Use your Twilio `Account SID` and `Auth Token` to build Twilio tasks right into your Dagster pipeline.
 

@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 from dagster import (
     AssetKey,
@@ -10,6 +11,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental, public
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
 
 from dagster_dbt.asset_utils import (
@@ -519,6 +521,40 @@ class DagsterDbtTranslator:
         return (
             auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
         )
+
+    def get_partitions_def(
+        self, dbt_resource_props: Mapping[str, Any]
+    ) -> Optional[PartitionsDefinition]:
+        """[INTERNAL] A function that takes a dictionary representing properties of a dbt resource, and
+        returns the Dagster :py:class:`dagster.PartitionsDefinition` for that resource.
+
+        This method can be overridden to provide a custom PartitionsDefinition for a dbt resource.
+
+        Args:
+            dbt_resource_props (Mapping[str, Any]): A dictionary representing the dbt resource.
+
+        Returns:
+            Optional[PartitionsDefinition]: A Dagster partitions definition.
+
+        Examples:
+            Set a custom AutomationCondition for dbt resources with a specific tag:
+
+            .. code-block:: python
+
+                from typing import Any, Mapping
+
+                from dagster import DailyPartitionsDefinition
+                from dagster_dbt import DagsterDbtTranslator
+
+
+                class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+                    def get_partitions_def(self, dbt_resource_props: Mapping[str, Any]) -> Optional[PartitionsDefinition]:
+                        if "my_custom_tag" in dbt_resource_props.get("tags", []):
+                            return DailyPartitionsDefinition(start_date="2022-01-01")
+                        else:
+                            return None
+        """
+        return None
 
 
 @dataclass

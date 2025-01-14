@@ -1,21 +1,8 @@
 from collections import Counter
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
 from inspect import Parameter
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
@@ -58,7 +45,7 @@ from dagster._core.types.dagster_type import (
 
 def get_function_params_without_context_or_config_or_resources(
     fn: Callable[..., Any],
-) -> List[Parameter]:
+) -> list[Parameter]:
     params = get_function_params(fn)
     is_context_provided = len(params) > 0 and params[0].name in get_valid_name_permutations(
         "context"
@@ -75,13 +62,39 @@ def get_function_params_without_context_or_config_or_resources(
     return new_input_args
 
 
-def build_named_ins(
+def validate_can_coexist(asset_in: AssetIn, asset_dep: AssetDep) -> None:
+    """Validates that the asset_in and asset_dep can coexist peacefully on the same asset key.
+    If both asset_in and asset_dep are set on the same asset key, expect that _no_ properties
+    are set on AssetIn except for the key itself.
+    """
+    if (
+        asset_in.metadata
+        or asset_in.key_prefix
+        or asset_in.dagster_type != NoValueSentinel
+        or asset_in.partition_mapping is not None
+    ):
+        raise DagsterInvalidDefinitionError(
+            f"Asset key '{asset_dep.asset_key.to_user_string()}' is used as both an input (via AssetIn) and a dependency (via AssetDep). If an asset key is used as an input and also set as a dependency, the input should only define the relationship between the asset key and the input name, or optionally set the input_manager_key. Any other properties should either not be set, or should be set on the dependency."
+        )
+
+
+def build_and_validate_named_ins(
     fn: Callable[..., Any],
     asset_ins: Mapping[str, AssetIn],
-    deps: Optional[AbstractSet[AssetKey]],
+    deps: Optional[Iterable[AssetDep]],
 ) -> Mapping[AssetKey, "NamedIn"]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
-    deps = check.opt_set_param(deps, "deps", AssetKey)
+    deps_by_key = {dep.asset_key: dep for dep in deps} if deps else {}
+    ins_by_asset_key = {
+        asset_in.key if asset_in.key else AssetKey.from_coercible(input_name): asset_in
+        for input_name, asset_in in asset_ins.items()
+    }
+    shared_keys_between_ins_and_deps = set(ins_by_asset_key.keys()) & set(deps_by_key.keys())
+    if shared_keys_between_ins_and_deps:
+        for shared_key in shared_keys_between_ins_and_deps:
+            validate_can_coexist(ins_by_asset_key[shared_key], deps_by_key[shared_key])
+
+    deps = check.opt_iterable_param(deps, "deps", AssetDep)
 
     new_input_args = get_function_params_without_context_or_config_or_resources(fn)
 
@@ -103,7 +116,7 @@ def build_named_ins(
                     "of the arguments to the decorated function"
                 )
 
-    named_ins_by_asset_key: Dict[AssetKey, NamedIn] = {}
+    named_ins_by_asset_key: dict[AssetKey, NamedIn] = {}
     for input_name in all_input_names:
         asset_key = None
 
@@ -126,23 +139,19 @@ def build_named_ins(
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
-    for asset_key in deps:
-        if asset_key in named_ins_by_asset_key:
-            raise DagsterInvalidDefinitionError(
-                f"deps value {asset_key} also declared as input/AssetIn"
+    for dep in deps:
+        if dep.asset_key not in named_ins_by_asset_key:
+            named_ins_by_asset_key[dep.asset_key] = NamedIn(
+                stringify_asset_key_to_input_name(dep.asset_key),
+                In(cast(type, Nothing)),
             )
-            # mypy doesn't realize that Nothing is a valid type here
-        named_ins_by_asset_key[asset_key] = NamedIn(
-            stringify_asset_key_to_input_name(asset_key),
-            In(cast(type, Nothing)),
-        )
 
     return named_ins_by_asset_key
 
 
 def build_named_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "NamedOut"]:
     """Creates a mapping from AssetKey to (name of output, Out object)."""
-    named_outs_by_asset_key: Dict[AssetKey, NamedOut] = {}
+    named_outs_by_asset_key: dict[AssetKey, NamedOut] = {}
     for output_name, asset_out in asset_outs.items():
         out = asset_out.to_out()
         asset_key = asset_out.key or AssetKey(
@@ -155,8 +164,8 @@ def build_named_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "N
 
 
 def build_subsettable_named_ins(
-    asset_ins: Mapping[AssetKey, Tuple[str, In]],
-    asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+    asset_ins: Mapping[AssetKey, tuple[str, In]],
+    asset_outs: Mapping[AssetKey, tuple[str, Out]],
     internal_upstream_deps: Iterable[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, "NamedIn"]:
     """Creates a mapping from AssetKey to (name of input, In object) for any asset key that is not
@@ -187,7 +196,7 @@ class NamedOut(NamedTuple):
 
 
 def make_keys_by_output_name(
-    asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+    asset_outs: Mapping[AssetKey, tuple[str, Out]],
 ) -> Mapping[str, AssetKey]:
     return {output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()}
 
@@ -211,7 +220,7 @@ def compute_required_resource_keys(
 
 
 class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
-    asset_deps: Mapping[str, Set[AssetKey]]
+    asset_deps: Mapping[str, set[AssetKey]]
     asset_in_map: Mapping[str, AssetIn]
     asset_out_map: Mapping[str, AssetOut]
     assets_def_resource_defs: Mapping[str, ResourceDefinition]
@@ -246,7 +255,7 @@ class DecoratorAssetsDefinitionBuilder:
         *,
         named_ins_by_asset_key: Mapping[AssetKey, NamedIn],
         named_outs_by_asset_key: Mapping[AssetKey, NamedOut],
-        internal_deps: Mapping[AssetKey, Set[AssetKey]],
+        internal_deps: Mapping[AssetKey, set[AssetKey]],
         op_name: str,
         args: DecoratorAssetsDefinitionBuilderArgs,
         fn: Callable[..., Any],
@@ -348,25 +357,23 @@ class DecoratorAssetsDefinitionBuilder:
                 ),
             )
 
-        upstream_keys = set()
+        upstream_deps = {}
         for spec in asset_specs:
             for dep in spec.deps:
                 if dep.asset_key not in named_outs_by_asset_key:
-                    upstream_keys.add(dep.asset_key)
+                    upstream_deps[dep.asset_key] = dep
                 if dep.asset_key in named_outs_by_asset_key and dep.partition_mapping is not None:
                     # self-dependent asset also needs to be considered an upstream_key
-                    upstream_keys.add(dep.asset_key)
+                    upstream_deps[dep.asset_key] = dep
 
         # get which asset keys have inputs set
-        loaded_upstreams = build_named_ins(fn, asset_in_map, deps=set())
-        unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_keys}
-        if unexpected_upstreams:
-            raise DagsterInvalidDefinitionError(
-                f"Asset inputs {unexpected_upstreams} do not have dependencies on the passed"
-                " AssetSpec(s). Set the deps on the appropriate AssetSpec(s)."
-            )
-        remaining_upstream_keys = {key for key in upstream_keys if key not in loaded_upstreams}
-        named_ins_by_asset_key = build_named_ins(fn, asset_in_map, deps=remaining_upstream_keys)
+        named_ins_by_asset_key = build_and_validate_named_ins(
+            fn, asset_in_map, deps=upstream_deps.values()
+        )
+        # We expect that asset_ins are a subset of asset_deps. The reason we do not check this in
+        # `build_and_validate_named_ins` is because in other decorator pathways, we allow for argument-based
+        # dependencies which are not specified in deps (such as the asset decorator).
+        validate_named_ins_subset_of_deps(named_ins_by_asset_key, upstream_deps)
 
         internal_deps = {
             spec.key: {dep.asset_key for dep in spec.deps}
@@ -394,17 +401,17 @@ class DecoratorAssetsDefinitionBuilder:
         op_name: str,
         asset_in_map: Mapping[str, AssetIn],
         asset_out_map: Mapping[str, AssetOut],
-        asset_deps: Mapping[str, Set[AssetKey]],
+        asset_deps: Mapping[str, set[AssetKey]],
         upstream_asset_deps: Optional[Iterable[AssetDep]],
         passed_args: DecoratorAssetsDefinitionBuilderArgs,
     ):
         check.param_invariant(
             not passed_args.specs, "args", "This codepath for non-spec based create"
         )
-        named_ins_by_asset_key = build_named_ins(
+        named_ins_by_asset_key = build_and_validate_named_ins(
             fn,
             asset_in_map,
-            deps=({dep.asset_key for dep in upstream_asset_deps} if upstream_asset_deps else set()),
+            deps=upstream_asset_deps or set(),
         )
         named_outs_by_asset_key = build_named_outs(asset_out_map)
 
@@ -477,7 +484,7 @@ class DecoratorAssetsDefinitionBuilder:
         }
 
     @cached_property
-    def asset_keys(self) -> Set[AssetKey]:
+    def asset_keys(self) -> set[AssetKey]:
         return set(self.named_outs_by_asset_key.keys())
 
     @cached_property
@@ -499,7 +506,7 @@ class DecoratorAssetsDefinitionBuilder:
         }
 
     @cached_property
-    def overlapping_output_names(self) -> Set[str]:
+    def overlapping_output_names(self) -> set[str]:
         return set(self.outs_by_output_name.keys()) & set(self.check_outs_by_output_name.keys())
 
     @cached_property
@@ -560,7 +567,6 @@ class DecoratorAssetsDefinitionBuilder:
             keys_by_input_name=self.asset_keys_by_input_names,
             keys_by_output_name=self.asset_keys_by_output_name,
             node_def=self.create_op_definition(),
-            partitions_def=self.args.partitions_def,
             can_subset=self.args.can_subset,
             resource_defs=self.args.assets_def_resource_defs,
             backfill_policy=self.args.backfill_policy,
@@ -574,18 +580,61 @@ class DecoratorAssetsDefinitionBuilder:
 
     @cached_property
     def specs(self) -> Sequence[AssetSpec]:
-        specs = self.args.specs if self.args.specs else self._synthesize_specs()
-
-        if not self.group_name:
-            return specs
+        if self.args.specs:
+            specs = self.args.specs
+            self._validate_spec_partitions_defs(specs, self.args.partitions_def)
+        else:
+            specs = self._synthesize_specs()
 
         check.invariant(
-            all((spec.group_name is None or spec.group_name == self.group_name) for spec in specs),
+            not self.group_name
+            or all(
+                (spec.group_name is None or spec.group_name == self.group_name) for spec in specs
+            ),
             "Cannot set group_name parameter on multi_asset if one or more of the"
             " AssetSpecs/AssetOuts supplied to this multi_asset have a group_name defined.",
         )
 
-        return [spec.replace_attributes(group_name=self.group_name) for spec in specs]
+        if not self.group_name and not self.args.partitions_def:
+            return specs
+
+        return [
+            spec.replace_attributes(
+                group_name=spec.group_name or self.group_name,
+                partitions_def=spec.partitions_def or self.args.partitions_def,
+            )
+            for spec in specs
+        ]
+
+    def _validate_spec_partitions_defs(
+        self, specs: Sequence[AssetSpec], partitions_def: Optional[PartitionsDefinition]
+    ) -> Optional[PartitionsDefinition]:
+        any_spec_has_partitions_def = False
+        any_spec_has_no_partitions_def = False
+        if partitions_def is not None:
+            for spec in specs:
+                if spec.partitions_def is not None and spec.partitions_def != partitions_def:
+                    check.failed(
+                        f"AssetSpec for {spec.key.to_user_string()} has partitions_def "
+                        f"(type={type(spec.partitions_def)}) which is different than the "
+                        f"partitions_def provided to AssetsDefinition (type={type(partitions_def)}).",
+                    )
+
+                any_spec_has_partitions_def = (
+                    any_spec_has_partitions_def or spec.partitions_def is not None
+                )
+                any_spec_has_no_partitions_def = (
+                    any_spec_has_no_partitions_def or spec.partitions_def is None
+                )
+
+        if (
+            partitions_def is not None
+            and any_spec_has_partitions_def
+            and any_spec_has_no_partitions_def
+        ):
+            check.failed(
+                "If partitions_def is provided, then either all specs must have that PartitionsDefinition or none."
+            )
 
     def _synthesize_specs(self) -> Sequence[AssetSpec]:
         resolved_specs = []
@@ -610,7 +659,9 @@ class DecoratorAssetsDefinitionBuilder:
             else:
                 deps = input_deps
 
-            resolved_specs.append(asset_out.to_spec(key, deps=deps))
+            resolved_specs.append(
+                asset_out.to_spec(key, deps=deps, partitions_def=self.args.partitions_def)
+            )
 
         specs = resolved_specs
         return specs
@@ -653,3 +704,22 @@ def _validate_check_specs_target_relevant_asset_keys(
                 f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
                 f" {valid_asset_keys}"
             )
+
+
+def validate_named_ins_subset_of_deps(
+    named_ins_per_key: Mapping[AssetKey, NamedIn],
+    asset_deps_by_key: Mapping[AssetKey, AssetDep],
+) -> None:
+    """Validates that the asset_ins are a subset of the asset_deps. This is a common validation
+    that we need to do in multiple places, so we've factored it out into a helper function.
+    """
+    asset_dep_keys = set(asset_deps_by_key.keys())
+    asset_in_keys = set(named_ins_per_key.keys())
+
+    if asset_in_keys - asset_dep_keys:
+        invalid_asset_in_keys = asset_in_keys - asset_dep_keys
+        raise DagsterInvalidDefinitionError(
+            f"Invalid asset dependencies: `{invalid_asset_in_keys}` specified as AssetIns, but"
+            " are not specified as `AssetDep` objects on any constituent AssetSpec objects. Asset inputs must be associated with an"
+            " output produced by the asset."
+        )

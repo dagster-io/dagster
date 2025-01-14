@@ -1,13 +1,14 @@
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import graphene
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
 from dagster._core.remote_representation.handle import RepositoryHandle
 
 from dagster_graphql.implementation.fetch_assets import get_asset
 from dagster_graphql.implementation.utils import capture_error
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
@@ -30,7 +31,12 @@ class GrapheneAssetSelection(graphene.ObjectType):
         self._resolved_keys = None
 
     def resolve_assetSelectionString(self, _graphene_info) -> str:
-        return str(self._asset_selection)
+        return str(
+            self._asset_selection
+            & CodeLocationAssetSelection(
+                selected_code_location=self._repository_handle.code_location_origin.location_name
+            )
+        )
 
     def resolve_assetKeys(self, graphene_info: ResolveInfo):
         return [

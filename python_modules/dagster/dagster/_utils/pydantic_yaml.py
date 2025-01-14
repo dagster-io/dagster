@@ -1,10 +1,13 @@
-from typing import Sequence, Type, TypeVar
+import contextlib
+from collections.abc import Generator, Sequence
+from typing import Optional, TypeVar
 
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.source_position import (
     KeyPath,
+    SourcePositionTree,
     ValueAndSourcePositionTree,
     populate_source_position_and_key_paths,
 )
@@ -14,7 +17,7 @@ T = TypeVar("T", bound=BaseModel)
 
 
 def _parse_and_populate_model_with_annotated_errors(
-    cls: Type[T],
+    cls: type[T],
     obj_parse_root: ValueAndSourcePositionTree,
     obj_key_path_prefix: KeyPath,
 ) -> T:
@@ -59,7 +62,7 @@ def _parse_and_populate_model_with_annotated_errors(
     return model
 
 
-def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string>") -> T:
+def parse_yaml_file_to_pydantic(cls: type[T], src: str, filename: str = "<string>") -> T:
     """Parse the YAML source and create a Pydantic model instance from it.
 
     Attaches source position information to the `_source_position_and_key_path` attribute of the
@@ -86,8 +89,38 @@ def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string
     )
 
 
+@contextlib.contextmanager
+def enrich_validation_errors_with_source_position(
+    source_position_tree: SourcePositionTree, obj_key_path_prefix: KeyPath
+) -> Generator[None, None, None]:
+    err: Optional[ValidationError] = None
+    try:
+        yield
+    except ValidationError as e:
+        line_errors = []
+        for error in e.errors():
+            key_path_in_obj = list(error["loc"])
+            source_position = source_position_tree.lookup_nearest(key_path_in_obj)
+
+            file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
+            file_key_path_str = ".".join(str(part) for part in file_key_path)
+            line_errors.append(
+                {**error, "loc": [file_key_path_str + " at " + str(source_position)]}
+            )
+
+        err = ValidationError.from_exception_data(
+            title=e.title,
+            line_errors=line_errors,
+            input_type="json",
+            hide_input=False,
+        )
+    finally:
+        if err:
+            raise err from None
+
+
 def parse_yaml_file_to_pydantic_sequence(
-    cls: Type[T], src: str, filename: str = "<string>"
+    cls: type[T], src: str, filename: str = "<string>"
 ) -> Sequence[T]:
     """Parse the YAML source and create a list of Pydantic model instances from it.
 

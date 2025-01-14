@@ -17,9 +17,9 @@ import {
   AssetGraphQueryVersion,
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
-import {usePrefixedCacheKey} from '../app/AppProvider';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {indexedDBAsyncMemoize} from '../app/Util';
+import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
@@ -79,7 +79,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     const requestId = ++currentRequestRef.current;
     buildGraphData({
       nodes: queryItems,
-      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+      flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -93,7 +93,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
       });
   }, [options.loading, queryItems]);
 
-  return fullAssetGraphData;
+  return {fullAssetGraphData, loading: fetchResult.loading || options.loading};
 }
 
 export type GraphDataState = {
@@ -172,7 +172,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       opsQuery,
       kinds,
       hideEdgesToNodesOutsideQuery,
-      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+      flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {

@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import graphene
 from dagster import (
@@ -61,7 +62,6 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
 from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.backfill import GrapheneBackfillPolicy
@@ -73,6 +73,7 @@ from dagster_graphql.schema.dagster_types import (
     GrapheneRegularDagsterType,
     to_dagster_type,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import GrapheneAssetNotFoundError
 from dagster_graphql.schema.freshness_policy import (
     GrapheneAssetFreshnessInfo,
@@ -297,7 +298,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         non_null_list(GrapheneAssetStaleCause), partition=graphene.String()
     )
     staleCausesByPartition = graphene.Field(
-        graphene.List((non_null_list(GrapheneAssetStaleCause))),
+        graphene.List(non_null_list(GrapheneAssetStaleCause)),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
     )
     type = graphene.Field(GrapheneDagsterType)
@@ -324,7 +325,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         remote_node: RemoteAssetNode,
         stale_status_loader: Optional[StaleStatusLoader] = None,
         dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader] = None,
-        asset_graph_differ: Optional[AssetGraphDiffer] = None,
     ):
         from dagster_graphql.implementation.fetch_assets import get_unique_asset_id
 
@@ -343,11 +343,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._dynamic_partitions_loader = check.opt_inst_param(
             dynamic_partitions_loader, "dynamic_partitions_loader", CachingDynamicPartitionsLoader
         )
-        self._asset_graph_differ = check.opt_inst_param(
-            asset_graph_differ, "asset_graph_differ", AssetGraphDiffer
-        )
         self._remote_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
+        self._asset_graph_differ = None  # lazily loaded
 
         super().__init__(
             id=get_unique_asset_id(
@@ -387,8 +385,19 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return loader
 
-    @property
-    def asset_graph_differ(self) -> Optional[AssetGraphDiffer]:
+    def _get_asset_graph_differ(self, graphene_info: ResolveInfo) -> Optional[AssetGraphDiffer]:
+        if self._asset_graph_differ is not None:
+            return self._asset_graph_differ
+
+        base_deployment_context = graphene_info.context.get_base_deployment_context()
+
+        if base_deployment_context is None:
+            return None
+
+        self._asset_graph_differ = AssetGraphDiffer(
+            branch_asset_graph=graphene_info.context.asset_graph,
+            base_asset_graph=base_deployment_context.asset_graph,
+        )
         return self._asset_graph_differ
 
     def _job_selector(self) -> Optional[JobSelector]:
@@ -677,10 +686,11 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_changedReasons(
         self, graphene_info: ResolveInfo
     ) -> Sequence[Any]:  # Sequence[GrapheneAssetChangedReason]
-        if self.asset_graph_differ is None:
+        asset_graph_differ = self._get_asset_graph_differ(graphene_info)
+        if asset_graph_differ is None:
             # asset_graph_differ is None when not in a branch deployment
             return []
-        return self.asset_graph_differ.get_changes_for_asset(self._asset_node_snap.asset_key)
+        return asset_graph_differ.get_changes_for_asset(self._asset_node_snap.asset_key)
 
     def resolve_staleStatus(
         self, graphene_info: ResolveInfo, partition: Optional[str] = None
@@ -770,7 +780,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             None if version == NULL_DATA_VERSION else version.value for version in data_versions
         ]
 
-    def resolve_dependedBy(self, graphene_info: ResolveInfo) -> List[GrapheneAssetDependency]:
+    def resolve_dependedBy(self, graphene_info: ResolveInfo) -> list[GrapheneAssetDependency]:
         if not self._remote_node.child_keys:
             return []
 
@@ -839,7 +849,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_automationCondition(
         self, _graphene_info: ResolveInfo
-    ) -> Optional[GrapheneAutoMaterializePolicy]:
+    ) -> Optional[GrapheneAutomationCondition]:
         automation_condition = (
             self._asset_node_snap.automation_condition_snapshot
             or self._asset_node_snap.automation_condition

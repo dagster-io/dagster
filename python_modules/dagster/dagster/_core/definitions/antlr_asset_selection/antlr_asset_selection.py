@@ -19,6 +19,13 @@ class AntlrInputErrorListener(ErrorListener):
         raise Exception(f"Syntax error at line {line}, column {column}: {msg}")
 
 
+def parse_traversal_depth(optional_digits):
+    """Return an integer from DIGITS text if present, otherwise None (meaning infinite depth)."""
+    if optional_digits is None:
+        return None
+    return int(optional_digits.getText())
+
+
 class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def __init__(self, include_sources: bool):
         self.include_sources = include_sources
@@ -35,21 +42,29 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         self, ctx: AssetSelectionParser.UpAndDownTraversalExpressionContext
     ):
         selection: AssetSelection = self.visit(ctx.traversalAllowedExpr())
-        up_depth = self.visit(ctx.traversal(0))
-        down_depth = self.visit(ctx.traversal(1))
+        # upTraversal => optional DIGITS? PLUS
+        up_digits = ctx.upTraversal().DIGITS()
+        up_depth = parse_traversal_depth(up_digits)
+
+        # downTraversal => PLUS DIGITS?
+        down_digits = ctx.downTraversal().DIGITS()
+        down_depth = parse_traversal_depth(down_digits)
+
         return selection.upstream(depth=up_depth) | selection.downstream(depth=down_depth)
 
     def visitUpTraversalExpression(self, ctx: AssetSelectionParser.UpTraversalExpressionContext):
         selection: AssetSelection = self.visit(ctx.traversalAllowedExpr())
-        traversal_depth = self.visit(ctx.traversal())
-        return selection.upstream(depth=traversal_depth)
+        up_digits = ctx.upTraversal().DIGITS()
+        up_depth = parse_traversal_depth(up_digits)
+        return selection.upstream(depth=up_depth)
 
     def visitDownTraversalExpression(
         self, ctx: AssetSelectionParser.DownTraversalExpressionContext
     ):
         selection: AssetSelection = self.visit(ctx.traversalAllowedExpr())
-        traversal_depth = self.visit(ctx.traversal())
-        return selection.downstream(depth=traversal_depth)
+        down_digits = ctx.downTraversal().DIGITS()
+        down_depth = parse_traversal_depth(down_digits)
+        return selection.downstream(depth=down_depth)
 
     def visitNotExpression(self, ctx: AssetSelectionParser.NotExpressionContext):
         selection: AssetSelection = self.visit(ctx.expr())
@@ -84,13 +99,6 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     ):
         return self.visit(ctx.expr())
 
-    def visitTraversal(self, ctx: AssetSelectionParser.TraversalContext):
-        # Get traversal depth from a traversal context
-        if ctx.STAR():
-            return None  # Star means no depth limit
-        elif ctx.PLUS():
-            return len(ctx.PLUS())  # Depth is the count of '+'
-
     def visitFunctionName(self, ctx: AssetSelectionParser.FunctionNameContext):
         if ctx.SINKS():
             return "sinks"
@@ -108,7 +116,7 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
-        return AssetSelection.tag(key, value)
+        return AssetSelection.tag(key, value, include_sources=self.include_sources)
 
     def visitOwnerAttributeExpr(self, ctx: AssetSelectionParser.OwnerAttributeExprContext):
         owner = self.visit(ctx.value())
@@ -116,11 +124,11 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
 
     def visitGroupAttributeExpr(self, ctx: AssetSelectionParser.GroupAttributeExprContext):
         group = self.visit(ctx.value())
-        return AssetSelection.groups(group)
+        return AssetSelection.groups(group, include_sources=self.include_sources)
 
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         kind = self.visit(ctx.value())
-        return AssetSelection.tag(f"{KIND_PREFIX}{kind}", "")
+        return AssetSelection.tag(f"{KIND_PREFIX}{kind}", "", include_sources=self.include_sources)
 
     def visitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext

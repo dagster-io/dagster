@@ -18,7 +18,8 @@ returning a `Nothing` `Output`.
 """
 
 import warnings
-from typing import Sequence, cast
+from collections.abc import Sequence
+from typing import cast
 
 from dagster import (
     AssetKey,

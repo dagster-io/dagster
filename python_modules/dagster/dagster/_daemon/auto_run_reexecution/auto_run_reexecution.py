@@ -1,5 +1,7 @@
+import logging
 import sys
-from typing import Iterator, Optional, Sequence, cast
+from collections.abc import Iterator, Sequence
+from typing import Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
@@ -208,6 +210,7 @@ def retry_run(
 def consume_new_runs_for_automatic_reexecution(
     workspace_process_context: IWorkspaceProcessContext,
     run_records: Sequence[RunRecord],
+    logger: logging.Logger,
 ) -> Iterator[None]:
     """Check which runs should be retried, and retry them.
 
@@ -223,7 +226,11 @@ def consume_new_runs_for_automatic_reexecution(
         try:
             retry_run(run, workspace_process_context)
         except Exception:
-            error_info = DaemonErrorCapture.on_exception(exc_info=sys.exc_info())
+            error_info = DaemonErrorCapture.process_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message=f"Failed to retry run {run.run_id}",
+            )
             workspace_process_context.instance.report_engine_event(
                 "Failed to retry run",
                 run,

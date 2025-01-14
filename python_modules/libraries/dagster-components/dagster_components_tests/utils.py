@@ -1,8 +1,9 @@
 import textwrap
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import AbstractSet, Iterator, Optional
+from typing import AbstractSet, Optional  # noqa: UP035
 
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import pushd
@@ -10,12 +11,12 @@ from dagster_components.core.component import (
     Component,
     ComponentDeclNode,
     ComponentLoadContext,
-    ComponentRegistry,
+    ComponentTypeRegistry,
 )
 
 
-def registry() -> ComponentRegistry:
-    return ComponentRegistry.from_entry_point_discovery()
+def registry() -> ComponentTypeRegistry:
+    return ComponentTypeRegistry.from_entry_point_discovery()
 
 
 def script_load_context(decl_node: Optional[ComponentDeclNode] = None) -> ComponentLoadContext:

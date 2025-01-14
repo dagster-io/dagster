@@ -1,0 +1,12 @@
+type: dagster_components.sling_replication_collection
+
+params:
+  replications:
+    - path: ./replication.yaml
+      asset_attributes:
+        key: "foo/{{ stream_definition.config.meta.dagster.asset_key }}"
+  sling:
+    connections:
+      - name: DUCKDB
+        type: duckdb
+        instance: <PLACEHOLDER>

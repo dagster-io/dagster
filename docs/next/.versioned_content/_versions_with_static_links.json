@@ -610,5 +610,17 @@
   {
     "url": "https://release-1-9-5.dagster.dagster-docs.io/",
     "version": "1.9.5"
+  },
+  {
+    "url": "https://release-1-9-6.dagster.dagster-docs.io/",
+    "version": "1.9.6"
+  },
+  {
+    "url": "https://release-1-9-7.dagster.dagster-docs.io/",
+    "version": "1.9.7"
+  },
+  {
+    "url": "https://release-1-9-8.dagster.dagster-docs.io/",
+    "version": "1.9.8"
   }
 ]

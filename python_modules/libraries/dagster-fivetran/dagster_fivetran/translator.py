@@ -1,6 +1,7 @@
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, NamedTuple, Optional
 
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
@@ -221,7 +222,7 @@ class FivetranWorkspaceData:
         """Method that converts a `FivetranWorkspaceData` object
         to a collection of `FivetranConnectorTableProps` objects.
         """
-        data: List[FivetranConnectorTableProps] = []
+        data: list[FivetranConnectorTableProps] = []
 
         for connector in self.connectors_by_id.values():
             destination = self.destinations_by_id[connector.destination_id]

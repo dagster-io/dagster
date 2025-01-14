@@ -1,25 +1,11 @@
 import copy
 import logging
 import warnings
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from datetime import datetime
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -173,19 +159,19 @@ class ScheduleEvaluationContext:
     """
 
     __slots__ = [
-        "_instance_ref",
-        "_scheduled_execution_time",
+        "_cm_scope_entered",
         "_exit_stack",
         "_instance",
+        "_instance_ref",
         "_log_key",
         "_logger",
+        "_repository_def",
         "_repository_name",
         "_resource_defs",
-        "_schedule_name",
-        "_resources_cm",
         "_resources",
-        "_cm_scope_entered",
-        "_repository_def",
+        "_resources_cm",
+        "_schedule_name",
+        "_scheduled_execution_time",
     ]
 
     def __init__(
@@ -457,7 +443,7 @@ class ScheduleExecutionData(
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
-        return super(ScheduleExecutionData, cls).__new__(
+        return super().__new__(
             cls,
             run_requests=run_requests,
             skip_message=skip_message,
@@ -466,8 +452,8 @@ class ScheduleExecutionData(
 
 
 def validate_and_get_schedule_resource_dict(
-    resources: Resources, schedule_name: str, required_resource_keys: Set[str]
-) -> Dict[str, Any]:
+    resources: Resources, schedule_name: str, required_resource_keys: set[str]
+) -> dict[str, Any]:
     """Validates that the context has all the required resources and returns a dictionary of
     resource key to resource object.
     """
@@ -589,7 +575,7 @@ class ScheduleDefinition(IHasInternalInit):
         description: Optional[str] = None,
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
         target: Optional[
             Union[
                 "CoercibleToAssetSelection",
@@ -772,7 +758,7 @@ class ScheduleDefinition(IHasInternalInit):
             default_status, "default_status", DefaultScheduleStatus
         )
 
-        resource_arg_names: Set[str] = (
+        resource_arg_names: set[str] = (
             {arg.name for arg in get_resource_args(self._execution_fn.decorated_fn)}
             if isinstance(self._execution_fn, DecoratedScheduleFunction)
             else set()
@@ -810,7 +796,7 @@ class ScheduleDefinition(IHasInternalInit):
         description: Optional[str],
         job: Optional[ExecutableDefinition],
         default_status: DefaultScheduleStatus,
-        required_resource_keys: Optional[Set[str]],
+        required_resource_keys: Optional[set[str]],
         target: Optional[
             Union[
                 "CoercibleToAssetSelection",
@@ -902,7 +888,7 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> set[str]:
         """Set[str]: The set of keys for resources that must be provided to this schedule."""
         return self._required_resource_keys
 
@@ -947,7 +933,7 @@ class ScheduleDefinition(IHasInternalInit):
         from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 
         check.inst_param(context, "context", ScheduleEvaluationContext)
-        execution_fn: Callable[..., "ScheduleEvaluationFunctionReturn"]
+        execution_fn: Callable[..., ScheduleEvaluationFunctionReturn]
         if isinstance(self._execution_fn, DecoratedScheduleFunction):
             execution_fn = self._execution_fn.wrapped_fn
         else:
@@ -960,7 +946,7 @@ class ScheduleDefinition(IHasInternalInit):
 
         skip_message: Optional[str] = None
 
-        run_requests: List[RunRequest] = []
+        run_requests: list[RunRequest] = []
         if not result or result == [None]:
             run_requests = []
             skip_message = "Schedule function returned an empty result"
@@ -975,7 +961,7 @@ class ScheduleDefinition(IHasInternalInit):
         else:
             # NOTE: mypy is not correctly reading this cast-- not sure why
             # (pyright reads it fine). Hence the type-ignores below.
-            result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))
+            result = cast(list[RunRequest], check.is_list(result, of_type=RunRequest))
             check.invariant(
                 not any(not request.run_key for request in result),
                 "Schedules that return multiple RunRequests must specify a run_key in each"

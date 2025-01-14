@@ -52,7 +52,7 @@
 -e python_modules/libraries/dagster-deltalake/
 -e python_modules/libraries/dagster-deltalake-pandas/
 -e python_modules/libraries/dagster-deltalake-polars/
--e python_modules/libraries/dagster-dg/
+-e python_modules/libraries/dagster-dg[test]
 -e python_modules/libraries/dagster-docker/
 -e python_modules/libraries/dagster-duckdb/
 -e python_modules/libraries/dagster-duckdb-pandas/
@@ -107,7 +107,7 @@ wordcloud  # (quickstart-*)
 apache-airflow>2.7
 pendulum<3
 types-sqlalchemy==1.4.53.34
-
+fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 
 ### EXAMPLES
 

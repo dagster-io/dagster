@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Optional, cast
 
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
@@ -22,7 +23,7 @@ DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def build_duckdb_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
 ) -> IOManagerDefinition:
     """Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
@@ -224,7 +225,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
     """
 
     database: str = Field(description="Path to the DuckDB database.")
-    connection_config: Dict[str, Any] = Field(
+    connection_config: dict[str, Any] = Field(
         description=(
             "DuckDB connection configuration options. See"
             " https://duckdb.org/docs/sql/configuration.html"
@@ -240,7 +241,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return None
 
     def create_io_manager(self, context) -> DbIOManager:

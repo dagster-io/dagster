@@ -1,5 +1,6 @@
 import sys
-from typing import Mapping, Optional, Union
+from collections.abc import Mapping
+from typing import Optional, Union
 
 import dagster._check as check
 import graphene

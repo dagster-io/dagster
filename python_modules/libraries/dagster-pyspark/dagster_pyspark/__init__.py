@@ -13,8 +13,8 @@ DagsterLibraryRegistry.register("dagster-pyspark", __version__)
 
 __all__ = [
     "DataFrame",
-    "pyspark_resource",
-    "lazy_pyspark_resource",
-    "PySparkResource",
     "LazyPySparkResource",
+    "PySparkResource",
+    "lazy_pyspark_resource",
+    "pyspark_resource",
 ]

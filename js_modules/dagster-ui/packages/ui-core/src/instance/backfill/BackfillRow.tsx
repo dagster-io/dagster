@@ -10,7 +10,7 @@ import {BackfillTableFragment} from './types/BackfillTable.types';
 import {QueryResult, gql, useQuery} from '../../apollo-client';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {RunStatus} from '../../graphql/types';
+import {PartitionBackfill, RunStatus} from '../../graphql/types';
 import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
 import {PipelineReference, PipelineTag} from '../../pipelines/PipelineReference';
 import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
@@ -27,7 +27,7 @@ interface BackfillRowProps {
   backfill: BackfillTableFragment;
   allPartitions?: string[];
   showBackfillTarget: boolean;
-  onShowPartitionsRequested: (backfill: BackfillTableFragment) => void;
+  onShowPartitionsRequested: (backfillId: string) => void;
   refetch: () => void;
 }
 
@@ -125,7 +125,7 @@ export const BackfillRowContent = ({
         <BackfillRequestedRange
           backfill={backfill}
           allPartitions={allPartitions}
-          onExpand={() => onShowPartitionsRequested(backfill)}
+          onExpand={() => onShowPartitionsRequested(backfill.id)}
         />
       </td>
       <td style={{width: 160}}>
@@ -147,10 +147,20 @@ export const BackfillTarget = ({
   backfill,
   repoAddress,
   useTags,
+  onShowPartitions,
 }: {
-  backfill: Pick<BackfillTableFragment, 'assetSelection' | 'partitionSet' | 'partitionSetName'>;
+  backfill: Pick<
+    BackfillTableFragment,
+    | 'id'
+    | 'partitionNames'
+    | 'assetSelection'
+    | 'partitionSet'
+    | 'partitionSetName'
+    | 'numPartitions'
+  >;
   repoAddress: RepoAddress | null;
   useTags: boolean;
+  onShowPartitions?: () => void;
 }) => {
   const repo = useRepository(repoAddress);
   const {assetSelection, partitionSet, partitionSetName} = backfill;
@@ -240,11 +250,21 @@ export const BackfillTarget = ({
     return null;
   };
 
+  const buildPartitionTag = () => {
+    if (!useTags || !onShowPartitions) {
+      return null;
+    }
+    return <BackfillRequestedRange backfill={backfill} onExpand={onShowPartitions} />;
+  };
+
   const repoLink = buildRepoLink();
   const pipelineOrAssets = buildPipelineOrAssets();
   return (
     <Box flex={{direction: 'column', gap: 8, alignItems: 'start'}}>
-      {buildHeader()}
+      <Box flex={{direction: 'row', gap: 4}}>
+        {buildPartitionTag()}
+        {buildHeader()}
+      </Box>
       {(pipelineOrAssets || repoLink) && (
         <Box flex={{direction: 'column', gap: 4}} style={{fontSize: '12px'}}>
           {repoLink && useTags ? <Tag>{repoLink}</Tag> : repoLink}
@@ -260,7 +280,7 @@ const BackfillRequestedRange = ({
   backfill,
   onExpand,
 }: {
-  backfill: BackfillTableFragment;
+  backfill: Pick<PartitionBackfill, 'numPartitions' | 'partitionNames'>;
   allPartitions?: string[];
   onExpand: () => void;
 }) => {
@@ -294,13 +314,13 @@ const BackfillRequestedRange = ({
 };
 
 const RequestedPartitionStatusBar = ({all, requested}: {all: string[]; requested: string[]}) => {
-  const health: PartitionStatusHealthSourceOps = React.useMemo(
-    () => ({
+  const health: PartitionStatusHealthSourceOps = React.useMemo(() => {
+    const requestedSet = new Set(requested);
+    return {
       runStatusForPartitionKey: (key: string) =>
-        requested && requested.includes(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
-    }),
-    [requested],
-  );
+        requestedSet.has(key) ? RunStatus.QUEUED : RunStatus.NOT_STARTED,
+    };
+  }, [requested]);
   return <PartitionStatus small hideStatusTooltip partitionNames={all} health={health} />;
 };
 
@@ -311,7 +331,7 @@ const TagButton = styled.button`
   padding: 0;
   margin: 0;
 
-  &:focus {
+  :focus {
     outline: none;
   }
 `;

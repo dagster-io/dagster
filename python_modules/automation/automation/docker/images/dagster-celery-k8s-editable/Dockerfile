@@ -13,4 +13,5 @@ RUN python -m uv pip install \
     -e dagster-k8s \
     -e dagster-celery[flower,redis,kubernetes] \
     -e dagster-celery-k8s \
-    -e dagster-webserver
+    -e dagster-webserver \
+    grpcio==1.57.0 # https://github.com/grpc/grpc/issues/38327

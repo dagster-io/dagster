@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
 
 import duckdb
 import pandas as pd
@@ -11,7 +10,7 @@ class LoadCsvToDuckDbArgs:
     table_name: str
     csv_path: Path
     duckdb_path: Path
-    names: List[str]
+    names: list[str]
     duckdb_schema: str
     duckdb_database_name: str
 

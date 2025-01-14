@@ -1,8 +1,9 @@
 import collections.abc
 import operator
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Sequence
 from functools import reduce
-from typing import AbstractSet, Iterable, Optional, Sequence, Union, cast
+from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -896,11 +897,11 @@ class DownstreamAssetSelection(ChainedAssetSelection):
 
     def to_selection_str(self) -> str:
         if self.depth is None:
-            base = f"{self.child.operand_to_selection_str()}*"
+            base = f"{self.child.operand_to_selection_str()}+"
         elif self.depth == 0:
             base = self.child.operand_to_selection_str()
         else:
-            base = f"{self.child.operand_to_selection_str()}{'+' * self.depth}"
+            base = f"{self.child.operand_to_selection_str()}{'+'}{self.depth}"
 
         if self.include_self:
             return base
@@ -1024,7 +1025,7 @@ class KeysAssetSelection(AssetSelection):
                     # Arbitrarily limit to 10 similar names to avoid a huge error message
                     subset_similar_names = similar_names[:10]
                     similar_to_string = ", ".join(
-                        (similar.to_string() for similar in subset_similar_names)
+                        similar.to_string() for similar in subset_similar_names
                     )
                     suggestions += (
                         f"\n\nFor selected asset {invalid_key.to_string()}, did you mean one of "
@@ -1140,11 +1141,11 @@ class UpstreamAssetSelection(ChainedAssetSelection):
 
     def to_selection_str(self) -> str:
         if self.depth is None:
-            base = f"*{self.child.operand_to_selection_str()}"
+            base = f"+{self.child.operand_to_selection_str()}"
         elif self.depth == 0:
             base = self.child.operand_to_selection_str()
         else:
-            base = f"{'+' * self.depth}{self.child.operand_to_selection_str()}"
+            base = f"{self.depth}{'+'}{self.child.operand_to_selection_str()}"
 
         if self.include_self:
             return base

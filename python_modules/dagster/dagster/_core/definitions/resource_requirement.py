@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 
 class ResourceRequirement(ABC):
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.definitions.resource_definition import ResourceDefinition
 
         return ResourceDefinition
@@ -102,7 +103,7 @@ class InputManagerRequirement(ResourceKeyRequirement):
     root_input: bool
 
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.storage.io_manager import IInputManagerDefinition
 
         return IInputManagerDefinition
@@ -122,7 +123,7 @@ class ExternalAssetIOManagerRequirement(ResourceKeyRequirement):
     asset_key: Optional[str]
 
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition
@@ -140,7 +141,7 @@ class SourceAssetIOManagerRequirement(ResourceKeyRequirement):
     asset_key: Optional[str]
 
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition
@@ -159,7 +160,7 @@ class OutputManagerRequirement(ResourceKeyRequirement):
     output_name: str
 
     @property
-    def expected_type(self) -> Type:
+    def expected_type(self) -> type:
         from dagster._core.storage.io_manager import IOManagerDefinition
 
         return IOManagerDefinition

@@ -5,6 +5,7 @@ import {
   AndExpressionContext,
   AttributeExpressionContext,
   CodeLocationAttributeExprContext,
+  DownTraversalContext,
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
   FunctionNameContext,
@@ -19,8 +20,8 @@ import {
   StartContext,
   TagAttributeExprContext,
   TraversalAllowedExpressionContext,
-  TraversalContext,
   UpAndDownTraversalExpressionContext,
+  UpTraversalContext,
   UpTraversalExpressionContext,
   ValueContext,
 } from './generated/AssetSelectionParser';
@@ -29,14 +30,12 @@ import {GraphTraverser} from '../app/GraphQueryImpl';
 import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 
-export function getTraversalDepth(ctx: TraversalContext): number {
-  if (ctx.STAR()) {
-    return Number.MAX_SAFE_INTEGER;
+export function getTraversalDepth(ctx: UpTraversalContext | DownTraversalContext): number {
+  const digits = ctx.DIGITS();
+  if (digits) {
+    return parseInt(ctx.text);
   }
-  if (ctx.PLUS()) {
-    return ctx.PLUS().length;
-  }
-  throw new Error('Invalid traversal');
+  return Number.MAX_SAFE_INTEGER;
 }
 
 export function getFunctionName(ctx: FunctionNameContext): string {
@@ -88,8 +87,8 @@ export class AntlrAssetSelectionVisitor
 
   visitUpAndDownTraversalExpression(ctx: UpAndDownTraversalExpressionContext) {
     const selection = this.visit(ctx.traversalAllowedExpr());
-    const up_depth: number = getTraversalDepth(ctx.traversal(0));
-    const down_depth: number = getTraversalDepth(ctx.traversal(1));
+    const up_depth: number = getTraversalDepth(ctx.upTraversal());
+    const down_depth: number = getTraversalDepth(ctx.downTraversal());
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, up_depth).forEach((i) => selection.add(i));
@@ -100,7 +99,7 @@ export class AntlrAssetSelectionVisitor
 
   visitUpTraversalExpression(ctx: UpTraversalExpressionContext) {
     const selection = this.visit(ctx.traversalAllowedExpr());
-    const traversal_depth: number = getTraversalDepth(ctx.traversal());
+    const traversal_depth: number = getTraversalDepth(ctx.upTraversal());
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchUpstream(item, traversal_depth).forEach((i) => selection.add(i));
@@ -110,7 +109,7 @@ export class AntlrAssetSelectionVisitor
 
   visitDownTraversalExpression(ctx: DownTraversalExpressionContext) {
     const selection = this.visit(ctx.traversalAllowedExpr());
-    const traversal_depth: number = getTraversalDepth(ctx.traversal());
+    const traversal_depth: number = getTraversalDepth(ctx.downTraversal());
     const selection_copy = new Set(selection);
     for (const item of selection_copy) {
       this.traverser.fetchDownstream(item, traversal_depth).forEach((i) => selection.add(i));

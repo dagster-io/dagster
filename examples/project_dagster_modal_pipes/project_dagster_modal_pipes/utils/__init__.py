@@ -83,9 +83,9 @@ def file_size(len_bytes, suffix="B") -> str:
     """
     for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
         if abs(len_bytes) < 1024.0:
-            return "%3.1f%s%s" % (len_bytes, unit, suffix)
+            return f"{len_bytes:3.1f}{unit}{suffix}"
         len_bytes /= 1024.0
-    return "%.1f%s%s" % (len_bytes, "Yi", suffix)
+    return "{:.1f}{}{}".format(len_bytes, "Yi", suffix)
 
 
 def get_entry_audio_url(entry) -> str:

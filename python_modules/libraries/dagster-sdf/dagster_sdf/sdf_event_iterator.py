@@ -1,5 +1,6 @@
 from collections import abc
-from typing import TYPE_CHECKING, Generic, Iterator, Union
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, Generic, Union
 
 from dagster import AssetCheckResult, AssetMaterialization, AssetObservation, Output
 from typing_extensions import TypeVar

@@ -2,9 +2,10 @@ import os
 import shutil
 import uuid
 from argparse import ArgumentParser, Namespace
+from collections.abc import Iterable, Mapping, Sequence
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Final, Optional, Union, cast
 
 import yaml
 from dagster import (
@@ -16,6 +17,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import pushd
@@ -28,22 +30,18 @@ from dbt.flags import get_flags, set_from_args
 from dbt.version import __version__ as dbt_version
 from packaging import version
 from pydantic import Field, model_validator, validator
-from typing_extensions import Final
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
-    dagster_name_fn,
+    DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
     get_manifest_and_translator_from_dbt_assets,
 )
 from dagster_dbt.core.dbt_cli_invocation import DbtCliInvocation, _get_dbt_target_path
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
-from dagster_dbt.utils import (
-    ASSET_RESOURCE_TYPES,
-    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-)
+from dagster_dbt.utils import get_dbt_resource_props_by_dbt_unique_id_from_manifest
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
 if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
@@ -68,7 +66,7 @@ DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     """Checks whether any package in the passed yaml file is the Dagster dbt package."""
     packages = cast(
-        List[Dict[str, Any]], yaml.safe_load(packages_file.read_text()).get("packages", [])
+        list[dict[str, Any]], yaml.safe_load(packages_file.read_text()).get("packages", [])
     )
     return any(package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE for package in packages)
 
@@ -159,7 +157,7 @@ class DbtCliResource(ConfigurableResource):
             " information."
         ),
     )
-    global_config_flags: List[str] = Field(
+    global_config_flags: list[str] = Field(
         default=[],
         description=(
             "A list of global flags configuration to pass to the dbt CLI invocation. See"
@@ -207,7 +205,7 @@ class DbtCliResource(ConfigurableResource):
     def __init__(
         self,
         project_dir: Union[str, Path, DbtProject],
-        global_config_flags: Optional[List[str]] = None,
+        global_config_flags: Optional[list[str]] = None,
         profiles_dir: Optional[Union[str, Path]] = None,
         profile: Optional[str] = None,
         target: Optional[str] = None,
@@ -314,7 +312,7 @@ class DbtCliResource(ConfigurableResource):
         return dbt_executable
 
     @model_validator(mode="before")
-    def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_dbt_version(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate that the dbt version is supported."""
         if version.parse(dbt_version) < version.parse("1.7.0"):
             raise ValueError(
@@ -623,7 +621,7 @@ class DbtCliResource(ConfigurableResource):
             **({"DBT_PROJECT_DIR": self.project_dir} if self.project_dir else {}),
         }
 
-        selection_args: List[str] = []
+        selection_args: list[str] = []
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
         if context and assets_def is not None:
             manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
@@ -648,7 +646,7 @@ class DbtCliResource(ConfigurableResource):
 
         # TODO: verify that args does not have any selection flags if the context and manifest
         # are passed to this function.
-        profile_args: List[str] = []
+        profile_args: list[str] = []
         if self.profile:
             profile_args = ["--profile", self.profile]
 
@@ -706,7 +704,7 @@ class DbtCliResource(ConfigurableResource):
             )
 
 
-def parse_cli_vars_from_args(args: Sequence[str]) -> Dict[str, Any]:
+def parse_cli_vars_from_args(args: Sequence[str]) -> dict[str, Any]:
     parser = ArgumentParser(description="Parse cli vars from dbt command")
     parser.add_argument("--vars")
     var_args, _ = parser.parse_known_args(args)
@@ -722,7 +720,7 @@ def _get_subset_selection_for_context(
     exclude: Optional[str],
     dagster_dbt_translator: DagsterDbtTranslator,
     current_dbt_indirect_selection_env: Optional[str],
-) -> Tuple[List[str], Optional[str]]:
+) -> tuple[list[str], Optional[str]]:
     """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
     resources in a subsetted execution context.
 
@@ -778,11 +776,9 @@ def _get_subset_selection_for_context(
     # Explicitly select a dbt resource by its path. Selecting a resource by path is more terse
     # than selecting it by its fully qualified name.
     # https://docs.getdbt.com/reference/node-selection/methods#the-path-method
-    dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
-    selected_dbt_non_test_resources = get_dbt_resource_names_for_output_names(
-        output_names=context.op_execution_context.selected_output_names,
-        dbt_resource_props_by_output_name=dbt_resource_props_by_output_name,
-        dagster_dbt_translator=dagster_dbt_translator,
+    dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
+    selected_asset_resources = get_dbt_resource_names_for_asset_keys(
+        dagster_dbt_translator, dbt_nodes, assets_def, context.selected_asset_keys
     )
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
@@ -813,11 +809,9 @@ def _get_subset_selection_for_context(
         # (all checks disabled, only one check and no assets) it's not a concern.
         # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
         selected_dbt_resources = [
-            *selected_dbt_non_test_resources,
-            *get_dbt_test_names_for_asset_checks(
-                check_keys=context.selected_asset_check_keys,
-                dbt_resource_props_by_test_name=get_dbt_resource_props_by_test_name(manifest),
-                dagster_dbt_translator=dagster_dbt_translator,
+            *selected_asset_resources,
+            *get_dbt_test_names_for_check_keys(
+                dagster_dbt_translator, dbt_nodes, assets_def, context.selected_asset_check_keys
             ),
         ]
         indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
@@ -831,16 +825,14 @@ def _get_subset_selection_for_context(
     elif checks_on_non_selected_assets:
         # explicitly select the tests that won't be run via indirect selection
         selected_dbt_resources = [
-            *selected_dbt_non_test_resources,
-            *get_dbt_test_names_for_asset_checks(
-                check_keys=checks_on_non_selected_assets,
-                dbt_resource_props_by_test_name=get_dbt_resource_props_by_test_name(manifest),
-                dagster_dbt_translator=dagster_dbt_translator,
+            *selected_asset_resources,
+            *get_dbt_test_names_for_check_keys(
+                dagster_dbt_translator, dbt_nodes, assets_def, checks_on_non_selected_assets
             ),
         ]
         indirect_selection_override = None
     else:
-        selected_dbt_resources = selected_dbt_non_test_resources
+        selected_dbt_resources = selected_asset_resources
         indirect_selection_override = None
 
     logger.info(
@@ -855,43 +847,20 @@ def _get_subset_selection_for_context(
     return union_selected_dbt_resources, indirect_selection_override
 
 
-def get_dbt_resource_props_by_output_name(
-    manifest: Mapping[str, Any],
-) -> Mapping[str, Mapping[str, Any]]:
-    node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
-
-    return {
-        dagster_name_fn(node): node
-        for node in node_info_by_dbt_unique_id.values()
-        if node["resource_type"] in ASSET_RESOURCE_TYPES
-    }
-
-
-def get_dbt_resource_props_by_test_name(
-    manifest: Mapping[str, Any],
-) -> Mapping[str, Mapping[str, Any]]:
-    return {
-        dbt_resource_props["name"]: dbt_resource_props
-        for unique_id, dbt_resource_props in manifest["nodes"].items()
-        if unique_id.startswith("test")
-    }
-
-
-def get_dbt_resource_names_for_output_names(
-    output_names: Iterable[str],
-    dbt_resource_props_by_output_name: Mapping[str, Any],
-    dagster_dbt_translator: DagsterDbtTranslator,
+def get_dbt_resource_names_for_asset_keys(
+    translator: DagsterDbtTranslator,
+    dbt_nodes: Mapping[str, Any],
+    assets_def: AssetsDefinition,
+    asset_keys: Iterable[AssetKey],
 ) -> Sequence[str]:
     dbt_resource_props_gen = (
-        dbt_resource_props_by_output_name[output_name]
-        for output_name in output_names
-        # output names corresponding to asset checks won't be in this dict
-        if output_name in dbt_resource_props_by_output_name
+        dbt_nodes[assets_def.get_asset_spec(key).metadata[DAGSTER_DBT_UNIQUE_ID_METADATA_KEY]]
+        for key in asset_keys
     )
 
     # Explicitly select a dbt resource by its file name.
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-method
-    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+    if translator.settings.enable_dbt_selection_by_name:
         return [
             Path(dbt_resource_props["original_file_path"]).stem
             for dbt_resource_props in dbt_resource_props_gen
@@ -902,19 +871,25 @@ def get_dbt_resource_names_for_output_names(
     return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
 
 
-def get_dbt_test_names_for_asset_checks(
+def get_dbt_test_names_for_check_keys(
+    translator: DagsterDbtTranslator,
+    dbt_nodes: Mapping[str, Any],
+    assets_def: AssetsDefinition,
     check_keys: Iterable[AssetCheckKey],
-    dbt_resource_props_by_test_name: Mapping[str, Any],
-    dagster_dbt_translator: DagsterDbtTranslator,
 ) -> Sequence[str]:
+    dbt_resource_props_gen = (
+        dbt_nodes[
+            (assets_def.get_spec_for_check_key(key).metadata or {})[
+                DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
+            ]
+        ]
+        for key in check_keys
+    )
     # Explicitly select a dbt test by its test name.
     # https://docs.getdbt.com/reference/node-selection/test-selection-examples#more-complex-selection.
-    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+    if translator.settings.enable_dbt_selection_by_name:
         return [asset_check_key.name for asset_check_key in check_keys]
 
     # Explictly select a dbt test by its fully qualified name (FQN).
     # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-    return [
-        ".".join(dbt_resource_props_by_test_name[asset_check_key.name]["fqn"])
-        for asset_check_key in check_keys
-    ]
+    return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]

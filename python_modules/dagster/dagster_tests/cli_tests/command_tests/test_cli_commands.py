@@ -3,7 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import ContextManager, NoReturn, Optional, Tuple
+from typing import ContextManager, NoReturn, Optional  # noqa: UP035
 from unittest import mock
 
 import pytest
@@ -422,7 +422,7 @@ def sensor_command_contexts():
     ]
 
 
-BackfillCommandTestContext: TypeAlias = ContextManager[Tuple[ClickArgMapping, DagsterInstance]]
+BackfillCommandTestContext: TypeAlias = ContextManager[tuple[ClickArgMapping, DagsterInstance]]
 
 
 # This iterates over a list of contextmanagers that can be used to contruct

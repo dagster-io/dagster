@@ -1,11 +1,23 @@
 from dagster_components.core.component import (
     Component as Component,
-    ComponentGenerateRequest as ComponentGenerateRequest,
     ComponentLoadContext as ComponentLoadContext,
-    ComponentRegistry as ComponentRegistry,
-    component as component,
+    ComponentTypeRegistry as ComponentTypeRegistry,
+    component_type as component_type,
 )
 from dagster_components.core.component_defs_builder import (
-    build_defs_from_toplevel_components_folder as build_defs_from_toplevel_components_folder,
+    build_component_defs as build_component_defs,
 )
+from dagster_components.core.component_generator import (
+    ComponentGenerateRequest as ComponentGenerateRequest,
+    ComponentGenerator as ComponentGenerator,
+    ComponentGeneratorUnavailableReason as ComponentGeneratorUnavailableReason,
+)
+from dagster_components.core.schema.base import ComponentSchemaBaseModel as ComponentSchemaBaseModel
+from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
+from dagster_components.core.schema.objects import (
+    AssetAttributesModel as AssetAttributesModel,
+    AssetSpecTransformModel as AssetSpecTransformModel,
+    OpSpecBaseModel as OpSpecBaseModel,
+)
+from dagster_components.core.schema.resolver import TemplatedValueResolver as TemplatedValueResolver
 from dagster_components.version import __version__ as __version__

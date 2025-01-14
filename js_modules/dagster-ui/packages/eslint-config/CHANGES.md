@@ -1,3 +1,11 @@
+## 1.0.19 (January 7, 2025)
+
+- Added custom rule to autocorrect `shared` paths to avoid internal build failures.
+- Added rule to lint against `window.open`.
+- Changed `react-hooks/exhaustive-deps` rule to be an error instead of a warning.
+- Changed `no-unused-vars` rule to be an error instead of a warning.
+- Fix tests.
+
 ## 1.0.18 (October 15, 2024)
 
 - Dependency upgrades

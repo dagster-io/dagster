@@ -2,7 +2,7 @@ import logging
 import sys
 import time
 from enum import Enum
-from typing import Any, Callable, List, Optional, Set, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import kubernetes.client
 import kubernetes.client.rest
@@ -52,7 +52,7 @@ class DagsterK8sAPIRetryLimitExceeded(Exception):
         max_retries = check.int_param(kwargs.pop("max_retries"), "max_retries")
 
         check.invariant(original_exc_info[0] is not None)
-        super(DagsterK8sAPIRetryLimitExceeded, self).__init__(
+        super().__init__(
             f"Retry limit of {max_retries} exceeded: " + args[0],
             *args[1:],
             **kwargs,
@@ -72,7 +72,7 @@ class DagsterK8sUnrecoverableAPIError(Exception):
         original_exc_info = check.tuple_param(kwargs.pop("original_exc_info"), "original_exc_info")
 
         check.invariant(original_exc_info[0] is not None)
-        super(DagsterK8sUnrecoverableAPIError, self).__init__(args[0], *args[1:], **kwargs)
+        super().__init__(args[0], *args[1:], **kwargs)
 
         self.k8s_api_exception = check.opt_inst_param(
             k8s_api_exception, "k8s_api_exception", Exception
@@ -468,7 +468,7 @@ class DagsterKubernetesClient:
             try:
                 job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
             except kubernetes.client.rest.ApiException as e:
-                if e.reason == "Not Found":
+                if e.status == 404:
                     return None
                 else:
                     raise
@@ -518,14 +518,14 @@ class DagsterKubernetesClient:
                 for error in errors:
                     if not (
                         isinstance(error, kubernetes.client.rest.ApiException)
-                        and error.reason == "Not Found"
+                        and error.status == 404
                     ):
                         raise error
                 raise errors[0]
 
             return True
         except kubernetes.client.rest.ApiException as e:
-            if e.reason == "Not Found":
+            if e.status == 404:
                 return False
             raise e
 
@@ -573,7 +573,7 @@ class DagsterKubernetesClient:
         wait_timeout: float = DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         start_time: Any = None,
-        ignore_containers: Optional[Set] = None,
+        ignore_containers: Optional[set] = None,
     ) -> None:
         """Wait for a pod to launch and be running, or wait for termination (useful for job pods).
 
@@ -847,7 +847,7 @@ class DagsterKubernetesClient:
         self,
         pod_name: str,
         namespace: str,
-    ) -> List[Any]:
+    ) -> list[Any]:
         # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/EventsV1Event.md
         field_selector = f"involvedObject.name={pod_name}"
         return self.core_api.list_namespaced_event(namespace, field_selector=field_selector).items
@@ -916,7 +916,7 @@ class DagsterKubernetesClient:
     ) -> str:
         if pod is None:
             pods = self.core_api.list_namespaced_pod(
-                namespace=namespace, field_selector="metadata.name=%s" % pod_name
+                namespace=namespace, field_selector=f"metadata.name={pod_name}"
             ).items
             pod = pods[0] if pods else None
 

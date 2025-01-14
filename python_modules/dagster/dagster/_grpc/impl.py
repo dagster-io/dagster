@@ -3,18 +3,9 @@
 import os
 import sys
 import threading
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Generator,
-    Iterator,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
@@ -27,7 +18,7 @@ from dagster._core.definitions.partition import (
     PartitionedConfig,
     PartitionsDefinition,
 )
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorEvaluationContext
 from dagster._core.errors import (
@@ -274,6 +265,7 @@ def start_run_in_subprocess(
 
 def get_external_pipeline_subset_result(
     repo_def: RepositoryDefinition,
+    recon_repo: ReconstructableRepository,
     job_name: str,
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
@@ -290,7 +282,11 @@ def get_external_pipeline_subset_result(
         job_data_snap = JobDataSnap.from_job_def(
             definition, include_parent_snapshot=include_parent_snapshot
         )
-        return RemoteJobSubsetResult(success=True, job_data_snap=job_data_snap)
+        return RemoteJobSubsetResult(
+            success=True,
+            job_data_snap=job_data_snap,
+            repository_python_origin=recon_repo.get_python_origin(),
+        )
     except Exception:
         return RemoteJobSubsetResult(
             success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
@@ -411,7 +407,7 @@ def _partitions_def_contains_dynamic_partitions_def(partitions_def: PartitionsDe
 def _get_job_partitions_and_config_for_partition_set_name(
     repo_def: RepositoryDefinition,
     partition_set_name: str,
-) -> Tuple[JobDefinition, PartitionsDefinition, PartitionedConfig]:
+) -> tuple[JobDefinition, PartitionsDefinition, PartitionedConfig]:
     job_name = job_name_for_partition_set_snap_name(partition_set_name)
     job_def = repo_def.get_job(job_name)
     assert job_def.partitions_def and job_def.partitioned_config, (
@@ -530,42 +526,28 @@ def get_partition_set_execution_param_data(
     ) = _get_job_partitions_and_config_for_partition_set_name(repo_def, partition_set_name)
 
     try:
-        with _instance_from_ref_for_dynamic_partitions(instance_ref, partitions_def) as instance:
-            with user_code_error_boundary(
-                PartitionExecutionError,
-                lambda: (
-                    "Error occurred during the partition generation for partitioned config on job"
-                    f" '{job_def.name}'"
-                ),
-            ):
-                all_partition_keys = partitions_def.get_partition_keys(
-                    dynamic_partitions_store=instance
-                )
-                partition_keys = [key for key in all_partition_keys if key in partition_names]
+        partition_data = []
+        for key in partition_names:
 
-            partition_data = []
-            for key in partition_keys:
-
-                def _error_message_fn(partition_name: str):
-                    return lambda: (
-                        "Error occurred during the partition config and tag generation for"
-                        f" '{partition_name}' in partitioned config on job '{job_def.name}'"
-                    )
-
-                with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):
-                    run_config = partitioned_config.get_run_config_for_partition_key(key)
-                    tags = partitioned_config.get_tags_for_partition_key(key, job_name=job_def.name)
-
-                partition_data.append(
-                    PartitionExecutionParamSnap(
-                        name=key,
-                        tags=tags,
-                        run_config=run_config,
-                    )
+            def _error_message_fn(partition_name: str):
+                return lambda: (
+                    "Error occurred during the partition config and tag generation for"
+                    f" '{partition_name}' in partitioned config on job '{job_def.name}'"
                 )
 
-            return PartitionSetExecutionParamSnap(partition_data=partition_data)
+            with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):
+                run_config = partitioned_config.get_run_config_for_partition_key(key)
+                tags = partitioned_config.get_tags_for_partition_key(key, job_name=job_def.name)
 
+            partition_data.append(
+                PartitionExecutionParamSnap(
+                    name=key,
+                    tags=tags,
+                    run_config=run_config,
+                )
+            )
+
+        return PartitionSetExecutionParamSnap(partition_data=partition_data)
     except Exception:
         return PartitionExecutionErrorSnap(
             error=serializable_error_info_from_exc_info(sys.exc_info())

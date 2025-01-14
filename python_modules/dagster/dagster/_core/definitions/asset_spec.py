@@ -1,16 +1,13 @@
+from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from functools import cached_property
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Iterable,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Set,
     Union,
     overload,
 )
@@ -172,7 +169,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
-        kinds: Optional[Set[str]] = None,
+        kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         **kwargs,
     ):
@@ -240,7 +237,7 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
-        kinds: Optional[Set[str]],
+        kinds: Optional[set[str]],
         partitions_def: Optional[PartitionsDefinition],
         **kwargs,
     ) -> "AssetSpec":
@@ -278,7 +275,7 @@ class AssetSpec(
         )
 
     @cached_property
-    def kinds(self) -> Set[str]:
+    def kinds(self) -> set[str]:
         return {tag[len(KIND_PREFIX) :] for tag in self.tags if tag.startswith(KIND_PREFIX)}
 
     @public
@@ -311,8 +308,9 @@ class AssetSpec(
         automation_condition: Optional[AutomationCondition] = ...,
         owners: Optional[Sequence[str]] = ...,
         tags: Optional[Mapping[str, str]] = ...,
-        kinds: Optional[Set[str]] = ...,
+        kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
+        freshness_policy: Optional[FreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -347,7 +345,7 @@ class AssetSpec(
         metadata: Mapping[str, Any] = ...,
         owners: Sequence[str] = ...,
         tags: Mapping[str, str] = ...,
-        kinds: Set[str] = ...,
+        kinds: set[str] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes merged with the current attributes.
 

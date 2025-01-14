@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Optional, cast
 
 import boto3
 from dagster import (
@@ -282,7 +283,7 @@ class EcsStepHandler(StepHandler):
 
         return run_task_kwargs
 
-    def _get_task_overrides(self, step_tags: Mapping[str, str]) -> Dict[str, Any]:
+    def _get_task_overrides(self, step_tags: Mapping[str, str]) -> dict[str, Any]:
         overrides = {**self._task_overrides}
 
         cpu = step_tags.get("ecs/cpu", self._cpu)
@@ -317,11 +318,11 @@ class EcsStepHandler(StepHandler):
         else:
             retry_count = 0
 
-        return "%s-%d" % (step_key, retry_count)
+        return "%s-%d" % (step_key, retry_count)  # noqa: UP031
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
-            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+            list[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]

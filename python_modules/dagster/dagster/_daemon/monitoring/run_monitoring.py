@@ -1,7 +1,8 @@
 import logging
 import sys
 import time
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 from dagster import (
     DagsterInstance,
@@ -200,7 +201,7 @@ def execute_run_monitoring_iteration(
             else:
                 check.invariant(False, f"Unexpected run status: {run_record.dagster_run.status}")
         except Exception:
-            yield DaemonErrorCapture.on_exception(
+            yield DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=logger,
                 log_message=f"Hit error while monitoring run {run_record.dagster_run.run_id}",

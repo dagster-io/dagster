@@ -9,15 +9,14 @@ date: 2024-08-20
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-shell
 docslink:
 partnerlink:
-logo: /integrations/Shell.svg
 categories:
   - Compute
 enabledBy:
 enables:
 tags: [dagster-supported, compute]
+sidebar_custom_props:
+  logo: images/integrations/shell.svg
 ---
-
-
 
 Dagster comes with a native `PipesSubprocessClient` resource that enables you to launch shell commands directly from Dagster assets and ops. This integration allows you to pass parameters to external shell scripts while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated external execution. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
 

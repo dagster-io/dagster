@@ -922,15 +922,19 @@
     "children": [
       {
         "title": "Airbyte",
-        "path": "/integrations/airbyte",
+        "path": "/integrations/airbyte/airbyte",
         "children": [
           {
             "title": "Airbyte & Dagster",
-            "path": "/integrations/airbyte"
+            "path": "/integrations/airbyte/airbyte"
           },
           {
             "title": "Airbyte Cloud & Dagster",
-            "path": "/integrations/airbyte-cloud"
+            "path": "/integrations/airbyte/airbyte-cloud"
+          },
+          {
+            "title": "Airbyte Cloud & Dagster (Legacy)",
+            "path": "/integrations/airbyte/airbyte-cloud-legacy"
           }
         ]
       },
@@ -1021,10 +1025,6 @@
             ]
           }
         ]
-      },
-      {
-        "title": "Airflow",
-        "path": "/integrations/airflow"
       },
       {
         "title": "Databricks",
@@ -1128,8 +1128,12 @@
       },
       {
         "title": "Fivetran",
-        "path": "/integrations/fivetran/fivetran",
+        "path": "/integrations/fivetran",
         "children": [
+          {
+            "title": "Fivetran",
+            "path": "/integrations/fivetran/fivetran"
+          },
           {
             "title": "Fivetran (Legacy)",
             "path": "/integrations/fivetran/fivetran-legacy"
@@ -1331,20 +1335,6 @@
         "isNotDynamic": true
       },
       {
-        "title": "Migrating to Dagster",
-        "path": "/guides/migrations",
-        "children": [
-          {
-            "title": "Learning Dagster from Airflow",
-            "path": "/integrations/airflow/from-airflow-to-dagster"
-          },
-          {
-            "title": "Migrating from Airflow",
-            "path": "/guides/migrations/migrating-airflow-to-dagster"
-          }
-        ]
-      },
-      {
         "title": "Best practices",
         "children": [
           {
@@ -1529,7 +1519,7 @@
             "path": "/_apidocs/libraries/dagster-pipes"
           },
           {
-            "title": "Airlift (dagster-airlift)",
+            "title": "Airflow (dagster-airlift)",
             "path": "/_apidocs/libraries/dagster-airlift"
           },
           {

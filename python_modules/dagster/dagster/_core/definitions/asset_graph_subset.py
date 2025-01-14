@@ -1,19 +1,8 @@
 import operator
 from collections import defaultdict
+from collections.abc import Iterable, Mapping
 from datetime import datetime
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Set,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
@@ -269,6 +258,10 @@ class AssetGraphSubset(NamedTuple):
         )
 
     @classmethod
+    def empty(cls) -> "AssetGraphSubset":
+        return AssetGraphSubset({}, set())
+
+    @classmethod
     def from_entity_subsets(
         cls, entity_subsets: Iterable[EntitySubset[AssetKey]]
     ) -> "AssetGraphSubset":
@@ -333,7 +326,7 @@ class AssetGraphSubset(NamedTuple):
         partitions_def_class_names_by_asset_key = serialized_dict.get(
             "partitions_def_class_names_by_asset_key", {}
         )
-        partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
+        partitions_subsets_by_asset_key: dict[AssetKey, PartitionsSubset] = {}
         for key, value in serialized_dict["partitions_subsets_by_asset_key"].items():
             asset_key = AssetKey.from_user_string(key)
 
@@ -374,7 +367,7 @@ class AssetGraphSubset(NamedTuple):
         non_partitioned_asset_keys = {
             asset_key
             for key in serialized_dict["non_partitioned_asset_keys"]
-            if asset_graph.has((asset_key := AssetKey.from_user_string(key)))
+            if asset_graph.has(asset_key := AssetKey.from_user_string(key))
         }
 
         return AssetGraphSubset(
@@ -404,8 +397,8 @@ class AssetGraphSubset(NamedTuple):
         dynamic_partitions_store: DynamicPartitionsStore,
         current_time: datetime,
     ) -> "AssetGraphSubset":
-        partitions_subsets_by_asset_key: Dict[AssetKey, PartitionsSubset] = {}
-        non_partitioned_asset_keys: Set[AssetKey] = set()
+        partitions_subsets_by_asset_key: dict[AssetKey, PartitionsSubset] = {}
+        non_partitioned_asset_keys: set[AssetKey] = set()
 
         for asset_key in asset_keys:
             partitions_def = asset_graph.get(asset_key).partitions_def

@@ -1,31 +1,18 @@
 import json
 import logging
 import os
+import sys
 import time
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_selection import KeysAssetSelection
 from dagster._core.definitions.automation_tick_evaluation_context import (
-    build_run_requests_from_asset_partitions,
     build_run_requests_with_backfill_policies,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -98,7 +85,7 @@ class PartitionedAssetBackfillStatus(
         num_targeted_partitions: int,
         partitions_counts_by_status: Mapping[AssetBackfillStatus, int],
     ):
-        return super(PartitionedAssetBackfillStatus, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(asset_key, "asset_key", AssetKey),
             check.int_param(num_targeted_partitions, "num_targeted_partitions"),
@@ -118,7 +105,7 @@ class UnpartitionedAssetBackfillStatus(
     )
 ):
     def __new__(cls, asset_key: AssetKey, asset_backfill_status: Optional[AssetBackfillStatus]):
-        return super(UnpartitionedAssetBackfillStatus, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(asset_key, "asset_key", AssetKey),
             check.opt_inst_param(
@@ -325,7 +312,7 @@ class AssetBackfillData(NamedTuple):
 
         Orders keys in the same topological level alphabetically.
         """
-        nodes: List[BaseAssetNode] = [asset_graph.get(key) for key in self.target_subset.asset_keys]
+        nodes: list[BaseAssetNode] = [asset_graph.get(key) for key in self.target_subset.asset_keys]
         return [
             item
             for items_by_level in toposort({node.key: node.parent_keys for node in nodes})
@@ -734,6 +721,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[None]:
     from dagster._core.execution.backfill import BulkActionStatus
+    from dagster._daemon.utils import DaemonErrorCapture
 
     run_requests = asset_backfill_iteration_result.run_requests
 
@@ -771,8 +759,10 @@ def _submit_runs_and_update_backfill_in_chunks(
                 logger,
             )
         except Exception:
-            logger.exception(
-                "Error while submitting run - updating the backfill data before re-raising"
+            DaemonErrorCapture.process_exception(
+                sys.exc_info(),
+                logger=logger,
+                log_message="Error while submitting run - updating the backfill data before re-raising",
             )
             # Write the runs that we submitted before hitting an error
             _write_updated_backfill_data(
@@ -1416,7 +1406,7 @@ def execute_asset_backfill_iteration_inner(
     This is a generator so that we can return control to the daemon and let it heartbeat during
     expensive operations.
     """
-    initial_candidates: Set[AssetKeyPartitionKey] = set()
+    initial_candidates: set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
         logger.info(
@@ -1533,37 +1523,11 @@ def execute_asset_backfill_iteration_inner(
             f"The following assets were considered for materialization but not requested:\n\n{not_requested_str}"
         )
 
-    # check if all assets have backfill policies if any of them do, otherwise, raise error
-    asset_backfill_policies = [
-        asset_graph.get(asset_key).backfill_policy
-        for asset_key in {
-            asset_partition.asset_key for asset_partition in asset_partitions_to_request
-        }
-    ]
-    all_assets_have_backfill_policies = all(
-        backfill_policy is not None for backfill_policy in asset_backfill_policies
+    run_requests = build_run_requests_with_backfill_policies(
+        asset_partitions=asset_partitions_to_request,
+        asset_graph=asset_graph,
+        dynamic_partitions_store=instance_queryer,
     )
-    if all_assets_have_backfill_policies:
-        run_requests = build_run_requests_with_backfill_policies(
-            asset_partitions=asset_partitions_to_request,
-            asset_graph=asset_graph,
-            dynamic_partitions_store=instance_queryer,
-        )
-    else:
-        if not all(backfill_policy is None for backfill_policy in asset_backfill_policies):
-            # if some assets have backfill policies, but not all of them, raise error
-            raise DagsterBackfillFailedError(
-                "Either all assets must have backfill policies or none of them must have backfill"
-                " policies. To backfill these assets together, either add backfill policies to all"
-                " assets, or remove backfill policies from all assets."
-            )
-        # When any of the assets do not have backfill policies, we fall back to the default behavior of
-        # backfilling them partition by partition.
-        run_requests = build_run_requests_from_asset_partitions(
-            asset_partitions=asset_partitions_to_request,
-            asset_graph=asset_graph,
-            run_tags={},
-        )
 
     if request_roots:
         check.invariant(
@@ -1595,7 +1559,7 @@ def can_run_with_parent(
     asset_graph: RemoteWorkspaceAssetGraph,
     target_subset: AssetGraphSubset,
     asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Returns if a given candidate can be materialized in the same run as a given parent on
     this tick, and the reason it cannot be materialized, if applicable.
     """
@@ -1612,8 +1576,7 @@ def can_run_with_parent(
     # checks if there is a simple partition mapping between the parent and the child
     has_identity_partition_mapping = (
         # both unpartitioned
-        not candidate_node.is_partitioned
-        and not parent_node.is_partitioned
+        (not candidate_node.is_partitioned and not parent_node.is_partitioned)
         # normal identity partition mapping
         or isinstance(partition_mapping, IdentityPartitionMapping)
         # for assets with the same time partitions definition, a non-offset partition
@@ -1697,7 +1660,7 @@ def should_backfill_atomic_asset_partitions_unit(
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
     current_time: datetime,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """Args:
     candidates_unit: A set of asset partitions that must all be materialized if any is
         materialized.
@@ -1738,7 +1701,7 @@ def should_backfill_atomic_asset_partitions_unit(
                 f" {parent_partitions_result.required_but_nonexistent_parents_partitions}"
             )
 
-        asset_partitions_to_request_map: Dict[AssetKey, Set[Optional[str]]] = defaultdict(set)
+        asset_partitions_to_request_map: dict[AssetKey, set[Optional[str]]] = defaultdict(set)
         for asset_partition in asset_partitions_to_request:
             asset_partitions_to_request_map[asset_partition.asset_key].add(
                 asset_partition.partition_key
@@ -1785,7 +1748,7 @@ def _get_failed_asset_partitions(
         )
     )
 
-    result: List[AssetKeyPartitionKey] = []
+    result: list[AssetKeyPartitionKey] = []
 
     for run in runs:
         planned_asset_keys = instance_queryer.get_planned_materializations_for_run(

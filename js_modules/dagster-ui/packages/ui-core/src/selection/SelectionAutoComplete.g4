@@ -24,17 +24,21 @@ expr:
 
 // Allowed expressions within traversal contexts
 traversalAllowedExpr:
-	attributeName colonToken attributeValue postAttributeValueWhitespace	# AttributeExpression
-	| functionName parenthesizedExpr										# FunctionCallExpression
-	| parenthesizedExpr														# TraversalAllowedParenthesizedExpression
-	| incompleteExpr														# IncompleteExpression;
+	attributeName colonToken attributeValue (
+		EQUAL attributeValue
+	)? postAttributeValueWhitespace		# AttributeExpression
+	| functionName parenthesizedExpr	# FunctionCallExpression
+	| parenthesizedExpr					# TraversalAllowedParenthesizedExpression
+	| incompleteExpr					# IncompleteExpression;
 
 parenthesizedExpr:
 	leftParenToken postLogicalOperatorWhitespace expr rightParenToken postExpressionWhitespace #
 		ParenthesizedExpression;
 
 incompleteExpr:
-	attributeName colonToken attributeValueWhitespace			# IncompleteAttributeExpressionMissingValue
+	attributeName colonToken attributeValueWhitespace							# IncompleteAttributeExpressionMissingValue
+	| attributeName colonToken attributeValue EQUAL attributeValueWhitespace	#
+		IncompleteAttributeExpressionMissingSecondValue
 	| functionName expressionLessParenthesizedExpr				# ExpressionlessFunctionExpression
 	| functionName leftParenToken postLogicalOperatorWhitespace	#
 		UnclosedExpressionlessFunctionExpression
@@ -50,12 +54,13 @@ expressionLessParenthesizedExpr:
 		ExpressionlessParenthesizedExpression;
 
 upTraversalExpr:
-	traversal postUpwardTraversalWhitespace # UpTraversal;
+	upTraversalToken postUpwardTraversalWhitespace # UpTraversal;
 
 downTraversalExpr:
-	traversal postDownwardTraversalWhitespace # DownTraversal;
+	downTraversalToken postDownwardTraversalWhitespace # DownTraversal;
 
-traversal: STAR | PLUS+;
+upTraversalToken: DIGITS? PLUS;
+downTraversalToken: PLUS DIGITS?;
 
 // Attribute and function names (to be validated externally)
 attributeName: IDENTIFIER;
@@ -107,17 +112,19 @@ NOT: 'not';
 STAR: '*';
 PLUS: '+';
 
+DIGITS: [0-9]+;
+
 COLON: ':';
 
 LPAREN: '(';
 RPAREN: ')';
 
-EQUAL: '=';
-
 // Tokens for strings
 QUOTED_STRING: '"' (~["\\\r\n])* '"';
-INCOMPLETE_LEFT_QUOTED_STRING: '"' (~["\\\r\n():])*;
-INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()])* '"';
+INCOMPLETE_LEFT_QUOTED_STRING: '"' (~["\\\r\n():=])*;
+INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()=])* '"';
+
+EQUAL: '=';
 
 // Identifiers (attributes and functions)
 IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;

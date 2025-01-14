@@ -4,7 +4,8 @@ import re
 import sys
 import tempfile
 import time
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import pytest
 from dagster import (

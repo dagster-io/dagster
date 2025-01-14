@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import docker
 import docker.errors
