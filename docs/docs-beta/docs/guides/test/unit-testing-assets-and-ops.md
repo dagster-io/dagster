@@ -1,6 +1,6 @@
 ---
 title: "Unit testing assets and ops"
-sidebar_position: 300
+sidebar_position: 400
 ---
 
 Unit testing is essential for ensuring that computations function as intended. In the context of data pipelines, this can be particularly challenging. However, Dagster streamlines the process by enabling direct invocation of computations with specified input values and mocked resources, making it easier to verify that data transformations behave as expected.
