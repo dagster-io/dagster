@@ -1122,7 +1122,7 @@
           },
           {
             "title": "Sling & Dagster",
-            "path": "/integrations/embedded-elt/sling"
+            "path": "/integrations/sling"
           }
         ]
       },
