@@ -1,3 +1,7 @@
+"""Sample local components for testing validation. Paired with test cases
+in integration_tests/components/validation.
+"""
+
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_components import Component, component_type
 from dagster_components.core.component import ComponentLoadContext

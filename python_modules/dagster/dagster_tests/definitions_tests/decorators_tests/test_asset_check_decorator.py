@@ -163,13 +163,38 @@ def test_asset_check_additional_ins() -> None:
     def my_check(asset1: int, asset2: int) -> AssetCheckResult:
         return AssetCheckResult(passed=asset1 == 5 and asset2 == 4)
 
+    assert my_check.keys_by_input_name == {
+        "asset1": AssetKey("asset1"),
+        "asset2": AssetKey("asset2"),
+    }
+
     @asset_check(asset=asset1, additional_ins={"asset2": AssetIn(key=asset2.key)})
     def my_check2(asset2: int) -> AssetCheckResult:
         return AssetCheckResult(passed=asset2 == 4)
 
+    assert my_check2.keys_by_input_name == {
+        "asset1": AssetKey("asset1"),
+        "asset2": AssetKey("asset2"),
+    }
+
     @asset_check(asset=asset1, additional_ins={"asset2": AssetIn(key=asset2.key)})
     def my_check3(context, asset2: int) -> AssetCheckResult:
         return AssetCheckResult(passed=asset2 == 4)
+
+    assert my_check3.keys_by_input_name == {
+        "asset1": AssetKey("asset1"),
+        "asset2": AssetKey("asset2"),
+    }
+
+    # If the input name matches the asset key, then the asset in can be empty.
+    @asset_check(asset=asset1, additional_ins={"asset2": AssetIn()})
+    def my_check4(asset2: int) -> AssetCheckResult:
+        return AssetCheckResult(passed=asset2 == 4)
+
+    assert my_check4.keys_by_input_name == {
+        "asset1": AssetKey("asset1"),
+        "asset2": AssetKey("asset2"),
+    }
 
     # Error bc asset2 is in additional_ins but not in the function signature
     with pytest.raises(DagsterInvalidDefinitionError):
