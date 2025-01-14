@@ -288,6 +288,8 @@ with open_dagster_pipes(
     )
 ```
 
+Note: The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](/concepts/dagster-pipes/subprocess/reference#passing-rich-metadata-to-dagster).
+
 Above we see that <PyObject object="open_dagster_pipes" module="dagster_pipes"/> takes three parameters:
 
 - `params_loader`: A params loader responsible for loading the bootstrap payload injected into the external process at launch. The standard approach is to inject the bootstrap payload into predetermined environment variables that the <PyObject object="PipesEnvVarParamsLoader" module="dagster_pipes" /> knows how to read. However, a different bootstrap parameter loader can be substituted in environments where it is not possible to modify environment variables.
