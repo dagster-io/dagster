@@ -1,7 +1,9 @@
 import asyncio
 from collections.abc import Sequence
+from typing import Optional, Union
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -9,7 +11,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._record import record
+from dagster._record import copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
@@ -61,6 +63,27 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
             operands=[child for child in self.operands if child != condition]
         )
 
+    @public
+    def replace(
+        self,
+        old: Union[AutomationCondition, str],
+        new: Optional[AutomationCondition],
+    ) -> "AndAutomationCondition":
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(self, operands=[child.replace(old, new) for child in self.operands])
+        )
+
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")
 @record
@@ -103,6 +126,27 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
         return AutomationResult(context, true_subset, child_results=child_results)
 
+    @public
+    def replace(
+        self,
+        old: Union[AutomationCondition, str],
+        new: Optional[AutomationCondition],
+    ) -> "OrAutomationCondition":
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(self, operands=[child.replace(old, new) for child in self.operands])
+        )
+
 
 @whitelist_for_serdes(storage_name="NotAssetCondition")
 @record
@@ -132,3 +176,24 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         true_subset = context.candidate_subset.compute_difference(child_result.true_subset)
 
         return AutomationResult(context, true_subset, child_results=[child_result])
+
+    @public
+    def replace(
+        self,
+        old: Union[AutomationCondition, str],
+        new: Optional[AutomationCondition],
+    ) -> "NotAutomationCondition":
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(self, operand=self.operand.replace(old, new))
+        )

@@ -2,7 +2,7 @@ import datetime
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, Optional
+from typing import TYPE_CHECKING, Generic, Optional, Union
 
 from typing_extensions import Self
 
@@ -252,6 +252,23 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
                     | AutomationCondition.initial_evaluation()
                 ).with_label("handled")
             )
+
+    @public
+    def replace(
+        self,
+        old: Union["AutomationCondition", str],
+        new: "AutomationCondition",
+    ) -> "AutomationCondition":
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return new if old in [self, self.get_label()] else self
 
     @public
     @staticmethod
