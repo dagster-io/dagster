@@ -41,33 +41,37 @@ LoadableDagsterDef = Union[
     UnresolvedAssetJobDefinition,
     UnresolvedPartitionedAssetScheduleDefinition,
 ]
+ALL_LOADABLE_TYPES: tuple[type] = get_args(LoadableDagsterDef)
 
 
 class ModuleScopedDagsterDefs:
-    def __init__(
-        self,
-        objects_per_module: Mapping[str, Sequence[LoadableDagsterDef]],
-        allow_spec_collisions: bool,
-    ):
+    def __init__(self, objects_per_module: Mapping[str, Sequence[LoadableDagsterDef]]):
         self.objects_per_module = objects_per_module
-        self.allow_spec_collisions = allow_spec_collisions
         self._do_collision_detection()
 
     @classmethod
     def from_modules(
-        cls, modules: Iterable[ModuleType], allow_spec_collisions: bool = False
+        cls,
+        modules: Iterable[ModuleType],
+        types_to_load: Optional[tuple[type]] = None,
     ) -> "ModuleScopedDagsterDefs":
+        # Ensure that the types_to_load are all valid types.
+        if types_to_load:
+            for type_to_load in types_to_load:
+                if type_to_load not in ALL_LOADABLE_TYPES:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid type {type_to_load} provided in types_to_load. Must be one of {ALL_LOADABLE_TYPES}."
+                    )
         return cls(
             {
                 module.__name__: list(
                     find_objects_in_module_of_types(
                         module,
-                        get_args(LoadableDagsterDef),
+                        types_to_load or ALL_LOADABLE_TYPES,
                     )
                 )
                 for module in modules
             },
-            allow_spec_collisions,
         )
 
     @cached_property
@@ -140,21 +144,13 @@ class ModuleScopedDagsterDefs:
         # Collision detection on module-scoped asset objects. This does not include CacheableAssetsDefinitions, which don't have their keys defined until runtime.
         for key, asset_objects in self.asset_objects_by_key.items():
             # In certain cases, we allow asset specs to collide because we know we aren't loading them.
-            asset_objects_to_check = [
-                asset_object
-                for asset_object in asset_objects
-                if (not isinstance(asset_object, AssetSpec) if self.allow_spec_collisions else True)
-            ]
             # If there is more than one asset_object in the list for a given key, and the objects do not refer to the same asset_object in memory, we have a collision.
             num_distinct_objects_for_key = len(
-                set(id(asset_object) for asset_object in asset_objects_to_check)
+                set(id(asset_object) for asset_object in asset_objects)
             )
-            if len(asset_objects_to_check) > 1 and num_distinct_objects_for_key > 1:
+            if len(asset_objects) > 1 and num_distinct_objects_for_key > 1:
                 asset_objects_str = ", ".join(
-                    set(
-                        self.module_name_by_id[id(asset_object)]
-                        for asset_object in asset_objects_to_check
-                    )
+                    set(self.module_name_by_id[id(asset_object)] for asset_object in asset_objects)
                 )
                 raise DagsterInvalidDefinitionError(
                     f"Asset key {key.to_user_string()} is defined multiple times. Definitions found in modules: {asset_objects_str}."
@@ -236,9 +232,11 @@ class DagsterObjectsList:
         return [*self.assets_defs_and_specs, *self.checks_defs]
 
     @cached_property
-    def source_assets(self) -> Sequence[SourceAsset]:
+    def source_assets(self) -> Sequence[Union[SourceAsset, AssetSpec]]:
         return [
-            dagster_def for dagster_def in self.loaded_defs if isinstance(dagster_def, SourceAsset)
+            dagster_def
+            for dagster_def in self.loaded_defs
+            if isinstance(dagster_def, (SourceAsset, AssetSpec))
         ]
 
     @cached_property
@@ -309,10 +307,10 @@ class DagsterObjectsList:
         for dagster_def in self.loaded_defs:
             if isinstance(dagster_def, CacheableAssetsDefinition):
                 result_list.append(dagster_def.with_prefix_for_all(key_prefix))
-            elif isinstance(dagster_def, (AssetsDefinition, AssetSpec)):
+            elif isinstance(dagster_def, AssetsDefinition):
                 result_list.append(replace_keys_in_asset(dagster_def, key_replacements))
             else:
-                # We don't replace the key for SourceAssets, or of course for non-asset objects.
+                # We don't replace the key for SourceAssets or AssetSpec objects (which can be thought of as the SourceAsset, or of course for non-asset objects.
                 result_list.append(dagster_def)
 
         return DagsterObjectsList(result_list)
