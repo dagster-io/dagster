@@ -8,6 +8,7 @@ Dagster can detect hanging runs and restart crashed [run workers](/deployment/ov
 - Running the Dagster Daemon
 - Enabling run monitoring in the Dagster Instance:
 
+{/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_run_monitoring endbefore=end_run_monitoring
 # Opt in to run monitoring
 run_monitoring:
@@ -19,13 +20,11 @@ run_monitoring:
   poll_interval_seconds: 120
 ```
 
-<Note>
-  In Dagster+ Run Monitoring is always enabled and can be configured in{" "}
-  <a href="https://docs.dagster.io/dagster-plus/managing-deployments/deployment-settings-reference">
-    deployment settings
-  </a>
-  .
-</Note>
+:::note
+
+In Dagster+, run monitoring is always enabled and can be configured in [deployment settings](/dagster-plus/deployment/managemet/settings/deployment-settings)
+
+:::
 
 ## Run start timeouts
 
@@ -37,7 +36,7 @@ When Dagster terminates a run, the run moves into CANCELING status and sends a t
 
 ## General run timeouts
 
-After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). You can configure a maximum runtime for every run in a deployment by setting the `run_monitoring.max_runtime_seconds` field in your dagster.yaml or [Dagster+ deployment settings](/dagster-plus/managing-deployments/deployment-settings-reference) to the maximum runtime in seconds. If a run exceeds this timeout and run monitoring is enabled, it will be marked as failed. The `dagster/max_runtime` tag can also be used to set a timeout in seconds on a per-run basis.
+After a run is marked as STARTED, it may hang indefinitely for various reasons (user API errors, network issues, etc.). You can configure a maximum runtime for every run in a deployment by setting the `run_monitoring.max_runtime_seconds` field in your dagster.yaml or [Dagster+ deployment settings](/dagster-plus/deployment/management/settings/deployment-settings) to the maximum runtime in seconds. If a run exceeds this timeout and run monitoring is enabled, it will be marked as failed. The `dagster/max_runtime` tag can also be used to set a timeout in seconds on a per-run basis.
 
 For example, to configure a maximum of 2 hours for every run in your deployment:
 
@@ -47,7 +46,7 @@ run_monitoring:
   max_runtime_seconds: 7200
 ```
 
-or in Dagster+, add the following to your [deployment settings](/dagster-plus/managing-deployments/deployment-settings-reference):
+or in Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/settings/deployment-settings):
 
 ```yaml
 run_monitoring:
@@ -72,10 +71,11 @@ asset_job = define_asset_job(
 
 ## Detecting run worker crashes
 
-<Note>
-  Detecting run worker crashes only works when using a run launcher other than
-  the <PyObject object="DefaultRunLauncher" />.
-</Note>
+:::note
+
+Detecting run worker crashes only works when using a run launcher other than the <PyObject section="internals" module="dagster._core.launcher" object="DefaultRunLauncher" />.
+
+:::
 
 It's possible for a run worker process to crash during a run. This can happen for a variety of reasons (the host it's running on could go down, it could run out of memory, etc.). Without the monitoring daemon, there are two possible outcomes, neither desirable:
 
@@ -88,8 +88,8 @@ If a run worker crashes, the run it's managing can hang. The monitoring daemon c
 
 This feature is experimental and currently only supported when using:
 
-- [`K8sRunLauncher`](/\_apidocs/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher) with the [`k8s_job_executor`](https://docs.dagster.io/\_apidocs/libraries/dagster-k8s#dagster_k8s.k8s_job_executor)
-- [`DockerRunLauncher`](/\_apidocs/libraries/dagster-docker#dagster_docker.DockerRunLauncher) with the [`docker_executor`](https://docs.dagster.io/\_apidocs/libraries/dagster-docker#dagster_docker.docker_executor)
+- [`K8sRunLauncher`](/api/python-api/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher) with the [`k8s_job_executor`](/api/python-api/libraries/dagster-k8s#dagster_k8s.k8s_job_executor)
+- [`DockerRunLauncher`](/api/python-api/libraries/dagster-docker#dagster_docker.DockerRunLauncher) with the [`docker_executor`](/api/python-api/libraries/dagster-docker#dagster_docker.docker_executor)
 
 The monitoring daemon handles these by performing health checks on the run workers. If a failure is detected, the daemon can launch a new run worker which resumes execution of the existing run. The run worker crash will be show in the event log, and the run will continue to completion. If the run worker continues to crash, the daemon will mark the run as failed after the configured number of attempts.
 
