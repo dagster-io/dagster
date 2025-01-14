@@ -22,12 +22,12 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags import build_kind_tag, has_kind
-from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
 from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
 
-from dagster_embedded_elt_tests.dlt_tests.dlt_test_sources.duckdb_with_transformer import (
+from dagster_dlt_tests.dlt_test_sources.duckdb_with_transformer import (
     pipeline,
     pipeline as dlt_source,
 )
