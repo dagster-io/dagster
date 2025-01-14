@@ -758,5 +758,10 @@
     "source": "/integrations/databricks",
     "destination": "/concepts/dagster-pipes/databricks",
     "statusCode": 302
+  },
+  {
+    "source": "/integrations/embedded-elt/dlt",
+    "destination": "/integrations/dlt",
+    "statusCode": 302
   }
 ]
