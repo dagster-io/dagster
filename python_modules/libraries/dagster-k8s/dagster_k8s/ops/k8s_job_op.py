@@ -405,11 +405,16 @@ def execute_k8s_job(
                         print(log_entry)  # noqa: T201
                 except StopIteration:
                     break
-                except ProtocolError as e:
+                except ProtocolError:
                     context.log.warning(
-                        f"urllib3.exceptions.ProtocolError. Pausing and will reconnect. {e}"
+                        "urllib3.exceptions.ProtocolError. Pausing and will reconnect.",
+                        exc_info=True,
                     )
-                    time.sleep(5)
+                    time.sleep(
+                        int(
+                            os.getenv("DAGSTER_EXECUTE_K8S_JOB_WAIT_AFTER_STREAM_LOGS_FAILURE", "5")
+                        )
+                    )
             context.log.info("Pod logs are disabled, because restart_policy is not Never")
 
         if job_spec_config and job_spec_config.get("parallelism"):
