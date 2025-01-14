@@ -293,9 +293,9 @@ export class HourlyDataCache<T> {
   /**
    * Notifies subscribers of new data added to a specific hour and subsequent hours.
    * @param hour - The hour bucket to notify subscribers of.
-   * @param data - The new data added.
    */
-  private notifySubscribers(hour: number): void {
+  private async notifySubscribers(hour: number): Promise<void> {
+    await this.loadCacheFromIndexedDB();
     for (const {hour: subHour, callback} of this.subscriptions) {
       if (hour >= subHour) {
         const combinedData = this.getCombinedData(subHour);
@@ -309,7 +309,8 @@ export class HourlyDataCache<T> {
    * @param startHour - The starting hour for the subscription.
    * @param callback - The callback function to notify with existing data.
    */
-  private notifyExistingData(startHour: number, callback: Subscription<T>): void {
+  private async notifyExistingData(startHour: number, callback: Subscription<T>): void {
+    await this.loadCacheFromIndexedDB();
     const combinedData = this.getCombinedData(startHour);
     if (combinedData.length > 0) {
       callback(combinedData);

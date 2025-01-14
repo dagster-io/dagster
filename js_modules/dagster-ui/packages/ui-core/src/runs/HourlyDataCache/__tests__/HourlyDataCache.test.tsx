@@ -1,3 +1,5 @@
+import {waitFor} from '@testing-library/dom';
+
 import {HourlyDataCache, ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache';
 
 const mockedCache = {
@@ -203,6 +205,25 @@ describe('HourlyDataCache Subscriptions', () => {
           cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
           expect(callback).not.toHaveBeenCalled();
+        });
+
+        it.only('should notify subscribers of existing data if the subscription is added before the indexeddb cache data is loaded', async () => {
+          let res: any = () => {};
+          mockedCache.has.mockImplementation(async () => {
+            return new Promise((resolve) => {
+              res = resolve;
+            });
+          });
+
+          cache = new HourlyDataCache<number>({version: VERSION});
+
+          const callback = jest.fn();
+          cache.subscribe(0, callback);
+          res();
+
+          waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          });
         });
       },
     );
