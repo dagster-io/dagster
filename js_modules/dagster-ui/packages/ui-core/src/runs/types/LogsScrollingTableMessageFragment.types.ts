@@ -1484,6 +1484,11 @@ export type LogsScrollingTableMessageFragment_LogsCapturedEvent = {
   externalUrl: string | null;
   externalStdoutUrl: string | null;
   externalStderrUrl: string | null;
+  shellCmd: {
+    __typename: 'LogRetrievalShellCommand';
+    stdout: string | null;
+    stderr: string | null;
+  } | null;
 };
 
 export type LogsScrollingTableMessageFragment_MaterializationEvent = {

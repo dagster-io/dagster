@@ -1656,6 +1656,11 @@ export type PipelineRunLogsSubscription = {
               externalStderrUrl: string | null;
               eventType: Types.DagsterEventType | null;
               externalUrl: string | null;
+              shellCmd: {
+                __typename: 'LogRetrievalShellCommand';
+                stdout: string | null;
+                stderr: string | null;
+              } | null;
             }
           | {
               __typename: 'MaterializationEvent';
@@ -4998,6 +5003,11 @@ export type RunLogsSubscriptionSuccessFragment = {
         externalStderrUrl: string | null;
         eventType: Types.DagsterEventType | null;
         externalUrl: string | null;
+        shellCmd: {
+          __typename: 'LogRetrievalShellCommand';
+          stdout: string | null;
+          stderr: string | null;
+        } | null;
       }
     | {
         __typename: 'MaterializationEvent';
@@ -8349,6 +8359,11 @@ export type RunLogsQuery = {
               externalStderrUrl: string | null;
               eventType: Types.DagsterEventType | null;
               externalUrl: string | null;
+              shellCmd: {
+                __typename: 'LogRetrievalShellCommand';
+                stdout: string | null;
+                stderr: string | null;
+              } | null;
             }
           | {
               __typename: 'MaterializationEvent';
@@ -10084,6 +10099,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = 'def2c2dc20d6b8640de7f4104ea03a58c8721cb5a632282f8e2d7489ab205280';
+export const PipelineRunLogsSubscriptionVersion = '9f7f83476b6839dabd890487982ba453adb7cee3340c47aebb7f189492784023';
 
-export const RunLogsQueryVersion = '0f1a38047ec63b668879f68aff67dc13d7a2b241c2f506d0109968897e01f385';
+export const RunLogsQueryVersion = '6086ddc4fb1ea5e12a73049ba83df08747ecd1a9d3443eeb7e2875fddd55fa9e';
