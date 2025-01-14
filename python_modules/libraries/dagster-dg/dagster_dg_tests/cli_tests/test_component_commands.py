@@ -29,6 +29,7 @@ def test_component_generate_dynamic_subcommand_generation() -> None:
             textwrap.dedent("""
             Commands:
               dagster_components.test.all_metadata_empty_asset
+              dagster_components.test.complex_schema_asset
               dagster_components.test.simple_asset
               dagster_components.test.simple_pipes_script_asset
         """).strip()
