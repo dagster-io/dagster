@@ -168,6 +168,7 @@ PipesMetadataType = Literal[
     "table",
     "table_schema",
     "table_column_lineage",
+    "timestamp",
 ]
 
 
