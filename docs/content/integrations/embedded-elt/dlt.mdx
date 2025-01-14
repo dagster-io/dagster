@@ -65,10 +65,10 @@ To follow the steps in this guide, you'll need:
 - **[To install](/getting-started/install) the following libraries**:
 
   ```bash
-  pip install dagster dagster-dlt
+  pip install dagster dagster-embedded-elt
   ```
 
-  Installing `dagster-dlt` will also install the `dlt` package.
+  Installing `dagster-embedded-elt` will also install the `dlt` package.
 
 ---
 
@@ -165,10 +165,10 @@ Ensure that these variables are defined in your environment, either in your `.en
 
 ## Step 4: Define a DagsterDltResource
 
-Next, we'll define a <PyObject module="dagster_dlt" object="DagsterDltResource" />, which provides a wrapper of a dlt pipeline runner. Use the following to define the resource, which can be shared across all dlt pipelines:
+Next, we'll define a <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" />, which provides a wrapper of a dlt pipeline runner. Use the following to define the resource, which can be shared across all dlt pipelines:
 
 ```python
-from dagster_dlt import DagsterDltResource
+from dagster_embedded_elt.dlt import DagsterDltResource
 
 dlt_resource = DagsterDltResource()
 ```
@@ -179,9 +179,9 @@ We'll add the resource to our <PyObject module="dagster" object="Definitions" />
 
 ## Step 5: Create a dlt_assets definition for GitHub
 
-The <PyObject object="dlt_assets" module="dagster_dlt" decorator /> decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from Github to Snowflake.
+The <PyObject object="dlt_assets" module="dagster_embedded_elt.dlt" decorator /> decorator takes a `dlt_source` and `dlt_pipeline` parameter. In this example, we used the `github_reactions` source and created a `dlt_pipeline` to ingest data from Github to Snowflake.
 
-In the same file containing your Dagster assets, you can create an instance of your <PyObject object="dlt_assets" module="dagster_dlt" decorator /> by doing something like the following:
+In the same file containing your Dagster assets, you can create an instance of your <PyObject object="dlt_assets" module="dagster_embedded_elt.dlt" decorator /> by doing something like the following:
 
 <Note>
   If you are using the{" "}
@@ -195,7 +195,7 @@ In the same file containing your Dagster assets, you can create an instance of y
 
 ```python
 from dagster import AssetExecutionContext, Definitions
-from dagster_dlt import DagsterDltResource, dlt_assets
+from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 from dlt import pipeline
 from dlt_sources.github import github_reactions
 
@@ -242,15 +242,19 @@ And that's it! You should now have two assets that load data to corresponding Sn
 
 ### Overriding the translator to customize dlt assets
 
-The <PyObject module="dagster_dlt" object="DagsterDltTranslator" /> object can be used to customize how dlt properties map to Dagster concepts.
+The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" /> object can be used to customize how dlt properties map to Dagster concepts.
 
-For example, to change how the name of the asset is derived, you can override the <PyObject module="dagster_dlt" object="DagsterDltTranslator" method="get_asset_key" /> method, or if you would like to change the key of the upstream source asset, you can override the <PyObject module="dagster_dlt" object="DagsterDltTranslator" method="get_deps_assets_keys" /> method.
+For example, to change how the name of the asset is derived, you can override the <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" method="get_asset_key" /> method, or if you would like to change the key of the upstream source asset, you can override the <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" method="get_deps_assets_keys" /> method.
 
-```python file=/integrations/dlt/dlt_dagster_translator.py
+```python file=/integrations/embedded_elt/dlt_dagster_translator.py
 from collections.abc import Iterable
 
 import dlt
-from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dagster_embedded_elt.dlt import (
+    DagsterDltResource,
+    DagsterDltTranslator,
+    dlt_assets,
+)
 from dlt.extract.resource import DltResource
 
 from dagster import AssetExecutionContext, AssetKey
@@ -294,13 +298,13 @@ In this example, we customized the translator to change how the dlt assets' name
 
 A common question is how to define metadata on the external assets upstream of the dlt assets.
 
-This can be accomplished by defining a <PyObject object="AssetSpec" /> with a key that matches the one defined in the <PyObject module="dagster_dlt" object="DagsterDltTranslator" method="get_deps_assets_keys" /> method.
+This can be accomplished by defining a <PyObject object="AssetSpec" /> with a key that matches the one defined in the <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" method="get_deps_assets_keys" /> method.
 
 For example, let's say we have defined a set of dlt assets named `thinkific_assets`, we can iterate over those assets and derive a <PyObject object="AssetSpec" /> with attributes like `group_name`.
 
-```python file=/integrations/dlt/dlt_source_assets.py
+```python file=/integrations/embedded_elt/dlt_source_assets.py
 import dlt
-from dagster_dlt import DagsterDltResource, dlt_assets
+from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 
 from dagster import AssetExecutionContext, AssetSpec
 
@@ -336,11 +340,11 @@ While still an experimental feature, it is possible to use partitions within you
 
 That said, here is an example of using static named partitions from a dlt source.
 
-```python file=/integrations/dlt/dlt_partitions.py
+```python file=/integrations/embedded_elt/dlt_partitions.py
 from typing import Optional
 
 import dlt
-from dagster_dlt import DagsterDltResource, dlt_assets
+from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
 
 from dagster import AssetExecutionContext, StaticPartitionsDefinition
 
@@ -381,11 +385,11 @@ Want to see real-world examples of dlt in production? Check out how we use it in
 
 ## APIs in this guide
 
-| Name                                                            | Description                                                    |
-| --------------------------------------------------------------- | -------------------------------------------------------------- |
-| <PyObject module="dagster_dlt" object="dlt_assets" decorator /> | The core dlt asset factory for building ingestion jobs         |
-| <PyObject module="dagster_.dlt" object="DagsterDltResource" />  | The dlt resource for running ingestions.                       |
-| <PyObject module="dagster_dlt" object="DagsterDltTranslator" /> | A translator for specifying how to map between dlt and Dagster |
+| Name                                                                         | Description                                                    |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| <PyObject module="dagster_embedded_elt.dlt" object="dlt_assets" decorator /> | The core dlt asset factory for building ingestion jobs         |
+| <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltResource" />   | The dlt resource for running ingestions.                       |
+| <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" /> | A translator for specifying how to map between dlt and Dagster |
 
 ---
 
