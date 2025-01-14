@@ -15,9 +15,9 @@ from dagster import (
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.tags import build_kind_tag
-from dagster_embedded_elt.sling import SlingReplicationParam, sling_assets
-from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
-from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+from dagster_sling import SlingReplicationParam, sling_assets
+from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_sling.resources import SlingConnectionResource, SlingResource
 
 
 @pytest.mark.parametrize(
@@ -138,10 +138,10 @@ def test_base_with_meta_config_translator():
     assert my_sling_assets.metadata_by_key == {
         AssetKey(["target", "public", "accounts"]): {
             "stream_config": JsonMetadataValue(data=None),
-            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+            "dagster_sling/dagster_sling_translator": DagsterSlingTranslator(
                 target_prefix="target"
             ),
-            "dagster_embedded_elt/sling_replication_config": replication_config,
+            "dagster_sling/sling_replication_config": replication_config,
         },
         AssetKey(["target", "departments"]): {
             "stream_config": JsonMetadataValue(
@@ -161,10 +161,10 @@ def test_base_with_meta_config_translator():
                     },
                 }
             ),
-            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+            "dagster_sling/dagster_sling_translator": DagsterSlingTranslator(
                 target_prefix="target"
             ),
-            "dagster_embedded_elt/sling_replication_config": replication_config,
+            "dagster_sling/sling_replication_config": replication_config,
         },
         AssetKey(["target", "public", "transactions"]): {
             "stream_config": JsonMetadataValue(
@@ -180,10 +180,10 @@ def test_base_with_meta_config_translator():
                     },
                 }
             ),
-            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+            "dagster_sling/dagster_sling_translator": DagsterSlingTranslator(
                 target_prefix="target"
             ),
-            "dagster_embedded_elt/sling_replication_config": replication_config,
+            "dagster_sling/sling_replication_config": replication_config,
         },
         AssetKey(["target", "public", "all_users"]): {
             "stream_config": JsonMetadataValue(
@@ -192,10 +192,10 @@ def test_base_with_meta_config_translator():
                     "object": "public.all_users",
                 }
             ),
-            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+            "dagster_sling/dagster_sling_translator": DagsterSlingTranslator(
                 target_prefix="target"
             ),
-            "dagster_embedded_elt/sling_replication_config": replication_config,
+            "dagster_sling/sling_replication_config": replication_config,
         },
     }
 
@@ -256,10 +256,10 @@ def test_base_with_default_meta_translator():
     assert my_sling_assets.metadata_by_key == {
         AssetKey(["target", "public", "accounts"]): {
             "stream_config": JsonMetadataValue(data={"meta": {"dagster": {"group": "group_1"}}}),
-            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+            "dagster_sling/dagster_sling_translator": DagsterSlingTranslator(
                 target_prefix="target"
             ),
-            "dagster_embedded_elt/sling_replication_config": replication_config,
+            "dagster_sling/sling_replication_config": replication_config,
         },
         AssetKey(["target", "departments"]): {
             "stream_config": JsonMetadataValue(
@@ -279,10 +279,10 @@ def test_base_with_default_meta_translator():
                     },
                 }
             ),
-            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+            "dagster_sling/dagster_sling_translator": DagsterSlingTranslator(
                 target_prefix="target"
             ),
-            "dagster_embedded_elt/sling_replication_config": replication_config,
+            "dagster_sling/sling_replication_config": replication_config,
         },
         AssetKey(["target", "public", "transactions"]): {
             "stream_config": JsonMetadataValue(
@@ -299,10 +299,10 @@ def test_base_with_default_meta_translator():
                     },
                 }
             ),
-            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+            "dagster_sling/dagster_sling_translator": DagsterSlingTranslator(
                 target_prefix="target"
             ),
-            "dagster_embedded_elt/sling_replication_config": replication_config,
+            "dagster_sling/sling_replication_config": replication_config,
         },
         AssetKey(["target", "public", "all_users"]): {
             "stream_config": JsonMetadataValue(
@@ -312,10 +312,10 @@ def test_base_with_default_meta_translator():
                     "meta": {"dagster": {"group": "group_1"}},
                 }
             ),
-            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+            "dagster_sling/dagster_sling_translator": DagsterSlingTranslator(
                 target_prefix="target"
             ),
-            "dagster_embedded_elt/sling_replication_config": replication_config,
+            "dagster_sling/sling_replication_config": replication_config,
         },
     }
 

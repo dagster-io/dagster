@@ -6,8 +6,8 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
-from dagster_embedded_elt.sling import DagsterSlingTranslator, SlingResource, sling_assets
-from dagster_embedded_elt.sling.resources import AssetExecutionContext
+from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
+from dagster_sling.resources import AssetExecutionContext
 from pydantic import BaseModel
 from typing_extensions import Self
 

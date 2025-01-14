@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 from dagster import file_relative_path
-from dagster_embedded_elt.sling import SlingConnectionResource, SlingResource
+from dagster_sling import SlingConnectionResource, SlingResource
 
 base_replication_config_path = (
     Path(__file__).joinpath("..", "replication_configs/base_config/replication.yaml").resolve()

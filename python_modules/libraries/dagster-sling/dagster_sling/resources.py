@@ -28,15 +28,15 @@ from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.env import environ
 from pydantic import Field
 
-from dagster_embedded_elt.sling.asset_decorator import (
+from dagster_sling.asset_decorator import (
     METADATA_KEY_REPLICATION_CONFIG,
     METADATA_KEY_TRANSLATOR,
     get_streams_from_replication,
     streams_with_default_dagster_meta,
 )
-from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
-from dagster_embedded_elt.sling.sling_event_iterator import SlingEventIterator, SlingEventType
-from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
+from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_sling.sling_event_iterator import SlingEventIterator, SlingEventType
+from dagster_sling.sling_replication import SlingReplicationParam, validate_replication
 
 logger = get_dagster_logger()
 

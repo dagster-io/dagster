@@ -1,14 +1,10 @@
-from dagster._utils.warnings import deprecation_warning
+from dagster._core.libraries import DagsterLibraryRegistry
+
 from dagster_sling.asset_decorator import sling_assets
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_sling.resources import SlingConnectionResource, SlingMode, SlingResource
 from dagster_sling.sling_replication import SlingReplicationParam
-
-deprecation_warning(
-    "The `dagster-embedded-elt` library",
-    "0.26",
-    additional_warn_text="Use `dagster-sling` instead.",
-)
+from dagster_sling.version import __version__
 
 __all__ = [
     "DagsterSlingTranslator",
@@ -18,3 +14,5 @@ __all__ = [
     "SlingResource",
     "sling_assets",
 ]
+
+DagsterLibraryRegistry.register("dagster-sling", __version__)

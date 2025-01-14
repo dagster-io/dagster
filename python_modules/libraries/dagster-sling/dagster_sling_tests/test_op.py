@@ -1,8 +1,8 @@
 import sqlite3
 
 from dagster import OpExecutionContext, job, op
-from dagster_embedded_elt.sling import SlingReplicationParam
-from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+from dagster_sling import SlingReplicationParam
+from dagster_sling.resources import SlingConnectionResource, SlingResource
 
 
 def test_base_sling_config_op(

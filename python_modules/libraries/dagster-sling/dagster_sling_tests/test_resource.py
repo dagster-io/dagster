@@ -1,8 +1,8 @@
 import json
 
 from dagster import EnvVar
-from dagster_embedded_elt.sling import SlingResource
-from dagster_embedded_elt.sling.resources import SlingConnectionResource
+from dagster_sling import SlingResource
+from dagster_sling.resources import SlingConnectionResource
 
 
 def test_sling_resource_env_with_source_target():

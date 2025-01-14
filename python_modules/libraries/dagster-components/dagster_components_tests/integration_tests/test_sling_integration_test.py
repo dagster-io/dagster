@@ -21,7 +21,7 @@ from dagster_components.core.component_defs_builder import (
 from dagster_components.lib.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
-from dagster_embedded_elt.sling import SlingResource
+from dagster_sling import SlingResource
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 

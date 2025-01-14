@@ -13,11 +13,11 @@ from dagster import (
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
-from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
-from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
+from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_sling.sling_replication import SlingReplicationParam, validate_replication
 
-METADATA_KEY_TRANSLATOR = "dagster_embedded_elt/dagster_sling_translator"
-METADATA_KEY_REPLICATION_CONFIG = "dagster_embedded_elt/sling_replication_config"
+METADATA_KEY_TRANSLATOR = "dagster_sling/dagster_sling_translator"
+METADATA_KEY_REPLICATION_CONFIG = "dagster_sling/sling_replication_config"
 
 
 def get_streams_from_replication(
@@ -82,7 +82,7 @@ def sling_assets(
 
         .. code-block:: python
 
-            from dagster_embedded_elt.sling import sling_assets, SlingResource, SlingConnectionResource
+            from dagster_sling import sling_assets, SlingResource, SlingConnectionResource
 
             sling_resource = SlingResource(
                 connections=[

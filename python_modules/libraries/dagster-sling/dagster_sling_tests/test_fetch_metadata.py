@@ -12,14 +12,14 @@ from dagster._core.definitions.metadata.table import (
     TableColumnLineage,
     TableSchema,
 )
-from dagster_embedded_elt.sling import SlingReplicationParam, sling_assets
+from dagster_sling import SlingReplicationParam, sling_assets
 
 
 def test_fetch_column_metadata(
     csv_to_sqlite_dataworks_replication: SlingReplicationParam,
     path_to_temp_sqlite_db: str,
 ):
-    from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+    from dagster_sling.resources import SlingConnectionResource, SlingResource
 
     @sling_assets(replication_config=csv_to_sqlite_dataworks_replication)
     def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
@@ -88,10 +88,10 @@ def test_fetch_column_metadata_failure(
     path_to_temp_sqlite_db: str,
 ):
     with mock.patch(
-        "dagster_embedded_elt.sling.resources.SlingResource.get_column_info_for_table",
+        "dagster_sling.resources.SlingResource.get_column_info_for_table",
         side_effect=Exception("test error"),
     ):
-        from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+        from dagster_sling.resources import SlingConnectionResource, SlingResource
 
         sling_resource = SlingResource(
             connections=[
@@ -131,7 +131,7 @@ def test_fetch_row_count(
     csv_to_sqlite_dataworks_replication: SlingReplicationParam,
     path_to_temp_sqlite_db: str,
 ):
-    from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+    from dagster_sling.resources import SlingConnectionResource, SlingResource
 
     @sling_assets(replication_config=csv_to_sqlite_dataworks_replication)
     def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
@@ -175,10 +175,10 @@ def test_fetch_row_count_failure(
     path_to_temp_sqlite_db: str,
 ):
     with mock.patch(
-        "dagster_embedded_elt.sling.resources.SlingResource.get_row_count_for_table",
+        "dagster_sling.resources.SlingResource.get_row_count_for_table",
         side_effect=Exception("test error"),
     ):
-        from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+        from dagster_sling.resources import SlingConnectionResource, SlingResource
 
         sling_resource = SlingResource(
             connections=[

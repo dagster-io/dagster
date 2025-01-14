@@ -1,6 +1,6 @@
 import pytest
 from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, JsonMetadataValue
-from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
 
 
 @pytest.mark.parametrize(

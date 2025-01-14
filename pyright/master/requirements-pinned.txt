@@ -161,6 +161,7 @@ dagster-contrib-modal==0.0.2
 -e python_modules/libraries/dagster-shell
 -e python_modules/libraries/dagster-sigma
 -e python_modules/libraries/dagster-slack
+-e python_modules/libraries/dagster-sling
 -e python_modules/libraries/dagster-snowflake
 -e python_modules/libraries/dagster-snowflake-pandas
 -e python_modules/libraries/dagster-snowflake-pyspark
