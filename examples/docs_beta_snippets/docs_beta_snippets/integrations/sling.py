@@ -1,8 +1,4 @@
-from dagster_embedded_elt.sling import (
-    SlingConnectionResource,
-    SlingResource,
-    sling_assets,
-)
+from dagster_sling import SlingConnectionResource, SlingResource, sling_assets
 
 import dagster as dg
 

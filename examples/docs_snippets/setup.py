@@ -37,6 +37,7 @@ setup(
         "dagster-k8s",
         "dagster-postgres",
         "dagster-slack",
+        "dagster-sling",
         "dagster-gcp-pandas",
         "dagster-gcp-pyspark",
         "dagster-snowflake",

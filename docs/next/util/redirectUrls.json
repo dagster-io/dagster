@@ -763,5 +763,15 @@
     "source": "/integrations/embedded-elt/dlt",
     "destination": "/integrations/dlt",
     "statusCode": 302
+  },
+  {
+    "source": "/integrations/embedded-elt/sling",
+    "destination": "/integrations/sling",
+    "statusCode": 302
+  },
+  {
+    "source": "/_apidocs/libraries/dagster-embedded-elt",
+    "destination": "/integrations/embedded-elt",
+    "statusCode": 302
   }
 ]

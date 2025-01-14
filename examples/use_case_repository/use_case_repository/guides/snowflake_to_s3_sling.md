@@ -1,12 +1,12 @@
 ---
 title: "Ingesting Data from S3 to Snowflake with Dagster and Sling"
-description: "This use case demonstrates how to ingest data from Amazon S3 into Snowflake using Dagster and the Sling integration from dagster-embedded-elt. The objective is to automate the data ingestion process for efficient data management and analysis."
+description: "This use case demonstrates how to ingest data from Amazon S3 into Snowflake using Dagster and the Sling integration from dagster-sling. The objective is to automate the data ingestion process for efficient data management and analysis."
 tags: ["snowflake", "s3", "sling", "data ingestion"]
 ---
 
 ## Ingesting Data from S3 to Snowflake with Dagster and Sling
 
-This guide provides a step-by-step approach to ingest data from Amazon S3 into Snowflake using Dagster and the Sling integration from dagster-embedded-elt. The main objective is to automate the data ingestion process, making it efficient and reliable for data management and analysis.
+This guide provides a step-by-step approach to ingest data from Amazon S3 into Snowflake using Dagster and the Sling integration from dagster-sling. The main objective is to automate the data ingestion process, making it efficient and reliable for data management and analysis.
 
 ---
 
@@ -28,7 +28,7 @@ Before you begin, ensure you have the following:
 - An Amazon S3 bucket with data to ingest.
 - AWS credentials with access to the S3 bucket.
 - Python installed on your system.
-- Dagster and dagster-embedded-elt installed in your Python environment.
+- Dagster and dagster-sling installed in your Python environment.
 
 ---
 
@@ -38,10 +38,10 @@ By following these steps, you will have an automated pipeline that ingests data 
 
 ### Step 1: Install Required Packages
 
-Ensure you have the necessary Python packages installed. Install Dagster and the Dagster UI (`dagster-webserver`) and dagster-embedded-elt using pip. Refer to the [Installation guide](https://docs.dagster.io/getting-started/install) for more info.
+Ensure you have the necessary Python packages installed. Install Dagster and the Dagster UI (`dagster-webserver`) and dagster-sling using pip. Refer to the [Installation guide](https://docs.dagster.io/getting-started/install) for more info.
 
 ```bash
-pip install dagster dagster-embedded-elt dagster-webserver
+pip install dagster dagster-sling dagster-webserver
 ```
 
 ### Step 2: Define Sling Connections
@@ -50,7 +50,7 @@ Define the connections to S3 and Snowflake using SlingConnectionResource. Use en
 
 ```python
 from dagster import EnvVar
-from dagster_embedded_elt.sling import SlingConnectionResource, SlingResource
+from dagster_sling import SlingConnectionResource, SlingResource
 
 s3_connection = SlingConnectionResource(
     name="MY_S3",
@@ -79,7 +79,7 @@ Use the `@sling_assets` decorator to define an asset that runs the Sling replica
 
 ```python
 from dagster import Definitions
-from dagster_embedded_elt.sling import sling_assets
+from dagster_sling import sling_assets
 
 replication_config = {
     "SOURCE": "MY_S3",
@@ -119,7 +119,6 @@ After implementing this use case, you should have an automated pipeline that ing
 ## Additional Resources
 
 - [Dagster Documentation](https://docs.dagster.io/)
-- [Embedded ELT Documentation](https://docs.dagster.io/integrations/embedded-elt)
 - [Sling Documentation](https://docs.slingdata.io/)
 - [Snowflake Documentation](https://docs.snowflake.com/)
 
