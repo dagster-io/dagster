@@ -21,6 +21,8 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_selection import AssetCheckKeysSelection, AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import (
@@ -906,3 +908,21 @@ def test_multi_asset_direct_invocation() -> None:
     assert isinstance(results[1], Output)
     assert isinstance(results[2], AssetCheckResult)
     assert results[2].passed
+
+
+def test_additional_deps_with_multi_asset_decorator() -> None:
+    # Document that it's not possible to specify an asset in referencing an additional_dep of an asset check.
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @multi_asset(
+            specs=[AssetSpec("asset1"), AssetSpec("asset2")],
+            check_specs=[
+                AssetCheckSpec(
+                    "check1", asset="asset1", additional_deps=[AssetDep("asset3")]
+                ),  # spec with a dep external to this asset
+            ],
+            ins={"asset3": AssetIn()},
+        )
+        def foo(context: AssetExecutionContext, asset3) -> Iterable:
+            yield Output(value=None, output_name="asset1")
+            yield Output(value=None, output_name="asset2")
