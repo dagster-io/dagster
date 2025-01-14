@@ -11,82 +11,23 @@ Dagster+ deployments, refer to the [Dagster+](/dagster-plus/) documentation.
 
 :::
 
-This page covers general information about deploying Dagster on your own infrastructure. For guides on specific platforms, refer to the [Deployment guides](/deployment/guides).
+This page covers general information about deploying Dagster on your own infrastructure. For guides on specific platforms, see the [deployment options documentation](/guides/deploy/deployment-options/).
 
 Let's take a look at a generic Dagster deployment, after which we'll walk through each of its components:
 
 <!-- https://excalidraw.com/#json=4771198026121216,nmLfShZ_frrUPJTUxaeI5g -->
 
-<Image
-alt="dagster-deployment.png"
-src="/images/deploying/dagster-deployment.png"
-width={2986}
-height={1106}
-/>
+![Dagster deployment](/images/guides/deploy/dagster-deployment.png)
 
 ## Long-running services
 
 Dagster requires three long-running services, which are outlined in the table below:
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "15%",
-        }}
-      >
-        Service
-      </th>
-      <th>Description</th>
-      <th
-        style={{
-          width: "15%",
-        }}
-      >
-        Replicas
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <a href="/concepts/webserver/ui">Dagster webserver/UI</a>
-      </td>
-      <td>
-        `dagster-webserver` serves the user interface and responds to GraphQL
-        queries. It can have one or more replicas.
-      </td>
-      <td>Supported</td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/deployment/dagster-daemon">Dagster daemon</a>
-      </td>
-      <td>
-        The Dagster daemon operates schedules, sensors, and run queuing.
-        Currently, replicas are not supported.
-      </td>
-      <td>Not supported</td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/concepts/code-locations">Code location server</a>
-      </td>
-      <td>
-        Code location servers serve metadata about the collection of its Dagster
-        definitions. You can have many code location servers, but currently each
-        code location can only have one replica for its server.
-      </td>
-      <td>Supported</td>
-    </tr>
-  </tbody>
-</table>
+| Service | Description | Replicas |
+|---------|-------------|----------|
+| [Dagster webserver](/guides/deploy/execution/webserver) | `dagster-webserver` serves the user interface and responds to GraphQL queries. | The Dagster webserver can have one or more replicas. |
+| [Dagster daemon](/guides/deploy/execution/dagster-daemon) | The Dagster daemon operates schedules, sensors, and run queuing. | Not supported. |
+| [Code location](/guides/deploy/code-locations/) server | Code location servers serve metadata about the collection of its Dagster definitions. | You can have many code location servers, but each code location can only have one replica for its server. |
 
 ## Deployment configuration
 
