@@ -61,11 +61,7 @@ class EntityMatchesCondition(
         return AutomationResult(context=context, true_subset=true_subset, child_results=[to_result])
 
     @public
-    def replace(
-        self,
-        old: Union[AutomationCondition, str],
-        new: Optional[AutomationCondition],
-    ) -> Self:
+    def replace(self, old: Union[AutomationCondition, str], new: AutomationCondition) -> Self:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
@@ -146,11 +142,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return dep_keys
 
     @public
-    def replace(
-        self,
-        old: Union[AutomationCondition, str],
-        new: Optional[AutomationCondition],
-    ) -> Self:
+    def replace(self, old: Union[AutomationCondition, str], new: AutomationCondition) -> Self:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
