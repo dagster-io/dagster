@@ -15,11 +15,11 @@ The easiest way to launch the webserver from the command line during local devel
 dagster dev
 ```
 
-This command launches both the Dagster webserver and the [Dagster daemon](dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
+This command launches both the Dagster webserver and the [Dagster daemon](/guides/deploy/execution/dagster-daemon), allowing you to start a full local deployment of Dagster from the command line.
 
 The command will print out the URL you can access the UI from in the browser, usually on port 3000.
 
-When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/guides/deploy/code-locations/workspace-yaml). For more information, see the [code locations documentation](/guides/deploy/code-locations).
+When invoked, the webserver will fetch definitions - such as assets, jobs, schedules, sensors, and resources - from a <PyObject section="definitions" module="dagster" object="Definitions" /> object in a Python module or package or the code locations configured in an open source deployment's [workspace files](/guides/deploy/code-locations/workspace-yaml). For more information, see the [code locations documentation](/guides/deploy/code-locations/).
 
 You can also launch the webserver by itself from the command line by running:
 
@@ -253,7 +253,7 @@ This feature is only available in Dagster+ Pro.
 
 **All resources**
 
-- **Description**: The **Resources** page lists all [resources](/concepts/resources) defined in your Dagster deployment, across all code locations. Clicking a resource will open the [**Resource details**](#resource-details) page.
+- **Description**: The **Resources** page lists all [resources](/guides/build/external-resources/) defined in your Dagster deployment, across all code locations. Clicking a resource will open the [**Resource details**](#resource-details) page.
 
 - **Accessed by**: Clicking **Overview (top nav) > Resources tab**
 
@@ -273,7 +273,7 @@ This feature is only available in Dagster+ Pro.
 
 **Configuration tab**
 
-- **Description**: The **Configuration** tab contains detailed information about a resource's configuration, including the name of each key, type, and value of each config value. If a key's value is an [environment variable](/guides/dagster/using-environment-variables-and-secrets), an `Env var` badge will display next to the value.
+- **Description**: The **Configuration** tab contains detailed information about a resource's configuration, including the name of each key, type, and value of each config value. If a key's value is an [environment variable](/guides/deploy/using-environment-variables-and-secrets), an `Env var` badge will display next to the value.
 
 - **Accessed by**: On the [**Resource details**](#resource-details) page, clicking the **Configuration tab**
 
@@ -284,7 +284,7 @@ This feature is only available in Dagster+ Pro.
 
 **Uses tab**
 
-- **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets/), [jobs](/guides/build/assets/asset-jobs), and [ops](/todo). Clicking on any of these definitions will open the details page for that definition type.
+- **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets/), [jobs](/guides/build/assets/asset-jobs), and [ops](/guides/build/ops). Clicking on any of these definitions will open the details page for that definition type.
 
 - **Accessed by**: On the [**Resource details**](#resource-details) page, clicking the **Uses tab**
 
@@ -407,7 +407,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS de
 
 **Daemons tab**
 
-- **Description**: The **Daemons** tab contains information about the [daemons](/deployment/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
+- **Description**: The **Daemons** tab contains information about the [daemons](/guides/deploy/execution/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
 - **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Daemons** tab
 
 ![UI Deployment - Daemons tab](/images/guides/deploy/execution/webserver/deployment-daemons-tab.png)
@@ -417,7 +417,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS de
 
 **Configuration tab**
 
-- **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/deployment/dagster-instance) file
+- **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/guides/deploy/dagster-yaml) file
 - **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Configuration** tab
 
 ![UI Deployment - Configuration tab](/images/guides/deploy/execution/webserver/deployment-configuration-tab.png)
@@ -437,7 +437,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 
 **Agents tab**
 
-- **Description**: The **Agents** tab contains information about the agents in a Dagster+ deployment. Refer to the [Dagster+ agent documentation](/dagster-plus/deployment/agents) for more info.
+- **Description**: The **Agents** tab contains information about the agents in a Dagster+ deployment.
 - **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Agents** tab
 
 ![UI Dagster+ Deployment - Agents tab](/images/guides/deploy/execution/webserver/deployment-cloud-agents-tab.png)
@@ -447,7 +447,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 
 **Environment variables tab**
 
-- **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster+ deployment. Refer to the [Dagster+ environment variables and secrets documentation](/dagster-plus/managing-deployments/environment-variables-and-secrets) for more info.
+- **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster+ deployment. Refer to the [Dagster+ environment variables documentation](/dagster-plus/deployment/management/environment-variables/) for more info.
 - **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Environment variables** tab
 
 ![UI Cloud Deployment - Environment variables tab](/images/guides/deploy/execution/webserver/deployment-cloud-environment-variables-tab.png)
@@ -457,7 +457,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 
 **Alerts tab**
 
-- **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. Refer to the [Dagster+ alerts guide](/dagster-plus/managing-deployments/alerts) for more info.
+- **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. Refer to the [Dagster+ alerts guide](/dagster-plus/features/alerts/) for more info.
 - **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Alerts** tab
 
 ![UI Dagster+ Deployment - Alerts tab](/images/guides/deploy/execution/webserver/deployment-cloud-alerts-tab.png)

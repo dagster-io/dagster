@@ -11,78 +11,10 @@ When you submit a run from the Dagster UI or the Dagster command line, it’s fi
 
 The following run coordinators can be configured on your [Dagster instance](/guides/deploy/dagster-instance-configuration):
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "20%",
-        }}
-      >
-        Term
-      </th>
-      <th>Definition</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <strong>
-          <PyObject
-            module="dagster._core.run_coordinator"
-            object="DefaultRunCoordinator"
-          />
-        </strong>
-      </td>
-      <td>
-        The{" "}
-        <PyObject
-          module="dagster._core.run_coordinator"
-          object="DefaultRunCoordinator"
-        />{" "}
-        calls <code>launch_run</code> on the instance’s run launcher immediately
-        in the same process, without applying any limits or prioritization
-        rules.
-        <br />
-        <br />
-        When this coordinator is set, clicking <strong>Launch Run</strong> in the
-        Dagster UI will immediately launch the run from the Dagster daemon process.
-        Similarly, scheduled runs will immediately launch from the scheduler process.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>
-          <PyObject
-            module="dagster._core.run_coordinator"
-            object="QueuedRunCoordinator"
-          />
-        </strong>
-      </td>
-      <td>
-        The{" "}
-        <PyObject
-          module="dagster._core.run_coordinator"
-          object="QueuedRunCoordinator"
-        />{" "}
-        sends runs to the Dagster daemon via a run queue. The daemon pulls runs
-        from the queue and calls <code>launch_run</code> on submitted runs.
-        <br />
-        <br />
-        Using this run coordinator enables <a href="/guides/limiting-concurrency-in-data-pipelines">
-          instance-level limits on run concurrency
-        </a>, as well as <a href="/guides/customizing-run-queue-priority">
-          custom run prioritization rules
-        </a>.
-      </td>
-    </tr>
-  </tbody>
-</table>
+| Term | Definition |
+|------|------------|
+| <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator"/> | The `DefaultRunCoordinator` calls launch_run on the instance’s run launcher immediately in the same process, without applying any limits or prioritization rules.<br />When this coordinator is set, clicking **Launch Run** in the Dagster UI will immediately launch the run from the Dagster daemon process. Similarly, scheduled runs will immediately launch from the scheduler process. |
+| <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator"/> | The `QueuedRunCoordinator` sends runs to the Dagster daemon via a run queue. The daemon pulls runs from the queue and calls launch_run on submitted runs.<br/>Using this run coordinator enables instance-level limits on run concurrency, as well as custom run prioritization rules. |
 
 ## Configuring run coordinators
 

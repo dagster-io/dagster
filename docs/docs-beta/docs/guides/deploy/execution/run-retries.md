@@ -3,13 +3,13 @@ title: "Configuring run retries"
 sidebar_position: 600
 ---
 
-If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op retries](/concepts/ops-jobs-graphs/op-retries), the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
+If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op retries](/todo), the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
 
 ## Configuration
 
 How to configure run retries depends on whether you're using Dagster+ or Dagster Open Source:
 
-- **Dagster+**: Use the [Dagster+ UI or the dagster-cloud CLI](/dagster-plus/managing-deployments/managing-deployments#configuring-deployment-settings) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
+- **Dagster+**: Use the [Dagster+ UI or the dagster-cloud CLI](/dagster-plus/deployment/management/settings/deployment-settings) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
 - **Dagster Open Source**: Use your instance's `dagster.yaml` to enable run retries.
 
 For example, the following will set a default maximum number of retries of `3` for all runs:
@@ -20,8 +20,9 @@ run_retries:
   max_retries: 3
 ```
 
-In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/concepts/webserver/ui#launchpad-tab).
+In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/guides/deploy/execution/webserver).
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/job_retries.py
 from dagster import job
 
@@ -42,7 +43,11 @@ The `dagster/retry_strategy` tag controls which ops the retry will run.
 
 By default, retries will re-execute from failure (tag value `FROM_FAILURE`). This means that any successful ops will be skipped, but their output will be used for downstream ops. If the `dagster/retry_strategy` tag is set to `ALL_STEPS`, all the ops will run again.
 
-**Note:** `FROM_FAILURE` requires an I/O manager that can access outputs from other runs. For example, on Kubernetes the <PyObject object="s3_pickle_io_manager" module="dagster_aws.s3.s3" /> would work but the <PyObject object="FilesytemIOManager" module="dagster" /> would not, since the new run is in a new Kubernetes job with a separate filesystem.
+:::note
+
+`FROM_FAILURE` requires an I/O manager that can access outputs from other runs. For example, on Kubernetes the <PyObject section="libraries" object="s3.s3_pickle_io_manager" module="dagster_aws" /> would work but the <PyObject section="io-managers" object="FilesytemIOManager" module="dagster" /> would not, since the new run is in a new Kubernetes job with a separate filesystem.
+
+:::
 
 ### Combining op and run retries
 

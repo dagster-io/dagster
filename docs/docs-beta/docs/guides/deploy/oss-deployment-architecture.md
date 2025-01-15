@@ -31,89 +31,21 @@ Dagster requires three long-running services, which are outlined in the table be
 
 ## Deployment configuration
 
-Dagster OSS deployments are composed of multiple components, such as storages, executors, and run launchers. One of the core features of Dagster is that each of these components is swappable and configurable. If custom configuration isn't provided, Dagster will automatically use a default implementation of each component. For example, by default Dagster uses <PyObject module="dagster._core.storage.runs" object="SqliteRunStorage" /> to store information about pipeline runs. This can be swapped with the Dagster-provided <PyObject module="dagster_postgres" object="PostgresRunStorage"/> instead or or a custom storage class.
+Dagster OSS deployments are composed of multiple components, such as storages, executors, and run launchers. One of the core features of Dagster is that each of these components is swappable and configurable. If custom configuration isn't provided, Dagster will automatically use a default implementation of each component. For example, by default Dagster uses <PyObject section="internals" module="dagster._core.storage.runs" object="SqliteRunStorage" /> to store information about pipeline runs. This can be swapped with the Dagster-provided <PyObject section="libraries" module="dagster_postgres" object="PostgresRunStorage"/> instead or or a custom storage class.
 
 Based on the component's scope, configuration occurs at either the **Dagster instance** or **Job run** level. Access to user code is configured at the **Workspace** level. Refer to the following table for info on how components are configured at each of these levels:
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "15%",
-        }}
-      >
-        Level
-      </th>
-      <th
-        style={{
-          width: "15%",
-        }}
-      >
-        Configuration
-      </th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <a href="/deployment/dagster-instance">Dagster instance</a>
-      </td>
-      <td>
-        <code>dagster.yaml</code>
-      </td>
-      <td>
-        The Dagster instance is responsible for managing all deployment-wide
-        components, such as the database. You can specify the configuration for
-        instance-level components in <code>dagster.yaml</code>.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/concepts/code-locations/workspace-files">Workspace</a>
-      </td>
-      <td>
-        <code>workspace.yaml</code>
-      </td>
-      <td>
-        Workspace files define how to access and load your code. You can define
-        workspace configuration using <code>workspace.yaml</code>.
-      </td>
-    </tr>
-    <tr>
-      <td>Job run</td>
-      <td>Run config</td>
-      <td>
-        A job run is responsible for managing all job-scoped components, such as
-        the executor, ops, and resources. These components dictate job behavior,
-        such as how to execute ops or where to store outputs.
-        <br></br>
-        <br></br>
-        Configuration for run-level components is specified using the job run's run
-        config, and defined in either Python code or in the <a href="/concepts/webserver/ui#launchpad">
-          UI launchpad
-        </a>.
-      </td>
-    </tr>
-  </tbody>
-</table>
-
+| Level | Configuration | Description |
+|-------|---------------|-------------|
+| [Dagster instance](/guides/deploy/dagster-instance-configuration) | `dagster.yaml` | The Dagster instance is responsible for managing all deployment-wide components, such as the database. You can specify the configuration for instance-level components in `dagster.yaml`. |
+| [Workspace](/guides/deploy/code-locations/workspace-yaml) | `workspace.yaml` | Workspace files define how to access and load your code. You can define workspace configuration using `workspace.yaml`. |
+| Job run | Run config | A job run is responsible for managing all job-scoped components, such as the executor, ops, and resources. These components dictate job behavior, such as how to execute ops or where to store outputs. <br/> Configuration for run-level components is specified using the job run's run config, and defined in either Python code or in the UI launchpad. |
+ 
 :::note
 
 Dagster provides a few vertically-integrated deployment options that abstract
 away some of the configuration options described above. For example, with
-Dagster's provided{" "}
-<Link href="/deployment/guides/kubernetes/deploying-with-helm">
-Kubernetes Helm chart deployment
-</Link>
-, configuration is defined through Helm values, and the Kubernetes deployment automatically
-generates Dagster Instance and Workspace configuration.
+Dagster's provided [Kubernetes Helm chart deployment](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes), configuration is defined through Helm values, and the Kubernetes deployment automatically generates Dagster Instance and Workspace configuration.
 
 :::
 
@@ -121,88 +53,13 @@ generates Dagster Instance and Workspace configuration.
 
 Job execution flows through several parts of the Dagster system. The following table describes runs launched by the UI, specifically the components that handle execution and the order in which they are executed.
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "5%",
-        }}
-      >
-        Order
-      </th>
-      <th
-        style={{
-          width: "15%",
-        }}
-      >
-        Component
-      </th>
-      <th>Description</th>
-      <th
-        style={{
-          width: "15%",
-        }}
-      >
-        Configured by
-      </th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>1</td>
-      <td>
-        <a href="/deployment/run-coordinator">Run coordinator</a>
-      </td>
-      <td>
-        The run coordinator is a class invoked by the webserver process when
-        runs are launched from the Dagster UI. This class can be configured to
-        pass runs to the daemon via a queue.
-      </td>
-      <td>Instance</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>
-        <a href="/deployment/run-launcher">Run launcher</a>
-      </td>
-      <td>
-        The run launcher is a class invoked by the daemon when it receives a run
-        from the queue. This class initializes a new run worker to handle
-        execution. Depending on the launcher, this could mean spinning up a new
-        process, container, Kubernetes pod, etc.
-      </td>
-      <td>Instance</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Run worker</td>
-      <td>
-        The run worker is a process which traverses a graph and uses the
-        executor to execute each op.
-      </td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>
-        <a href="/deployment/executors">Executor</a>
-      </td>
-      <td>
-        The executor is a class invoked by the run worker for running user ops.
-        Depending on the executor, ops run in local processes, new containers,
-        Kubernetes pods, etc.
-      </td>
-      <td>Run config</td>
-    </tr>
-  </tbody>
-</table>
+| Order | Component | Description | Configured by |
+|-------|-----------|-------------|---------------|
+| [Run coordinator](/guides/deploy/execution/run-coordinators) | The run coordinator is a class invoked by the webserver process when runs are launched from the Dagster UI. This class can be configured to pass runs to the daemon via a queue. | Instance |
+| [Run launcher](/guides/deploy/execution/run-launchers) | The run launcher is a class invoked by the daemon when it receives a run from the queue. This class initializes a new run worker to handle execution. Depending on the launcher, this could mean spinning up a new process, container, Kubernetes pod, etc. | Instance |
+| Run worker | The run worker is a process which traverses a graph and uses the executor to execute each op. | n/a |
+| [Executor](/guides/operate/run-executors) | The executor is a class invoked by the run worker for running user ops. Depending on the executor, ops run in local processes, new containers, Kubernetes pods, etc. | Run config | 
 
-Additionally, note that runs launched by schedules and sensors go through the same flow, but the first step is called by the [Dagster daemon](/deployment/dagster-daemon) instead of the webserver.
+Additionally, note that runs launched by schedules and sensors go through the same flow, but the first step is called by the [Dagster daemon](/guides/deploy/execution/dagster-daemon) instead of the webserver.
 
-In a deployment without the [Dagster daemon](/deployment/dagster-daemon), the webserver directly calls the **run launcher** and skips the **run coordinator**.
+In a deployment without the [Dagster daemon](/guides/deploy/execution/dagster-daemon), the webserver directly calls the **run launcher** and skips the **run coordinator**.

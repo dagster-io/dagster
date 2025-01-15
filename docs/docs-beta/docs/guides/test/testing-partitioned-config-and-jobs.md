@@ -14,10 +14,11 @@ This article assumes familiarity with [partitioned assets](/guides/build/partiti
 
 ## Testing partitioned config
 
-Invoking a <PyObject object="PartitionedConfig" /> object directly invokes the decorated function.
+Invoking a <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> object directly invokes the decorated function.
 
-If you want to check whether the generated run config is valid for the config of a job, you can use the <PyObject object="validate_run_config" /> function.
+If you want to check whether the generated run config is valid for the config of a job, you can use the <PyObject section="execution" module="dagster" object="validate_run_config" /> function.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_config endbefore=end_partition_config
 from dagster import validate_run_config, daily_partitioned_config
 from datetime import datetime
@@ -44,8 +45,9 @@ def test_my_partitioned_config():
     assert validate_run_config(partitioned_op_job, run_config)
 ```
 
-If you want to test that a <PyObject object="PartitionedConfig" /> creates the partitions you expect, use the `get_partition_keys` or `get_run_config_for_partition_key` functions:
+If you want to test that a <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> creates the partitions you expect, use the `get_partition_keys` or `get_run_config_for_partition_key` functions:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/partitioned_config_test.py startafter=start_partition_keys endbefore=end_partition_keys
 from dagster import Config, OpExecutionContext
 
@@ -103,8 +105,9 @@ def test_my_offset_partitioned_config():
 
 ## Testing partitioned jobs
 
-To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of <PyObject object="JobDefinition" method="execute_in_process" />. For example:
+To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of <PyObject section="execution" module="dagster" object="JobDefinition" method="execute_in_process" />. For example:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job_test.py startafter=start endbefore=end
 def test_partitioned_op_job():
     assert partitioned_op_job.execute_in_process(partition_key="2020-01-01").success

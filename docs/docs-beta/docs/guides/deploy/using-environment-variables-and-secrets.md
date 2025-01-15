@@ -163,7 +163,7 @@ class GithubClientResource(ConfigurableResource):
 Let's review what's happening here:
 
 - This code creates a GitHub resource named `GithubClientResource`
-- By subclassing <PyObject object="ConfigurableResource" /> and specifying the `access_token` field, we're telling Dagster that we want to be able to configure the resource with an `access_token` parameter
+- By subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource" /> and specifying the `access_token` field, we're telling Dagster that we want to be able to configure the resource with an `access_token` parameter
 - Since `access_token` is a string value, this config parameter can either be:
   - An environment variable, or
   - Provided directly in the configuration
@@ -190,7 +190,7 @@ defs = Definitions(
 Let's review what's happening here:
 
 - We pass configuration info to the resource when we construct it. In this example, we're telling Dagster to load the `access_token` from the `GITHUB_ACCESS_TOKEN` environment variable by wrapping it in `EnvVar`.
-- We're adding that resource to our <PyObject object="Definitions" /> object so it's available for our assets.
+- We're adding that resource to our <PyObject section="definitions" module="dagster" object="Definitions" /> object so it's available for our assets.
 
 ## Parameterizing pipeline behavior
 
@@ -246,5 +246,5 @@ Let's review what's happening here:
 
 | Error | Description | Solution     |
 |-------|-------------|--------------|
-| **You have attempted to fetch the environment variable "[variable]" which is not set. In order for this execution to succeed it must be set in this environment.** | Surfacing when a run is launched in the UI, this error means that an environment variable set using <PyObject section="config" module="dagster" object="StringSource" /> could not be found in the executing environment. | Verify that the environment variable is named correctly and accessible in the environment.<ul><li>**If developing locally and using a `.env` file**, try reloading the workspace in the UI. The workspace must be reloaded any time this file is modified for the UI to be aware of the changes.</li><li>**If using Dagster+**:</li><ul><li>Verify that the environment variable is [scoped to the environment and code location](/dagster-plus/deployment/management/environment-variables/dagster-ui#scope) if using the built-in secrets manager</li><li>Verify that the environment variable was correctly configured and added to your [agent's configuration](/dagster-plus/deployment/management/settings/environment-variables/agent-config)</li></ul></ul> |
+| **You have attempted to fetch the environment variable "[variable]" which is not set. In order for this execution to succeed it must be set in this environment.** | Surfacing when a run is launched in the UI, this error means that an environment variable set using <PyObject section="config" module="dagster" object="StringSource" /> could not be found in the executing environment. | Verify that the environment variable is named correctly and accessible in the environment.<ul><li>**If developing locally and using a `.env` file**, try reloading the workspace in the UI. The workspace must be reloaded any time this file is modified for the UI to be aware of the changes.</li><li>**If using Dagster+**:</li><ul><li>Verify that the environment variable is [scoped to the environment and code location](/dagster-plus/deployment/management/environment-variables/dagster-ui#scope) if using the built-in secrets manager</li><li>Verify that the environment variable was correctly configured and added to your [agent's configuration](/dagster-plus/deployment/management/environment-variables/agent-config)</li></ul></ul> |
 | **No environment variables in `.env` file.** | Dagster located and attempted to load a local `.env` file while launching `dagster-webserver`, but couldn't find any environment variables in the file. | If this is unexpected, verify that your `.env` is correctly formatted and located in the same folder where you're running `dagster-webserver`. |

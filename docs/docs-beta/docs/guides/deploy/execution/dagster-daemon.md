@@ -3,7 +3,7 @@ title: "Dagster daemon"
 sidebar_position: 100
 ---
 
-Several Dagster features, like [schedules](/guides/automate/schedules/), [sensors](/guides/automate/sensors/), and [run queueing](/guides/customizing-run-queue-priority), require a long-running `dagster-daemon` process to be included with your deployment.
+Several Dagster features, like [schedules](/guides/automate/schedules/), [sensors](/guides/automate/sensors/), and [run queueing](/guides/deploy/execution/customizing-run-queue-priority), require a long-running `dagster-daemon` process to be included with your deployment.
 
 ## Starting the daemon
 

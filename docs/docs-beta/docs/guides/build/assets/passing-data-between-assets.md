@@ -57,7 +57,7 @@ I/O managers handle:
 1. **Input**: Reading data from storage and loading it into memory for use by dependent assets.
 2. **Output**: Writing data to the configured storage location.
 
-For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/guides/build/io-managers) guide.
+For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/guides/build/io-managers/) guide.
 
 <CodeExample filePath="guides/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using I/O managers" />
 

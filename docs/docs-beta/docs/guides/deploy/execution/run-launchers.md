@@ -28,7 +28,7 @@ Other run launchers include:
 | Name | Description | Documentation |
 |------|-------------|---------------|
 | <PyObject section="libraries" module="dagster_k8s" object="K8sRunLauncher" /> | A run launcher that allocates a Kubernetes job per run. | [Deploying Dagster to Kubernetes](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes) |
-| <PyObject section="libraries" module="dagster_aws.ecs" object="EcsRunLauncher" /> | A run launcher that launches an Amazon ECS task per run. | [Deploying Dagster to Amazon Web Services](/guides/deploy/deployment-options/aws) |
+| <PyObject section="libraries" module="dagster_aws" object="ecs.EcsRunLauncher" /> | A run launcher that launches an Amazon ECS task per run. | [Deploying Dagster to Amazon Web Services](/guides/deploy/deployment-options/aws) |
 | <PyObject section="libraries" module="dagster_docker" object="DockerRunLauncher" /> | A run launcher that launches runs in a Docker container. | [Deploying Dagster using Docker Compose](/guides/deploy/deployment-options/) |
 | <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> | A run launcher that launches runs as single Kubernetes jobs with extra configuration to support the `celery_k8s_job_executor`. | [Using Celery with Kubernetes](/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery) |
 

@@ -1,5 +1,5 @@
 ---
-title: "Managing stored data with I/O managers"
+title: "I/O managers"
 sidebar_position: 50
 ---
 

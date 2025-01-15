@@ -14,7 +14,7 @@ Using a few Dagster concepts, we can easily tackle this task! Here’s an overvi
 
 - [Assets](/guides/build/assets/) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage.
 - [Resources](/guides/build/external-resources) - A resource is an object that models a connection to a (typically) external service. Resources can be shared between assets, and different implementations of resources can be used depending on the environment. For example, a resource may provide methods to send messages in Slack.
-- [I/O managers](/guides/build/io-managers) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 I/O manager.
+- [I/O managers](/guides/build/io-managers/) - An I/O manager is a special kind of resource that handles storing and loading assets. For example, if we wanted to store assets in S3, we could use Dagster’s built-in S3 I/O manager.
 - [Run config](/todo) - Assets and resources sometimes require configuration to set certain values, like the password to a database. Run config allows you to set these values at run time. In this guide, we will also use an API to set some default run configuration.
 
 Using these Dagster concepts we will:
@@ -195,7 +195,7 @@ We still have some problems with this setup:
 1. Developers need to remember to change `user` and `password` to their credentials and `schema` to their name when developing locally.
 2. Passwords are being stored in code.
 
-We can easily solve these problems using <PyObject object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the I/O manager to those environment variables:
+We can easily solve these problems using <PyObject section="resources" module="dagster" object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the I/O manager to those environment variables:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start endbefore=end
@@ -233,7 +233,7 @@ defs = Definitions(
 
 Depending on your organization’s Dagster setup, there are a couple of options for a staging environment.
 
-- **For Dagster+ users**, we recommend using [Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/managing-deployments/) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch, and can be used to verify data pipelines before deploying them to production.
+- **For Dagster+ users**, we recommend using [branch deployments](/dagster-plus/features/ci-cd/branch-deployments/) as your staging step. A branch deployment is a new Dagster deployment that is automatically generated for each git branch, and can be used to verify data pipelines before deploying them to production.
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 
@@ -384,9 +384,7 @@ class StubHNClient:
 
 :::note
 
-  Since the stub Hacker News resource and the real Hacker News resource need to
-  implement the same methods, this would be a great time to write an interface.
-  We’ll skip the implementation in this guide, but you can find it in the [full code example](https://github.com/dagster-io/dagster/tree/master/examples/development_to_production).
+Since the stub Hacker News resource and the real Hacker News resource need to implement the same methods, this would be a great time to write an interface. We’ll skip the implementation in this guide, but you can find it in the [full code example](https://github.com/dagster-io/dagster/tree/master/examples/development_to_production).
 
 :::
 

@@ -322,7 +322,7 @@ run_coordinator:
 
 **QueuedRunCoordinator**
 
-The <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note** This requires an active [dagster-daemon process](dagster-daemon) to launch the runs.
+The <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executed at once. **Note** This requires an active [dagster-daemon process](/guides/deploy/execution/dagster-daemon) to launch the runs.
 
 This run coordinator supports both limiting the overall number of concurrent runs and specific limits based on run tags. For example, to avoid throttling, you can specify a concurrency limit for runs that interact with a specific cloud service.
 
@@ -429,7 +429,7 @@ compute_logs:
 
 **AzureBlobComputeLogManager**
 
-The <PyObject section="libraries" module="dagster_azure.blob" object="AzureBlobComputeLogManager" /> writes `stdout` and `stderr` to Azure Blob Storage.
+The <PyObject section="libraries" module="dagster_azure" object="blob.AzureBlobComputeLogManager" /> writes `stdout` and `stderr` to Azure Blob Storage.
 
 {/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_blob endbefore=end_marker_compute_log_storage_blob
@@ -503,7 +503,7 @@ compute_logs:
 
 **S3ComputeLogManager**
 
-The <PyObject section="libraries" module="dagster_aws.s3" object="S3ComputeLogManager" /> writes `stdout` and `stderr` to an Amazon Web Services S3 bucket.
+The <PyObject section="libraries" module="dagster_aws" object="s3.S3ComputeLogManager" /> writes `stdout` and `stderr` to an Amazon Web Services S3 bucket.
 
 {/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_s3 endbefore=end_marker_compute_log_storage_s3
@@ -536,7 +536,7 @@ compute_logs:
 The `local_artifact_storage` key allows you to configure local artifact storage. Local artifact storage is used to:
 
 - Configure storage for artifacts that require a local disk, or
-- Store inputs and outputs when using the filesystem I/O manager (<PyObject section="io-managers" module="dagster" object="FilesytemIOManager" />). For more information on how other I/O managers store artifacts, see the [I/O managers documentation](/guides/build/io-managers).
+- Store inputs and outputs when using the filesystem I/O manager (<PyObject section="io-managers" module="dagster" object="FilesytemIOManager" />). For more information on how other I/O managers store artifacts, see the [I/O managers documentation](/guides/build/io-managers/).
 
 :::note
 

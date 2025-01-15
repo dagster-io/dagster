@@ -24,7 +24,7 @@ To configure environment variables in the Dagster+ UI , you'll need:
 
 To securely store environment variables defined using the Dagster+ UI, Dagster+ uses [Amazon Key Management Services (KMS)](https://docs.aws.amazon.com/kms/index.html) and [envelope encryption](https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#enveloping). Envelope encryption is a multi-layered approach to key encryption. Plaintext data is encrypted using a data key, and then the data under the data key is encrypted under another key.
 
-![Dagster+ encryption key hierarchy diagram](/images/dagster-plus/deployment/settings/environment-variables/encryption-key-hierarchy.png)
+![Dagster+ encryption key hierarchy diagram](/images/dagster-plus/deployment/environment-variables/encryption-key-hierarchy.png)
 
 ### Scope
 
@@ -58,7 +58,7 @@ Before you begin, use the deployment switcher to select the right deployment.
         - **Local** - If selected, the variable will be included when [exporting environment variables to a local `.env` file](#export).
     - **Code Location Scope** - select the code location(s) where the variable should be accessible. At least one code location is required.
 
-![Create new environment variable dialog window in Dagster+](/images/dagster-plus/deployment/settings/environment-variables/create-new-variable-in-ui.png)
+![Create new environment variable dialog window in Dagster+](/images/dagster-plus/deployment/environment-variables/create-new-variable-in-ui.png)
 
 3. Click **Save**
 
@@ -107,7 +107,7 @@ For example, if you wanted to provide different Snowflake passwords for your pro
    - Set the value as the branch deployment password, and
    - Check only the **Branch deployments** box
 
-![Example SNOWFLAKE_PASSWORD variables configured with different values based on deployment](/images/dagster-plus/deployment/settings/environment-variables/same-variable-diff-scope.png)
+![Example SNOWFLAKE_PASSWORD variables configured with different values based on deployment](/images/dagster-plus/deployment/environment-variables/same-variable-diff-scope.png)
 
 ## Next steps
 

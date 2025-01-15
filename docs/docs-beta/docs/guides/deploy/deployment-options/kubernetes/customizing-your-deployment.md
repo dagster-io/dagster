@@ -12,7 +12,7 @@ Dagster allows you to pass custom configuration to the Kubernetes Jobs and Pods 
 
 ### Instance-level Kubernetes Configuration
 
-If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, you can configure custom configuration for every run launched by Dagster by setting the `k8sRunLauncher.runK8sConfig` dictionary in the Helm chart.
+If your instance is using the <PyObject section="libraries" module="dagster_k8s" object="K8sRunLauncher" />, you can configure custom configuration for every run launched by Dagster by setting the `k8sRunLauncher.runK8sConfig` dictionary in the Helm chart.
 
 `k8sRunLauncher.runK8sConfig` is a dictionary with the following keys:
 
@@ -26,6 +26,7 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
+{/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/kubernetes/run_k8s_config.yaml
 runLauncher:
   type: K8sRunLauncher
@@ -50,11 +51,11 @@ runLauncher:
             mykey: myvalue
 ```
 
-If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set in `runK8sConfig` will also be propagated to the pods that are created for each step, unless that step's configuration is overridden using one of the methods below.
+If your Dagster job is configured with the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set in `runK8sConfig` will also be propagated to the pods that are created for each step, unless that step's configuration is overridden using one of the methods below.
 
 ### Per-job Kubernetes configuration
 
-If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLauncher" /> or <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, you can use the `dagster-k8s/config` tag on a Dagster job to pass custom configuration to the Kubernetes Jobs and Pods created by Dagster for that job.
+If your instance is using the <PyObject section="libraries" module="dagster_k8s" object="K8sRunLauncher" /> or <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, you can use the `dagster-k8s/config` tag on a Dagster job to pass custom configuration to the Kubernetes Jobs and Pods created by Dagster for that job.
 
 `dagster-k8s/config` is a dictionary with the following keys:
 
@@ -68,6 +69,7 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/kubernetes/k8s_config_tag_job.py startafter=start_k8s_config endbefore=end_k8s_config
 @job(
     tags={
@@ -113,13 +115,13 @@ def my_job():
 
 Other run launchers will ignore the `dagster-k8s/config` tag.
 
-The default [executor](/deployment/executors) - <PyObject module="dagster" object="multi_or_in_process_executor" /> - will run each job in its own pod, executing each step in an individual process. If your Dagster job produces assets which have a short compute time (compared to the step overhead time), consider avoiding the step process creation cost by using the <PyObject module="dagster" object="in_process_executor" /> executor, which runs each step serially in a single process. This can be especially useful where parallelism is obtained through a <PyObject object="PartitionsDefinition" /> and is unnecessary within the job.
+The default [executor](/guides/operate/run-executors) - <PyObject section="execution" module="dagster" object="multi_or_in_process_executor" /> - will run each job in its own pod, executing each step in an individual process. If your Dagster job produces assets which have a short compute time (compared to the step overhead time), consider avoiding the step process creation cost by using the <PyObject section="execution" module="dagster" object="in_process_executor" /> executor, which runs each step serially in a single process. This can be especially useful where parallelism is obtained through a <PyObject section="partitions" module="dagster" object="PartitionsDefinition" /> and is unnecessary within the job.
 
-For this use-case, the <PyObject module="dagster" object="in_process_executor" /> is more efficient than running each step in its own process. The <PyObject module="dagster_k8s" object="k8s_job_executor" /> is contraindicated, as the delay of scheduling and starting up a new Dagster pod to execute every step would significantly slow down overall execution time.
+For this use-case, the <PyObject section="execution" module="dagster" object="in_process_executor" /> is more efficient than running each step in its own process. The <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> is contraindicated, as the delay of scheduling and starting up a new Dagster pod to execute every step would significantly slow down overall execution time.
 
 ### Kubernetes configuration on every step in a run
 
-If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set on a job using the `dagster-k8s/config` tag will _not_ be propagated to any of those step pods. Use the `step_k8s_config` field on the executor to control the Kubernetes configuration for every step pod.
+If your Dagster job is configured with the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set on a job using the `dagster-k8s/config` tag will _not_ be propagated to any of those step pods. Use the `step_k8s_config` field on the executor to control the Kubernetes configuration for every step pod.
 
 `step_k8s_config` is a dictionary with the following keys:
 
@@ -133,6 +135,7 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/kubernetes/step_k8s_config.py startafter=start_step_k8s_config endbefore=end_step_k8s_config
 my_k8s_executor = k8s_job_executor.configured(
     {
@@ -153,7 +156,7 @@ def my_job():
 
 ### Kubernetes configuration on individual steps in a run
 
-If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> or <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" /> that run each step in its own Kubernetes pod, you can use the `dagster-k8s/config` tag on a Dagster op to control the Kubernetes configuration for that specific op.
+If your Dagster job is configured with the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> or <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" /> that run each step in its own Kubernetes pod, you can use the `dagster-k8s/config` tag on a Dagster op to control the Kubernetes configuration for that specific op.
 
 As above when used on jobs, `dagster-k8s/config` is a dictionary with the following keys:
 
@@ -169,6 +172,7 @@ The value for each of these keys is a dictionary with the YAML configuration for
 
 For example, for an asset:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/kubernetes/k8s_config_tag_asset.py startafter=start_k8s_config endbefore=end_k8s_config
 @asset(
     op_tags={
@@ -189,6 +193,7 @@ my_job = define_asset_job(name="my_job", selection="my_asset", executor_def=k8s_
 
 or an op:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/kubernetes/k8s_config_tag_op.py startafter=start_k8s_config endbefore=end_k8s_config
 @op(
     tags={
@@ -218,7 +223,7 @@ Kubernetes configuration can be applied at several different scopes:
 - At the deployment level, applying to every run in the deployment
 - At the code location, applying to every run launched from the code location
 - At the job level, applying to every run launched for that job
-- At the step level, if using the <PyObject module="dagster_k8s" object="k8s_job_executor" />
+- At the step level, if using the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" />
 
 By default, if Kubernetes configuration is specified in multiple places, the configuration is merged recursively. Scalar values will be replaced by the configuration for the more specific scope, dictionary fields will be combined, and list fields will be appended to each other, discarding duplicate values. List fields that cannot be meaningfully appended, like `command` or `args`, are replaced.
 
@@ -374,6 +379,7 @@ helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/va
 
 If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day. The TTL value can be modified in your job tags:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/kubernetes/ttl_config_job.py startafter=start_ttl endbefore=end_ttl
 @job(
     tags = {

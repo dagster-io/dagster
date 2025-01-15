@@ -5,11 +5,11 @@ sidebar_position: 300
 
 In addition to using the `k8s_job_executor` to run each op in its own Kubernetes job, Dagster also allows you to use Celery to limit the number of ops that can concurrently connect to a resource across all running Dagster jobs.
 
-In this section, we demonstrate how to extend the [previous Helm deployment guide](/deployment/guides/kubernetes/deploying-with-helm) to support that use case, by deploying a more complex configuration of Dagster, which utilizes the <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
+In this section, we demonstrate how to extend the [previous Helm deployment guide](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes) to support that use case, by deploying a more complex configuration of Dagster, which utilizes the <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> and <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
 
 ## Prerequisites
 
-In addition to the [previous prerequisites](/deployment/guides/kubernetes/deploying-with-helm#prerequisites), we expect familiarity with [Celery, a distributed task queue system](https://docs.celeryq.dev/).
+In addition to the [previous prerequisites](deploying-to-kubernetes), this article assumes familiarity with [Celery, a distributed task queue system](https://docs.celeryq.dev/).
 
 ## Deployment architecture
 
@@ -29,7 +29,7 @@ In addition to the [previous prerequisites](/deployment/guides/kubernetes/deploy
 | Step job | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
 | User code deployment | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
 
-The Helm chart can be configured to use this architecture by configuring the `runLauncher.type` field in your `values.yaml` file to be `CeleryK8sRunLauncher` instead of the default `K8sRunLauncher`. The resulting architecture is similar to the architecture described in the [Helm deployment guide](/deployment/guides/kubernetes/deploying-with-helm), with the following changes:
+The Helm chart can be configured to use this architecture by configuring the `runLauncher.type` field in your `values.yaml` file to be `CeleryK8sRunLauncher` instead of the default `K8sRunLauncher`. The resulting architecture is similar to the architecture described in the [Helm deployment guide](deploying-to-kubernetes), with the following changes:
 
 ### Celery
 

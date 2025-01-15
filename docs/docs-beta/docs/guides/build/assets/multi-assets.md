@@ -9,7 +9,7 @@ A multi-asset represents a set of asset definitions that are all updated by the 
 
 | Name                                        | Description                              |
 | ------------------------------------------- | ---------------------------------------- |
-| <PyObject section="asset" module="dagster" object="multi_asset" decorator /> | A decorator used to define multi-assets. |
+| <PyObject section="assets" module="dagster" object="multi_asset" decorator /> | A decorator used to define multi-assets. |
 
 ## Overview
 
@@ -22,11 +22,11 @@ Multi-assets may be useful in the following scenarios:
 
 ## Defining multi-assets
 
-The function responsible for computing the contents of any asset is an [op](/concepts/ops-jobs-graphs/ops). Multi-assets are responsible for updating multiple assets, so the underlying op will have multiple outputs -- one for each associated asset.
+The function responsible for computing the contents of any asset is an [op](/guides/build/ops). Multi-assets are responsible for updating multiple assets, so the underlying op will have multiple outputs -- one for each associated asset.
 
 ### A basic multi-asset
 
-The easiest way to create a multi-asset is with the <PyObject section="asset" module="dagster" object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject section="asset" module="dagster" object="asset" decorator /> decorator, but requires a `specs` parameter specifying each asset that the function materializes.
+The easiest way to create a multi-asset is with the <PyObject section="assets" module="dagster" object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator, but requires a `specs` parameter specifying each asset that the function materializes.
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/concepts/assets/multi_assets.py startafter=start_basic_multi_asset endbefore=end_basic_multi_asset

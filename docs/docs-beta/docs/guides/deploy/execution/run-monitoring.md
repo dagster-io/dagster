@@ -3,7 +3,7 @@ title: "Detect and restart crashed workers with run monitoring"
 sidebar_position: 500
 ---
 
-Dagster can detect hanging runs and restart crashed [run workers](/deployment/overview#job-execution-flow). Using run monitoring requires:
+Dagster can detect hanging runs and restart crashed [run workers](/guides/deploy/oss-deployment-architecture#job-execution-flow). Using run monitoring requires:
 
 - Running the Dagster Daemon
 - Enabling run monitoring in the Dagster Instance:
@@ -22,7 +22,7 @@ run_monitoring:
 
 :::note
 
-In Dagster+, run monitoring is always enabled and can be configured in [deployment settings](/dagster-plus/deployment/managemet/settings/deployment-settings)
+In Dagster+, run monitoring is always enabled and can be configured in [deployment settings](/dagster-plus/deployment/management/settings/deployment-settings)
 
 :::
 

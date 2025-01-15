@@ -7,7 +7,7 @@ The [dagster-dask](https://github.com/dagster-io/dagster/tree/master/python_modu
 
 This executor takes the compiled execution plan, and converts each execution step into a [Dask Future](https://docs.dask.org/en/latest/futures.html) configured with the appropriate task dependencies to ensure tasks are properly sequenced. When the job is executed, these futures are generated and then awaited by the parent Dagster process.
 
-Data is passed between step executions via [IO Managers](/concepts/io-management/io-managers). As a consequence, a persistent shared storage (such as a network filesystem shared by all of the Dask nodes, S3, or GCS) must be used.
+Data is passed between step executions via [IO Managers](/guides/build/io-managers/). As a consequence, a persistent shared storage (such as a network filesystem shared by all of the Dask nodes, S3, or GCS) must be used.
 
 Note that, when using this executor, the compute function of a single op is still executed in a single process on a single machine. If your goal is to distribute execution of workloads _within_ the logic of a single op, you may find that invoking Dask or PySpark directly from within the body of an op's compute function is a better fit than the engine layer covered in this documentation.
 
@@ -23,6 +23,7 @@ First, run `pip install dagster-dask`.
 
 Then, create a job with the dask executor:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/dask_hello_world.py startafter=start_local_job_marker endbefore=end_local_job_marker
 from dagster_dask import dask_executor
 
@@ -41,6 +42,7 @@ def local_dask_job():
 
 Now you can run this job with a config block such as the following:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/dask_hello_world.yaml
 execution:
   config:
@@ -54,8 +56,9 @@ Executing this job will spin up local Dask execution, run the job, and exit.
 
 If you want to use a Dask cluster for distributed execution, you will first need to [set up a Dask cluster](https://distributed.readthedocs.io/en/latest/quickstart.html#setup-dask-distributed-the-hard-way). Note that the machine running the Dagster parent process must be able to connect to the host/port on which the Dask scheduler is running.
 
-You'll also need an IO manager that uses persistent shared storage, which should be attached to the job along with any resources on which it depends. Here, we use the <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/>:
+You'll also need an IO manager that uses persistent shared storage, which should be attached to the job along with any resources on which it depends. Here, we use the <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager"/>:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/dask_hello_world_distributed.py startafter=start_distributed_job_marker endbefore=end_distributed_job_marker
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.resources import s3_resource
@@ -79,6 +82,7 @@ def distributed_dask_job():
 
 For distributing task execution on a Dask cluster, you must provide a config block that includes the address/port of the Dask scheduler:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/dask_remote.yaml
 resources:
   io_manager:

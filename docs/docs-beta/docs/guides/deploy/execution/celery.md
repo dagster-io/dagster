@@ -7,23 +7,21 @@ sidebar_position: 700
 
 The `dagster-celery` executor uses Celery to satisfy three common requirements when running jobs in production:
 
-1. Parallel execution capacity that scales horizontally across multiple compute nodes.
-2. Separate queues to isolate execution and control external resource usage at the op level.
-3. Priority-based execution at the op level.
+- Parallel execution capacity that scales horizontally across multiple compute nodes.
+- Separate queues to isolate execution and control external resource usage at the op level.
+- Priority-based execution at the op level.
 
 The dagster-celery executor compiles a job and its associated configuration into a concrete execution plan, and then submits each execution step to the broker as a separate Celery task. The dagster-celery workers then pick up tasks from the queues to which they are subscribed, according to the priorities assigned to each task, and execute the steps to which the tasks correspond.
 
 ## Prerequisites
 
-To complete the steps in this guide, you'll need to:
-
-- Install `dagster` and `dagster-celery`:
+To complete the steps in this guide, you'll need to install `dagster` and `dagster-celery`:
 
   ```shell
   pip install dagster dagster-celery
   ```
 
-- **A running broker,** which is required to run the Celery executor. Refer to the [Celery documentation](https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#choosing-a-broker) for more info about choosing a broker.
+- You will also need **a running broker**, which is required to run the Celery executor. Refer to the [Celery documentation](https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#choosing-a-broker) for more info about choosing a broker.
 
 ## Part 1: Write and execute a job
 
@@ -31,6 +29,7 @@ To demonstrate, we'll start by constructing a parallel toy job that uses the Cel
 
 In your Dagster project, create a new file named `celery_job.py` and paste in the following:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/deploying/celery_job.py
 from dagster_celery import celery_executor
 
@@ -66,7 +65,7 @@ Next, execute this job with Celery by running the following:
 dagster dev -f celery_job.py
 ```
 
-Now you can execute the parallel job from the [Dagster UI](/concepts/webserver/ui).
+Now you can execute the parallel job from the [Dagster UI](/guides/deploy/execution/webserver).
 
 ## Part 2: Ensuring workers are in sync
 
@@ -79,9 +78,13 @@ In production, more configuration is required.
 
 ### Step 1: Configure persistent run and event log storage
 
-First, configure appropriate persistent run and event log storage, e.g., `PostgresRunStorage` and `PostgresEventLogStorage` on your [Dagster instance](/deployment/dagster-instance) (via `dagster.yaml`). This allows the webserver and workers to communicate information about the run and events with each other. Refer to the [Dagster storage section of the Dagster instance documentation](/deployment/dagster-instance#dagster-storage) for information on how to do this.
+First, configure appropriate persistent run and event log storage, e.g., `PostgresRunStorage` and `PostgresEventLogStorage` on your [Dagster instance](/guides/deploy/dagster-instance-configuration) (via [`dagster.yaml`](/guides/deploy/dagster-yaml)). This allows the webserver and workers to communicate information about the run and events with each other. Refer to the [Dagster storage section of the Dagster instance documentation](/guides/deploy/dagster-instance-configuration#dagster-storage) for information on how to do this.
 
-**Note**: The same instance config must be present in the webserver's environment and in the workers' environments. Refer to the [Dagster instance](/deployment/dagster-instance#default-local-behavior) documentation for more information.
+:::note
+
+The same instance config must be present in the webserver's environment and in the workers' environments. Refer to the [Dagster instance](/guides/deploy/dagster-instance-configuration) documentation for more information.
+
+:::
 
 ### Step 2: Configure a persistent I/O manager
 
@@ -89,9 +92,9 @@ When using the Celery executor for job runs, you'll need to use storage that's a
 
 To do this, include an appropriate I/O manager in the job's resource. For example, any of the following I/O managers would be suitable:
 
-- <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager" />
-- <PyObject module="dagster_azure.adls2" object="adls2_pickle_io_manager" />
-- <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager" />
+- <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager" />
+- <PyObject section="libraries" module="dagster_azure" object="adsl2.adls2_pickle_io_manager" />
+- <PyObject section="libraries" module="dagster_gcp" object="gcs.gcs_pickle_io_manager" />
 
 ### Step 3: Supply executor and worker config
 
@@ -113,7 +116,7 @@ Lastly, you'll need to make sure that the Dagster code you want the workers to e
 1. Present in the workers' environment, and
 2. The code is in sync with the code present on the node running the webserver
 
-The easiest way to do this is typically to package the code into a Python module and to configure your project's [`workspace.yaml`](/concepts/code-locations/workspace-files) to have the webserver load from that module.
+The easiest way to do this is typically to package the code into a Python module and to configure your project's [`workspace.yaml`](/guides/deploy/code-locations/workspace-yaml) to have the webserver load from that module.
 
 In Part 1, we accomplished this by starting the webserver with the `-f` parameter:
 
@@ -142,7 +145,11 @@ dagster-celery worker list
 dagster-celery worker terminate
 ```
 
-**Note**: If running Celery with custom config, include the config file path in these commands to ensure workers start with the correct config. Refer to [Step 3](#step-3-supply-executor-and-worker-config) of the walkthrough for more information.
+:::note
+
+If running Celery with custom config, include the config file path in these commands to ensure workers start with the correct config. Refer to [Step 3](#step-3-supply-executor-and-worker-config) of the walkthrough for more information.
+
+:::
 
 While `dagster-celery` is designed to make the full range of Celery configuration available on an as-needed basis, keep in mind that some combinations of config may not be compatible with each other. However, if you're may be comfortable tuning Celery, changing some of the settings may work better for your use case.
 
