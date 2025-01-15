@@ -30,7 +30,6 @@ setup(
         "dagster-dlt",
         "dagster-duckdb",
         "dagster-duckdb-pandas",
-        "dagster-embedded-elt",
         "dagster-fivetran",
         "dagster-gcp",
         "dagster-graphql",

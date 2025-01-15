@@ -83,7 +83,7 @@ dagster_components.pipes_subprocess_script_collection
 This is because the basic `dagster-components` package is lightweight and doesn't include components for specific tools. We can get access to a `sling` component by installing the `sling` extra:
 
 ```bash
-uv add 'dagster-components[sling]' dagster-embedded-elt
+uv add 'dagster-components[sling]' dagster-sling
 ```
 
 Now let's see what's available:
