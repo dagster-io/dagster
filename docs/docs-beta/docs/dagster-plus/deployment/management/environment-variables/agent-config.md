@@ -1,5 +1,5 @@
 ---
-title: "Set environment variables using agent config"
+title: "Setting environment variables using agent config"
 sidebar_position: 300
 sidebar_label: "Set with agent config"
 ---
