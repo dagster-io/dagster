@@ -1052,6 +1052,7 @@ class AssetDaemon(DagsterDaemon):
             submit_threadpool_executor=submit_threadpool_executor,
             remote_sensor=sensor,
             batch_size=batch_size,
+            stored_cursor=stored_cursor,
         )
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
@@ -1137,6 +1138,7 @@ class AssetDaemon(DagsterDaemon):
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         remote_sensor: Optional[RemoteSensor],
         batch_size: Optional[int],
+        stored_cursor: AssetDaemonCursor,
     ):
         updated_evaluation_keys = set()
         run_request_execution_data_cache = {}
@@ -1194,7 +1196,12 @@ class AssetDaemon(DagsterDaemon):
                         "Sensor has been manually stopped while submitted runs. No more runs will be submitted."
                     )
                     tick_context.set_user_interrupted(True)
-                    self._reset_cursor(instance=instance, prev_cursor=stored_cursor, remote_sensor=remote_sensor, tick=tick_context.tick)
+                    self._reset_cursor(
+                        instance=instance,
+                        prev_cursor=stored_cursor,
+                        remote_sensor=remote_sensor,
+                        tick=tick_context.tick,
+                    )
                     break
 
         evaluations_to_update = [
@@ -1229,3 +1236,31 @@ class AssetDaemon(DagsterDaemon):
                 return False
 
         return True
+
+    def _reset_cursor(
+        self,
+        instance: DagsterInstance,
+        prev_cursor: AssetDaemonCursor,
+        remote_sensor: Optional[RemoteSensor],
+        tick: InstigatorTick,
+    ):
+        use_auto_materialize_sensors = instance.auto_materialize_use_sensors
+        if use_auto_materialize_sensors:
+            remote_sensor = check.not_none(remote_sensor)
+            state = instance.get_instigator_state(
+                remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
+            )
+            instance.update_instigator_state(
+                check.not_none(state).with_data(
+                    SensorInstigatorData(
+                        last_tick_timestamp=tick.timestamp,
+                        min_interval=remote_sensor.min_interval_seconds,
+                        cursor=asset_daemon_cursor_to_instigator_serialized_cursor(prev_cursor),
+                        sensor_type=remote_sensor.sensor_type,
+                    )
+                )
+            )
+        else:
+            instance.daemon_cursor_storage.set_cursor_values(
+                {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(prev_cursor)}
+            )
