@@ -7,8 +7,9 @@ import uuid
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
+from subprocess import CompletedProcess
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, Callable
 
 import pytest
 import requests
@@ -18,6 +19,8 @@ from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
 from dagster._utils import process_is_alive
 from dagster_azure.blob.utils import create_blob_client
+
+AZURE_CLI_IMAGE = "mcr.microsoft.com/azure-cli:latest"
 
 
 def integration_test_dir() -> Path:
@@ -136,3 +139,62 @@ def setup_credentials() -> Generator[ClientSecretCredential, None, None]:
 @pytest.fixture(name="container_client")
 def setup_container_client() -> Generator[ContainerClient, None, None]:
     yield get_container_client(get_credentials())
+
+
+@pytest.fixture(name="azure_tmp_dir")
+def setup_azure_tmp_dir() -> Generator[Path, None, None]:
+    with TemporaryDirectory() as tmpdir:
+        yield Path(tmpdir)
+
+
+@pytest.fixture(name="call_azure_cli")
+def setup_azure_env_file(
+    azure_tmp_dir: Path,
+) -> Generator[Callable[[list[str]], CompletedProcess[str]], None, None]:
+    additional_env_vars = {
+        "AZURE_CLIENT_ID": os.environ["TEST_AZURE_CLIENT_ID"],
+        "AZURE_CLIENT_SECRET": os.environ["TEST_AZURE_CLIENT_SECRET"],
+        "AZURE_TENANT_ID": os.environ["TEST_AZURE_TENANT_ID"],
+    }
+    # this creates a file and writes the additional env vars to it
+    file_path = Path(azure_tmp_dir) / "env_vars"
+    with open(file_path, "w") as f:
+        for key, value in additional_env_vars.items():
+            f.write(f"{key}={value}\n")
+
+    subprocess.run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--env-file",
+            file_path,
+            "-v",
+            f"{azure_tmp_dir}/.azure:/root/.azure",
+            AZURE_CLI_IMAGE,
+            "/bin/bash",
+            "-c",
+            "az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID",
+        ],
+        check=True,
+    )
+
+    def invoke_cli(args: list[str]) -> CompletedProcess[str]:
+        assert os.path.exists(f"{azure_tmp_dir}/.azure"), "Azure CLI login information not found."
+
+        docker_args = [
+            "docker",
+            "run",
+            "--rm",
+            "-v",
+            f"{azure_tmp_dir}/.azure:/root/.azure",
+            AZURE_CLI_IMAGE,
+        ]
+        return subprocess.run(
+            [*docker_args, *args],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+    yield invoke_cli
