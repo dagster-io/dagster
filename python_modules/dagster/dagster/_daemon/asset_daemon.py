@@ -1161,7 +1161,7 @@ class AssetDaemon(DagsterDaemon):
             yield
             import time
 
-            time.sleep(5)
+            time.sleep(1)
             num_submitted += 1
 
             tick_context.add_run_info(run_id=submitted_run_id)
@@ -1176,9 +1176,10 @@ class AssetDaemon(DagsterDaemon):
                     )
                     updated_evaluation_keys.add(entity_key)
 
-            # check if the sensor is still enabled:
+            # write the tick to update UI progress and check if the sensor is still enabled:
             check_after_runs_num = instance.get_tick_termination_check_interval()
             if check_after_runs_num is not None and num_submitted % check_after_runs_num == 0:
+                tick_context.write()
                 if not self._sensor_is_enabled(instance, remote_sensor):
                     # The user has manually stopped the sensor mid-iteration. In this case we assume
                     # the user has a good reason for stopping the sensor (e.g. the sensor is submitting

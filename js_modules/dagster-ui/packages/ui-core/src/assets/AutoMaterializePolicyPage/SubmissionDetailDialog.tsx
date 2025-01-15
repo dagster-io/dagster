@@ -3,11 +3,16 @@ import {
   Dialog,
   HeaderCell,
   Row,
-  RowCell
+  RowCell,
+  Inner
 } from '@dagster-io/ui-components';
 import {DialogHeader} from './EvaluationDetailDialog';
-import { HeaderRow } from 'shared/ui/VirtualizedTable';
-import { TEMPLATE_COLUMNS } from 'shared/automation/VirtualizedAutomationRow';
+import { Container, HeaderRow } from 'shared/ui/VirtualizedTable';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import { useRef } from 'react';
+import styled from 'styled-components';
+
+const TEMPLATE_COLUMNS = '50% 50%';
 
 interface Props {
   isOpen: boolean;
@@ -28,30 +33,53 @@ export const SubmissionDetailDialog = ({
 }: Props) => {
   console.log(requestedPartitionKeys);
   console.log(submittedPartitionKeys);
+  const parentRef = useRef<HTMLDivElement | null>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: requestedPartitionKeys?.length || 0,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 60,
+    overscan: 10,
+  });
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const items = rowVirtualizer.getVirtualItems();
   return (
     <Dialog isOpen={isOpen} onClose={onClose} style={EvaluationDetailDialogStyle}>
-       <div>
-        <DialogHeader assetKeyPath={assetKeyPath} assetCheckName={assetCheckName} />
-        <div style={{flex: 1, overflowY: 'auto'}}>
-          <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
-            <HeaderCell>Partition</HeaderCell>
-            <HeaderCell>Submitted</HeaderCell>
-          </HeaderRow>
-        </div>
-        <div>
-          {requestedPartitionKeys?.map((partitionKey) => {
-            return (
-              <Row $height={10} $start={10} key={partitionKey}>
-                <RowCell>partitionKey</RowCell>
-                <RowCell>{submittedPartitionKeys?.includes(partitionKey) ? 'True' : 'False'}</RowCell>
+      <DialogHeader assetKeyPath={assetKeyPath} assetCheckName={assetCheckName} />
+      <Container ref={parentRef}>
+        <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
+          <HeaderCell>Partition</HeaderCell>
+          <HeaderCell>Submitted</HeaderCell>
+        </HeaderRow>
+        <Inner $totalHeight={totalHeight}>
+          {items?.map(({index, key, size, start}) => {
+            const partitionKey = requestedPartitionKeys?.[index];
+            const returnVal = partitionKey ? (
+              <Row $height={size} $start={start} key={key}>
+                <RowGrid border="bottom">
+                  <RowCell>{partitionKey}</RowCell>
+                  <RowCell>
+                    {submittedPartitionKeys?.includes(partitionKey) ? 'True' : 'False'}
+                  </RowCell>
+                </RowGrid>
               </Row>
-            );
+            ) : null;
+            return returnVal;
           })}
-        </div>
-      </div>
+        </Inner>
+      </Container>
     </Dialog>
   );
 };
+
+const RowGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: ${TEMPLATE_COLUMNS};
+  height: 100%;
+  > * {
+    justify-content: center;
+  }
+`;
 
 const EvaluationDetailDialogStyle = {
   width: '80vw',

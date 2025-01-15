@@ -119,7 +119,9 @@ export const TickMaterializationsTable = ({
                 $start={start}
                 assetKey={assetKey}
                 requestedPartitionKeys={assetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
-                submittedPartitionKeys={submittedAssetKeyToPartitionsMap[tokenForAssetKey(assetKey)]}
+                submittedPartitionKeys={
+                  submittedAssetKeyToPartitionsMap[tokenForAssetKey(assetKey)]
+                }
                 evaluationId={tick.autoMaterializeAssetEvaluationId!}
               />
             );
