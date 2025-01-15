@@ -42,7 +42,7 @@ async function getPaginatedChangeLogImpl(input: {versionCountPerPage: number}): 
   const versionMarkerList = [];
   for (let i = 0; i < lineList.length; i++) {
     const line = lineList[i];
-    if (/^# \d/.test(line)) {
+    if (/^## \d/.test(line)) {
       versionMarkerList.push(i);
     }
   }
