@@ -425,8 +425,6 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
 
-            batch_size = workspace_process_context.instance.get_tick_termination_check_interval()
-
             while True:
                 start_time = get_current_timestamp()
                 yield SpanMarker.START_SPAN
@@ -437,7 +435,6 @@ class AssetDaemon(DagsterDaemon):
                         submit_threadpool_executor=submit_threadpool_executor,
                         amp_tick_futures=amp_tick_futures,
                         debug_crash_flags={},
-                        batch_size=batch_size,
                     )
                 except Exception:
                     error_info = DaemonErrorCapture.process_exception(
@@ -460,7 +457,6 @@ class AssetDaemon(DagsterDaemon):
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         amp_tick_futures: dict[Optional[str], Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        batch_size: Optional[int],
     ):
         instance: DagsterInstance = workspace_process_context.instance
 
@@ -596,7 +592,6 @@ class AssetDaemon(DagsterDaemon):
                     sensor,
                     debug_crash_flags,
                     submit_threadpool_executor,
-                    batch_size,
                 )
                 amp_tick_futures[selector_id] = future
                 yield
@@ -607,7 +602,6 @@ class AssetDaemon(DagsterDaemon):
                     sensor,
                     debug_crash_flags,
                     submit_threadpool_executor,
-                    batch_size,
                 )
 
     def _create_initial_sensor_cursors_from_raw_cursor(
@@ -695,7 +689,6 @@ class AssetDaemon(DagsterDaemon):
         sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
-        batch_size: Optional[int],
     ):
         evaluation_time = get_current_datetime()
 
@@ -891,7 +884,6 @@ class AssetDaemon(DagsterDaemon):
                     debug_crash_flags,
                     is_retry=(retry_tick is not None),
                     submit_threadpool_executor=submit_threadpool_executor,
-                    batch_size=batch_size,
                 )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
@@ -917,7 +909,6 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         is_retry: bool,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
-        batch_size: Optional[int],
     ):
         evaluation_id = tick.automation_condition_evaluation_id
 
@@ -1051,7 +1042,6 @@ class AssetDaemon(DagsterDaemon):
             debug_crash_flags=debug_crash_flags,
             submit_threadpool_executor=submit_threadpool_executor,
             remote_sensor=sensor,
-            batch_size=batch_size,
             stored_cursor=stored_cursor,
         )
 
@@ -1137,7 +1127,6 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         remote_sensor: Optional[RemoteSensor],
-        batch_size: Optional[int],
         stored_cursor: AssetDaemonCursor,
     ):
         updated_evaluation_keys = set()
@@ -1185,7 +1174,8 @@ class AssetDaemon(DagsterDaemon):
                     updated_evaluation_keys.add(entity_key)
 
             # check if the sensor is still enabled:
-            if batch_size is not None and num_submitted % batch_size == 0:
+            check_after_runs_num = instance.get_tick_termination_check_interval()
+            if check_after_runs_num is not None and num_submitted % check_after_runs_num == 0:
                 if not self._sensor_is_enabled(instance, remote_sensor):
                     # The user has manually stopped the sensor mid-iteration. In this case we assume
                     # the user has a good reason for stopping the sensor (e.g. the sensor is submitting
@@ -1244,6 +1234,12 @@ class AssetDaemon(DagsterDaemon):
         remote_sensor: Optional[RemoteSensor],
         tick: InstigatorTick,
     ):
+        reset_cursor = AssetDaemonCursor(
+            evaluation_id=tick.automation_condition_evaluation_id,
+            last_observe_request_timestamp_by_asset_key=prev_cursor.last_observe_request_timestamp_by_asset_key,
+            previous_evaluation_state=prev_cursor.previous_evaluation_state,
+            previous_condition_cursors=prev_cursor.previous_condition_cursors,
+        )
         use_auto_materialize_sensors = instance.auto_materialize_use_sensors
         if use_auto_materialize_sensors:
             remote_sensor = check.not_none(remote_sensor)
@@ -1255,12 +1251,12 @@ class AssetDaemon(DagsterDaemon):
                     SensorInstigatorData(
                         last_tick_timestamp=tick.timestamp,
                         min_interval=remote_sensor.min_interval_seconds,
-                        cursor=asset_daemon_cursor_to_instigator_serialized_cursor(prev_cursor),
+                        cursor=asset_daemon_cursor_to_instigator_serialized_cursor(reset_cursor),
                         sensor_type=remote_sensor.sensor_type,
                     )
                 )
             )
         else:
             instance.daemon_cursor_storage.set_cursor_values(
-                {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(prev_cursor)}
+                {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(reset_cursor)}
             )
