@@ -468,8 +468,10 @@ class AssetDaemonScenarioState(ScenarioState):
                 self._log_assertion_error(expected_run_requests, [])
                 raise AssertionError("Expected run requests not found in tick data")
 
-        if len(ticks) > 1:
+        if sensor_origin and len(ticks) > 1:
             prev_tick = ticks[-2]
+            assert prev_tick.cursor is not None
+            assert latest_tick.cursor is not None
             if prev_tick.cursor and latest_tick.cursor:
                 prev_cursor = deserialize_value(prev_tick.cursor, AssetDaemonCursor)
                 latest_cursor = deserialize_value(latest_tick.cursor, AssetDaemonCursor)
@@ -487,8 +489,6 @@ class AssetDaemonScenarioState(ScenarioState):
                     prev_cursor.previous_condition_cursors
                     == latest_cursor.previous_condition_cursors
                 )
-            else:
-                self.logger.critical("No cursor found in tick data")
 
         return self
 

@@ -121,7 +121,7 @@ def _get_threadpool_executor(instance: DagsterInstance):
 
 mid_iteration_terminate_scenarios = [
     AssetDaemonScenario(
-        id="two_distinct_graphs_so_multiple_runs",
+        id="stop_while_submitting_runs",
         initial_spec=two_distinct_partitions_graphs.with_current_time(time_partitions_start_str)
         .with_current_time_advanced(days=1, hours=1)
         .with_all_eager(),
@@ -184,7 +184,6 @@ mid_iteration_terminate_scenarios = [
 # just run over a subset of the total scenarios
 daemon_scenarios = [*basic_scenarios, *partition_scenarios, *mid_iteration_terminate_scenarios]
 
-# test_asset_daemon_with_sensor[4-cursor_reset_correctly]
 # Additional repo with assets that should be not be included in the evaluation
 extra_definitions = ScenarioSpec(
     [
@@ -296,7 +295,6 @@ auto_materialize_sensor_scenarios = [
     "scenario", daemon_scenarios, ids=[scenario.id for scenario in daemon_scenarios]
 )
 def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
-    # test_asset_daemon_without_sensor[two_distinct_graphs_so_multiple_runs]
     with get_daemon_instance(
         extra_overrides={"auto_materialize": {"use_sensors": False}}
     ) as instance:
