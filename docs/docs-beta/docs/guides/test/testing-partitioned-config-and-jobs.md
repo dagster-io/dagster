@@ -105,7 +105,9 @@ def test_my_offset_partitioned_config():
 
 ## Testing partitioned jobs
 
-To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of <PyObject section="execution" module="dagster" object="JobDefinition" method="execute_in_process" />. For example:
+{/* TODO fix the API docs so this can be a PyObject */}
+
+To run a partitioned job in-process on a particular partition, supply a value for the `partition_key` argument of [`dagster.JobDefinition.execute_in_process`](/api/python-api/execution):
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job_test.py startafter=start endbefore=end

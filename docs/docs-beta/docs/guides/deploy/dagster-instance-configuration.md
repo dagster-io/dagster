@@ -121,7 +121,7 @@ To use Postgres storage, you'll need to install the [dagster-postgres](/api/pyth
 
 :::
 
-To use a PostgreSQL database (<PyObject section="libraries" module="dagster_postgres" object="DagsterPostgresStorage" />) for storage, configure `storage.postgres` in `dagster.yaml`:
+To use a [PostgreSQL database](/api/python-api/libraries/dagster-postgres) for storage, configure `storage.postgres` in `dagster.yaml`:
 
 {/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_postgres endbefore=end_marker_storage_postgres
@@ -175,8 +175,9 @@ To use MySQL storage, you'll need to install the [dagster-mysql](/api/python-api
 
 :::
 
-To use a MySQL database (<PyObject section="libraries" module="dagster_mysql" object="DagsterMySQLStorage" />) for storage, configure `storage.mysql` in `dagster.yaml`:
+To use a [MySQL database](/api/python-api/libraries/dagster-mysql) for storage, configure `storage.mysql` in `dagster.yaml`:
 
+{/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_storage_mysql endbefore=end_marker_storage_mysql
 # MySQL storage can be set using either credentials or a connection string.  This requires that the
 # `dagster-mysql` library be installed.
@@ -248,13 +249,12 @@ run_launcher:
 
 The <PyObject section="libraries" module="dagster_docker" object="DockerRunLauncher" /> allocates a Docker container per run.
 
+{/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_launcher_docker endbefore=end_marker_run_launcher_docker
 run_launcher:
   module: dagster_docker
   class: DockerRunLauncher
 ```
-
----
 
 </TabItem>
 <TabItem value="K8sRunLauncher" label="K8sRunLauncher">
@@ -473,7 +473,7 @@ compute_logs:
 
 **GCSComputeLogManager**
 
-The <PyObject section="internals" module="dagster_gcp.gcs" object="GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
+The <PyObject section="libraries" module="dagster_gcp" object="gcs.GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
 
 {/* TODO convert to <CodeExample> */}
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_gcs endbefore=end_marker_compute_log_storage_gcs
@@ -536,7 +536,7 @@ compute_logs:
 The `local_artifact_storage` key allows you to configure local artifact storage. Local artifact storage is used to:
 
 - Configure storage for artifacts that require a local disk, or
-- Store inputs and outputs when using the filesystem I/O manager (<PyObject section="io-managers" module="dagster" object="FilesytemIOManager" />). For more information on how other I/O managers store artifacts, see the [I/O managers documentation](/guides/build/io-managers/).
+- Store inputs and outputs when using the filesystem I/O manager (<PyObject section="io-managers" module="dagster" object="FilesystemIOManager" />). For more information on how other I/O managers store artifacts, see the [I/O managers documentation](/guides/build/io-managers/).
 
 :::note
 

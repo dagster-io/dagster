@@ -12,8 +12,8 @@ Executors can range from single-process serial executors to managing per-step co
 
 | Name                                     | Description                                                                                  |
 | ---------------------------------------- | -------------------------------------------------------------------------------------------- |
-| <PyObject section="execution" module="dagster"object="executor" decorator /> | The decorator used to define executors. Defines an <PyObject section="execution" module="dagster" object="ExecutorDefinition" />. |
-| <PyObject section="execution" module="dagster" object="ExecutorDefinition" /> | An executor definition.                                                                      |
+| <PyObject section="internals" module="dagster" object="executor" decorator /> | The decorator used to define executors. Defines an <PyObject section="internals" module="dagster" object="ExecutorDefinition" />. |
+| <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> | An executor definition.                                                                      |
 
 ## Specifying executors
 
@@ -24,7 +24,7 @@ Executors can range from single-process serial executors to managing per-step co
 
 Every job has an executor. The default executor is the <PyObject section="execution" module="dagster" object="multi_or_in_process_executor" />, which by default executes each step in its own process. This executor can be configured to execute each step within the same process.
 
-An executor can be specified directly on a job by supplying an <PyObject section="execution" module="dagster" object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" />:
+An executor can be specified directly on a job by supplying an <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" />:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/deploying/executors/executors.py startafter=start_executor_on_job endbefore=end_executor_on_job

@@ -121,7 +121,7 @@ For example:
 "access_token": {"env": "GITHUB_ACCESS_TOKEN"}
 ```
 
-Refer to the [Handling secrets section](#handling-secrets) and [Per-environment configuration example](#example-1-per-environment-configuration) for examples.
+Refer to the [Handling secrets section](#handling-secrets) and [Per-environment configuration example](#per-environment-configuration-example) for examples.
 
 </TabItem>
 </Tabs>

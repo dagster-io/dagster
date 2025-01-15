@@ -31,7 +31,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 ## Overview page
 
-- **Description**: This page, also known as the "factory floor", provides a high-level look at the activity in your Dagster deployment, across all code locations. This includes information about [runs](#runs), [jobs](#jobs), [schedules](#schedules), [sensors](#sensors), [resources](#resources), and [backfills](#backfills), all of which can be accessed using the tabs on this page.
+- **Description**: This page, also known as the "factory floor", provides a high-level look at the activity in your Dagster deployment, across all code locations. This includes information about runs, jobs, schedules, sensors, resources, and backfills, all of which can be accessed using the tabs on this page.
 
 - **Accessed by**: Clicking **Overview** in the top navigation bar
 
@@ -44,7 +44,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 **Asset catalog (OSS)**
 
-- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, [asset group](/todo), [code location](/guides/deploy/code-locations/), and [tags](/guides/build/assets/organizing-assets-with-tags-and-metadata#tags). Clicking an asset opens the [**Asset details** page](#asset-details) for that asset. You can also navigate to the [Global asset lineage](#global-asset-lineage) page, reload definitions, and materialize assets.
+- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, [asset group](/todo), [code location](/guides/deploy/code-locations/), and [tags](/guides/build/assets/organizing-assets-with-tags-and-metadata#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
@@ -64,9 +64,9 @@ This feature is only available in Dagster+ Pro.
 - **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, [asset group](/todo), [code location](/guides/deploy/code-locations/), [tags](/guides/build/assets/organizing-assets-with-tags-and-metadata#tags), and [owners](/guides/build/assets/organizing-assets-with-tags-and-metadata#owners), etc. On this page, you can:
 
   - View all [assets](/guides/build/assets/) in your Dagster deployment
-  - View [details](#asset-details) about a specific asset by clicking on it
+  - View details about a specific asset by clicking on it
   - Search assets by asset key, compute kind, asset group, code location, tags, owners, etc.
-  - Access the [Global asset lineage](#global-asset-lineage)
+  - Access the global asset lineage
   - Reload definitions
 
 - **Accessed by:** Clicking **Catalog** in the top navigation
@@ -86,7 +86,7 @@ This feature is only available in Dagster+ Pro.
 - **Accessed by:**
 
   - Clicking **Catalog** in the top navigation
-  - **From the [Global asset lineage](#global-asset-lineage)**: Clicking **View global asset lineage**, located near the top right corner of the **Catalog** page
+  - **From the Global asset lineage**: Clicking **View global asset lineage**, located near the top right corner of the **Catalog** page
 
 ![The Catalog views dropdown in the Dagster+ Pro Catalog UI](/images/guides/deploy/execution/webserver/catalog-views.png)
 
@@ -101,12 +101,12 @@ This feature is only available in Dagster+ Pro.
   - Filter a subset of assets by using [asset selection syntax](/guides/build/assets/asset-selection-syntax)
   - Reload definitions
   - Materialize all or a selection of assets
-  - View [run details](#run-details) for the latest materialization of any asset
+  - View run details for the latest materialization of any asset
 
 - **Accessed by**:
 
-  - **From the [Asset catalog](#asset-catalog)**: Clicking **View global asset lineage**, located near the top right corner of the page
-  - **From the [Asset details](#asset-details) page**: Clicking the **Lineage tab**
+  - **From the Asset catalog**: Clicking **View global asset lineage**, located near the top right corner of the page
+  - **From the Asset details page**: Clicking the **Lineage tab**
 
 ![The Global asset lineage page in the Dagster UI](/images/guides/deploy/execution/webserver/global-asset-lineage.png)
 
@@ -121,11 +121,11 @@ This feature is only available in Dagster+ Pro.
   - **Partitions** - The asset's partitions, including their materialization status, metadata, and run information
   - **Events** - The asset's materialization history
   - **Checks** - The [Asset checks](/guides/test/asset-checks) defined for the asset
-  - **Lineage** - The asset's lineage in the [**Global asset lineage** page](#global-asset-lineage)
+  - **Lineage** - The asset's lineage in the **Global asset lineage** page
   - **Automation** - The [Declarative Automation conditions](/guides/automate/declarative-automation) associated with the asset
   - **Insights** - **Dagster+ only.** Historical information about the asset, such as failures and credit usage. Refer to the [Dagster+ Insights](/dagster-plus/features/insights/) documentation for more information.
 
-- **Accessed by**: Clicking an asset in the [**Asset catalog**](#asset-catalog)
+- **Accessed by**: Clicking an asset in the **Asset catalog**
 
 ![The Asset Details page in the Dagster UI](/images/guides/deploy/execution/webserver/asset-details.png)
 
@@ -139,7 +139,7 @@ This feature is only available in Dagster+ Pro.
 
 **All runs**
 
-- **Description**: The **Runs** page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the [**Run details** page](#run-details) and view details for that run.
+- **Description**: The **Runs** page lists all job runs, which can be filtered by job name, run ID, execution status, or tag. Click a run ID to open the **Run details** page and view details for that run.
 
 - **Accessed by**: Clicking **Runs** in the top navigation bar
 
@@ -154,10 +154,10 @@ This feature is only available in Dagster+ Pro.
 
   In this page, you can:
 
-  - **View structured event and raw compute logs.** Refer to the [run logs tab](#run-logs) for more info.
+  - **View structured event and raw compute logs.** Refer to the run logs tab for more info.
   - **Re-execute a run** using the same configuration by clicking the **Re-execute** button. Related runs (e.g., runs created by re-executing the same previous run) are grouped in the right pane for easy reference
 
-- **Accessed by**: Clicking a run in the [**Run details**](#run-details) page
+- **Accessed by**: Clicking a run in the **Run details** page
 
 ![UI Run details page](/images/guides/deploy/execution/webserver/run-details.png)
 
@@ -166,12 +166,12 @@ This feature is only available in Dagster+ Pro.
 
 **Run logs**
 
-- **Description**: Located at the bottom of the [**Run details** page](#run-details), the run logs list every event that occurred in a run, the type of event, and detailed information about the event itself. There are two types of logs, which we'll discuss in the next section:
+- **Description**: Located at the bottom of the **Run details** page, the run logs list every event that occurred in a run, the type of event, and detailed information about the event itself. There are two types of logs, which we'll discuss in the next section:
 
-  - [Structured event logs](#structured-event-logs)
-  - [Raw compute logs](#raw-compute-logs)
+  - Structured event logs
+  - Raw compute logs
 
-- **Accessed by**: Scrolling to the bottom of the [**Run details**](#run-details) page
+- **Accessed by**: Scrolling to the bottom of the **Run details** page
 
 **Structured event logs**
 
@@ -199,7 +199,7 @@ This feature is only available in Dagster+ Pro.
 
 **All schedules**
 
-- **Description**: The **Schedules** page lists all [schedules](/guides/automate/schedules) defined in your Dagster deployment, as well as information about upcoming ticks for anticipated scheduled runs. Click a schedule to open the [**Schedule details**](#schedule-details) page.
+- **Description**: The **Schedules** page lists all [schedules](/guides/automate/schedules) defined in your Dagster deployment, as well as information about upcoming ticks for anticipated scheduled runs. Click a schedule to open the **Schedule details** page.
 
 - **Accessed by**: Clicking **Overview (top nav) > Schedules tab**
 
@@ -212,7 +212,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Schedule details** page contains details about a single schedule, including its next tick, tick history, and run history. Clicking the **Test schedule** button near the top right corner of the page allows you to test the schedule.
 
-- **Accessed by**: Clicking a schedule in the [**Schedules** page](#all-schedules)
+- **Accessed by**: Clicking a schedule in the **Schedules** page.
 
 ![UI Schedule details page](/images/guides/deploy/execution/webserver/schedule-details.png)
 
@@ -239,7 +239,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Sensor details** page contains details about a single sensor, including its next tick, tick history, and run history. Clicking the **Test sensor** button near the top right corner of the page allows you to test the sensor.
 
-- **Accessed by**: Clicking a sensor in the [**Sensors** page](#all-sensors)
+- **Accessed by**: Clicking a sensor in the **Sensors** page
 
 ![UI Sensor details page](/images/guides/deploy/execution/webserver/sensor-details.png)
 
@@ -253,7 +253,7 @@ This feature is only available in Dagster+ Pro.
 
 **All resources**
 
-- **Description**: The **Resources** page lists all [resources](/guides/build/external-resources/) defined in your Dagster deployment, across all code locations. Clicking a resource will open the [**Resource details**](#resource-details) page.
+- **Description**: The **Resources** page lists all [resources](/guides/build/external-resources/) defined in your Dagster deployment, across all code locations. Clicking a resource will open the **Resource details** page.
 
 - **Accessed by**: Clicking **Overview (top nav) > Resources tab**
 
@@ -266,7 +266,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Resource details** page contains detailed information about a resource, including its configuration, description, and uses. Click the tabs below for more information about the tabs on this page.
 
-- **Accessed by**: Clicking a resource in the [**Resources**](#all-resources) page
+- **Accessed by**: Clicking a resource in the **Resources** page.
 
 <Tabs>
 <TabItem value="Configuration tab">
@@ -275,7 +275,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Configuration** tab contains detailed information about a resource's configuration, including the name of each key, type, and value of each config value. If a key's value is an [environment variable](/guides/deploy/using-environment-variables-and-secrets), an `Env var` badge will display next to the value.
 
-- **Accessed by**: On the [**Resource details**](#resource-details) page, clicking the **Configuration tab**
+- **Accessed by**: On the **Resource details** page, clicking the **Configuration tab**
 
 ![UI Resource details - Configuration tab](/images/guides/deploy/execution/webserver/resource-details-configuration-tab.png)
 
@@ -286,7 +286,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets/), [jobs](/guides/build/assets/asset-jobs), and [ops](/guides/build/ops). Clicking on any of these definitions will open the details page for that definition type.
 
-- **Accessed by**: On the [**Resource details**](#resource-details) page, clicking the **Uses tab**
+- **Accessed by**: On the **Resource details* page, clicking the **Uses tab**
 
 ![UI Resource details - Uses tab](/images/guides/deploy/execution/webserver/resource-details-uses-tab.png)
 
@@ -310,7 +310,7 @@ This feature is only available in Dagster+ Pro.
 
 **All jobs**
 
-- **Description**: The **Jobs** page lists all [jobs](/guides/build/assets/asset-jobs) defined in your Dagster deployment across all code locations. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the [**Job details**](#job-details) page.
+- **Description**: The **Jobs** page lists all [jobs](/guides/build/assets/asset-jobs) defined in your Dagster deployment across all code locations. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the **Job details** page.
 
 - **Accessed by**: Clicking **Overview (top nav) > Jobs tab**
 
@@ -323,7 +323,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Job details** page contains detailed information about a job. Click the tabs below for more information about the tabs on this page.
 
-- **Accessed by**: Clicking a job in the [**Jobs** page](#all-jobs)
+- **Accessed by**: Clicking a job in the **Jobs** page.
 
 <Tabs>
 <TabItem value="Overview tab">
@@ -332,7 +332,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Overview** tab in the **Job details** page shows the graph of assets and/or ops that make up a job.
 
-- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Overview** tab
+- **Accessed by:** On the **Job details** page, clicking the **Overview** tab
 
 ![UI Job Definition](/images/guides/deploy/execution/webserver/job-definition-with-ops.png)
 
@@ -343,7 +343,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Launchpad tab** provides a configuration editor to let you experiment with configuration and launch runs. **Note**: For assets, this tab will only display if a job requires config. It displays by default for all op jobs.
 
-- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Launchpad** tab
+- **Accessed by:** On the **Job details** page, clicking the **Launchpad** tab
 
 ![UI Launchpad](/images/guides/deploy/execution/webserver/job-config-with-ops.png)
 
@@ -352,9 +352,9 @@ This feature is only available in Dagster+ Pro.
 
 **Runs tab**
 
-- **Description**: The **Runs** tab displays a list of recent runs for a job. Clicking a run will open the [**Run details**](#run-details) page.
+- **Description**: The **Runs** tab displays a list of recent runs for a job. Clicking a run will open the [**Run details** page.
 
-- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Runs** tab
+- **Accessed by:** On the **Job details** page, clicking the **Runs** tab
 
 ![UI Job runs tab](/images/guides/deploy/execution/webserver/jobs-runs-tab.png)
 
@@ -365,7 +365,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Partitions** tab displays information about the [partitions](/guides/build/partitions-and-backfills) associated with the job, including the total number of partitions, the number of missing partitions, and the job's backfill history. **Note**: This tab will display only if the job contains partitions.
 
-- **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Partitions** tab
+- **Accessed by:** On the **Job details** page, clicking the **Partitions** tab
 
 ![UI Job Partitions tab](/images/guides/deploy/execution/webserver/jobs-partitions-tab.png)
 
@@ -400,7 +400,7 @@ The **Deployment** page includes information about the status of the code locati
 
 **Open Source (OSS)**
 
-In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS deployments contain a few additional tabs. Click the tabs below for more information.
+In addition to the **Code locations** tab, Dagster OSS deployments contain a few additional tabs. Click the tabs below for more information.
 
 <Tabs>
 <TabItem value="Daemons tab">
@@ -408,7 +408,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS de
 **Daemons tab**
 
 - **Description**: The **Daemons** tab contains information about the [daemons](/guides/deploy/execution/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
-- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Daemons** tab
+- **Accessed by**: On the **Deployment overview** page, clicking the **Daemons** tab
 
 ![UI Deployment - Daemons tab](/images/guides/deploy/execution/webserver/deployment-daemons-tab.png)
 
@@ -418,7 +418,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS de
 **Configuration tab**
 
 - **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/guides/deploy/dagster-yaml) file
-- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Configuration** tab
+- **Accessed by**: On the **Deployment overview** page, clicking the **Configuration** tab
 
 ![UI Deployment - Configuration tab](/images/guides/deploy/execution/webserver/deployment-configuration-tab.png)
 
@@ -430,7 +430,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS de
 
 **Dagster+**
 
-In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deployments contain a few additional tabs. Click the tabs below for more information.
+In addition to the **Code locations** tab, Dagster+ deployments contain a few additional tabs. Click the tabs below for more information.
 
 <Tabs>
 <TabItem value="Agents tab">
@@ -438,7 +438,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 **Agents tab**
 
 - **Description**: The **Agents** tab contains information about the agents in a Dagster+ deployment.
-- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Agents** tab
+- **Accessed by**: On the **Deployment overview** page, clicking the **Agents** tab
 
 ![UI Dagster+ Deployment - Agents tab](/images/guides/deploy/execution/webserver/deployment-cloud-agents-tab.png)
 
@@ -448,7 +448,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 **Environment variables tab**
 
 - **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster+ deployment. Refer to the [Dagster+ environment variables documentation](/dagster-plus/deployment/management/environment-variables/) for more info.
-- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Environment variables** tab
+- **Accessed by**: On the **Deployment overview** page, clicking the **Environment variables** tab
 
 ![UI Cloud Deployment - Environment variables tab](/images/guides/deploy/execution/webserver/deployment-cloud-environment-variables-tab.png)
 
@@ -458,7 +458,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 **Alerts tab**
 
 - **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. Refer to the [Dagster+ alerts guide](/dagster-plus/features/alerts/) for more info.
-- **Accessed by**: On the [**Deployment overview**](#code-locations-tab) page, clicking the **Alerts** tab
+- **Accessed by**: On the **Deployment overview** page, clicking the **Alerts** tab
 
 ![UI Dagster+ Deployment - Alerts tab](/images/guides/deploy/execution/webserver/deployment-cloud-alerts-tab.png)
 

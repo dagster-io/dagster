@@ -129,6 +129,10 @@ modules = [{ type = "module", name = "foo" }, { type = "module", name = "bar" }]
 
 Fore more information about local development, including how to configure your local instance, see "[Running Dagster locally](/guides/deploy/deployment-options/running-dagster-locally)".
 
+### Dagster+ deployment
+
+See the [Dagster+ code locations documentation](/dagster-plus/deployment/code-locations/).
+
 ### Open source deployment
 
 The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](workspace-yaml.md)".
