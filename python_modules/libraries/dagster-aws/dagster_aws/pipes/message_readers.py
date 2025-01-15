@@ -354,14 +354,21 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         log_stream: Optional[str] = None,
         log_readers: Optional[Sequence[PipesLogReader]] = None,
         max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
+        include_stdio_in_messages: bool = False,
     ):
         """Args:
         client (boto3.client): boto3 CloudWatch client.
+        log_group (Optional[str]): The log group to read from.
+        log_stream (Optional[str]): The log stream to read from.
+        log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers for logs in CloudWatch.
+        max_retries (Optional[int]): The number of retries to attempt getting cloudwatch logs in case exceptions are encountered. Defaults to 10.
+        include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
         """
         self.client: CloudWatchLogsClient = client or boto3.client("logs")
         self.log_group = log_group
         self.log_stream = log_stream
         self.max_retries = max_retries
+        self.include_stdio_in_messages = include_stdio_in_messages
 
         self.start_time = datetime.now()
 
@@ -378,7 +385,10 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
 
     @contextmanager
     def get_params(self) -> Iterator[PipesParams]:
-        yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDOUT}
+        yield {
+            PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDOUT,
+            PipesBlobStoreMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY: self.include_stdio_in_messages,
+        }
 
     def messages_are_readable(self, params: PipesParams) -> bool:
         if self.log_group is not None and self.log_stream is not None:
