@@ -13,7 +13,7 @@ In addition to the [previous prerequisites](deploying-to-kubernetes), this artic
 
 ## Deployment architecture
 
-{/* https://excalidraw.com/#json=4680957890134016,q6NWURUuPP_VThmbRQ89Jg *}
+{/* https://excalidraw.com/#json=4680957890134016,q6NWURUuPP_VThmbRQ89Jg */}
 ![dagster-kubernetes-advanced-architecture.png](/images/guides/deploy/kubernetes/dagster-kubernetes-advanced-architecture.png)
 
 ### Components
