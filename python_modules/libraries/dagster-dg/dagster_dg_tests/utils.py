@@ -22,14 +22,16 @@ from typing_extensions import Self
 @contextmanager
 def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    with runner.isolated_filesystem(), clear_module_from_cache("bar"):
+    with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
         runner.invoke("deployment", "scaffold", "foo")
         with pushd("foo"):
             yield
 
 
+# Preferred example code location is foo-bar instead of a single word so that we can test the effect
+# of hyphenation.
 @contextmanager
-def isolated_example_code_location_bar(
+def isolated_example_code_location_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"], in_deployment: bool = True, skip_venv: bool = False
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
@@ -42,9 +44,9 @@ def isolated_example_code_location_bar(
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
                 *(["--no-use-dg-managed-environment"] if skip_venv else []),
-                "bar",
+                "foo-bar",
             )
-            with clear_module_from_cache("bar"), pushd("code_locations/bar"):
+            with clear_module_from_cache("foo_bar"), pushd("code_locations/foo-bar"):
                 yield
     else:
         with runner.isolated_filesystem():
@@ -54,9 +56,9 @@ def isolated_example_code_location_bar(
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
                 *(["--no-use-dg-managed-environment"] if skip_venv else []),
-                "bar",
+                "foo-bar",
             )
-            with clear_module_from_cache("bar"), pushd("bar"):
+            with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
                 yield
 
 

@@ -77,21 +77,24 @@ class CodeLocationProjectContext:
             )
 
         name = os.path.basename(path)
+        root_package = name.replace("-", "_")
         config = _load_code_location_config(path)
         components_package_name = (
-            config.component_package or f"{name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE}"
+            config.component_package
+            or f"{root_package}.{_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE}"
         )
         if not components_path:
             with ensure_loadable_path(path):
                 components_path = (
                     Path(get_path_for_package(config.component_package))
                     if config.component_package
-                    else path / name / _DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE
+                    else path / root_package / _DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE
                 )
 
         return cls(
             root_path=str(path),
             name=name,
+            root_package=root_package,
             component_registry=component_registry,
             components_path=components_path,
             components_package_name=components_package_name,
@@ -101,12 +104,14 @@ class CodeLocationProjectContext:
         self,
         root_path: str,
         name: str,
+        root_package: str,
         component_registry: "ComponentTypeRegistry",
         components_path: Path,
         components_package_name: str,
     ):
         self._root_path = root_path
         self._name = name
+        self._root_package = root_package
         self._component_registry = component_registry
         self._components_path = components_path
         self._components_package_name = components_package_name
