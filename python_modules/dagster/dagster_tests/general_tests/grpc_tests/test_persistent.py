@@ -3,6 +3,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 import pytest
 from dagster import _seven
@@ -548,7 +549,46 @@ def test_load_timeout():
     assert "StatusCode.UNAVAILABLE" in str(timeout_exception)
 
 
-def test_load_timeout_code_server_cli():
+def test_server_heartbeat_timeout_code_server_cli() -> None:
+    """Test that without a heartbeat from the calling process, the server will eventually time out."""
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+
+    subprocess_args = [
+        "dagster",
+        "code-server",
+        "start",
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+        "--heartbeat",
+        "--heartbeat-timeout",
+        "5",
+    ]
+
+    process = subprocess.Popen(subprocess_args)
+
+    try:
+        client = DagsterGrpcClient(port=port, host="localhost")
+        wait_for_grpc_server(
+            process,
+            DagsterGrpcClient(port=port, host="localhost"),
+            subprocess_args,
+        )
+        # Send out an initial heartbeat, ensure server is alive to begin with.
+        client.ping("foobar")
+        client.shutdown_server()
+        assert process.poll() is None
+        time.sleep(6)
+        assert process.poll() == 0
+
+    finally:
+        process.terminate()
+        process.wait()
+
+
+def test_load_timeout_code_server_cli() -> None:
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo_that_times_out.py")
 
