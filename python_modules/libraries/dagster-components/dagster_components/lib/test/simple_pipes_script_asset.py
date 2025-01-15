@@ -10,8 +10,11 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.core.component_generator import ComponentGenerateRequest, ComponentGenerator
-from dagster_components.generate import generate_component_yaml
+from dagster_components.core.component_scaffolder import (
+    ComponentScaffolder,
+    ComponentScaffoldRequest,
+)
+from dagster_components.scaffold import scaffold_component_yaml
 
 
 # Same schema used for file generation and defs generation
@@ -20,15 +23,15 @@ class SimplePipesScriptAssetParams(BaseModel):
     filename: str
 
 
-class SimplePipesScriptAssetGenerator(ComponentGenerator):
+class SimplePipesScriptAssetScaffolder(ComponentScaffolder):
     @classmethod
     def get_params_schema_type(cls):
         return SimplePipesScriptAssetParams
 
-    def generate_files(
-        self, request: ComponentGenerateRequest, params: SimplePipesScriptAssetParams
+    def scaffold(
+        self, request: ComponentScaffoldRequest, params: SimplePipesScriptAssetParams
     ) -> None:
-        generate_component_yaml(request, params.model_dump())
+        scaffold_component_yaml(request, params.model_dump())
         Path(request.component_instance_root_path, params.filename).write_text(
             _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
         )
@@ -52,8 +55,8 @@ class SimplePipesScriptAsset(Component):
     """
 
     @classmethod
-    def get_generator(cls) -> ComponentGenerator:
-        return SimplePipesScriptAssetGenerator()
+    def get_scaffolder(cls) -> ComponentScaffolder:
+        return SimplePipesScriptAssetScaffolder()
 
     @classmethod
     def get_component_schema_type(cls):

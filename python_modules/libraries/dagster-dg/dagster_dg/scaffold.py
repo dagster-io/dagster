@@ -8,17 +8,17 @@ import click
 
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.context import DgContext
-from dagster_dg.utils import camelcase, generate_subtree
+from dagster_dg.utils import camelcase, scaffold_subtree
 
 # ########################
 # ##### DEPLOYMENT
 # ########################
 
 
-def generate_deployment(path: Path, dg_context: DgContext) -> None:
+def scaffold_deployment(path: Path, dg_context: DgContext) -> None:
     click.echo(f"Creating a Dagster deployment at {path}.")
 
-    generate_subtree(
+    scaffold_subtree(
         path=path,
         name_placeholder="DEPLOYMENT_NAME_PLACEHOLDER",
         templates_path=os.path.join(
@@ -93,7 +93,7 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> Sequence[Path]:
     ]
 
 
-def generate_code_location(
+def scaffold_code_location(
     path: Path,
     dg_context: DgContext,
     editable_dagster_root: Optional[str] = None,
@@ -109,7 +109,7 @@ def generate_code_location(
         get_pyproject_toml_uv_sources(Path(editable_dagster_root)) if editable_dagster_root else ""
     )
 
-    generate_subtree(
+    scaffold_subtree(
         path=path,
         name_placeholder="CODE_LOCATION_NAME_PLACEHOLDER",
         templates_path=os.path.join(
@@ -132,11 +132,11 @@ def generate_code_location(
 # ########################
 
 
-def generate_component_type(dg_context: DgContext, name: str) -> None:
+def scaffold_component_type(dg_context: DgContext, name: str) -> None:
     root_path = Path(dg_context.components_lib_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
 
-    generate_subtree(
+    scaffold_subtree(
         path=root_path,
         name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
         templates_path=os.path.join(os.path.dirname(__file__), "templates", "COMPONENT_TYPE"),
@@ -154,21 +154,21 @@ def generate_component_type(dg_context: DgContext, name: str) -> None:
 # ########################
 
 
-def generate_component_instance(
+def scaffold_component_instance(
     root_path: Path,
     name: str,
     component_type: str,
-    generate_params: Optional[Mapping[str, Any]],
+    scaffold_params: Optional[Mapping[str, Any]],
     dg_context: "DgContext",
 ) -> None:
     component_instance_root_path = root_path / name
     click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
     os.makedirs(component_instance_root_path, exist_ok=True)
     code_location_command = [
-        "generate",
+        "scaffold",
         "component",
         component_type,
         name,
-        *(["--json-params", json.dumps(generate_params)] if generate_params else []),
+        *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
     ]
     dg_context.external_components_command(code_location_command)

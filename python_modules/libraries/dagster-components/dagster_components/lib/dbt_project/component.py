@@ -22,7 +22,7 @@ from dagster_components.core.schema.objects import (
     OpSpecBaseModel,
     TemplatedValueResolver,
 )
-from dagster_components.lib.dbt_project.generator import DbtProjectComponentGenerator
+from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
@@ -53,8 +53,8 @@ class DbtProjectComponent(Component):
         self.value_resolver = value_resolver
 
     @classmethod
-    def get_generator(cls) -> "DbtProjectComponentGenerator":
-        return DbtProjectComponentGenerator()
+    def get_scaffolder(cls) -> "DbtProjectComponentScaffolder":
+        return DbtProjectComponentScaffolder()
 
     @classmethod
     def get_component_schema_type(cls):

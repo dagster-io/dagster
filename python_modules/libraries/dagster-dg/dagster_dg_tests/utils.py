@@ -23,7 +23,7 @@ from typing_extensions import Self
 def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem(), clear_module_from_cache("bar"):
-        runner.invoke("deployment", "generate", "foo")
+        runner.invoke("deployment", "scaffold", "foo")
         with pushd("foo"):
             yield
 
@@ -38,7 +38,7 @@ def isolated_example_code_location_bar(
         with isolated_example_deployment_foo(runner):
             runner.invoke(
                 "code-location",
-                "generate",
+                "scaffold",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
                 *(["--no-use-dg-managed-environment"] if skip_venv else []),
@@ -50,7 +50,7 @@ def isolated_example_code_location_bar(
         with runner.isolated_filesystem():
             runner.invoke(
                 "code-location",
-                "generate",
+                "scaffold",
                 "--use-editable-dagster",
                 dagster_git_repo_dir,
                 *(["--no-use-dg-managed-environment"] if skip_venv else []),
@@ -94,10 +94,10 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts)
 
     def invoke(self, *args: str):
-        # We need to find the right spot to inject global options. For the `dg component generate`
+        # We need to find the right spot to inject global options. For the `dg component scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[:2] == ("component", "generate"):
+        if args[:2] == ("component", "scaffold"):
             index = 2
         elif "--help" in args:
             index = args.index("--help")

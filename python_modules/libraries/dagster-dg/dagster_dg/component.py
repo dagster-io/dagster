@@ -16,7 +16,7 @@ class RemoteComponentType:
     package: str
     summary: Optional[str]
     description: Optional[str]
-    generate_params_schema: Optional[Mapping[str, Any]]  # json schema
+    scaffold_params_schema: Optional[Mapping[str, Any]]  # json schema
     component_params_schema: Optional[Mapping[str, Any]]  # json schema
 
     @property

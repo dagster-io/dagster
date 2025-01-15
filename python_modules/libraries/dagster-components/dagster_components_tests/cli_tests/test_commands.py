@@ -51,7 +51,7 @@ def test_list_component_types_command():
         "package": "dagster_components.test",
         "summary": "A simple asset that returns a constant string value.",
         "description": "A simple asset that returns a constant string value.",
-        "generate_params_schema": None,
+        "scaffold_params_schema": None,
         "component_params_schema": {
             "properties": {
                 "asset_key": {"title": "Asset Key", "type": "string"},
@@ -78,12 +78,12 @@ def test_list_component_types_command():
         "package": "dagster_components.test",
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
-        "generate_params_schema": pipes_script_params_schema,
+        "scaffold_params_schema": pipes_script_params_schema,
         "component_params_schema": pipes_script_params_schema,
     }
 
 
-def test_generate_component_command():
+def test_scaffold_component_command():
     runner = CliRunner()
 
     with temp_code_location_bar():
@@ -92,7 +92,7 @@ def test_generate_component_command():
             [
                 "--builtin-component-lib",
                 "dagster_components.test",
-                "generate",
+                "scaffold",
                 "component",
                 "dagster_components.test.simple_pipes_script_asset",
                 "qux",

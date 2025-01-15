@@ -8,7 +8,7 @@ import click
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.generate import generate_code_location
+from dagster_dg.scaffold import scaffold_code_location
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
@@ -18,11 +18,11 @@ def code_location_group():
 
 
 # ########################
-# ##### GENERATE
+# ##### SCAFFOLD
 # ########################
 
 
-@code_location_group.command(name="generate", cls=DgClickCommand)
+@code_location_group.command(name="scaffold", cls=DgClickCommand)
 @click.argument("name", type=str)
 @click.option(
     "--use-editable-dagster",
@@ -44,14 +44,14 @@ def code_location_group():
 )
 @dg_global_options
 @click.pass_context
-def code_location_generate_command(
+def code_location_scaffold_command(
     context: click.Context,
     name: str,
     use_editable_dagster: Optional[str],
     skip_venv: bool,
     **global_options: object,
 ) -> None:
-    """Generate a Dagster code location file structure and a uv-managed virtual environment scoped
+    """Scaffold a Dagster code location file structure and a uv-managed virtual environment scoped
     to the code location.
 
     This command can be run inside or outside of a deployment directory. If run inside a deployment,
@@ -71,9 +71,9 @@ def code_location_generate_command(
     │   └── __init__.py
     └── pyproject.toml
 
-    The `<name>.components` directory holds components (which can be created with `dg generate
+    The `<name>.components` directory holds components (which can be created with `dg scaffold
     component`).  The `<name>.lib` directory holds custom component types scoped to the code
-    location (which can be created with `dg component-type generate`).
+    location (which can be created with `dg component-type scaffold`).
     """  # noqa: D301
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
@@ -100,7 +100,7 @@ def code_location_generate_command(
     else:
         editable_dagster_root = None
 
-    generate_code_location(
+    scaffold_code_location(
         code_location_path, dg_context, editable_dagster_root, skip_venv=skip_venv
     )
 

@@ -11,7 +11,7 @@ from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.docs import markdown_for_component_type, render_markdown_in_browser
-from dagster_dg.generate import generate_component_type
+from dagster_dg.scaffold import scaffold_component_type
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
@@ -21,21 +21,21 @@ def component_type_group():
 
 
 # ########################
-# ##### GENERATE
+# ##### SCAFFOLD
 # ########################
 
 
-@component_type_group.command(name="generate", cls=DgClickCommand)
+@component_type_group.command(name="scaffold", cls=DgClickCommand)
 @click.argument("name", type=str)
 @dg_global_options
 @click.pass_context
-def component_type_generate_command(
+def component_type_scaffold_command(
     context: click.Context, name: str, **global_options: object
 ) -> None:
-    """Generate a scaffold of a custom Dagster component type.
+    """Scaffold of a custom Dagster component type.
 
     This command must be run inside a Dagster code location directory. The component type scaffold
-    will be generated in submodule `<code_location_name>.lib.<name>`.
+    will be placed in submodule `<code_location_name>.lib.<name>`.
     """
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
@@ -52,7 +52,7 @@ def component_type_generate_command(
         click.echo(click.style(f"A component type named `{name}` already exists.", fg="red"))
         sys.exit(1)
 
-    generate_component_type(dg_context, name)
+    scaffold_component_type(dg_context, name)
 
 
 # ########################
@@ -90,7 +90,7 @@ def component_type_docs_command(
 @component_type_group.command(name="info", cls=DgClickCommand)
 @click.argument("component_type", type=str)
 @click.option("--description", is_flag=True, default=False)
-@click.option("--generate-params-schema", is_flag=True, default=False)
+@click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-params-schema", is_flag=True, default=False)
 @dg_global_options
 @click.pass_context
@@ -98,7 +98,7 @@ def component_type_info_command(
     context: click.Context,
     component_type: str,
     description: bool,
-    generate_params_schema: bool,
+    scaffold_params_schema: bool,
     component_params_schema: bool,
     **global_options: object,
 ) -> None:
@@ -111,10 +111,10 @@ def component_type_info_command(
             click.style(f"No component type `{component_type}` could be resolved.", fg="red")
         )
         sys.exit(1)
-    elif sum([description, generate_params_schema, component_params_schema]) > 1:
+    elif sum([description, scaffold_params_schema, component_params_schema]) > 1:
         click.echo(
             click.style(
-                "Only one of --description, --generate-params-schema, and --component-params-schema can be specified.",
+                "Only one of --description, --scaffold-params-schema, and --component-params-schema can be specified.",
                 fg="red",
             )
         )
@@ -127,11 +127,11 @@ def component_type_info_command(
             click.echo(component_type_metadata.description)
         else:
             click.echo("No description available.")
-    elif generate_params_schema:
-        if component_type_metadata.generate_params_schema:
-            click.echo(_serialize_json_schema(component_type_metadata.generate_params_schema))
+    elif scaffold_params_schema:
+        if component_type_metadata.scaffold_params_schema:
+            click.echo(_serialize_json_schema(component_type_metadata.scaffold_params_schema))
         else:
-            click.echo("No generate params schema defined.")
+            click.echo("No scaffold params schema defined.")
     elif component_params_schema:
         if component_type_metadata.component_params_schema:
             click.echo(_serialize_json_schema(component_type_metadata.component_params_schema))
@@ -144,9 +144,9 @@ def component_type_info_command(
         if component_type_metadata.description:
             click.echo("\nDescription:\n")
             click.echo(component_type_metadata.description)
-        if component_type_metadata.generate_params_schema:
-            click.echo("\nGenerate params schema:\n")
-            click.echo(_serialize_json_schema(component_type_metadata.generate_params_schema))
+        if component_type_metadata.scaffold_params_schema:
+            click.echo("\nScaffold params schema:\n")
+            click.echo(_serialize_json_schema(component_type_metadata.scaffold_params_schema))
         if component_type_metadata.component_params_schema:
             click.echo("\nComponent params schema:\n")
             click.echo(_serialize_json_schema(component_type_metadata.component_params_schema))

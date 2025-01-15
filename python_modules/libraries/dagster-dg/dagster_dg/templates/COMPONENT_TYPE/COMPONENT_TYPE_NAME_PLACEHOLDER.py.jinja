@@ -2,7 +2,7 @@ from dagster import Definitions
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    DefaultComponentGenerator,
+    DefaultComponentScaffolder,
     component_type,
 )
 from pydantic import BaseModel
@@ -22,8 +22,8 @@ class {{ component_type_class_name }}(Component):
         return {{ component_type_class_name }}Params
 
     @classmethod
-    def get_generator(cls) -> DefaultComponentGenerator:
-        return DefaultComponentGenerator()
+    def get_scaffolder(cls) -> DefaultComponentScaffolder:
+        return DefaultComponentScaffolder()
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> "{{ component_type_class_name }}":

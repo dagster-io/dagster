@@ -7,11 +7,11 @@ from dagster_components.core.component import (
 from dagster_components.core.component_defs_builder import (
     build_component_defs as build_component_defs,
 )
-from dagster_components.core.component_generator import (
-    ComponentGenerateRequest as ComponentGenerateRequest,
-    ComponentGenerator as ComponentGenerator,
-    ComponentGeneratorUnavailableReason as ComponentGeneratorUnavailableReason,
-    DefaultComponentGenerator as DefaultComponentGenerator,
+from dagster_components.core.component_scaffolder import (
+    ComponentScaffolder as ComponentScaffolder,
+    ComponentScaffolderUnavailableReason as ComponentScaffolderUnavailableReason,
+    ComponentScaffoldRequest as ComponentScaffoldRequest,
+    DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
 from dagster_components.core.schema.base import ComponentSchemaBaseModel as ComponentSchemaBaseModel
 from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
