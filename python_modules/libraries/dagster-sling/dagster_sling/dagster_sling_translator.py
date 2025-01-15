@@ -194,9 +194,9 @@ class DagsterSlingTranslator:
                         return AssetKey(map[stream_name])
 
         """
-        return self._default_deps_asset_key_fn(stream_definition)
+        return self._default_deps_fn(stream_definition)
 
-    def _default_deps_asset_key_fn(
+    def _default_deps_fn(
         self, stream_definition: Mapping[str, Any]
     ) -> Iterable[AssetKey]:
         """A function that takes a stream name from a Sling replication config and returns a
