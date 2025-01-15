@@ -3,13 +3,33 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
+from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public
 
 
 @dataclass
 class DagsterSlingTranslator:
     target_prefix: str = "target"
+
+    @public
+    def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+        """A function that takes a stream definition from a Sling replication config and returns a
+        Dagster AssetSpec.
+
+        The stream definition is a dictionary key/value pair where the key is the stream name and
+        the value is a dictionary representing the Sling Replication Stream Config.
+        """
+        return AssetSpec(
+            key=self.get_asset_key(stream_definition),
+            deps=self.get_deps_asset_key(stream_definition),
+            description=self.get_description(stream_definition),
+            metadata=self.get_metadata(stream_definition),
+            tags=self.get_tags(stream_definition),
+            kinds=self.get_kinds(stream_definition),
+            group_name=self.get_group_name(stream_definition),
+            freshness_policy=self.get_freshness_policy(stream_definition),
+            auto_materialize_policy=self.get_auto_materialize_policy(stream_definition),
+        )
 
     @public
     def sanitize_stream_name(self, stream_name: str) -> str:
