@@ -27,7 +27,7 @@ class SlingReplicationParams(BaseModel):
     path: str
     op: Optional[OpSpecBaseModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvableFieldInfo(additional_scope={"stream_definition"})
+        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"stream_definition"})
     ] = None
 
 

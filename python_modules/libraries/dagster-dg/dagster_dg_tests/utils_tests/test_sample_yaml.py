@@ -11,7 +11,7 @@ class SampleSubSchema(ComponentSchemaBaseModel):
 
 
 class SampleSchema(ComponentSchemaBaseModel):
-    sub_scoped: Annotated[SampleSubSchema, ResolvableFieldInfo(additional_scope={"outer_scope"})]
+    sub_scoped: Annotated[SampleSubSchema, ResolvableFieldInfo(required_scope={"outer_scope"})]
     sub_optional: SampleSubSchema
     sub_list: Sequence[SampleSubSchema]
 
