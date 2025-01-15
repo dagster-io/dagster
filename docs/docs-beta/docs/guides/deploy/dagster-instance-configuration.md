@@ -20,9 +20,7 @@ Some important configuration, like [execution parallelism](/guides/operate/run-e
 
 :::
 
-<!--
-  This heading is referenced in a call of DagsterUnmetExecutorRequirementsError, so be sure to update code link if this title changes.
--->
+{/* This heading is referenced in a call of DagsterUnmetExecutorRequirementsError, so be sure to update code link if this title changes. */}
 
 ## Default local behavior
 

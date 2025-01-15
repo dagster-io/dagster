@@ -15,7 +15,7 @@ This page covers general information about deploying Dagster on your own infrast
 
 Let's take a look at a generic Dagster deployment, after which we'll walk through each of its components:
 
-<!-- https://excalidraw.com/#json=4771198026121216,nmLfShZ_frrUPJTUxaeI5g -->
+{/* https://excalidraw.com/#json=4771198026121216,nmLfShZ_frrUPJTUxaeI5g */}
 
 ![Dagster deployment](/images/guides/deploy/dagster-deployment.png)
 
