@@ -10,9 +10,6 @@ COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /uvx /bin/
 
 RUN install_packages curl
 
-# Download the matching hadoop-aws JAR and AWS Java SDK bundle
-# Make sure versions match your Spark/Hadoop build.
-
 RUN curl -fSL "https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/$SPARK_VERSION/hadoop-aws-$SPARK_VERSION.jar" \
     -o /opt/bitnami/spark/jars/hadoop-aws-$SPARK_VERSION.jar
 

@@ -2,8 +2,8 @@
 
 import os
 import subprocess
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Mapping, Sequence
 
 import boto3
 from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
@@ -38,16 +38,16 @@ def pipes_spark_asset(context: dg.AssetExecutionContext):
         include_stdio_in_messages=True,
     )
 
+    # end_pipes_session_marker
+
+    # pipes_spark_asset body continues below
     with dg.open_pipes_session(
         context=context,
         message_reader=message_reader,
         context_injector=context_injector,
     ) as session:
-        # end_pipes_session_marker
-
-        # prepare Pipes bootstrap CLI arguments
-
         dagster_pipes_args = " ".join(
+            # prepare Pipes bootstrap CLI arguments
             [
                 f"{key} {value}"
                 for key, value in session.get_bootstrap_cli_arguments().items()
@@ -57,7 +57,7 @@ def pipes_spark_asset(context: dg.AssetExecutionContext):
         cmd = " ".join(
             [
                 "spark-submit",
-                # change --master and --deploy-mode according to Spark setup
+                # change --master and --deploy-mode according to specific Spark setup
                 "--master",
                 "local[*]",
                 "--conf",
@@ -76,7 +76,7 @@ def pipes_spark_asset(context: dg.AssetExecutionContext):
             # we do not forward stdio on purpose to demonstrate how Pipes collect logs from the driver
             cmd,
             shell=True,
-            check=True,  # stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            check=True,
         )
 
         return session.get_results()
