@@ -9,7 +9,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._record import record
+from dagster._record import copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
@@ -57,9 +57,7 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         operands = [child for child in self.operands if child != condition]
         if len(operands) < 2:
             check.failed("Cannot have fewer than 2 operands in an AndAutomationCondition")
-        return AndAutomationCondition(
-            operands=[child for child in self.operands if child != condition]
-        )
+        return copy(self, operands=[child for child in self.operands if child != condition])
 
 
 @whitelist_for_serdes(storage_name="OrAssetCondition")

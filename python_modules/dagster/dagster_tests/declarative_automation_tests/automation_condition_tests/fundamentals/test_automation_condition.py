@@ -161,6 +161,9 @@ def test_without_automation_condition() -> None:
     assert orig.without(AutomationCondition.in_latest_time_window()) == b & c
     assert orig.without(~AutomationCondition.any_deps_in_progress()) == a & b
 
+    # ensure label is preserved
+    assert orig.with_label("my_label").without(a) == (b & c).with_label("my_label")
+
     # make sure it errors if an invalid condition is passed
     with pytest.raises(CheckError, match="Condition not found"):
         orig.without(AutomationCondition.in_progress())
