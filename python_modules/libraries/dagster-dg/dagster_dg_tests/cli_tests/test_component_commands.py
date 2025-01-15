@@ -180,6 +180,20 @@ def test_component_generate_fails_components_package_does_not_exist() -> None:
         assert "Components package `bar._components` is not installed" in str(result.exception)
 
 
+def test_component_generate_succeeds_scaffolded_component_type() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+        result = runner.invoke("component-type", "generate", "baz")
+        assert_runner_result(result)
+        assert Path("bar/lib/baz.py").exists()
+
+        result = runner.invoke("component", "generate", "bar.baz", "qux")
+        assert_runner_result(result)
+        assert Path("bar/components/qux").exists()
+        component_yaml_path = Path("bar/components/qux/component.yaml")
+        assert component_yaml_path.exists()
+        assert "type: bar.baz" in component_yaml_path.read_text()
+
+
 # ##### REAL COMPONENTS
 
 

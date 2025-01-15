@@ -5,19 +5,16 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from pydantic import BaseModel
+from typing_extensions import Self
 
-from dagster_components import (
+from dagster_components import Component, ComponentLoadContext, component_type
+from dagster_components.core.component_generator import DefaultComponentGenerator
+from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.objects import (
+    AssetAttributesModel,
     AssetSpecTransformModel,
-    Component,
-    ComponentLoadContext,
-    ResolvableFieldInfo,
-    component_type,
+    OpSpecBaseModel,
 )
-from dagster_components.core.component_generator import (
-    ComponentGenerator,
-    DefaultComponentGenerator,
-)
-from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecBaseModel
 
 
 class ComplexAssetParams(BaseModel):
@@ -38,8 +35,18 @@ class ComplexSchemaAsset(Component):
         return ComplexAssetParams
 
     @classmethod
-    def get_generator(cls) -> ComponentGenerator:
+    def get_generator(cls) -> DefaultComponentGenerator:
         return DefaultComponentGenerator()
+
+    @classmethod
+    def load(cls, context: "ComponentLoadContext") -> Self:
+        loaded_params = context.load_params(cls.get_component_schema_type())
+        return cls(
+            value=loaded_params.value,
+            op_spec=loaded_params.op,
+            asset_attributes=loaded_params.asset_attributes,
+            asset_transforms=loaded_params.asset_transforms or [],
+        )
 
     def __init__(
         self,

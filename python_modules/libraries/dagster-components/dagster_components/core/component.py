@@ -42,7 +42,7 @@ class Component(ABC):
     @classmethod
     def get_generator(cls) -> Union[ComponentGenerator, ComponentGeneratorUnavailableReason]:
         """Subclasses should implement this method to override scaffolding behavior. If this component
-        is not meant to be scaffoled it returns a ComponetnGeneratorUnavailableReason with a message
+        is not meant to be scaffolded it returns a ComponetnGeneratorUnavailableReason with a message
         This can be determined at runtime based on the environment or configuration. For example,
         if generators are optionally installed as extras (for example to avoid heavy dependencies in production),
         this method should return a ComponentGeneratorUnavailableReason with a message explaining
