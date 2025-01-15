@@ -39,8 +39,8 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 ## Assets
 
-<TabGroup>
-<TabItem name="Asset catalog">
+<Tabs>
+<TabItem value="Asset catalog">
 
 **Asset catalog (OSS)**
 
@@ -51,7 +51,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 ![The Asset Catalog page in the Dagster UI](/images/guides/deploy/execution/webserver/asset-catalog.png)
 
 </TabItem>
-<TabItem name="Asset catalog (Dagster+ Pro)">
+<TabItem value="Asset catalog (Dagster+ Pro)">
 
 **Asset catalog (Dagster+ Pro)**
 
@@ -74,7 +74,7 @@ This feature is only available in Dagster+ Pro.
 ![The Asset Catalog page in the Dagster UI](/images/guides/deploy/execution/webserver/asset-catalog-cloud-pro.png)
 
 </TabItem>
-<TabItem name="Catalog views (Dagster+)">
+<TabItem value="Catalog views (Dagster+)">
 
 **Catalog views (Dagster+)**
 
@@ -91,7 +91,7 @@ This feature is only available in Dagster+ Pro.
 ![The Catalog views dropdown in the Dagster+ Pro Catalog UI](/images/guides/deploy/execution/webserver/catalog-views.png)
 
 </TabItem>
-<TabItem name="Global asset lineage">
+<TabItem value="Global asset lineage">
 
 **Global asset lineage**
 
@@ -111,7 +111,7 @@ This feature is only available in Dagster+ Pro.
 ![The Global asset lineage page in the Dagster UI](/images/guides/deploy/execution/webserver/global-asset-lineage.png)
 
 </TabItem>
-<TabItem name="Asset details">
+<TabItem value="Asset details">
 
 **Asset details**
 
@@ -130,12 +130,12 @@ This feature is only available in Dagster+ Pro.
 ![The Asset Details page in the Dagster UI](/images/guides/deploy/execution/webserver/asset-details.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ## Runs
 
-<TabGroup>
-<TabItem name="All runs">
+<Tabs>
+<TabItem value="All runs">
 
 **All runs**
 
@@ -146,7 +146,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Runs page](/images/guides/deploy/execution/webserver/runs-page.png)
 
 </TabItem>
-<TabItem name="Run details">
+<TabItem value="Run details">
 
 **Run details**
 
@@ -162,7 +162,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Run details page](/images/guides/deploy/execution/webserver/run-details.png)
 
 </TabItem>
-<TabItem name="Run logs">
+<TabItem value="Run logs">
 
 **Run logs**
 
@@ -190,12 +190,12 @@ This feature is only available in Dagster+ Pro.
 ![Raw compute logs in the Run details page](/images/guides/deploy/execution/webserver/run-details-compute-logs.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ## Schedules
 
-<TabGroup>
-<TabItem name="All schedules">
+<Tabs>
+<TabItem value="All schedules">
 
 **All schedules**
 
@@ -206,7 +206,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Schedules page](/images/guides/deploy/execution/webserver/schedules-tab.png)
 
 </TabItem>
-<TabItem name="Schedule details">
+<TabItem value="Schedule details">
 
 **Schedule details**
 
@@ -217,12 +217,12 @@ This feature is only available in Dagster+ Pro.
 ![UI Schedule details page](/images/guides/deploy/execution/webserver/schedule-details.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ## Sensors
 
-<TabGroup>
-<TabItem name="All sensors">
+<Tabs>
+<TabItem value="All sensors">
 
 **All sensors**
 
@@ -233,7 +233,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Sensors page](/images/guides/deploy/execution/webserver/sensors-tab.png)
 
 </TabItem>
-<TabItem name="Sensor details">
+<TabItem value="Sensor details">
 
 **Sensor details**
 
@@ -244,12 +244,12 @@ This feature is only available in Dagster+ Pro.
 ![UI Sensor details page](/images/guides/deploy/execution/webserver/sensor-details.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ## Resources
 
-<TabGroup>
-<TabItem name="All resources">
+<Tabs>
+<TabItem value="All resources">
 
 **All resources**
 
@@ -260,7 +260,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Resources page](/images/guides/deploy/execution/webserver/resources-tab.png)
 
 </TabItem>
-<TabItem name="Resource details">
+<TabItem value="Resource details">
 
 **Resource details**
 
@@ -268,8 +268,8 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking a resource in the [**Resources**](#all-resources) page
 
-<TabGroup>
-<TabItem name="Configuration tab">
+<Tabs>
+<TabItem value="Configuration tab">
 
 **Configuration tab**
 
@@ -280,7 +280,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Resource details - Configuration tab](/images/guides/deploy/execution/webserver/resource-details-configuration-tab.png)
 
 </TabItem>
-<TabItem name="Uses tab">
+<TabItem value="Uses tab">
 
 **Uses tab**
 
@@ -291,9 +291,9 @@ This feature is only available in Dagster+ Pro.
 ![UI Resource details - Uses tab](/images/guides/deploy/execution/webserver/resource-details-uses-tab.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ## Backfills
 
@@ -305,8 +305,8 @@ This feature is only available in Dagster+ Pro.
 
 ## Jobs
 
-<TabGroup>
-<TabItem name="All jobs">
+<Tabs>
+<TabItem value="All jobs">
 
 **All jobs**
 
@@ -317,7 +317,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Job Definition](/images/guides/deploy/execution/webserver/jobs-tab.png)
 
 </TabItem>
-<TabItem name="Job details">
+<TabItem value="Job details">
 
 **Job details**
 
@@ -325,8 +325,8 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking a job in the [**Jobs** page](#all-jobs)
 
-<TabGroup>
-<TabItem name="Overview tab">
+<Tabs>
+<TabItem value="Overview tab">
 
 **Overview tab**
 
@@ -334,10 +334,10 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by:** On the [**Job details**](#job-details) page, clicking the **Overview** tab
 
-![UI Job Definition](/images/guides/deploy/execution/webserver/jobs-definition-with-ops.png)
+![UI Job Definition](/images/guides/deploy/execution/webserver/job-definition-with-ops.png)
 
 </TabItem>
-<TabItem name="Launchpad tab">
+<TabItem value="Launchpad tab">
 
 **Launchpad tab**
 
@@ -348,7 +348,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Launchpad](/images/guides/deploy/execution/webserver/job-config-with-ops.png)
 
 </TabItem>
-<TabItem name="Runs tab">
+<TabItem value="Runs tab">
 
 **Runs tab**
 
@@ -359,7 +359,7 @@ This feature is only available in Dagster+ Pro.
 ![UI Job runs tab](/images/guides/deploy/execution/webserver/jobs-runs-tab.png)
 
 </TabItem>
-<TabItem name="Partitions tab">
+<TabItem value="Partitions tab">
 
 **Partitions tab**
 
@@ -370,17 +370,17 @@ This feature is only available in Dagster+ Pro.
 ![UI Job Partitions tab](/images/guides/deploy/execution/webserver/jobs-partitions-tab.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ## Deployment
 
 The **Deployment** page includes information about the status of the code locations in your Dagster deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details.
 
-<TabGroup>
-<TabItem name="Code locations tab">
+<Tabs>
+<TabItem value="Code locations tab">
 
 **Code locations tab**
 
@@ -396,14 +396,14 @@ The **Deployment** page includes information about the status of the code locati
 ![UI Deployment overview page](/images/guides/deploy/execution/webserver/deployment-code-locations.png)
 
 </TabItem>
-<TabItem name="Open Source (OSS)">
+<TabItem value="Open Source (OSS)">
 
 **Open Source (OSS)**
 
 In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS deployments contain a few additional tabs. Click the tabs below for more information.
 
-<TabGroup>
-<TabItem name="Daemons tab">
+<Tabs>
+<TabItem value="Daemons tab">
 
 **Daemons tab**
 
@@ -413,7 +413,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS de
 ![UI Deployment - Daemons tab](/images/guides/deploy/execution/webserver/deployment-daemons-tab.png)
 
 </TabItem>
-<TabItem name="Configuration tab">
+<TabItem value="Configuration tab">
 
 **Configuration tab**
 
@@ -423,17 +423,17 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster OSS de
 ![UI Deployment - Configuration tab](/images/guides/deploy/execution/webserver/deployment-configuration-tab.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 </TabItem>
 
-<TabItem name="Dagster+">
+<TabItem value="Dagster+">
 
 **Dagster+**
 
 In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deployments contain a few additional tabs. Click the tabs below for more information.
 
-<TabGroup>
-<TabItem name="Agents tab">
+<Tabs>
+<TabItem value="Agents tab">
 
 **Agents tab**
 
@@ -443,7 +443,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 ![UI Dagster+ Deployment - Agents tab](/images/guides/deploy/execution/webserver/deployment-cloud-agents-tab.png)
 
 </TabItem>
-<TabItem name="Environmental variables tab">
+<TabItem value="Environmental variables tab">
 
 **Environment variables tab**
 
@@ -453,7 +453,7 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 ![UI Cloud Deployment - Environment variables tab](/images/guides/deploy/execution/webserver/deployment-cloud-environment-variables-tab.png)
 
 </TabItem>
-<TabItem name="Alerts tab">
+<TabItem value="Alerts tab">
 
 **Alerts tab**
 
@@ -463,6 +463,6 @@ In addition to the [**Code locations** tab](#code-locations-tab), Dagster+ deplo
 ![UI Dagster+ Deployment - Alerts tab](/images/guides/deploy/execution/webserver/deployment-cloud-alerts-tab.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 </TabItem>
-</TabGroup>
+</Tabs>

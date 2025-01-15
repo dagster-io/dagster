@@ -36,8 +36,8 @@ When defining a priority value, note that:
 - Values must be integers specified as a string. For example: `"1"`
 - Negative values are allowed. For example: `"-1"`
 
-<TabGroup>
-<TabItem name="In Python">
+<Tabs>
+<TabItem value="In Python" label="In Python">
 
 **In Python**
 
@@ -59,16 +59,16 @@ def less_important_schedule(_): ...
 ```
 
 </TabItem>
-<TabItem name="In the Dagster UI">
+<TabItem value="In the Dagster UI" label="In the Dagster UI">
 
 **In the Dagster UI**
 
 Using the launchpad in the Dagster UI, you can also override priority tag values. In this example, we clicked the **Edit tags** button to display the following modal:
 
-![Add tags to run modal in Dagster UI Launchpad](/guides/deploy/execution/dagster-priority-in-launchpad.png)
+![Add tags to run modal in Dagster UI Launchpad](/images/guides/deploy/execution/dagster-priority-in-launchpad.png)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 **Understanding prioritization rules and concurrency limits**
 

@@ -13,8 +13,8 @@ Using environment variables, you can define various configuration options for yo
 
 How environment variables are declared depends on whether you're developing locally or have already deployed your Dagster project.
 
-<TabGroup>
-<TabItem name="Local development">
+<Tabs>
+<TabItem value="Local development">
 
 **Local development**
 
@@ -38,7 +38,7 @@ When using a `.env` file, keep the following in mind:
 - Any time the `.env` file is modified, the workspace must be re-loaded to make the Dagster webserver/UI aware of the changes
 
 </TabItem>
-<TabItem name="Dagster open source">
+<TabItem value="Dagster open source">
 
 **Dagster open source**
 
@@ -50,7 +50,7 @@ How environment variables are set for Dagster projects deployed on your infrastr
 * [Kubernetes](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes)
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ## Accessing environment variables
 
@@ -81,8 +81,8 @@ database_name = EnvVar('DATABASE_NAME').get_value()
 
 [Configurable Dagster objects](/todo) - such as ops, assets, resources, I/O managers, and so on - can accept configuration from environment variables. Dagster provides a native way to specify environment variables in your configuration. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`. Refer to the [next section](#using-envvar-vs-osgetenv) for more info.
 
-<TabGroup>
-<TabItem name="In Python code">
+<Tabs>
+<TabItem value="In Python code">
 
 **In Python code**
 
@@ -105,7 +105,7 @@ And when specifying an integer number:
 ```
 
 </TabItem>
-<TabItem name="In YAML or config dictionaries">
+<TabItem value="In YAML or config dictionaries">
 
 **In YAML or config dictionaries**
 
@@ -124,7 +124,7 @@ For example:
 Refer to the [Handling secrets section](#handling-secrets) and [Per-environment configuration example](#example-1-per-environment-configuration) for examples.
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ### Using EnvVar vs os.getenv
 

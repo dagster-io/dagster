@@ -16,9 +16,7 @@ All of the processes and services that make up your Dagster deployment should sh
 
 :::warning
 
-  Some important configuration, like{" "}
-  <Link href="/deployment/executors">execution parallelism</Link>, is set on a
-  per-job basis rather than on the instance.
+Some important configuration, like [execution parallelism](/guides/operate/run-executors), is set on a per-job basis rather than on the instance.
 
 :::
 
@@ -89,8 +87,8 @@ The `storage` key allows you to configure how job and asset history is persisted
 
 Refer to the following tabs for available options and sample configuration.
 
-<TabGroup>
-  <TabItem name="Sqlite storage (default)">
+<Tabs>
+  <TabItem value="Sqlite storage (default)" label="Sqlite storage (default)">
 
 **SQLite storage (default)**
 
@@ -113,11 +111,11 @@ storage:
 ```
 
 </TabItem>
-<TabItem name="Postgres storage">
+<TabItem value="Postgres storage" label="Postgres storage">
 
 **Postgres storage**
 
-::note
+:::note
 
 To use Postgres storage, you'll need to install the [dagster-postgres](/api/python-api/libraries/dagster-postgres) library.
 
@@ -167,7 +165,7 @@ storage:
 ```
 
 </TabItem>
-<TabItem name="MySQL storage">
+<TabItem value="MySQL storage" label="MySQL storage">
 
 **MySQL storage**
 
@@ -221,7 +219,7 @@ storage:
 ```
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ### Run launcher
 
@@ -229,8 +227,8 @@ The `run_launcher` key allows you to configure the run launcher for your instanc
 
 Refer to the following tabs for available options and sample configuration. Keep in mind that databases should be configured to use UTC timezone.
 
-<TabGroup>
-<TabItem name="DefaultRunLauncher (default)">
+<Tabs>
+<TabItem value="DefaultRunLauncher" label="DefaultRunLauncher (default)">
 
 **DefaultRunLauncher**
 
@@ -244,7 +242,7 @@ run_launcher:
 ```
 
 </TabItem>
-<TabItem name="DockerRunLauncher">
+<TabItem value="DockerRunLauncher" label="DockerRunLauncher">
 
 **DockerRunLauncher**
 
@@ -259,7 +257,7 @@ run_launcher:
 ---
 
 </TabItem>
-<TabItem name="K8sRunLauncher">
+<TabItem value="K8sRunLauncher" label="K8sRunLauncher">
 
 **K8sRunLauncher**
 
@@ -295,7 +293,7 @@ run_launcher:
 ```
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ### Run coordinator
 
@@ -303,8 +301,8 @@ The `run_coordinator` key allows you to configure the run coordinator for your i
 
 Refer to the following tabs for available options and sample configuration.
 
-<TabGroup>
-<TabItem name="DefaultRunCoordinator (default)">
+<Tabs>
+<TabItem value="DefaultRunCoordinator (default)" label="DefaultRunCoordinator (default)">
 
 **DefaultRunCoordinator (default)**
 
@@ -320,7 +318,7 @@ run_coordinator:
 ```
 
 </TabItem>
-<TabItem name="QueuedRunCoordinator">
+<TabItem value="QueuedRunCoordinator" label="QueuedRunCoordinator">
 
 **QueuedRunCoordinator**
 
@@ -376,7 +374,7 @@ run_coordinator:
 ```
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ### Compute log storage
 
@@ -384,8 +382,8 @@ The `compute_logs` key allows you to configure compute log storage. Compute log 
 
 Refer to the following tabs for available options and sample configuration.
 
-<TabGroup>
-<TabItem name="LocalComputeLogManager (default)">
+<Tabs>
+<TabItem value="LocalComputeLogManager (default)" label="LocalComputeLogManager (default)">
 
 **LocalComputeLogManager**
 
@@ -413,7 +411,7 @@ compute_logs:
 ```
 
 </TabItem>
-<TabItem name="NoOpComputeLogManager">
+<TabItem value="NoOpComputeLogManager" label="NoOpComputeLogManager">
 
 **NoOpComputeLogManager**
 
@@ -427,7 +425,7 @@ compute_logs:
 ```
 
 </TabItem>
-<TabItem name="AzureBlobComputeLogManager">
+<TabItem value="AzureBlobComputeLogManager" label="AzureBlobComputeLogManager">
 
 **AzureBlobComputeLogManager**
 
@@ -471,7 +469,7 @@ compute_logs:
 ```
 
 </TabItem>
-<TabItem name="GCSComputeLogManager">
+<TabItem value="GCSComputeLogManager" label="GCSComputeLogManager">
 
 **GCSComputeLogManager**
 
@@ -501,7 +499,7 @@ compute_logs:
 ```
 
 </TabItem>
-<TabItem name="S3ComputeLogManager">
+<TabItem value="S3ComputeLogManager" label="S3ComputeLogManager">
 
 **S3ComputeLogManager**
 
@@ -531,7 +529,7 @@ compute_logs:
 ```
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
 ### Local artifact storage
 

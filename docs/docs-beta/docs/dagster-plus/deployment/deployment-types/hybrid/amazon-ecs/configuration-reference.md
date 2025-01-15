@@ -4,14 +4,16 @@ sidebar_position: 400
 ---
 
 :::note
+
 This guide is applicable to Dagster+.
+
 :::
 
 This reference describes the various configuration options Dagster+ currently supports for [Amazon ECS agents](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs).
 
 ## Per-location configuration
 
-When [adding a code location](/dagster-plus/deployment/code-locations) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
+When [adding a code location](/dagster-plus/deployment/code-locations/) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
 
 **Note**: If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
 
@@ -109,7 +111,7 @@ locations:
 Refer to the following guides for more info about environment variables:
 
 - [Dagster+ environment variables and secrets](/dagster-plus/deployment/management/environment-variables/)
-- [Using environment variables and secrets in Dagster code](/guides/deploy/secrets)
+- [Using environment variables and secrets in Dagster code](/guides/deploy/using-environment-variables-and-secrets)
 
 ## Per-job configuration: Resource limits
 

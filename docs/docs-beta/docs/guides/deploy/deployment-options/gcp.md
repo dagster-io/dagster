@@ -8,7 +8,7 @@ To deploy Dagster to GCP, Google Compute Engine (GCE) can host the Dagster webse
 
 ## Hosting the Dagster webserver or Dagster Daemon on GCE
 
-To host the Dagster webserver or Dagster daemon on a bare VM or in Docker on GCE, see [Running Dagster as a service](/deployment/guides/service).
+To host the Dagster webserver or Dagster daemon on a bare VM or in Docker on GCE, see [Running Dagster as a service](/guides/deploy/deployment-options/deploying-dagster-as-a-service).
 
 ## Using Cloud SQL for run and event log storage
 

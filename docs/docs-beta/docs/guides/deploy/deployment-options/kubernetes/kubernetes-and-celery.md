@@ -14,142 +14,20 @@ In addition to the [previous prerequisites](/deployment/guides/kubernetes/deploy
 ## Deployment architecture
 
 <!-- https://excalidraw.com/#json=4680957890134016,q6NWURUuPP_VThmbRQ89Jg -->
-
-<Image
-alt="dagster-kubernetes-advanced-architecture.png"
-src="/images/deploying/dagster-kubernetes-advanced-architecture.png"
-width={2628}
-height={1130}
-/>
+![dagster-kubernetes-advanced-architecture.png](/images/guides/deploy/kubernetes/dagster-kubernetes-advanced-architecture.png)
 
 ### Components
 
-<table>
-  <tr style={{ background: "#F8F8F8" }}>
-    <th>Component Name</th>
-    <th>Type</th>
-    <th>Image</th>
-  </tr>
-  <tr>
-    <td>Celery</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>
-    </td>
-    <td>
-      <a href="https://hub.docker.com/r/dagster/dagster-celery-k8s">
-        dagster/dagster-celery-k8s
-      </a>{" "}
-      <i>(released weekly)</i>
-    </td>
-  </tr>
-  <tr style={{ background: "#F8F8F8" }}>
-    <td>Daemon</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>
-    </td>
-    <td>
-      <a href="https://hub.docker.com/r/dagster/dagster-celery-k8s">
-        dagster/dagster-celery-k8s
-      </a>{" "}
-      <i>(released weekly)</i>
-    </td>
-  </tr>
-  <tr>
-    <td>Dagster webserver</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>{" "}
-      behind a{" "}
-      <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
-        Service
-      </a>
-    </td>
-    <td>
-      <a href="https://hub.docker.com/r/dagster/dagster-celery-k8s">
-        dagster/dagster-celery-k8s
-      </a>{" "}
-      <i>(released weekly)</i>
-    </td>
-  </tr>
-  <tr style={{ background: "#F8F8F8" }}>
-    <td>Database</td>
-    <td>PostgreSQL</td>
-    <td>
-      <a href="https://hub.docker.com/_/postgres">postgres</a> <i>(Optional)</i>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Flower <i>(Optional)</i>
-    </td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>{" "}
-      behind a{" "}
-      <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
-        Service
-      </a>
-    </td>
-    <td>
-      <a href="https://hub.docker.com/r/mher/flower">mher/flower</a>
-    </td>
-  </tr>
-  <tr style={{ background: "#F8F8F8" }}>
-    <td>Run Worker</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">
-        Job
-      </a>
-    </td>
-    <td>
-      User-provided or{" "}
-      <a href="https://hub.docker.com/r/dagster/user-code-example">
-        dagster/user-code-example
-      </a>{" "}
-      <i>(released weekly)</i>{" "}
-    </td>
-  </tr>
-  <tr>
-    <td>Step Job</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/job/">
-        Job
-      </a>
-    </td>
-    <td>
-      User-provided or{" "}
-      <a href="https://hub.docker.com/r/dagster/user-code-example">
-        dagster/user-code-example
-      </a>{" "}
-      <i>(released weekly)</i>{" "}
-    </td>
-  </tr>
-  <tr style={{ background: "#F8F8F8" }}>
-    <td>User Code Deployment</td>
-    <td>
-      <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">
-        Deployment
-      </a>{" "}
-      behind a{" "}
-      <a href="https://kubernetes.io/docs/concepts/services-networking/service/">
-        Service
-      </a>
-    </td>
-    <td>
-      User-provided or{" "}
-      <a href="https://hub.docker.com/r/dagster/user-code-example">
-        dagster/user-code-example
-      </a>{" "}
-      <i>(released weekly)</i>{" "}
-    </td>
-  </tr>
-</table>
+| Component name | Type | Image |
+|----------------|------|-------|
+| Celery | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_ |
+| Daemon | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_ |
+| Dagster webserver | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_ |
+| Database | PostgreSQL | [postgres](https://hub.docker.com/_/postgres) _(Optional)_ |
+| Flower _(Optional)_ | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | [mher/flower](https://hub.docker.com/r/mher/flower) |
+| Run worker | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
+| Step job | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
+| User code deployment | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
 
 The Helm chart can be configured to use this architecture by configuring the `runLauncher.type` field in your `values.yaml` file to be `CeleryK8sRunLauncher` instead of the default `K8sRunLauncher`. The resulting architecture is similar to the architecture described in the [Helm deployment guide](/deployment/guides/kubernetes/deploying-with-helm), with the following changes:
 
@@ -161,15 +39,15 @@ The Celery workers poll for new Celery tasks and execute each task in order of r
 
 ### Daemon
 
-The daemon now launches runs using the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
+The daemon now launches runs using the <PyObject section="libraries" module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
 
-### Run Worker
+### Run worker
 
 The run worker is still responsible for traversing the execution plan, but now uses the `celery_k8s_job_executor` to submit steps that are ready to be executed to the corresponding Celery queue (instead of executing the step itself).
 
 All jobs being executed on an instance that uses the `CeleryK8sRunLauncher` must have the `celery_k8s_job_executor` set in the `executor_def` field.
 
-### Step Worker
+### Step worker
 
 The step worker is responsible for executing a single step, writing the structured events to the database. The Celery worker polls for the step worker completion.
 
@@ -179,24 +57,27 @@ The step worker is responsible for executing a single step, writing the structur
 
 ## Walkthrough
 
-We assume that you've followed the initial steps in the [previous walkthrough](/deployment/guides/kubernetes/deploying-with-helm#walkthrough) by building your docker image for your user code, pushing it to a registry, adding the Dagster Helm chart repository, and configuring your Helm User Deployment values. Note that any job that you wish to run in an instance using the `CeleryK8sRunLauncher` must be using the `celery_k8s_job_executor` as its executor. The [example user code repository](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) includes an example job that uses the `celery_k8s_job_executor`, called `pod_per_op_celery_job`.
+We assume that you've followed the initial steps in the [previous walkthrough](deploying-to-kubernetes) by building your Docker image for your user code, pushing it to a registry, adding the Dagster Helm chart repository, and configuring your Helm User Deployment values. Note that any job that you wish to run in an instance using the `CeleryK8sRunLauncher` must be using the `celery_k8s_job_executor` as its executor. The [example user code repository](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) includes an example job that uses the `celery_k8s_job_executor`, called `pod_per_op_celery_job`.
 
-### Configure Persistent Object Storage
+### Configure persistent object storage
 
 We need to configure persistent object storage so that data can be serialized and passed between steps. To run the Dagster User Code example, create a S3 bucket named "dagster-test".
 
 To enable Dagster to connect to S3, provide `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables via the `env`, `envConfigMaps`, or `envSecrets` fields under `dagster-user-deployments` in `values.yaml` or (not recommended) by setting these variables directly in the User Code Deployment image.
 
-### Install the Dagster Helm Chart with Celery
+### Install the Dagster Helm chart with Celery
 
 Install the Helm chart and create a release, with the run launcher configured to use the `CeleryK8sRunLauncher`. The helm chart checks for this run launcher type and includes Celery infrastructure in your cluster. Below, we've named our release `dagster`. We use `helm upgrade --install` to create the release if it does not exist; otherwise, the existing `dagster` release will be modified:
 
+```
     helm upgrade --install dagster dagster/dagster -f /path/to/values.yaml \
       --set runLauncher.type=CeleryK8sRunLauncher \
       --set rabbitmq.enabled=true
+```
 
 Helm will launch several pods. You can check the status of the installation with `kubectl`. If everything worked correctly, you should see output like the following:
 
+```
     $ kubectl get pods
     NAME                                                     READY   STATUS      RESTARTS   AGE
     dagster-celery-workers-74886cfbfb-m9cbc                  1/1     Running     1          3m42s
@@ -205,31 +86,36 @@ Helm will launch several pods. You can check the status of the installation with
     dagster-k8s-example-user-code-1-88764b4f4-25mbd          1/1     Running     0          3m42s
     dagster-postgresql-0                                     1/1     Running     0          3m42s
     dagster-rabbitmq-0                                       1/1     Running     0          3m42s
+```
 
 ### Run a job in your deployment
 
 After Helm has successfully installed all the required kubernetes resources, start port forwarding to the webserver pod via:
 
+```
     DAGSTER_WEBSERVER_POD_NAME=$(kubectl get pods --namespace default \
       -l "app.kubernetes.io/name=dagster,app.kubernetes.io/instance=dagster,component=webserver" \
       -o jsonpath="{.items[0].metadata.name}")
     kubectl --namespace default port-forward $DAGSTER_WEBSERVER_POD_NAME 8080:80
+```
 
-Visit <http://127.0.0.1:8080>, and navigate to the [launchpad](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/pod_per_op_celery_job/launchpad). Notice how `resources.io_manager.config.s3_bucket` is set to `dagster-test`. You can replace this string with any other accessible S3 bucket. Then, click _Launch Run_.
+Visit [http://127.0.0.1:8080](http://127.0.0.1:8080), and navigate to the [launchpad](http://127.0.0.1:8080/workspace/example_repo@k8s-example-user-code-1/jobs/pod_per_op_celery_job/launchpad). Notice how `resources.io_manager.config.s3_bucket` is set to `dagster-test`. You can replace this string with any other accessible S3 bucket. Then, click _Launch Run_.
 
 You can introspect the jobs that were launched with `kubectl`:
 
+```
     $ kubectl get jobs
     NAME                                               COMPLETIONS   DURATION   AGE
     dagster-step-9f5c92d1216f636e0d33877560818840       1/1           5s         12s
     dagster-step-a1063317b9aac91f42ca9eacec551b6f       1/1           12s        34s
     dagster-run-fb6822e5-bf43-476f-9e6c-6f9896cf3fb8   1/1           37s        37s
+```
 
 `dagster-step-` entries correspond to step workers and `dagster-run-` entries correspond to run workers.
 
 Within the Dagster UI, you can watch the job as it executes.
 
-### Configuring Celery Queues
+### Configuring Celery queues
 
 Users can configure multiple Celery queues (for example, one queue for each resource to be limited) and multiple Celery workers per queue via the `runLauncher.config.celeryK8sRunLauncher.workerQueues` section of `values.yaml`.
 
@@ -247,7 +133,7 @@ def my_op(context):
   context.log.info('running')
 ```
 
-### Celery Priority
+### Celery priority
 
 Users can set `dagster-celery/run_priority` on job tags to configure the baseline priority of all ops from that job. To set priority at the op level, users can set `dagster-celery/priority` on the op tags. When priorities are set on both a job and an op, the sum of both priorities will be used.
 

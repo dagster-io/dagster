@@ -9,7 +9,7 @@ A multi-asset represents a set of asset definitions that are all updated by the 
 
 | Name                                        | Description                              |
 | ------------------------------------------- | ---------------------------------------- |
-| <PyObject object="multi_asset" decorator /> | A decorator used to define multi-assets. |
+| <PyObject section="asset" module="dagster" object="multi_asset" decorator /> | A decorator used to define multi-assets. |
 
 ## Overview
 
@@ -26,8 +26,9 @@ The function responsible for computing the contents of any asset is an [op](/con
 
 ### A basic multi-asset
 
-The easiest way to create a multi-asset is with the <PyObject object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject object="asset" decorator /> decorator, but requires a `specs` parameter specifying each asset that the function materializes.
+The easiest way to create a multi-asset is with the <PyObject section="asset" module="dagster" object="multi_asset" decorator /> decorator. This decorator functions similarly to the <PyObject section="asset" module="dagster" object="asset" decorator /> decorator, but requires a `specs` parameter specifying each asset that the function materializes.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/assets/multi_assets.py startafter=start_basic_multi_asset endbefore=end_basic_multi_asset
 from dagster import AssetSpec, multi_asset
 
@@ -40,14 +41,15 @@ def my_function():
 
 ### Conditional materialization
 
-In some cases, an asset may not need to be updated in storage each time the decorated function is executed. You can use the `skippable` parameter along with `yield` syntax and <PyObject object="MaterializeResult" /> to implement this behavior.
+In some cases, an asset may not need to be updated in storage each time the decorated function is executed. You can use the `skippable` parameter along with `yield` syntax and <PyObject section="assets" module="dagster" object="MaterializeResult" /> to implement this behavior.
 
-If the `skippable` parameter is set to `True` on an <PyObject object="AssetSpec" />, and your function does not `yield` a <PyObject object="MaterializeResult" /> object for that asset, then:
+If the `skippable` parameter is set to `True` on an <PyObject section="assets" module="dagster" object="AssetSpec" />, and your function does not `yield` a <PyObject section="assets" module="dagster" object="MaterializeResult" /> object for that asset, then:
 
 - No asset materialization event will be created
 - Downstream assets in the same run will not be materialized
 - Asset sensors monitoring the asset will not trigger
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/assets/multi_asset_conditional_materialization.py
 import random
 
@@ -83,6 +85,7 @@ Sometimes, the underlying computation is sufficiently flexible to allow for comp
 
 Inside the body of the function, we can use `context.selected_asset_keys` to find out which assets should be materialized.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/assets/multi_assets.py startafter=start_subsettable_multi_asset endbefore=end_subsettable_multi_asset
 from dagster import AssetExecutionContext, AssetSpec, MaterializeResult, multi_asset
 
@@ -100,8 +103,9 @@ def split_actions(context: AssetExecutionContext):
 
 ### Dependencies inside multi-assets
 
-Assets defined within multi-assets can have dependencies on upstream assets. These dependencies can be expressed using the `deps` attribute on <PyObject object="AssetSpec" />.
+Assets defined within multi-assets can have dependencies on upstream assets. These dependencies can be expressed using the `deps` attribute on <PyObject section="assets" module="dagster" object="AssetSpec" />.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/assets/multi_assets.py startafter=start_asset_deps_multi_asset endbefore=end_asset_deps_multi_asset
 from dagster import AssetKey, AssetSpec, asset, multi_asset
 
@@ -122,6 +126,7 @@ def my_complex_assets(): ...
 
 Multi-assets may assign different code versions for each of their outputs:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/assets/code_versions.py startafter=start_multi_asset endbefore=end_multi_asset
 @multi_asset(
     specs=[AssetSpec(key="a", code_version="1"), AssetSpec(key="b", code_version="2")]

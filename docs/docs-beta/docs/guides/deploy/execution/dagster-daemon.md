@@ -12,8 +12,8 @@ Several Dagster features, like [schedules](/guides/automate/schedules/), [sensor
 
 ### Running locally
 
-<TabGroup>
-  <TabItem name="Running the daemon and webserver">
+<Tabs>
+  <TabItem value="Running the daemon and webserver" label="Running the daemon and webserver">
 
 The easiest way to run the Dagster daemon locally is to run the `dagster dev` command:
 
@@ -24,7 +24,7 @@ dagster dev
 This command launches both the Dagster webserver and the Dagster daemon, allowing you to start a full local deployment of Dagster from the command line. For more information about `dagster dev`, see "[Running Dagster locally](/guides/deploy/deployment-options/running-dagster-locally).
 
   </TabItem>
-  <TabItem name="Running only the daemon">
+  <TabItem value="Running only the daemon" label="Running only the daemon">
 
 To run the Dagster daemon by itself:
 
@@ -35,7 +35,7 @@ dagster-daemon run
 This command takes the same arguments as `dagster dev` for specifying where to find your code.
 
   </TabItem>
-</TabGroup>
+</Tabs>
 
 ### Deploying the daemon
 
@@ -50,7 +50,7 @@ The following daemons are currently available:
 |  Name                      | Description         | Enabled by       |
 |----------------------------|---------------------|------------------|
 | Scheduler daemon           |  Creates runs from active schedules   |  Enabled / runs as long as the default         <PyObject section="internals" module="dagster._core.scheduler" object="DagsterDaemonScheduler"/> isn't overriden as the scheduler on your instance. |
-| Run queue daemon           |  Launches queued runs, taking into account any limits and prioritization rules set on your instance |  Setting the [run coordinator](run-coordinators) on your instance <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator">.    |
+| Run queue daemon           |  Launches queued runs, taking into account any limits and prioritization rules set on your instance |  Setting the [run coordinator](run-coordinators) on your instance <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" />.    |
 | Sensor daemon |  Creates runs from active [sensors](/guides/automate/sensors/) that are turned on | Always enabled. |
 | Run monitoring daemon      |  Handles [run worker](/guides/deploy/oss-deployment-architecture#job-execution-flow) failures |  Using the `run_monitoring` field in your instance. For more information, see "[Run monitoring](run-monitoring)".|
 

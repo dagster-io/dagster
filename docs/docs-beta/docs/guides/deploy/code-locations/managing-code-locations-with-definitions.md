@@ -54,8 +54,8 @@ It is recommenced to include definitions in a Python module named `definitions.p
 
 ### Local development
 
-<TabGroup>
-<TabItem name="From a file">
+<Tabs>
+<TabItem value="From a file" label="From a file">
 
 Dagster can load a file directly as a code location. In the following example, we used the `-f` argument to supply the name of the file:
 
@@ -72,9 +72,9 @@ dagster dev -f my_file.py -f my_second_file.py
 ```
 
 </TabItem>
-<TabItem name="From a module">
+<TabItem value="From a module" label="From a module">
 
-Dagster can also load Python modules as [code locations](/concepts/code-locations). When this approach is used, Dagster loads the definitions defined in the module passed to the command line.
+Dagster can also load Python modules as [code locations](/guides/deploy/code-locations/). When this approach is used, Dagster loads the definitions defined in the module passed to the command line.
 
 We recommend defining a variable containing the <PyObject section="definitions" module="dagster" object="Definitions" /> object in a submodule named `definitions` inside the Python module. In practice, the submodule can be created by adding a file named `definitions.py` at the root level of the Python module.
 
@@ -95,7 +95,7 @@ dagster dev -m your_module_name.definitions -m your_second_module.definitions
 ```
 
 </TabItem>
-<TabItem name="Without command line arguments">
+<TabItem value="Without command line arguments" label="Without command line arguments">
 
 To load definitions without supplying command line arguments, you can use the `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section with a `module_name` variable:
 
@@ -125,9 +125,9 @@ modules = [{ type = "module", name = "foo" }, { type = "module", name = "bar" }]
 ```
 
 </TabItem>
-</TabGroup>
+</Tabs>
 
-Fore more information about local development, including how to configure your local instance, see "[Running Dagster locally](/guides/deploy/running-dagster-locally)".
+Fore more information about local development, including how to configure your local instance, see "[Running Dagster locally](/guides/deploy/deployment-options/running-dagster-locally)".
 
 ### Open source deployment
 
