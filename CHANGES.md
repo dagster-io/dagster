@@ -4469,7 +4469,7 @@ nux:
   enabled: false
 ```
 
-- The `grpcio` pin in Dagster to <1.48.1 has been restored for Python versions 3.10 and 3.11, due to [upstream issues](https://github.com/grpc/grpc/issues/31885) in the grpcio package causing hangs in Dagster.
+- The `grpcio` pin in Dagster to \<1.48.1 has been restored for Python versions 3.10 and 3.11, due to [upstream issues](https://github.com/grpc/grpc/issues/31885) in the grpcio package causing hangs in Dagster.
 - [dagit] Improved query performance on Scheduled Runs page.
 - [dagit] The "Materialize" button now allows you to add tags to asset materialization runs. If your assets do not require config or partitions, you may need to shift-click "Materialize".
 - [dagit] The kind tags and logos shown on assets in the Asset Graph now appear in other parts of Dagit so it's easier to understand your assets.
@@ -4509,7 +4509,7 @@ nux:
 - The `selection` argument of `define_asset_job` now accepts lists of `AssetKey`s or `AssetsDefinitions`.
 - `RunRequest` now takes a `stale_assets_only` flag that filters the full set of assets that would be materialized by a job to stale assets only. This can be used in schedules and sensors.
 - Dagit will now choose a different open port on the local machine to run on when no port is specified to the `dagit` command and the default port 3000 is already in use.
-- The `grpcio` pin in Dagster to <1.48.1 has been removed for Python versions 3.10 and 3.11. Python 3.7, 3.8, and 3.9 are still pinned to <1.48.1 due to a bug in the grpc library that is causing the process to sometimes hang.
+- The `grpcio` pin in Dagster to \<1.48.1 has been removed for Python versions 3.10 and 3.11. Python 3.7, 3.8, and 3.9 are still pinned to \<1.48.1 due to a bug in the grpc library that is causing the process to sometimes hang.
 - When it is likely that an op process was killed due to running out of memory, a clearer error message is now displayed in Dagit.
 - When a sensor tick fails due to taking longer than 60 seconds to execute, a clearer error message is displayed on the sensor timeline in Dagit.
 - When you view compute logs on a run in Dagit, we now locally track whether you choose the `stdout` or `stderr` tab. The next time you view compute logs, you will see that tab first by default.
@@ -4677,7 +4677,7 @@ nux:
 - Fixed a bug where a `sqlite3.ProgrammingError` error was raised when creating an ephemeral `DagsterInstance`, most commonly when `build_resources` was called without passing in an instance parameter.
 - [dagstermill] Jupyter notebooks now correctly render in Dagit on Windows machines.
 - [dagster-duckdb-pyspark] New `duckdb_pyspark_io_manager` helper to automatically create a DuckDB I/O manager that can store and load PySpark DataFrames.
-- [dagster-mysql] Fixed a bug where versions of mysql < `8.0.31` would raise an error on some run queries.
+- [dagster-mysql] Fixed a bug where versions of mysql \< `8.0.31` would raise an error on some run queries.
 - [dagster-postgres] connection url param “options“ are no longer overwritten in dagit.
 - [dagit] Dagit now allows backfills to be launched for asset jobs that have partitions and required config.
 - [dagit] Dagit no longer renders the "Job in repo@location" label incorrectly in Chrome v109.
@@ -4764,7 +4764,7 @@ nux:
 
 - In Dagit, assets that had been materialized prior to upgrading to 1.1.1 were showing as "Stale". This is now fixed.
 - Schedules that were constructed with a list of cron strings previously rendered with an error in Dagit. This is now fixed.
-- For users running dagit version >= 1.0.17 (or dagster-cloud) with dagster version < 1.0.17, errors could occur when hitting "Materialize All" and some other asset-related interactions. This has been fixed.
+- For users running dagit version >= 1.0.17 (or dagster-cloud) with dagster version \< 1.0.17, errors could occur when hitting "Materialize All" and some other asset-related interactions. This has been fixed.
 
 # 1.1.1 (core) / 0.17.1 (libraries)
 
@@ -6575,7 +6575,7 @@ asset_group = AssetGroup(
   - The Asset Catalog now allows you to filter by repository to see a subset of your assets, and offers a “View in Asset Graph” button for quickly seeing software-defined assets in context.
   - The Asset page in Dagit has been split into two tabs, “Activity” and “Definition”.
   - Dagit now displays a warning on the Asset page if the most recent run including the asset’s step key failed without yielding a materialization, making it easier to jump to error logs.
-  - Dagit now gives you the option to view jobs with software-defined assets as an Asset Graph (default) or as an Op Graph, and displays asset <-> op relationships more prominently when a single op yields multiple assets.
+  - Dagit now gives you the option to view jobs with software-defined assets as an Asset Graph (default) or as an Op Graph, and displays asset \<-> op relationships more prominently when a single op yields multiple assets.
   - You can now include your assets in a repository with the use of an AssetGroup. Each repository can only have one AssetGroup, and it can provide a jumping off point for creating the jobs you plan on using from your assets.
 
     ```python
@@ -7006,7 +7006,7 @@ def my_schedule(context):
 
 - Improved the error message for situations where you try `a, b = my_op()`, inside `@graph` or `@job`, but `my`\_op only has a single `Out`.
 - [dagster-dbt] A new integration with dbt Cloud allows you to launch dbt Cloud jobs as part of your Dagster jobs. This comes complete with rich error messages, links back to the dbt Cloud UI, and automatically generated [Asset Materializations](https://docs.dagster.io/concepts/assets/asset-materializations) to help keep track of your dbt models in Dagit. It provides a pre-built `dbt_cloud_run_op`, as well as a more flexible `dbt_cloud_resource` for more customized use cases. Check out the [api docs](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#ops) to learn more!
-- [dagster-gcp] Pinned the google-cloud-bigquery dependency to <3, because the new 3.0.0b1 version was causing some problems in tests.
+- [dagster-gcp] Pinned the google-cloud-bigquery dependency to \<3, because the new 3.0.0b1 version was causing some problems in tests.
 - [dagit] Verbiage update to make it clear that wiping an asset means deleting the materialization events for that asset.
 
 ### Bugfixes
@@ -7892,7 +7892,7 @@ def my_root_manager(_):
 - `retry_number` is now available on `SolidExecutionContext`, allowing you to determine within a solid function how many times the solid has been previously retried.
 - Errors that are surfaced during solid execution now have clearer stack traces.
 - When using Postgres or MySQL storage, the database mutations that initialize Dagster tables on startup now happen in atomic transactions, rather than individual SQL queries.
-- For versions >=0.11.13, when specifying the `--version` flag when installing the Helm chart, the tags for Dagster-provided images in the Helm chart will now default to the current Chart version. For `--version` <0.11.13, the image tags will still need to be updated properly to use old chart version.
+- For versions >=0.11.13, when specifying the `--version` flag when installing the Helm chart, the tags for Dagster-provided images in the Helm chart will now default to the current Chart version. For `--version` \<0.11.13, the image tags will still need to be updated properly to use old chart version.
 - Removed the `PIPELINE_INIT_FAILURE` event type. A failure that occurs during pipeline initialization will now produce a `PIPELINE_FAILURE` as with all other pipeline failures.
 
 ### Bugfixes
@@ -9052,7 +9052,7 @@ the 0.10.0 release._
 
 **Bugfixes**
 
-- [Dask] Pin dask[dataframe] to <=2.30.0 and distributed to <=2.30.1
+- [Dask] Pin dask[dataframe] to \<=2.30.0 and distributed to \<=2.30.1
 
 # 0.9.22
 
