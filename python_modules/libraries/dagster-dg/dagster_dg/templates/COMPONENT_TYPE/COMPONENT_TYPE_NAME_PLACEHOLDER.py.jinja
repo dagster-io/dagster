@@ -2,15 +2,37 @@ from dagster import Definitions
 from dagster_components import (
     Component,
     ComponentLoadContext,
+    DefaultComponentGenerator,
     component_type,
 )
+from pydantic import BaseModel
+
+class {{ component_type_class_name }}Params(BaseModel):
+    ...
 
 @component_type(name="{{ name }}")
 class {{ component_type_class_name }}(Component):
+    """COMPONENT SUMMARY HERE.
+
+    COMPONENT DESCRIPTION HERE.
+    """
 
     @classmethod
-    def generate_files(cls) -> None:
-        ...
+    def get_component_schema_type(cls):
+        return {{ component_type_class_name }}Params
+
+    @classmethod
+    def get_generator(cls) -> DefaultComponentGenerator:
+        return DefaultComponentGenerator()
+
+    @classmethod
+    def load(cls, context: ComponentLoadContext) -> "{{ component_type_class_name }}":
+        loaded_params = context.load_params(cls.get_component_schema_type())
+
+        # Add logic for mapping schema parameters to constructor args here.
+        return cls()
+
 
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
-        ...
+        # Add definition construction logic here.
+        return Definitions()
