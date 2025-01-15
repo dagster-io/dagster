@@ -142,7 +142,7 @@ def scaffold_component_type(dg_context: DgContext, name: str) -> None:
         templates_path=os.path.join(os.path.dirname(__file__), "templates", "COMPONENT_TYPE"),
         project_name=name,
         component_type_class_name=camelcase(name),
-        component_type=name,
+        name=name,
     )
 
     with open(root_path / "__init__.py", "a") as f:

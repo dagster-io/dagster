@@ -31,7 +31,7 @@ class ComplexSchemaAsset(Component):
     """An asset that has a complex params schema."""
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return ComplexAssetParams
 
     @classmethod
@@ -40,7 +40,7 @@ class ComplexSchemaAsset(Component):
 
     @classmethod
     def load(cls, context: "ComponentLoadContext") -> Self:
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
         return cls(
             value=loaded_params.value,
             op_spec=loaded_params.op,

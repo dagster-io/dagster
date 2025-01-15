@@ -108,7 +108,7 @@ def _get_available_scope(subschema: Mapping[str, Any]) -> Set[str]:
     return set(raw) if raw else set()
 
 
-def allow_render(
+def allow_resolve(
     valpath: Sequence[Union[str, int]], json_schema: Mapping[str, Any], subschema: Mapping[str, Any]
 ) -> bool:
     """Given a valpath and the json schema of a given target type, determines if there is a rendering scope

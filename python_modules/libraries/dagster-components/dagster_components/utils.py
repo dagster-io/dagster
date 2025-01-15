@@ -59,8 +59,8 @@ class ResolvingInfo:
     value_resolver: TemplatedValueResolver
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        renderer = self.value_resolver.with_context(**{self.obj_name: obj})
-        rendered_attributes = self.asset_attributes.render_properties(renderer)
+        renderer = self.value_resolver.with_scope(**{self.obj_name: obj})
+        rendered_attributes = self.asset_attributes.resolve_properties(renderer)
         return (
             rendered_attributes[attribute]
             if attribute in rendered_attributes
@@ -85,8 +85,8 @@ class ResolvingInfo:
 
         ```
         """
-        resolver = self.value_resolver.with_context(**context)
-        resolved_attributes = self.asset_attributes.render_properties(resolver)
+        resolver = self.value_resolver.with_scope(**context)
+        resolved_attributes = self.asset_attributes.resolve_properties(resolver)
         return base_spec.replace_attributes(**resolved_attributes)
 
 
@@ -101,19 +101,23 @@ def get_wrapped_translator_class(translator_type: type):
             self.resolving_info = resolving_info
 
         def get_asset_key(self, obj: Any) -> AssetKey:
-            return self.resolving_info.get_resolved_attribute("key", obj, super().get_asset_key)
+            return self.resolving_info.get_resolved_attribute(
+                "key", obj, self.base_translator.get_asset_key
+            )
 
         def get_group_name(self, obj: Any) -> Optional[str]:
             return self.resolving_info.get_resolved_attribute(
-                "group_name", obj, super().get_group_name
+                "group_name", obj, self.base_translator.get_group_name
             )
 
         def get_tags(self, obj: Any) -> Mapping[str, str]:
-            return self.resolving_info.get_resolved_attribute("tags", obj, super().get_tags)
+            return self.resolving_info.get_resolved_attribute(
+                "tags", obj, self.base_translator.get_tags
+            )
 
         def get_automation_condition(self, obj: Any) -> Optional[AutomationCondition]:
             return self.resolving_info.get_resolved_attribute(
-                "automation_condition", obj, super().get_automation_condition
+                "automation_condition", obj, self.base_translator.get_automation_condition
             )
 
     return WrappedTranslator

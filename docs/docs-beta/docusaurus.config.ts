@@ -86,7 +86,7 @@ const config: Config = {
           label: 'Tutorials',
           type: 'doc',
           docId: 'tutorials/index',
-          position: 'left'
+          position: 'left',
         },
         {
           label: 'Integrations',
