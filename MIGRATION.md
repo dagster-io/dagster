@@ -1193,8 +1193,7 @@ enabled in your Helm values.
 
 We have removed the `config` argument to the `ConfigMapping`, `@composite_solid`, `@solid`,
 `SolidDefinition`, `@executor`, `ExecutorDefinition`, `@logger`, `LoggerDefinition`, `@resource`,
-and `ResourceDefinition` APIs, which we deprecated in 0.8.0, in favor of `config_schema`, as
-described [here](#renaming-config).
+and `ResourceDefinition` APIs, which we deprecated in 0.8.0, in favor of `config_schema`.
 
 ## Migrating to 0.8.8
 
