@@ -3,19 +3,14 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from dagster_components.core.schema.metadata import (
-    JSON_SCHEMA_EXTRA_DEFER_RENDERING_KEY,
-    get_resolution_metadata,
-)
+from dagster_components.core.schema.metadata import get_resolution_metadata
 from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 
 class ComponentSchemaBaseModel(BaseModel):
     """Base class for models that are part of a component schema."""
 
-    model_config = ConfigDict(
-        json_schema_extra={JSON_SCHEMA_EXTRA_DEFER_RENDERING_KEY: True}, extra="forbid"
-    )
+    model_config = ConfigDict(extra="forbid")
 
     def render_properties(self, value_resolver: TemplatedValueResolver) -> Mapping[str, Any]:
         """Returns a dictionary of resolved properties for this class."""
