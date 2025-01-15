@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
+from dagster._core.instance_for_test import environ
 from dagster._core.test_utils import new_cwd
 from dagster_components.cli import cli
 from dagster_components.utils import ensure_dagster_components_tests_import
@@ -20,12 +21,18 @@ from dagster_components_tests.integration_tests.validation_tests.utils import (
 ensure_dagster_components_tests_import()
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_env_vars():
+    with environ({"STRING_ENV_VAR": "foo", "INT_ENV_VAR": "42"}):
+        yield
+
+
 @pytest.mark.parametrize(
     "test_case",
     COMPONENT_VALIDATION_TEST_CASES,
     ids=[str(case.component_path) for case in COMPONENT_VALIDATION_TEST_CASES],
 )
-def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
+def test_validation_messages(setup_env_vars, test_case: ComponentValidationTestCase) -> None:
     """Tests raw YAML error messages when attempting to load components with
     errors.
     """
@@ -50,7 +57,7 @@ def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
     COMPONENT_VALIDATION_TEST_CASES,
     ids=[str(case.component_path) for case in COMPONENT_VALIDATION_TEST_CASES],
 )
-def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
+def test_validation_cli(setup_env_vars, test_case: ComponentValidationTestCase) -> None:
     """Tests that the check CLI prints rich error messages when attempting to
     load components with errors.
     """

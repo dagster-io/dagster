@@ -1,5 +1,6 @@
 import functools
 import os
+import re
 from collections.abc import Mapping, Sequence
 from typing import Any, Callable, Optional, TypeVar, Union
 
@@ -7,10 +8,14 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._record import record
+from dagster._utils.pydantic_yaml import YamlConvertableToValidationError
+from jinja2 import UndefinedError
 from jinja2.nativetypes import NativeTemplate
 from pydantic import BaseModel
 
 from dagster_components.core.schema.metadata import allow_render
+
+UNDEFINED_MSG_REGEX = re.compile(r"'(.+)' is undefined")
 
 T = TypeVar("T")
 
@@ -70,7 +75,24 @@ class TemplatedValueResolver:
                 for i, v in enumerate(obj)
             ]
         else:
-            return self._render_value(obj)
+            try:
+                return self._render_value(obj)
+
+            except UndefinedError as e:
+                undefined_value = UNDEFINED_MSG_REGEX.match(e.message or "")
+                available_scopes = ", ".join(self.context.keys())
+                message = (
+                    (
+                        f"Error rendering value: `{undefined_value.group(1)}` not found in scope, "
+                        f"available scope is: {available_scopes}"
+                    )
+                    if undefined_value
+                    else e.message or "Unknown scope"
+                )
+
+                raise YamlConvertableToValidationError(
+                    message=message, path=tuple(valpath) if valpath else tuple()
+                ) from None
 
     def render_obj(self, val: Any) -> Any:
         """Recursively renders templated values in a nested object."""

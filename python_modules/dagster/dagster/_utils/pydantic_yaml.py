@@ -1,8 +1,9 @@
 import contextlib
 from collections.abc import Generator, Sequence
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, Union
 
 from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic_core import PydanticCustomError
 
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.source_position import (
@@ -99,13 +100,50 @@ def parse_yaml_file_to_pydantic(cls: type[T], src: str, filename: str = "<string
     )
 
 
+class YamlConvertableToValidationError(Exception):
+    path: Sequence[Union[str, int]]
+    message: str
+
+    def __init__(self, message: str, path: Sequence[Union[str, int]]):
+        self.message = message
+        self.path = path
+
+
 @contextlib.contextmanager
 def enrich_validation_errors_with_source_position(
-    source_position_tree: SourcePositionTree, obj_key_path_prefix: KeyPath
+    source_position_tree: SourcePositionTree,
+    obj_key_path_prefix: KeyPath,
+    title: str,
 ) -> Generator[None, None, None]:
     err: Optional[ValidationError] = None
     try:
         yield
+    except YamlConvertableToValidationError as e:
+        key_path_in_obj = list(e.path)
+        source_position, source_position_path = source_position_tree.lookup_closest_and_path(
+            key_path_in_obj, None
+        )
+
+        file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
+        file_key_path_str = ".".join(str(part) for part in file_key_path)
+
+        ctx = {
+            "source_position": source_position,
+            "source_position_path": source_position_path,
+            "message": e.message,
+        }
+        err = ValidationError.from_exception_data(
+            title=title,
+            line_errors=[
+                {
+                    "loc": tuple([file_key_path_str + " at " + str(source_position)]),
+                    "input": e.message,
+                    "type": PydanticCustomError("jinja", "{message}", ctx),
+                }
+            ],
+            input_type="json",
+            hide_input=False,
+        )
     except ValidationError as e:
         line_errors = []
         for error in e.errors():
