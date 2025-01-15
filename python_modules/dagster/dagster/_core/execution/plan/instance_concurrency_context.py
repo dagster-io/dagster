@@ -1,13 +1,17 @@
 import time
 from collections import defaultdict
+from collections.abc import Sequence
 from types import TracebackType
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import Self
 
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import PRIORITY_TAG
+
+if TYPE_CHECKING:
+    from dagster._core.storage.event_log.base import PoolLimit
 
 INITIAL_INTERVAL_VALUE = 1
 STEP_UP_BASE = 1.1
@@ -33,7 +37,7 @@ class InstanceConcurrencyContext:
     def __init__(self, instance: DagsterInstance, dagster_run: DagsterRun):
         self._instance = instance
         self._run_id = dagster_run.run_id
-        self._global_concurrency_keys = None
+        self._pools = None
         self._pending_timeouts = defaultdict(float)
         self._pending_claim_counts = defaultdict(int)
         self._pending_claims = set()
@@ -69,27 +73,29 @@ class InstanceConcurrencyContext:
         self._context_guard = False
 
     @property
-    def global_concurrency_keys(self) -> set[str]:
+    def pools(self) -> Sequence["PoolLimit"]:
         # lazily load the global concurrency keys, to avoid the DB fetch for plans that do not
         # have global concurrency limited keys
-        if self._global_concurrency_keys is None:
+        if self._pools is None:
             if not self._instance.event_log_storage.supports_global_concurrency_limits:
-                self._global_concurrency_keys = set()
+                self._pools = []
             else:
-                self._global_concurrency_keys = (
-                    self._instance.event_log_storage.get_concurrency_keys()
-                )
+                self._pools = self._instance.event_log_storage.get_pool_limits()
 
-        return self._global_concurrency_keys
+        return self._pools
 
-    def _sync_global_concurrency_keys(self) -> None:
-        self._global_concurrency_keys = self._instance.event_log_storage.get_concurrency_keys()
+    @property
+    def configured_pools(self) -> set[str]:
+        return set(pool.name for pool in self.pools if not pool.from_default)
+
+    def _sync_pools(self) -> None:
+        self._pools = self._instance.event_log_storage.get_pool_limits()
 
     def claim(self, concurrency_key: str, step_key: str, step_priority: int = 0):
         if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
 
-        if concurrency_key not in self.global_concurrency_keys:
+        if concurrency_key not in self.configured_pools:
             # The initialization call will be a no-op if the limit is set by another process,
             # mitigating any race condition concerns
             if not self._instance.event_log_storage.initialize_concurrency_limit_to_default(
@@ -99,7 +105,7 @@ class InstanceConcurrencyContext:
                 return True
             else:
                 # sync the global concurrency keys to ensure we have the latest
-                self._sync_global_concurrency_keys()
+                self._sync_pools()
 
         if step_key in self._pending_claims:
             if time.time() > self._pending_timeouts[step_key]:

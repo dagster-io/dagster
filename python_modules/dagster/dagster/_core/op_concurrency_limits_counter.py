@@ -73,7 +73,8 @@ class GlobalOpConcurrencyLimitsCounter:
         # runs
         all_run_concurrency_keys = set()
 
-        configured_concurrency_keys = instance.event_log_storage.get_concurrency_keys()
+        pools = instance.event_log_storage.get_pool_limits()
+        configured_pools = set(pool.name for pool in pools if pool.from_default is False)
         for run in queued_runs:
             if run.run_op_concurrency:
                 all_run_concurrency_keys.update(run.run_op_concurrency.root_key_counts.keys())
@@ -82,7 +83,7 @@ class GlobalOpConcurrencyLimitsCounter:
             if key is None:
                 continue
 
-            if key not in configured_concurrency_keys:
+            if key not in configured_pools:
                 instance.event_log_storage.initialize_concurrency_limit_to_default(key)
 
             self._concurrency_info_by_key[key] = instance.event_log_storage.get_concurrency_info(

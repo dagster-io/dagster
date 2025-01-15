@@ -1,20 +1,22 @@
+import tempfile
 import time
 from contextlib import ExitStack
 from unittest import mock
 
 import pytest
-from dagster import job, op
+from dagster import JobDefinition, job, op
 from dagster._core.execution.plan.instance_concurrency_context import (
     INITIAL_INTERVAL_VALUE,
     STEP_UP_BASE,
     InstanceConcurrencyContext,
 )
+from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 
 from dagster_tests.core_tests.execution_tests.conftest import CUSTOM_SLEEP_INTERVAL
 
 
-def define_foo_job():
+def define_foo_job() -> JobDefinition:
     @op
     def foo_op():
         pass
@@ -189,6 +191,49 @@ def test_zero_concurrency_key(concurrency_instance):
     with InstanceConcurrencyContext(concurrency_instance, run) as context:
         assert not context.claim("foo", "a")
         assert not context.claim("foo", "b")
+
+
+def test_changing_default_concurrency_key():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+                "concurrency": {"default_op_concurrency_limit": 1},
+            }
+        ) as instance_with_default_one:
+            run = instance_with_default_one.create_run_for_job(
+                define_foo_job(), run_id=make_new_run_id()
+            )
+
+            with InstanceConcurrencyContext(instance_with_default_one, run) as context:
+                assert context.claim("foo", "a")
+
+            assert (
+                instance_with_default_one.event_log_storage.get_concurrency_info("foo").slot_count
+                == 1
+            )
+
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+                "concurrency": {"default_op_concurrency_limit": 2},
+            }
+        ) as instance_with_default_two:
+            with InstanceConcurrencyContext(instance_with_default_two, run) as context:
+                assert context.claim("foo", "b")
+
+            assert (
+                instance_with_default_one.event_log_storage.get_concurrency_info("foo").slot_count
+                == 2
+            )
 
 
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.INITIAL_INTERVAL_VALUE", 0.1)
