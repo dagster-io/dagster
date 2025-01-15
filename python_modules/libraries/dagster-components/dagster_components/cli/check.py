@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import click
 import typer
@@ -72,7 +72,7 @@ OFFSET_LINES_AFTER = 3
 
 
 def error_dict_to_formatted_error(
-    component_type: type[Component], error_details: ErrorDetails
+    component_type: Optional[type[Component]], error_details: ErrorDetails
 ) -> str:
     ctx = error_details.get("ctx", {})
     source_position: SourcePosition = ctx["source_position"]
@@ -89,7 +89,7 @@ def error_dict_to_formatted_error(
             [
                 value
                 for value in reversed(list(source_position_path))
-                if value.start != source_position.start
+                if value.start.line < source_position.start.line
             ]
         ),
         source_position,
@@ -100,8 +100,9 @@ def error_dict_to_formatted_error(
 
         filtered_lines_with_line_numbers = (
             lines_with_line_numbers[
-                preceding_source_position.start.line
-                - OFFSET_LINES_BEFORE : source_position.start.line
+                max(
+                    0, preceding_source_position.start.line - OFFSET_LINES_BEFORE
+                ) : source_position.start.line
             ]
             + [
                 (
@@ -116,7 +117,6 @@ def error_dict_to_formatted_error(
                 source_position.start.line : source_position.end.line + OFFSET_LINES_AFTER
             ]
         )
-
         # Combine the filtered lines with the line numbers, and add empty lines before and after
         lines_with_line_numbers = prepend_lines_with_line_numbers(
             [(None, ""), *filtered_lines_with_line_numbers, (None, "")]
@@ -128,8 +128,10 @@ def error_dict_to_formatted_error(
         f":{typer.style(source_position.start.line, fg=typer.colors.GREEN)}"
     )
     fmt_location = typer.style(location, fg=typer.colors.BRIGHT_WHITE)
-    fmt_name = typer.style(get_component_type_name(component_type), fg=typer.colors.RED)
-    return f"{fmt_filename} - {fmt_name} {fmt_location} {error_details['msg']}\n{code_snippet}\n"
+    fmt_name = typer.style(
+        f"{get_component_type_name(component_type)} " if component_type else "", fg=typer.colors.RED
+    )
+    return f"{fmt_filename} - {fmt_name}{fmt_location} {error_details['msg']}\n{code_snippet}\n"
 
 
 @check_cli.command(name="component")
@@ -152,7 +154,7 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
         )
         sys.exit(1)
 
-    validation_errors: list[tuple[type[Component], ValidationError]] = []
+    validation_errors: list[tuple[Union[type[Component], None], ValidationError]] = []
 
     context = CodeLocationProjectContext.from_code_location_path(
         find_enclosing_code_location_root_path(Path.cwd()),
@@ -162,7 +164,12 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
     )
 
     for instance_path in Path(context.components_path).iterdir():
-        decl_node = path_to_decl_node(path=instance_path)
+        try:
+            decl_node = path_to_decl_node(path=instance_path)
+        except ValidationError as e:
+            validation_errors.append((None, e))
+            continue
+
         if not decl_node:
             raise Exception(f"No component found at path {instance_path}")
 

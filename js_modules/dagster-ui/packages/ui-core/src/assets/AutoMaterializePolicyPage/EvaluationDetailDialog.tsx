@@ -7,6 +7,8 @@ import {
   Mono,
   NonIdealState,
   SpinnerWithText,
+  Tab,
+  Tabs,
   Tag,
 } from '@dagster-io/ui-components';
 import {ReactNode, useMemo, useState} from 'react';
@@ -14,6 +16,7 @@ import {ReactNode, useMemo, useState} from 'react';
 import {GET_SLIM_EVALUATIONS_QUERY} from './GetEvaluationsQuery';
 import {PartitionTagSelector} from './PartitionTagSelector';
 import {QueryfulEvaluationDetailTable} from './QueryfulEvaluationDetailTable';
+import {runTableFiltersForEvaluation} from './runTableFiltersForEvaluation';
 import {
   GetSlimEvaluationsQuery,
   GetSlimEvaluationsQueryVariables,
@@ -21,8 +24,11 @@ import {
 import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
 import {useQuery} from '../../apollo-client';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
+import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {AnchorButton} from '../../ui/AnchorButton';
+
+export type Tab = 'evaluation' | 'runs';
 
 interface Props {
   isOpen: boolean;
@@ -30,6 +36,7 @@ interface Props {
   assetKeyPath: string[];
   assetCheckName?: string;
   evaluationID: string;
+  initialTab?: Tab;
 }
 
 export const EvaluationDetailDialog = ({
@@ -38,6 +45,7 @@ export const EvaluationDetailDialog = ({
   evaluationID,
   assetKeyPath,
   assetCheckName,
+  initialTab = 'evaluation',
 }: Props) => {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} style={EvaluationDetailDialogStyle}>
@@ -46,6 +54,7 @@ export const EvaluationDetailDialog = ({
         assetKeyPath={assetKeyPath}
         assetCheckName={assetCheckName}
         onClose={onClose}
+        initialTab={initialTab}
       />
     </Dialog>
   );
@@ -56,6 +65,7 @@ interface ContentProps {
   assetKeyPath: string[];
   assetCheckName?: string;
   onClose: () => void;
+  initialTab?: Tab;
 }
 
 const EvaluationDetailDialogContents = ({
@@ -63,8 +73,10 @@ const EvaluationDetailDialogContents = ({
   assetKeyPath,
   assetCheckName,
   onClose,
+  initialTab = 'evaluation',
 }: ContentProps) => {
   const [selectedPartition, setSelectedPartition] = useState<string | null>(null);
+  const [tabId, setTabId] = useState<Tab>(initialTab);
 
   const {data, loading} = useQuery<GetSlimEvaluationsQuery, GetSlimEvaluationsQueryVariables>(
     GET_SLIM_EVALUATIONS_QUERY,
@@ -101,6 +113,8 @@ const EvaluationDetailDialogContents = ({
     return (
       <DialogContents
         header={<DialogHeader assetKeyPath={assetKeyPath} assetCheckName={assetCheckName} />}
+        selectedTabId={tabId}
+        onTabChange={setTabId}
         body={
           <Box padding={{top: 64}} flex={{direction: 'row', justifyContent: 'center'}}>
             <SpinnerWithText label="Loading evaluation details..." />
@@ -117,6 +131,8 @@ const EvaluationDetailDialogContents = ({
     return (
       <DialogContents
         header={<DialogHeader assetKeyPath={assetKeyPath} assetCheckName={assetCheckName} />}
+        selectedTabId={tabId}
+        onTabChange={setTabId}
         body={
           <Box margin={{top: 64}}>
             <NonIdealState
@@ -137,6 +153,9 @@ const EvaluationDetailDialogContents = ({
     return (
       <DialogContents
         header={<DialogHeader assetKeyPath={assetKeyPath} assetCheckName={assetCheckName} />}
+        selectedTabId={tabId}
+        onTabChange={setTabId}
+        onDone={onClose}
         body={
           <Box margin={{top: 64}}>
             <NonIdealState
@@ -150,39 +169,65 @@ const EvaluationDetailDialogContents = ({
             />
           </Box>
         }
-        onDone={onClose}
       />
     );
   }
 
-  return (
-    <DialogContents
-      header={
-        <>
-          <DialogHeader
-            assetKeyPath={assetKeyPath}
-            assetCheckName={assetCheckName}
-            timestamp={evaluation.timestamp}
-          />
-          {allPartitions.length > 0 && evaluation.isLegacy ? (
-            <Box padding={{vertical: 12, right: 20}} flex={{justifyContent: 'flex-end'}}>
-              <PartitionTagSelector
-                allPartitions={allPartitions}
-                selectedPartition={selectedPartition}
-                selectPartition={setSelectedPartition}
-              />
-            </Box>
-          ) : null}
-        </>
-      }
-      body={
+  const {runIds} = evaluation;
+
+  const body = () => {
+    if (tabId === 'evaluation') {
+      return (
         <QueryfulEvaluationDetailTable
           evaluation={evaluation}
           assetKeyPath={assetKeyPath}
           selectedPartition={selectedPartition}
           setSelectedPartition={setSelectedPartition}
         />
+      );
+    }
+
+    const filter = runTableFiltersForEvaluation(evaluation.runIds);
+    if (filter) {
+      return <RunsFeedTableWithFilters filter={filter} includeRunsFromBackfills={false} />;
+    }
+
+    return (
+      <Box padding={{top: 64}} flex={{direction: 'row', justifyContent: 'center'}}>
+        <NonIdealState
+          icon="run"
+          title="No runs launched"
+          description="No runs were launched by this evaluation."
+        />
+      </Box>
+    );
+  };
+
+  return (
+    <DialogContents
+      onTabChange={setTabId}
+      runCount={runIds.length}
+      selectedTabId={tabId}
+      onDone={onClose}
+      header={
+        <DialogHeader
+          assetKeyPath={assetKeyPath}
+          assetCheckName={assetCheckName}
+          timestamp={evaluation.timestamp}
+        />
       }
+      rightOfTabs={
+        allPartitions.length > 0 && evaluation.isLegacy ? (
+          <Box padding={{vertical: 12}} flex={{justifyContent: 'flex-end'}}>
+            <PartitionTagSelector
+              allPartitions={allPartitions}
+              selectedPartition={selectedPartition}
+              selectPartition={setSelectedPartition}
+            />
+          </Box>
+        ) : null
+      }
+      body={body()}
       viewAllButton={
         viewAllPath ? (
           <AnchorButton to={viewAllPath} icon={<Icon name="automation_condition" />}>
@@ -190,7 +235,6 @@ const EvaluationDetailDialogContents = ({
           </AnchorButton>
         ) : null
       }
-      onDone={onClose}
     />
   );
 };
@@ -241,15 +285,51 @@ const DialogHeader = ({
 interface BasicContentProps {
   header: ReactNode;
   body: ReactNode;
+  rightOfTabs?: ReactNode;
   viewAllButton?: ReactNode;
+  selectedTabId: Tab;
+  onTabChange: (tabId: Tab) => void;
   onDone: () => void;
+  runCount?: number;
 }
 
 // Dialog contents for which the body container is scrollable and expands to fill the height.
-const DialogContents = ({header, body, onDone, viewAllButton}: BasicContentProps) => {
+const DialogContents = ({
+  header,
+  body,
+  selectedTabId,
+  onTabChange,
+  rightOfTabs,
+  runCount = 0,
+  viewAllButton,
+  onDone,
+}: BasicContentProps) => {
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%'}}>
       {header}
+      <Box
+        padding={{horizontal: 20}}
+        border="bottom"
+        flex={{direction: 'row', justifyContent: 'space-between'}}
+      >
+        <Tabs selectedTabId={selectedTabId} onChange={onTabChange}>
+          <Tab id="evaluation" title="Evaluation" />
+          <Tab
+            id="runs"
+            title={
+              runCount > 0 ? (
+                <span>
+                  Runs <span style={{fontVariantNumeric: 'tabular-nums'}}>({runCount})</span>
+                </span>
+              ) : (
+                'Runs'
+              )
+            }
+            disabled={runCount === 0}
+          />
+        </Tabs>
+        {rightOfTabs}
+      </Box>
       <div style={{flex: 1, overflowY: 'auto'}}>{body}</div>
       <div style={{flexGrow: 0}}>
         <DialogFooter topBorder left={viewAllButton}>

@@ -41,6 +41,7 @@ def test_list_component_types_command():
 
     assert list(result.keys()) == [
         "dagster_components.test.all_metadata_empty_asset",
+        "dagster_components.test.complex_schema_asset",
         "dagster_components.test.simple_asset",
         "dagster_components.test.simple_pipes_script_asset",
     ]
