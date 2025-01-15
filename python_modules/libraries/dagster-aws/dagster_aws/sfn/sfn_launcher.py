@@ -55,7 +55,7 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     @cached_property
     def _start_execution_input(self) -> "StartExecutionInputRequestTypeDef":
-        input_dict: "StartExecutionInputRequestTypeDef" = {"stateMachineArn": self._sfn_arn}
+        input_dict: StartExecutionInputRequestTypeDef = {"stateMachineArn": self._sfn_arn}
         if self._name is not None:
             input_dict["name"] = self._name
         if self._input is not None:

@@ -1,4 +1,5 @@
-from typing import Iterator, Literal
+from collections.abc import Iterator
+from typing import Literal
 
 import boto3
 import pytest

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 
 class LocalSfnMockClient:
@@ -15,7 +15,7 @@ class LocalSfnMockClient:
         stateMachineArn: str,
         input: Optional[str] = None,  # noqa: A002 # AWS API parameter
         name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {"executionArn": self.execution_arn, "startDate": self.default_dt}
 
     def describe_execution(self, executionArn: str):

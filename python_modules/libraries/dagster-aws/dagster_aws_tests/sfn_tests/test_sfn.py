@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 @mock_stepfunctions
 def test_launch_run(stub_launch_context):
-    sfn_client: "SFNClient" = boto3.client("stepfunctions")
+    sfn_client: SFNClient = boto3.client("stepfunctions")
     sfn_arn = "arn:aws:states:us-east-1:123456789012:stateMachine:TestSFN"
     wrong_sfn_arn = "arn:aws:states:us-east-1:123456789012:stateMachine:WrongTestSFN"
     sfn_client.create_state_machine(

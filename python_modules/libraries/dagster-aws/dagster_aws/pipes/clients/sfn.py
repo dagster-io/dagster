@@ -1,5 +1,5 @@
 import time
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
 import dagster._check as check
@@ -63,7 +63,7 @@ class PipesSFNClient(PipesClient, TreatAsResourceParam):
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
         start_execution_input: "StartExecutionInputRequestTypeDef",
-        extras: Optional[Dict[str, Any]] = None,
+        extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Start a Step Function execution, enriched with the pipes protocol.
 
