@@ -2,6 +2,8 @@ import asyncio
 from collections.abc import Sequence
 from typing import Optional, Union
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -68,7 +70,7 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self,
         old: Union[AutomationCondition, str],
         new: Optional[AutomationCondition],
-    ) -> "AndAutomationCondition":
+    ) -> Self:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
@@ -131,7 +133,7 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self,
         old: Union[AutomationCondition, str],
         new: Optional[AutomationCondition],
-    ) -> "OrAutomationCondition":
+    ) -> Self:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
@@ -182,7 +184,7 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self,
         old: Union[AutomationCondition, str],
         new: Optional[AutomationCondition],
-    ) -> "NotAutomationCondition":
+    ) -> Self:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching

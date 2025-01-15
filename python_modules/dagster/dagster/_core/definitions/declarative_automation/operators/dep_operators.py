@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Union  # noqa: UP035
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.asset_graph_view.asset_graph_view import U_EntityKey
@@ -63,7 +65,7 @@ class EntityMatchesCondition(
         self,
         old: Union[AutomationCondition, str],
         new: Optional[AutomationCondition],
-    ) -> "EntityMatchesCondition":
+    ) -> Self:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
@@ -148,7 +150,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self,
         old: Union[AutomationCondition, str],
         new: Optional[AutomationCondition],
-    ) -> "DepsAutomationCondition":
+    ) -> Self:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
