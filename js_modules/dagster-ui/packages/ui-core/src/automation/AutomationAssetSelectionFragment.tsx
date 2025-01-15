@@ -4,6 +4,12 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 export const AUTOMATION_ASSET_SELECTION_FRAGMENT = gql`
   fragment AutomationAssetSelectionFragment on AssetSelection {
     assetSelectionString
+    assetChecks {
+      name
+      assetKey {
+        path
+      }
+    }
     assetsOrError {
       ... on AssetConnection {
         nodes {
