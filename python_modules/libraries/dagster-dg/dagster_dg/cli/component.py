@@ -20,6 +20,7 @@ from dagster_dg.scaffold import scaffold_component_instance
 from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
+    exit_with_error,
     json_schema_property_to_click_option,
     not_none,
     parse_json_option,
@@ -67,12 +68,7 @@ class ComponentScaffoldGroup(DgClickGroup):
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), config)
 
         if not dg_context.is_code_location:
-            click.echo(
-                click.style(
-                    "This command must be run inside a Dagster code location directory.", fg="red"
-                )
-            )
-            sys.exit(1)
+            exit_with_error("This command must be run inside a Dagster code location directory.")
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         for key, component_type in registry.items():
@@ -181,26 +177,13 @@ def _create_component_scaffold_subcommand(
         cli_config = get_config_from_cli_context(cli_context)
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
         if not dg_context.is_code_location:
-            click.echo(
-                click.style(
-                    "This command must be run inside a Dagster code location directory.", fg="red"
-                )
-            )
-            sys.exit(1)
+            exit_with_error("This command must be run inside a Dagster code location directory.")
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         if not registry.has(component_key):
-            click.echo(
-                click.style(f"No component type `{component_key}` could be resolved.", fg="red")
-            )
-            sys.exit(1)
+            exit_with_error(f"No component type `{component_key}` could be resolved.")
         elif dg_context.has_component(component_name):
-            click.echo(
-                click.style(
-                    f"A component instance named `{component_name}` already exists.", fg="red"
-                )
-            )
-            sys.exit(1)
+            exit_with_error(f"A component instance named `{component_name}` already exists.")
 
         # Specified key-value params will be passed to this function with their default value of
         # `None` even if the user did not set them. Filter down to just the ones that were set by
@@ -211,14 +194,10 @@ def _create_component_scaffold_subcommand(
             if cli_context.get_parameter_source(k) == ParameterSource.COMMANDLINE
         }
         if json_params is not None and user_provided_key_value_params:
-            click.echo(
-                click.style(
-                    "Detected params passed as both --json-params and individual options. These are mutually exclusive means of passing"
-                    " component generation parameters. Use only one.",
-                    fg="red",
-                )
+            exit_with_error(
+                "Detected params passed as both --json-params and individual options. These are mutually exclusive means of passing"
+                " component generation parameters. Use only one.",
             )
-            sys.exit(1)
         elif json_params:
             scaffold_params = json_params
         elif user_provided_key_value_params:
@@ -259,12 +238,7 @@ def component_list_command(context: click.Context, **global_options: object) -> 
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
     if not dg_context.is_code_location:
-        click.echo(
-            click.style(
-                "This command must be run inside a Dagster code location directory.", fg="red"
-            )
-        )
-        sys.exit(1)
+        exit_with_error("This command must be run inside a Dagster code location directory.")
 
     for component_name in dg_context.get_component_names():
         click.echo(component_name)

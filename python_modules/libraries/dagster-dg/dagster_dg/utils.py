@@ -239,6 +239,11 @@ def not_none(value: Optional[T]) -> T:
     return value
 
 
+def exit_with_error(error_message: str) -> None:
+    click.echo(click.style(error_message, fg="red"))
+    sys.exit(1)
+
+
 # ########################
 # ##### CUSTOM CLICK SUBCLASSES
 # ########################
