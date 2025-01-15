@@ -7,7 +7,7 @@ import click
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.generate import generate_deployment
+from dagster_dg.scaffold import scaffold_deployment
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
@@ -17,18 +17,18 @@ def deployment_group():
 
 
 # ########################
-# ##### GENERATE
+# ##### SCAFFOLD
 # ########################
 
 
-@deployment_group.command(name="generate", cls=DgClickCommand)
+@deployment_group.command(name="scaffold", cls=DgClickCommand)
 @dg_global_options
 @click.argument("path", type=Path)
 @click.pass_context
-def deployment_generate_command(
+def deployment_scaffold_command(
     context: click.Context, path: Path, **global_options: object
 ) -> None:
-    """Generate a Dagster deployment file structure.
+    """Scaffold a Dagster deployment file structure.
 
     The deployment file structure includes a directory for code locations and configuration files
     for deploying to Dagster Plus.
@@ -42,4 +42,4 @@ def deployment_generate_command(
             + "\nPlease delete the contents of this path or choose another location."
         )
         sys.exit(1)
-    generate_deployment(path, dg_context)
+    scaffold_deployment(path, dg_context)

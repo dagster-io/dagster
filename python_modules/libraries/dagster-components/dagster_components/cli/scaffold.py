@@ -11,24 +11,24 @@ from dagster_components.core.deployment import (
     find_enclosing_code_location_root_path,
     is_inside_code_location_project,
 )
-from dagster_components.generate import (
-    ComponentGeneratorUnavailableReason,
-    generate_component_instance,
+from dagster_components.scaffold import (
+    ComponentScaffolderUnavailableReason,
+    scaffold_component_instance,
 )
 from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
-@click.group(name="generate")
-def generate_cli() -> None:
-    """Commands for generating Dagster components and related entities."""
+@click.group(name="scaffold")
+def scaffold_cli() -> None:
+    """Commands for scaffolding Dagster components and related entities."""
 
 
-@generate_cli.command(name="component")
+@scaffold_cli.command(name="component")
 @click.argument("component_type", type=str)
 @click.argument("component_name", type=str)
 @click.option("--json-params", type=str, default=None)
 @click.pass_context
-def generate_component_command(
+def scaffold_component_command(
     ctx: click.Context,
     component_type: str,
     component_name: str,
@@ -57,19 +57,21 @@ def generate_component_command(
 
     component_type_cls = context.get_component_type(component_type)
     if json_params:
-        generator = component_type_cls.get_generator()
-        if isinstance(generator, ComponentGeneratorUnavailableReason):
+        scaffolder = component_type_cls.get_scaffolder()
+        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
             raise Exception(
-                f"Component type {component_type} does not have a generator. Reason: {generator.message}."
+                f"Component type {component_type} does not have a scaffolder. Reason: {scaffolder.message}."
             )
-        generate_params = TypeAdapter(generator.get_params_schema_type()).validate_json(json_params)
+        scaffold_params = TypeAdapter(scaffolder.get_params_schema_type()).validate_json(
+            json_params
+        )
     else:
-        generate_params = {}
+        scaffold_params = {}
 
-    generate_component_instance(
+    scaffold_component_instance(
         context.components_path,
         component_name,
         component_type_cls,
         component_type,
-        generate_params,
+        scaffold_params,
     )

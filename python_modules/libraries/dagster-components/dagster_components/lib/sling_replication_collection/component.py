@@ -13,7 +13,7 @@ from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component_type
-from dagster_components.core.component_generator import ComponentGenerator
+from dagster_components.core.component_scaffolder import ComponentScaffolder
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
@@ -52,12 +52,12 @@ class SlingReplicationCollectionComponent(Component):
         self.transforms = transforms
 
     @classmethod
-    def get_generator(cls) -> ComponentGenerator:
-        from dagster_components.lib.sling_replication_collection.generator import (
-            SlingReplicationComponentGenerator,
+    def get_scaffolder(cls) -> ComponentScaffolder:
+        from dagster_components.lib.sling_replication_collection.scaffolder import (
+            SlingReplicationComponentScaffolder,
         )
 
-        return SlingReplicationComponentGenerator()
+        return SlingReplicationComponentScaffolder()
 
     @classmethod
     def get_component_schema_type(cls):

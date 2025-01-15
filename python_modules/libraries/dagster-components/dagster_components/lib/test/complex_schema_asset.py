@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.core.component_generator import DefaultComponentGenerator
+from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
@@ -35,8 +35,8 @@ class ComplexSchemaAsset(Component):
         return ComplexAssetParams
 
     @classmethod
-    def get_generator(cls) -> DefaultComponentGenerator:
-        return DefaultComponentGenerator()
+    def get_scaffolder(cls) -> DefaultComponentScaffolder:
+        return DefaultComponentScaffolder()
 
     @classmethod
     def load(cls, context: "ComponentLoadContext") -> Self:

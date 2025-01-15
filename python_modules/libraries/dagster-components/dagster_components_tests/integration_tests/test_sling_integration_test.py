@@ -1,6 +1,6 @@
 import shutil
 import tempfile
-from collections.abc import Generator, Iterator, Mapping
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Union
@@ -39,7 +39,7 @@ def _update_yaml(path: Path, fn) -> None:
 
 @contextmanager
 @pytest.fixture(scope="module")
-def sling_path() -> Generator[Path, None, None]:
+def sling_path() -> Iterator[Path]:
     """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
     the proper temp path.
     """

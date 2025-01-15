@@ -17,14 +17,14 @@ from dagster_dg_tests.utils import (
 )
 
 # ########################
-# ##### GENERATE
+# ##### SCAFFOLD
 # ########################
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
-def test_component_type_generate_success(in_deployment: bool) -> None:
+def test_component_type_scaffold_success(in_deployment: bool) -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
-        result = runner.invoke("component-type", "generate", "baz")
+        result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result)
         assert Path("bar/lib/baz.py").exists()
         dg_context = DgContext.default()
@@ -32,24 +32,24 @@ def test_component_type_generate_success(in_deployment: bool) -> None:
         assert registry.has("bar.baz")
 
 
-def test_component_type_generate_outside_code_location_fails() -> None:
+def test_component_type_scaffold_outside_code_location_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("component-type", "generate", "baz")
+        result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
-def test_component_type_generate_already_exists_fails(in_deployment: bool) -> None:
+def test_component_type_scaffold_already_exists_fails(in_deployment: bool) -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
-        result = runner.invoke("component-type", "generate", "baz")
+        result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result)
-        result = runner.invoke("component-type", "generate", "baz")
+        result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
 
-def test_component_type_generate_succeeds_non_default_component_lib_package() -> None:
+def test_component_type_scaffold_succeeds_non_default_component_lib_package() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         alt_lib_path = Path("bar/_lib")
         alt_lib_path.mkdir(parents=True)
@@ -58,7 +58,7 @@ def test_component_type_generate_succeeds_non_default_component_lib_package() ->
             pyproject_toml["project"]["entry-points"]["dagster.components"]["bar"] = "bar._lib"
         result = runner.invoke(
             "component-type",
-            "generate",
+            "scaffold",
             "baz",
         )
         assert_runner_result(result)
@@ -68,14 +68,14 @@ def test_component_type_generate_succeeds_non_default_component_lib_package() ->
         assert registry.has("bar.baz")
 
 
-def test_component_type_generate_fails_components_lib_package_does_not_exist() -> None:
+def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         with modify_pyproject_toml() as pyproject_toml:
             pyproject_toml["tool"]["dg"]["component_lib_package"] = "bar._lib"
             pyproject_toml["project"]["entry-points"]["dagster.components"]["bar"] = "bar._lib"
         result = runner.invoke(
             "component-type",
-            "generate",
+            "scaffold",
             "baz",
         )
         assert_runner_result(result, exit_0=False)
@@ -110,7 +110,7 @@ _EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
 
     Because it is a pipes asset, no value is returned.
 
-    Generate params schema:
+    Scaffold params schema:
 
     {
         "properties": {
@@ -203,7 +203,7 @@ def test_component_type_info_flag_fields_success():
             "component-type",
             "info",
             "dagster_components.test.simple_pipes_script_asset",
-            "--generate-params-schema",
+            "--scaffold-params-schema",
         )
         assert_runner_result(result)
         assert (
@@ -281,11 +281,11 @@ def test_component_type_info_multiple_flags_fails() -> None:
             "info",
             "dagster_components.test.simple_pipes_script_asset",
             "--description",
-            "--generate-params-schema",
+            "--scaffold-params-schema",
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --generate-params-schema, and --component-params-schema can be specified."
+            "Only one of --description, --scaffold-params-schema, and --component-params-schema can be specified."
             in result.output
         )
 

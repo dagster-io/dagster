@@ -45,7 +45,7 @@ def test_cache_invalidation_modified_lib():
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
 
-        result = runner.invoke("component-type", "generate", "my_component")
+        result = runner.invoke("component-type", "scaffold", "my_component")
         assert_runner_result(result)
 
         result = runner.invoke("component-type", "list")

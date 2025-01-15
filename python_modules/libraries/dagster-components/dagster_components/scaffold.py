@@ -8,9 +8,9 @@ import yaml
 from dagster._utils import mkdir_p
 
 from dagster_components.core.component import Component
-from dagster_components.core.component_generator import (
-    ComponentGenerateRequest,
-    ComponentGeneratorUnavailableReason,
+from dagster_components.core.component_scaffolder import (
+    ComponentScaffolderUnavailableReason,
+    ComponentScaffoldRequest,
 )
 
 
@@ -22,8 +22,8 @@ class ComponentDumper(yaml.Dumper):
         super().write_line_break()
 
 
-def generate_component_yaml(
-    request: ComponentGenerateRequest, component_params: Optional[Mapping[str, Any]]
+def scaffold_component_yaml(
+    request: ComponentScaffoldRequest, component_params: Optional[Mapping[str, Any]]
 ) -> None:
     with open(request.component_instance_root_path / "component.yaml", "w") as f:
         component_data = {"type": request.component_type_name, "params": component_params or {}}
@@ -33,34 +33,34 @@ def generate_component_yaml(
         f.writelines([""])
 
 
-def generate_component_instance(
+def scaffold_component_instance(
     root_path: str,
     name: str,
     component_type: type[Component],
     component_type_name: str,
-    generate_params: Mapping[str, Any],
+    scaffold_params: Mapping[str, Any],
 ) -> None:
     component_instance_root_path = Path(os.path.join(root_path, name))
     click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
     mkdir_p(str(component_instance_root_path))
-    generator = component_type.get_generator()
+    scaffolder = component_type.get_scaffolder()
 
-    if isinstance(generator, ComponentGeneratorUnavailableReason):
+    if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
         raise Exception(
-            f"Component type {component_type_name} does not have a generator. Reason: {generator.message}."
+            f"Component type {component_type_name} does not have a scaffolder. Reason: {scaffolder.message}."
         )
 
-    generator.generate_files(
-        ComponentGenerateRequest(
+    scaffolder.scaffold(
+        ComponentScaffoldRequest(
             component_type_name=component_type_name,
             component_instance_root_path=component_instance_root_path,
         ),
-        generate_params,
+        scaffold_params,
     )
 
     component_yaml_path = component_instance_root_path / "component.yaml"
 
     if not component_yaml_path.exists():
         raise Exception(
-            f"Currently all components require a component.yaml file. Please ensure your implementation of generate_files writes this file at {component_yaml_path}."
+            f"Currently all components require a component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."
         )

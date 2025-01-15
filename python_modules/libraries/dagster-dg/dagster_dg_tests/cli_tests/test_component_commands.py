@@ -17,13 +17,13 @@ from dagster_dg_tests.utils import (
 )
 
 # ########################
-# ##### GENERATE
+# ##### SCAFFOLD
 # ########################
 
 
-def test_component_generate_dynamic_subcommand_generation() -> None:
+def test_component_scaffold_dynamic_subcommand_generation() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
-        result = runner.invoke("component", "generate", "--help")
+        result = runner.invoke("component", "scaffold", "--help")
         assert_runner_result(result)
         assert (
             textwrap.dedent("""
@@ -38,11 +38,11 @@ def test_component_generate_dynamic_subcommand_generation() -> None:
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
-def test_component_generate_no_params_success(in_deployment: bool) -> None:
+def test_component_scaffold_no_params_success(in_deployment: bool) -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.all_metadata_empty_asset",
             "qux",
         )
@@ -57,11 +57,11 @@ def test_component_generate_no_params_success(in_deployment: bool) -> None:
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
-def test_component_generate_json_params_success(in_deployment: bool) -> None:
+def test_component_scaffold_json_params_success(in_deployment: bool) -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.simple_pipes_script_asset",
             "qux",
             "--json-params",
@@ -79,11 +79,11 @@ def test_component_generate_json_params_success(in_deployment: bool) -> None:
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
-def test_component_generate_key_value_params_success(in_deployment: bool) -> None:
+def test_component_scaffold_key_value_params_success(in_deployment: bool) -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.simple_pipes_script_asset",
             "qux",
             "--asset-key=foo",
@@ -100,11 +100,11 @@ def test_component_generate_key_value_params_success(in_deployment: bool) -> Non
         )
 
 
-def test_component_generate_json_params_and_key_value_params_fails() -> None:
+def test_component_scaffold_json_params_and_key_value_params_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.simple_pipes_script_asset",
             "qux",
             "--json-params",
@@ -117,26 +117,26 @@ def test_component_generate_json_params_and_key_value_params_fails() -> None:
         )
 
 
-def test_component_generate_outside_code_location_fails() -> None:
+def test_component_scaffold_outside_code_location_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("component", "generate", "bar.baz", "qux")
+        result = runner.invoke("component", "scaffold", "bar.baz", "qux")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
-def test_component_generate_already_exists_fails(in_deployment: bool) -> None:
+def test_component_scaffold_already_exists_fails(in_deployment: bool) -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.all_metadata_empty_asset",
             "qux",
         )
         assert_runner_result(result)
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.all_metadata_empty_asset",
             "qux",
         )
@@ -144,7 +144,7 @@ def test_component_generate_already_exists_fails(in_deployment: bool) -> None:
         assert "already exists" in result.output
 
 
-def test_component_generate_succeeds_non_default_component_package() -> None:
+def test_component_scaffold_succeeds_non_default_component_package() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         alt_lib_path = Path("bar/_components")
         alt_lib_path.mkdir(parents=True)
@@ -152,7 +152,7 @@ def test_component_generate_succeeds_non_default_component_package() -> None:
             pyproject_toml["tool"]["dg"]["component_package"] = "bar._components"
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.all_metadata_empty_asset",
             "qux",
         )
@@ -166,13 +166,13 @@ def test_component_generate_succeeds_non_default_component_package() -> None:
         )
 
 
-def test_component_generate_fails_components_package_does_not_exist() -> None:
+def test_component_scaffold_fails_components_package_does_not_exist() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         with modify_pyproject_toml() as pyproject_toml:
             pyproject_toml["tool"]["dg"]["component_package"] = "bar._components"
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.all_metadata_empty_asset",
             "qux",
         )
@@ -180,13 +180,13 @@ def test_component_generate_fails_components_package_does_not_exist() -> None:
         assert "Components package `bar._components` is not installed" in str(result.exception)
 
 
-def test_component_generate_succeeds_scaffolded_component_type() -> None:
+def test_component_scaffold_succeeds_scaffolded_component_type() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
-        result = runner.invoke("component-type", "generate", "baz")
+        result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result)
         assert Path("bar/lib/baz.py").exists()
 
-        result = runner.invoke("component", "generate", "bar.baz", "qux")
+        result = runner.invoke("component", "scaffold", "bar.baz", "qux")
         assert_runner_result(result)
         assert Path("bar/components/qux").exists()
         component_yaml_path = Path("bar/components/qux/component.yaml")
@@ -207,7 +207,7 @@ dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffl
         ["--project-path", dbt_project_path],
     ],
 )
-def test_generate_dbt_project_instance(params) -> None:
+def test_scaffold_dbt_project_instance(params) -> None:
     with (
         ProxyRunner.test(use_test_component_lib=False) as runner,
         isolated_example_code_location_bar(runner),
@@ -217,7 +217,7 @@ def test_generate_dbt_project_instance(params) -> None:
         subprocess.run(["uv", "add", "dagster-components[dbt]", "dagster-dbt"], check=True)
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.dbt_project",
             "my_project",
             *params,
@@ -243,7 +243,7 @@ def test_list_components_succeeds():
     with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
         result = runner.invoke(
             "component",
-            "generate",
+            "scaffold",
             "dagster_components.test.all_metadata_empty_asset",
             "qux",
         )

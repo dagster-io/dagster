@@ -16,7 +16,7 @@ from dagster_dg.config import (
     set_config_on_cli_context,
 )
 from dagster_dg.context import DgContext
-from dagster_dg.generate import generate_component_instance
+from dagster_dg.scaffold import scaffold_component_instance
 from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
@@ -32,11 +32,11 @@ def component_group():
 
 
 # ########################
-# ##### GENERATE
+# ##### SCAFFOLD
 # ########################
 
 
-# The `dg component generate` command is special because its subcommands are dynamically generated
+# The `dg component scaffold` command is special because its subcommands are dynamically generated
 # from the registered component types in the code location. Because the registered component types
 # depend on the built-in component library we are using, we cannot resolve them until we have the
 # built-in component library, which can be set via a global option, e.g.:
@@ -44,7 +44,7 @@ def component_group():
 #     dg --builtin-component-lib dagster_components.test ...
 #
 # To handle this, we define a custom click.Group subclass that loads the commands on demand.
-class ComponentGenerateGroup(DgClickGroup):
+class ComponentScaffoldGroup(DgClickGroup):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._commands_defined = False
@@ -76,11 +76,11 @@ class ComponentGenerateGroup(DgClickGroup):
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         for key, component_type in registry.items():
-            command = _create_component_generate_subcommand(key, component_type)
+            command = _create_component_scaffold_subcommand(key, component_type)
             self.add_command(command)
 
 
-class ComponentGenerateSubCommand(DgClickCommand):
+class ComponentScaffoldSubCommand(DgClickCommand):
     def format_usage(self, context: click.Context, formatter: click.HelpFormatter) -> None:
         if not isinstance(self, click.Command):
             raise ValueError("This mixin is only intended for use with click.Command instances.")
@@ -91,7 +91,7 @@ class ComponentGenerateSubCommand(DgClickCommand):
 
     def format_options(self, context: click.Context, formatter: click.HelpFormatter) -> None:
         # This will not produce any global options since there are none defined on component
-        # generate subcommands.
+        # scaffold subcommands.
         super().format_options(context, formatter)
 
         # Get the global options off the parent group.
@@ -114,16 +114,16 @@ class ComponentGenerateSubCommand(DgClickCommand):
 # options first and generate the correct subcommands. We then add a custom `--help` option that
 # gets invoked inside the callback.
 @component_group.group(
-    name="generate",
-    cls=ComponentGenerateGroup,
+    name="scaffold",
+    cls=ComponentScaffoldGroup,
     invoke_without_command=True,
     context_settings={"help_option_names": []},
 )
 @click.option("-h", "--help", "help_", is_flag=True, help="Show this message and exit.")
 @dg_global_options
 @click.pass_context
-def component_generate_group(context: click.Context, help_: bool, **global_options: object) -> None:
-    """Generate a scaffold of a Dagster component."""
+def component_scaffold_group(context: click.Context, help_: bool, **global_options: object) -> None:
+    """Scaffold of a Dagster component."""
     # Click attempts to resolve subcommands BEFORE it invokes this callback.
     # Therefore we need to manually invoke this callback during subcommand generation to make sure
     # it runs first. It will be invoked again later by Click. We make it idempotent to deal with
@@ -136,14 +136,14 @@ def component_generate_group(context: click.Context, help_: bool, **global_optio
         context.exit(0)
 
 
-def _create_component_generate_subcommand(
+def _create_component_scaffold_subcommand(
     component_key: str, component_type: RemoteComponentType
 ) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
         name=component_key,
-        cls=ComponentGenerateSubCommand,
+        cls=ComponentScaffoldSubCommand,
         context_settings={"help_option_names": ["-h", "--help"]},
     )
     @click.argument("component_name", type=str)
@@ -155,26 +155,26 @@ def _create_component_generate_subcommand(
         callback=parse_json_option,
     )
     @click.pass_context
-    def generate_component_command(
+    def scaffold_component_command(
         cli_context: click.Context,
         component_name: str,
         json_params: Mapping[str, Any],
         **key_value_params: Any,
     ) -> None:
-        f"""Generate a scaffold of a {component_type.name} component.
+        f"""Scaffold of a {component_type.name} component.
 
         This command must be run inside a Dagster code location directory. The component scaffold will be
-        generated in submodule `<code_location_name>.components.<COMPONENT_NAME>`.
+        placed in submodule `<code_location_name>.components.<COMPONENT_NAME>`.
 
-        Components can optionally be passed generate parameters. There are two ways to do this:
+        Components can optionally be passed scaffold parameters. There are two ways to do this:
 
         (1) Passing a single --json-params option with a JSON string of parameters. For example:
 
-            dg component generate foo.bar my_component --json-params '{{"param1": "value", "param2": "value"}}'`.
+            dg component scaffold foo.bar my_component --json-params '{{"param1": "value", "param2": "value"}}'`.
 
         (2) Passing each parameter as an option. For example:
 
-            dg component generate foo.bar my_component --param1 value1 --param2 value2`
+            dg component scaffold foo.bar my_component --param1 value1 --param2 value2`
 
         It is an error to pass both --json-params and key-value pairs as options.
         """
@@ -220,30 +220,30 @@ def _create_component_generate_subcommand(
             )
             sys.exit(1)
         elif json_params:
-            generate_params = json_params
+            scaffold_params = json_params
         elif user_provided_key_value_params:
-            generate_params = user_provided_key_value_params
+            scaffold_params = user_provided_key_value_params
         else:
-            generate_params = None
+            scaffold_params = None
 
-        generate_component_instance(
+        scaffold_component_instance(
             Path(dg_context.components_path),
             component_name,
             component_key,
-            generate_params,
+            scaffold_params,
             dg_context,
         )
 
-    # If there are defined generate params, add them to the command
-    schema = component_type.generate_params_schema
+    # If there are defined scaffold params, add them to the command
+    schema = component_type.scaffold_params_schema
     if schema:
         for key, field_info in schema["properties"].items():
             # All fields are currently optional because they can also be passed under
             # `--json-params`
             option = json_schema_property_to_click_option(key, field_info, required=False)
-            generate_component_command.params.append(option)
+            scaffold_component_command.params.append(option)
 
-    return generate_component_command
+    return scaffold_component_command
 
 
 # ########################

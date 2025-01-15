@@ -6,21 +6,24 @@ import dagster._check as check
 from dbt.cli.main import dbtRunner
 from pydantic import BaseModel, Field
 
-from dagster_components.core.component_generator import ComponentGenerateRequest, ComponentGenerator
-from dagster_components.generate import generate_component_yaml
+from dagster_components.core.component_scaffolder import (
+    ComponentScaffolder,
+    ComponentScaffoldRequest,
+)
+from dagster_components.scaffold import scaffold_component_yaml
 
 
-class DbtGenerateParams(BaseModel):
+class DbtScaffoldParams(BaseModel):
     init: bool = Field(default=False)
     project_path: Optional[str] = None
 
 
-class DbtProjectComponentGenerator(ComponentGenerator):
+class DbtProjectComponentScaffolder(ComponentScaffolder):
     @classmethod
     def get_params_schema_type(cls) -> Optional[type[BaseModel]]:
-        return DbtGenerateParams
+        return DbtScaffoldParams
 
-    def generate_files(self, request: ComponentGenerateRequest, params: DbtGenerateParams) -> None:
+    def scaffold(self, request: ComponentScaffoldRequest, params: DbtScaffoldParams) -> None:
         cwd = os.getcwd()
         if params.project_path:
             # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to
@@ -39,4 +42,4 @@ class DbtProjectComponentGenerator(ComponentGenerator):
         else:
             relative_path = None
 
-        generate_component_yaml(request, {"dbt": {"project_dir": relative_path}})
+        scaffold_component_yaml(request, {"dbt": {"project_dir": relative_path}})

@@ -6,9 +6,9 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.core.component_generator import (
-    ComponentGenerator,
-    DefaultComponentGenerator,
+from dagster_components.core.component_scaffolder import (
+    ComponentScaffolder,
+    DefaultComponentScaffolder,
 )
 
 
@@ -26,8 +26,8 @@ class SimpleAsset(Component):
         return SimpleAssetParams
 
     @classmethod
-    def get_generator(cls) -> ComponentGenerator:
-        return DefaultComponentGenerator()
+    def get_scaffolder(cls) -> ComponentScaffolder:
+        return DefaultComponentScaffolder()
 
     @classmethod
     def load(cls, context: "ComponentLoadContext") -> Self:
