@@ -4,19 +4,45 @@ sidebar_position: 200
 sidebar_label: "Set with Dagster+ UI"
 ---
 
-Environment variable are key-value pairs that are set outside of your source code. Using environment variables lets you dynamically change the behavior of your application without modifying source code and securely set up secrets.
+Environment variable are key-value pairs that are set outside of your source code. Using environment variables lets you dynamically change the behavior of your application without modifying source code and securely configured secrets.
 
 Dagster supports several approaches for [accessing environment variable in your code](/todo). You can also set environment variables in several ways, but this guide will focus on the Dagster+ UI.
 
 <details>
   <summary>Prerequisites</summary>
 
-To follow the steps in this guide, you'll need:
+To configure environment variables in the Dagster+ UI , you'll need:
 
 - **Organization Admin**, **Admin**, or **Editor** permissions for your Dagster+ account
 - To be using Dagster version 1.0.17 or later
 
 </details>
+
+## Overview
+
+### Storage and encryption
+
+To securely store environment variables defined using the Dagster+ UI, Dagster+ uses [Amazon Key Management Services (KMS)](https://docs.aws.amazon.com/kms/index.html) and [envelope encryption](https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#enveloping). Envelope encryption is a multi-layered approach to key encryption. Plaintext data is encrypted using a data key, and then the data under the data key is encrypted under another key.
+
+![Dagster+ encryption key hierarchy diagram](/images/dagster-plus/deployment/settings/environment-variables/encryption-key-hierarchy.png)
+
+### Scope
+
+By default, new environment variables set in the Dagster+ UI default to all deployments and all code locations. When creating or modifying an environment variable, you'll be prompted to select the deployment(s) to which you want to scope the variable:
+
+- **Local:** - Variables with this scope will be included when downloading variables to a local `.env` file.
+- **Full deployment:** - Variables with this scope will be available to selected code locations in the full deployment.
+- **Branch deployments:** - Variables with this scope will be available to selected code locations in branch deployments.
+
+:::note
+
+Environment variables will be read-only for branch deployments viewed in Dagster+. Environment variables must be managed in the branch deployment's parent full deployment, which will usually be production.
+
+:::
+
+### Reserved variables
+
+[Built-in (system) Dagster+ environment variables](built-in) are reserved and therefore unavailable for use. You will see an error in Dagster+ if you use a built-in variable name.
 
 ## Adding environment variables \{#add}
 
@@ -32,10 +58,7 @@ Before you begin, use the deployment switcher to select the right deployment.
         - **Local** - If selected, the variable will be included when [exporting environment variables to a local `.env` file](#export).
     - **Code Location Scope** - select the code location(s) where the variable should be accessible. At least one code location is required.
 
-
-{/* TODO replace placeholder image */}
-
-![Screenshot of adding environment variables](/img/placeholder.svg)
+![Create new environment variable dialog window in Dagster+](/images/dagster-plus/settings/environment-variables/create-new-variable-in-ui.png)
 
 3. Click **Save**
 
@@ -84,9 +107,9 @@ For example, if you wanted to provide different Snowflake passwords for your pro
    - Set the value as the branch deployment password, and
    - Check only the **Branch deployments** box
 
-![Screenshot of environment variables](/img/placeholder.svg)
+![Example SNOWFLAKE_PASSWORD variables configured with different values based on deployment](/images/dagster-plus/deployment/settings/environment-variables/same-variable-diff-scope.png)
 
 ## Next steps
 
-- Learn how to [access environment variables in Dagster code](/todo)
+- Learn how to [access environment variables in Dagster code](/guides/deploy/using-environment-variables-and-secrets#accessing-environment-variables)
 - Learn about the [built-in environment variables](built-in) provided by Dagster+

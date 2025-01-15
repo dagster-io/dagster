@@ -3,11 +3,6 @@ title: Using environment variables and secrets
 sidebar_position: 400
 ---
 
----
-title: Using environment variables and secrets | Dagster Docs
-description: Learn how to securely define and access environment variables in your Dagster code.
----
-
 # Using environment variables and secrets
 
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
@@ -34,7 +29,8 @@ DATABASE_USERNAME=salesteam
 DATABASE_PASSWORD=supersecretstagingpassword
 ```
 
-If Dagster detects a `.env` file in the same folder where `dagster-webserver` or `dagster-daemon` is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/dagster-plus/managing-deployments/environment-variables-and-secrets#exporting-variables-to-a-env-file).
+If Dagster detects a `.env` file in the same folder where `dagster-webserver` or `dagster-daemon` is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/dagster-plus/deployment/management/environment-variables/dagster-ui#export)
+
 
 When using a `.env` file, keep the following in mind:
 
@@ -48,20 +44,10 @@ When using a `.env` file, keep the following in mind:
 
 How environment variables are set for Dagster projects deployed on your infrastructure depends on **where** Dagster is deployed. Refer to the deployment guide for your platform for more info:
 
-<ArticleList>
-  <ArticleListItem
-    title="Amazon Web Services EC2 / ECS"
-    href="/deployment/guides/aws#secrets-management-in-ecs"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Docker"
-    href="/deployment/guides/docker"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Kubernetes"
-    href="/deployment/guides/kubernetes/deploying-with-helm#configure-your-user-deployment"
-  ></ArticleListItem>
-</ArticleList>
+* [Amazon Web Services EC2 / ECS](/guides/deploy/deployment-options/aws)
+* [GCP](/guides/deploy/deployment-options/gcp)
+* [Docker](/guides/deploy/deployment-options/docker)
+* [Kubernetes](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes)
 
 </TabItem>
 </TabGroup>
@@ -93,7 +79,7 @@ database_name = EnvVar('DATABASE_NAME').get_value()
 
 ### From Dagster configuration
 
-[Configurable Dagster objects](/concepts/configuration/config-schema) - such as ops, assets, resources, I/O managers, and so on - can accept configuration from environment variables. Dagster provides a native way to specify environment variables in your configuration. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`. Refer to the [next section](#using-envvar-vs-osgetenv) for more info.
+[Configurable Dagster objects](/todo) - such as ops, assets, resources, I/O managers, and so on - can accept configuration from environment variables. Dagster provides a native way to specify environment variables in your configuration. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`. Refer to the [next section](#using-envvar-vs-osgetenv) for more info.
 
 <TabGroup>
 <TabItem name="In Python code">
@@ -144,7 +130,7 @@ Refer to the [Handling secrets section](#handling-secrets) and [Per-environment 
 
 We just covered two different ways to access environment variables in Dagster. So, which one should you use? When choosing an approach, keep the following in mind:
 
-- **When `os.getenv` is used**, the variable's value is retrieved when Dagster loads the [code location](/concepts/code-locations) and **will** be visible in the UI.
+- **When `os.getenv` is used**, the variable's value is retrieved when Dagster loads the [code location](/guides/deploy/code-locations/) and **will** be visible in the UI.
 - **When `EnvVar` is used**, the variable's value is retrieved at runtime and **won't** be visible in the UI.
 
 Using the `EnvVar` approach has a few unique benefits:
@@ -155,7 +141,7 @@ Using the `EnvVar` approach has a few unique benefits:
 
 ## Handling secrets
 
-Using environment variables to provide secrets ensures sensitive info won't be visible in your code or the launchpad in the UI. In Dagster, best practice for handling secrets uses [configuration](/concepts/configuration/config-schema) and [resources](/concepts/resources).
+Using environment variables to provide secrets ensures sensitive info won't be visible in your code or the launchpad in the UI. In Dagster, best practice for handling secrets uses [configuration](/todo) and [resources](/guides/build/external-resources/).
 
 A resource is typically used to connect to an external service or system, such as a database. Resources can be configured separately from the rest of your app, allowing you to define it once and reuse it as needed.
 
@@ -184,6 +170,7 @@ Let's review what's happening here:
 
 As storing secrets in configuration is bad practice, we'll opt for using an environment variable. In this code, we're configuring the resource supplying it to our assets:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/using_environment_variables_and_secrets/repository.py startafter=start endbefore=end
 # definitions.py
 
@@ -213,10 +200,11 @@ Using environment variables, you define how your code should execute at runtime.
 
 ### Per-environment configuration example
 
-In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/concepts/configuration/configured) (specifically the configured API) and [resources](/concepts/resources).
+In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/todo) (specifically the configured API) and [resources](/guides/build/external-resources/).
 
-This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/dagster/transitioning-data-pipelines-from-development-to-production):
+This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/deploy/dev-to-prod):
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/guides/dagster/using_environment_variables_and_secrets/repository_v2.py startafter=start_new endbefore=end_new
 # definitions.py
 
@@ -250,90 +238,13 @@ defs = Definitions(
 
 Let's review what's happening here:
 
-- We've created a dictionary of resource definitions, `resources`, named after our `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/\_apidocs/libraries/dagster-snowflake-pandas).
+- We've created a dictionary of resource definitions, `resources`, named after our `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/api/python-api/libraries/dagster-snowflake-pandas).
 - For both `local` and `production`, we constructed the I/O manager using environment-specific run configuration. Note the differences in configuration between `local` and `production`, specifically where environment variables were used.
 - Following the `resources` dictionary, we define the `deployment_name` variable, which determines the current executing environment. This variable defaults to `local`, ensuring that `DAGSTER_DEPLOYMENT=PRODUCTION` must be set to use the `production` configuration.
 
 ## Troubleshooting
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "30%",
-        }}
-      >
-        Error
-      </th>
-      <th>Description and resolution</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <strong>
-          You have attempted to fetch the environment variable "[variable]"
-          which is not set. In order for this execution to succeed it must be
-          set in this environment.
-        </strong>
-      </td>
-      <td>
-        Surfacing when a run is launched in the UI, this error means that an
-        environment variable set using <PyObject object="StringSource" /> could
-        not be found in the executing environment.
-        <br></br>
-        <br></br>
-        Verify that the environment variable is named correctly and accessible in
-        the environment.
-        <ul>
-          <li>
-            If developing locally and using a <code>.env</code> file, try
-            re-loading the workspace in the UI. The workspace must be re-loaded
-            any time this file is modified for the UI to be aware of the
-            changes.
-          </li>
-          <li>
-            If using Dagster+:
-            <ul>
-              <li>
-                Verify that the environment variable is{" "}
-                <a href="/dagster-plus/managing-deployments/environment-variables-and-secrets#scope">
-                  scoped to the environment and code location
-                </a>{" "}
-                if using the built-in secrets manager
-              </li>
-              <li>
-                Verify that the environment variable was correctly configured
-                and added to your{" "}
-                <a href="/dagster-plus/managing-deployments/environment-variables-and-secrets#managing-environment-variables">
-                  agent's configuration
-                </a>
-              </li>
-            </ul>
-          </li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>No environment variables in .env file</strong>
-      </td>
-      <td>
-        Dagster located and attempted to load a local <code>.env</code> file
-        while launching <code>dagster-webserver</code>, but couldn't find any
-        environment variables in the file.
-        <br></br>
-        <br></br>
-        If this is unexpected, verify that your <code>.env</code> is correctly formatted
-        and located in the same folder where you're running
-        <code>dagster-webserver</code>.
-      </td>
-    </tr>
-  </tbody>
-</table>
+| Error | Description | Solution     |
+|-------|-------------|--------------|
+| **You have attempted to fetch the environment variable "[variable]" which is not set. In order for this execution to succeed it must be set in this environment.** | Surfacing when a run is launched in the UI, this error means that an environment variable set using <PyObject section="config" module="dagster" object="StringSource" /> could not be found in the executing environment. | Verify that the environment variable is named correctly and accessible in the environment.<ul><li>**If developing locally and using a `.env` file**, try reloading the workspace in the UI. The workspace must be reloaded any time this file is modified for the UI to be aware of the changes.</li><li>**If using Dagster+**:</li><ul><li>Verify that the environment variable is [scoped to the environment and code location](/dagster-plus/deployment/management/environment-variables/dagster-ui#scope) if using the built-in secrets manager</li><li>Verify that the environment variable was correctly configured and added to your [agent's configuration](/dagster-plus/deployment/management/settings/environment-variables/agent-config)</li></ul></ul> |
+| **No environment variables in `.env` file.** | Dagster located and attempted to load a local `.env` file while launching `dagster-webserver`, but couldn't find any environment variables in the file. | If this is unexpected, verify that your `.env` is correctly formatted and located in the same folder where you're running `dagster-webserver`. |
