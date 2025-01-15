@@ -204,7 +204,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ### Breaking changes
 
-- The UI dialog for launching a backfill no longer includes a toggle to determine whether the backfill is launched as a single run or multiple runs. This toggle was misleading, because it implied that all backfills could be launched as single-run backfills, when it actually required special handling in the implementations of the assets targeted by the backfill to achieve this behavior. Instead, whether to execute a backfill as a single run is now determined by a setting on the asset definition. To enable single-run backfills, set `backfill_policy=BackfillPolicy.single_run()` on the asset definitions. Refer to the [docs on single-run backfills](/concepts/partitions-schedules-sensors/backfills#single-run-backfills) for more information.
+- The UI dialog for launching a backfill no longer includes a toggle to determine whether the backfill is launched as a single run or multiple runs. This toggle was misleading, because it implied that all backfills could be launched as single-run backfills, when it actually required special handling in the implementations of the assets targeted by the backfill to achieve this behavior. Instead, whether to execute a backfill as a single run is now determined by a setting on the asset definition. To enable single-run backfills, set `backfill_policy=BackfillPolicy.single_run()` on the asset definitions. Refer to the [docs on single-run backfills](https://docs.dagster.io/concepts/partitions-schedules-sensors/backfills#single-run-backfills) for more information.
 
 - `AssetExecutionContext` is now a subclass of `OpExecutionContext`, not a type alias. The code
 
@@ -860,7 +860,7 @@ set up and run the daemon process for local development, Docker, or Kubernetes d
 3. Start the `dagster-daemon` process. Guides can be found in our
    [deployment documentations](https://docs.dagster.io/deployment).
 
-See our [schedules troubleshooting guide](/concepts/partitions-schedules-sensors/schedules) for
+See our [schedules troubleshooting guide](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) for
 help if you experience any problems with the new scheduler.
 
 **If you are not using a legacy scheduler:**
@@ -1003,7 +1003,7 @@ should now be expressed as:
     location_name: dagster_examples
 ```
 
-See our [Workspaces Overview](/concepts/code-locations/workspace-files)
+See our [Workspaces Overview](https://docs.dagster.io/concepts/code-locations/workspace-files)
 for more information and examples.
 
 ### Removal: config_field property on definition classes
