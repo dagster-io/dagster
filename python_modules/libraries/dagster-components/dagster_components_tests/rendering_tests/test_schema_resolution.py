@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
 class InnerRendered(ComponentSchemaBaseModel):
-    a: Optional[str] = None
+    a: Annotated[Optional[str], ResolvableFieldInfo(additional_scope={"deferred"})] = None
 
 
 class Container(BaseModel):
@@ -65,13 +65,13 @@ def test_allow_render(path, expected: bool) -> None:
     "path,expected",
     [
         (["a"], set()),
-        (["inner", "a"], set()),
-        (["container_optional", "inner", "a"], set()),
+        (["inner", "a"], {"deferred"}),
+        (["container_optional", "inner", "a"], {"deferred"}),
         (["inner_seq"], set()),
         (["container_optional_scoped"], {"a", "b"}),
         (["container_optional_scoped", "inner"], {"a", "b"}),
         (["container_optional_scoped", "inner_scoped"], {"a", "b", "c", "d"}),
-        (["container_optional_scoped", "inner_scoped", "a"], {"a", "b", "c", "d"}),
+        (["container_optional_scoped", "inner_scoped", "a"], {"a", "b", "c", "d", "deferred"}),
     ],
 )
 def test_get_available_scope(path, expected: Set[str]) -> None:
