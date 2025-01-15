@@ -163,7 +163,6 @@ def _execute_ticks(
             amp_tick_futures=asset_daemon_futures,
             debug_crash_flags=debug_crash_flags or {},
             submit_threadpool_executor=submit_threadpool_executor,
-            batch_size=1,  # check the status of the sensor after every run submission
         )
     )
 

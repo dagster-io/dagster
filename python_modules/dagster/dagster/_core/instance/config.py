@@ -430,11 +430,6 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                         "How many threads to use to process ticks from multiple automation policy sensors in parallel"
                     ),
                 ),
-                "tick_termination_check_interval": Field(
-                    IntSource,
-                    default_value=25,
-                    description="While submitting runs, the daemon will check that the sensor is still enabled after every N runs are submitted.",
-                ),
             }
         ),
         "concurrency": Field(

@@ -225,7 +225,6 @@ class AssetDaemonScenarioState(ScenarioState):
                         amp_tick_futures=amp_tick_futures,
                         debug_crash_flags={},
                         submit_threadpool_executor=None,
-                        batch_size=1,  # check the status of the sensor after every run submission
                     )
                 )
 
@@ -300,7 +299,9 @@ class AssetDaemonScenarioState(ScenarioState):
         return new_state, run_requests
 
     def evaluate_tick(
-        self, label: Optional[str] = None, stop_mid_iteration: bool = False
+        self,
+        label: Optional[str] = None,
+        stop_mid_iteration: bool = False,
     ) -> "AssetDaemonScenarioState":
         self.logger.critical("********************************")
         self.logger.critical(f"EVALUATING TICK {label or self.tick_index}")
@@ -439,13 +440,14 @@ class AssetDaemonScenarioState(ScenarioState):
             origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
             selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
 
-        latest_tick = sorted(
+        ticks = sorted(
             self.instance.get_ticks(
                 origin_id=origin_id,
                 selector_id=selector_id,
             ),
             key=lambda tick: tick.tick_id,
-        )[-1]
+        )
+        latest_tick = ticks[-1]
         assert len(latest_tick.run_ids) == num_expected_submissions
         assert (
             len(latest_tick.unsubmitted_run_ids_with_requests)
@@ -465,6 +467,28 @@ class AssetDaemonScenarioState(ScenarioState):
             if len(expected_run_requests) > 0:
                 self._log_assertion_error(expected_run_requests, [])
                 raise AssertionError("Expected run requests not found in tick data")
+
+        if len(ticks) > 1:
+            prev_tick = ticks[-2]
+            if prev_tick.cursor and latest_tick.cursor:
+                prev_cursor = deserialize_value(prev_tick.cursor, AssetDaemonCursor)
+                latest_cursor = deserialize_value(latest_tick.cursor, AssetDaemonCursor)
+                # when a tick is stopped mid-iteration we reset the cursor to the cursor of the previous tick
+                # other than the evaluation id
+                assert prev_cursor.evaluation_id == latest_cursor.evaluation_id - 1
+                assert (
+                    prev_cursor.last_observe_request_timestamp_by_asset_key
+                    == latest_cursor.last_observe_request_timestamp_by_asset_key
+                )
+                assert (
+                    prev_cursor.previous_evaluation_state == latest_cursor.previous_evaluation_state
+                )
+                assert (
+                    prev_cursor.previous_condition_cursors
+                    == latest_cursor.previous_condition_cursors
+                )
+            else:
+                self.logger.critical("No cursor found in tick data")
 
         return self
 
@@ -580,6 +604,10 @@ class AssetDaemonScenarioState(ScenarioState):
         if self.is_daemon:
             self._assert_evaluation_daemon(asset_key, actual_evaluation)
 
+        return self
+
+    def start_asset_daemon(self):
+        set_auto_materialize_paused(instance=self.instance, paused=False)
         return self
 
 
