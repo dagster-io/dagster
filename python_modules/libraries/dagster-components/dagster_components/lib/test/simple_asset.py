@@ -22,7 +22,7 @@ class SimpleAsset(Component):
     """A simple asset that returns a constant string value."""
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return SimpleAssetParams
 
     @classmethod
@@ -31,7 +31,7 @@ class SimpleAsset(Component):
 
     @classmethod
     def load(cls, context: "ComponentLoadContext") -> Self:
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
         return cls(
             asset_key=AssetKey.from_user_string(loaded_params.asset_key),
             value=loaded_params.value,

@@ -19,19 +19,19 @@ describe('getPaginatedChangeLog', () => {
   test('returns paginated changelog and frontMatterData', async () => {
     const content = `# Changelog
 
-# 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
+## 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
 
-## Header
+### Header
 
 - Feature A
 
-# 1.2.0
+## 1.2.0
 
-## Another one
+### Another one
 
 - Feature B
 
-# 1.1.0
+## 1.1.0
 
 ### Something here
 
@@ -46,23 +46,23 @@ describe('getPaginatedChangeLog', () => {
       [
         "# Changelog
 
-      # 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
+      ## 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
 
-      ## Header
+      ### Header
 
       - Feature A
       ",
         "# Changelog
 
-      # 1.2.0
+      ## 1.2.0
 
-      ## Another one
+      ### Another one
 
       - Feature B
       ",
         "# Changelog
 
-      # 1.1.0
+      ## 1.1.0
 
       ### Something here
 
@@ -77,21 +77,21 @@ describe('getPaginatedChangeLog', () => {
       [
         "# Changelog
 
-      # 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
+      ## 1.3.0 (core) / 0.19.0 (libraries) "Smooth Operator"
 
-      ## Header
+      ### Header
 
       - Feature A
 
-      # 1.2.0
+      ## 1.2.0
 
-      ## Another one
+      ### Another one
 
       - Feature B
       ",
         "# Changelog
 
-      # 1.1.0
+      ## 1.1.0
 
       ### Something here
 

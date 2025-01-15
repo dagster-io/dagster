@@ -23,7 +23,7 @@ Next, set up the default environment variables and install the project’s Pytho
 ```shell
 cd dagster_university
 cp .env.example .env
-pip install -e ".[dev]"
+pip install -e .[dev]
 ```
 
 The `-e` flag installs the project in editable mode, which will improve your development experience by shortening how long it takes to test a change. The main exceptions are when you're adding new assets or installing additional dependencies.

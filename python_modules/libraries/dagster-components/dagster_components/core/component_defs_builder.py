@@ -56,7 +56,7 @@ def resolve_decl_node_to_yaml_decls(decl: ComponentDeclNode) -> list[YamlCompone
 def load_components_from_context(context: ComponentLoadContext) -> Sequence[Component]:
     if isinstance(context.decl_node, YamlComponentDecl):
         component_type = component_type_from_yaml_decl(context.registry, context.decl_node)
-        context = context.with_rendering_scope(component_type.get_rendering_scope())
+        context = context.with_rendering_scope(component_type.get_additional_scope())
         return [component_type.load(context)]
     elif isinstance(context.decl_node, ComponentFolder):
         components = []
@@ -135,7 +135,7 @@ def defs_from_components(
     return Definitions.merge(
         *[
             *[
-                c.build_defs(context.with_rendering_scope(c.get_rendering_scope()))
+                c.build_defs(context.with_rendering_scope(c.get_additional_scope()))
                 for c in components
             ],
             Definitions(resources=resources),
