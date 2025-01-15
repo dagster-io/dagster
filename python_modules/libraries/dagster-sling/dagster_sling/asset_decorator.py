@@ -4,7 +4,6 @@ from typing import Any, Callable, Optional
 
 from dagster import (
     AssetsDefinition,
-    AssetSpec,
     BackfillPolicy,
     PartitionsDefinition,
     _check as check,
@@ -124,23 +123,13 @@ def sling_assets(
         op_tags=op_tags,
         backfill_policy=backfill_policy,
         specs=[
-            AssetSpec(
-                key=dagster_sling_translator.get_asset_key(stream),
-                deps=dagster_sling_translator.get_deps_asset_key(stream),
-                description=dagster_sling_translator.get_description(stream),
+            dagster_sling_translator.get_asset_spec(stream)
+            .replace_attributes(code_version=code_version)
+            .merge_attributes(
                 metadata={
-                    **dagster_sling_translator.get_metadata(stream),
                     METADATA_KEY_TRANSLATOR: dagster_sling_translator,
                     METADATA_KEY_REPLICATION_CONFIG: replication_config,
-                },
-                tags=dagster_sling_translator.get_tags(stream),
-                kinds=dagster_sling_translator.get_kinds(stream),
-                group_name=dagster_sling_translator.get_group_name(stream),
-                freshness_policy=dagster_sling_translator.get_freshness_policy(stream),
-                auto_materialize_policy=dagster_sling_translator.get_auto_materialize_policy(
-                    stream
-                ),
-                code_version=code_version,
+                }
             )
             for stream in streams
         ],
