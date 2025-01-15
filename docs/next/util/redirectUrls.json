@@ -776,7 +776,7 @@
   },
   {
     "source": "/integrations/fivetran",
-    "destination": "/integrations/fivetran/fivetran-legacy",
+    "destination": "/integrations/fivetran/fivetran",
     "statusCode": 302
   }
 ]
