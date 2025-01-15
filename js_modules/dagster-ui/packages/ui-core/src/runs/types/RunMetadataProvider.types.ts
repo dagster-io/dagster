@@ -207,6 +207,11 @@ export type RunMetadataProviderMessageFragment_LogsCapturedEvent = {
   pid: number | null;
   externalStdoutUrl: string | null;
   externalStderrUrl: string | null;
+  shellCmd: {
+    __typename: 'LogRetrievalShellCommand';
+    stdout: string | null;
+    stderr: string | null;
+  } | null;
 };
 
 export type RunMetadataProviderMessageFragment_MaterializationEvent = {

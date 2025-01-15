@@ -66,6 +66,11 @@ export interface IStepMetadata {
   markers: IMarker[];
 }
 
+export interface ILogRetrievalShellCommand {
+  stdout?: string | null;
+  stderr?: string | null;
+}
+
 export interface ILogCaptureInfo {
   fileKey: string;
   stepKeys: string[];
@@ -73,6 +78,7 @@ export interface ILogCaptureInfo {
   pid?: string;
   externalStdoutUrl?: string;
   externalStderrUrl?: string;
+  shellCmd?: ILogRetrievalShellCommand | null;
 }
 
 export interface IRunMetadataDict {
@@ -277,6 +283,7 @@ export function extractMetadataFromLogs(
         pid: String(log.pid),
         externalStdoutUrl: log.externalStdoutUrl || undefined,
         externalStderrUrl: log.externalStderrUrl || undefined,
+        shellCmd: log.shellCmd || undefined,
       };
     }
 
@@ -454,6 +461,10 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       pid
       externalStdoutUrl
       externalStderrUrl
+      shellCmd {
+        stdout
+        stderr
+      }
     }
   }
 
