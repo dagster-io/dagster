@@ -113,7 +113,7 @@ daff==1.3.46
 -e python_modules/libraries/dagster-celery-k8s
 -e python_modules/libraries/dagster-census
 -e python_modules/libraries/dagster-components
-dagster-contrib-modal==0.0.2
+dagster-modal==0.0.2
 -e python_modules/libraries/dagster-dask
 -e python_modules/libraries/dagster-databricks
 -e python_modules/libraries/dagster-datadog
