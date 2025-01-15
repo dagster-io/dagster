@@ -2,8 +2,6 @@ import asyncio
 from collections.abc import Sequence
 from typing import Union
 
-from typing_extensions import Self
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -66,7 +64,9 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
 
     @public
-    def replace(self, old: Union[AutomationCondition, str], new: AutomationCondition) -> Self:
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
@@ -125,7 +125,9 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return AutomationResult(context, true_subset, child_results=child_results)
 
     @public
-    def replace(self, old: Union[AutomationCondition, str], new: AutomationCondition) -> Self:
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
@@ -172,7 +174,9 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return AutomationResult(context, true_subset, child_results=[child_result])
 
     @public
-    def replace(self, old: Union[AutomationCondition, str], new: AutomationCondition) -> Self:
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
         """Replaces all instances of ``old`` across any sub-conditions with ``new``.
 
         If ``old`` is a string, then conditions with a label matching
