@@ -773,5 +773,10 @@
     "source": "/_apidocs/libraries/dagster-embedded-elt",
     "destination": "/integrations/embedded-elt",
     "statusCode": 302
+  },
+  {
+    "source": "/integrations/fivetran",
+    "destination": "/integrations/fivetran/fivetran",
+    "statusCode": 302
   }
 ]
