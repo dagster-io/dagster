@@ -43,7 +43,7 @@ Using RDS for run and event log storage doesn't require that the webserver be ru
 {/* TODO turn back into <CodeReferenceLink> once that's implemented */}
 :::tip
 
-You can find the code for this example on [GitHub](https://github.com/dagster-io/dagster/tree/1.9.8/examples/deploy_ecs).
+You can find the code for this example on [GitHub](https://github.com/dagster-io/dagster/tree/master/examples/deploy_ecs).
 
 :::
 
@@ -171,7 +171,7 @@ def my_job():
 
 Refer to the [boto3 docs](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs.html#ECS.Client.run_task) for the full set of available arguments to `run_task`. Additionally, note that:
 
-- Keys are in `camelCase` as they correspond to arguments in boto's API
+- Keys are in camelCase as they correspond to arguments in boto's API
 - All arguments with the exception of `taskDefinition` and `overrides` can be used in `run_launcher.config.run_task_kwargs`. `taskDefinition` can be overridden by configuring the `run_launcher.config.task_definition` field instead.
 
 ### Secrets management in ECS

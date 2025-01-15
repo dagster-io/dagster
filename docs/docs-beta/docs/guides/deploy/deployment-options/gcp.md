@@ -27,7 +27,7 @@ storage:
 
 In this case, you'll want to ensure you provide the right connection strings for your Cloud SQL instance, and that the node or container hosting the webserver is able to connect to Cloud SQL.
 
-Be sure that this file is present, and _DAGSTER_HOME_ is set, on the node where the webserver is running.
+Be sure that this file is present, and `_DAGSTER_HOME_` is set, on the node where the webserver is running.
 
 Note that using Cloud SQL for run and event log storage does not require that the webserver be running in the cloud. If you are connecting a local webserver instance to a remote Cloud SQL storage, double check that your local node is able to connect to Cloud SQL.
 
