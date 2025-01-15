@@ -425,7 +425,7 @@ class AssetDaemon(DagsterDaemon):
                     )
                 )
 
-            batch_size = self._settings.get("tick_termination_check_interval", 25)
+            batch_size = workspace_process_context.instance.get_tick_termination_check_interval()
 
             while True:
                 start_time = get_current_timestamp()
@@ -460,7 +460,7 @@ class AssetDaemon(DagsterDaemon):
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         amp_tick_futures: dict[Optional[str], Future],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
-        batch_size: int,
+        batch_size: Optional[int],
     ):
         instance: DagsterInstance = workspace_process_context.instance
 
@@ -695,7 +695,7 @@ class AssetDaemon(DagsterDaemon):
         sensor: Optional[RemoteSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
-        batch_size: int,
+        batch_size: Optional[int],
     ):
         evaluation_time = get_current_datetime()
 
@@ -917,7 +917,7 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         is_retry: bool,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
-        batch_size: int,
+        batch_size: Optional[int],
     ):
         evaluation_id = tick.automation_condition_evaluation_id
 
@@ -1136,7 +1136,7 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         remote_sensor: Optional[RemoteSensor],
-        batch_size: int,
+        batch_size: Optional[int],
     ):
         updated_evaluation_keys = set()
         run_request_execution_data_cache = {}
@@ -1183,7 +1183,7 @@ class AssetDaemon(DagsterDaemon):
                     updated_evaluation_keys.add(entity_key)
 
             # check if the sensor is still enabled:
-            if num_submitted % batch_size == 0:
+            if batch_size is not None and num_submitted % batch_size == 0:
                 if not self._sensor_is_enabled(instance, remote_sensor):
                     # The user has manually stopped the sensor mid-iteration. In this case we assume
                     # the user has a good reason for stopping the sensor (e.g. the sensor is submitting
