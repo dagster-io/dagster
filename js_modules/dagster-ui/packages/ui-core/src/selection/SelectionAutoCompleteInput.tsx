@@ -96,7 +96,7 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     if (!autocompleteResults?.list.length) {
       showResults.current = false;
     }
-  }, [autocompleteResults]);
+  }, [autocompleteResults, showResults.current]);
 
   const scheduleUpdateValue = useCallback(() => {
     if (setValueTimeoutRef.current) {
