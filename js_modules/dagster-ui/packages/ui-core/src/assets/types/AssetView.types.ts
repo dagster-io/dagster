@@ -30,6 +30,7 @@ export type AssetViewDefinitionQuery = {
           jobNames: Array<string>;
           isMaterializable: boolean;
           isExecutable: boolean;
+          pools: Array<string>;
           hasMaterializePermission: boolean;
           changedReasons: Array<Types.ChangeReason>;
           computeKind: string | null;
@@ -16414,6 +16415,7 @@ export type AssetViewDefinitionNodeFragment = {
   jobNames: Array<string>;
   isMaterializable: boolean;
   isExecutable: boolean;
+  pools: Array<string>;
   hasMaterializePermission: boolean;
   changedReasons: Array<Types.ChangeReason>;
   computeKind: string | null;
@@ -32572,4 +32574,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '50f492ac4a6ea268a3e8c2a54c80ad63cee4aa97a56da4c7659d0200746abe1a';
+export const AssetViewDefinitionQueryVersion = 'dcda9d955aedec1cd9640f349171a2e9f60934af69f5ea3a5362326757269b45';

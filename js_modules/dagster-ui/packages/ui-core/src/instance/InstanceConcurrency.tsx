@@ -962,6 +962,7 @@ const CONCURRENCY_STEP_FRAGMENT = gql`
 const CONCURRENCY_LIMIT_FRAGMENT = gql`
   fragment ConcurrencyLimitFragment on ConcurrencyKeyInfo {
     concurrencyKey
+    configuredLimit
     slotCount
     claimedSlots {
       runId
@@ -1019,7 +1020,7 @@ export const FREE_CONCURRENCY_SLOTS_MUTATION = gql`
   }
 `;
 
-const CONCURRENCY_KEY_DETAILS_QUERY = gql`
+export const CONCURRENCY_KEY_DETAILS_QUERY = gql`
   query ConcurrencyKeyDetailsQuery($concurrencyKey: String!) {
     instance {
       id

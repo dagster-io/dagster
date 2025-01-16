@@ -214,6 +214,7 @@ export const SIDEBAR_OP_DEFINITION_FRAGMENT = gql`
         ...DagsterTypeWithTooltipFragment
       }
     }
+    pools
     ... on SolidDefinition {
       requiredResources {
         resourceKey

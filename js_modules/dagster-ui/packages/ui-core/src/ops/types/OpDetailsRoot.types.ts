@@ -22,6 +22,7 @@ export type UsedSolidDetailsQuery = {
                 name: string;
                 description: string | null;
                 id: string;
+                pools: Array<string>;
                 metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
                 inputDefinitions: Array<{
                   __typename: 'InputDefinition';
@@ -100,6 +101,7 @@ export type UsedSolidDetailsQuery = {
                 __typename: 'SolidDefinition';
                 name: string;
                 description: string | null;
+                pools: Array<string>;
                 metadata: Array<{__typename: 'MetadataItemDefinition'; key: string; value: string}>;
                 inputDefinitions: Array<{
                   __typename: 'InputDefinition';
@@ -721,4 +723,4 @@ export type UsedSolidDetailsQuery = {
     | {__typename: 'RepositoryNotFoundError'};
 };
 
-export const UsedSolidDetailsQueryVersion = '075b7d054775a58ed6aff12a1a912cf17ec6f40b722a97344db0c51507579c95';
+export const UsedSolidDetailsQueryVersion = '9f501125e94979298e2b290f5c8dac2fd8aa0e0d4a5d9f6dfde007186a707665';
