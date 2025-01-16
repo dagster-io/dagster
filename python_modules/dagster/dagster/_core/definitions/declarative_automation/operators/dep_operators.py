@@ -1,7 +1,8 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Union  # noqa: UP035
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.asset_graph_view.asset_graph_view import U_EntityKey
 from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -56,6 +57,25 @@ class EntityMatchesCondition(
             context.key, direction=directions[1]
         )
         return AutomationResult(context=context, true_subset=true_subset, child_results=[to_result])
+
+    @public
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(self, operand=self.operand.replace(old, new))
+        )
 
 
 @record
@@ -120,6 +140,25 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         if self.ignore_selection is not None:
             dep_keys -= self.ignore_selection.resolve(asset_graph)
         return dep_keys
+
+    @public
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(self, operand=self.operand.replace(old, new))
+        )
 
 
 @whitelist_for_serdes

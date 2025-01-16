@@ -181,6 +181,26 @@ def test_without_automation_condition() -> None:
         orig.without(a).without(b)
 
 
+def test_replace_automation_conditions() -> None:
+    a = AutomationCondition.in_latest_time_window().with_label("in_latest_time_window")
+    b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+    c = (~AutomationCondition.any_deps_in_progress()).with_label("not_any_deps_in_progress")
+    d = AutomationCondition.missing()
+
+    orig = a & b | c
+
+    assert orig.replace(a, d) == d & b | c
+    assert orig.replace(
+        AutomationCondition.in_progress(), d
+    ) == a & AutomationCondition.any_deps_match(d) | (
+        ~AutomationCondition.any_deps_match(d).with_label("any_deps_in_progress")
+    ).with_label("not_any_deps_in_progress")
+    assert orig.replace("not_any_deps_in_progress", d) == a & b | d
+    assert orig.replace("any_deps_in_progress", d) == a & b | (~d).with_label(
+        "not_any_deps_in_progress"
+    )
+
+
 @pytest.mark.parametrize(
     ("op", "cond"), [(operator.and_, AndAutomationCondition), (operator.or_, OrAutomationCondition)]
 )
