@@ -66,14 +66,13 @@ class PipesSubprocessScriptCollection(Component):
 
         return Definitions(
             assets=[self._create_asset_def(path, specs) for path, specs in self.path_specs.items()],
-            resources={"pipes_client": PipesSubprocessClient()},
         )
 
     def _create_asset_def(self, path: Path, specs: Sequence[AssetSpec]) -> AssetsDefinition:
         # TODO: allow name paraeterization
         @multi_asset(specs=specs, name=f"script_{path.stem}")
-        def _asset(context: AssetExecutionContext, pipes_client: PipesSubprocessClient):
+        def _asset(context: AssetExecutionContext):
             cmd = [shutil.which("python"), path]
-            return pipes_client.run(command=cmd, context=context).get_results()
+            return PipesSubprocessClient().run(command=cmd, context=context).get_results()
 
         return _asset

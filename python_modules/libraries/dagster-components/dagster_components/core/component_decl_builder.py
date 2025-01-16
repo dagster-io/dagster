@@ -3,6 +3,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 from dagster._utils import pushd
 from dagster._utils.pydantic_yaml import (
@@ -19,6 +20,7 @@ from dagster_components.core.component import (
     ComponentLoadContext,
     ComponentTypeRegistry,
     get_component_type_name,
+    is_component_loader,
     is_registered_component_type,
 )
 from dagster_components.utils import load_module_from_path
@@ -30,6 +32,40 @@ class ComponentFileModel(BaseModel):
 
 
 T = TypeVar("T", bound=BaseModel)
+
+
+@record
+class PythonComponentDecl(ComponentDeclNode):
+    path: Path
+
+    @staticmethod
+    def component_file_path(path: Path) -> Path:
+        return path / "component.py"
+
+    @staticmethod
+    def exists_at(path: Path) -> bool:
+        return PythonComponentDecl.component_file_path(path).exists()
+
+    @staticmethod
+    def from_path(path: Path) -> "PythonComponentDecl":
+        return PythonComponentDecl(path=path)
+
+    def load(self, context: ComponentLoadContext) -> Sequence[Component]:
+        module = load_module_from_path(
+            self.path.stem, PythonComponentDecl.component_file_path(self.path)
+        )
+        component_loaders = list(inspect.getmembers(module, is_component_loader))
+        if len(component_loaders) < 1:
+            raise DagsterInvalidDefinitionError("No component loaders found in module")
+        elif len(component_loaders) > 1:
+            # note: we could support multiple component loaders in the same file, just
+            # being more restrictive to start
+            raise DagsterInvalidDefinitionError(
+                f"Multiple component loaders found in module: {component_loaders}"
+            )
+        else:
+            _, component_loader = component_loaders[0]
+            return [component_loader(context)]
 
 
 @record
@@ -114,7 +150,7 @@ class YamlComponentDecl(ComponentDeclNode):
 @record
 class ComponentFolder(ComponentDeclNode):
     path: Path
-    sub_decls: Sequence[Union[YamlComponentDecl, "ComponentFolder"]]
+    sub_decls: Sequence[Union[YamlComponentDecl, PythonComponentDecl, "ComponentFolder"]]
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         components = []
@@ -134,6 +170,8 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
 
     if YamlComponentDecl.exists_at(path):
         return YamlComponentDecl.from_path(path)
+    elif PythonComponentDecl.exists_at(path):
+        return PythonComponentDecl.from_path(path)
 
     subs = []
     for subpath in path.iterdir():

@@ -10,9 +10,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, ClassVar, Optional, TypedDict, TypeVar, Union
+from typing import Any, Callable, ClassVar, Optional, TypedDict, TypeVar, Union
 
-import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
@@ -100,16 +99,6 @@ def _clean_docstring(docstring: str) -> str:
     else:
         rest = textwrap.dedent("\n".join(lines[1:]))
         return f"{first_line}\n{rest}"
-
-
-def _get_click_cli_help(command: click.Command) -> str:
-    with click.Context(command) as ctx:
-        formatter = click.formatting.HelpFormatter()
-        param_records = [
-            p.get_help_record(ctx) for p in command.get_params(ctx) if p.name != "help"
-        ]
-        formatter.write_dl([pr for pr in param_records if pr])
-        return formatter.getvalue()
 
 
 class ComponentTypeInternalMetadata(TypedDict):
@@ -238,9 +227,12 @@ class ComponentLoadContext:
 
     @property
     def path(self) -> Path:
-        from dagster_components.core.component_decl_builder import YamlComponentDecl
+        from dagster_components.core.component_decl_builder import (
+            PythonComponentDecl,
+            YamlComponentDecl,
+        )
 
-        if not isinstance(self.decl_node, YamlComponentDecl):
+        if not isinstance(self.decl_node, (YamlComponentDecl, PythonComponentDecl)):
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
@@ -256,6 +248,7 @@ class ComponentLoadContext:
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
+COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"
 
 
 def component_type(cls: Optional[type[Component]] = None, *, name: Optional[str] = None) -> Any:
@@ -299,3 +292,17 @@ def get_component_type_name(component_type: type[Component]) -> str:
         "Expected a registered component. Use @component to register a component.",
     )
     return getattr(component_type, COMPONENT_REGISTRY_KEY_ATTR)
+
+
+T_Component = TypeVar("T_Component", bound=Component)
+
+
+def component_loader(
+    fn: Callable[[ComponentLoadContext], T],
+) -> Callable[[ComponentLoadContext], T]:
+    setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
+    return fn
+
+
+def is_component_loader(obj: Any) -> bool:
+    return getattr(obj, COMPONENT_LOADER_FN_ATTR, False)
