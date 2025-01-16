@@ -2409,6 +2409,12 @@ export type LogMessageEvent = MessageEvent & {
   timestamp: Scalars['String']['output'];
 };
 
+export type LogRetrievalShellCommand = {
+  __typename: 'LogRetrievalShellCommand';
+  stderr: Maybe<Scalars['String']['output']>;
+  stdout: Maybe<Scalars['String']['output']>;
+};
+
 export type LogTelemetryMutationResult = LogTelemetrySuccess | PythonError;
 
 export type LogTelemetrySuccess = {
@@ -2435,6 +2441,7 @@ export type LogsCapturedEvent = MessageEvent & {
   message: Scalars['String']['output'];
   pid: Maybe<Scalars['Int']['output']>;
   runId: Scalars['String']['output'];
+  shellCmd: Maybe<LogRetrievalShellCommand>;
   solidHandleID: Maybe<Scalars['String']['output']>;
   stepKey: Maybe<Scalars['String']['output']>;
   stepKeys: Maybe<Array<Scalars['String']['output']>>;
@@ -9783,6 +9790,19 @@ export const buildLogMessageEvent = (
   };
 };
 
+export const buildLogRetrievalShellCommand = (
+  overrides?: Partial<LogRetrievalShellCommand>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LogRetrievalShellCommand'} & LogRetrievalShellCommand => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LogRetrievalShellCommand');
+  return {
+    __typename: 'LogRetrievalShellCommand',
+    stderr: overrides && overrides.hasOwnProperty('stderr') ? overrides.stderr! : 'adipisci',
+    stdout: overrides && overrides.hasOwnProperty('stdout') ? overrides.stdout! : 'voluptas',
+  };
+};
+
 export const buildLogTelemetrySuccess = (
   overrides?: Partial<LogTelemetrySuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9843,6 +9863,12 @@ export const buildLogsCapturedEvent = (
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ex',
     pid: overrides && overrides.hasOwnProperty('pid') ? overrides.pid! : 7623,
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'modi',
+    shellCmd:
+      overrides && overrides.hasOwnProperty('shellCmd')
+        ? overrides.shellCmd!
+        : relationshipsToOmit.has('LogRetrievalShellCommand')
+          ? ({} as LogRetrievalShellCommand)
+          : buildLogRetrievalShellCommand({}, relationshipsToOmit),
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
         ? overrides.solidHandleID!
