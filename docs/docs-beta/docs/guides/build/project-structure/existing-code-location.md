@@ -1,6 +1,7 @@
 ---
 title: 'Making an existing code location components-compatible'
 sidebar_position: 100
+unlisted: true
 ---
 
 :::note
