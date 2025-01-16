@@ -1,5 +1,5 @@
 ---
-title: Transforming data with dbt
+title: Getting started
 sidebar_position: 200
 ---
 

@@ -1,14 +1,14 @@
 import importlib.util
 
 _has_dagster_dbt = importlib.util.find_spec("dagster_dbt") is not None
-_has_dagster_embedded_elt = importlib.util.find_spec("dagster_embedded_elt") is not None
+_has_dagster_sling = importlib.util.find_spec("dagster_sling") is not None
 
 if _has_dagster_dbt:
     from dagster_components.lib.dbt_project.component import (
         DbtProjectComponent as DbtProjectComponent,
     )
 
-if _has_dagster_embedded_elt:
+if _has_dagster_sling:
     from dagster_components.lib.sling_replication_collection.component import (
         SlingReplicationCollectionComponent as SlingReplicationCollectionComponent,
     )

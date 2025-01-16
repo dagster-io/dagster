@@ -164,19 +164,37 @@ This article assumes familiarity with [assets](example-link).
 
 :::
 ```
-
 ---
 
-## Diagrams
+## Admonitions
 
-You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
+[Admonitions](https://docusaurus.io/docs/next/markdown-features/admonitions) are formatted as follows:
 
-```mermaid
-flowchart LR
-    Start --> Stop
+```
+:::note
+
+Here's a note
+
+:::
 ```
 
-Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
+Available admonitions:
+
+* `:::note`
+* `:::tip`
+* `:::info`
+* `:::warning`
+* `:::danger`
+
+You can specify your own title for admonitions:
+
+```
+:::note My cool title
+
+Here's a note.
+
+:::
+```
 
 ---
 
@@ -199,3 +217,35 @@ This will run `pyright` on all new/changed files relative to the master branch.
 ```
 make quick_pyright
 ```
+
+---
+
+## Diagrams
+
+You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
+
+```mermaid
+flowchart LR
+    Start --> Stop
+```
+
+Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
+
+---
+
+## Tabs
+
+[Tabs](https://docusaurus.io/docs/markdown-features/tabs) are formatted as follows:
+
+```
+<Tabs>
+  <TabItem value="github" label="GitHub" default>
+    This is AWS-specific content.
+  </TabItem>
+  <TabItem value="gitlab" label="GitLab">
+    This is GCP-specific content.
+  </TabItem>
+</Tabs>
+```
+
+Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, since that will generate confusing items in the right sidebar for the page.

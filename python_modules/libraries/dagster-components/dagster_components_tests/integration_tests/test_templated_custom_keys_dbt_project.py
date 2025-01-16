@@ -1,6 +1,6 @@
 import shutil
 import tempfile
-from collections.abc import Generator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -52,7 +52,7 @@ JAFFLE_SHOP_KEYS_WITH_PREFIX = {
 
 @contextmanager
 @pytest.fixture(scope="module")
-def dbt_path() -> Generator[Path, None, None]:
+def dbt_path() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
         # make sure a manifest.json file is created

@@ -65,7 +65,9 @@ def _subschemas_on_path(
     # List[ComplexType] (e.g.) will contain a reference to the complex type schema in the
     # top-level $defs, so we dereference it here.
     if "$ref" in subschema:
-        subschema = json_schema["$defs"].get(subschema["$ref"][len(REF_BASE) :])
+        # depending on the pydantic version, the extras may be stored with the reference or not
+        extras = {k: v for k, v in subschema.items() if k != "$ref"}
+        subschema = {**json_schema["$defs"].get(subschema["$ref"][len(REF_BASE) :]), **extras}
 
     yield subschema
     if len(valpath) == 0:
@@ -106,7 +108,7 @@ def _get_available_scope(subschema: Mapping[str, Any]) -> Set[str]:
     return set(raw) if raw else set()
 
 
-def allow_render(
+def allow_resolve(
     valpath: Sequence[Union[str, int]], json_schema: Mapping[str, Any], subschema: Mapping[str, Any]
 ) -> bool:
     """Given a valpath and the json schema of a given target type, determines if there is a rendering scope

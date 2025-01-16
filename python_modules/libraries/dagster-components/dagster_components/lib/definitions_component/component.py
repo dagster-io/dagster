@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.lib.definitions_component.generator import DefinitionsComponentGenerator
+from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
 
 
 class DefinitionsParamSchema(BaseModel):
@@ -24,17 +24,17 @@ class DefinitionsComponent(Component):
         self.definitions_path = definitions_path
 
     @classmethod
-    def get_generator(cls) -> DefinitionsComponentGenerator:
-        return DefinitionsComponentGenerator()
+    def get_scaffolder(cls) -> DefinitionsComponentScaffolder:
+        return DefinitionsComponentScaffolder()
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return DefinitionsParamSchema
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
         # all paths should be resolved relative to the directory we're in
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
 
         return cls(definitions_path=Path(loaded_params.definitions_path or "definitions.py"))
 

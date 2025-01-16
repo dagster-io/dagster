@@ -1118,11 +1118,11 @@
         "children": [
           {
             "title": "dlt & Dagster",
-            "path": "/integrations/embedded-elt/dlt"
+            "path": "/integrations/dlt"
           },
           {
             "title": "Sling & Dagster",
-            "path": "/integrations/embedded-elt/sling"
+            "path": "/integrations/sling"
           }
         ]
       },
@@ -1571,6 +1571,10 @@
             "path": "/_apidocs/libraries/dagster-deltalake"
           },
           {
+            "title": "dlt (dagster-dlt)",
+            "path": "/_apidocs/libraries/dagster-dlt"
+          },
+          {
             "title": "Docker (dagster-docker)",
             "path": "/_apidocs/libraries/dagster-docker"
           },
@@ -1589,10 +1593,6 @@
           {
             "title": "DuckDB & Polars (dagster-duckdb-polars)",
             "path": "/_apidocs/libraries/dagster-duckdb-polars"
-          },
-          {
-            "title": "Embedded ELT (dagster-embedded-elt)",
-            "path": "/_apidocs/libraries/dagster-embedded-elt"
           },
           {
             "title": "Fivetran (dagster-fivetran)",
@@ -1693,6 +1693,10 @@
           {
             "title": "Slack (dagster-slack)",
             "path": "/_apidocs/libraries/dagster-slack"
+          },
+          {
+            "title": "Sling (dagster-sling)",
+            "path": "/_apidocs/libraries/dagster-sling"
           },
           {
             "title": "Snowflake (dagster-snowflake)",

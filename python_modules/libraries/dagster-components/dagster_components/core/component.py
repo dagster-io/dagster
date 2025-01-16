@@ -21,10 +21,10 @@ from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_po
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
-from dagster_components.core.component_generator import (
-    ComponentGenerator,
-    ComponentGeneratorUnavailableReason,
-    DefaultComponentGenerator,
+from dagster_components.core.component_scaffolder import (
+    ComponentScaffolder,
+    ComponentScaffolderUnavailableReason,
+    DefaultComponentScaffolder,
 )
 from dagster_components.core.schema.resolver import TemplatedValueResolver
 
@@ -36,22 +36,22 @@ class Component(ABC):
     name: ClassVar[Optional[str]] = None
 
     @classmethod
-    def get_component_schema_type(cls) -> Optional[type[BaseModel]]:
+    def get_schema(cls) -> Optional[type[BaseModel]]:
         return None
 
     @classmethod
-    def get_generator(cls) -> Union[ComponentGenerator, ComponentGeneratorUnavailableReason]:
+    def get_scaffolder(cls) -> Union[ComponentScaffolder, ComponentScaffolderUnavailableReason]:
         """Subclasses should implement this method to override scaffolding behavior. If this component
-        is not meant to be scaffoled it returns a ComponetnGeneratorUnavailableReason with a message
+        is not meant to be scaffolded it returns a ComponentScaffolderUnavailableReason with a message
         This can be determined at runtime based on the environment or configuration. For example,
-        if generators are optionally installed as extras (for example to avoid heavy dependencies in production),
-        this method should return a ComponentGeneratorUnavailableReason with a message explaining
+        if scaffolders are optionally installed as extras (for example to avoid heavy dependencies in production),
+        this method should return a ComponentScaffolderUnavailableReason with a message explaining
         how to install the necessary extras.
         """
-        return DefaultComponentGenerator()
+        return DefaultComponentScaffolder()
 
     @classmethod
-    def get_rendering_scope(cls) -> Mapping[str, Any]:
+    def get_additional_scope(cls) -> Mapping[str, Any]:
         return {}
 
     @abstractmethod
@@ -66,19 +66,21 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        generator = cls.get_generator()
+        scaffolder = cls.get_scaffolder()
 
-        if isinstance(generator, ComponentGeneratorUnavailableReason):
-            raise DagsterError(f"Component {cls.__name__} is not scaffoldable: {generator.message}")
+        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+            raise DagsterError(
+                f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
+            )
 
-        component_params = cls.get_component_schema_type()
-        generator_params = generator.get_params_schema_type()
+        component_params = cls.get_schema()
+        scaffold_params = scaffolder.get_params_schema_type()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "generate_params_schema": None
-            if generator_params is None
-            else generator_params.model_json_schema(),
+            "scaffold_params_schema": None
+            if scaffold_params is None
+            else scaffold_params.model_json_schema(),
             "component_params_schema": None
             if component_params is None
             else component_params.model_json_schema(),
@@ -112,7 +114,7 @@ def _get_click_cli_help(command: click.Command) -> str:
 class ComponentTypeInternalMetadata(TypedDict):
     summary: Optional[str]
     description: Optional[str]
-    generate_params_schema: Optional[Any]  # json schema
+    scaffold_params_schema: Optional[Any]  # json schema
     component_params_schema: Optional[Any]  # json schema
 
 
@@ -245,7 +247,7 @@ class ComponentLoadContext:
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
             self,
-            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
+            templated_value_resolver=self.templated_value_resolver.with_scope(**rendering_scope),
         )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
@@ -262,7 +264,7 @@ class ComponentLoadContext:
         from dagster_components.core.component_decl_builder import YamlComponentDecl
 
         with pushd(str(self.path)):
-            preprocessed_params = self.templated_value_resolver.render_params(
+            preprocessed_params = self.templated_value_resolver.resolve_params(
                 self._raw_params(), params_schema
             )
             yaml_decl = cast(YamlComponentDecl, self.decl_node)

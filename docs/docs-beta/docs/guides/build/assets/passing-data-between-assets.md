@@ -20,8 +20,6 @@ This article assumes familiarity with [assets](/guides/build/assets/defining-ass
 
 :::
 
----
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -31,8 +29,6 @@ To run the code in this article, you'll need to create and activate a Python vir
    pip install dagster dagster-duckdb-pandas
    ```
 </details>
-
----
 
 ## Move data assets explicitly using external storage
 
@@ -61,7 +57,7 @@ I/O managers handle:
 1. **Input**: Reading data from storage and loading it into memory for use by dependent assets.
 2. **Output**: Writing data to the configured storage location.
 
-For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/guides/operate/io-managers) guide.
+For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/guides/build/io-managers/) guide.
 
 <CodeExample filePath="guides/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using I/O managers" />
 
@@ -118,8 +114,6 @@ The downsides of this approach are:
 - It makes certain assumptions about how much data is being processed
 - It can be difficult to reuse functions across assets, since they're tightly coupled to the data they produce
 - It may not always be possible to swap functionality based on the environment you are running in. For example, if you are running in a cloud environment, you may not have access to the local file system.
-
----
 
 ## Related resources
 

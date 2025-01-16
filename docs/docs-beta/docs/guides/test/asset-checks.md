@@ -12,13 +12,11 @@ Asset checks are tests that verify specific properties of your data assets, allo
 
 Each asset check should test only a single asset property to keep tests uncomplicated, reusable, and easy to track over time.
 
-<details>
-<summary>Prerequisites</summary>
+:::note
 
-To follow this guide, you'll need:
+This article assumes familiarity with [assets](/guides/build/assets/)
 
-- Familiarity with [Assets](/guides/build/assets/index.mdx
-</details>
+:::
 
 ## Getting started
 

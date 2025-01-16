@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from typing import Optional
 
 import dagster._check as check
@@ -1043,3 +1044,88 @@ def test_partitioned_asset_metadata():
             "output_unpartitioned": TextMetadataValue("yay"),
             "output_name_specified": TextMetadataValue("yay"),
         }
+
+
+def test_time_partitioned_asset_get_partition_key():
+    hourly_partition_definition = HourlyPartitionsDefinition(start_date="2021-05-05-00:00")
+
+    @asset(partitions_def=hourly_partition_definition)
+    def hourly_asset():
+        pass
+
+    daily_partition_definition = DailyPartitionsDefinition(start_date="2021-05-05")
+
+    @asset(partitions_def=daily_partition_definition)
+    def daily_asset():
+        pass
+
+    class CustomIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            pass
+
+    # Assert get_partition_key works with regular strings
+    assert materialize(
+        assets=[daily_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key=daily_partition_definition.get_partition_key("2022-01-01"),
+    ).success
+    assert materialize(
+        assets=[hourly_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key=hourly_partition_definition.get_partition_key("2022-01-01-01:01"),
+    ).success
+
+    # Assert get_partition_key works with (valid) date
+    assert materialize(
+        assets=[daily_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key=daily_partition_definition.get_partition_key(date(2022, 1, 1)),
+    ).success
+    assert materialize(
+        assets=[hourly_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key=hourly_partition_definition.get_partition_key(date(2022, 1, 1)),
+    ).success
+
+    # Assert get_partition_key works with (valid) datetime
+    assert materialize(
+        assets=[daily_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key=daily_partition_definition.get_partition_key(datetime(2022, 1, 1, 23, 1, 1)),
+    ).success
+    assert materialize(
+        assets=[hourly_asset],
+        resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+        partition_key=hourly_partition_definition.get_partition_key(datetime(2022, 1, 1, 21, 1, 1)),
+    ).success
+
+    # If we pass a date outside the defined start/end range of the asset, expect ValueError
+    with pytest.raises(
+        ValueError,
+    ):
+        materialize(
+            assets=[daily_asset],
+            resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+            partition_key=daily_partition_definition.get_partition_key(date(1970, 1, 1)),
+        )
+    with pytest.raises(
+        ValueError,
+    ):
+        materialize(
+            assets=[hourly_asset],
+            resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+            partition_key=hourly_partition_definition.get_partition_key(datetime(1970, 1, 1)),
+        )
+
+    # We should also expect ValueError if we pass in an invalid value like None
+    with pytest.raises(
+        check.ParameterCheckError,
+    ):
+        materialize(
+            assets=[daily_asset],
+            resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+            partition_key=daily_partition_definition.get_partition_key(None),  # pyright: ignore[reportArgumentType]
+        )

@@ -1,7 +1,7 @@
 import contextlib
 import shutil
 import tempfile
-from collections.abc import Generator
+from collections.abc import Iterator
 from pathlib import Path
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -23,9 +23,7 @@ def _setup_component_in_folder(
 
 
 @contextlib.contextmanager
-def inject_component(
-    src_path: str, local_component_defn_to_inject: Path
-) -> Generator[str, None, None]:
+def inject_component(src_path: str, local_component_defn_to_inject: Path) -> Iterator[str]:
     with tempfile.TemporaryDirectory() as tmpdir:
         _setup_component_in_folder(src_path, tmpdir, local_component_defn_to_inject)
         yield tmpdir
@@ -34,7 +32,7 @@ def inject_component(
 @contextlib.contextmanager
 def create_code_location_from_components(
     *src_paths: str, local_component_defn_to_inject: Path
-) -> Generator[Path, None, None]:
+) -> Iterator[Path]:
     """Scaffolds a code location with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """

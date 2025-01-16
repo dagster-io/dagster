@@ -118,7 +118,7 @@ PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
 
 # Copied from dagster._generate.generate
-def generate_subtree(
+def scaffold_subtree(
     path: Path,
     excludes: Optional[list[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
@@ -188,7 +188,7 @@ def generate_subtree(
                 )
                 f.write("\n")
 
-    click.echo(f"Generated files for Dagster project in {path}.")
+    click.echo(f"Scaffolded files for Dagster project in {path}.")
 
 
 def _should_skip_file(path: str, excludes: list[str] = _DEFAULT_EXCLUDES):
@@ -237,6 +237,11 @@ def not_none(value: Optional[T]) -> T:
     if value is None:
         raise DgError("Expected non-none value.")
     return value
+
+
+def exit_with_error(error_message: str) -> None:
+    click.echo(click.style(error_message, fg="red"))
+    sys.exit(1)
 
 
 # ########################

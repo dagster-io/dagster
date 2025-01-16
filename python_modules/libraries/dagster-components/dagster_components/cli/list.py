@@ -17,7 +17,7 @@ from dagster_components.core.deployment import (
 from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
-@click.group(name="generate")
+@click.group(name="list")
 def list_cli():
     """Commands for listing Dagster components and related entities."""
 

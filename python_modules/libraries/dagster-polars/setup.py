@@ -49,6 +49,7 @@ setup(
             "hypothesis[zoneinfo]>=6.89.0",
             "deepdiff>=6.3.0",
             "pytest-cases>=3.6.14",
+            "pyarrow<19.0.0",  # temporary until polars supports pyarrow 19
         ],
     },
     zip_safe=False,

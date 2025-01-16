@@ -95,7 +95,7 @@ import meta from './kindtag-images/tool-meta-color.svg';
 import metabase from './kindtag-images/tool-metabase-color.svg';
 import microsoft from './kindtag-images/tool-microsoft-color.svg';
 import minio from './kindtag-images/tool-minio-color.svg';
-import minstral from './kindtag-images/tool-minstral-color.svg';
+import mistral from './kindtag-images/tool-mistral-color.svg';
 import mlflow from './kindtag-images/tool-mlflow-color.svg';
 import modal from './kindtag-images/tool-modal-color.svg';
 import mongodb from './kindtag-images/tool-mongodb-color.svg';
@@ -323,7 +323,7 @@ export type KnownTagType =
   | 'llama'
   | 'meta'
   | 'microsoft'
-  | 'minstral'
+  | 'mistral'
   | 'montecarlo'
   | 'openmetadata'
   | 'oracle'
@@ -883,9 +883,9 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: microsoft,
     content: 'Microsoft',
   },
-  minstral: {
-    icon: minstral,
-    content: 'Minstral',
+  mistral: {
+    icon: mistral,
+    content: 'Mistral',
   },
   montecarlo: {
     icon: montecarlo,
