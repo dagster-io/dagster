@@ -3,19 +3,19 @@ from typing import Annotated, Optional
 
 import pytest
 from dagster_components import ComponentSchemaBaseModel, ResolvableFieldInfo, TemplatedValueResolver
-from dagster_components.core.schema.metadata import allow_resolve, get_available_scope
+from dagster_components.core.schema.metadata import allow_resolve, get_required_scope
 from pydantic import BaseModel, Field, TypeAdapter, ValidationError
 
 
 class InnerRendered(ComponentSchemaBaseModel):
-    a: Optional[str] = None
+    a: Annotated[Optional[str], ResolvableFieldInfo(required_scope={"deferred"})] = None
 
 
 class Container(BaseModel):
     a: str
     inner: InnerRendered
-    inner_scoped: Annotated[InnerRendered, ResolvableFieldInfo(additional_scope={"c", "d"})] = (
-        Field(default_factory=InnerRendered)
+    inner_scoped: Annotated[InnerRendered, ResolvableFieldInfo(required_scope={"c", "d"})] = Field(
+        default_factory=InnerRendered
     )
 
 
@@ -25,36 +25,38 @@ class Outer(BaseModel):
     container: Container
     container_optional: Optional[Container] = None
     container_optional_scoped: Annotated[
-        Optional[Container], ResolvableFieldInfo(additional_scope={"a", "b"})
+        Optional[Container], ResolvableFieldInfo(required_scope={"a", "b"})
     ] = None
     inner_seq: Sequence[InnerRendered]
     inner_optional: Optional[InnerRendered] = None
     inner_optional_seq: Optional[Sequence[InnerRendered]] = None
+    transformed: Annotated[Optional[str], ResolvableFieldInfo(output_type=Optional[int])] = None
 
 
 @pytest.mark.parametrize(
     "path,expected",
     [
         (["a"], True),
-        (["inner"], False),
+        (["inner"], True),
         (["inner", "a"], False),
         (["container", "a"], True),
-        (["container", "inner"], False),
+        (["container", "inner"], True),
         (["container", "inner", "a"], False),
         (["container_optional", "a"], True),
-        (["container_optional", "inner"], False),
+        (["container_optional", "inner"], True),
         (["container_optional", "inner", "a"], False),
         (["container_optional_scoped"], False),
         (["container_optional_scoped", "inner", "a"], False),
         (["container_optional_scoped", "inner_scoped", "a"], False),
         (["inner_seq"], True),
-        (["inner_seq", 0], False),
+        (["inner_seq", 0], True),
         (["inner_seq", 0, "a"], False),
         (["inner_optional"], True),
         (["inner_optional", "a"], False),
         (["inner_optional_seq"], True),
-        (["inner_optional_seq", 0], False),
+        (["inner_optional_seq", 0], True),
         (["inner_optional_seq", 0, "a"], False),
+        (["transformed"], False),
     ],
 )
 def test_allow_render(path, expected: bool) -> None:
@@ -65,19 +67,17 @@ def test_allow_render(path, expected: bool) -> None:
     "path,expected",
     [
         (["a"], set()),
-        (["inner", "a"], set()),
-        (["container_optional", "inner", "a"], set()),
+        (["inner", "a"], {"deferred"}),
+        (["container_optional", "inner", "a"], {"deferred"}),
         (["inner_seq"], set()),
         (["container_optional_scoped"], {"a", "b"}),
         (["container_optional_scoped", "inner"], {"a", "b"}),
         (["container_optional_scoped", "inner_scoped"], {"a", "b", "c", "d"}),
-        (["container_optional_scoped", "inner_scoped", "a"], {"a", "b", "c", "d"}),
+        (["container_optional_scoped", "inner_scoped", "a"], {"a", "b", "c", "d", "deferred"}),
     ],
 )
-def test_get_available_scope(path, expected: Set[str]) -> None:
-    assert (
-        get_available_scope(path, Outer.model_json_schema(), Outer.model_json_schema()) == expected
-    )
+def test_get_required_scope(path, expected: Set[str]) -> None:
+    assert get_required_scope(path, Outer.model_json_schema()) == expected
 
 
 def test_render() -> None:

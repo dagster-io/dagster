@@ -36,7 +36,7 @@ def _commented_object_for_subschema(
     subschema: Mapping[str, Any],
     available_scope: Optional[Set[str]] = None,
 ) -> Union[CommentedObject, Any]:
-    additional_scope = subschema.get("dagster_available_scope")
+    additional_scope = subschema.get("dagster_required_scope")
     available_scope = (available_scope or set()) | set(additional_scope or [])
 
     subschema = _dereference_schema(json_schema, subschema)
