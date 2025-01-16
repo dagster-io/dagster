@@ -20,22 +20,22 @@ from typing_extensions import Self
 
 
 @contextmanager
-def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
+def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    with runner.isolated_filesystem(), clear_module_from_cache("bar"):
+    with runner.isolated_filesystem() as path, clear_module_from_cache("bar"):
         runner.invoke("deployment", "scaffold", "foo")
         with pushd("foo"):
-            yield
+            yield path / "foo"
 
 
 @contextmanager
 def isolated_example_code_location_bar(
     runner: Union[CliRunner, "ProxyRunner"], in_deployment: bool = True, skip_venv: bool = False
-) -> Iterator[None]:
+) -> Iterator[Path]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     if in_deployment:
-        with isolated_example_deployment_foo(runner):
+        with isolated_example_deployment_foo(runner) as path:
             runner.invoke(
                 "code-location",
                 "scaffold",
@@ -45,9 +45,9 @@ def isolated_example_code_location_bar(
                 "bar",
             )
             with clear_module_from_cache("bar"), pushd("code_locations/bar"):
-                yield
+                yield path / "code_locations" / "bar"
     else:
-        with runner.isolated_filesystem():
+        with runner.isolated_filesystem() as path:
             runner.invoke(
                 "code-location",
                 "scaffold",
@@ -57,7 +57,7 @@ def isolated_example_code_location_bar(
                 "bar",
             )
             with clear_module_from_cache("bar"), pushd("bar"):
-                yield
+                yield path / "bar"
 
 
 @contextmanager
@@ -112,9 +112,9 @@ class ProxyRunner:
         return self.original.invoke(dg_cli, all_args, terminal_width=DG_CLI_MAX_OUTPUT_WIDTH)
 
     @contextmanager
-    def isolated_filesystem(self) -> Iterator[None]:
-        with self.original.isolated_filesystem():
-            yield
+    def isolated_filesystem(self) -> Iterator[Path]:
+        with self.original.isolated_filesystem() as path:
+            yield Path(path)
 
 
 def assert_runner_result(result: Result, exit_0: bool = True) -> None:
