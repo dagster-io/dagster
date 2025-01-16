@@ -10,13 +10,13 @@ apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-datadog
 docslink:
 partnerlink: https://www.datadoghq.com/
 logo: /integrations/Datadog.svg
-categories:
-  - Monitoring
 enabledBy:
 enables:
 tags: [dagster-supported, monitoring]
 sidebar_custom_props: 
   logo: images/integrations/datadog.svg
+  categories:
+    - monitoring
 ---
 
 While Dagster provides comprehensive monitoring and observability of the pipelines it orchestrates, many teams look to centralize all their monitoring across apps, processes and infrastructure using Datadog's 'Cloud Monitoring as a Service'. The `dagster-datadog` integration allows you to publish metrics to Datadog from within Dagster ops.

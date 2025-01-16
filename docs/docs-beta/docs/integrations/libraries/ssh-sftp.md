@@ -9,13 +9,13 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-ssh
 docslink:
 partnerlink: https://www.ssh.com/academy/ssh/protocol
-categories:
-  - Other
 enabledBy:
 enables:
 tags: [dagster-supported]
 sidebar_custom_props:
   logo: images/integrations/ssh.svg
+  categories:
+    - other
 ---
 
 This integration provides a resource for SSH remote execution using [Paramiko](https://github.com/paramiko/paramiko). It allows you to establish secure connections to networked resources and execute commands remotely. The integration also provides an SFTP client for secure file transfers between the local and remote systems.

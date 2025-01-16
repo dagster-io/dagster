@@ -10,13 +10,13 @@ apireflink: http://docs.dagster.io/_apidocs/libraries/dagster-census
 partnerlink: https://www.getcensus.com/
 communityIntegration: true
 logo: /integrations/Census.svg
-categories:
-  - ETL
 enabledBy:
 enables:
 tags: [community-supported, etl]
 sidebar_custom_props: 
   logo: images/integrations/census.svg
+  categories:
+    - etl
 ---
 
 With the `dagster-census` integration you can execute a Census sync and poll until that sync completes, raising an error if it's unsuccessful.

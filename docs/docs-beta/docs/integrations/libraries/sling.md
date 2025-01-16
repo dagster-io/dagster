@@ -9,13 +9,13 @@ date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-sling
 docslink: https://docs.dagster.io/integrations/sling
 partnerlink: https://slingdata.io/
-categories:
-  - ETL
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
 sidebar_custom_props:
   logo: images/integrations/sling.png
+  categories:
+    - etl
 ---
 
 This integration allows you to use [Sling](https://slingdata.io/) to extract and load data from popular data sources to destinations with high performance and ease.

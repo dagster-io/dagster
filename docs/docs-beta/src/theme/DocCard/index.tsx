@@ -41,19 +41,40 @@ function CardContainer({href, children}: {href: string; children: ReactNode}): R
   );
 }
 
-function truncate(text: string, max: number) {
-  return text.length > max ? text.slice(0, max).split(' ').slice(0, -1).join(' ') + ' ...' : text;
+function CategoryPills({categories}: {categories: Array<string>}): ReactNode {
+  return (
+    <div style={{display: 'flex', gap: '8px'}}>
+      {categories.map((category, index) => (
+        <span
+          key={index}
+          style={{
+            paddingLeft: '8px',
+            paddingRight: '8px',
+            background: 'var(--theme-color-background-blue)',
+            borderRadius: '16px',
+            fontSize: '0.8rem',
+            fontWeight: '400',
+          }}
+        >
+          {category}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function CardLayout({
   href,
   logo,
+  categories,
   title,
   description,
 }: {
   href: string;
+
   title: string;
   logo?: string;
+  categories: Array<string>;
   description?: string;
 }): ReactNode {
   return (
@@ -71,6 +92,7 @@ function CardLayout({
               {description}
             </p>
           )}
+          <CategoryPills categories={categories} />
         </div>
       </div>
     </CardContainer>
@@ -87,12 +109,14 @@ function CardCategory({item}: {item: PropSidebarItemCategory}): ReactNode {
   }
 
   const logo: string | null = item?.customProps?.logo || null;
+  const categories: Array<string> = item?.customProps?.categories || [];
 
   return (
     <CardLayout
       href={href}
       title={item.label}
       logo={logo}
+      categories={categories}
       description={item.description ?? categoryItemsPlural(item.items.length)}
     />
   );
@@ -102,12 +126,14 @@ function CardLink({item}: {item: PropSidebarItemLink}): ReactNode {
   // https://github.com/facebook/docusaurus/discussions/10476
   //const icon = item?.customProps?.myEmoji ?? (isInternalUrl(item.href) ? '📄️' : '🔗');
   const logo: string | null = item?.customProps?.logo || null;
+  const categories: Array<string> = item?.customProps?.categories || [];
   const doc = useDocById(item.docId ?? undefined);
 
   return (
     <CardLayout
       href={item.href}
       logo={logo}
+      categories={categories}
       title={item.label}
       description={item.description ?? doc?.description}
     />

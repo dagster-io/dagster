@@ -11,12 +11,12 @@ docslink: https://docs.dagster.io/integrations/dagstermill
 partnerlink:
 enabledBy:
   - dagster-dagstermill
-categories:
-  - Compute
 enables:
 tags: [dagster-supported, compute]
 sidebar_custom_props: 
   logo: images/integrations/jupyter.svg
+  categories:
+    - compute
 ---
 
 ### About Jupyter

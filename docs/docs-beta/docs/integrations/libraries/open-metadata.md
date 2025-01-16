@@ -10,13 +10,13 @@ apireflink:
 docslink: https://docs.open-metadata.org/connectors/pipeline/dagster
 partnerlink: https://open-metadata.org/
 communityIntegration: true
-categories:
-  - Metadata
 enabledBy:
 enables:
 tags: [community-supported, metadata]
 sidebar_custom_props: 
   logo: images/integrations/openmetadata.svg
+  categories:
+    - metadata
 ---
 
 With this integration you can create a Open Metadata service to ingest metadata produced by the Dagster application. View the Ingestion Pipeline running from the Open Metadata Service Page.

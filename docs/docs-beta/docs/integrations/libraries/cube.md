@@ -10,13 +10,13 @@ apireflink: https://cube.dev/docs/orchestration-api/dagster
 partnerlink: https://cube.dev/
 communityIntegration: true
 logo: /integrations/cube.svg
-categories:
-  - Other
 enabledBy:
 enables:
 tags: [community-supported]
 sidebar_custom_props: 
   logo: images/integrations/cube.svg
+  categories:
+    - other
 ---
 
 With the `dagster_cube` integration you can setup Cube and Dagster to work together so that Dagster can push changes from upstream data sources to Cube using its integration API.

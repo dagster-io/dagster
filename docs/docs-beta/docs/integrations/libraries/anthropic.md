@@ -6,13 +6,14 @@ title: Dagster & Anthropic
 sidebar_label: Anthropic
 excerpt: Integrate Anthropic calls into your Dagster pipelines, without breaking the bank.
 partnerlink: https://docs.anthropic.com/en/api/getting-started
-categories:
-  - Other
 enabledBy:
 enables:
 tags: [dagster-supported]
 sidebar_custom_props:
   logo: images/integrations/anthropic.svg
+  categories:
+    - ai
+    - resource
 ---
 
 The `dagster-anthropic` library allows you to easily interact with the Anthropic REST API using the Anthropic Python API to build AI steps into your Dagster pipelines. You can also log Anthropic API usage metadata in Dagster Insights, giving you detailed observability on API call credit consumption.

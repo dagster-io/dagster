@@ -9,13 +9,13 @@ date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pagerduty
 docslink:
 partnerlink: https://www.pagerduty.com/
-categories:
-  - Alerting
 enabledBy:
 enables:
 tags: [dagster-supported, alerting]
 sidebar_custom_props:
   logo: images/integrations/pagerduty.svg
+  categories:
+    - alerting
 ---
 
 This library provides an integration between Dagster and PagerDuty to support creating alerts from your Dagster code.

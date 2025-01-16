@@ -11,13 +11,13 @@ docslink: https://github.com/silentsokolov/dagster-hashicorp
 partnerlink: https://www.vaultproject.io/
 communityIntegration: true
 logo: /integrations/Hashicorp.svg
-categories:
-  - Other
 enabledBy:
 enables:
 tags: [community-supported]
 sidebar_custom_props: 
   logo: images/integrations/hashicorp.svg
+  categories:
+    - other
 ---
 
 Package for integrating HashiCorp Vault into Dagster so that you can securely manage tokens and passwords.

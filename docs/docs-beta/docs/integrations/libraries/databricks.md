@@ -10,13 +10,13 @@ apireflink: https://docs.dagster.io/concepts/dagster-pipes/databricks
 docslink:
 partnerlink: https://databricks.com/
 logo: /integrations/databricks.svg
-categories:
-  - Compute
 enabledBy:
 enables:
 tags: [dagster-supported, compute]
 sidebar_custom_props: 
   logo: images/integrations/databricks.svg
+  categories:
+    - compute
 ---
 
 The `dagster-databricks` integration library provides the `PipesDatabricksClient` resource, enabling you to launch Databricks jobs directly from Dagster assets and ops. This integration allows you to pass parameters to Databricks code while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.

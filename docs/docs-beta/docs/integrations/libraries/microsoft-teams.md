@@ -9,13 +9,13 @@ date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-msteams
 docslink:
 partnerlink: https://www.microsoft.com/en-us/microsoft-teams/group-chat-software
-categories:
-  - Alerting
 enabledBy:
 enables:
 tags: [dagster-supported, alerting]
 sidebar_custom_props: 
   logo: images/integrations/microsoft_teams.svg
+  categories:
+    - alerting
 ---
 
 By configuring this resource, you can post messages to MS Teams from any Dagster op or asset.

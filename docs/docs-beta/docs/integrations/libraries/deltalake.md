@@ -10,13 +10,13 @@ communityIntegration: true
 apireflink: https://delta-io.github.io/delta-rs/integrations/delta-lake-dagster/
 docslink:
 partnerlink: https://delta.io/
-categories:
-  - Storage
 enabledBy:
 enables:
 tags: [community-supported, storage]
 sidebar_custom_props: 
   logo: images/integrations/deltalake.svg
+  categories:
+    - storage
 ---
 
 Delta Lake is a great storage format for Dagster workflows. With this integration, you can use the Delta Lake I/O Manager to read and write your Dagster assets.

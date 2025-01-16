@@ -10,13 +10,13 @@ docslink: https://github.com/hightouchio/dagster-hightouch
 partnerlink: https://hightouch.com/
 communityIntegration: true
 logo: /integrations/Hightouch.svg
-categories:
-  - ETL
 enabledBy:
 enables:
 tags: [community-supported, etl]
 sidebar_custom_props: 
   logo: images/integrations/hightouch.svg
+  categories:
+    - etl
 ---
 
 With this integration you can trigger Hightouch syncs and monitor them from within Dagster. Fine-tune when Hightouch syncs kick-off, visualize their dependencies, and monitor the steps in your data activation workflow.

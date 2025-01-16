@@ -10,13 +10,13 @@ apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-dlt
 docslink: https://docs.dagster.io/integrations/dlt
 partnerlink: https://www.getdbt.com/
 logo: /integrations/dlthub.jpeg
-categories:
-  - ETL
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
 sidebar_custom_props: 
   logo: images/integrations/dlthub.jpeg
+  categories:
+    - etl
 ---
 
 This integration allows you to use [dlt](https://dlthub.com/) to easily ingest and replicate data between systems through Dagster.
