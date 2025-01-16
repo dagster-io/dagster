@@ -356,6 +356,11 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             )
         )
 
+    def with_user_interrupted(self, user_interrupted: bool) -> "InstigatorTick":
+        return self._replace(
+            tick_data=self.tick_data.with_user_interrupted(user_interrupted=user_interrupted)
+        )
+
     @property
     def instigator_origin_id(self) -> str:
         return self.tick_data.instigator_origin_id
@@ -569,6 +574,10 @@ class TickData(
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
             ("consecutive_failure_count", int),
+            (
+                "user_interrupted",
+                bool,
+            ),  # indicates if a user stopped the tick while submitting runs
         ],
     )
 ):
@@ -637,6 +646,7 @@ class TickData(
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
         consecutive_failure_count: Optional[int] = None,
+        user_interrupted: bool = False,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -668,6 +678,7 @@ class TickData(
             consecutive_failure_count=check.opt_int_param(
                 consecutive_failure_count, "consecutive_failure_count", 0
             ),
+            user_interrupted=user_interrupted,
         )
 
     def with_status(
@@ -766,6 +777,14 @@ class TickData(
                         dynamic_partitions_request_result,
                     ]
                 },
+            )
+        )
+
+    def with_user_interrupted(self, user_interrupted: bool):
+        return TickData(
+            **merge_dicts(
+                self._asdict(),
+                {"user_interrupted": user_interrupted},
             )
         )
 

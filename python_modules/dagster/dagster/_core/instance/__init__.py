@@ -3179,6 +3179,9 @@ class DagsterInstance(DynamicPartitionsStore):
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
 
+    def get_tick_termination_check_interval(self) -> Optional[int]:
+        return None
+
     def inject_env_vars(self, location_name: Optional[str]) -> None:
         if not self._secrets_loader:
             return

@@ -271,6 +271,12 @@ class AutoMaterializeLaunchContext:
 
         self._tick = self._tick.with_status(status=status, **kwargs)
 
+    def set_user_interrupted(self, user_interrupted: bool):
+        self._tick = self._tick.with_user_interrupted(user_interrupted)
+
+    def set_skip_reason(self, skip_reason: str):
+        self._tick = self._tick.with_reason(skip_reason)
+
     def __enter__(self):
         return self
 
@@ -1035,6 +1041,8 @@ class AssetDaemon(DagsterDaemon):
             reserved_run_ids=reserved_run_ids,
             debug_crash_flags=debug_crash_flags,
             submit_threadpool_executor=submit_threadpool_executor,
+            remote_sensor=sensor,
+            stored_cursor=stored_cursor,
         )
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
@@ -1118,6 +1126,8 @@ class AssetDaemon(DagsterDaemon):
         reserved_run_ids: Sequence[str],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
+        remote_sensor: Optional[RemoteSensor],
+        stored_cursor: AssetDaemonCursor,
     ):
         updated_evaluation_keys = set()
         run_request_execution_data_cache = {}
@@ -1145,9 +1155,11 @@ class AssetDaemon(DagsterDaemon):
         else:
             gen_run_request_results = map(submit_run_request, to_submit)
 
+        num_submitted = 0
         for submitted_run_id, entity_keys in gen_run_request_results:
             # heartbeat after each submitted run
             yield
+            num_submitted += 1
 
             tick_context.add_run_info(run_id=submitted_run_id)
 
@@ -1161,6 +1173,27 @@ class AssetDaemon(DagsterDaemon):
                     )
                     updated_evaluation_keys.add(entity_key)
 
+            # check if the sensor is still enabled:
+            check_after_runs_num = instance.get_tick_termination_check_interval()
+            if check_after_runs_num is not None and num_submitted % check_after_runs_num == 0:
+                if not self._sensor_is_enabled(instance, remote_sensor):
+                    # The user has manually stopped the sensor mid-iteration. In this case we assume
+                    # the user has a good reason for stopping the sensor (e.g. the sensor is submitting
+                    # many unintentional runs) so we stop submitting runs and will mark the tick as
+                    # skipped so that when the sensor is turned back on we don't detect this tick as incomplete
+                    # and try to submit the same runs again.
+                    self._logger.info(
+                        "Sensor has been manually stopped while submitted runs. No more runs will be submitted."
+                    )
+                    tick_context.set_user_interrupted(True)
+                    self._reset_cursor(
+                        instance=instance,
+                        prev_cursor=stored_cursor,
+                        remote_sensor=remote_sensor,
+                        tick=tick_context.tick,
+                    )
+                    break
+
         evaluations_to_update = [
             evaluations_by_key[asset_key] for asset_key in updated_evaluation_keys
         ]
@@ -1172,6 +1205,58 @@ class AssetDaemon(DagsterDaemon):
 
         check_for_debug_crash(debug_crash_flags, "RUN_IDS_ADDED_TO_EVALUATIONS")
 
-        tick_context.update_state(
-            TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
+        if tick_context.tick.tick_data.user_interrupted:
+            # mark as skipped so that we don't request any remaining runs when the sensor is started again
+            tick_context.update_state(TickStatus.SKIPPED)
+            tick_context.set_skip_reason("Sensor manually stopped mid-iteration.")
+        else:
+            tick_context.update_state(
+                TickStatus.SUCCESS if len(run_requests) > 0 else TickStatus.SKIPPED,
+            )
+
+    def _sensor_is_enabled(self, instance: DagsterInstance, remote_sensor: Optional[RemoteSensor]):
+        use_auto_materialize_sensors = instance.auto_materialize_use_sensors
+        if (not use_auto_materialize_sensors) and get_auto_materialize_paused(instance):
+            return False
+        if use_auto_materialize_sensors and remote_sensor:
+            instigator_state = instance.get_instigator_state(
+                remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
+            )
+            if instigator_state and not instigator_state.is_running:
+                return False
+
+        return True
+
+    def _reset_cursor(
+        self,
+        instance: DagsterInstance,
+        prev_cursor: AssetDaemonCursor,
+        remote_sensor: Optional[RemoteSensor],
+        tick: InstigatorTick,
+    ):
+        reset_cursor = AssetDaemonCursor(
+            evaluation_id=tick.automation_condition_evaluation_id,
+            last_observe_request_timestamp_by_asset_key=prev_cursor.last_observe_request_timestamp_by_asset_key,
+            previous_evaluation_state=prev_cursor.previous_evaluation_state,
+            previous_condition_cursors=prev_cursor.previous_condition_cursors,
         )
+        use_auto_materialize_sensors = instance.auto_materialize_use_sensors
+        if use_auto_materialize_sensors:
+            remote_sensor = check.not_none(remote_sensor)
+            state = instance.get_instigator_state(
+                remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
+            )
+            instance.update_instigator_state(
+                check.not_none(state).with_data(
+                    SensorInstigatorData(
+                        last_tick_timestamp=tick.timestamp,
+                        min_interval=remote_sensor.min_interval_seconds,
+                        cursor=asset_daemon_cursor_to_instigator_serialized_cursor(reset_cursor),
+                        sensor_type=remote_sensor.sensor_type,
+                    )
+                )
+            )
+        else:
+            instance.daemon_cursor_storage.set_cursor_values(
+                {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(reset_cursor)}
+            )
