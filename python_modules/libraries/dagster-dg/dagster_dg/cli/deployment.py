@@ -1,5 +1,4 @@
 import os
-import sys
 from pathlib import Path
 
 import click
@@ -8,7 +7,7 @@ from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_deployment
-from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error
 
 
 @click.group(name="deployment", cls=DgClickGroup)
@@ -37,9 +36,8 @@ def deployment_scaffold_command(
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
     dir_abspath = os.path.abspath(path)
     if os.path.exists(dir_abspath):
-        click.echo(
-            click.style(f"A file or directory at {dir_abspath} already exists. ", fg="red")
+        exit_with_error(
+            f"A file or directory at {dir_abspath} already exists. "
             + "\nPlease delete the contents of this path or choose another location."
         )
-        sys.exit(1)
     scaffold_deployment(path, dg_context)
