@@ -22,6 +22,30 @@ const config: Config = {
     require.resolve('docusaurus-plugin-sass'),
     require.resolve('docusaurus-plugin-image-zoom'),
     require.resolve('./src/plugins/scoutos'),
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        redirects: [
+          {
+            to: '/guides/deploy/',
+            from: 'deployment',
+          },
+          {
+            to: '/guides/deploy/oss-deployment-architecture',
+            from: '/deployment/overview'
+          }
+        ],
+        createRedirects(existingPath) {
+          if (existingPath.includes('/api/python-api')) {
+            // redirect from /_apidocs/X to /api/python-api/X
+            return [
+              existingPath.replace('/api/python-api', '/_apidocs')
+            ];
+          }
+          return undefined; // Return a falsy value: no redirect created
+        }
+      }
+    ]
   ],
   themeConfig: {
     // Algolia environment variables are not required during development
