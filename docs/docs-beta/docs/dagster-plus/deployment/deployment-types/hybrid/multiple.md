@@ -1,6 +1,6 @@
 ---
 title: Running multiple agents
-sidebar_position: 60
+sidebar_position: 70
 sidebar_label: Multiple agents
 ---
 
