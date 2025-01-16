@@ -26,6 +26,18 @@ class RemoteComponentType:
         return self.name
 
 
+def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
+    """Generate a schema for all components in the current environment, or retrieve it from the cache."""
+    schema_raw = None
+    if dg_context.has_cache:
+        cache_key = dg_context.get_cache_key("all_components_schema")
+        schema_raw = dg_context.cache.get(cache_key)
+
+    if not schema_raw:
+        schema_raw = dg_context.external_components_command(["list", "all-components-schema"])
+    return json.loads(schema_raw)
+
+
 def _retrieve_local_component_types(
     dg_context: "DgContext", paths: Sequence[Path]
 ) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:

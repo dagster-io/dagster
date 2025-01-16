@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from typing import Optional
@@ -5,6 +6,11 @@ from typing import Optional
 import click
 
 from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.vscode_utils import (
+    install_or_update_yaml_schema_extension,
+    recommend_yaml_extension,
+)
+from dagster_dg.component import all_components_schema_from_dg_context
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_code_location
@@ -114,3 +120,29 @@ def code_location_list_command(context: click.Context, **global_options: object)
 
     for code_location in dg_context.get_code_location_names():
         click.echo(code_location)
+
+
+_DEFAULT_SCHEMA_FOLDER_NAME = ".vscode"
+
+
+@code_location_group.command(
+    help="Generates and installs a VS Code extension which provides JSON schemas for Components types specified by YamlComponentssLoader objects."
+)
+@dg_global_options
+@click.pass_context
+def configure_vscode(
+    context: click.Context,
+    **global_options: object,
+) -> None:
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+
+    recommend_yaml_extension()
+
+    schema_folder = dg_context.root_path / _DEFAULT_SCHEMA_FOLDER_NAME
+    schema_folder.mkdir(exist_ok=True)
+
+    schema_path = schema_folder / "schema.json"
+    schema_path.write_text(json.dumps(all_components_schema_from_dg_context(dg_context), indent=2))
+
+    install_or_update_yaml_schema_extension(dg_context.root_path, schema_path)
