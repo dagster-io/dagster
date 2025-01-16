@@ -47,7 +47,7 @@ from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.compute_log_manager import CapturedLogContext
+from dagster._core.storage.compute_log_manager import CapturedLogContext, LogRetrievalShellCommand
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._serdes.serdes import EnumSerializer, UnpackContext, is_whitelisted_for_serdes_object
@@ -1494,6 +1494,7 @@ class DagsterEvent(
                 file_key=file_key,
                 external_stdout_url=log_context.external_stdout_url,
                 external_stderr_url=log_context.external_stderr_url,
+                shell_cmd=log_context.shell_cmd,
                 external_url=log_context.external_url,
             ),
         )
@@ -1874,6 +1875,7 @@ class ComputeLogsCaptureData(
             ("external_url", Optional[str]),
             ("external_stdout_url", Optional[str]),
             ("external_stderr_url", Optional[str]),
+            ("shell_cmd", Optional[LogRetrievalShellCommand]),
         ],
     )
 ):
@@ -1884,6 +1886,7 @@ class ComputeLogsCaptureData(
         external_url: Optional[str] = None,
         external_stdout_url: Optional[str] = None,
         external_stderr_url: Optional[str] = None,
+        shell_cmd: Optional[LogRetrievalShellCommand] = None,
     ):
         return super().__new__(
             cls,
@@ -1892,6 +1895,7 @@ class ComputeLogsCaptureData(
             external_url=check.opt_str_param(external_url, "external_url"),
             external_stdout_url=check.opt_str_param(external_stdout_url, "external_stdout_url"),
             external_stderr_url=check.opt_str_param(external_stderr_url, "external_stderr_url"),
+            shell_cmd=check.opt_inst_param(shell_cmd, "shell_cmd", LogRetrievalShellCommand),
         )
 
 
