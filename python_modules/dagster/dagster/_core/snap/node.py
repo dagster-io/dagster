@@ -159,6 +159,7 @@ class GraphDefSnap:
     dep_structure_snapshot: DependencyStructureSnapshot
     input_mapping_snaps: Sequence[InputMappingSnap]
     output_mapping_snaps: Sequence[OutputMappingSnap]
+    pools: set[str]
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -177,7 +178,7 @@ class GraphDefSnap:
 
 @whitelist_for_serdes(storage_name="SolidDefSnap")
 @record
-class OpDefSnap:
+class OpDefSnap(IHaveNew):
     name: str
     input_def_snaps: Sequence[InputDefSnap]
     output_def_snaps: Sequence[OutputDefSnap]
@@ -185,6 +186,7 @@ class OpDefSnap:
     tags: Mapping[str, str]
     required_resource_keys: Sequence[str]
     config_field_snap: Optional[ConfigFieldSnap]
+    pool: Optional[str] = None
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -257,6 +259,7 @@ def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
         dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(graph_def),
         input_mapping_snaps=list(map(build_input_mapping_snap, graph_def.input_mappings)),
         output_mapping_snaps=list(map(build_output_mapping_snap, graph_def.output_mappings)),
+        pools=graph_def.pools,
     )
 
 
@@ -274,6 +277,7 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
             if op_def.has_config_field
             else None
         ),
+        pool=op_def.pool,
     )
 
 

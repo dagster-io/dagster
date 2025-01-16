@@ -15,7 +15,7 @@
       },
       "step_output_versions": []
     },
-    "pipeline_snapshot_id": "da8c01714b1e44006e9cf334fbe3bc446dd7edcf",
+    "pipeline_snapshot_id": "9a249ea2e68f01696a6527edc4f16a3105d4ff08",
     "snapshot_version": 1,
     "step_keys_to_execute": [
       "op_one",
@@ -52,6 +52,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "op_one",
         "step_handle": {
           "__class__": "StepHandle",
@@ -124,6 +125,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "op_two",
         "step_handle": {
           "__class__": "StepHandle",
@@ -156,7 +158,7 @@
       },
       "step_output_versions": []
     },
-    "pipeline_snapshot_id": "2be758e018ad9a646ff3f425bcd0100b6f7c9db5",
+    "pipeline_snapshot_id": "2e1a9c7bcca1fbd5675ae312810b00213b71f5c5",
     "snapshot_version": 1,
     "step_keys_to_execute": [
       "noop_op"
@@ -192,6 +194,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "noop_op",
         "step_handle": {
           "__class__": "StepHandle",
@@ -224,7 +227,7 @@
       },
       "step_output_versions": []
     },
-    "pipeline_snapshot_id": "e27e6d43717f02d68975024eeecd407fb2c3ea9e",
+    "pipeline_snapshot_id": "fc39b83b76579bcfdee52119fbd707f12bdf7eb1",
     "snapshot_version": 1,
     "step_keys_to_execute": [
       "noop_op"
@@ -271,6 +274,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "noop_op",
         "step_handle": {
           "__class__": "StepHandle",
@@ -306,7 +310,7 @@
       },
       "step_output_versions": []
     },
-    "pipeline_snapshot_id": "abd9ab67d88662d348cd56af4d70283f2c09f978",
+    "pipeline_snapshot_id": "b57cc7e00dc45fd4927a082265100e665a21f23d",
     "snapshot_version": 1,
     "step_keys_to_execute": [
       "comp_1.return_one",
@@ -405,6 +409,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "add",
         "step_handle": {
           "__class__": "StepHandle",
@@ -481,6 +486,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "comp_1.add_one",
         "step_handle": {
           "__class__": "StepHandle",
@@ -531,6 +537,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "comp_1.return_one",
         "step_handle": {
           "__class__": "StepHandle",
@@ -611,6 +618,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "comp_2.add_one",
         "step_handle": {
           "__class__": "StepHandle",
@@ -661,6 +669,7 @@
             }
           }
         ],
+        "pool": null,
         "solid_handle_id": "comp_2.return_one",
         "step_handle": {
           "__class__": "StepHandle",
