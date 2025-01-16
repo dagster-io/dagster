@@ -59,9 +59,7 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         operands = [child for child in self.operands if child != condition]
         if len(operands) < 2:
             check.failed("Cannot have fewer than 2 operands in an AndAutomationCondition")
-        return AndAutomationCondition(
-            operands=[child for child in self.operands if child != condition]
-        )
+        return copy(self, operands=[child for child in self.operands if child != condition])
 
     @public
     def replace(
