@@ -1,5 +1,5 @@
+import logging
 import os
-import sys
 import traceback
 import uuid
 from collections.abc import Sequence
@@ -89,6 +89,11 @@ def _should_redact_user_code_error() -> bool:
     return str(os.getenv("DAGSTER_REDACT_USER_CODE_ERRORS")).lower() in ("1", "true", "t")
 
 
+_REDACTED_ERROR_LOGGER_NAME = os.getenv(
+    "DAGSTER_REDACTED_ERROR_LOGGER_NAME", "dagster.redacted_errors"
+)
+
+
 def serializable_error_info_from_exc_info(
     exc_info: ExceptionInfo,
     # Whether to forward serialized errors thrown from subprocesses
@@ -115,12 +120,11 @@ def serializable_error_info_from_exc_info(
 
     if isinstance(e, DagsterUserCodeExecutionError) and _should_redact_user_code_error():
         error_id = str(uuid.uuid4())
+        masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
 
-        sys.stderr.write(f"Error occurred during user code execution, error ID {error_id}.\n")
-        sys.stderr.write(
-            _serializable_error_info_from_tb(
-                traceback.TracebackException(exc_type, e, tb)
-            ).to_string(),
+        masked_logger.error(
+            f"Error occurred during user code execution, error ID {error_id}",
+            exc_info=exc_info,
         )
         return SerializableErrorInfo(
             message=(
