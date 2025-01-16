@@ -141,9 +141,10 @@ class DagsterSlingTranslator:
             .. code-block:: python
 
                 class CustomSlingTranslator(DagsterSlingTranslator):
-                    def get_asset_key_for_target(self, stream_definition: Mapping[str, Any]) -> AssetKey:
+                    def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetKey:
+                        default_spec = super().get_asset_spec(stream_definition)
                         map = {"stream1": "asset1", "stream2": "asset2"}
-                        return AssetKey(map[stream_definition["name"]])
+                        return default_spec.replace_attributes(key=AssetKey(map[stream_definition["name"]]))
         """
         return self.get_asset_spec(stream_definition).key
 
@@ -181,6 +182,17 @@ class DagsterSlingTranslator:
 
         Returns:
             AssetKey: The Dagster AssetKey for the replication stream.
+
+        Examples:
+            Using a custom mapping for streams:
+
+            .. code-block:: python
+
+                class CustomSlingTranslator(DagsterSlingTranslator):
+                    def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetKey:
+                        default_spec = super().get_asset_spec(stream_definition)
+                        map = {"stream1": "asset1", "stream2": "asset2"}
+                        return default_spec.replace_attributes(key=AssetKey(map[stream_definition["name"]]))
         """
         config = stream_definition.get("config", {}) or {}
         object_key = config.get("object")
@@ -207,8 +219,8 @@ class DagsterSlingTranslator:
     )
     @public
     def get_deps_asset_key(self, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
-        """A function that takes a stream name from a Sling replication config and returns a
-        Dagster AssetKey for the dependencies of the replication stream.
+        """A function that takes a stream definition from a Sling replication config and returns a
+        Dagster AssetKey for each dependency of the replication stream.
 
         By default, this returns the stream name. For example, a stream named "public.accounts"
         will create an AssetKey named "target_public_accounts" and a dependency named "public_accounts".
@@ -228,24 +240,13 @@ class DagsterSlingTranslator:
             stream_definition (Mapping[str, Any]): A dictionary representing the stream definition
 
         Returns:
-            AssetKey: The Dagster AssetKey dependency for the replication stream.
-
-        Examples:
-            Using a custom mapping for streams:
-
-            .. code-block:: python
-
-                class CustomSlingTranslator(DagsterSlingTranslator):
-                    def get_deps_asset_key(self, stream_definition: Mapping[str, Any]) -> AssetKey:
-                        map = {"stream1": "asset1", "stream2": "asset2"}
-                        return AssetKey(map[stream_definition["name"]])
-
+            Iterable[AssetKey]: A list of Dagster AssetKey for each dependency of the replication stream.
         """
         return [dep.asset_key for dep in self.get_asset_spec(stream_definition).deps]
 
     def _default_deps_fn(self, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
         """A function that takes a stream definition from a Sling replication config and returns a
-        Dagster AssetKey for the dependencies of the replication stream.
+        Dagster AssetKey for each dependency of the replication stream.
 
         This returns the stream name. For example, a stream named "public.accounts"
         will create an AssetKey named "target_public_accounts" and a dependency named "public_accounts".
@@ -264,7 +265,7 @@ class DagsterSlingTranslator:
             stream_definition (Mapping[str, Any]): A dictionary representing the stream definition
 
         Returns:
-            AssetKey: The Dagster AssetKey dependency for the replication stream.
+            Iterable[AssetKey]: A list of Dagster AssetKey for each dependency of the replication stream.
         """
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})
