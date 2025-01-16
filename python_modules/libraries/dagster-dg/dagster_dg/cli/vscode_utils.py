@@ -27,7 +27,7 @@ def run_vscode_cli_command(args: list[str]) -> bytes:
 def recommend_yaml_extension() -> None:
     if not has_vscode_cli_command():
         click.echo(
-            "Could not find `code` executable in PATH. In order to use the dagster-blueprint-schema extension, "
+            "Could not find `code` executable in PATH. In order to use the dagster-components-schema extension, "
             "please install the redhat.vscode-yaml extension manually."
         )
         return
