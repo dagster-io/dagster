@@ -38,7 +38,9 @@ from dagster._core.definitions.asset_check_evaluation import (
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.utils import check_valid_title
 from dagster._core.errors import (
+    DagsterError,
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
@@ -79,8 +81,9 @@ from dagster._core.storage.tags import (
     TAGS_TO_MAYBE_OMIT_ON_RETRY,
     WILL_RETRY_TAG,
 )
+from dagster._core.utils import make_new_backfill_id
 from dagster._serdes import ConfigurableClass
-from dagster._time import get_current_datetime, get_current_timestamp
+from dagster._time import datetime_from_timestamp, get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
@@ -3154,6 +3157,87 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def update_backfill(self, partition_backfill: "PartitionBackfill") -> None:
         self._run_storage.update_backfill(partition_backfill)
+
+    @public
+    @experimental
+    def launch_backfill(
+        self,
+        *,
+        asset_graph: "BaseAssetGraph",
+        asset_selection: Sequence[AssetKey],
+        partition_names: Optional[Sequence[str]] = None,
+        all_partitions: bool = False,
+        tags: Mapping[str, str] = {},
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> str:
+        """Launch a set of partition backfill runs.
+
+        Either ``partition_names`` must not be ``None`` or ``all_partitions`` must be ``True`` but
+        not both.
+
+        Args:
+            asset_graph (BaseAssetGraph): The asset graph for the backfill.
+            asset_selection (Sequence[AssetKey]): List of asset keys to backfill.
+            partition_names (Optional[Sequence[str]]): List of partition names to backfill.
+            all_partitions (bool): Whether to backfill all partitions.
+            tags (Mapping[str, str]): The tags for the backfill.
+            title (Optional[str]): The title of the backfill.
+            description (Optional[str]): The description of the backfill.
+
+        Returns:
+            str: The ID of the backfill.
+        """
+        from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+        from dagster._core.execution.backfill import PartitionBackfill
+
+        backfill_id = make_new_backfill_id()
+        backfill_timestamp = get_current_timestamp()
+        backfill_datetime = datetime_from_timestamp(backfill_timestamp)
+        dynamic_partitions_store = CachingDynamicPartitionsLoader(self)
+
+        check_valid_title(title)
+
+        if asset_selection is not None:
+            backfill = PartitionBackfill.from_asset_partitions(
+                backfill_id=backfill_id,
+                asset_graph=asset_graph,
+                asset_selection=asset_selection,
+                partition_names=partition_names,
+                backfill_timestamp=backfill_timestamp,
+                tags=tags,
+                dynamic_partitions_store=dynamic_partitions_store,
+                all_partitions=all_partitions,
+                title=title,
+                description=description,
+            )
+        else:
+            raise DagsterError(
+                "Backfill requested without specifying partition set selector or asset selection"
+            )
+
+        # Check that the partition keys can be found in the asset graph.
+        # TODO(deepyaman): Abstract logic shared with `dagster-graphql`.
+        asset_backfill_data = backfill.asset_backfill_data
+        if asset_backfill_data:
+            partitions_subsets_by_asset_key = (
+                asset_backfill_data.target_subset.partitions_subsets_by_asset_key
+            )
+            for asset_key, partitions_subset in partitions_subsets_by_asset_key.items():
+                partitions_def = asset_graph.get(asset_key).partitions_def
+                if not partitions_def:
+                    continue
+
+                invalid_keys = set(partitions_subset.get_partition_keys()) - set(
+                    partitions_def.get_partition_keys(backfill_datetime, dynamic_partitions_store)
+                )
+                if invalid_keys:
+                    raise DagsterError(
+                        f"Partition keys `{sorted(invalid_keys)}` could not be found."
+                    )
+
+        self.add_backfill(backfill)
+        return backfill_id
 
     @property
     def should_start_background_run_thread(self) -> bool:
