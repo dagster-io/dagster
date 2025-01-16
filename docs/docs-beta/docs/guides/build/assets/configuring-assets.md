@@ -30,7 +30,7 @@ Run configurations reference an `op` which is the underlying compute associated 
 
 When launching a run using the Launchpad in the UI, you can provide a run config file as YAML or JSON that overrides the default configuration for your asset.
 
-On any page with a **Materialize** button, click the **options menu > Open launchpad** to access the Launchpad.
+On any page with a **Materialize** button, click the **options menu > Open launchpad** to access the Launchpad:
 
 ![Highlighted Open Launchpad option in the Materialize options menu of the Dagster UI](/images/guides/build/assets/configuring_assets_in_the_ui/open_launchpad.png)
 
