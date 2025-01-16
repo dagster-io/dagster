@@ -1,10 +1,10 @@
 ---
-title: "Making an existing code location components-compatible"
+title: 'Making an existing code location components-compatible'
 sidebar_position: 100
 ---
 
 :::note
-This guide is only relevant if you are starting from an *existing* Dagster code location. This setup is unnecessary if you used `dg code-location generate` to create your code location.
+This guide is only relevant if you are starting from an _existing_ Dagster code location. This setup is unnecessary if you used `dg code-location generate` to create your code location.
 :::
 
 ## Create a `components` directory
@@ -23,7 +23,6 @@ To do so, you'll need to modify your `definitions.py` file, or whichever file co
 
 You can manually construct a set of definitions for your components using `build_component_defs`, then merge them with your existing definitions using `Definitions.merge`.
 
-
 <Tabs>
     <TabItem value='before' label='Before'>
         <CodeExample filePath="guides/components/existing-project/definitions-before.py" language="python" />
@@ -33,8 +32,7 @@ You can manually construct a set of definitions for your components using `build
     </TabItem>
 </Tabs>
 
-
 ## Next steps
 
-- [Add a new component to your code location](#TODO)
-- [Create a new component type](#TODO)
+- Add a new component to your code location
+- Create a new component type
