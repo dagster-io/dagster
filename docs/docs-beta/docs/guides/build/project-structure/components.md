@@ -1,6 +1,7 @@
 ---
 title: "Components"
 sidebar_position: 100
+unlisted: true
 ---
 
 Welcome to Dagster Components.
