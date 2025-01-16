@@ -1,8 +1,11 @@
+import contextlib
 import logging
 import os
+import sys
 import traceback
 import uuid
 from collections.abc import Sequence
+from contextvars import ContextVar
 from types import TracebackType
 from typing import Any, NamedTuple, Optional, Union
 
@@ -93,6 +96,31 @@ _REDACTED_ERROR_LOGGER_NAME = os.getenv(
     "DAGSTER_REDACTED_ERROR_LOGGER_NAME", "dagster.redacted_errors"
 )
 
+last_user_code_error_id: ContextVar[Optional[str]] = ContextVar(
+    "last_user_code_error_id", default=None
+)
+
+
+@contextlib.contextmanager
+def log_and_redact_stacktrace_if_enabled():
+    if not _should_redact_user_code_error():
+        yield
+    else:
+        try:
+            yield
+        except BaseException as e:
+            exc_info = sys.exc_info()
+            error_id = last_user_code_error_id.get() or str(uuid.uuid4())
+            masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
+
+            last_user_code_error_id.set(error_id)
+            masked_logger.error(
+                f"Error occurred during user code execution, error ID {error_id}",
+                exc_info=exc_info,
+            )
+
+            raise e.with_traceback(None) from None
+
 
 def serializable_error_info_from_exc_info(
     exc_info: ExceptionInfo,
@@ -116,19 +144,14 @@ def serializable_error_info_from_exc_info(
     e = check.not_none(e, additional_message=additional_message)
     tb = check.not_none(tb, additional_message=additional_message)
 
-    from dagster._core.errors import DagsterUserCodeExecutionError, DagsterUserCodeProcessError
+    from dagster._core.errors import DagsterUserCodeProcessError
 
-    if isinstance(e, DagsterUserCodeExecutionError) and _should_redact_user_code_error():
-        error_id = str(uuid.uuid4())
-        masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
-
-        masked_logger.error(
-            f"Error occurred during user code execution, error ID {error_id}",
-            exc_info=exc_info,
-        )
+    err_id = last_user_code_error_id.get()
+    if err_id:
+        last_user_code_error_id.set(None)
         return SerializableErrorInfo(
             message=(
-                f"Error occurred during user code execution, error ID {error_id}. "
+                f"Error occurred during user code execution, error ID {err_id}. "
                 "The error has been masked to prevent leaking sensitive information. "
                 "Search in logs for this error ID for more details."
             ),
