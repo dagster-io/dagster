@@ -20,7 +20,7 @@ class DbtScaffoldParams(BaseModel):
 
 class DbtProjectComponentScaffolder(ComponentScaffolder):
     @classmethod
-    def get_params_schema_type(cls) -> Optional[type[BaseModel]]:
+    def get_schema(cls) -> Optional[type[BaseModel]]:
         return DbtScaffoldParams
 
     def scaffold(self, request: ComponentScaffoldRequest, params: DbtScaffoldParams) -> None:

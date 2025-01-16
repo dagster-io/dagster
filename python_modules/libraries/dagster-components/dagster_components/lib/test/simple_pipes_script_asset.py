@@ -25,7 +25,7 @@ class SimplePipesScriptAssetParams(BaseModel):
 
 class SimplePipesScriptAssetScaffolder(ComponentScaffolder):
     @classmethod
-    def get_params_schema_type(cls):
+    def get_schema(cls):
         return SimplePipesScriptAssetParams
 
     def scaffold(
