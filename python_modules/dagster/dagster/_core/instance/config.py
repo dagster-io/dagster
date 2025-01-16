@@ -1,19 +1,22 @@
 import logging
 import os
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dagster import (
     Array,
     Bool,
+    String,
     _check as check,
 )
 from dagster._config import (
     Field,
     IntSource,
+    Noneable,
     Permissive,
     ScalarUnion,
     Selector,
+    Shape,
     StringSource,
     validate_config,
 )
@@ -55,7 +58,7 @@ def dagster_instance_config(
             f" desired behavior, create an empty {config_filename} file in {base_dir}."
         )
 
-    dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path) or {}, overrides)
+    dagster_config_dict = merge_dicts(load_yaml_from_globs(config_yaml_path) or {}, overrides or {})
 
     if "instance_class" in dagster_config_dict:
         custom_instance_class_data = dagster_config_dict["instance_class"]
@@ -120,18 +123,7 @@ def dagster_instance_config(
 
     # validate default op concurrency limits
     if "concurrency" in dagster_config_dict:
-        default_concurrency_limit = dagster_config_dict["concurrency"].get(
-            "default_op_concurrency_limit"
-        )
-        if default_concurrency_limit is not None:
-            max_limit = get_max_concurrency_limit_value()
-            if default_concurrency_limit < 0 or default_concurrency_limit > max_limit:
-                raise DagsterInvalidConfigError(
-                    f"Found value `{default_concurrency_limit}` for `default_op_concurrency_limit`, "
-                    f"Expected value between 0-{max_limit}.",
-                    [],
-                    None,
-                )
+        validate_concurrency_config(dagster_config_dict)
 
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
@@ -155,6 +147,106 @@ def run_queue_config_schema() -> Field:
         QueuedRunCoordinator.config_type(),
         is_required=False,
     )
+
+
+def validate_concurrency_config(dagster_config_dict: Mapping[str, Any]):
+    concurrency_config = dagster_config_dict["concurrency"]
+    if "pools" in concurrency_config:
+        if concurrency_config.get("default_op_concurrency_limit") is not None:
+            raise DagsterInvalidConfigError(
+                "Found config for `default_op_concurrency_limit` which is incompatible with `pools` config.  Use `pools > default_limit` instead.",
+                [],
+                None,
+            )
+
+        default_concurrency_limit = check.opt_inst(
+            pluck_config_value(concurrency_config, ["pools", "default_limit"]), int
+        )
+        if default_concurrency_limit is not None:
+            max_limit = get_max_concurrency_limit_value()
+            if default_concurrency_limit < 0 or default_concurrency_limit > max_limit:
+                raise DagsterInvalidConfigError(
+                    f"Found value `{default_concurrency_limit}` for `pools > default_limit`, "
+                    f"Expected value between 0-{max_limit}.",
+                    [],
+                    None,
+                )
+    elif "default_op_concurrency_limit" in concurrency_config:
+        default_concurrency_limit = check.opt_inst(
+            pluck_config_value(concurrency_config, ["default_op_concurrency_limit"]), int
+        )
+        if default_concurrency_limit is not None:
+            max_limit = get_max_concurrency_limit_value()
+            if default_concurrency_limit < 0 or default_concurrency_limit > max_limit:
+                raise DagsterInvalidConfigError(
+                    f"Found value `{default_concurrency_limit}` for `default_op_concurrency_limit`, "
+                    f"Expected value between 0-{max_limit}.",
+                    [],
+                    None,
+                )
+
+    using_concurrency_config = "runs" in concurrency_config or "pools" in concurrency_config
+    if using_concurrency_config:
+        conflicting_run_queue_fields = [
+            ["max_concurrent_runs"],
+            ["tag_concurrency_limits"],
+            ["block_op_concurrency_limited_runs", "op_concurrency_slot_buffer"],
+        ]
+        if "run_queue" in dagster_config_dict:
+            for field in conflicting_run_queue_fields:
+                if pluck_config_value(dagster_config_dict, ["run_queue", *field]) is not None:
+                    raise DagsterInvalidConfigError(
+                        f"Found config value for `{field}` in `run_queue` which is incompatible with the `concurrency > runs` config",
+                        [],
+                        None,
+                    )
+
+        if "run_coordinator" in dagster_config_dict:
+            if (
+                pluck_config_value(dagster_config_dict, ["run_coordinator", "class"])
+                == "QueuedRunCoordinator"
+            ):
+                for field in conflicting_run_queue_fields:
+                    if (
+                        pluck_config_value(
+                            dagster_config_dict, ["run_coordinator", "config", *field]
+                        )
+                        is not None
+                    ):
+                        raise DagsterInvalidConfigError(
+                            f"Found config value for `{field}` in `run_coordinator` which is incompatible with the `concurrency > runs` config",
+                            [],
+                            None,
+                        )
+
+
+def pluck_config_value(config: Mapping[str, Any], path: Sequence[str]):
+    value = config
+    for part in path:
+        if not isinstance(value, dict):
+            return None
+
+        value = value.get(part)
+        if value is None:
+            return value
+
+    return value
+
+
+def verify_config_match(config: Mapping[str, Any], path_a: Sequence[str], path_b: Sequence[str]):
+    value_a = pluck_config_value(config, path_a)
+    value_b = pluck_config_value(config, path_b)
+    if value_a is None or value_b is None:
+        return
+
+    if value_a != value_b:
+        path_a_str = " > ".join(path_a)
+        path_b_str = " > ".join(path_b)
+        raise DagsterInvalidConfigError(
+            f"Found `{value_a}` for `{path_a_str}` that conflicts with `{value_b}` for `{path_b_str}`.",
+            [],
+            None,
+        )
 
 
 def storage_config_schema() -> Field:
@@ -345,6 +437,84 @@ def secrets_loader_config_schema() -> Field:
     )
 
 
+def get_concurrency_config() -> Field:
+    return Field(
+        {
+            "pools": Field(
+                {
+                    "default_limit": Field(
+                        int,
+                        is_required=False,
+                        description="The default maximum number of concurrent operations for an unconfigured pool",
+                    ),
+                    "granularity": Field(
+                        str,
+                        is_required=False,
+                        description="The granularity of the concurrency enforcement of the pool.  One of `run` or `op`.",
+                        default_value="run",
+                    ),
+                    "op_run_buffer": Field(
+                        int,
+                        is_required=False,
+                        description=(
+                            "When the pool scope is set to `op`, this determines the number of runs "
+                            "that can be launched with all of its steps blocked waiting for pool slots "
+                            "to be freed."
+                        ),
+                    ),
+                }
+            ),
+            "runs": Field(
+                {
+                    "max_concurrent_runs": Field(
+                        int,
+                        is_required=False,
+                        description=(
+                            "The maximum number of runs that are allowed to be in progress at once."
+                            " Defaults to 10. Set to -1 to disable the limit. Set to 0 to stop any runs"
+                            " from launching. Any other negative values are disallowed."
+                        ),
+                    ),
+                    "tag_concurrency_limits": Field(
+                        config=Noneable(
+                            Array(
+                                Shape(
+                                    {
+                                        "key": String,
+                                        "value": Field(
+                                            ScalarUnion(
+                                                scalar_type=String,
+                                                non_scalar_schema=Shape(
+                                                    {"applyLimitPerUniqueValue": Bool}
+                                                ),
+                                            ),
+                                            is_required=False,
+                                        ),
+                                        "limit": Field(int),
+                                    }
+                                )
+                            )
+                        ),
+                        is_required=False,
+                        description=(
+                            "A set of limits that are applied to runs with particular tags. If a value is"
+                            " set, the limit is applied to only that key-value pair. If no value is set,"
+                            " the limit is applied across all values of that key. If the value is set to a"
+                            " dict with `applyLimitPerUniqueValue: true`, the limit will apply to the"
+                            " number of unique values for that key."
+                        ),
+                    ),
+                }
+            ),
+            "default_op_concurrency_limit": Field(
+                int,
+                is_required=False,
+                description="[Deprecated] The default maximum number of concurrent operations for an unconfigured concurrency key",
+            ),
+        }
+    )
+
+
 def dagster_instance_config_schema() -> Mapping[str, Field]:
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
@@ -432,13 +602,5 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
                 ),
             }
         ),
-        "concurrency": Field(
-            {
-                "default_op_concurrency_limit": Field(
-                    int,
-                    is_required=False,
-                    description="The default maximum number of concurrent operations for an unconfigured concurrency key",
-                ),
-            }
-        ),
+        "concurrency": get_concurrency_config(),
     }
