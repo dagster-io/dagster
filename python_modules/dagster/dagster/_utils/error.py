@@ -12,6 +12,7 @@ from typing import Any, NamedTuple, Optional, Union
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.errors import DagsterUserCodeExecutionError
 from dagster._serdes import whitelist_for_serdes
 
 
@@ -154,17 +155,33 @@ def serializable_error_info_from_exc_info(
 
     err_id = error_id_by_exception.get().get(id(e))
     if err_id:
-        return SerializableErrorInfo(
-            message=(
-                f"Error occurred during user code execution, error ID {err_id}. "
-                "The error has been masked to prevent leaking sensitive information. "
-                "Search in logs for this error ID for more details."
-            ),
-            stack=[],
-            cls_name="DagsterRedactedUserCodeError",
-            cause=None,
-            context=None,
-        )
+        if isinstance(e, DagsterUserCodeExecutionError):
+            return SerializableErrorInfo(
+                message=(
+                    f"Error occurred during user code execution, error ID {err_id}. "
+                    "The error has been masked to prevent leaking sensitive information. "
+                    "Search in logs for this error ID for more details."
+                ),
+                stack=[],
+                cls_name="DagsterRedactedUserCodeError",
+                cause=None,
+                context=None,
+            )
+        else:
+            tb_exc = traceback.TracebackException(exc_type, e, tb)
+            error_info = _serializable_error_info_from_tb(tb_exc)
+            return SerializableErrorInfo(
+                message=error_info.message
+                + (
+                    "Error ID {err_id}. "
+                    "The error has been masked to prevent leaking sensitive information. "
+                    "Search in logs for this error ID for more details."
+                ),
+                stack=[],
+                cls_name=error_info.cls_name,
+                cause=None,
+                context=None,
+            )
 
     if (
         hoist_user_code_error
