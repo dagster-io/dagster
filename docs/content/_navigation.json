@@ -382,6 +382,10 @@
                   }
                 ]
               },
+	      {
+                "title": "Dagster Pipes + PySpark",
+                "path": "/concepts/dagster-pipes/pyspark"
+              },
               {
                 "title": "Dagster Pipes + AWS ECS",
                 "path": "/concepts/dagster-pipes/aws-ecs"
