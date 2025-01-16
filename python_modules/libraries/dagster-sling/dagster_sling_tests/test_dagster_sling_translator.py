@@ -104,8 +104,8 @@ def test_get_metadata(stream, expected):
     [
         ({"name": "foo"}, None),
         (
-            {"name": "foo", "config": {"meta": {"dagster": {"group": "foo.bar"}}}},
-            "foo.bar",
+            {"name": "foo", "config": {"meta": {"dagster": {"group": "foo_bar"}}}},
+            "foo_bar",
         ),
     ],
 )
