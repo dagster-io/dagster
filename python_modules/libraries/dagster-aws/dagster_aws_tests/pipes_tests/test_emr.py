@@ -14,19 +14,6 @@ if TYPE_CHECKING:
     from mypy_boto3_emr import EMRClient
 
 
-# @pytest.fixture
-# def emr_setup(
-#     moto_server, external_s3_glue_script, s3_client
-# ) -> tuple["EMRClient", str]:
-#     client: "EMRClient" = boto3.client("emr", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
-#     resp = client.create_application(
-#         type="SPARK",
-#         releaseLabel="emr-7.2.0-latest",
-#         clientToken=str(uuid4()),
-#     )
-#     return client, resp["applicationId"]
-
-
 @pytest.fixture
 def emr_client(moto_server) -> "EMRClient":
     return boto3.client("emr", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
