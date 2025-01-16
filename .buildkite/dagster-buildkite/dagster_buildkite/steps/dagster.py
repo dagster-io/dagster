@@ -112,6 +112,8 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
                     f'pip install -U "{UV_PIN}"',
+                    "uv venv",
+                    "source .venv/bin/activate",
                     "make install_pyright",
                     "make pyright",
                 )
@@ -122,6 +124,8 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
                     f'pip install -U "{UV_PIN}"',
+                    "uv venv",
+                    "source .venv/bin/activate",
                     "make install_pyright",
                     "make rebuild_pyright_pins",
                 )
