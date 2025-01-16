@@ -62,6 +62,10 @@ class LoadableTargetOrigin(
             )
         return ctx
 
+    @property
+    def as_dict(self) -> dict:
+        return {k: v for k, v in self._asdict().items() if v is not None}
+
 
 _current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = (
     ContextVar("_current_loadable_target_origin", default=None)
