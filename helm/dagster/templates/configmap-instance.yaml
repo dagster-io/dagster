@@ -67,6 +67,8 @@ data:
         {{- include "dagsterYaml.computeLogManager.gcs" . | indent 6 -}}
       {{- else if eq $computeLogManagerType "S3ComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.s3" . | indent 6 -}}
+      {{- else if eq $computeLogManagerType "LocalComputeLogManager" }}
+        {{- include "dagsterYaml.computeLogManager.local" . | indent 6 -}}
       {{- else if eq $computeLogManagerType "CustomComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.custom" . | indent 6 -}}
       {{- end }}
