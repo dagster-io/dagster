@@ -290,7 +290,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
 
     def _get_shell_cmd_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
         blob_key = self._blob_key(log_key, io_type)
-        return f"az storage blob download --account-name {self._storage_account} --container-name {self._container} --name {blob_key}"
+        return f"az storage blob download --auth-mode login --account-name {self._storage_account} --container-name {self._container} --name {blob_key}"
 
     @contextmanager
     def capture_logs(self, log_key: Sequence[str]) -> Iterator[CapturedLogContext]:
