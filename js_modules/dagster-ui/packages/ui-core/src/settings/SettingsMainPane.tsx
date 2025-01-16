@@ -17,7 +17,7 @@ export const SettingsMainPane = () => {
         <Route path="/deployment/daemons">
           <InstanceHealthPageContent />
         </Route>
-        <Route path="/deployment/concurrency">
+        <Route path="/deployment/concurrency(/?.*)">
           <InstanceConcurrencyPageContent />
         </Route>
         <Route path="/deployment/config">
