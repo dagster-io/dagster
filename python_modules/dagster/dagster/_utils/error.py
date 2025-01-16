@@ -173,7 +173,7 @@ def serializable_error_info_from_exc_info(
             return SerializableErrorInfo(
                 message=error_info.message
                 + (
-                    "Error ID {err_id}. "
+                    f"Error ID {err_id}. "
                     "The error has been masked to prevent leaking sensitive information. "
                     "Search in logs for this error ID for more details."
                 ),
