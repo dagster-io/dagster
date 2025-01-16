@@ -95,7 +95,7 @@ def test_masking_nested_user_code_err_reraise(enable_masking_user_code_errors):
         try:
             with user_code_error_boundary(
                 error_cls=DagsterUserCodeExecutionError,
-                msg_fn=lambda: "hunter2",
+                msg_fn=lambda: "test",
             ):
 
                 def hunter2():
