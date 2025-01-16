@@ -1534,6 +1534,11 @@ export type RunDagsterRunEventFragment_LogsCapturedEvent = {
   externalStderrUrl: string | null;
   eventType: Types.DagsterEventType | null;
   externalUrl: string | null;
+  shellCmd: {
+    __typename: 'LogRetrievalShellCommand';
+    stdout: string | null;
+    stderr: string | null;
+  } | null;
 };
 
 export type RunDagsterRunEventFragment_MaterializationEvent = {
