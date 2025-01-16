@@ -32,8 +32,10 @@ class ShellCommand(Component):
         # highlight-end
 
     @classmethod
-    def load(cls, load_context: ComponentLoadContext) -> "ShellCommand":
-        return cls(params=load_context.load_params(cls.get_schema()))
+    def load(
+        cls, params: ShellScriptSchema, load_context: ComponentLoadContext
+    ) -> "ShellCommand":
+        return cls(params=params)
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
         resolved_asset_attributes = self.params.asset_attributes.resolve_properties(
