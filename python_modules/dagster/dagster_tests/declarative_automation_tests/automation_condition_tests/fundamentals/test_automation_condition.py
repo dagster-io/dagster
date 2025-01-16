@@ -4,6 +4,7 @@ import operator
 import pytest
 from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
 from dagster._check.functions import CheckError
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators import (
@@ -198,6 +199,26 @@ def test_replace_automation_conditions() -> None:
     assert orig.replace("not_any_deps_in_progress", d) == a & b | d
     assert orig.replace("any_deps_in_progress", d) == a & b | (~d).with_label(
         "not_any_deps_in_progress"
+    )
+
+
+@pytest.mark.parametrize("method", ["allow", "ignore"])
+def test_filter_automation_condition(method: str) -> None:
+    a = AutomationCondition.in_latest_time_window()
+    b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+    c = ~AutomationCondition.any_deps_in_progress()
+
+    orig = a & b | c
+
+    # simple case
+    apply_filter = operator.methodcaller(method, AssetSelection.keys("A"))
+    assert apply_filter(orig) == a & apply_filter(b) | apply_filter(c)
+
+    # propagate to children
+    complex_condition = orig & orig | orig
+    assert apply_filter(complex_condition) == (
+        (a & apply_filter(b) | apply_filter(c)) & (a & apply_filter(b) | apply_filter(c))
+        | (a & apply_filter(b) | apply_filter(c))
     )
 
 
