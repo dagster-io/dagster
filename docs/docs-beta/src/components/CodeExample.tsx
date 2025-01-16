@@ -80,16 +80,8 @@ function useLoadModule(
 ) {
   const isServer = typeof window === 'undefined';
   if (isServer) {
-    /**
-     * Note: Remove the try/catch to cause a hard error on build once all of the bad code examples are cleaned up.
-     */
-    try {
-      const module = require(`!!raw-loader!/../../examples/${path}`);
-      processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
-    } catch (e) {
-      console.error(e);
-      contentCache[cacheKey] = {error: e.toString()};
-    }
+    const module = require(`!!raw-loader!/../../examples/${path}`);
+    processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
   }
 
   if (!contentCache[cacheKey]) {
