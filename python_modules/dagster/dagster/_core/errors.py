@@ -282,7 +282,6 @@ def user_code_error_boundary(
     check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
     from dagster._utils.error import log_and_redact_stacktrace_if_enabled
 
-    print("enter user")
     with log_and_redact_stacktrace_if_enabled(), raise_execution_interrupts():
         if log_manager:
             log_manager.begin_python_log_capture()
