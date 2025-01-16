@@ -1,5 +1,5 @@
 ---
-title: "Creating a New Component Type"
+title: 'Creating a New Component Type'
 sidebar_position: 100
 ---
 
@@ -50,7 +50,6 @@ This file contains the basic structure for the new component type. There are two
 - `load`: This method takes the loading context and returns an instance of the component class. This is where you'll load the parameters from the `component.yaml` file.
 - `build_defs`: This method should return a `Definitions` object for this component.
 
-
 ## Defining a schema
 
 The first step is to define a schema for the component. This means determining what aspects of the component should be customizable.
@@ -69,7 +68,6 @@ To simplify common use cases, `dagster-components` provides schemas for common b
 We can the schema for our component and add it to our class as follows:
 
 <CodeExample filePath="guides/components/shell-script-component/with-config-schema.py" language="python" />
-
 
 ## Building definitions
 
@@ -136,10 +134,10 @@ When a user instantiates a component, they will be able to use your custom scope
 component_type: my_component
 
 params:
-    script_path: script.sh
-    script_runner: "{{ get_script_runner('arg') }}"
+  script_path: script.sh
+  script_runner: "{{ get_script_runner('arg') }}"
 ```
 
 ## Next steps
 
-- [Add a new component to your project](#TODO)
+- Add a new component to your project
