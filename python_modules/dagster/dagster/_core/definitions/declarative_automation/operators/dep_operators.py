@@ -107,6 +107,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     def requires_cursor(self) -> bool:
         return False
 
+    @public
     def allow(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
         AssetSelection.
@@ -119,6 +120,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
         return copy(self, allow_selection=allow_selection)
 
+    @public
     def ignore(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will ignore dependencies within the provided
         AssetSelection.
