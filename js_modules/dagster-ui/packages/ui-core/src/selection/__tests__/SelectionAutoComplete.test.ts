@@ -1,9 +1,9 @@
-import {Hint, Hints, Position} from 'codemirror';
+import {Hint, Hints} from 'codemirror';
 
-import {createSelectionHint} from '../SelectionAutoComplete';
+import {generateAutocompleteResults} from '../SelectionAutoComplete';
 
 describe('createAssetSelectionHint', () => {
-  const selectionHint = createSelectionHint({
+  const selectionHint = generateAutocompleteResults({
     nameBase: 'key',
     attributesMap: {
       key: ['asset1', 'asset2', 'asset3'],
@@ -24,27 +24,14 @@ describe('createAssetSelectionHint', () => {
     const cursorIndex = testString.indexOf('|');
     const string = testString.split('|').join('');
 
-    mockEditor.getCursor.mockReturnValue({ch: cursorIndex});
-    mockEditor.getLine.mockReturnValue(string);
-
-    const hints = selectionHint(mockEditor, {}) as HintsModified;
+    const hints = selectionHint(string, cursorIndex) as HintsModified;
 
     return {
       list: hints.list,
-      from: hints.from.ch,
-      to: hints.to.ch,
+      from: hints.from,
+      to: hints.to,
     };
   }
-
-  const mockEditor = {
-    getCursor: jest.fn(),
-    getLine: jest.fn(),
-    posFromIndex: (index: number) =>
-      ({
-        ch: index,
-        line: 0,
-      }) as Position,
-  } as any;
 
   beforeEach(() => {
     jest.clearAllMocks();
