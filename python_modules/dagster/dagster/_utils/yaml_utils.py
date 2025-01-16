@@ -216,7 +216,10 @@ def parse_yaml_with_source_positions(
                     Mapping[ValueAndSourcePositionTree, ValueAndSourcePositionTree], value
                 ).items():
                     dict_with_raw_values[k.value] = v.value
-                    child_trees[k.value] = v.source_position_tree
+                    child_trees[k.value] = SourcePositionTree(
+                        position=k.source_position_tree.position,
+                        children=v.source_position_tree.children,
+                    )
                 return ValueAndSourcePositionTree(
                     dict_with_raw_values,
                     SourcePositionTree(position=source_position, children=child_trees),
