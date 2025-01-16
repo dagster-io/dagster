@@ -30,7 +30,7 @@ def test_component_type_scaffold_success(in_deployment: bool) -> None:
         result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
-        dg_context = DgContext.default()
+        dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         assert registry.has("foo_bar.baz")
 
@@ -69,7 +69,7 @@ def test_component_type_scaffold_succeeds_non_default_component_lib_package() ->
         )
         assert_runner_result(result)
         assert Path("foo_bar/_lib/baz.py").exists()
-        dg_context = DgContext.default()
+        dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         assert registry.has("bar.baz")
 
@@ -331,5 +331,5 @@ def test_list_component_types_success_with_unmanaged_environment():
 
 def test_component_type_list_success_outside_code_location():
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("component-type", "list", "--no-use-dg-managed-environment")
+        result = runner.invoke("component-type", "list")
         assert_runner_result(result)

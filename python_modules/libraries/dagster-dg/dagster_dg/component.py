@@ -27,7 +27,7 @@ class RemoteComponentType:
 class RemoteComponentRegistry:
     @classmethod
     def from_dg_context(cls, dg_context: "DgContext") -> "RemoteComponentRegistry":
-        if dg_context.config.use_dg_managed_environment:
+        if dg_context.use_dg_managed_environment:
             dg_context.ensure_uv_lock()
 
         if dg_context.has_cache:
