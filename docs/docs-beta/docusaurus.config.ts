@@ -28,7 +28,7 @@ const config: Config = {
         redirects: [
           {
             to: '/guides/deploy/',
-            from: 'deployment',
+            from: '/deployment',
           },
           {
             to: '/guides/deploy/oss-deployment-architecture',
