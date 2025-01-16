@@ -42,12 +42,15 @@ def op_execution_error_boundary(
     as respecting the RetryPolicy if present.
     """
     from dagster._core.execution.context.system import StepExecutionContext
+    from dagster._utils.error import log_and_redact_stacktrace_if_enabled
+
+    print("enter op")
 
     check.callable_param(msg_fn, "msg_fn")
     check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
-    with raise_execution_interrupts():
+    with log_and_redact_stacktrace_if_enabled(), raise_execution_interrupts():
         step_context.log.begin_python_log_capture()
         retry_policy = step_context.op_retry_policy
 
