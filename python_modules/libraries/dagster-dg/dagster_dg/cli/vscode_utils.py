@@ -58,7 +58,8 @@ def install_or_update_yaml_schema_extension(yaml_dir: Path, schema_path: Path) -
 
     extension_working_dir.mkdir(parents=True, exist_ok=True)
 
-    # Read existing yamlValidation settings from package.json
+    # Merge with existing yamlValidation entries, so we can provide schema completions for many
+    # code locations.
     if extension_package_json_path.exists():
         existing_package_json = json.loads(extension_package_json_path.read_text())
         existing_yaml_validation = existing_package_json["contributes"].get("yamlValidation")
@@ -72,6 +73,8 @@ def install_or_update_yaml_schema_extension(yaml_dir: Path, schema_path: Path) -
     extension_package_json_path.write_text(json.dumps(template_package_json, indent=2))
     click.echo(f"Set up package.json for VS Code extension in {extension_package_json_path}")
 
+    # Local VS Code extensions must be packaged into a vsix file, which under the hood is just a zip file
+    # with a special extension.
     extension_zip_path = extension_working_dir / "dagster-components-schema.vsix"
     with zipfile.ZipFile(extension_zip_path, "w") as z:
         z.write(extension_package_json_path, "extension/package.json")
