@@ -32,6 +32,7 @@ def load_test_component_project_context() -> CodeLocationProjectContext:
     return CodeLocationProjectContext(
         root_path=str(Path(__file__).parent),
         name="test",
+        root_package=Path(__file__).parent.name.replace("-", "_"),
         component_registry=ComponentTypeRegistry(components),
         components_path=Path(__file__).parent / "components",
         components_package_name="dagster_components_tests.integration_tests.components",
