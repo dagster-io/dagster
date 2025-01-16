@@ -79,10 +79,12 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         fixed_iteration_time: Optional[float] = None,  # used for tests
     ) -> DaemonIterator:
         run_coordinator = workspace_process_context.instance.run_coordinator
+        run_queue_config = workspace_process_context.instance.get_run_queue_config()
         if not isinstance(run_coordinator, QueuedRunCoordinator):
             check.failed(f"Expected QueuedRunCoordinator, got {run_coordinator}")
 
-        run_queue_config = run_coordinator.get_run_queue_config()
+        if not run_queue_config:
+            check.failed("Got invalid run queue config")
 
         instance = workspace_process_context.instance
         runs_to_dequeue = self._get_runs_to_dequeue(

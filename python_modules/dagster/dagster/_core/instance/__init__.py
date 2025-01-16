@@ -143,6 +143,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.remote_representation.external import RemoteSchedule
     from dagster._core.run_coordinator import RunCoordinator
+    from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
         InstigatorState,
@@ -782,7 +783,13 @@ class DagsterInstance(DynamicPartitionsStore):
             self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
-    # run launcher
+    def get_run_queue_config(self) -> Optional["RunQueueConfig"]:
+        from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+
+        if not isinstance(self.run_coordinator, QueuedRunCoordinator):
+            return None
+
+        return self.run_coordinator.get_run_queue_config()
 
     @property
     def run_launcher(self) -> "RunLauncher":
