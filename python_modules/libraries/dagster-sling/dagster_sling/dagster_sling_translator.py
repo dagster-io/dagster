@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 
 
 @dataclass
@@ -86,6 +86,10 @@ class DagsterSlingTranslator:
         """
         return re.sub(r"[^a-zA-Z0-9_.]", "_", stream_name.replace('"', "").lower())
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).key` instead.",
+    )
     @public
     def get_asset_key(self, stream_definition: Mapping[str, Any]) -> AssetKey:
         """A function that takes a stream definition from a Sling replication config and returns a
@@ -189,6 +193,12 @@ class DagsterSlingTranslator:
         sanitized_components = self.sanitize_stream_name(stream_name).split(".")
         return AssetKey([self.target_prefix] + sanitized_components)
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text=(
+            "Iterate over `DagsterSlingTranslator.get_asset_spec(...).deps` to access `AssetDep.asset_key` instead."
+        ),
+    )
     @public
     def get_deps_asset_key(self, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
         """A function that takes a stream name from a Sling replication config and returns a
@@ -271,6 +281,10 @@ class DagsterSlingTranslator:
         components = self.sanitize_stream_name(stream_name).split(".")
         return [AssetKey(components)]
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).description` instead.",
+    )
     @public
     def get_description(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         """Retrieves the description for a given stream definition.
@@ -309,6 +323,10 @@ class DagsterSlingTranslator:
         description = meta.get("dagster", {}).get("description")
         return description
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).metadata` instead.",
+    )
     @public
     def get_metadata(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
         """Retrieves the metadata for a given stream definition.
@@ -340,6 +358,10 @@ class DagsterSlingTranslator:
         """
         return {"stream_config": MetadataValue.json(stream_definition.get("config", {}))}
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).tags` instead.",
+    )
     @public
     def get_tags(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
         """Retrieves the tags for a given stream definition.
@@ -371,6 +393,10 @@ class DagsterSlingTranslator:
         """
         return {}
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).kinds` instead.",
+    )
     @public
     def get_kinds(self, stream_definition: Mapping[str, Any]) -> set[str]:
         """Retrieves the kinds for a given stream definition.
@@ -400,6 +426,10 @@ class DagsterSlingTranslator:
         """
         return {"sling"}
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).group_name` instead.",
+    )
     @public
     def get_group_name(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         """Retrieves the group name for a given stream definition.
@@ -433,6 +463,10 @@ class DagsterSlingTranslator:
         meta = config.get("meta", {})
         return meta.get("dagster", {}).get("group")
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).freshness_policy` instead.",
+    )
     @public
     def get_freshness_policy(
         self, stream_definition: Mapping[str, Any]
@@ -482,6 +516,10 @@ class DagsterSlingTranslator:
                 cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
             )
 
+    @deprecated(
+        breaking_version="1.11",
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).auto_materialize_policy` instead.",
+    )
     @public
     def get_auto_materialize_policy(
         self, stream_definition: Mapping[str, Any]
