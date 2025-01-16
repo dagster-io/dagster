@@ -2,7 +2,7 @@ import re
 import sys
 import time
 import traceback
-from typing import Any
+from typing import Any, Callable
 
 import pytest
 from dagster import Config, RunConfig, config_mapping, job, op
@@ -36,10 +36,24 @@ def enable_masking_user_code_errors() -> Any:
         yield
 
 
-def test_masking_op_execution(enable_masking_user_code_errors) -> Any:
+class hunter2:
+    pass
+
+
+@pytest.mark.parametrize(
+    "build_exc",
+    [lambda: UserError(), lambda: KeyboardInterrupt("hunter2"), lambda: hunter2() - 5],  # type:ignore
+    ids=["UserError", "KeyboardInterrupt", "TypeError"],
+)
+def test_masking_op_execution(
+    enable_masking_user_code_errors, build_exc: Callable[[], BaseException]
+) -> Any:
     @op
     def throws_user_error(_):
-        raise UserError()
+        def hunter2():
+            raise build_exc()
+
+        hunter2()
 
     @job
     def job_def():
@@ -47,7 +61,12 @@ def test_masking_op_execution(enable_masking_user_code_errors) -> Any:
 
     result = job_def.execute_in_process(raise_on_error=False)
     assert not result.success
-    assert not any("hunter2" in str(event) for event in result.all_events)
+
+    # Ensure error message and contents of user code don't leak (e.g. hunter2 text or function name)
+    assert not any("hunter2" in str(event).lower() for event in result.all_events), [
+        str(event) for event in result.all_events if "hunter2" in str(event)
+    ]
+
     step_error = next(event for event in result.all_events if event.is_step_failure)
     assert (
         step_error.step_failure_data.error

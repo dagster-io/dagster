@@ -44,8 +44,6 @@ def op_execution_error_boundary(
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._utils.error import log_and_redact_stacktrace_if_enabled
 
-    print("enter op")
-
     check.callable_param(msg_fn, "msg_fn")
     check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
     check.inst_param(step_context, "step_context", StepExecutionContext)

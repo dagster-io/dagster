@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
 from types import TracebackType
 from typing import Any, NamedTuple, Optional, Union
@@ -96,8 +96,8 @@ _REDACTED_ERROR_LOGGER_NAME = os.getenv(
     "DAGSTER_REDACTED_ERROR_LOGGER_NAME", "dagster.redacted_errors"
 )
 
-last_user_code_error_id: ContextVar[Optional[str]] = ContextVar(
-    "last_user_code_error_id", default=None
+error_id_by_exception: ContextVar[Mapping[int, str]] = ContextVar(
+    "error_id_by_exception", default={}
 )
 
 
@@ -110,14 +110,20 @@ def log_and_redact_stacktrace_if_enabled():
             yield
         except BaseException as e:
             exc_info = sys.exc_info()
-            error_id = last_user_code_error_id.get() or str(uuid.uuid4())
-            masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
 
-            last_user_code_error_id.set(error_id)
-            masked_logger.error(
-                f"Error occurred during user code execution, error ID {error_id}",
-                exc_info=exc_info,
-            )
+            # Generate a unique error ID for this error, or re-use an existing one
+            # if this error has already been seen
+            existing_error_id = error_id_by_exception.get().get(id(e))
+
+            if not existing_error_id:
+                error_id = str(uuid.uuid4())
+                error_id_by_exception.set({**error_id_by_exception.get(), id(e): error_id})
+                masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
+
+                masked_logger.error(
+                    f"Error occurred during user code execution, error ID {error_id}",
+                    exc_info=exc_info,
+                )
 
             raise e.with_traceback(None) from None
 
@@ -146,9 +152,8 @@ def serializable_error_info_from_exc_info(
 
     from dagster._core.errors import DagsterUserCodeProcessError
 
-    err_id = last_user_code_error_id.get()
+    err_id = error_id_by_exception.get().get(id(e))
     if err_id:
-        last_user_code_error_id.set(None)
         return SerializableErrorInfo(
             message=(
                 f"Error occurred during user code execution, error ID {err_id}. "
