@@ -1660,6 +1660,7 @@ enum InstigationStatus {
 type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
+  assetChecks: [AssetCheckhandle!]!
   assets: [Asset!]!
   assetsOrError: AssetsOrError!
 }
