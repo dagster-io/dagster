@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from dagster._record import record
+from dagster._record import IHaveNew, record, record_custom
 
 
 def get_max_concurrency_limit_value() -> int:
@@ -68,12 +68,30 @@ class ClaimedSlotInfo:
     step_key: str
 
 
-@record
-class ConcurrencyKeyInfo:
+@record_custom
+class ConcurrencyKeyInfo(IHaveNew):
     concurrency_key: str
     slot_count: int
     claimed_slots: list[ClaimedSlotInfo]
     pending_steps: list[PendingStepInfo]
+    configured_limit: Optional[int]
+
+    def __new__(
+        cls,
+        concurrency_key: str,
+        slot_count: int,
+        claimed_slots: list[ClaimedSlotInfo],
+        pending_steps: list[PendingStepInfo],
+        configured_limit: Optional[int] = None,
+    ):
+        return super().__new__(
+            cls,
+            concurrency_key=concurrency_key,
+            slot_count=slot_count,
+            claimed_slots=claimed_slots,
+            pending_steps=pending_steps,
+            configured_limit=configured_limit,
+        )
 
     ###################################################
     # Fields that we need to keep around for backcompat
