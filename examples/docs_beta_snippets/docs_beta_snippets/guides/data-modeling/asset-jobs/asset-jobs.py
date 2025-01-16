@@ -17,9 +17,9 @@ def sugary_cereals() -> None:
 def shopping_list() -> None:
     execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
 
+
 # start_marker
 import dagster as dg
-
 
 all_assets_job = dg.define_asset_job(name="all_assets_job")
 sugary_cereals_job = dg.define_asset_job(
