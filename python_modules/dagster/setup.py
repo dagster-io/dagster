@@ -112,6 +112,8 @@ setup(
         "filelock",
         f"dagster-pipes{pin}",
         "antlr4-python3-runtime",
+        "msgpack",
+        "cbor2",
     ],
     extras_require={
         "docker": ["docker"],

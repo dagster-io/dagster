@@ -10,9 +10,17 @@ import dagster._check as check
 import pydantic
 import pytest
 from dagster._check.functions import CheckError
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._model import DagsterModel
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster._serdes.msgpack import (
+    deserialize_value_with_cbor,
+    deserialize_value_with_msgpack,
+    serialize_value_with_cbor,
+    serialize_value_with_msgpack,
+)
 from dagster._serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
@@ -104,7 +112,7 @@ def test_forward_compat_serdes_new_field_with_default() -> None:
         return Quux("zip", "zow")
 
     orig = get_orig_obj()
-    serialized = serialize_value(orig, whitelist_map=test_map)
+    serialized = serialize_value_with_msgpack(orig, whitelist_map=test_map)
 
     test_map = WhitelistMap.create()
 
@@ -117,7 +125,7 @@ def test_forward_compat_serdes_new_field_with_default() -> None:
     serializer_v2 = test_map.object_serializers["Quux"]
     assert serializer_v2.klass is Quux
 
-    deserialized = deserialize_value(serialized, as_type=Quux, whitelist_map=test_map)
+    deserialized = deserialize_value_with_msgpack(serialized, as_type=Quux, whitelist_map=test_map)
 
     assert deserialized != orig
     assert deserialized.foo == orig.foo
@@ -450,6 +458,47 @@ def test_named_tuple() -> None:
     assert serialized.startswith(get_prefix_for_a_serialized(Foo, whitelist_map=test_map))
     deserialized = deserialize_value(serialized, whitelist_map=test_map)
     assert deserialized == val
+
+
+def test_deserialize_empty_set_msgpack():
+    assert set() == deserialize_value_with_msgpack(serialize_value_with_msgpack(set()))
+    assert frozenset() == deserialize_value_with_msgpack(serialize_value_with_msgpack(frozenset()))
+
+
+def test_named_tuple_msgpack() -> None:
+    test_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=test_map)
+    class Foo(NamedTuple):
+        color: str
+
+    val = Foo("red")
+    serialized = serialize_value_with_msgpack(val, whitelist_map=test_map)
+    assert val == deserialize_value_with_msgpack(serialized, whitelist_map=test_map)
+
+
+def test_event_log_msgpack() -> None:
+    materialization = AssetMaterialization(AssetKey("a"))
+    serialized = serialize_value_with_msgpack(materialization)
+    assert materialization == deserialize_value_with_msgpack(serialized)
+
+
+def test_large_int_msgpack() -> None:
+    val = 2**64
+    serialized = serialize_value_with_msgpack(val)
+    assert val == deserialize_value_with_msgpack(serialized)
+
+
+def test_event_log_cbor() -> None:
+    materialization = AssetMaterialization(AssetKey("a"))
+    serialized = serialize_value_with_cbor(materialization)
+    assert materialization == deserialize_value_with_cbor(serialized)
+
+
+def test_large_int_cbor() -> None:
+    val = 2**64
+    serialized = serialize_value_with_cbor(val)
+    assert val == deserialize_value_with_cbor(serialized)
 
 
 # Ensures it is possible to simultaneously have a class Foo and a separate class that serializes to

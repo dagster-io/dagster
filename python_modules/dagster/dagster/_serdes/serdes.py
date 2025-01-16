@@ -816,6 +816,10 @@ class SetToSequenceFieldSerializer(FieldSerializer):
 def serialize_value(
     val: PackableValue,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    json_dumps: Callable = seven.json.dumps,
+    object_handler: Optional[
+        Callable[[SerializableObject, WhitelistMap, str], JsonSerializableValue]
+    ] = None,
     **json_kwargs: Any,
 ) -> str:
     """Serialize an object to a JSON string.
@@ -825,10 +829,10 @@ def serialize_value(
     serializable_value = _transform_for_serialization(
         val,
         whitelist_map=whitelist_map,
-        object_handler=_wrap_object,
+        object_handler=object_handler or _wrap_object,
         descent_path=_root(val),
     )
-    return seven.json.dumps(serializable_value, **json_kwargs)
+    return json_dumps(serializable_value, **json_kwargs)
 
 
 @overload
@@ -1091,6 +1095,7 @@ def deserialize_value(
     val: str,
     as_type: tuple[type[T_PackableValue], type[U_PackableValue]],
     whitelist_map: WhitelistMap = ...,
+    json_loads: Callable = seven.json.loads,
 ) -> Union[T_PackableValue, U_PackableValue]: ...
 
 
@@ -1099,6 +1104,7 @@ def deserialize_value(
     val: str,
     as_type: type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
+    json_loads: Callable = seven.json.loads,
 ) -> T_PackableValue: ...
 
 
@@ -1107,6 +1113,7 @@ def deserialize_value(
     val: str,
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
+    json_loads: Callable = seven.json.loads,
 ) -> PackableValue: ...
 
 
@@ -1116,6 +1123,7 @@ def deserialize_value(
         Union[type[T_PackableValue], tuple[type[T_PackableValue], type[U_PackableValue]]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    json_loads: Callable = seven.json.loads,
 ) -> Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]:
     """Deserialize a json encoded string to a Python object.
 
@@ -1124,9 +1132,7 @@ def deserialize_value(
     - Parse the input string as JSON with an object_hook for custom types.
     - Optionally, check that the resulting object is of the expected type.
     """
-    check.str_param(val, "val")
-
-    return deserialize_values([val], as_type, whitelist_map)[0]
+    return deserialize_values([val], as_type, whitelist_map, json_loads)[0]
 
 
 @overload
@@ -1134,6 +1140,7 @@ def deserialize_values(
     vals: Iterable[str],
     as_type: type[T_PackableValue],
     whitelist_map: WhitelistMap = ...,
+    json_loads: Callable = seven.json.loads,
 ) -> Sequence[T_PackableValue]: ...
 
 
@@ -1142,6 +1149,7 @@ def deserialize_values(
     vals: Iterable[str],
     as_type: None = ...,
     whitelist_map: WhitelistMap = ...,
+    json_loads: Callable = seven.json.loads,
 ) -> Sequence[PackableValue]: ...
 
 
@@ -1152,6 +1160,7 @@ def deserialize_values(
         Union[type[T_PackableValue], tuple[type[T_PackableValue], type[U_PackableValue]]]
     ],
     whitelist_map: WhitelistMap = ...,
+    json_loads: Callable = seven.json.loads,
 ) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]: ...
 
 
@@ -1161,6 +1170,7 @@ def deserialize_values(
         Union[type[T_PackableValue], tuple[type[T_PackableValue], type[U_PackableValue]]]
     ] = None,
     whitelist_map: WhitelistMap = _WHITELIST_MAP,
+    json_loads: Callable = seven.json.loads,
 ) -> Sequence[Union[PackableValue, T_PackableValue, Union[T_PackableValue, U_PackableValue]]]:
     """Deserialize a collection of values without having to repeatedly exit/enter the deserializing context."""
     with (
@@ -1170,7 +1180,7 @@ def deserialize_values(
         unpacked_values = []
         for val in vals:
             context = UnpackContext()
-            unpacked_value = seven.json.loads(
+            unpacked_value = json_loads(
                 val,
                 object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context),
             )
