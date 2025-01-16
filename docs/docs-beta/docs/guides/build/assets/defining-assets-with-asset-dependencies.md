@@ -11,15 +11,15 @@ You can define a dependency between two assets by passing the upstream asset to 
 
 In this example, the asset `sugary_cereals` creates a new table (`sugary_cereals`) by selecting records from the `cereals` table. Then the asset `shopping_list` creates a new table (`shopping_list`) by selecting records from `sugary_cereals`:
 
-<CodeExample filePath="" language="python" lineStart="" lineEnd=""/>
+<CodeExample filePath="guides/data-modeling/asset-dependencies/asset-dependencies.py" language="python" lineStart="6" lineEnd="20"/>
 
 ## Defining asset dependencies across code locations
 
 Assets can depend on assets in different [code locations](/guides/deploy/code-locations/). In the following example, the `code_location_1_asset` asset produces a JSON string from a file in `code_location_1`:
 
-<CodeExample filePath="" language="python" lineStart="" lineEnd=""/>
+<CodeExample filePath="guides/data-modeling/asset-dependencies/asset-dependencies.py" language="python" lineStart="21" lineEnd="34"/>
 
 In `code_location_2`, we can reference `code_location_1_asset` it via its asset key:
 
-<CodeExample filePath="" language="python" lineStart="" lineEnd=""/>
+<CodeExample filePath="guides/data-modeling/asset-dependencies/asset-dependencies.py" language="python" lineStart="34" lineEnd="46"/>
 
