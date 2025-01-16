@@ -27,6 +27,9 @@ class AssetCheckEvaluationPlanned(
             check_name=check.str_param(check_name, "check_name"),
         )
 
+    def redact_errors(self) -> "AssetCheckEvaluationPlanned":
+        return self
+
     @property
     def asset_check_key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.check_name)
@@ -121,6 +124,9 @@ class AssetCheckEvaluation(
             severity=check.inst_param(severity, "severity", AssetCheckSeverity),
             description=check.opt_str_param(description, "description"),
         )
+
+    def redact_errors(self) -> "AssetCheckEvaluation":
+        return self
 
     @property
     def asset_check_key(self) -> AssetCheckKey:

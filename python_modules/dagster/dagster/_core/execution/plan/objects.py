@@ -103,6 +103,9 @@ class StepFailureData(
             ),
         )
 
+    def redact_errors(self) -> "StepFailureData":
+        return self._replace(error=redact_error_info(self.error) if self.error else None)
+
     @property
     def error_display_string(self) -> str:
         """Creates a display string that hides framework frames if the error arose in user code."""
@@ -159,8 +162,14 @@ class StepRetryData(
             seconds_to_wait=check.opt_numeric_param(seconds_to_wait, "seconds_to_wait"),
         )
 
+    def redact_errors(self) -> "StepRetryData":
+        return self._replace(error=redact_error_info(self.error) if self.error else None)
+
 
 @whitelist_for_serdes
 class StepSuccessData(NamedTuple("_StepSuccessData", [("duration_ms", float)])):
     def __new__(cls, duration_ms):
         return super().__new__(cls, duration_ms=check.float_param(duration_ms, "duration_ms"))
+
+    def redact_errors(self) -> "StepSuccessData":
+        return self

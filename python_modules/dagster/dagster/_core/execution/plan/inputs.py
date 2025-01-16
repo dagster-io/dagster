@@ -42,6 +42,9 @@ class StepInputData:
     input_name: str
     type_check_data: TypeCheckData
 
+    def redact_errors(self):
+        return self
+
 
 @record
 class StepInput:

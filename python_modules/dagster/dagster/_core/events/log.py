@@ -178,6 +178,14 @@ class EventLogEntry(
         return None
 
 
+def _process_event_for_logging(event: Optional[DagsterEvent]):
+    if not event:
+        return None
+
+    if event.event_specific_data:
+        event = event._replace(event_specific_data=event.event_specific_data.redact_errors())
+
+
 def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogEntry:
     check.inst_param(logger_message, "logger_message", StructuredLoggerMessage)
 
