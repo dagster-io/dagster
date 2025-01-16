@@ -7,6 +7,7 @@ from typing import AbstractSet, Optional  # noqa: UP035
 
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import pushd
+
 from dagster_components.core.component import (
     Component,
     ComponentDeclNode,

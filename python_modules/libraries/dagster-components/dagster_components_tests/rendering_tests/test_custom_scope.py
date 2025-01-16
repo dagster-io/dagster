@@ -2,8 +2,7 @@ from pathlib import Path
 
 from dagster import AssetSpec, AutomationCondition
 from dagster_components.core.component_defs_builder import build_defs_from_component_path
-
-from dagster_components_tests.utils import registry
+from dagster_components.utils.test import registry
 
 
 def test_custom_scope() -> None:

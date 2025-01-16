@@ -11,8 +11,7 @@ from dagster_components.core.component_defs_builder import (
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection,
 )
-
-from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
+from dagster_components.utils.test import assert_assets, get_asset_keys, script_load_context
 
 LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
 

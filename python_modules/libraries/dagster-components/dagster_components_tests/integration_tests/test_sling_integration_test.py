@@ -21,9 +21,8 @@ from dagster_components.core.component_defs_builder import (
 from dagster_components.lib.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
+from dagster_components.utils.test import assert_assets, get_asset_keys, script_load_context
 from dagster_sling import SlingResource
-
-from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "sling_location"
 COMPONENT_RELPATH = "components/ingest"

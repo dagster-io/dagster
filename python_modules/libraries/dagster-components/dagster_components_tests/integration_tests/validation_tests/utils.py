@@ -5,12 +5,12 @@ from collections.abc import Iterator
 from pathlib import Path
 
 from dagster._core.definitions.definitions_class import Definitions
+from dagster_components.utils.test import generate_component_lib_pyproject_toml
 
 from dagster_components_tests.integration_tests.component_loader import (
     build_defs_from_component_path,
     load_test_component_project_context,
 )
-from dagster_components_tests.utils import generate_component_lib_pyproject_toml
 
 
 def _setup_component_in_folder(

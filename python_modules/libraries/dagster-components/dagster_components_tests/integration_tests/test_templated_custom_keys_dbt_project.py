@@ -15,9 +15,8 @@ from dagster_components.core.component_defs_builder import (
     defs_from_components,
 )
 from dagster_components.lib.dbt_project.component import DbtProjectComponent
+from dagster_components.utils.test import assert_assets, get_asset_keys, script_load_context
 from dagster_dbt import DbtProject
-
-from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions

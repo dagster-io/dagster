@@ -7,7 +7,7 @@ from dagster_components.utils import ensure_dagster_components_tests_import
 
 ensure_dagster_components_tests_import()
 
-from dagster_components_tests.utils import temp_code_location_bar
+from dagster_components.utils.test import temp_code_location_bar
 
 
 # Test that the global --use-test-component-lib flag changes the registered components
