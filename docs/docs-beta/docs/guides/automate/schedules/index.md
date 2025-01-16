@@ -33,6 +33,8 @@ daily_schedule = ScheduleDefinition(
 )
 ```
 
+For more information, see "[Customizing a schedule's execution timezone](customizing-execution-timezone)".
+
 ## Create schedules from partitions
 
 If using partitions and jobs, you can create a schedule using the partition with `build_schedule_from_partitioned_job`. The schedule will execute at the same cadence specified by the partition definition.
