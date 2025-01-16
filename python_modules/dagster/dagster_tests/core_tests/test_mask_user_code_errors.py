@@ -7,7 +7,11 @@ from typing import Any, Callable
 import pytest
 from dagster import Config, RunConfig, config_mapping, job, op
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.errors import (
+    DagsterUserCodeExecutionError,
+    DagsterUserCodeProcessError,
+    user_code_error_boundary,
+)
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.error import (
     _serializable_error_info_from_tb,
@@ -30,14 +34,109 @@ class UserError(Exception):
         )
 
 
+class hunter2:
+    pass
+
+
 @pytest.fixture(scope="function")
 def enable_masking_user_code_errors() -> Any:
     with environ({"DAGSTER_REDACT_USER_CODE_ERRORS": "1"}):
         yield
 
 
-class hunter2:
-    pass
+def test_masking_basic(enable_masking_user_code_errors):
+    try:
+        with user_code_error_boundary(
+            error_cls=DagsterUserCodeExecutionError,
+            msg_fn=lambda: "hunter2",
+        ):
+
+            def hunter2():
+                raise UserError()
+
+            hunter2()
+    except Exception:
+        exc_info = sys.exc_info()
+        err_info = serializable_error_info_from_exc_info(exc_info)
+
+    assert "hunter2" not in str(err_info)
+
+
+def test_masking_nested_user_code_err_boundaries(enable_masking_user_code_errors):
+    try:
+        with user_code_error_boundary(
+            error_cls=DagsterUserCodeExecutionError,
+            msg_fn=lambda: "hunter2 as well",
+        ):
+            with user_code_error_boundary(
+                error_cls=DagsterUserCodeExecutionError,
+                msg_fn=lambda: "hunter2",
+            ):
+
+                def hunter2():
+                    raise UserError()
+
+                hunter2()
+    except Exception:
+        exc_info = sys.exc_info()
+        err_info = serializable_error_info_from_exc_info(exc_info)
+
+    assert "hunter2" not in str(err_info)
+
+
+def test_masking_nested_user_code_err_reraise(enable_masking_user_code_errors):
+    class MyException(Exception):
+        inner: Exception
+
+        def __init__(self, inner: Exception):
+            self.inner = inner
+
+    try:
+        try:
+            with user_code_error_boundary(
+                error_cls=DagsterUserCodeExecutionError,
+                msg_fn=lambda: "hunter2",
+            ):
+
+                def hunter2():
+                    raise UserError()
+
+                hunter2()
+        except Exception as e:
+            raise MyException(e) from e
+
+    except Exception:
+        exc_info = sys.exc_info()
+        err_info = serializable_error_info_from_exc_info(exc_info)
+
+    assert "hunter2" not in str(err_info)
+
+
+def test_masking_nested_user_code_err_boundaries_reraise(enable_masking_user_code_errors):
+    try:
+        try:
+            with user_code_error_boundary(
+                error_cls=DagsterUserCodeExecutionError,
+                msg_fn=lambda: "hunter2",
+            ):
+
+                def hunter2():
+                    raise UserError()
+
+                hunter2()
+        except Exception as e:
+            with user_code_error_boundary(
+                error_cls=DagsterUserCodeExecutionError,
+                msg_fn=lambda: "teardown after we raised hunter2 error",
+            ):
+                # do teardown stuff
+                raise e
+
+    except Exception:
+        exc_info = sys.exc_info()
+        err_info = serializable_error_info_from_exc_info(exc_info)
+
+    assert "hunter2" not in str(err_info)
 
 
 @pytest.mark.parametrize(
