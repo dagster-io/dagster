@@ -64,7 +64,7 @@ def get_metadata_schema(
     return TableSchema(
         columns=[
             TableColumn(name=col, type=str(pl_type), description=descriptions.get(col))
-            for col, pl_type in df.schema.items()
+            for col, pl_type in df.collect_schema().items()
         ]
     )
 
