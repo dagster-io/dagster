@@ -26,7 +26,6 @@ export const SelectionAutoCompleteResults = ({
   setSelectedIndex,
   scrollOnNavigate,
 }: SelectionAutoCompleteResultsProps) => {
-  // Refs to avoid unnecessary re-binding of event handlers
   if (!results) {
     return null;
   }
