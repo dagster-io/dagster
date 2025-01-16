@@ -26,9 +26,6 @@ def automation_condition_scope() -> Mapping[str, Any]:
     }
 
 
-ShouldResolveFn = Callable[[Sequence[Union[str, int]]], bool]
-
-
 @record
 class TemplatedValueResolver:
     scope: Mapping[str, Any]
@@ -50,23 +47,23 @@ class TemplatedValueResolver:
         self,
         obj: Any,
         valpath: Optional[Sequence[Union[str, int]]],
-        should_render: Callable[[Sequence[Union[str, int]]], bool],
+        should_resolve: Callable[[Sequence[Union[str, int]]], bool],
     ) -> Any:
-        """Recursively resolves templated values in a nested object, based on the provided should_render function."""
-        if valpath is not None and not should_render(valpath):
+        """Recursively resolves templated values in a nested object, based on the provided should_resolve function."""
+        if valpath is not None and not should_resolve(valpath):
             return obj
         elif isinstance(obj, dict):
-            # render all values in the dict
+            # resolve all values in the dict
             return {
                 k: self._resolve_obj(
-                    v, [*valpath, k] if valpath is not None else None, should_render
+                    v, [*valpath, k] if valpath is not None else None, should_resolve
                 )
                 for k, v in obj.items()
             }
         elif isinstance(obj, list):
-            # render all values in the list
+            # resolve all values in the list
             return [
-                self._resolve_obj(v, [*valpath, i] if valpath is not None else None, should_render)
+                self._resolve_obj(v, [*valpath, i] if valpath is not None else None, should_resolve)
                 for i, v in enumerate(obj)
             ]
         else:
@@ -76,15 +73,12 @@ class TemplatedValueResolver:
         """Recursively resolves templated values in a nested object."""
         return self._resolve_obj(val, None, lambda _: True)
 
-    def resolve_params(self, val: T, target_type: type) -> T:
-        """Given a raw params value, preprocesses it by rendering any templated values that are not marked as deferred in the target_type's json schema."""
-        json_schema = (
-            target_type.model_json_schema() if issubclass(target_type, BaseModel) else None
+    def resolve_params(self, val: T, target_type: type[BaseModel]) -> T:
+        """Given a raw params value, preprocesses it by resolving any templated values that are not marked
+        as deferred in the target_type's json schema.
+        """
+        json_schema = target_type.model_json_schema()
+        should_resolve = functools.partial(
+            allow_resolve, json_schema=json_schema, subschema=json_schema
         )
-        if json_schema is None:
-            should_render = lambda _: True
-        else:
-            should_render = functools.partial(
-                allow_resolve, json_schema=json_schema, subschema=json_schema
-            )
-        return self._resolve_obj(val, [], should_render=should_render)
+        return self._resolve_obj(val, [], should_resolve=should_resolve)

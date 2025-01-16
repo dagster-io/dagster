@@ -211,7 +211,7 @@ def get_registered_component_types_in_module(module: ModuleType) -> Iterable[typ
             yield component
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=BaseModel)
 
 
 @dataclass

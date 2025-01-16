@@ -34,16 +34,16 @@ def _commented_object_for_subschema(
     name: str,
     json_schema: Mapping[str, Any],
     subschema: Mapping[str, Any],
-    available_scope: Optional[Set[str]] = None,
+    required_scope: Optional[Set[str]] = None,
 ) -> Union[CommentedObject, Any]:
-    additional_scope = subschema.get("dagster_available_scope")
-    available_scope = (available_scope or set()) | set(additional_scope or [])
+    additional_scope = subschema.get("dagster_required_scope")
+    required_scope = (required_scope or set()) | set(additional_scope or [])
 
     subschema = _dereference_schema(json_schema, subschema)
     if "anyOf" in subschema:
         # TODO: handle anyOf fields more gracefully, for now just choose first option
         return _commented_object_for_subschema(
-            name, json_schema, subschema["anyOf"][0], available_scope=available_scope
+            name, json_schema, subschema["anyOf"][0], required_scope=required_scope
         )
 
     objtype = subschema["type"]
@@ -54,12 +54,12 @@ def _commented_object_for_subschema(
                 k: _commented_object_for_subschema(k, json_schema, v)
                 for k, v in subschema.get("properties", {}).items()
             },
-            comment=f"Available scope: {available_scope}" if available_scope else None,
+            comment=f"Available scope: {required_scope}" if required_scope else None,
         )
     elif objtype == "array":
         return [
             _commented_object_for_subschema(
-                name, json_schema, subschema["items"], available_scope=available_scope
+                name, json_schema, subschema["items"], required_scope=required_scope
             )
         ]
     elif objtype == "string":

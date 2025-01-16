@@ -21,7 +21,7 @@ class ComplexAssetParams(BaseModel):
     value: str
     op: Optional[OpSpecBaseModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvableFieldInfo(additional_scope={"node"})
+        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
     ] = None
     asset_transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
