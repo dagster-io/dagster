@@ -58,18 +58,16 @@ class DbtProjectComponent(Component):
         return DbtProjectComponentScaffolder()
 
     @classmethod
-    def get_schema(cls):
+    def get_schema(cls) -> type[DbtProjectParams]:
         return DbtProjectParams
 
     @classmethod
-    def load(cls, context: ComponentLoadContext) -> Self:
-        loaded_params = context.load_params(cls.get_schema())
-
+    def load(cls, params: DbtProjectParams, context: ComponentLoadContext) -> Self:
         return cls(
-            dbt_resource=loaded_params.dbt,
-            op_spec=loaded_params.op,
-            asset_attributes=loaded_params.asset_attributes,
-            transforms=loaded_params.transforms or [],
+            dbt_resource=params.dbt,
+            op_spec=params.op,
+            asset_attributes=params.asset_attributes,
+            transforms=params.transforms or [],
             value_resolver=context.templated_value_resolver,
         )
 
