@@ -6,8 +6,10 @@ from typing import Any, Callable
 
 import pytest
 from dagster import Config, RunConfig, config_mapping, job, op
+from dagster._core.definitions.events import Failure
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
+    DagsterExecutionInterruptedError,
     DagsterUserCodeExecutionError,
     DagsterUserCodeProcessError,
     user_code_error_boundary,
@@ -84,34 +86,6 @@ def test_masking_nested_user_code_err_boundaries(enable_masking_user_code_errors
     assert "hunter2" not in str(err_info)
 
 
-def test_masking_nested_user_code_err_reraise(enable_masking_user_code_errors):
-    class MyException(Exception):
-        inner: Exception
-
-        def __init__(self, inner: Exception):
-            self.inner = inner
-
-    try:
-        try:
-            with user_code_error_boundary(
-                error_cls=DagsterUserCodeExecutionError,
-                msg_fn=lambda: "test",
-            ):
-
-                def hunter2():
-                    raise UserError()
-
-                hunter2()
-        except Exception as e:
-            raise MyException(e) from e
-
-    except Exception:
-        exc_info = sys.exc_info()
-        err_info = serializable_error_info_from_exc_info(exc_info)
-
-    assert "hunter2" not in str(err_info)
-
-
 def test_masking_nested_user_code_err_boundaries_reraise(enable_masking_user_code_errors):
     try:
         try:
@@ -140,12 +114,20 @@ def test_masking_nested_user_code_err_boundaries_reraise(enable_masking_user_cod
 
 
 @pytest.mark.parametrize(
-    "build_exc",
-    [lambda: UserError(), lambda: KeyboardInterrupt("hunter2"), lambda: hunter2() - 5],  # type:ignore
-    ids=["UserError", "KeyboardInterrupt", "TypeError"],
+    "exc_name, expect_exc_name_in_error, build_exc",
+    [
+        ("UserError", False, lambda: UserError()),
+        ("TypeError", False, lambda: TypeError("hunter2")),
+        ("KeyboardInterrupt", True, lambda: KeyboardInterrupt()),
+        ("DagsterExecutionInterruptedError", True, lambda: DagsterExecutionInterruptedError()),
+        ("Failure", True, lambda: Failure("asdf")),
+    ],
 )
 def test_masking_op_execution(
-    enable_masking_user_code_errors, build_exc: Callable[[], BaseException]
+    enable_masking_user_code_errors,
+    exc_name: str,
+    expect_exc_name_in_error: bool,
+    build_exc: Callable[[], BaseException],
 ) -> Any:
     @op
     def throws_user_error(_):
@@ -167,10 +149,17 @@ def test_masking_op_execution(
     ]
 
     step_error = next(event for event in result.all_events if event.is_step_failure)
-    assert (
-        step_error.step_failure_data.error
-        and step_error.step_failure_data.error.cls_name == "DagsterRedactedUserCodeError"
-    )
+
+    if expect_exc_name_in_error:
+        assert (
+            step_error.step_failure_data.error
+            and step_error.step_failure_data.error.cls_name == exc_name
+        )
+    else:
+        assert (
+            step_error.step_failure_data.error
+            and step_error.step_failure_data.error.cls_name == "DagsterRedactedUserCodeError"
+        )
 
 
 ERROR_ID_REGEX = r"Error occurred during user code execution, error ID ([a-z0-9\-]+)"
