@@ -70,6 +70,7 @@ from dagster import (
     daily_partitioned_config,
     define_asset_job,
     graph,
+    graph_asset,
     job,
     logger,
     multi_asset,
@@ -1998,6 +1999,37 @@ checked_multi_asset_job = define_asset_job(
 )
 
 
+@asset(pool="foo")
+def concurrency_asset():
+    pass
+
+
+@op(pool="bar")
+def concurrency_op_1():
+    pass
+
+
+@op(pool="baz")
+def concurrency_op_2(input_1):
+    return input_1
+
+
+@graph_asset
+def concurrency_graph_asset():
+    return concurrency_op_2(concurrency_op_1())
+
+
+@multi_asset(
+    specs=[
+        AssetSpec("concurrency_multi_asset_1"),
+        AssetSpec("concurrency_multi_asset_2"),
+    ],
+    pool="buzz",
+)
+def concurrency_multi_asset():
+    pass
+
+
 # These are defined separately because the dict repo does not handle unresolved asset jobs
 def define_asset_jobs() -> Sequence[UnresolvedAssetJobDefinition]:
     return [
@@ -2147,6 +2179,9 @@ def define_assets():
         asset_with_compute_storage_kinds,
         asset_with_automation_condition,
         asset_with_custom_automation_condition,
+        concurrency_asset,
+        concurrency_graph_asset,
+        concurrency_multi_asset,
     ]
 
 
