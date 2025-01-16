@@ -16,6 +16,19 @@ from dagster._serdes.serdes import (
 
 class MsgPackExtType(int, Enum):
     LARGE_INT = 1
+    SET = 2
+    FROZENSET = 3
+    ENUM = 4
+    CLASS = 5
+    MAPPING_ITEMS = 6
+
+
+class SerdesSpecialKeys(str, Enum):
+    SET = "__set__"
+    FROZENSET = "__frozenset__"
+    ENUM = "__enum__"
+    MAPPING_ITEMS = "__mapping_items__"
+    CLASS = "__class__"
 
 
 def _msgpack_pack_compat(obj):
@@ -23,12 +36,37 @@ def _msgpack_pack_compat(obj):
         return msgpack.ExtType(
             MsgPackExtType.LARGE_INT, obj.to_bytes(16, byteorder="big", signed=True)
         )
+    elif isinstance(obj, dict):
+        if {SerdesSpecialKeys.SET} == obj.keys():
+            return msgpack.ExtType(MsgPackExtType.SET, _msgpack_pack(obj[SerdesSpecialKeys.SET]))
+        elif {SerdesSpecialKeys.FROZENSET} == obj.keys():
+            return msgpack.ExtType(
+                MsgPackExtType.FROZENSET, _msgpack_pack(obj[SerdesSpecialKeys.FROZENSET])
+            )
+        elif {SerdesSpecialKeys.ENUM} == obj.keys():
+            return msgpack.ExtType(
+                MsgPackExtType.ENUM,
+                obj[SerdesSpecialKeys.ENUM].encode("utf-8"),
+            )
+        elif {SerdesSpecialKeys.CLASS} == obj.keys():
+            return msgpack.ExtType(
+                MsgPackExtType.CLASS,
+                obj[SerdesSpecialKeys.CLASS].encode("utf-8"),
+            )
     return obj
 
 
 def _msgpack_unpack_compat(code, data):
     if code == MsgPackExtType.LARGE_INT:
         return int.from_bytes(data, byteorder="big", signed=True)
+    elif code == MsgPackExtType.SET:
+        return {"__set__": data}
+    elif code == MsgPackExtType.FROZENSET:
+        return {"__frozenset__": data}
+    elif code == MsgPackExtType.ENUM:
+        return {"__enum__": data}
+    elif code == MsgPackExtType.CLASS:
+        return {"__class__": data}
     return msgpack.ExtType(code, data)
 
 
