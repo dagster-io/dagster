@@ -11,7 +11,7 @@ class SampleSubSchema(ComponentSchemaBaseModel):
 
 
 class SampleSchema(ComponentSchemaBaseModel):
-    sub_scoped: Annotated[SampleSubSchema, ResolvableFieldInfo(additional_scope={"outer_scope"})]
+    sub_scoped: Annotated[SampleSubSchema, ResolvableFieldInfo(required_scope={"outer_scope"})]
     sub_optional: SampleSubSchema
     sub_list: Sequence[SampleSubSchema]
 
@@ -26,8 +26,8 @@ def test_generate_sample_yaml():
 
 params:
   sub_scoped: # Available scope: {'outer_scope'}
-    str_field: '...'
-    int_field: 0
+    str_field: '...' # Available scope: {'outer_scope'}
+    int_field: 0 # Available scope: {'outer_scope'}
   sub_optional:
     str_field: '...'
     int_field: 0
