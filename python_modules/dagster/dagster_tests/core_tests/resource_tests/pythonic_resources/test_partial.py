@@ -1,15 +1,8 @@
 import pytest
-from dagster import (
-    asset,
-)
-from dagster._config.pythonic_config import (
-    ConfigurableResource,
-)
+from dagster import asset
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 
 
 def test_structured_resource_partial_config_empty() -> None:

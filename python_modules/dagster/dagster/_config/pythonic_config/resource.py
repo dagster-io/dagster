@@ -19,7 +19,7 @@ from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 import dagster._check as check
 from dagster import Field as DagsterField
-from dagster._annotations import deprecated
+from dagster._annotations import deprecated, experimental
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.pythonic_config.attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
@@ -331,6 +331,7 @@ class ConfigurableResourceFactory(
         """
         return PartialResource(cls, data=kwargs)
 
+    @experimental
     @classmethod
     def partial(cls: "type[T_Self]", **kwargs) -> "PartialResource[T_Self]":
         """Returns a partially initialized copy of the resource, with remaining config fields
