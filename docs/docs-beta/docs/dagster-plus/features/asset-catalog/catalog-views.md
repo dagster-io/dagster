@@ -53,7 +53,7 @@ When viewing the global asset lineage or asset list, you can create a new catalo
 4. To make the view shareable, toggle the **Public view** switch.
 5. Click **Create view** to create the view.
 
-![Screenshot of creating catalog view from filters](/img/placeholder.svg)
+![Screenshot of creating catalog view from filters](/images/dagster-plus/asset-catalog/new-catalog-view-from-asset-page.png)
 
 ## Editing, duplicating, or deleting catalog views
 
@@ -62,4 +62,4 @@ When viewing the global asset lineage or asset list, you can create a new catalo
 3. Click the **three dot menu** to the right of the view to display available options.
 4. If modifying the view, note that any active filters will automatically be included in the set of changes. You can also change the view's name, description, icon, and sharing settings. 5. When finished, click **Save changes**.
 
-![Screenshot of editing catalog views](/img/placeholder.svg)
+![Screenshot of editing catalog views](/images/dagster-plus/asset-catalog/edit-catalog-view.png)

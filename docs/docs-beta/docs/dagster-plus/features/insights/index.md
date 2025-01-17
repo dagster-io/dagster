@@ -27,7 +27,7 @@ To use Insights, you'll need a Dagster+ account.
 
 To access Insights, click **Insights** in the top navigation bar in the UI:
 
-![Viewing the Insights tab in the Dagster+ UI](/img/placeholder.svg)
+![Viewing the Insights tab in the Dagster+ UI](/images/dagster-plus/insights/insights-tab.png)
 
 The left navigation panel on this page contains a list of available metrics. For each metric, the daily, weekly, or monthly aggregated values are displayed in the graph.
 
