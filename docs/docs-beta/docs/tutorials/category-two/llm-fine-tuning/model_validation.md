@@ -61,7 +61,7 @@ We will store the accuracy of both models as metadata in the check. Because this
 
 ![2048 resolution](/images/tutorial/llm-fine-tuning/model_accuracy_1.png)
 
-We can also execute this asset check separately from the fine tuning job if we ever want to compare the accuracy. Running it a few more times we can see that the accuracy is plotted:
+We can also execute this asset check separately from the fine-tuning job if we ever want to compare the accuracy. Running it a few more times, we can see that the accuracy is plotted:
 
 ![2048 resolution](/images/tutorial/llm-fine-tuning/model_accuracy_2.png)
 
