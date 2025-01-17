@@ -35,7 +35,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 - **Accessed by**: Clicking **Overview** in the top navigation bar
 
-![The Overview tab, also known as the Factory Floor, in the Dagster UI](/images/guides/deploy/execution/webserver/factory-floor.png)
+![The Overview tab, also known as the Factory Floor, in the Dagster UI](/images/guides/deploy/webserver/factory-floor.png)
 
 ## Assets
 
@@ -48,7 +48,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
-![The Asset Catalog page in the Dagster UI](/images/guides/deploy/execution/webserver/asset-catalog.png)
+![The Asset Catalog page in the Dagster UI](/images/guides/deploy/webserver/asset-catalog.png)
 
 </TabItem>
 <TabItem value="Asset catalog (Dagster+ Pro)">
@@ -71,7 +71,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by:** Clicking **Catalog** in the top navigation
 
-![The Asset Catalog page in the Dagster UI](/images/guides/deploy/execution/webserver/asset-catalog-cloud-pro.png)
+![The Asset Catalog page in the Dagster UI](/images/guides/deploy/webserver/asset-catalog-cloud-pro.png)
 
 </TabItem>
 <TabItem value="Catalog views (Dagster+)">
@@ -88,7 +88,7 @@ This feature is only available in Dagster+ Pro.
   - Clicking **Catalog** in the top navigation
   - **From the Global asset lineage**: Clicking **View global asset lineage**, located near the top right corner of the **Catalog** page
 
-![The Catalog views dropdown in the Dagster+ Pro Catalog UI](/images/guides/deploy/execution/webserver/catalog-views.png)
+![The Catalog views dropdown in the Dagster+ Pro Catalog UI](/images/guides/deploy/webserver/catalog-views.png)
 
 </TabItem>
 <TabItem value="Global asset lineage">
@@ -108,7 +108,7 @@ This feature is only available in Dagster+ Pro.
   - **From the Asset catalog**: Clicking **View global asset lineage**, located near the top right corner of the page
   - **From the Asset details page**: Clicking the **Lineage tab**
 
-![The Global asset lineage page in the Dagster UI](/images/guides/deploy/execution/webserver/global-asset-lineage.png)
+![The Global asset lineage page in the Dagster UI](/images/guides/deploy/webserver/global-asset-lineage.png)
 
 </TabItem>
 <TabItem value="Asset details">
@@ -127,7 +127,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking an asset in the **Asset catalog**
 
-![The Asset Details page in the Dagster UI](/images/guides/deploy/execution/webserver/asset-details.png)
+![The Asset Details page in the Dagster UI](/images/guides/deploy/webserver/asset-details.png)
 
 </TabItem>
 </Tabs>
@@ -143,7 +143,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking **Runs** in the top navigation bar
 
-![UI Runs page](/images/guides/deploy/execution/webserver/runs-page.png)
+![UI Runs page](/images/guides/deploy/webserver/runs-page.png)
 
 </TabItem>
 <TabItem value="Run details">
@@ -159,7 +159,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking a run in the **Run details** page
 
-![UI Run details page](/images/guides/deploy/execution/webserver/run-details.png)
+![UI Run details page](/images/guides/deploy/webserver/run-details.png)
 
 </TabItem>
 <TabItem value="Run logs">
@@ -179,7 +179,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking the **left side** of the toggle next to the log filter field
 
-![Structured event logs in the Run details page](/images/guides/deploy/execution/webserver/run-details-event-logs.png)
+![Structured event logs in the Run details page](/images/guides/deploy/webserver/run-details-event-logs.png)
 
 **Raw compute logs**
 
@@ -187,7 +187,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking the **right side** of the toggle next to the log filter field
 
-![Raw compute logs in the Run details page](/images/guides/deploy/execution/webserver/run-details-compute-logs.png)
+![Raw compute logs in the Run details page](/images/guides/deploy/webserver/run-details-compute-logs.png)
 
 </TabItem>
 </Tabs>
@@ -203,7 +203,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking **Overview (top nav) > Schedules tab**
 
-![UI Schedules page](/images/guides/deploy/execution/webserver/schedules-tab.png)
+![UI Schedules page](/images/guides/deploy/webserver/schedules-tab.png)
 
 </TabItem>
 <TabItem value="Schedule details">
@@ -214,7 +214,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking a schedule in the **Schedules** page.
 
-![UI Schedule details page](/images/guides/deploy/execution/webserver/schedule-details.png)
+![UI Schedule details page](/images/guides/deploy/webserver/schedule-details.png)
 
 </TabItem>
 </Tabs>
@@ -230,7 +230,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking **Overview (top nav) > Sensors tab**
 
-![UI Sensors page](/images/guides/deploy/execution/webserver/sensors-tab.png)
+![UI Sensors page](/images/guides/deploy/webserver/sensors-tab.png)
 
 </TabItem>
 <TabItem value="Sensor details">
@@ -241,7 +241,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking a sensor in the **Sensors** page
 
-![UI Sensor details page](/images/guides/deploy/execution/webserver/sensor-details.png)
+![UI Sensor details page](/images/guides/deploy/webserver/sensor-details.png)
 
 </TabItem>
 </Tabs>
@@ -257,7 +257,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking **Overview (top nav) > Resources tab**
 
-![UI Resources page](/images/guides/deploy/execution/webserver/resources-tab.png)
+![UI Resources page](/images/guides/deploy/webserver/resources-tab.png)
 
 </TabItem>
 <TabItem value="Resource details">
@@ -277,7 +277,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: On the **Resource details** page, clicking the **Configuration tab**
 
-![UI Resource details - Configuration tab](/images/guides/deploy/execution/webserver/resource-details-configuration-tab.png)
+![UI Resource details - Configuration tab](/images/guides/deploy/webserver/resource-details-configuration-tab.png)
 
 </TabItem>
 <TabItem value="Uses tab">
@@ -288,7 +288,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: On the **Resource details* page, clicking the **Uses tab**
 
-![UI Resource details - Uses tab](/images/guides/deploy/execution/webserver/resource-details-uses-tab.png)
+![UI Resource details - Uses tab](/images/guides/deploy/webserver/resource-details-uses-tab.png)
 
 </TabItem>
 </Tabs>
@@ -301,7 +301,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking **Overview (top nav) > Backfills tab**
 
-![UI Backfills tab](/images/guides/deploy/execution/webserver/backfills-tab.png)
+![UI Backfills tab](/images/guides/deploy/webserver/backfills-tab.png)
 
 ## Jobs
 
@@ -314,7 +314,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by**: Clicking **Overview (top nav) > Jobs tab**
 
-![UI Job Definition](/images/guides/deploy/execution/webserver/jobs-tab.png)
+![UI Job Definition](/images/guides/deploy/webserver/jobs-tab.png)
 
 </TabItem>
 <TabItem value="Job details">
@@ -334,7 +334,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by:** On the **Job details** page, clicking the **Overview** tab
 
-![UI Job Definition](/images/guides/deploy/execution/webserver/job-definition-with-ops.png)
+![UI Job Definition](/images/guides/deploy/webserver/job-definition-with-ops.png)
 
 </TabItem>
 <TabItem value="Launchpad tab">
@@ -345,7 +345,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by:** On the **Job details** page, clicking the **Launchpad** tab
 
-![UI Launchpad](/images/guides/deploy/execution/webserver/job-config-with-ops.png)
+![UI Launchpad](/images/guides/deploy/webserver/job-config-with-ops.png)
 
 </TabItem>
 <TabItem value="Runs tab">
@@ -356,7 +356,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by:** On the **Job details** page, clicking the **Runs** tab
 
-![UI Job runs tab](/images/guides/deploy/execution/webserver/jobs-runs-tab.png)
+![UI Job runs tab](/images/guides/deploy/webserver/jobs-runs-tab.png)
 
 </TabItem>
 <TabItem value="Partitions tab">
@@ -367,7 +367,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Accessed by:** On the **Job details** page, clicking the **Partitions** tab
 
-![UI Job Partitions tab](/images/guides/deploy/execution/webserver/jobs-partitions-tab.png)
+![UI Job Partitions tab](/images/guides/deploy/webserver/jobs-partitions-tab.png)
 
 </TabItem>
 </Tabs>
@@ -393,7 +393,7 @@ The **Deployment** page includes information about the status of the code locati
   - Clicking **Deployment** in the top navigation bar
   - On the **Deployment overview** page, clicking the **Code locations** tab
 
-![UI Deployment overview page](/images/guides/deploy/execution/webserver/deployment-code-locations.png)
+![UI Deployment overview page](/images/guides/deploy/webserver/deployment-code-locations.png)
 
 </TabItem>
 <TabItem value="Open Source (OSS)">
@@ -410,7 +410,7 @@ In addition to the **Code locations** tab, Dagster OSS deployments contain a few
 - **Description**: The **Daemons** tab contains information about the [daemons](/guides/deploy/execution/dagster-daemon) in an Open Source Dagster deployment, including their current status and when their last heartbeat was detected.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Daemons** tab
 
-![UI Deployment - Daemons tab](/images/guides/deploy/execution/webserver/deployment-daemons-tab.png)
+![UI Deployment - Daemons tab](/images/guides/deploy/webserver/deployment-daemons-tab.png)
 
 </TabItem>
 <TabItem value="Configuration tab">
@@ -420,7 +420,7 @@ In addition to the **Code locations** tab, Dagster OSS deployments contain a few
 - **Description**: The **Configuration** tab displays information about the configuration for a Dagster deployment, which is managed through the [`dagster.yaml`](/guides/deploy/dagster-yaml) file
 - **Accessed by**: On the **Deployment overview** page, clicking the **Configuration** tab
 
-![UI Deployment - Configuration tab](/images/guides/deploy/execution/webserver/deployment-configuration-tab.png)
+![UI Deployment - Configuration tab](/images/guides/deploy/webserver/deployment-configuration-tab.png)
 
 </TabItem>
 </Tabs>
@@ -440,7 +440,7 @@ In addition to the **Code locations** tab, Dagster+ deployments contain a few ad
 - **Description**: The **Agents** tab contains information about the agents in a Dagster+ deployment.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Agents** tab
 
-![UI Dagster+ Deployment - Agents tab](/images/guides/deploy/execution/webserver/deployment-cloud-agents-tab.png)
+![UI Dagster+ Deployment - Agents tab](/images/guides/deploy/webserver/deployment-cloud-agents-tab.png)
 
 </TabItem>
 <TabItem value="Environmental variables tab">
@@ -450,7 +450,7 @@ In addition to the **Code locations** tab, Dagster+ deployments contain a few ad
 - **Description**: The **Agents** tab contains information about the environment variables configured in a Dagster+ deployment. Refer to the [Dagster+ environment variables documentation](/dagster-plus/deployment/management/environment-variables/) for more info.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Environment variables** tab
 
-![UI Cloud Deployment - Environment variables tab](/images/guides/deploy/execution/webserver/deployment-cloud-environment-variables-tab.png)
+![UI Cloud Deployment - Environment variables tab](/images/guides/deploy/webserver/deployment-cloud-environment-variables-tab.png)
 
 </TabItem>
 <TabItem value="Alerts tab">
@@ -460,7 +460,7 @@ In addition to the **Code locations** tab, Dagster+ deployments contain a few ad
 - **Description**: The **Alerts** tab contains information about the alert policies configured for a Dagster+ deployment. Refer to the [Dagster+ alerts guide](/dagster-plus/features/alerts/) for more info.
 - **Accessed by**: On the **Deployment overview** page, clicking the **Alerts** tab
 
-![UI Dagster+ Deployment - Alerts tab](/images/guides/deploy/execution/webserver/deployment-cloud-alerts-tab.png)
+![UI Dagster+ Deployment - Alerts tab](/images/guides/deploy/webserver/deployment-cloud-alerts-tab.png)
 
 </TabItem>
 </Tabs>
