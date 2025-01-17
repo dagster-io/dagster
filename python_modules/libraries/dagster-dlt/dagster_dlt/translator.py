@@ -2,19 +2,51 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from dagster import AssetKey, AutoMaterializePolicy, AutomationCondition
+from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public
+from dagster._record import record
 from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
 
 
+@record
+class DltResourceTranslatorData:
+    resource: DltResource
+    destination: Destination
+
+
 @dataclass
 class DagsterDltTranslator:
+    def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+        """Defines the asset spec for a given dlt resource.
+
+        This method can be overridden to provide custom asset key for a dlt resource.
+
+        Args:
+            data (DltResourceTranslatorData): The dlt data to pass to the translator,
+                including the resource and the destination.
+
+        Returns:
+            The :py:class:`dagster.AssetSpec` for the given dlt resource
+
+        """
+        return AssetSpec(
+            key=self.get_asset_key(data.resource),
+            automation_condition=self.get_automation_condition(data.resource),
+            deps=self.get_deps_asset_keys(data.resource),
+            description=self.get_description(data.resource),
+            group_name=self.get_group_name(data.resource),
+            metadata=self.get_metadata(data.resource),
+            owners=self.get_owners(data.resource),
+            tags=self.get_tags(data.resource),
+            kinds=self.get_kinds(data.resource, data.destination),
+        )
+
     @public
     def get_asset_key(self, resource: DltResource) -> AssetKey:
         """Defines asset key for a given dlt resource key and dataset name.
 
-        This method can be overriden to provide custom asset key for a dlt resource.
+        This method can be overridden to provide custom asset key for a dlt resource.
 
         Args:
             resource (DltResource): dlt resource
@@ -29,13 +61,13 @@ class DagsterDltTranslator:
     def get_auto_materialize_policy(self, resource: DltResource) -> Optional[AutoMaterializePolicy]:
         """Defines resource specific auto materialize policy.
 
-        This method can be overriden to provide custom auto materialize policy for a dlt resource.
+        This method can be overrdidden to provide custom auto materialize policy for a dlt resource.
 
         Args:
             resource (DltResource): dlt resource
 
         Returns:
-            Optional[AutoMaterializePolicy]: The automaterialize policy for a resource
+            Optional[AutoMaterializePolicy]: The auto-materialize policy for a resource
 
         """
         return None
@@ -82,7 +114,7 @@ class DagsterDltTranslator:
     def get_description(self, resource: DltResource) -> Optional[str]:
         """A method that takes in a dlt resource returns the Dagster description of the resource.
 
-        This method can be overriden to provide a custom description for a dlt resource.
+        This method can be overridden to provide a custom description for a dlt resource.
 
         Args:
             resource (DltResource): dlt resource
@@ -101,7 +133,7 @@ class DagsterDltTranslator:
     def get_group_name(self, resource: DltResource) -> Optional[str]:
         """A method that takes in a dlt resource and returns the Dagster group name of the resource.
 
-        This method can be overriden to provide a custom group name for a dlt resource.
+        This method can be overridden to provide a custom group name for a dlt resource.
 
         Args:
             resource (DltResource): dlt resource
@@ -127,7 +159,7 @@ class DagsterDltTranslator:
     def get_owners(self, resource: DltResource) -> Optional[Sequence[str]]:
         """A method that takes in a dlt resource and returns the Dagster owners of the resource.
 
-        This method can be overriden to provide custom owners for a dlt resource.
+        This method can be overridden to provide custom owners for a dlt resource.
 
         Args:
             resource (DltResource): dlt resource
@@ -141,7 +173,7 @@ class DagsterDltTranslator:
     def get_tags(self, resource: DltResource) -> Mapping[str, str]:
         """A method that takes in a dlt resource and returns the Dagster tags of the structure.
 
-        This method can be overriden to provide custom tags for a dlt resource.
+        This method can be overridden to provide custom tags for a dlt resource.
 
         Args:
             resource (DltResource): dlt resource
@@ -157,10 +189,11 @@ class DagsterDltTranslator:
         """A method that takes in a dlt resource and returns the kinds which should be
         attached. Defaults to the destination type and "dlt".
 
-        This method can be overriden to provide custom kinds for a dlt resource.
+        This method can be overridden to provide custom kinds for a dlt resource.
 
         Args:
             resource (DltResource): dlt resource
+            destination (Destination): dlt destination
 
         Returns:
             Set[str]: The kinds of the asset.

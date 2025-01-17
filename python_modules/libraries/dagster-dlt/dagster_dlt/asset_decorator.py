@@ -12,7 +12,7 @@ from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
 from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
-from dagster_dlt.translator import DagsterDltTranslator
+from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 
 def build_dlt_asset_specs(
@@ -34,23 +34,14 @@ def build_dlt_asset_specs(
     """
     dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
     return [
-        AssetSpec(
-            key=dagster_dlt_translator.get_asset_key(dlt_source_resource),
-            automation_condition=dagster_dlt_translator.get_automation_condition(
-                dlt_source_resource
-            ),
-            deps=dagster_dlt_translator.get_deps_asset_keys(dlt_source_resource),
-            description=dagster_dlt_translator.get_description(dlt_source_resource),
-            group_name=dagster_dlt_translator.get_group_name(dlt_source_resource),
+        dagster_dlt_translator.get_asset_spec(
+            DltResourceTranslatorData(resource=dlt_source_resource, destination=dlt_pipeline.destination)
+        ).merge_attributes(
             metadata={
-                **dagster_dlt_translator.get_metadata(dlt_source_resource),
                 META_KEY_SOURCE: dlt_source,
                 META_KEY_PIPELINE: dlt_pipeline,
                 META_KEY_TRANSLATOR: dagster_dlt_translator,
-            },
-            owners=dagster_dlt_translator.get_owners(dlt_source_resource),
-            tags=dagster_dlt_translator.get_tags(dlt_source_resource),
-            kinds=dagster_dlt_translator.get_kinds(dlt_source_resource, dlt_pipeline.destination),
+            }
         )
         for dlt_source_resource in dlt_source.selected_resources.values()
     ]
