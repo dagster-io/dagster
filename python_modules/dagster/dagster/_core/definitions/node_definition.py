@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
@@ -235,4 +235,4 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @property
     @abstractmethod
-    def pools(self) -> set[str]: ...
+    def pools(self) -> Set[str]: ...

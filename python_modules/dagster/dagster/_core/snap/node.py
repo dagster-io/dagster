@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
 from typing import Optional, Union
 
@@ -159,7 +159,7 @@ class GraphDefSnap:
     dep_structure_snapshot: DependencyStructureSnapshot
     input_mapping_snaps: Sequence[InputMappingSnap]
     output_mapping_snaps: Sequence[OutputMappingSnap]
-    pools: set[str]
+    pools: Set[str]
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -178,7 +178,7 @@ class GraphDefSnap:
 
 @whitelist_for_serdes(storage_name="SolidDefSnap")
 @record
-class OpDefSnap(IHaveNew):
+class OpDefSnap:
     name: str
     input_def_snaps: Sequence[InputDefSnap]
     output_def_snaps: Sequence[OutputDefSnap]

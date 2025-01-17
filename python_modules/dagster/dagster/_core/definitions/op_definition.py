@@ -1,5 +1,5 @@
 import inspect
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
 from typing_extensions import TypeAlias, get_args, get_origin
@@ -301,7 +301,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return self._pool if self._pool else self.tags.get(GLOBAL_CONCURRENCY_TAG)
 
     @property
-    def pools(self) -> set[str]:
+    def pools(self) -> Set[str]:
         """Optional[str]: The concurrency pools for this op node."""
         return {self._pool} if self._pool else set()
 
