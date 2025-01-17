@@ -3683,6 +3683,7 @@ def test_multi_partitioned_asset_backfill(
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill(backfill_id)
+    assert backfill is not None
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
 
 
@@ -3717,12 +3718,14 @@ def test_multi_partitioned_asset_with_single_run_bp_backfill(
     assert backfill.status == BulkActionStatus.REQUESTED
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
-    assert instance.get_runs_count() == 1
+    # even though it is a single run backfill, the multi-partitions selected will span two ranges
+    # because we compute ranges per-primary key
+    assert instance.get_runs_count() == 2
     wait_for_all_runs_to_start(instance, timeout=30)
-    assert instance.get_runs_count() == 1
+    assert instance.get_runs_count() == 2
     wait_for_all_runs_to_finish(instance, timeout=30)
 
-    assert instance.get_runs_count() == 1
+    assert instance.get_runs_count() == 2
     runs = reversed(list(instance.get_runs()))
     for run in runs:
         assert run.tags[BACKFILL_ID_TAG] == backfill_id
