@@ -12,7 +12,7 @@ sidebar_class_name: hidden
 In this tutorial, you'll build a pipeline with Dagster that:
 
 - Loads a public Goodreads JSON dataset into DuckDB
-- Perform feature engineering to enhance the data
+- Performs feature engineering to enhance the data
 - Create and valiate the data files needed for an OpenAI fine-tuning job
 - Generate a custom model and validate it
 
