@@ -16,8 +16,10 @@ from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.msgpack import (
     deserialize_value_with_cbor,
+    deserialize_value_with_ion,
     deserialize_value_with_msgpack,
     serialize_value_with_cbor,
+    serialize_value_with_ion,
     serialize_value_with_msgpack,
 )
 from dagster._serdes.serdes import (
@@ -498,6 +500,18 @@ def test_large_int_cbor() -> None:
     val = 2**64
     serialized = serialize_value_with_cbor(val)
     assert val == deserialize_value_with_cbor(serialized)
+
+
+def test_event_log_ion() -> None:
+    materialization = AssetMaterialization(AssetKey("a"))
+    serialized = serialize_value_with_ion(materialization)
+    assert materialization == deserialize_value_with_ion(serialized)
+
+
+def test_large_int_ion() -> None:
+    val = 2**64
+    serialized = serialize_value_with_ion(val)
+    assert val == deserialize_value_with_ion(serialized)
 
 
 # Ensures it is possible to simultaneously have a class Foo and a separate class that serializes to

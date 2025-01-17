@@ -2,6 +2,7 @@ from enum import Enum
 from functools import partial
 from typing import Callable
 
+import amazon.ion.simpleion as ion
 import cbor2
 import msgpack
 
@@ -102,3 +103,38 @@ serialize_value_with_cbor = partial(
 )
 deserialize_value_with_cbor = partial(deserialize_value, json_loads=_cbor_unpack)
 deserialize_values_with_cbor = partial(deserialize_values, json_loads=_cbor_unpack)
+
+
+def traverse_and_transform(obj, object_hook):
+    if isinstance(obj, dict):
+        # First transform the dictionary contents recursively
+        transformed_dict = {k: traverse_and_transform(v, object_hook) for k, v in obj.items()}
+        # Then apply the object hook to the transformed dictionary
+        return object_hook(transformed_dict)
+    elif isinstance(obj, list):
+        # Transform each element of the list recursively
+        return [traverse_and_transform(item, object_hook) for item in obj]
+    else:
+        # Base case: return primitive values as-is
+        return obj
+
+
+def _ion_pack(obj: JsonSerializableValue):
+    return ion.dumps(obj)
+
+
+def _ion_unpack(packed_message: bytes, object_hook: Callable):
+    return traverse_and_transform(
+        ion.loads(
+            packed_message,
+            value_model=ion.IonPyValueModel.MAY_BE_BARE | ion.IonPyValueModel.STRUCT_AS_STD_DICT,
+        ),
+        object_hook,
+    )
+
+
+serialize_value_with_ion = partial(
+    serialize_value, json_dumps=_ion_pack, object_handler=_pack_object
+)
+deserialize_value_with_ion = partial(deserialize_value, json_loads=_ion_unpack)
+deserialize_values_with_ion = partial(deserialize_values, json_loads=_ion_unpack)

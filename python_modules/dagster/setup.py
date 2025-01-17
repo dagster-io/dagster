@@ -115,6 +115,7 @@ setup(
         "antlr4-python3-runtime",
         "msgpack",
         "cbor2",
+        "amazon-ion",
     ],
     extras_require={
         "docker": ["docker"],
