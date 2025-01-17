@@ -163,7 +163,10 @@ export class AntlrAssetSelectionVisitor
 
   visitTagAttributeExpr(ctx: TagAttributeExprContext) {
     const key: string = getValue(ctx.value(0));
-    const value: string | undefined = getValue(ctx.value(1));
+    let value: string | undefined = undefined;
+    if (ctx.EQUAL()) {
+      value = getValue(ctx.value(1));
+    }
     return new Set(
       [...this.all_assets].filter((i) =>
         i.node.tags.some((t) => t.key === key && (!value || t.value === value)),

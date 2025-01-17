@@ -53,7 +53,6 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
 
 function assertQueryResult(query: string, expectedNames: string[]) {
   const result = parseAssetSelectionQuery(TEST_GRAPH, query);
-  expect(result).not.toBeInstanceOf(Error);
   if (result instanceof Error) {
     throw result;
   }
