@@ -1,5 +1,5 @@
 ---
-title: File Creation
+title: File creation
 description: File Creation and File Validation
 last_update:
   author: Dennis Hume
@@ -51,16 +51,18 @@ def training_file(
 ```
 
 :::note
+
 Since these files save the data locally, it may not work with every type of deployment.
+
 :::
 
 ## Validation
 
-The files are ready but before we send the data to OpenAI to perform the training job, we should do some validation. It is always a good idea to put checkpoints in place as your workflows become more involved. Taking the time to ensure our data if formatted correctly can save debugging time before we get other APIs involved.
+The files are ready, but before we send the data to OpenAI to perform the training job, we should do some validation. It is always a good idea to put checkpoints in place as your workflows become more involved. Taking the time to ensure our data if formatted correctly can save debugging time before we get other APIs involved.
 
-Luckily, OpenAI provides a cookbook specifically about [format validation](https://cookbook.openai.com/examples/chat_finetuning_data_prep#format-validation). This contains a serious checks we can perform to ensure our data meets the requirements for OpenAI training jobs.
+Luckily, OpenAI provides a cookbook specifically about [format validation](https://cookbook.openai.com/examples/chat_finetuning_data_prep#format-validation). This contains a series of checks we can perform to ensure our data meets the requirements for OpenAI training jobs.
 
-Looking at this notebook. This would make a great asset check. Asset checks help ensure the assets in our DAG meet certain criteria that we define. Writing asset checks look very similar to assets but are connected directly to the asset and do not appear as a separate node within the DAG.
+Looking at this notebook. This would make a great asset check. Asset checks help ensure the assets in our DAG meet certain criteria that we define. Asset checks look very similar to assets, but are connected directly to the asset and do not appear as a separate node within the DAG.
 
 Since we want an asset check for both the training and validation files, we will write a general function that contains the logic from the cookbook:
 
@@ -118,7 +120,7 @@ def openai_file_validation(file_name: str) -> Iterable:
         )
 ```
 
-This looks like any other python function except it returns an `AssetCheckResult` which is what Dagster uses to store the output of the asset check. Now we can use that function to create asset checks directly tied to our file assets. Again they look similar to assets except for using the `asset_check` decorator:
+This looks like any other Python function, except it returns an `AssetCheckResult`, which is what Dagster uses to store the output of the asset check. Now we can use that function to create asset checks directly tied to our file assets. Again, they look similar to assets, except they use the `asset_check` decorator:
 
 ```python
 @dg.asset_check(
@@ -134,4 +136,4 @@ def training_file_format_check():
 
 ## Next steps
 
-- Continue this tutorial with [open ai job](open_ai_job)
+- Continue this tutorial with [OpenAI job](open_ai_job)

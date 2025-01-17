@@ -13,14 +13,14 @@ In this tutorial, you'll build a pipeline with Dagster that:
 
 - Loads a public Goodreads JSON dataset into DuckDB
 - Performs feature engineering to enhance the data
-- Create and valiate the data files needed for an OpenAI fine-tuning job
+- Creates and validates the data files needed for an OpenAI fine-tuning job
 - Generate a custom model and validate it
 
 ## You will learn to:
 
 - Set up a Dagster project with the recommended project structure
 - Create and materialize assets
-- Create and materialize dependant assets
+- Create and materialize dependent assets
 - Ensure data quality with asset checks
 
 <details>
@@ -71,7 +71,7 @@ First, set up a new Dagster project.
 
 ## Step 3: Launch the Dagster webserver
 
-To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:"
+To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
 followed by a bash code snippet for `dagster dev`
 

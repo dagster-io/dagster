@@ -6,9 +6,9 @@ last_update:
 sidebar_position: 50
 ---
 
-Now that we are confident in the files we have generated, we can kickoff our OpenAI fine-tuning job. The first step is uploading the files to the OpenAI storage endpoint. Like DuckDB, Dagster offers a resource to interact with OpenAI and provide us with a client we can use. After the files have been uploaded, OpenAI will return a file id which we will need for the fine-tuning job.
+Now that we are confident in the files we have generated, we can kick off our OpenAI fine-tuning job. The first step is uploading the files to the OpenAI storage endpoint. Like DuckDB, Dagster offers a resource to interact with OpenAI and provide us with a client we can use. After the files have been uploaded, OpenAI will return a file ID, which we will need for the fine-tuning job.
 
-We have an asset for each file to upload but like the file creation, they will look very similar:
+We have an asset for each file to upload, but as in the file creation step, they will look very similar:
 
 ```python
 @dg.asset(
@@ -27,9 +27,9 @@ def upload_training_file(
     return response.id
 ```
 
-## Fine-Tuning Job
+## Fine-tuning job
 
-We can now fine-tune our model. Using the OpenAI resource again we will use the fine-tuning endpoint and submit a job using our two files. Executing a fine-tuning job may take a while so after we submit it, we will want to the asset to poll and wait for it to succeed:
+We can now fine-tune our model. Using the OpenAI resource again, we will use the fine-tuning endpoint and submit a job using our two files. Executing a fine-tuning job may take a while, so after we submit it, we will want to the asset to poll and wait for it to succeed:
 
 ```python
 @dg.asset(

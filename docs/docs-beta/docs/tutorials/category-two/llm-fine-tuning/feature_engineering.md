@@ -8,7 +8,7 @@ sidebar_position: 30
 
 With the data loaded, we can think of how we might want to train our model. One possible use case is to create a model that can tell categorize books based on their details.
 
-The Goodreads does not include categories exactly but has something very similar in `popular_shelves`. These are free text tags that users can associate with books. Looking at a book you can see how often certain shelves are used:
+The Goodreads data does not include categories exactly, but has something very similar in `popular_shelves`. These are free text tags that users can associate with books. Looking at a book, you can see how often certain shelves are used:
 
 ```sql
 select popular_shelves from graphic_novels limit 5;
@@ -22,7 +22,7 @@ select popular_shelves from graphic_novels limit 5;
 │ `[{'count': 222, 'name': to-read}, {'count': 9, 'name': currently-reading}, {'count': 3, 'name': mil…`  │
 │ `[{'count': 20, 'name': to-read}, {'count': 8, 'name': comics}, {'count': 4, 'name': graphic-novel},…` |
 
-Parsing the data out by unpacking and aggregating this field we can see the most popular shelves:
+Parsing the data out by unpacking and aggregating this field, we can see the most popular shelves:
 
 ```sql
 select
@@ -66,7 +66,7 @@ CATEGORIES = [
 ]
 ```
 
-Using these categories we can construct a table of the most common genres and select the single best genre to each book (assuming it was shelved that way at least three times). We can then wrap that query in an asset and materialize it as a table alongside our other DuckDB tables:
+Using these categories, we can construct a table of the most common genres and select the single best genre for each book (assuming it was shelved that way at least three times). We can then wrap that query in an asset and materialize it as a table alongside our other DuckDB tables:
 
 ```python
 @dg.asset(
@@ -112,9 +112,9 @@ def book_category(
         conn.execute(query)
 ```
 
-## Enrichment Table
+## Enrichment table
 
-With our `book_category` asset created, we can combine that with the `author` and `graphic_novel` assets to create our final data set we will use for modeling. Here we will both create the table within DuckDB and select its contents into a DataFrame which we can pass to our next series of assets:
+With our `book_category` asset created, we can combine that with the `author` and `graphic_novel` assets to create our final data set we will use for modeling. Here we will both create the table within DuckDB and select its contents into a DataFrame, which we can pass to our next series of assets:
 
 ```python
 @dg.asset(

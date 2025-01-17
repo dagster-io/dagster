@@ -1,5 +1,5 @@
 ---
-title: Model Validation
+title: Model validation
 description: Validate Fine-Tuned Model
 last_update:
   author: Dennis Hume
@@ -67,4 +67,4 @@ We can also execute this asset check separately from the fine-tuning job if we e
 
 ## Summary
 
-This should give you a good sense of how to go end to end in fine tuning a model, from ingesting the files, to creating features and generating and validating the model.
+This should give you a good sense of how to fine-tune a model end to end, from ingesting the files, to creating features, and generating and validating the model.
