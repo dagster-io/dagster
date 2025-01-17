@@ -433,7 +433,6 @@ def infer_schema_from_config_class(
                     " definition. 'dagster.Field' should only be used in legacy Dagster config"
                     " schemas. Did you mean to use 'pydantic.Field' instead?"
                 )
-
             try:
                 fields[resolved_field_name] = _convert_pydantic_field(pydantic_field_info)
             except DagsterInvalidConfigDefinitionError as e:
