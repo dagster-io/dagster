@@ -8,7 +8,7 @@ sidebar_position: 50
 
 Now that we are confident in the files we have generated, we can kick off our OpenAI fine-tuning job. The first step is uploading the files to the OpenAI storage endpoint. Like DuckDB, Dagster offers a resource to interact with OpenAI and provide us with a client we can use. After the files have been uploaded, OpenAI will return a file ID, which we will need for the fine-tuning job.
 
-We have an asset for each file to upload, but as in the file creation step, they will look very similar:
+We have an asset for each file to upload, but as in the file creation step, they will look similar:
 
 ```python
 @dg.asset(
@@ -67,7 +67,7 @@ def fine_tuned_model(
     return fine_tuned_model_name
 ```
 
-After the fine-tuning job has succeeded, we are given the unique name of our new model (in this case `ft:gpt-4o-mini-2024-07-18:test:goodreads:AoAYW0x3`). We can record this as metadata so it can be used over time.
+After the fine-tuning job has succeeded, we are given the unique name of our new model (in this case `ft:gpt-4o-mini-2024-07-18:test:goodreads:AoAYW0x3`). Note that we used `context.add_output_metadata` to record this as metadata as it will be good to track all the fine-tuned models we create over time with this job.
 
 Now that we have a model, we should test if it is an improvement over our initial model.
 

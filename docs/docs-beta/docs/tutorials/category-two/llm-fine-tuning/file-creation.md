@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 40
 ---
 
-Using the data we just prepared, we need to create two files: a training and validation file. A training file provides the model with labeled data to learn patterns, while a validation file evaluates the model's performance on unseen data to prevent overfitting. These will be used in our OpenAI fine-tuning job to create our model. The columnar data from our DuckDB assets needs to be fit into messages that resemble the conversation a user would have with a chatbot. Here we can inject the values of those fields from into conversations:
+Using the data we prepared in the [previous step](feature-engineering), we will create two files: a training file and a validation file. A training file provides the model with labeled data to learn patterns, while a validation file evaluates the model's performance on unseen data to prevent overfitting. These will be used in our OpenAI fine-tuning job to create our model. The columnar data from our DuckDB assets needs to be fit into messages that resemble the conversation a user would have with a chatbot. Here we can inject the values of those fields into conversations:
 
 ```python
 def create_prompt_record(data: dict, categories: list):
@@ -29,7 +29,7 @@ def create_prompt_record(data: dict, categories: list):
     }
 ```
 
-The fine-tuning process does not need all the data prepared from `enriched_graphic_novels`. We will simply take a sample of the DataFrame and write it to a `.jsonl` file. The assets to create the training and validation set are very similar (only the file name is different). They will take in the `enriched_graphic_novels` asset, generate the prompts, and write the outputs to a file stored locally:
+The fine-tuning process does not need all the data prepared from `enriched_graphic_novels`. We will simply take a sample of the DataFrame and write it to a `.jsonl` file. The assets to create the training and validation set are very similar (only the filename is different). They will take in the `enriched_graphic_novels` asset, generate the prompts, and write the outputs to a file stored locally:
 
 ```python
 @dg.asset(

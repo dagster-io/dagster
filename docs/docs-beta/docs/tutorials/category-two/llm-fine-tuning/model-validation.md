@@ -57,7 +57,7 @@ def fine_tuned_model_accuracy(
         )
 ```
 
-We will store the accuracy of both models as metadata in the check. Because this is an asset check, this will automatically every time we run our fine-tuning asset. When we execute the pipeline, you will see our check has passed since our model got .76 of the genres correct vs the base model which was only correct .44 of the the time.
+We will store the accuracy of both models as metadata in the check. Because this is an asset check, this will automatically every time we run our fine-tuning asset. When we execute the pipeline, you will see our check has passed since our fine-tuned model correctly identified 76 of the genres in our sample compared to the base model which was only correct in 44 instances.
 
 ![2048 resolution](/images/tutorial/llm-fine-tuning/model_accuracy_1.png)
 

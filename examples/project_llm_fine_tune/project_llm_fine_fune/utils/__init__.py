@@ -18,7 +18,7 @@ def write_openai_file(file_name: str, data: list):
 
 
 def read_openai_file(file_name: str) -> Generator:
-    """Reads the contents of a file
+    """Reads the contents of a file.
 
     Args:
         file_name (str): name of the input file

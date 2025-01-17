@@ -4,7 +4,6 @@ description: Learn how to fine-tune an LLM
 last_update:
    author: Dennis Hume
 sidebar_position: 10
-sidebar_class_name: hidden
 ---
 
 # Fine-tune an LLM
@@ -30,8 +29,8 @@ To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
-- Familiarity with SQL and Python data manipulation libraries, such as Pandas.
-- Understanding of data pipelines and the extract, transform, and load process.
+- Familiarity with SQL and Python data manipulation libraries, such as [Pandas](https://pandas.pydata.org/).
+- Understanding of data pipelines and the extract, transform, and load process (ETL).
 </details>
 
 
@@ -51,13 +50,13 @@ First, set up a new Dagster project.
    <Tabs>
    <TabItem value="macos" label="MacOS">
    ```bash
-   python -m venv dagster_tutorial
+   uv venv dagster_tutorial
    source dagster_tutorial/bin/activate
    ```
    </TabItem>
    <TabItem value="windows" label="Windows">
    ```bash
-   python -m venv dagster_tutorial
+   uv venv dagster_tutorial
    dagster_tutorial\Scripts\activate
    ```
    </TabItem>
@@ -66,15 +65,18 @@ First, set up a new Dagster project.
 3. Install Dagster and the required dependencies:
 
    ```bash
-   pip install dagster dagster-webserver pandas dagster-duckdb
+   uv pip install -e ".[dev]"
    ```
 
 ## Step 3: Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-followed by a bash code snippet for `dagster dev`
+followed by a bash code snippet for 
 
+```bash
+dagster dev
+```
 
 ## Next steps
 

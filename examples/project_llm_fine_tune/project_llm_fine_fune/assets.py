@@ -116,7 +116,7 @@ def enriched_graphic_novels(
     authors,
     book_category,
 ) -> pd.DataFrame:
-    query = f"""
+    query = """
         select
             book.title as title,
             authors.name as author,

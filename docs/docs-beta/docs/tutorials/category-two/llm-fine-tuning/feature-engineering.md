@@ -8,7 +8,7 @@ sidebar_position: 30
 
 With the data loaded, we can think of how we might want to train our model. One possible use case is to create a model that can tell categorize books based on their details.
 
-The Goodreads data does not include categories exactly, but has something very similar in `popular_shelves`. These are free text tags that users can associate with books. Looking at a book, you can see how often certain shelves are used:
+The Goodreads data does not include categories exactly, but has something similar in `popular_shelves`. These are free text tags that users can associate with books. Looking at a book, you can see how often certain shelves are used:
 
 ```sql
 select popular_shelves from graphic_novels limit 5;

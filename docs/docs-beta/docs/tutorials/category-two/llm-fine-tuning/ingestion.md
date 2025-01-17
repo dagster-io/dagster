@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 20
 ---
 
-We will be working with data from Goodreads which can be found [here](https://mengtingwan.github.io/data/goodreads#datasets). The dataset consists of JSON files that contain different genres of books. We will focus on graphic novels to limit the amount of data we need to process. Within this domain, the files we need are `goodreads_books_comics_graphic.json.gz` and `goodreads_book_authors.json.gz`.
+We will be working with a [Goodreads dataset](https://mengtingwan.github.io/data/goodreads#datasets) that consists of JSON files that contain different genres of books. The dataset consists of JSON files that contain different genres of books. We will focus on graphic novels to limit the amount of data we need to process. Within this domain, the files we need are `goodreads_books_comics_graphic.json.gz` and `goodreads_book_authors.json.gz`.
 
 Since the data is normalized across these two files, we will want to combine them in some way to produce a single dataset. This is a great use case for [DuckDB](https://duckdb.org/). DuckDB is an in-process database, similar to SQLite, optimized for analytical workloads. Using DuckDB, we can directly load the semi-structured data and work on it using SQL.
 
