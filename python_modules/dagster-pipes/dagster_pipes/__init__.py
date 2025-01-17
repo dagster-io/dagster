@@ -165,6 +165,9 @@ PipesMetadataType = Literal[
     "dagster_run",
     "asset",
     "null",
+    "table",
+    "table_schema",
+    "table_column_lineage",
 ]
 
 

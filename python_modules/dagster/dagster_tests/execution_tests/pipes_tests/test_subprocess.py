@@ -32,6 +32,19 @@ from dagster._core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
+from dagster._core.definitions.metadata.metadata_value import (
+    TableColumnLineageMetadataValue,
+    TableMetadataValue,
+    TableSchemaMetadataValue,
+)
+from dagster._core.definitions.metadata.table import (
+    TableColumn,
+    TableColumnConstraints,
+    TableColumnDep,
+    TableColumnLineage,
+    TableRecord,
+    TableSchema,
+)
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
@@ -256,6 +269,41 @@ def test_pipes_typed_metadata():
                     "dagster_run_meta": {"raw_value": "foo", "type": "dagster_run"},
                     "asset_meta": {"raw_value": "bar/baz", "type": "asset"},
                     "null_meta": {"raw_value": None, "type": "null"},
+                    "table_meta": {
+                        "raw_value": {
+                            "records": [{"code": "invalid-data-type"}],
+                            "schema": [
+                                {
+                                    "name": "code",
+                                    "type": "string",
+                                    "description": "code",
+                                    "tags": {"key": "value"},
+                                    "constraints": {"unique": True},
+                                }
+                            ],
+                        },
+                        "type": "table",
+                    },
+                    "table_schema_meta": {
+                        "raw_value": {
+                            "columns": [
+                                {
+                                    "name": "code",
+                                    "type": "string",
+                                    "description": "code",
+                                    "tags": {"key": "value"},
+                                    "constraints": {"unique": True},
+                                }
+                            ]
+                        },
+                        "type": "table_schema",
+                    },
+                    "table_column_lineage_meta": {
+                        "raw_value": {
+                            "deps_by_column": {"a": [{"asset_key": "b", "column_name": "c"}]},
+                        },
+                        "type": "table_column_lineage",
+                    },
                 }
             )
 
@@ -300,6 +348,38 @@ def test_pipes_typed_metadata():
         assert metadata["asset_meta"].value == AssetKey(["bar", "baz"])
         assert isinstance(metadata["null_meta"], NullMetadataValue)
         assert metadata["null_meta"].value is None
+        assert isinstance(metadata["table_meta"], TableMetadataValue)
+        table_metadata = metadata["table_meta"]
+        assert table_metadata.records == [TableRecord({"code": "invalid-data-type"})]
+        assert table_metadata.schema == TableSchema(
+            columns=[
+                TableColumn(
+                    name="code",
+                    type="string",
+                    description="code",
+                    tags={"key": "value"},
+                    constraints=TableColumnConstraints(unique=True),
+                )
+            ],
+        )
+        assert isinstance(metadata["table_schema_meta"], TableSchemaMetadataValue)
+        assert metadata["table_schema_meta"] == TableSchemaMetadataValue(
+            TableSchema(
+                columns=[
+                    TableColumn(
+                        name="code",
+                        type="string",
+                        description="code",
+                        tags={"key": "value"},
+                        constraints=TableColumnConstraints(unique=True),
+                    )
+                ]
+            )
+        )
+        assert isinstance(metadata["table_column_lineage_meta"], TableColumnLineageMetadataValue)
+        assert metadata["table_column_lineage_meta"].value == TableColumnLineage(
+            deps_by_column={"a": [TableColumnDep(asset_key="b", column_name="c")]}
+        )
 
 
 def test_pipes_asset_failed():
