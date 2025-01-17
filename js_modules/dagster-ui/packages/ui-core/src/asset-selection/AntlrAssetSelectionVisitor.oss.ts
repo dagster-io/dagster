@@ -21,7 +21,7 @@ import {
   TraversalAllowedExpressionContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalExpressionContext,
-} from 'shared/asset-selection/Antlr.oss';
+} from 'shared/asset-selection/AssetSelectionAntlr.oss';
 
 import {getFunctionName, getTraversalDepth, getValue} from './util';
 import {GraphTraverser} from '../app/GraphQueryImpl';

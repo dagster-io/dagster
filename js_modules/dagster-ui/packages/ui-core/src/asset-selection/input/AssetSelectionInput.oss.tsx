@@ -1,6 +1,9 @@
 import {Icons} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
-import {AssetSelectionLexer, AssetSelectionParser} from 'shared/asset-selection/Antlr.oss';
+import {
+  AssetSelectionLexer,
+  AssetSelectionParser,
+} from 'shared/asset-selection/AssetSelectionAntlr.oss';
 import styled from 'styled-components';
 
 import {assertUnreachable} from '../../app/Util';

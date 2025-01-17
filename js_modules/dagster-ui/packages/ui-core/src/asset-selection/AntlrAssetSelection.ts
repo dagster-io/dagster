@@ -7,8 +7,11 @@ import {
 } from 'antlr4ts';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
-import {AssetSelectionLexer, AssetSelectionParser} from 'shared/asset-selection/Antlr.oss';
 import {AntlrAssetSelectionVisitor} from 'shared/asset-selection/AntlrAssetSelectionVisitor.oss';
+import {
+  AssetSelectionLexer,
+  AssetSelectionParser,
+} from 'shared/asset-selection/AssetSelectionAntlr.oss';
 
 import {featureEnabled} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';

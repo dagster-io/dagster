@@ -3,7 +3,7 @@ import {
   FunctionNameContext,
   UpTraversalContext,
   ValueContext,
-} from 'shared/asset-selection/Antlr.oss';
+} from 'shared/asset-selection/AssetSelectionAntlr.oss';
 
 export function getTraversalDepth(ctx: UpTraversalContext | DownTraversalContext): number {
   const digits = ctx.DIGITS();
