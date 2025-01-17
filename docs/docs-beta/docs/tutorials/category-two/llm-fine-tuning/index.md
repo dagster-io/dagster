@@ -1,5 +1,5 @@
 ---
-title: LLM Fine Tuning
+title: LLM fine-tuning
 description: Learn how to fine tune an LLM
 last_update:
    author: Dennis Hume
