@@ -398,7 +398,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             with open(config.get("private_key_path"), "rb") as key:
                 private_key = key.read()
         else:
-            private_key = config.get("private_key", None)
+            private_key = config.get("private_key", None).encode()
 
         kwargs = {}
         if config.get("private_key_password", None) is not None:
@@ -410,7 +410,7 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
             p_key = serialization.load_pem_private_key(
                 private_key, backend=default_backend(), **kwargs
             )
-        except TypeError:
+        except (ValueError, TypeError):
             try:
                 private_key = base64.b64decode(private_key)
                 p_key = serialization.load_pem_private_key(
