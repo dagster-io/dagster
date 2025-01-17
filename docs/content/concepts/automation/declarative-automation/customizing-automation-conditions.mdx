@@ -73,15 +73,9 @@ By default, `AutomationCondition.on_cron()` will wait for all upstream dependenc
 ```python file=concepts/declarative_automation/ignore_dependencies_cron.py
 import dagster as dg
 
-all_deps_except_foo_updated = dg.AutomationCondition.all_deps_updated_since_cron(
-    "@hourly"
-).ignore(dg.AssetSelection.assets("foo"))
-
-condition = (
-    dg.AutomationCondition.on_cron("@hourly").without(
-        dg.AutomationCondition.all_deps_updated_since_cron("@hourly")
-    )
-) & all_deps_except_foo_updated
+condition = dg.AutomationCondition.on_cron("@hourly").ignore(
+    dg.AssetSelection.assets("foo")
+)
 ```
 
 Alternatively, you can pass in an <PyObject object="AssetSelection" /> to be allowed:
@@ -89,15 +83,9 @@ Alternatively, you can pass in an <PyObject object="AssetSelection" /> to be all
 ```python file=concepts/declarative_automation/allow_dependencies_cron.py
 import dagster as dg
 
-group_abc_updated = dg.AutomationCondition.all_deps_updated_since_cron("@hourly").allow(
+condition = dg.AutomationCondition.on_cron("@hourly").allow(
     dg.AssetSelection.groups("abc")
 )
-
-condition = (
-    dg.AutomationCondition.on_cron("@hourly").without(
-        dg.AutomationCondition.all_deps_updated_since_cron("@hourly")
-    )
-) & group_abc_updated
 ```
 
 ### Wait for all blocking asset checks to complete before executing
