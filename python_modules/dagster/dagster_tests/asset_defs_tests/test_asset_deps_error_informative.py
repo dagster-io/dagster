@@ -1,7 +1,6 @@
 import re
 import sys
 import time
-from typing import List
 from unittest import mock
 
 import pytest
@@ -184,7 +183,7 @@ NUM_PERF_TRIALS = 10
 
 
 def test_perf() -> None:
-    assets: List[AssetKey] = []
+    assets: list[AssetKey] = []
     for i in range(NUM_ASSETS_TO_TEST_PERF):
 
         @asset(name="asset_" + str(i))

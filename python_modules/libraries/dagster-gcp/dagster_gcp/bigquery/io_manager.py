@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
-from typing import Generator, Optional, Sequence, Type, cast
+from typing import Optional, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
 from dagster._annotations import experimental
@@ -25,7 +26,7 @@ BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 @experimental
 def build_bigquery_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
 ) -> IOManagerDefinition:
     """Builds an I/O manager definition that reads inputs from and writes outputs to BigQuery.
 
@@ -307,7 +308,7 @@ class BigQueryIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return None
 
     def create_io_manager(self, context) -> Generator:

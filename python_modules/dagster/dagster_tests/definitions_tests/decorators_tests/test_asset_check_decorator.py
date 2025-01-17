@@ -1,5 +1,6 @@
 import re
-from typing import Iterable, NamedTuple, Optional
+from collections.abc import Iterable
+from typing import NamedTuple, Optional
 
 import pytest
 from dagster import (

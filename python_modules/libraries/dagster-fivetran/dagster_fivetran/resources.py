@@ -2,9 +2,10 @@ import json
 import logging
 import os
 import time
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 from functools import partial
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Union
 from urllib.parse import urljoin
 
 import requests
@@ -184,7 +185,7 @@ class FivetranResource(ConfigurableResource):
         if connector_details["status"]["setup_state"] != "connected":
             raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
-    def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime, bool, str]:
+    def get_connector_sync_status(self, connector_id: str) -> tuple[datetime, bool, str]:
         """Gets details about the status of the most recent Fivetran sync operation for a given
         connector.
 

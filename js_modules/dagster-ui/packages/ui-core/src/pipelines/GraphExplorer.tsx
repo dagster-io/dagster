@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useEffect, useMemo, useState} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
 import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphNotices';
@@ -16,12 +17,15 @@ import {ExplorerPath} from './PipelinePathUtils';
 import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
 import {gql} from '../apollo-client';
+import {OpGraphSelectionInput} from './OpGraphSelectionInput';
+import {featureEnabled} from '../app/Flags';
 import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {Route} from '../app/Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {OP_GRAPH_OP_FRAGMENT, OpGraph} from '../graph/OpGraph';
 import {useOpLayout} from '../graph/asyncGraphLayout';
+import {filterOpSelectionByQuery} from '../op-selection/AntlrOpSelection';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
@@ -156,10 +160,15 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
     (options.explodeComposites ||
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
-  const queryResultOps = useMemo(
-    () => (solidsQueryEnabled ? filterByQuery(solids, opsQuery) : {all: solids, focus: []}),
-    [opsQuery, solids, solidsQueryEnabled],
-  );
+  const queryResultOps = useMemo(() => {
+    if (solidsQueryEnabled) {
+      if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+        return filterOpSelectionByQuery(solids, opsQuery);
+      }
+      return filterByQuery(solids, opsQuery);
+    }
+    return {all: solids, focus: []};
+  }, [opsQuery, solids, solidsQueryEnabled]);
 
   const highlightedOps = useMemo(
     () => queryResultOps.all.filter((s) => s.name.toLowerCase().includes(nameMatch.toLowerCase())),
@@ -193,13 +202,21 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
         <ErrorBoundary region="op graph">
           {solidsQueryEnabled ? (
             <QueryOverlay>
-              <GraphQueryInput
-                items={solids}
-                value={explorerPath.opsQuery}
-                placeholder="Type an op subset…"
-                popoverPosition="bottom-left"
-                onChange={handleQueryChange}
-              />
+              {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
+                <OpGraphSelectionInput
+                  items={solids}
+                  value={explorerPath.opsQuery}
+                  onChange={handleQueryChange}
+                />
+              ) : (
+                <GraphQueryInput
+                  items={solids}
+                  value={explorerPath.opsQuery}
+                  placeholder="Type an op subset…"
+                  popoverPosition="bottom-left"
+                  onChange={handleQueryChange}
+                />
+              )}
             </QueryOverlay>
           ) : breadcrumbs.length > 1 ? (
             <BreadcrumbsOverlay>

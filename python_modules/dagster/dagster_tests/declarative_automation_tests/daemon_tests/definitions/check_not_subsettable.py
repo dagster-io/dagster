@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 import dagster as dg
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec

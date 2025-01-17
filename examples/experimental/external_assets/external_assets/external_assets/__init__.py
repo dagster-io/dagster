@@ -8,7 +8,7 @@ from dagster._core.definitions.external_asset import external_assets_from_specs
 
 def build_asset_specs_from_external_definitions():
     specs = []
-    with open(os.path.join(os.path.dirname(__file__), "asset_defs.yaml"), "r") as f:
+    with open(os.path.join(os.path.dirname(__file__), "asset_defs.yaml")) as f:
         data = yaml.load(f, Loader=yaml.SafeLoader)
         for asset in data["assets"]:
             deps = []

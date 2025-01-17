@@ -2,7 +2,7 @@ import re
 import sys
 import warnings
 from abc import abstractmethod
-from typing import NamedTuple, get_type_hints
+from typing import Annotated, NamedTuple, get_type_hints
 
 import pytest
 from dagster import resource
@@ -26,7 +26,6 @@ from dagster._annotations import (
 )
 from dagster._check import CheckError
 from dagster._utils.warnings import ExperimentalWarning
-from typing_extensions import Annotated
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 

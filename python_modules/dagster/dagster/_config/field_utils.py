@@ -1,18 +1,7 @@
-# encoding: utf-8
 import hashlib
 import os
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from typing_extensions import TypeGuard
 
@@ -60,7 +49,7 @@ INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 class _ConfigHasFields(ConfigType):
     def __init__(self, fields, **kwargs):
         self.fields = expand_fields_dict(fields)
-        super(_ConfigHasFields, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def type_iterator(self) -> Iterator["ConfigType"]:
         for field in self.fields.values():
@@ -68,7 +57,7 @@ class _ConfigHasFields(ConfigType):
         yield from super().type_iterator()
 
 
-FIELD_HASH_CACHE: Dict[str, Any] = {}
+FIELD_HASH_CACHE: dict[str, Any] = {}
 
 
 def _memoize_inst_in_field_cache(passed_cls, defined_cls, key):
@@ -153,7 +142,7 @@ class Shape(_ConfigHasFields):
             return
 
         fields = expand_fields_dict(fields)
-        super(Shape, self).__init__(
+        super().__init__(
             kind=ConfigTypeKind.STRICT_SHAPE,
             key=_define_shape_key_hash(fields, description, field_aliases),
             description=description,
@@ -204,7 +193,7 @@ class Map(ConfigType):
         )
         check.opt_str_param(self.given_name, "name")
 
-        super(Map, self).__init__(
+        super().__init__(
             key="Map.{key_type}.{inner_type}{name_key}".format(
                 key_type=self.key_type.key,
                 inner_type=self.inner_type.key,
@@ -271,7 +260,7 @@ class Permissive(_ConfigHasFields):
             return
 
         fields = expand_fields_dict(fields) if fields else None
-        super(Permissive, self).__init__(
+        super().__init__(
             key=_define_permissive_dict_key(fields, description),
             kind=ConfigTypeKind.PERMISSIVE_SHAPE,
             fields=fields or dict(),
@@ -338,7 +327,7 @@ class Selector(_ConfigHasFields):
             return
 
         fields = expand_fields_dict(fields)
-        super(Selector, self).__init__(
+        super().__init__(
             key=_define_selector_key(fields, description),
             kind=ConfigTypeKind.SELECTOR,
             fields=fields,
@@ -363,7 +352,7 @@ def convert_fields_to_dict_type(fields: Mapping[str, object]):
 
 
 def _convert_fields_to_dict_type(
-    original_root: object, fields: Mapping[str, object], stack: List[str]
+    original_root: object, fields: Mapping[str, object], stack: list[str]
 ) -> Shape:
     return Shape(_expand_fields_dict(original_root, fields, stack))
 
@@ -373,7 +362,7 @@ def expand_fields_dict(fields: Mapping[str, object]) -> Mapping[str, "Field"]:
 
 
 def _expand_fields_dict(
-    original_root: object, fields: Mapping[str, object], stack: List[str]
+    original_root: object, fields: Mapping[str, object], stack: list[str]
 ) -> Mapping[str, "Field"]:
     check.mapping_param(fields, "fields")
     return {
@@ -382,7 +371,7 @@ def _expand_fields_dict(
     }
 
 
-def expand_list(original_root: object, the_list: Sequence[object], stack: List[str]) -> Array:
+def expand_list(original_root: object, the_list: Sequence[object], stack: list[str]) -> Array:
     if len(the_list) != 1:
         raise DagsterInvalidConfigDefinitionError(
             original_root, the_list, stack, "List must be of length 1"
@@ -400,7 +389,7 @@ def expand_list(original_root: object, the_list: Sequence[object], stack: List[s
     return Array(inner_type)
 
 
-def expand_map(original_root: object, the_dict: Mapping[object, object], stack: List[str]) -> Map:
+def expand_map(original_root: object, the_dict: Mapping[object, object], stack: list[str]) -> Map:
     if len(the_dict) != 1:
         raise DagsterInvalidConfigDefinitionError(
             original_root, the_dict, stack, "Map dict must be of length 1"
@@ -432,7 +421,7 @@ def convert_potential_field(potential_field: object) -> "Field":
     return _convert_potential_field(potential_field, potential_field, [])
 
 
-def _convert_potential_type(original_root: object, potential_type, stack: List[str]):
+def _convert_potential_type(original_root: object, potential_type, stack: list[str]):
     from dagster._config.field import resolve_to_config_type
 
     if isinstance(potential_type, Mapping):
@@ -452,7 +441,7 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
 
 
 def _convert_potential_field(
-    original_root: object, potential_field: object, stack: List[str]
+    original_root: object, potential_field: object, stack: list[str]
 ) -> "Field":
     from dagster._config.field import Field
 
@@ -472,7 +461,7 @@ def _convert_potential_field(
 
 def config_dictionary_from_values(
     values: Mapping[str, Any], config_field: "Field"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Converts a set of config values into a dictionary representation,
     in particular converting EnvVar objects into Dagster config inputs
     and processing data structures such as dicts, lists, and structured Config classes.
@@ -484,7 +473,7 @@ def config_dictionary_from_values(
     return check.is_dict(_config_value_to_dict_representation(None, values))
 
 
-def _create_direct_access_exception(cls: Type, env_var_name: str) -> Exception:
+def _create_direct_access_exception(cls: type, env_var_name: str) -> Exception:
     return RuntimeError(
         f'Attempted to directly retrieve environment variable {cls.__name__}("{env_var_name}").'
         f" {cls.__name__} defers resolution of the environment variable value until run time, and"
@@ -570,7 +559,7 @@ def is_dagster_env_var(value: Any) -> TypeGuard[DagsterEnvVar]:
     return isinstance(value, (EnvVar, IntEnvVar))
 
 
-def env_var_to_config_dict(value: DagsterEnvVar) -> Dict[str, Any]:
+def env_var_to_config_dict(value: DagsterEnvVar) -> dict[str, Any]:
     if isinstance(value, EnvVar):
         return {"env": value.env_var_name}
     else:

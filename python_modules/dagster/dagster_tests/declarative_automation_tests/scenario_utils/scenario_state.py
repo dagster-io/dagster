@@ -4,9 +4,10 @@ import json
 import logging
 import os
 import sys
+from collections.abc import Iterable, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
+from typing import AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
 from unittest import mock
 
 from dagster import (

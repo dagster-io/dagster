@@ -1,18 +1,7 @@
 import sys
 from abc import abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    Mapping,
-    TypeVar,
-    Union,
-    cast,
-    get_args,
-    get_origin,
-)
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, Union, cast, get_args, get_origin
 
 if sys.version_info < (3, 10):
     from typing_extensions import TypeAlias
@@ -128,7 +117,7 @@ class DictTypeRouter(BaseTypeRouter, Generic[T]):
 
     @staticmethod
     def match(context: Union[InputContext, OutputContext], typing_type: Any) -> bool:
-        return get_origin(typing_type) in (dict, Dict, Mapping)
+        return get_origin(typing_type) in (dict, dict, Mapping)
 
     @property
     def is_base_type(self) -> bool:

@@ -1,7 +1,8 @@
 import warnings
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Callable, Iterator, Optional, TypeVar
+from typing import Callable, Optional, TypeVar
 
 import dagster._check as check
 from dagster._core.decorator_utils import Decoratable, apply_context_manager_decorator

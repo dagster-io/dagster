@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import U_EntityKey

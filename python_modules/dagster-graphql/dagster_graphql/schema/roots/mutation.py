@@ -1,4 +1,5 @@
-from typing import List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import dagster._check as check
 import graphene
@@ -332,7 +333,7 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
 
     @capture_error
     def mutate(
-        self, graphene_info: ResolveInfo, executionParamsList: List[GrapheneExecutionParams]
+        self, graphene_info: ResolveInfo, executionParamsList: list[GrapheneExecutionParams]
     ) -> Union[
         GrapheneLaunchMultipleRunsResult,
         GrapheneError,

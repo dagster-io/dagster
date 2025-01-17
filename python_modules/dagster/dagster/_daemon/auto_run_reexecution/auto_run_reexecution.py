@@ -1,6 +1,7 @@
 import logging
 import sys
-from typing import Iterator, Optional, Sequence, cast
+from collections.abc import Iterator, Sequence
+from typing import Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue

@@ -1,5 +1,6 @@
 import time
-from typing import TYPE_CHECKING, Optional, Sequence, Set
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.definitions.run_request import InstigatorType
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 def get_sensors_or_error(
     graphene_info: ResolveInfo,
     repository_selector: RepositorySelector,
-    instigator_statuses: Optional[Set[InstigatorStatus]] = None,
+    instigator_statuses: Optional[set[InstigatorStatus]] = None,
 ) -> "GrapheneSensors":
     from dagster_graphql.schema.sensors import GrapheneSensor, GrapheneSensors
 

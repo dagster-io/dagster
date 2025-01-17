@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import pytest
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher

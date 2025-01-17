@@ -55,11 +55,7 @@ class Field:
         self.description = description
 
     def __repr__(self):
-        return "Field(%s, %s, %s)" % (
-            pprint.pformat(self.fields),
-            str(self.is_required),
-            self.description,
-        )
+        return f"Field({pprint.pformat(self.fields)}, {self.is_required!s}, {self.description})"
 
     def _print_fields(self, printer):
         # Scalars
@@ -116,7 +112,7 @@ class Field:
 
             # Print is_required=True/False if defined; if not defined, default to True
             printer.line(
-                "is_required=%s," % str(self.is_required if self.is_required is not None else True)
+                f"is_required={self.is_required if self.is_required is not None else True!s},"
             )
         printer.line(")")
         return printer.read()
@@ -124,15 +120,15 @@ class Field:
 
 class ParsedConfig(namedtuple("_ParsedConfig", "name configs enums")):
     def __new__(cls, name, configs, enums):
-        return super(ParsedConfig, cls).__new__(cls, name, configs, enums)
+        return super().__new__(cls, name, configs, enums)
 
     def write_configs(self, base_path):
-        configs_filename = "configs_%s.py" % self.name
+        configs_filename = f"configs_{self.name}.py"
         print("Writing", configs_filename)  # noqa: T201
         with open(os.path.join(base_path, configs_filename), "wb") as f:
             f.write(self.configs)
 
-        enums_filename = "types_%s.py" % self.name
+        enums_filename = f"types_{self.name}.py"
         with open(os.path.join(base_path, enums_filename), "wb") as f:
             f.write(self.enums)
 
@@ -157,7 +153,7 @@ class ConfigParser:
                 )
                 printer.blank_line()
 
-            printer.line("def define_%s_config():" % suffix)
+            printer.line(f"def define_{suffix}_config():")
             with printer.with_indent():
                 printer.append("return ")
                 base_field.write(printer)

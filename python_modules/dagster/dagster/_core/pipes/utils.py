@@ -6,9 +6,10 @@ import tempfile
 import time
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from threading import Event, Thread
-from typing import IO, Dict, Iterator, Optional, Sequence, Tuple, TypeVar, Union
+from typing import IO, Optional, TypeVar, Union
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
@@ -269,7 +270,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
     """
 
     interval: float
-    log_readers: Dict[str, "PipesLogReader"]
+    log_readers: dict[str, "PipesLogReader"]
     opened_payload: Optional[PipesOpenedData]
     launched_payload: Optional[PipesLaunchedData]
 
@@ -360,7 +361,7 @@ class PipesThreadedMessageReader(PipesMessageReader):
     @abstractmethod
     def download_messages(
         self, cursor: Optional[TCursor], params: PipesParams
-    ) -> Optional[Tuple[TCursor, str]]:
+    ) -> Optional[tuple[TCursor, str]]:
         """Download a chunk of messages from the target location.
 
         Args:
@@ -559,7 +560,7 @@ class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
 
     def download_messages(
         self, cursor: Optional[int], params: PipesParams
-    ) -> Optional[Tuple[int, str]]:
+    ) -> Optional[tuple[int, str]]:
         # mapping new interface to the old one
         # the old interface isn't using the cursor parameter, instead, it keeps track of counter in the "counter" attribute
         chunk = self.download_messages_chunk(self.counter, params)

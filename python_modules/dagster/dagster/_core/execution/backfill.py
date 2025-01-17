@@ -1,6 +1,7 @@
+from collections.abc import Iterator, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -151,7 +152,7 @@ class PartitionBackfill(
             check.invariant(last_submitted_partition_name is None)
             check.invariant(reexecution_steps is None)
 
-        return super(PartitionBackfill, cls).__new__(
+        return super().__new__(
             cls,
             backfill_id=check.str_param(backfill_id, "backfill_id"),
             status=check.inst_param(status, "status", BulkActionStatus),

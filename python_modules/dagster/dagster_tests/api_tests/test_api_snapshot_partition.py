@@ -331,7 +331,9 @@ def test_dynamic_partition_set_grpc(instance: DagsterInstance):
             instance=instance,
         )
         assert isinstance(data, PartitionSetExecutionParamSnap)
-        assert data.partition_data == []
+
+        # non existant partitions can still return snapshots
+        assert len(data.partition_data) == 1
 
 
 def test_external_partition_tags_grpc_backcompat_no_job_name(instance: DagsterInstance):

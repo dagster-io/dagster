@@ -1,5 +1,6 @@
 import os
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, NamedTuple, Optional
 
 import dagster._check as check
 import requests
@@ -61,7 +62,7 @@ class DagsterEcsTaskDefinitionConfig(
         linux_parameters: Optional[Mapping[str, Any]] = None,
         health_check: Optional[Mapping[str, Any]] = None,
     ):
-        return super(DagsterEcsTaskDefinitionConfig, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(family, "family"),
             check.str_param(image, "image"),

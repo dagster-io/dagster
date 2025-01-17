@@ -9,7 +9,8 @@
 """
 
 import datetime
-from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 from dagster._core.definitions.declarative_automation.legacy.valid_asset_subset import (
     ValidAssetSubset,
@@ -70,7 +71,7 @@ def get_execution_period_and_evaluation_data_for_policies(
     policies: AbstractSet[FreshnessPolicy],
     effective_data_time: Optional[datetime.datetime],
     current_time: datetime.datetime,
-) -> Tuple[Optional[TimeWindow], Optional["TextRuleEvaluationData"]]:
+) -> tuple[Optional[TimeWindow], Optional["TextRuleEvaluationData"]]:
     """Determines a range of times for which you can kick off an execution of this asset to solve
     the most pressing constraint, alongside a maximum number of additional constraints.
     """
@@ -161,7 +162,7 @@ def get_expected_data_time_for_asset_key(
 
 def freshness_evaluation_results_for_asset_key(
     context: "LegacyRuleEvaluationContext",
-) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
+) -> tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
     """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 

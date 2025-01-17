@@ -10,7 +10,7 @@ def test_write_read_stream():
     @whitelist_for_serdes
     class TestMessage(namedtuple("_TestMessage", "message")):
         def __new__(cls, message):
-            return super(TestMessage, cls).__new__(cls, message)
+            return super().__new__(cls, message)
 
     with safe_tempfile_path() as f:
         message_1 = TestMessage(message="hello")

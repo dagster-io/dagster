@@ -13,6 +13,7 @@ from dagster_dg_tests.utils import (
     assert_runner_result,
     isolated_example_code_location_bar,
     isolated_example_deployment_foo,
+    modify_pyproject_toml,
 )
 
 # ########################
@@ -142,34 +143,43 @@ def test_component_generate_already_exists_fails(in_deployment: bool) -> None:
         assert "already exists" in result.output
 
 
-# ########################
-# ##### REAL COMPONENTS
-# ########################
-
-
-def test_generate_sling_replication_instance() -> None:
-    with (
-        ProxyRunner.test(use_test_component_lib=False) as runner,
-        isolated_example_code_location_bar(runner),
-    ):
-        # We need to add dagster-embedded-elt also because we are using editable installs. Only
-        # direct dependencies will be resolved by uv.tool.sources.
-        subprocess.run(
-            ["uv", "add", "dagster-components[sling]", "dagster-embedded-elt"], check=True
-        )
+def test_component_generate_succeeds_non_default_component_package() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+        alt_lib_path = Path("bar/_components")
+        alt_lib_path.mkdir(parents=True)
+        with modify_pyproject_toml() as pyproject_toml:
+            pyproject_toml["tool"]["dg"]["components_package"] = "bar._components"
         result = runner.invoke(
-            "component", "generate", "dagster_components.sling_replication", "file_ingest"
+            "component",
+            "generate",
+            "dagster_components.test.all_metadata_empty_asset",
+            "qux",
         )
         assert_runner_result(result)
-        assert Path("bar/components/file_ingest").exists()
-
-        component_yaml_path = Path("bar/components/file_ingest/component.yaml")
+        assert Path("bar/_components/qux").exists()
+        component_yaml_path = Path("bar/_components/qux/component.yaml")
         assert component_yaml_path.exists()
-        assert "type: dagster_components.sling_replication" in component_yaml_path.read_text()
+        assert (
+            "type: dagster_components.test.all_metadata_empty_asset"
+            in component_yaml_path.read_text()
+        )
 
-        replication_path = Path("bar/components/file_ingest/replication.yaml")
-        assert replication_path.exists()
-        assert "source: " in replication_path.read_text()
+
+def test_component_generate_fails_components_package_does_not_exist() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+        with modify_pyproject_toml() as pyproject_toml:
+            pyproject_toml["tool"]["dg"]["components_package"] = "bar._components"
+        result = runner.invoke(
+            "component",
+            "generate",
+            "dagster_components.test.all_metadata_empty_asset",
+            "qux",
+        )
+        assert_runner_result(result, exit_0=False)
+        assert "Components package `bar._components` is not installed" in str(result.exception)
+
+
+# ##### REAL COMPONENTS
 
 
 dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffle_shop"

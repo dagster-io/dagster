@@ -1,5 +1,6 @@
 import datetime
-from typing import Callable, Iterator, Mapping, Optional, Sequence, Tuple, Union
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Callable, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions.asset_check_result import AssetCheckResult
@@ -266,7 +267,7 @@ def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: 
 
 def build_multi_asset_check(
     check_specs: Sequence[AssetCheckSpec],
-    check_fn: Callable[[DagsterInstance, AssetCheckKey], Tuple[bool, str]],
+    check_fn: Callable[[DagsterInstance, AssetCheckKey], tuple[bool, str]],
     severity: AssetCheckSeverity,
 ) -> Sequence[AssetChecksDefinition]:
     @multi_asset_check(

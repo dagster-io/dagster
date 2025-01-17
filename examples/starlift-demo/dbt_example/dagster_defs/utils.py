@@ -1,4 +1,4 @@
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from dagster import AssetsDefinition, AssetSpec, AutomationCondition, Definitions, Nothing
 from dagster._core.definitions.asset_key import AssetKey

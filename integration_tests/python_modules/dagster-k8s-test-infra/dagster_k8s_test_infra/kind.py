@@ -25,11 +25,11 @@ def kind_load_images(cluster_name, local_dagster_test_image, additional_images=N
 
     # Pull rabbitmq/pg images
     for image in additional_images:
-        print("kind: Loading image %s into kind cluster %s" % (image, cluster_name))
+        print(f"kind: Loading image {image} into kind cluster {cluster_name}")
         check_output(["docker", "pull", image])
         check_output(["kind", "load", "docker-image", "--name", cluster_name, image])
 
-    print("kind: Loading image %s into kind cluster %s" % (local_dagster_test_image, cluster_name))
+    print(f"kind: Loading image {local_dagster_test_image} into kind cluster {cluster_name}")
     check_output(["kind", "load", "docker-image", "--name", cluster_name, local_dagster_test_image])
 
 
@@ -82,7 +82,7 @@ def kind_kubeconfig(cluster_name, use_internal_address=True):
             kubeconfig_call += ["--internal"]
 
         with safe_tempfile_path() as kubeconfig_file:
-            print("Writing kubeconfig to file %s" % kubeconfig_file)
+            print(f"Writing kubeconfig to file {kubeconfig_file}")
 
             with open(kubeconfig_file, "wb") as f:
                 subprocess.check_call(kubeconfig_call, stdout=f)
@@ -117,12 +117,12 @@ def kind_sync_dockerconfig():
         cmd = os.path.expandvars(
             f"{docker_exe} cp $HOME/.docker/config.json {node_name}:/var/lib/kubelet/config.json"
         )
-        print("Running cmd: %s" % cmd)
+        print(f"Running cmd: {cmd}")
         check_output(cmd, shell=True)
 
         # restart kubelet to pick up the config
         print("Restarting node kubelets...")
-        check_output("docker exec %s systemctl restart kubelet.service" % node_name, shell=True)
+        check_output(f"docker exec {node_name} systemctl restart kubelet.service", shell=True)
 
 
 @contextmanager
@@ -133,7 +133,7 @@ def kind_cluster(cluster_name=None, should_cleanup=False, kind_ready_timeout=60.
     use_internal_address = within_docker()
 
     if kind_cluster_exists(cluster_name):
-        print("Using existing cluster %s" % cluster_name)
+        print(f"Using existing cluster {cluster_name}")
 
         with kind_kubeconfig(cluster_name, use_internal_address) as kubeconfig_file:
             kubernetes.config.load_kube_config(config_file=kubeconfig_file)
@@ -143,7 +143,7 @@ def kind_cluster(cluster_name=None, should_cleanup=False, kind_ready_timeout=60.
                 print(
                     "WARNING: should_cleanup is true, but won't delete your existing cluster. If"
                     " you'd like to delete this cluster, please manually remove by running the"
-                    " command:\nkind delete cluster --name %s" % cluster_name
+                    f" command:\nkind delete cluster --name {cluster_name}"
                 )
     else:
         with create_kind_cluster(cluster_name, should_cleanup=should_cleanup):

@@ -3,9 +3,10 @@ import re
 import shutil
 import subprocess
 import uuid
+from collections.abc import Sequence
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -59,7 +60,7 @@ class SdfCliResource(ConfigurableResource):
             " `workspace.sdf.yml`."
         ),
     )
-    global_config_flags: List[str] = Field(
+    global_config_flags: list[str] = Field(
         default=[],
         description="A list of global flags configuration to pass to the sdf CLI invocation.",
     )
@@ -71,7 +72,7 @@ class SdfCliResource(ConfigurableResource):
     def __init__(
         self,
         workspace_dir: Union[str, Path, SdfWorkspace],
-        global_config_flags: Optional[List[str]] = None,
+        global_config_flags: Optional[list[str]] = None,
         sdf_executable: str = SDF_EXECUTABLE,
         **kwargs,  # allow custom subclasses to add fields
     ):

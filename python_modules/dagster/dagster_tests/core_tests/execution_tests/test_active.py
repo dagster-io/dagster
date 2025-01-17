@@ -1,7 +1,6 @@
 import math
 import tempfile
 from collections import defaultdict
-from typing import List, Set
 
 import pytest
 from dagster import job, op
@@ -238,7 +237,7 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
         self._pending_claims = set()
 
     @property
-    def global_concurrency_keys(self) -> Set[str]:
+    def global_concurrency_keys(self) -> set[str]:
         return {"foo"}
 
     def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
@@ -248,7 +247,7 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
     def interval_to_next_pending_claim_check(self) -> float:
         return self._interval
 
-    def pending_claim_steps(self) -> List[str]:
+    def pending_claim_steps(self) -> list[str]:
         return list(self._pending_claims)
 
     def has_pending_claims(self) -> bool:

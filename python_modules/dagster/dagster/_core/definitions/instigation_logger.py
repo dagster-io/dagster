@@ -3,8 +3,9 @@ import logging
 import sys
 import threading
 import traceback
+from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
-from typing import IO, Any, List, Mapping, Optional, Sequence
+from typing import IO, Any, Optional
 
 from dagster import _seven
 from dagster._core.instance import DagsterInstance
@@ -21,7 +22,7 @@ class DispatchingLogHandler(logging.Handler):
     implemented as loggers rather than log handlers.
     """
 
-    def __init__(self, downstream_loggers: List[logging.Logger]):
+    def __init__(self, downstream_loggers: list[logging.Logger]):
         # Setting up a local thread context here to allow the DispatchingLogHandler
         # to be used in multi threading environments where the handler is called by
         # different threads with different log messages in parallel.

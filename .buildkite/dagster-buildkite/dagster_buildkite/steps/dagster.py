@@ -186,7 +186,9 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
             "dagster-graphql-client query check",
         )
         .with_skip(
-            skip_graphql_if_no_changes_to_dependencies(["dagster", "dagster-graphql", "automation"])
+            skip_graphql_if_no_changes_to_dependencies(
+                ["dagster", "dagster-graphql", "automation"]
+            )
         )
         .build()
     ]

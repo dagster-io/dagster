@@ -1,6 +1,6 @@
 ### ORCHESTRATION PROCESS
 
-from typing import Iterator
+from collections.abc import Iterator
 
 # `third_party_api` is a fictional package representing a third-party library (or user code)
 # providing APIs for launching and polling a process in some external environment.

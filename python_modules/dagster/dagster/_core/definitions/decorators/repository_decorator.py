@@ -1,18 +1,6 @@
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
@@ -52,9 +40,9 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _flatten(items: Iterable[Union[T, List[T]]]) -> Iterator[T]:
+def _flatten(items: Iterable[Union[T, list[T]]]) -> Iterator[T]:
     for x in items:
-        if isinstance(x, List):
+        if isinstance(x, list):
             # switch to `yield from _flatten(x)` to support multiple layers of nesting
             yield from x
         else:
@@ -106,7 +94,7 @@ class _Repository:
         if not self.name:
             self.name = fn.__name__
 
-        cacheable_asset_data: Dict[str, Sequence["AssetsDefinitionCacheableData"]] = {}
+        cacheable_asset_data: dict[str, Sequence[AssetsDefinitionCacheableData]] = {}
         reconstruction_metadata = {
             k: v
             for k, v in self.metadata.items()

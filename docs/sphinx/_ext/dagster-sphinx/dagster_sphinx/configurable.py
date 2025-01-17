@@ -1,7 +1,7 @@
 import inspect
 import json
 import textwrap
-from typing import Any, List, Type, Union, cast
+from typing import Any, Union, cast
 
 import dagster._check as check
 from dagster import BoolSource, Field, IntSource, StringSource
@@ -69,7 +69,7 @@ def type_repr(config_type: ConfigType) -> str:
         raise Exception(f"Unhandled config type {config_type}")
 
 
-def config_field_to_lines(field, name=None) -> List[str]:
+def config_field_to_lines(field, name=None) -> list[str]:
     """Given a config field, turn it into a list of lines to add to the documentation."""
     lines = [""]
 
@@ -142,7 +142,7 @@ class ConfigurableDocumenter(DataDocumenter):
             obj = self.object
 
         obj = cast(
-            Union[ConfigurableDefinition, Type[ConfigurableClass], ConfigurableResource], obj
+            Union[ConfigurableDefinition, type[ConfigurableClass], ConfigurableResource], obj
         )
 
         config_field = None

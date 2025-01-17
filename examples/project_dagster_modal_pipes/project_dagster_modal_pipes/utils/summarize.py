@@ -12,7 +12,7 @@ summarizing movie subtitles:
 """
 
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import tiktoken
 from openai import Client
@@ -27,12 +27,12 @@ def get_chat_completion(client, messages, model="gpt-4-turbo"):
     return response.choices[0].message.content
 
 
-def tokenize(text: str) -> List[str]:
+def tokenize(text: str) -> list[str]:
     encoding = tiktoken.encoding_for_model("gpt-4-turbo")
     return encoding.encode(text)  # type: ignore
 
 
-def chunk_on_delimiter(input_string: str, max_tokens: int, delimiter: str) -> List[str]:
+def chunk_on_delimiter(input_string: str, max_tokens: int, delimiter: str) -> list[str]:
     chunks = input_string.split(delimiter)
     combined_chunks, _, dropped_chunk_count = combine_chunks_with_no_minimum(
         chunks, max_tokens, chunk_delimiter=delimiter, add_ellipsis_for_overflow=True
@@ -44,12 +44,12 @@ def chunk_on_delimiter(input_string: str, max_tokens: int, delimiter: str) -> Li
 
 
 def combine_chunks_with_no_minimum(
-    chunks: List[str],
+    chunks: list[str],
     max_tokens: int,
     chunk_delimiter="\n\n",
     header: Optional[str] = None,
     add_ellipsis_for_overflow=False,
-) -> Tuple[List[str], List[int], int]:
+) -> tuple[list[str], list[int], int]:
     dropped_chunk_count = 0
     output = []
     output_indices = []

@@ -178,9 +178,9 @@ my_email_sensor(run_status_sensor_context)
 # end_run_status_sensor_testing_marker
 
 from dagster import SensorDefinition
-from typing import List
+from typing import List  # noqa: UP035
 
-my_jobs: List[SensorDefinition] = []
+my_jobs: list[SensorDefinition] = []
 
 
 @job

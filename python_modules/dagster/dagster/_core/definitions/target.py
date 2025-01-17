@@ -1,4 +1,5 @@
-from typing import NamedTuple, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import NamedTuple, Optional, Union
 
 from typing_extensions import Self, TypeAlias
 

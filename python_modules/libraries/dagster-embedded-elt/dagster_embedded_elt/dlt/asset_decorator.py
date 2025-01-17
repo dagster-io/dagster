@@ -1,4 +1,5 @@
-from typing import Any, Callable, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Callable, Optional
 
 from dagster import (
     AssetsDefinition,

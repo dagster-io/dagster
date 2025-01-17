@@ -5,7 +5,7 @@
 # as to not require any additional dependencies
 
 from datetime import datetime
-from typing import List, Literal, Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 
 ChecksumAlgorithmType = Literal[
     "CRC32",
@@ -43,7 +43,7 @@ class ObjectTypeDef(TypedDict):
     Key: str
     LastModified: datetime
     ETag: Optional[str]
-    ChecksumAlgorithm: Optional[List[ChecksumAlgorithmType]]
+    ChecksumAlgorithm: Optional[list[ChecksumAlgorithmType]]
     Size: Optional[int]
     StorageClass: Optional[ObjectStorageClassType]
     Owner: Optional[OwnerTypeDef]

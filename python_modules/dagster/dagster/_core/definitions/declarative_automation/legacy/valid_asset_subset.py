@@ -1,7 +1,7 @@
 import datetime
 import operator
 from dataclasses import replace
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.asset_graph_view.serializable_entity_subset import (

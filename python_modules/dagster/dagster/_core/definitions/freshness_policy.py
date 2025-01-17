@@ -1,5 +1,5 @@
 import datetime
-from typing import AbstractSet, NamedTuple, Optional
+from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated
@@ -126,7 +126,7 @@ class FreshnessPolicy(
                 raise DagsterInvalidDefinitionError(
                     "Invalid cron schedule timezone '{cron_schedule_timezone}'.   "
                 ) from e
-        return super(FreshnessPolicy, cls).__new__(
+        return super().__new__(
             cls,
             maximum_lag_minutes=float(
                 check.numeric_param(maximum_lag_minutes, "maximum_lag_minutes")

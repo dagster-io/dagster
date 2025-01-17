@@ -29,7 +29,7 @@ Inside the body of the function, we can use <PyObject object="AssetCheckExecutio
 As we don't know in advance which checks will be executed, we explicitly `yield` each asset check result that we're expected to create:
 
 ```python file=/concepts/assets/asset_checks/subset_multi_asset_check.py
-from typing import Iterable
+from collections.abc import Iterable
 
 from dagster import (
     AssetCheckExecutionContext,

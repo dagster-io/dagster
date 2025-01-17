@@ -5,11 +5,11 @@ import re
 import string
 import threading
 import time
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional, Sequence, Set, Union
+from typing import Any, Optional, Union
 
 import kubernetes
 from dagster import (
@@ -370,7 +370,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
         env: Optional[Mapping[str, str]] = None,
         base_pod_meta: Optional[Mapping[str, Any]] = None,
         base_pod_spec: Optional[Mapping[str, Any]] = None,
-        ignore_containers: Optional[Set] = None,
+        ignore_containers: Optional[set] = None,
         enable_multi_container_logs: bool = False,
     ) -> PipesClientCompletedInvocation:
         """Publish a kubernetes pod and wait for it to complete, enriched with the pipes protocol.

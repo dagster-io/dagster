@@ -538,6 +538,49 @@ def test_multi_asset_with_different_partitions_defs():
         materialize(assets=[my_assets], partition_key="b")
 
 
+def test_multi_asset_with_differrent_partitions_def_and_top_level_group_name():
+    partitions_def1 = DailyPartitionsDefinition(start_date="2020-01-01")
+    partitions_def2 = StaticPartitionsDefinition(["1", "2", "3"])
+
+    @multi_asset(
+        specs=[
+            AssetSpec("my_asset_1", partitions_def=partitions_def1),
+            AssetSpec("my_asset_2", partitions_def=partitions_def2),
+        ],
+        can_subset=True,
+        group_name="my_group",
+    )
+    def my_assets(context): ...
+
+    assert len(list(my_assets.specs or [])) == 2
+    for spec in my_assets.specs:
+        assert spec.group_name == "my_group"
+
+    pds = {spec.partitions_def for spec in my_assets.specs}
+    assert pds == {partitions_def1, partitions_def2}
+
+
+def test_multi_asset_with_differrent_group_names_and_top_level_partitions_def():
+    partitions_def1 = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @multi_asset(
+        specs=[
+            AssetSpec("my_asset_1", group_name="group1"),
+            AssetSpec("my_asset_2", group_name="group2"),
+        ],
+        can_subset=True,
+        partitions_def=partitions_def1,
+    )
+    def my_assets(context): ...
+
+    assert len(list(my_assets.specs or [])) == 2
+    for spec in my_assets.specs:
+        assert spec.partitions_def == partitions_def1
+
+    group_names = {spec.group_name for spec in my_assets.specs}
+    assert group_names == {"group1", "group2"}
+
+
 def test_multi_asset_with_different_partitions_defs_partition_key_range():
     partitions_def1 = DailyPartitionsDefinition(start_date="2020-01-01")
     partitions_def2 = StaticPartitionsDefinition(["1", "2", "3"])

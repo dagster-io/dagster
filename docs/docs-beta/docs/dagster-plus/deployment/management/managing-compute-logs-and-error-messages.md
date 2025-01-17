@@ -55,7 +55,7 @@ computeLogs:
 
 ### Disabling compute log upload
 
-If your organization has its own logging solution which ingests `stdout` and `stderr` from your compute environment, you may want to disable compute log upload entirely. You can do this with the <PyObject module="dagster._core.storage.noop_compute_log_manager" object="NoOpComputeLogManager" />.
+If your organization has its own logging solution which ingests `stdout` and `stderr` from your compute environment, you may want to disable compute log upload entirely. You can do this with the <PyObject section="internals" module="dagster._core.storage.noop_compute_log_manager" object="NoOpComputeLogManager" />.
 
 {/* You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/agents/customizing-configuration): */}
 You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/todo):

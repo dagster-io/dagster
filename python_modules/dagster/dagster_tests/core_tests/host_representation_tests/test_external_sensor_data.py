@@ -1,4 +1,4 @@
-from typing import AbstractSet
+from typing import AbstractSet  # noqa: UP035
 
 from dagster import AssetKey, AssetSelection, Definitions, asset, sensor
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph

@@ -1,6 +1,7 @@
 import glob
 import os
-from typing import Callable, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Callable, Optional, Union
 
 import click
 

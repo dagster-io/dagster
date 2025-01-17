@@ -1,6 +1,6 @@
 import asyncio
 from abc import abstractmethod
-from typing import AbstractSet
+from typing import AbstractSet  # noqa: UP035
 
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode

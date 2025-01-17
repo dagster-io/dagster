@@ -6,18 +6,8 @@ import logging
 import os
 import random
 import sys
-from typing import (
-    AbstractSet,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import AbstractSet, NamedTuple, Optional, Union  # noqa: UP035
 from unittest import mock
 
 import dagster._check as check
@@ -91,7 +81,7 @@ class RunSpec(NamedTuple):
 
 class AssetEvaluationSpec(NamedTuple):
     asset_key: str
-    rule_evaluations: Sequence[Tuple[AutoMaterializeRuleEvaluation, Optional[Iterable[str]]]]
+    rule_evaluations: Sequence[tuple[AutoMaterializeRuleEvaluation, Optional[Iterable[str]]]]
     num_requested: int = 0
     num_skipped: int = 0
     num_discarded: int = 0
@@ -203,7 +193,7 @@ class AssetReconciliationScenario(
                 assets, asset_graph, auto_materialize_asset_keys
             )
 
-        return super(AssetReconciliationScenario, cls).__new__(
+        return super().__new__(
             cls,
             unevaluated_runs=unevaluated_runs,
             assets=assets_with_implicit_policies,
@@ -536,7 +526,7 @@ def do_run(
     failed_asset_keys: Optional[Sequence[AssetKey]] = None,
     tags: Optional[Mapping[str, str]] = None,
 ) -> None:
-    assets_in_run: List[Union[SourceAsset, AssetsDefinition]] = []
+    assets_in_run: list[Union[SourceAsset, AssetsDefinition]] = []
     asset_keys_set = set(asset_keys)
     for a in all_assets:
         if isinstance(a, SourceAsset):
@@ -612,7 +602,7 @@ def run_request(
 
 def asset_def(
     key: str,
-    deps: Optional[Union[List[str], Mapping[str, Optional[PartitionMapping]]]] = None,
+    deps: Optional[Union[list[str], Mapping[str, Optional[PartitionMapping]]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     freshness_policy: Optional[FreshnessPolicy] = None,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
@@ -652,8 +642,8 @@ def asset_def(
 
 
 def multi_asset_def(
-    keys: List[str],
-    deps: Optional[Union[List[str], Mapping[str, Set[str]]]] = None,
+    keys: list[str],
+    deps: Optional[Union[list[str], Mapping[str, set[str]]]] = None,
     can_subset: bool = False,
     freshness_policies: Optional[Mapping[str, FreshnessPolicy]] = None,
 ) -> AssetsDefinition:

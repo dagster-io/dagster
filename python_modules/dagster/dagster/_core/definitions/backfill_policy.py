@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from enum import Enum
-from typing import Iterable, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental, public
@@ -50,7 +51,7 @@ class BackfillPolicy(
     """
 
     def __new__(cls, max_partitions_per_run: Optional[int] = 1):
-        return super(BackfillPolicy, cls).__new__(
+        return super().__new__(
             cls,
             max_partitions_per_run=max_partitions_per_run,
         )

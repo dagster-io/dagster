@@ -13,6 +13,7 @@ export const RunTargetLink = ({
   isJob,
   repoAddress,
   useTags,
+  extraTags,
 }: {
   isJob: boolean;
   run: Pick<
@@ -21,6 +22,7 @@ export const RunTargetLink = ({
   >;
   repoAddress: RepoAddress | null;
   useTags: boolean;
+  extraTags?: React.ReactNode[];
 }) => {
   const assetKeys = React.useMemo(() => {
     return isHiddenAssetGroupJob(run.pipelineName) ? assetKeysForRun(run) : null;
@@ -32,6 +34,7 @@ export const RunTargetLink = ({
         <AssetKeyTagCollection
           assetKeys={assetKeys}
           useTags={useTags}
+          extraTags={extraTags}
           maxRows={run.assetCheckSelection?.length ? 1 : 2}
         />
         <AssetCheckTagCollection

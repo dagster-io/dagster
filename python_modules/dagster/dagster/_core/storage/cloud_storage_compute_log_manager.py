@@ -5,8 +5,9 @@ import threading
 import time
 from abc import abstractmethod
 from collections import defaultdict
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import IO, Iterator, Optional, Sequence, Tuple
+from typing import IO, Optional
 
 from dagster._core.instance import T_DagsterInstance
 from dagster._core.storage.compute_log_manager import (
@@ -108,7 +109,7 @@ class CloudStorageComputeLogManager(ComputeLogManager[T_DagsterInstance]):
         io_type: ComputeIOType,
         offset: int,
         max_bytes: Optional[int],
-    ) -> Tuple[Optional[bytes], int]:
+    ) -> tuple[Optional[bytes], int]:
         if self.has_local_file(log_key, io_type):
             local_path = self.local_manager.get_captured_local_path(
                 log_key, IO_TYPE_EXTENSION[io_type]

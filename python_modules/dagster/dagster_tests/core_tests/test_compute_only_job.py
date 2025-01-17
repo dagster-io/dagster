@@ -1,11 +1,11 @@
-from typing import Dict, TypeVar
+from typing import TypeVar
 
 from dagster import job, op
 
 T = TypeVar("T")
 
 
-def _set_key_value(ddict: Dict[str, object], key: str, value: T) -> T:
+def _set_key_value(ddict: dict[str, object], key: str, value: T) -> T:
     ddict[key] = value
     return value
 

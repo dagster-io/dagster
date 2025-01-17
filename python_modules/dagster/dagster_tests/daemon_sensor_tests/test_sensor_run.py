@@ -224,7 +224,7 @@ def run_key_sensor(_context):
 @sensor(job_name="the_job")
 def only_once_cursor_sensor(context):
     if not context.cursor:
-        context.update_cursor(str("cursor"))
+        context.update_cursor("cursor")
         return RunRequest()
 
 

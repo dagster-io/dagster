@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional
 
 from pydantic import ConfigDict
 
@@ -24,6 +24,7 @@ class AzureBlobComputeLogManager(BaseModel):
     localDir: Optional[StringSource] = None
     prefix: Optional[StringSource] = None
     uploadInterval: Optional[int] = None
+    showUrlOnly: Optional[bool] = None
 
 
 class GCSComputeLogManager(BaseModel):
@@ -67,7 +68,7 @@ class ComputeLogManager(BaseModel):
     )
 
     @staticmethod
-    def json_schema_extra(schema: Dict[str, Any], model: Type["ComputeLogManager"]):
+    def json_schema_extra(schema: dict[str, Any], model: type["ComputeLogManager"]):
         schema["allOf"] = create_json_schema_conditionals(
             {
                 ComputeLogManagerType.AZURE: "azureBlobComputeLogManager",

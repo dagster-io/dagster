@@ -2,7 +2,8 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._config.field_utils import compute_fields_hash
@@ -248,7 +249,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         group_name_for_all_assets: Optional[str] = None,
-        prefix_for_all_assets: Optional[List[str]] = None,
+        prefix_for_all_assets: Optional[list[str]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,

@@ -6,57 +6,52 @@ import inspect
 import sys
 import textwrap
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import (
-    Any,
-    ClassVar,
-    Dict,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    TypedDict,
-    TypeVar,
-)
+from typing import Any, ClassVar, Optional, TypedDict, TypeVar, Union
 
 import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._record import record
 from dagster._utils import pushd, snakecase
-from pydantic import TypeAdapter
+from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
+from dagster_components.core.component_generator import (
+    ComponentGenerator,
+    ComponentGeneratorUnavailableReason,
+    DefaultComponentGenerator,
+)
 from dagster_components.core.component_rendering import TemplatedValueResolver
 
 
 class ComponentDeclNode: ...
 
 
-@record
-class ComponentGenerateRequest:
-    component_type_name: str
-    component_instance_root_path: Path
-
-
 class Component(ABC):
     name: ClassVar[Optional[str]] = None
-    params_schema: ClassVar = None
-    generate_params_schema: ClassVar = None
+
+    @classmethod
+    def get_component_schema_type(cls) -> Optional[type[BaseModel]]:
+        return None
+
+    @classmethod
+    def get_generator(cls) -> Union[ComponentGenerator, ComponentGeneratorUnavailableReason]:
+        """Subclasses should implement this method to override scaffolding behavior. If this component
+        is not meant to be scaffoled it returns a ComponetnGeneratorUnavailableReason with a message
+        This can be determined at runtime based on the environment or configuration. For example,
+        if generators are optionally installed as extras (for example to avoid heavy dependencies in production),
+        this method should return a ComponentGeneratorUnavailableReason with a message explaining
+        how to install the necessary extras.
+        """
+        return DefaultComponentGenerator()
 
     @classmethod
     def get_rendering_scope(cls) -> Mapping[str, Any]:
         return {}
-
-    @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
-        from dagster_components.generate import generate_component_yaml
-
-        generate_component_yaml(request, {})
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
@@ -70,13 +65,22 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
+        generator = cls.get_generator()
+
+        if isinstance(generator, ComponentGeneratorUnavailableReason):
+            raise DagsterError(f"Component {cls.__name__} is not scaffoldable: {generator.message}")
+
+        component_params = cls.get_component_schema_type()
+        generator_params = generator.get_params_schema_type()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "generate_params_schema": cls.generate_params_schema.schema()
-            if cls.generate_params_schema
-            else None,
-            "component_params_schema": cls.params_schema.schema() if cls.params_schema else None,
+            "generate_params_schema": None
+            if generator_params is None
+            else generator_params.model_json_schema(),
+            "component_params_schema": None
+            if component_params is None
+            else component_params.model_json_schema(),
         }
 
     @classmethod
@@ -148,7 +152,7 @@ class ComponentTypeRegistry:
             `dagster_components*`. Only one built-in  component library can be loaded at a time.
             Defaults to `dagster_components`, the standard set of published component types.
         """
-        component_types: Dict[str, Type[Component]] = {}
+        component_types: dict[str, type[Component]] = {}
         for entry_point in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP):
             # Skip built-in entry points that are not the specified builtin component library.
             if (
@@ -169,14 +173,14 @@ class ComponentTypeRegistry:
 
         return cls(component_types)
 
-    def __init__(self, component_types: Dict[str, Type[Component]]):
-        self._component_types: Dict[str, Type[Component]] = copy.copy(component_types)
+    def __init__(self, component_types: dict[str, type[Component]]):
+        self._component_types: dict[str, type[Component]] = copy.copy(component_types)
 
     @staticmethod
     def empty() -> "ComponentTypeRegistry":
         return ComponentTypeRegistry({})
 
-    def register(self, name: str, component_type: Type[Component]) -> None:
+    def register(self, name: str, component_type: type[Component]) -> None:
         if name in self._component_types:
             raise DagsterError(f"There is an existing component registered under {name}")
         self._component_types[name] = component_type
@@ -184,7 +188,7 @@ class ComponentTypeRegistry:
     def has(self, name: str) -> bool:
         return name in self._component_types
 
-    def get(self, name: str) -> Type[Component]:
+    def get(self, name: str) -> type[Component]:
         return self._component_types[name]
 
     def keys(self) -> Iterable[str]:
@@ -194,7 +198,7 @@ class ComponentTypeRegistry:
         return f"<ComponentRegistry {list(self._component_types.keys())}>"
 
 
-def get_registered_component_types_in_module(module: ModuleType) -> Iterable[Type[Component]]:
+def get_registered_component_types_in_module(module: ModuleType) -> Iterable[type[Component]]:
     from dagster._core.definitions.module_loaders.load_assets_from_modules import (
         find_subclasses_in_module,
     )
@@ -253,7 +257,7 @@ class ComponentLoadContext:
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
         return self.decl_node.component_file_model.params
 
-    def load_params(self, params_schema: Type[T]) -> T:
+    def load_params(self, params_schema: type[T]) -> T:
         with pushd(str(self.path)):
             preprocessed_params = self.templated_value_resolver.render_params(
                 self._raw_params(), params_schema
@@ -264,7 +268,7 @@ class ComponentLoadContext:
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
 
 
-def component_type(cls: Optional[Type[Component]] = None, *, name: Optional[str] = None) -> Any:
+def component_type(cls: Optional[type[Component]] = None, *, name: Optional[str] = None) -> Any:
     """Decorator for registering a component type. You must annotate a component
     type with this decorator in order for it to be inspectable and loaded by tools.
 
@@ -277,7 +281,7 @@ def component_type(cls: Optional[Type[Component]] = None, *, name: Optional[str]
     """
     if cls is None:
 
-        def wrapper(actual_cls: Type[Component]) -> Type[Component]:
+        def wrapper(actual_cls: type[Component]) -> type[Component]:
             check.inst_param(actual_cls, "actual_cls", type)
             setattr(
                 actual_cls,
@@ -294,11 +298,11 @@ def component_type(cls: Optional[Type[Component]] = None, *, name: Optional[str]
         return cls
 
 
-def is_registered_component_type(cls: Type) -> bool:
+def is_registered_component_type(cls: type) -> bool:
     return hasattr(cls, COMPONENT_REGISTRY_KEY_ATTR)
 
 
-def get_component_type_name(component_type: Type[Component]) -> str:
+def get_component_type_name(component_type: type[Component]) -> str:
     check.param_invariant(
         is_registered_component_type(component_type),
         "component_type",

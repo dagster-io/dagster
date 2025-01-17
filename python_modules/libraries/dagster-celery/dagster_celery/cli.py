@@ -1,7 +1,8 @@
 import os
 import subprocess
 import uuid
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import click
 import dagster._check as check

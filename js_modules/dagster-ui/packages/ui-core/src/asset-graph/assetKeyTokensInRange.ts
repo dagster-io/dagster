@@ -47,8 +47,9 @@ export const assetKeyTokensInRange = (
 
   const ledToTarget: string[] = [];
 
+  const seenSet = new Set(seen);
   for (const node of downstream) {
-    if (seen.includes(node.id)) {
+    if (seenSet.has(node.id)) {
       continue;
     }
     const result: string[] = assetKeyTokensInRange({graph, from: node, to}, [...seen, from.id]);

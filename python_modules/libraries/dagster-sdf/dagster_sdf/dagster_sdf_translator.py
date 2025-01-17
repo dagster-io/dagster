@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from dagster import (
     AssetCheckKey,
@@ -71,7 +71,7 @@ class DagsterSdfTranslator:
 
     @public
     def get_description(
-        self, table_row: Dict[str, Any], workspace_dir: Optional[Path], output_dir: Optional[Path]
+        self, table_row: dict[str, Any], workspace_dir: Optional[Path], output_dir: Optional[Path]
     ) -> str:
         """A function that takes a dictionary representing columns of an sdf table row in sdf's
         information schema and returns the Dagster description for that table.

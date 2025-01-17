@@ -1,5 +1,5 @@
 import sys
-from typing import Generator, Iterable, Iterator
+from collections.abc import Generator, Iterable, Iterator
 
 import pytest
 from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, op

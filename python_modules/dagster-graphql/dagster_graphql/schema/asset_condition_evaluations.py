@@ -1,6 +1,7 @@
 import enum
 import itertools
-from typing import Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import graphene
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset

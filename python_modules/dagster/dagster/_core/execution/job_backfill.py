@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Callable, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -202,7 +203,7 @@ def _get_partitions_chunk(
     backfill_job: PartitionBackfill,
     chunk_size: int,
     partition_set: RemotePartitionSet,
-) -> Tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
+) -> tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
     partition_names = cast(Sequence[str], backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
     backfill_policy = partition_set.backfill_policy

@@ -1,5 +1,3 @@
-from typing import List
-
 import dagster._check as check
 import graphene
 from dagster._core.definitions.selector import ResourceSelector
@@ -83,7 +81,7 @@ class GrapheneJobAndSpecificOps(graphene.ObjectType):
     def resolve_jobName(self, _) -> str:
         return self._entry.job_name
 
-    def resolve_opHandleIDs(self, _) -> List[str]:
+    def resolve_opHandleIDs(self, _) -> list[str]:
         return [str(handle) for handle in self._entry.node_handles]
 
 
@@ -164,7 +162,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for key, value in self._configured_values.items()
         ]
 
-    def resolve_nestedResources(self, graphene_info) -> List[GrapheneNestedResourceEntry]:
+    def resolve_nestedResources(self, graphene_info) -> list[GrapheneNestedResourceEntry]:
         from dagster_graphql.implementation.fetch_resources import get_resource_or_error
 
         return [
@@ -187,7 +185,7 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for k, v in self._nested_resources.items()
         ]
 
-    def resolve_parentResources(self, graphene_info) -> List[GrapheneNestedResourceEntry]:
+    def resolve_parentResources(self, graphene_info) -> list[GrapheneNestedResourceEntry]:
         from dagster_graphql.implementation.fetch_resources import get_resource_or_error
 
         return [
@@ -206,10 +204,10 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for name, attribute in self._parent_resources.items()
         ]
 
-    def resolve_assetKeysUsing(self, _graphene_info) -> List[GrapheneAssetKey]:
+    def resolve_assetKeysUsing(self, _graphene_info) -> list[GrapheneAssetKey]:
         return [GrapheneAssetKey(path=asset_key.path) for asset_key in self._asset_keys_using]
 
-    def resolve_jobsOpsUsing(self, graphene_info: ResolveInfo) -> List[GrapheneJobAndSpecificOps]:
+    def resolve_jobsOpsUsing(self, graphene_info: ResolveInfo) -> list[GrapheneJobAndSpecificOps]:
         return [
             GrapheneJobAndSpecificOps(
                 entry=entry,
@@ -219,10 +217,10 @@ class GrapheneResourceDetails(graphene.ObjectType):
             for entry in self._job_ops_using
         ]
 
-    def resolve_schedulesUsing(self, _graphene_info) -> List[str]:
+    def resolve_schedulesUsing(self, _graphene_info) -> list[str]:
         return self._schedules_using
 
-    def resolve_sensorsUsing(self, _graphene_info) -> List[str]:
+    def resolve_sensorsUsing(self, _graphene_info) -> list[str]:
         return self._sensors_using
 
 

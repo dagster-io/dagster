@@ -1,7 +1,7 @@
 import abc
 from contextlib import contextmanager
 from logging import Logger
-from typing import Any, Dict, Optional, cast
+from typing import Any, Optional, cast
 
 import psycopg2
 import psycopg2.extensions
@@ -33,7 +33,7 @@ class BaseRedshiftClient(abc.ABC):
 
 
 class RedshiftClient(BaseRedshiftClient):
-    def __init__(self, conn_args: Dict[str, Any], autocommit: Optional[bool], log: Logger):
+    def __init__(self, conn_args: dict[str, Any], autocommit: Optional[bool], log: Logger):
         # Extract parameters from resource config
         self.conn_args = conn_args
 

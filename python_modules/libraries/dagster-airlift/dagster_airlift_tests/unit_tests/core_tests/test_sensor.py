@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Sequence
+from typing import Optional
 from unittest import mock
 
 import pytest

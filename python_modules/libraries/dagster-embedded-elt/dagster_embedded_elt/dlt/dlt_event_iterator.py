@@ -1,4 +1,5 @@
-from typing import Iterator, Optional, Union
+from collections.abc import Iterator
+from typing import Optional, Union
 
 from dagster import AssetMaterialization, MaterializeResult
 from dagster._annotations import experimental, public

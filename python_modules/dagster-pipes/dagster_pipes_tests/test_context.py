@@ -1,5 +1,5 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 from unittest.mock import MagicMock
 
 import pytest

@@ -1,9 +1,10 @@
 import importlib
 import importlib.util
 import inspect
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Optional
 
 from dagster._utils.warnings import suppress_dagster_warnings
 
@@ -55,7 +56,7 @@ def load_components_from_context(context: ComponentLoadContext) -> Sequence[Comp
 
 def component_type_from_yaml_decl(
     registry: ComponentTypeRegistry, decl_node: YamlComponentDecl
-) -> Type[Component]:
+) -> type[Component]:
     parsed_defs = decl_node.component_file_model
     if parsed_defs.type.startswith("."):
         component_registry_key = parsed_defs.type[1:]
@@ -67,7 +68,7 @@ def component_type_from_yaml_decl(
             module = load_module_from_path(module_name, decl_node.path / f"{module_name}.py")
 
             for _name, obj in inspect.getmembers(module, inspect.isclass):
-                assert isinstance(obj, Type)
+                assert isinstance(obj, type)
                 if (
                     is_registered_component_type(obj)
                     and get_component_type_name(obj) == component_registry_key
@@ -119,7 +120,13 @@ def defs_from_components(
     from dagster._core.definitions.definitions_class import Definitions
 
     return Definitions.merge(
-        *[*[c.build_defs(context) for c in components], Definitions(resources=resources)]
+        *[
+            *[
+                c.build_defs(context.with_rendering_scope(c.get_rendering_scope()))
+                for c in components
+            ],
+            Definitions(resources=resources),
+        ]
     )
 
 
@@ -129,7 +136,7 @@ def build_component_defs(
     code_location_root: Path,
     resources: Optional[Mapping[str, object]] = None,
     registry: Optional["ComponentTypeRegistry"] = None,
-    components_folder: Optional[Path] = None,
+    components_path: Optional[Path] = None,
 ) -> "Definitions":
     """Build a Definitions object for all the component instances in a given code location.
 
@@ -142,10 +149,10 @@ def build_component_defs(
     context = CodeLocationProjectContext.from_code_location_path(
         code_location_root,
         registry or ComponentTypeRegistry.from_entry_point_discovery(),
-        components_folder=components_folder,
+        components_path=components_path,
     )
 
-    all_defs: List[Definitions] = []
+    all_defs: list[Definitions] = []
     for component in context.component_instances:
         component_path = Path(context.get_component_instance_path(component))
         defs = build_defs_from_component_path(

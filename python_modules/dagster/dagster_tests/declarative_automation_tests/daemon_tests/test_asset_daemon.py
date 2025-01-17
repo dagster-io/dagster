@@ -1,7 +1,8 @@
 import dataclasses
 import datetime
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager, nullcontext
-from typing import Any, Generator, Mapping, Optional, Sequence, cast
+from typing import Any, Optional, cast
 
 import pytest
 from dagster import (

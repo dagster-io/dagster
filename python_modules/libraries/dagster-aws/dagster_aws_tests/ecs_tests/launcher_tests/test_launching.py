@@ -2,7 +2,7 @@ import copy
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Set
+from typing import Any
 
 import pytest
 from botocore.exceptions import ClientError
@@ -999,9 +999,9 @@ def test_launch_cannot_use_system_tags(instance_cm, workspace, job, remote_job):
     ],
 )
 def test_propagate_tags_include_all(
-    run_tags: Dict[str, str],
-    expected_ecs_tag_keys: Set[str],
-    allow_list: List[str],
+    run_tags: dict[str, str],
+    expected_ecs_tag_keys: set[str],
+    allow_list: list[str],
     instance_cm,
     workspace,
     job,
@@ -1045,7 +1045,7 @@ def test_propagate_tags_args_validated(
     workspace,
     job,
     remote_job,
-    propagate_tags: Dict[str, Any],
+    propagate_tags: dict[str, Any],
 ):
     with pytest.raises(CheckError):
         with instance_cm({"propagate_tags": propagate_tags}) as instance:
@@ -1423,3 +1423,56 @@ def test_external_launch_type(
 
         assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
         assert task["launchType"] == "EXTERNAL"
+
+
+def test_removing_network_configuration(
+    ecs,
+    instance_cm,
+    workspace,
+    remote_job,
+    job,
+):
+    container_name = "external"
+
+    task_definition = ecs.register_task_definition(
+        family="external",
+        containerDefinitions=[{"name": container_name, "image": "dagster:first"}],
+        networkMode="bridge",
+        memory="512",
+        cpu="256",
+    )["taskDefinition"]
+
+    assert task_definition["networkMode"] == "bridge"
+    task_definition_arn = task_definition["taskDefinitionArn"]
+
+    # You can provide a family or a task definition ARN
+    with instance_cm(
+        {
+            "task_definition": task_definition_arn,
+            "container_name": container_name,
+            "run_task_kwargs": {"networkConfiguration": None},
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
+        )
+
+        initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        instance.launch_run(run.run_id, workspace)
+
+        # A new task definition is not created
+        assert ecs.list_task_definitions()["taskDefinitionArns"] == initial_task_definitions
+
+        # A new task is launched
+        tasks = ecs.list_tasks()["taskArns"]
+
+        assert len(tasks) == len(initial_tasks) + 1
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+
+        assert task["taskDefinitionArn"] == task_definition["taskDefinitionArn"]
+        assert "networkConfiguration" not in task

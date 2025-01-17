@@ -35,6 +35,7 @@ export const GanttStatusPanel = React.memo(
     onDoubleClickStep,
     onHighlightStep,
   }: GanttStatusPanelProps) => {
+    const selectedKeysSet = React.useMemo(() => new Set(selection.keys), [selection.keys]);
     const {preparing, executing, errored, succeeded, notExecuted} = React.useMemo(() => {
       const keys = Object.keys(metadata.steps);
       const preparing = [];
@@ -77,7 +78,7 @@ export const GanttStatusPanel = React.memo(
         name={stepName}
         key={stepName}
         metadata={metadata}
-        selected={selection.keys.includes(stepName)}
+        selected={selectedKeysSet.has(stepName)}
         onClick={onClickStep}
         onDoubleClick={onDoubleClickStep}
         onHover={onHighlightStep}

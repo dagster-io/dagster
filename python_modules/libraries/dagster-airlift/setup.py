@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_airlift/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -26,6 +25,8 @@ pin = "" if ver == "1!0+dev" or "rc" in ver else f"=={ver}"
 AIRFLOW_REQUIREMENTS = [
     # Requirements for python versions under 3.12.
     "apache-airflow==2.7.3; python_version < '3.12'",
+    "marshmallow==3.20.1; python_version < '3.12'",
+    "marshmallow==3.23.1; python_version >= '3.12'",
     "pendulum>=2.0.0,<3.0.0; python_version < '3.12'",
     # Requirements for python versions 3.12 and above.
     "apache-airflow>=2.9.0; python_version >= '3.12'",

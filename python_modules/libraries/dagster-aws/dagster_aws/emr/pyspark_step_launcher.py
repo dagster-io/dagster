@@ -332,8 +332,7 @@ class EmrPySparkStepLauncher(StepLauncher):
     def wait_for_completion_and_log(self, run_id, step_key, emr_step_id, step_context):
         s3 = boto3.resource("s3", region_name=self.region_name)
         try:
-            for event in self.wait_for_completion(step_context, s3, run_id, step_key, emr_step_id):
-                yield event
+            yield from self.wait_for_completion(step_context, s3, run_id, step_key, emr_step_id)
         except EmrError as emr_error:
             if self.wait_for_logs:
                 self._log_logs_from_s3(step_context.log, emr_step_id)
@@ -429,10 +428,9 @@ class EmrPySparkStepLauncher(StepLauncher):
         check.invariant(
             conf.get("spark.master", "yarn") == "yarn",
             desc=(
-                "spark.master is configured as %s; cannot set Spark master on EMR to anything "
+                "spark.master is configured as {}; cannot set Spark master on EMR to anything "
                 'other than "yarn"'
-            )
-            % conf.get("spark.master"),
+            ).format(conf.get("spark.master")),
         )
 
         command = (
@@ -454,7 +452,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         )
 
         return EmrJobRunner.construct_step_dict_for_command(
-            "Execute Solid/Op %s" % solid_name, command, action_on_failure=action_on_failure
+            f"Execute Solid/Op {solid_name}", command, action_on_failure=action_on_failure
         )
 
     def _main_file_name(self):

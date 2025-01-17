@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, NamedTuple, Optional, Sequence
+from collections.abc import Sequence
+from typing import NamedTuple, Optional
 
 import tomli
 
@@ -60,7 +61,7 @@ def validate_dagster_block_for_module_name_or_modules(dagster_block):
     return True
 
 
-def is_valid_modules_list(modules: List[Dict[str, str]]) -> bool:
+def is_valid_modules_list(modules: list[dict[str, str]]) -> bool:
     # Could be skipped theorectically, but double check maybe useful, if this functions finds it's way elsewhere
     if not isinstance(modules, list):
         raise ValueError("Modules should be a list.")

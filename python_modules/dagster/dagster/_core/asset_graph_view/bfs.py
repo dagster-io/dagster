@@ -1,6 +1,7 @@
+from collections.abc import Iterable, Sequence
 from functools import total_ordering
 from heapq import heapify, heappop, heappush
-from typing import TYPE_CHECKING, Callable, Iterable, NamedTuple, Sequence, Tuple
+from typing import TYPE_CHECKING, Callable, NamedTuple
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
 
 class AssetGraphViewBfsFilterConditionResult(NamedTuple):
     passed_asset_graph_subset: AssetGraphSubset
-    excluded_asset_graph_subsets_and_reasons: Sequence[Tuple[AssetGraphSubset, str]]
+    excluded_asset_graph_subsets_and_reasons: Sequence[tuple[AssetGraphSubset, str]]
 
 
 def bfs_filter_asset_graph_view(
@@ -24,7 +25,7 @@ def bfs_filter_asset_graph_view(
     ],
     initial_asset_graph_subset: "AssetGraphSubset",
     include_full_execution_set: bool,
-) -> Tuple[AssetGraphSubset, Sequence[Tuple[AssetGraphSubset, str]]]:
+) -> tuple[AssetGraphSubset, Sequence[tuple[AssetGraphSubset, str]]]:
     """Returns the subset of the graph that satisfy supplied criteria.
 
     - Are >= initial_asset_graph_subset
@@ -58,7 +59,7 @@ def bfs_filter_asset_graph_view(
     visited_graph_subset = initial_asset_graph_subset
 
     result: AssetGraphSubset = AssetGraphSubset.empty()
-    failed_reasons: Sequence[Tuple[AssetGraphSubset, str]] = []
+    failed_reasons: Sequence[tuple[AssetGraphSubset, str]] = []
 
     asset_graph = asset_graph_view.asset_graph
 

@@ -475,6 +475,8 @@ interface GanttChartViewportContentsProps {
 const GanttChartViewportContents = React.memo((props: GanttChartViewportContentsProps) => {
   const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
 
+  const focusedStepsSet = useMemo(() => new Set(focusedSteps), [focusedSteps]);
+
   return useThrottledMemo(() => {
     const items: React.ReactNode[] = [];
 
@@ -507,8 +509,8 @@ const GanttChartViewportContents = React.memo((props: GanttChartViewportContents
           items.push(
             <GanttLine
               darkened={
-                (focusedSteps?.includes(box.node.name) || hoveredStep) === box.node.name ||
-                (focusedSteps?.includes(child.node.name) || hoveredStep) === child.node.name
+                (focusedStepsSet.has(box.node.name) || hoveredStep) === box.node.name ||
+                (focusedStepsSet.has(child.node.name) || hoveredStep) === child.node.name
               }
               dotted={childNotDrawn || childWaiting}
               key={`${box.key}-${child.key}-${childIdx}`}
@@ -539,7 +541,7 @@ const GanttChartViewportContents = React.memo((props: GanttChartViewportContents
           className={`
             chart-element
             ${useDot ? 'dot' : 'box'}
-            ${focusedSteps.includes(box.node.name) && 'focused'}
+            ${focusedStepsSet.has(box.node.name) && 'focused'}
             ${hoveredStep === box.node.name && 'hovered'}
             ${isDynamicStep(box.node.name) && 'dynamic'}`}
           style={{

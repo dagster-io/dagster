@@ -42,7 +42,7 @@ def less_simple_data_frame_type_check(_, value):
 @dagster_type_loader({"csv_path": Field(String)})
 def less_simple_data_frame_loader(context, config):
     csv_path = os.path.join(os.path.dirname(__file__), config["csv_path"])
-    with open(csv_path, "r", encoding="utf8") as fd:
+    with open(csv_path, encoding="utf8") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
     context.log.info(f"Read {len(lines)} lines")

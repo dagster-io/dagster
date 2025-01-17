@@ -1,5 +1,6 @@
 import asyncio
-from typing import Mapping, Optional
+from collections.abc import Mapping
+from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import click

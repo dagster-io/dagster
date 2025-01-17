@@ -1,9 +1,9 @@
 import os
 import shutil
 import subprocess
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
 import pytest
 from dagster_airlift.core import AirflowBasicAuthBackend, AirflowInstance

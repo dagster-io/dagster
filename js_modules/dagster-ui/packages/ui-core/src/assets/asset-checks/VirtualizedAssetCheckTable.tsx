@@ -4,7 +4,7 @@ import {useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {ASSET_CHECK_EXECUTION_FRAGMENT, MetadataCell} from './AssetCheckDetailModal';
+import {ASSET_CHECK_EXECUTION_FRAGMENT, MetadataCell} from './AssetCheckDetailDialog';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
 import {EXECUTE_CHECKS_BUTTON_CHECK_FRAGMENT, ExecuteChecksButton} from './ExecuteChecksButton';
 import {ExecuteChecksButtonAssetNodeFragment} from './types/ExecuteChecksButton.types';

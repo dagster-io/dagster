@@ -16,7 +16,6 @@ export type Scalars = {
   Boolean: {input: boolean; output: boolean};
   Int: {input: number; output: number};
   Float: {input: number; output: number};
-  Cursor: {input: any; output: any};
   GenericScalar: {input: any; output: any};
   RunConfigData: {input: any; output: any};
 };
@@ -223,7 +222,7 @@ export type AssetCheckEvaluationPlannedEvent = MessageEvent &
 export type AssetCheckEvaluationTargetMaterializationData = {
   __typename: 'AssetCheckEvaluationTargetMaterializationData';
   runId: Scalars['String']['output'];
-  storageId: Scalars['Int']['output'];
+  storageId: Scalars['ID']['output'];
   timestamp: Scalars['Float']['output'];
 };
 
@@ -4006,14 +4005,14 @@ export type QueryRunTagsOrErrorArgs = {
 
 export type QueryRunsFeedCountOrErrorArgs = {
   filter?: InputMaybe<RunsFilter>;
-  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
+  view: RunsFeedView;
 };
 
 export type QueryRunsFeedOrErrorArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>;
   filter?: InputMaybe<RunsFilter>;
-  includeRunsFromBackfills?: InputMaybe<Scalars['Boolean']['input']>;
   limit: Scalars['Int']['input'];
+  view: RunsFeedView;
 };
 
 export type QueryRunsOrErrorArgs = {
@@ -4840,6 +4839,12 @@ export type RunsFeedEntry = {
   startTime: Maybe<Scalars['Float']['output']>;
   tags: Array<PipelineTag>;
 };
+
+export enum RunsFeedView {
+  BACKFILLS = 'BACKFILLS',
+  ROOTS = 'ROOTS',
+  RUNS = 'RUNS',
+}
 
 export type RunsFilter = {
   createdAfter?: InputMaybe<Scalars['Float']['input']>;
@@ -6133,7 +6138,10 @@ export const buildAssetCheckEvaluationTargetMaterializationData = (
   return {
     __typename: 'AssetCheckEvaluationTargetMaterializationData',
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'exercitationem',
-    storageId: overrides && overrides.hasOwnProperty('storageId') ? overrides.storageId! : 3254,
+    storageId:
+      overrides && overrides.hasOwnProperty('storageId')
+        ? overrides.storageId!
+        : '48345232-8586-483c-9958-ca65cb4208cd',
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 3.87,
   };
 };

@@ -1,4 +1,5 @@
-from typing import Any, Callable, Mapping, Optional, Set
+from collections.abc import Mapping
+from typing import Any, Callable, Optional
 
 from dagster import (
     AssetsDefinition,
@@ -33,7 +34,7 @@ def dbt_assets(
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     project: Optional[DbtProject] = None,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:

@@ -1,7 +1,8 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
 from io import StringIO
 from textwrap import TextWrapper
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Optional
 
 from typing_extensions import Self
 
@@ -82,7 +83,7 @@ class IndentingStringIoPrinter(IndentingPrinter):
     def __init__(self, **kwargs: Any):
         self.buffer = StringIO()
         self.printer = lambda x: self.buffer.write(x + "\n")
-        super(IndentingStringIoPrinter, self).__init__(printer=self.printer, **kwargs)
+        super().__init__(printer=self.printer, **kwargs)
 
     def __enter__(self) -> Self:
         return self

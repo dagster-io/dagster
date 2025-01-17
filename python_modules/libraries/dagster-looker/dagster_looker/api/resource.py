@@ -1,18 +1,7 @@
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster import (
     AssetSpec,
@@ -62,7 +51,7 @@ class LookerFilter:
             will be fetched. If False, all explores will be fetched. Defaults to False.
     """
 
-    dashboard_folders: Optional[List[List[str]]] = None
+    dashboard_folders: Optional[list[list[str]]] = None
     only_fetch_explores_used_in_dashboards: bool = False
 
 
@@ -138,7 +127,7 @@ class LookerResource(ConfigurableResource):
 def load_looker_asset_specs(
     looker_resource: LookerResource,
     dagster_looker_translator: Optional[
-        Union[DagsterLookerApiTranslator, Type[DagsterLookerApiTranslator]]
+        Union[DagsterLookerApiTranslator, type[DagsterLookerApiTranslator]]
     ] = None,
     looker_filter: Optional[LookerFilter] = None,
 ) -> Sequence[AssetSpec]:
@@ -175,7 +164,7 @@ def load_looker_asset_specs(
     )
 
 
-def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) -> List[str]:
+def build_folder_path(folder_id_to_folder: dict[str, "Folder"], folder_id: str) -> list[str]:
     curr = folder_id
     result = []
     while curr in folder_id_to_folder:
@@ -329,7 +318,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 for model_name, explore_names in explores_for_model.items()
             }
 
-        def fetch_explore(model_name, explore_name) -> Optional[Tuple[str, "LookmlModelExplore"]]:
+        def fetch_explore(model_name, explore_name) -> Optional[tuple[str, "LookmlModelExplore"]]:
             try:
                 lookml_explore = sdk.lookml_model_explore(
                     lookml_model_name=model_name,
@@ -358,7 +347,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             ]
             explores_by_id = dict(
                 cast(
-                    List[Tuple[str, "LookmlModelExplore"]],
+                    list[tuple[str, "LookmlModelExplore"]],
                     (
                         entry
                         for entry in executor.map(

@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING, Optional
 
 import pytest
 from dagster import (
@@ -31,6 +31,9 @@ from dagster_tests.scheduler_tests.test_scheduler_run import (
     validate_tick,
     wait_for_all_runs_to_start,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 @op

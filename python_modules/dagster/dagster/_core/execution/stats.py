@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Dict, Iterable, Mapping, Optional, Sequence, cast
+from typing import Any, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions import ExpectationResult
@@ -212,9 +213,9 @@ def build_run_step_stats_snapshot_from_events(
     entries: Iterable[EventLogEntry],
     previous_snapshot: Optional["RunStepStatsSnapshot"] = None,
 ) -> "RunStepStatsSnapshot":
-    by_step_key: Dict[str, Dict[str, Any]] = defaultdict(dict)
+    by_step_key: dict[str, dict[str, Any]] = defaultdict(dict)
     attempts = defaultdict(list)
-    markers: Dict[str, Dict[str, Any]] = defaultdict(dict)
+    markers: dict[str, dict[str, Any]] = defaultdict(dict)
 
     if previous_snapshot:
         for step_stats in previous_snapshot.step_key_stats:

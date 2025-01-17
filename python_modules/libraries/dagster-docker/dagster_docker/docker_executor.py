@@ -1,4 +1,5 @@
-from typing import Iterator, List, Optional, cast
+from collections.abc import Iterator
+from typing import Optional, cast
 
 import dagster._check as check
 import docker
@@ -171,7 +172,7 @@ class DockerStepHandler(StepHandler):
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
-            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+            list[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]

@@ -47,7 +47,7 @@ def new_resource_testing_with_nesting() -> None:
     test_my_resource_with_nesting()
 
 
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any  # noqa: UP035
 
 
 def new_resources_assets_defs() -> "Definitions":
@@ -57,10 +57,10 @@ def new_resources_assets_defs() -> "Definitions":
     from dagster import ResourceParam
     import requests
 
-    from typing import Dict, Any
+    from typing import Dict, Any  # noqa: UP035
 
     @asset
-    def data_from_url(data_url: ResourceParam[str]) -> Dict[str, Any]:
+    def data_from_url(data_url: ResourceParam[str]) -> dict[str, Any]:
         return requests.get(data_url).json()
 
     defs = Definitions(
@@ -114,7 +114,7 @@ def new_resources_configurable_defs() -> "Definitions":
             )
 
     @asset
-    def data_from_service(my_conn: MyConnectionResource) -> Dict[str, Any]:
+    def data_from_service(my_conn: MyConnectionResource) -> dict[str, Any]:
         return my_conn.request("/fetch_data").json()
 
     defs = Definitions(
@@ -456,7 +456,6 @@ def io_adapter() -> None:
                     context.upstream_output.step_key,  # type: ignore
                     context.upstream_output.name,  # type: ignore
                 ),
-                "r",
             ) as fd:
                 return fd.read()
 
@@ -744,12 +743,12 @@ def new_resource_on_sensor() -> None:
         RunConfig,
     )
     import requests
-    from typing import List
+    from typing import List  # noqa: UP035
 
     class UsersAPI(ConfigurableResource):
         url: str
 
-        def fetch_users(self) -> List[str]:
+        def fetch_users(self) -> list[str]:
             return requests.get(self.url).json()
 
     @job
@@ -785,7 +784,7 @@ def new_resource_on_sensor() -> None:
 
     def test_process_new_users_sensor():
         class FakeUsersAPI:
-            def fetch_users(self) -> List[str]:
+            def fetch_users(self) -> list[str]:
                 return ["1", "2", "3"]
 
         context = build_sensor_context()
@@ -807,7 +806,7 @@ def new_resource_on_schedule() -> None:
         Definitions,
     )
     from datetime import datetime
-    from typing import List
+    from typing import List  # noqa: UP035
 
     class DateFormatter(ConfigurableResource):
         format: str

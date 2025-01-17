@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
-from typing import Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 from dagster._core.instance import DagsterInstance
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot

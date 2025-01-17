@@ -3,8 +3,9 @@ import inspect
 import os
 import subprocess
 import textwrap
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Optional
 
 import dagster._check as check
 import pytest

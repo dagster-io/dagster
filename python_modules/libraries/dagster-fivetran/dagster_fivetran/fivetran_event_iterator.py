@@ -1,6 +1,7 @@
 import os
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, Union
+from typing import TYPE_CHECKING, Any, Callable, Union
 
 from dagster import (
     AssetExecutionContext,
@@ -29,7 +30,7 @@ DEFAULT_MAX_THREADPOOL_WORKERS = 10
 def _fetch_column_metadata(
     materialization: FivetranEventType,
     fivetran_workspace: "FivetranWorkspace",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Subroutine to fetch column metadata for a given table from the Fivetran API."""
     materialization_metadata = check.not_none(materialization.metadata)
     connector_id = check.not_none(
@@ -98,7 +99,7 @@ class FivetranEventIterator(Iterator[T]):
         """
         fetch_metadata_fn: Callable[
             [FivetranEventType],
-            Dict[str, Any],
+            dict[str, Any],
         ] = lambda materialization: _fetch_column_metadata(
             materialization=materialization,
             fivetran_workspace=self._fivetran_workspace,
@@ -108,7 +109,7 @@ class FivetranEventIterator(Iterator[T]):
 
     def _attach_metadata(
         self,
-        fn: Callable[[FivetranEventType], Dict[str, Any]],
+        fn: Callable[[FivetranEventType], dict[str, Any]],
     ) -> "FivetranEventIterator":
         """Runs a threaded task to attach metadata to each event in the iterator.
 

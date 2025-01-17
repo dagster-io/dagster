@@ -38,6 +38,6 @@ def test_mdx_builder(sphinx_build):
         assert expected_file.exists(), f"{expected_file} was not generated"
 
     # Optionally, check the content of the generated files
-    with open(sphinx_build / "datasets" / "index.mdx", "r") as f:
+    with open(sphinx_build / "datasets" / "index.mdx") as f:
         content = f.read()
         assert "This folder contains test sources." in content

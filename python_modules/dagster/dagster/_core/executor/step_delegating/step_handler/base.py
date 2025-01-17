@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, Mapping, NamedTuple, Optional, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from typing import NamedTuple, Optional
 
 from dagster import (
     DagsterInstance,
@@ -61,7 +62,7 @@ class CheckStepHealthResult(
     )
 ):
     def __new__(cls, is_healthy: bool, unhealthy_reason: Optional[str] = None):
-        return super(CheckStepHealthResult, cls).__new__(
+        return super().__new__(
             cls,
             check.bool_param(is_healthy, "is_healthy"),
             check.opt_str_param(unhealthy_reason, "unhealthy_reason"),

@@ -163,7 +163,8 @@ def scope_custom_asset_key_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetKey, AssetExecutionContext
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Mapping
+    from typing import Any
+    from collections.abc import Mapping
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -244,7 +245,8 @@ def scope_custom_group_name_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetExecutionContext
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Mapping, Optional
+    from typing import Any, Optional
+    from collections.abc import Mapping
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -269,7 +271,8 @@ def scope_custom_owners_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetExecutionContext
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Mapping, Optional, Sequence
+    from typing import Any, Optional
+    from collections.abc import Mapping, Sequence
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -295,7 +298,8 @@ def scope_custom_description_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetExecutionContext
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Mapping
+    from typing import Any
+    from collections.abc import Mapping
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -318,7 +322,8 @@ def scope_custom_metadata_dagster_dbt_translator():
     from pathlib import Path
     from dagster import MetadataValue, AssetExecutionContext
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Mapping
+    from typing import Any
+    from collections.abc import Mapping
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -345,7 +350,8 @@ def scope_custom_tags_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetExecutionContext
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Mapping
+    from typing import Any
+    from collections.abc import Mapping
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -375,7 +381,8 @@ def scope_custom_automation_condition_dagster_dbt_translator():
     from pathlib import Path
     from dagster import AssetExecutionContext, AutomationCondition
     from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Mapping, Optional
+    from typing import Any, Optional
+    from collections.abc import Mapping
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 

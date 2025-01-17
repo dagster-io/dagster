@@ -1,9 +1,7 @@
 /* eslint-disable */
-const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
+const {RuleTester} = require('@typescript-eslint/rule-tester');
 
-const ruleTester = new ESLintUtils.RuleTester({
-  parser: '@typescript-eslint/parser',
-});
+const ruleTester = new RuleTester();
 
 jest.mock('fs');
 // @ts-expect-error - using require because this package isn't setup for import declarations
@@ -16,8 +14,8 @@ fs.readFileSync = (path) => {
   const api = path.includes('Query')
     ? 'Query'
     : path.includes('Mutation')
-    ? 'Mutation'
-    : 'Subscription';
+      ? 'Mutation'
+      : 'Subscription';
   if (path.includes('WithVariables')) {
     return `
       export type Some${api} {}
@@ -37,24 +35,12 @@ ruleTester.run('missing-graphql-variables', rule, {
       useQuery<SomeQuery, SomeQueryVariables>();
     `,
     `
-      import { SomeQuery } from '../SomeQueryWithOutVariables';
-      useQuery<SomeQuery>();
-    `,
-    `
       import { SomeMutation, SomeMutationVariables } from '../SomeMutationWithVariables';
       useMutation<SomeMutation, SomeMutationVariables>();
     `,
     `
-      import { SomeMutation } from '../SomeMutationWithOutVariables';
-      useMutation<SomeMutation>();
-    `,
-    `
       import { SomeSubscription, SomeSubscriptionVariables } from '../SomeSubscriptionWithVariables';
       useSubscription<SomeSubscription, SomeSubscriptionVariables>();
-    `,
-    `
-      import { SomeSubscription } from '../SomeSubscriptionWithOutVariables';
-      useSubscription<SomeSubscription>();
     `,
   ],
   invalid: [
@@ -69,7 +55,7 @@ ruleTester.run('missing-graphql-variables', rule, {
       `,
       errors: [
         {
-          type: AST_NODE_TYPES.CallExpression,
+          type: 'CallExpression',
           messageId: 'missing-graphql-variables-type',
         },
       ],
@@ -85,7 +71,7 @@ ruleTester.run('missing-graphql-variables', rule, {
       `,
       errors: [
         {
-          type: AST_NODE_TYPES.CallExpression,
+          type: 'CallExpression',
           messageId: 'missing-graphql-variables-type',
         },
       ],
@@ -101,7 +87,7 @@ ruleTester.run('missing-graphql-variables', rule, {
       `,
       errors: [
         {
-          type: AST_NODE_TYPES.CallExpression,
+          type: 'CallExpression',
           messageId: 'missing-graphql-variables-type',
         },
       ],
@@ -117,7 +103,7 @@ ruleTester.run('missing-graphql-variables', rule, {
       `,
       errors: [
         {
-          type: AST_NODE_TYPES.CallExpression,
+          type: 'CallExpression',
           messageId: 'missing-graphql-variables-type',
         },
       ],
@@ -133,7 +119,7 @@ ruleTester.run('missing-graphql-variables', rule, {
       `,
       errors: [
         {
-          type: AST_NODE_TYPES.CallExpression,
+          type: 'CallExpression',
           messageId: 'missing-graphql-variables-type',
         },
       ],
@@ -149,7 +135,7 @@ ruleTester.run('missing-graphql-variables', rule, {
       `,
       errors: [
         {
-          type: AST_NODE_TYPES.CallExpression,
+          type: 'CallExpression',
           messageId: 'missing-graphql-variables-type',
         },
       ],

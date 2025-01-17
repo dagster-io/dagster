@@ -1,6 +1,7 @@
 import datetime
 import logging
-from typing import AbstractSet, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet  # noqa: UP035
 
 from dagster import AssetKey, DagsterInstance, observable_source_asset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor

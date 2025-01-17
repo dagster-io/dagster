@@ -4,7 +4,8 @@ import pickle
 import sys
 import tempfile
 import uuid
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Callable, Optional, Union, cast
 
 import nbformat
 import papermill
@@ -347,7 +348,7 @@ def define_dagstermill_op(
     ins: Optional[Mapping[str, In]] = None,
     outs: Optional[Mapping[str, Out]] = None,
     config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     output_notebook_name: Optional[str] = None,
     asset_key_prefix: Optional[Union[Sequence[str], str]] = None,
     description: Optional[str] = None,
@@ -431,7 +432,7 @@ def define_dagstermill_op(
     }
 
     if safe_is_subclass(config_schema, Config):
-        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
+        config_schema = infer_schema_from_config_class(cast(type[Config], config_schema))
 
     return OpDefinition(
         name=name,

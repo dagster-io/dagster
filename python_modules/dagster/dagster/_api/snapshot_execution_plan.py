@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey

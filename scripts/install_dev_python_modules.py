@@ -3,7 +3,7 @@ import argparse
 import itertools
 import subprocess
 import sys
-from typing import List, Optional
+from typing import Optional
 
 # We allow extra packages to be passed in via the command line because pip's version resolution
 # requires everything to be installed at the same time.
@@ -26,7 +26,7 @@ parser.add_argument(
 
 def main(
     quiet: bool,
-    extra_packages: List[str],
+    extra_packages: list[str],
     include_prebuilt_grpcio_wheel: Optional[bool],
     system: Optional[bool],
 ) -> None:
@@ -39,7 +39,7 @@ def main(
     # build errors, try this first. For context, there is a lengthy discussion here:
     # https://github.com/pypa/pip/issues/5599
 
-    install_targets: List[str] = [
+    install_targets: list[str] = [
         *extra_packages,
     ]
 

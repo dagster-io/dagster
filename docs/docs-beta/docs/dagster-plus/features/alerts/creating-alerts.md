@@ -95,6 +95,13 @@ If desired, add **tags** in the format `{key}:{value}` to filter the runs that w
 You can set up alerts to notify you when an asset materialization attempt fails.
 
 By default, these alerts will target all assets in the deployment, but they can be scoped to a specific asset or group of assets.
+
+:::note
+
+If using a RetryPolicy, an alert will only be sent after all retries complete.
+
+:::
+
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.

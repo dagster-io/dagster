@@ -1,6 +1,6 @@
 import io
 import pickle
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from dagster import (
     ConfigurableIOManager,
@@ -68,7 +68,7 @@ class PickledObjectS3IOManager(UPathIOManager):
         # It is not necessary to create directories in S3
         return None
 
-    def get_metadata(self, context: OutputContext, obj: Any) -> Dict[str, MetadataValue]:
+    def get_metadata(self, context: OutputContext, obj: Any) -> dict[str, MetadataValue]:
         path = self._get_path(context)
         return {"uri": MetadataValue.path(self._uri_for_path(path))}
 

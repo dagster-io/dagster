@@ -1,5 +1,6 @@
 import re
-from typing import Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Union, cast
 
 import pytest
 from dagster import (
@@ -172,6 +173,17 @@ def test_load_assets_from_modules(monkeypatch):
             pass
 
         m.setattr(asset_package, "top_level_spec_same_assets_def", top_level_spec, raising=False)
+        with pytest.raises(
+            DagsterInvalidDefinitionError,
+        ):
+            load_assets_from_modules([asset_package, module_with_assets], include_specs=True)
+
+    # Create an asset spec with an identical key to a full fledged assetsdef. Won't cause an error unless include_specs=True
+    with monkeypatch.context() as m:
+        spec = AssetSpec("chuck_berry")
+        m.setattr(asset_package, "chuck_berry_spec", spec, raising=False)
+        assets = load_assets_from_modules([asset_package, module_with_assets])
+        assert [get_unique_asset_identifier(asset) for asset in assets] == assets_1
         with pytest.raises(
             DagsterInvalidDefinitionError,
         ):

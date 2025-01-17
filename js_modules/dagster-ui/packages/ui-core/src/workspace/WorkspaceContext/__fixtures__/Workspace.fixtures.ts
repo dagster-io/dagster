@@ -33,7 +33,9 @@ export const buildCodeLocationsStatusQuery = (
 
 export const buildWorkspaceMocks = (
   entries: WorkspaceLocationEntry[],
-  options: Partial<Omit<MockedResponse, 'result' | 'query' | 'variables' | 'data'>> = {},
+  options: Partial<Omit<MockedResponse, 'result' | 'query' | 'variables' | 'data'>> & {
+    cascadingUpdates?: boolean;
+  } = {},
 ) => {
   return [
     buildCodeLocationsStatusQuery(
@@ -41,12 +43,13 @@ export const buildWorkspaceMocks = (
         buildWorkspaceLocationStatusEntry({
           ...entry,
           updateTimestamp: entry.updatedTimestamp,
+          versionKey: '' + entry.updatedTimestamp,
           __typename: 'WorkspaceLocationStatusEntry',
         }),
       ),
       options,
     ),
-    ...entries.map((entry) =>
+    ...entries.map((entry, index) =>
       buildQueryMock<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
         query: LOCATION_WORKSPACE_QUERY,
         variables: {
@@ -56,6 +59,11 @@ export const buildWorkspaceMocks = (
           workspaceLocationEntryOrError: entry,
         },
         ...options,
+        ...(options.cascadingUpdates
+          ? {
+              delay: 100 * (1 + index),
+            }
+          : {}),
       }),
     ),
   ];

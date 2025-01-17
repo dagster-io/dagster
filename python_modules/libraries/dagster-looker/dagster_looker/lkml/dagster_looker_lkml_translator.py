@@ -1,8 +1,9 @@
 import itertools
 import logging
 import re
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, Tuple, cast
+from typing import Any, Literal, Optional, cast
 
 from dagster import AssetKey
 from dagster._annotations import experimental, public
@@ -19,7 +20,7 @@ logger = logging.getLogger("dagster_looker")
 
 def build_deps_for_looker_dashboard(
     dagster_looker_translator: "DagsterLookerLkmlTranslator",
-    lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]],
+    lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
 ) -> Sequence[AssetKey]:
     lookml_view_path, _, lookml_dashboard_props = lookml_structure
 
@@ -45,7 +46,7 @@ def build_deps_for_looker_dashboard(
 
 def build_deps_for_looker_explore(
     dagster_looker_translator: "DagsterLookerLkmlTranslator",
-    lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]],
+    lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
 ) -> Sequence[AssetKey]:
     lookml_explore_path, _, lookml_explore_props = lookml_structure
 
@@ -73,7 +74,7 @@ def build_deps_for_looker_explore(
 
 def build_deps_for_looker_view(
     dagster_looker_translator: "DagsterLookerLkmlTranslator",
-    lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]],
+    lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
 ) -> Sequence[AssetKey]:
     lookml_view_path, _, lookml_view_props = lookml_structure
 
@@ -172,7 +173,7 @@ class DagsterLookerLkmlTranslator:
 
     @public
     def get_asset_key(
-        self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> AssetKey:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster asset key that represents the structure.
@@ -228,7 +229,7 @@ class DagsterLookerLkmlTranslator:
 
     @public
     def get_deps(
-        self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Sequence[AssetKey]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster dependencies of that the structure.
@@ -275,7 +276,7 @@ class DagsterLookerLkmlTranslator:
 
     @public
     def get_description(
-        self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Optional[str]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster description of the structure.
@@ -305,7 +306,7 @@ class DagsterLookerLkmlTranslator:
 
     @public
     def get_metadata(
-        self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Optional[Mapping[str, Any]]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster metadata of the structure.
@@ -334,7 +335,7 @@ class DagsterLookerLkmlTranslator:
 
     @public
     def get_group_name(
-        self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Optional[str]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster group name of the structure.
@@ -362,7 +363,7 @@ class DagsterLookerLkmlTranslator:
 
     @public
     def get_owners(
-        self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Optional[Sequence[str]]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster owners of the structure.
@@ -390,7 +391,7 @@ class DagsterLookerLkmlTranslator:
 
     @public
     def get_tags(
-        self, lookml_structure: Tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Optional[Mapping[str, str]]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
         returns the Dagster tags of the structure.

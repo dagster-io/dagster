@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 from dagster import AssetMaterialization, Output, asset, job, materialize, op
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey

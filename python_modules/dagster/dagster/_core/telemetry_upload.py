@@ -2,8 +2,8 @@ import datetime
 import os
 import threading
 import zlib
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 from dagster._core.telemetry import MAX_BYTES, get_or_create_dir_from_dagster_home
 

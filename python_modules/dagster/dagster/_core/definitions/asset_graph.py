@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
@@ -252,8 +253,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # and child nodes.
         dep_graph = generate_asset_dep_graph(assets_defs)
 
-        assets_defs_by_check_key: Dict[AssetCheckKey, AssetsDefinition] = {}
-        check_keys_by_asset_key: DefaultDict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        assets_defs_by_check_key: dict[AssetCheckKey, AssetsDefinition] = {}
+        check_keys_by_asset_key: defaultdict[AssetKey, set[AssetCheckKey]] = defaultdict(set)
         for ad in assets_defs:
             for ck in ad.check_keys:
                 check_keys_by_asset_key[ck.asset_key].add(ck)

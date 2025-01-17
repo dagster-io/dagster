@@ -104,20 +104,23 @@ dt > a.reference.internal {
   @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green
 }
 
-.deprecated-tag {
-  @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-gray-300 text-gray-900
+.preview-tag,
+.flag.preview {
+  @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green
 }
 
-.superseded-tag {
-  @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-gray-300 text-gray-900
+.beta-tag,
+.flag.beta {
+  @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-sea-foam text-gable-green
 }
 
 .legacy-tag,
+.deprecated-tag,
 .flag.deprecated {
   @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-orange-200 text-orange-700
 }
 
-.legacy-tag,
+.superseded-tag,
 .flag.superseded {
   @apply inline-flex items-center px-3 py-0.5 rounded-full align-middle text-xs uppercase font-medium bg-yellow-200 text-yellow-700
 }

@@ -1,7 +1,8 @@
 import warnings
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from itertools import groupby
-from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param
@@ -73,7 +74,7 @@ class UnresolvedAssetJobDefinition(
         # run tags. This is for backcompat with old behavior prior to the introduction of
         # `run_tags`.
         run_tags = check.mapping_param(run_tags, "run_tags") if run_tags else tags
-        return super(UnresolvedAssetJobDefinition, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             selection=check.inst_param(selection, "selection", AssetSelection),

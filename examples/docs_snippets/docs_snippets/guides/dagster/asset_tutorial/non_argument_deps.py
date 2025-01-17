@@ -69,7 +69,7 @@ def cereal_ratings_csv() -> None:
 # nabisco_cereal_ratings_start
 @asset(deps=[cereal_ratings_csv])
 def nabisco_cereal_ratings(nabisco_cereals):
-    with open("cereal-ratings.csv", "r") as f:
+    with open("cereal-ratings.csv") as f:
         cereal_ratings = {
             row["name"]: row["rating"] for row in csv.DictReader(f.readlines())
         }

@@ -1,6 +1,7 @@
 import copy
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, Mapping, Optional
+from typing import Any, Optional
 
 
 @dataclass
@@ -19,13 +20,13 @@ class RemoteComponentType:
 
 class RemoteComponentRegistry:
     @classmethod
-    def from_dict(cls, components: Dict[str, Mapping[str, Any]]) -> "RemoteComponentRegistry":
+    def from_dict(cls, components: dict[str, Mapping[str, Any]]) -> "RemoteComponentRegistry":
         return RemoteComponentRegistry(
             {key: RemoteComponentType(**value) for key, value in components.items()}
         )
 
-    def __init__(self, components: Dict[str, RemoteComponentType]):
-        self._components: Dict[str, RemoteComponentType] = copy.copy(components)
+    def __init__(self, components: dict[str, RemoteComponentType]):
+        self._components: dict[str, RemoteComponentType] = copy.copy(components)
 
     @staticmethod
     def empty() -> "RemoteComponentRegistry":

@@ -17,8 +17,8 @@ For assets that follow this pattern, an I/O manager can streamline the code that
 
 To follow the steps in this guide, you'll need familiarity with:
 
-- [Assets](/guides/build/create-asset-pipelines/assets-concepts/index.mdx
-- [Resources](/guides/build/connect-to-external-systems/resources)
+- [Assets](/guides/build/assets/)
+- [Resources](/guides/build/external-resources/)
 </details>
 
 ## Before you begin
@@ -35,7 +35,7 @@ To follow the steps in this guide, you'll need familiarity with:
 - Your pipeline manages I/O on its own by using other libraries/tools that write to storage
 - Your assets won't fit in memory, such as a database table with billions of rows
 
-As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/build/create-asset-pipelines/assets-concepts/asset-dependencies).
+As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/build/assets/passing-data-between-assets).
 
 ## Using I/O managers in assets \{#io-in-assets}
 
@@ -67,20 +67,20 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 
 | Name                                                                                       | Description                                                                   |
 | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| <PyObject module="dagster" object="FilesystemIOManager" />                                 | Default I/O manager. Stores outputs as pickle files on the local file system. |
-| <PyObject module="dagster" object="InMemoryIOManager" />                                   | Stores outputs in memory. Primarily useful for unit testing.                  |
-| <PyObject module="dagster_aws.s3" object="S3PickleIOManager" />                            | Stores outputs as pickle files in Amazon Web Services S3.                     |
-| <PyObject module="dagster_azure.adls2" object="ConfigurablePickledObjectADLS2IOManager" /> | Stores outputs as pickle files in Azure ADLS2.                                |
-| <PyObject module="dagster_gcp" object="GCSPickleIOManager" />                              | Stores outputs as pickle files in Google Cloud Platform GCS.                  |
-| <PyObject module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />                  | Stores Pandas DataFrame outputs in Google Cloud Platform BigQuery.            |
-| <PyObject module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />                | Stores PySpark DataFrame outputs in Google Cloud Platform BigQuery.           |
-| <PyObject module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" />           | Stores Pandas DataFrame outputs in Snowflake.                                 |
-| <PyObject module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />         | Stores PySpark DataFrame outputs in Snowflake.                                |
-| <PyObject module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |
-| <PyObject module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
-| <PyObject module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
+| <PyObject section="io-managers" module="dagster" object="FilesystemIOManager" />                                 | Default I/O manager. Stores outputs as pickle files on the local file system. |
+| <PyObject section="io-managers" module="dagster" object="InMemoryIOManager" />                                   | Stores outputs in memory. Primarily useful for unit testing.                  |
+| <PyObject section="libraries" module="dagster_aws" object="s3.S3PickleIOManager" />                            | Stores outputs as pickle files in Amazon Web Services S3.                     |
+| <PyObject section="libraries" module="dagster_azure" object="adls2.ConfigurablePickledObjectADLS2IOManager" /> | Stores outputs as pickle files in Azure ADLS2.                                |
+| <PyObject section="libraries" module="dagster_gcp" object="GCSPickleIOManager" />                              | Stores outputs as pickle files in Google Cloud Platform GCS.                  |
+| <PyObject section="libraries" module="dagster_gcp_pandas" object="BigQueryPandasIOManager" />                  | Stores Pandas DataFrame outputs in Google Cloud Platform BigQuery.            |
+| <PyObject section="libraries" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />                | Stores PySpark DataFrame outputs in Google Cloud Platform BigQuery.           |
+| <PyObject section="libraries" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" />           | Stores Pandas DataFrame outputs in Snowflake.                                 |
+| <PyObject section="libraries" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />         | Stores PySpark DataFrame outputs in Snowflake.                                |
+| <PyObject section="libraries" module="dagster_duckdb_pandas" object="DuckDBPandasIOManager" />                 | Stores Pandas DataFrame outputs in DuckDB.                                    |
+| <PyObject section="libraries" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
+| <PyObject section="libraries" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
 
 ## Next steps
 
-- Learn to [connect databases](/guides/build/connect-to-external-systems/databases) with resources
-- Learn to [connect APIs](/guides/build/connect-to-external-systems/apis) with resources
+- Learn to [connect databases](/guides/build/external-resources/connecting-to-databases) with resources
+- Learn to [connect APIs](/guides/build/external-resources/connecting-to-apis) with resources

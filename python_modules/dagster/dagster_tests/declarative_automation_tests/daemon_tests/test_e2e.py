@@ -2,8 +2,9 @@ import datetime
 import os
 import sys
 import time
+from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, cast
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 import pytest
@@ -93,7 +94,7 @@ def _setup_instance(context: WorkspaceProcessContext) -> None:
 
 @contextmanager
 def get_workspace_request_context(
-    filenames: Sequence[str], overrides: Optional[Dict[str, Any]] = None
+    filenames: Sequence[str], overrides: Optional[dict[str, Any]] = None
 ):
     with instance_for_test(
         overrides={

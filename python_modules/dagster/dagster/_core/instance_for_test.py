@@ -1,8 +1,9 @@
 import os
 import sys
 import tempfile
+from collections.abc import Iterator, Mapping
 from contextlib import ExitStack, contextmanager
-from typing import Any, Iterator, Mapping, Optional
+from typing import Any, Optional
 
 import yaml
 

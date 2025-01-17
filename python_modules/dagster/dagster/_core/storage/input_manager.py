@@ -1,6 +1,14 @@
 from abc import ABC, abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union, cast, overload
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Callable,
+    Optional,
+    Union,
+    cast,
+    overload,
+)
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -71,7 +79,7 @@ class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
         self._input_config_schema = convert_user_facing_definition_config_schema(
             input_config_schema
         )
-        super(InputManagerDefinition, self).__init__(
+        super().__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,

@@ -1,5 +1,6 @@
 import warnings
-from typing import Sequence, cast
+from collections.abc import Sequence
+from typing import cast
 
 from dagster import ExperimentalWarning
 from dagster._core.definitions.assets import AssetsDefinition

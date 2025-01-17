@@ -1,5 +1,5 @@
 ---
-title: "Setting up alerts"
+title: Alerts
 sidebar_position: 10
 unlisted: true
 ---

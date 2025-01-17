@@ -1,7 +1,8 @@
 # ruff: noqa: T201
 import argparse
+from collections.abc import Sequence
 from random import randint
-from typing import Sequence, Union
+from typing import Union
 
 from dagster import StaticPartitionsDefinition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext

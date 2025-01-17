@@ -184,6 +184,7 @@ export const AssetPartitions = ({
     const matching = uniq(
       getKeysWithStates(statusFilters.filter((f) => f !== AssetPartitionStatus.MISSING)),
     );
+    const matchingSet = new Set(matching);
 
     let result;
     // We have to add in "missing" separately because it's the absence of a range
@@ -196,8 +197,9 @@ export const AssetPartitions = ({
             r.end.idx >= idx &&
             !r.value.includes(AssetPartitionStatus.MISSING),
         );
+      const selectionKeysSet = new Set(selectionKeys);
       result = filteredKeys.filter(
-        (a, pidx) => selectionKeys.includes(a) && (matching.includes(a) || isMissingForIndex(pidx)),
+        (a, pidx) => selectionKeysSet.has(a) && (matchingSet.has(a) || isMissingForIndex(pidx)),
       );
     } else {
       result = matching;

@@ -713,6 +713,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
                     localDir=local_dir,
                     prefix=prefix,
                     uploadInterval=upload_interval,
+                    showUrlOnly=True,
                 )
             ),
         )
@@ -734,6 +735,7 @@ def test_azure_blob_compute_log_manager(template: HelmTemplate):
         "prefix": prefix,
         "upload_interval": upload_interval,
         "access_key_or_sas_token": access_key_or_sas_token,
+        "show_url_only": True,
     }
 
     # Test all config fields in configurable class

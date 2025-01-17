@@ -1,7 +1,8 @@
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
 from types import ModuleType
-from typing import Any, Callable, Dict, Iterable, Mapping, Optional, Sequence, Union, cast, get_args
+from typing import Any, Callable, Optional, Union, cast, get_args
 
 from dagster._core.definitions.asset_checks import AssetChecksDefinition, has_only_asset_checks
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKeyPrefix
@@ -46,12 +47,16 @@ class ModuleScopedDagsterDefs:
     def __init__(
         self,
         objects_per_module: Mapping[str, Sequence[LoadableDagsterDef]],
+        allow_spec_collisions: bool,
     ):
         self.objects_per_module = objects_per_module
+        self.allow_spec_collisions = allow_spec_collisions
         self._do_collision_detection()
 
     @classmethod
-    def from_modules(cls, modules: Iterable[ModuleType]) -> "ModuleScopedDagsterDefs":
+    def from_modules(
+        cls, modules: Iterable[ModuleType], allow_spec_collisions: bool = False
+    ) -> "ModuleScopedDagsterDefs":
         return cls(
             {
                 module.__name__: list(
@@ -62,6 +67,7 @@ class ModuleScopedDagsterDefs:
                 )
                 for module in modules
             },
+            allow_spec_collisions,
         )
 
     @cached_property
@@ -71,7 +77,7 @@ class ModuleScopedDagsterDefs:
         ]
 
     @cached_property
-    def objects_by_id(self) -> Dict[int, LoadableDagsterDef]:
+    def objects_by_id(self) -> dict[int, LoadableDagsterDef]:
         return {id(asset_object): asset_object for asset_object in self.flat_object_list}
 
     @cached_property
@@ -111,7 +117,7 @@ class ModuleScopedDagsterDefs:
         return [sensor for sensor in self.deduped_objects if isinstance(sensor, SensorDefinition)]
 
     @cached_property
-    def module_name_by_id(self) -> Dict[int, str]:
+    def module_name_by_id(self) -> dict[int, str]:
         return {
             id(asset_object): module_name
             for module_name, objects in self.objects_per_module.items()
@@ -133,13 +139,22 @@ class ModuleScopedDagsterDefs:
     def _do_collision_detection(self) -> None:
         # Collision detection on module-scoped asset objects. This does not include CacheableAssetsDefinitions, which don't have their keys defined until runtime.
         for key, asset_objects in self.asset_objects_by_key.items():
+            # In certain cases, we allow asset specs to collide because we know we aren't loading them.
+            asset_objects_to_check = [
+                asset_object
+                for asset_object in asset_objects
+                if (not isinstance(asset_object, AssetSpec) if self.allow_spec_collisions else True)
+            ]
             # If there is more than one asset_object in the list for a given key, and the objects do not refer to the same asset_object in memory, we have a collision.
             num_distinct_objects_for_key = len(
-                set(id(asset_object) for asset_object in asset_objects)
+                set(id(asset_object) for asset_object in asset_objects_to_check)
             )
-            if len(asset_objects) > 1 and num_distinct_objects_for_key > 1:
+            if len(asset_objects_to_check) > 1 and num_distinct_objects_for_key > 1:
                 asset_objects_str = ", ".join(
-                    set(self.module_name_by_id[id(asset_object)] for asset_object in asset_objects)
+                    set(
+                        self.module_name_by_id[id(asset_object)]
+                        for asset_object in asset_objects_to_check
+                    )
                 )
                 raise DagsterInvalidDefinitionError(
                     f"Asset key {key.to_user_string()} is defined multiple times. Definitions found in modules: {asset_objects_str}."

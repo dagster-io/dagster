@@ -4,10 +4,11 @@ import os
 import queue
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from multiprocessing.process import BaseProcess
-from typing import TYPE_CHECKING, Iterator, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 from typing_extensions import Literal
 

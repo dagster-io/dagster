@@ -2,7 +2,8 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import requests
 from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource

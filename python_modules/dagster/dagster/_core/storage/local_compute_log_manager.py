@@ -2,11 +2,11 @@ import os
 import shutil
 import sys
 from collections import defaultdict
+from collections.abc import Generator, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import IO, Generator, Iterator, Mapping, Optional, Sequence
+from typing import IO, Final, Optional
 
-from typing_extensions import Final
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
 
@@ -340,7 +340,7 @@ class LocalComputeLogFilesystemEventHandler(PatternMatchingEventHandler):
         self.update_paths = update_paths
         self.complete_paths = complete_paths
         patterns = update_paths + complete_paths
-        super(LocalComputeLogFilesystemEventHandler, self).__init__(patterns=patterns)
+        super().__init__(patterns=patterns)
 
     def on_created(self, event):
         if event.src_path in self.complete_paths:

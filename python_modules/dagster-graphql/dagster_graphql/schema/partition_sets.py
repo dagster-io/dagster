@@ -1,4 +1,5 @@
-from typing import AbstractSet, Optional, Sequence, cast
+from collections.abc import Sequence
+from typing import AbstractSet, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 import graphene

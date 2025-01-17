@@ -1,8 +1,8 @@
 import itertools
 import textwrap
+from collections.abc import Iterator
 from datetime import datetime
 from queue import Queue
-from typing import Iterator
 
 import pytest
 from dagster._core.pipes.merge_streams import LogItem, merge_streams

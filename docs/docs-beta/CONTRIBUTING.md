@@ -4,6 +4,29 @@
 
 There are some features in the previous docs that require changes to be made to work in the new Docusaurus-based documentation site.
 
+### PyObject references
+
+To create a link to the Python API docs, use the `PyObject` component. Previously, we were able to parse the Sphinx search index to determine the section that the module resides. As we no longer have this, a `section` prop was added to the component.
+
+Before:
+
+```
+<PyObject
+  module="dagster"
+  object="MaterializeResult"
+/>
+```
+
+After:
+
+```
+<PyObject
+  section="assets"
+  module="dagster"
+  object="MaterializeResult"
+/>
+```
+
 ### Images
 
 #### Location
@@ -108,6 +131,39 @@ After:
 ### Whitespace via `{" "}`
 
 Forcing empty space using the `{" "}` interpolation is not supported, and must be removed.
+
+### Prerequisites
+
+Before:
+
+```
+## Prerequisites
+
+- Install this
+- Configure that
+```
+
+After:
+
+```
+<details>
+  <summary>Prerequisites</summary>
+
+  - Install this
+  - Configure that
+
+</details>
+```
+
+A prerequisites section should only include steps that the reader must take in order to run the example code in the article. Recommended reading should be formatted as a note:
+
+```
+:::note
+
+This article assumes familiarity with [assets](example-link).
+
+:::
+```
 
 ---
 

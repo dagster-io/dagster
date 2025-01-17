@@ -1,5 +1,6 @@
 import re
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import (
     AssetMaterialization,

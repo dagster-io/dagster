@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -37,7 +37,7 @@ class DbtCloudRunOpConfig(Config):
         ),
     )
 
-    asset_key_prefix: List[str] = Field(
+    asset_key_prefix: list[str] = Field(
         default=["dbt"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "

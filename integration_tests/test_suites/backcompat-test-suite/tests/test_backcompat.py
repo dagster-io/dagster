@@ -4,9 +4,10 @@ import os
 import subprocess
 import time
 import traceback
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 import dagster._check as check
 import docker

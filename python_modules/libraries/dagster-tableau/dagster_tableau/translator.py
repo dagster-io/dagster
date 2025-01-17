@@ -1,6 +1,7 @@
 import re
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, Literal, Mapping, Optional, Sequence
+from typing import Any, Literal, Optional
 
 from dagster import _check as check
 from dagster._annotations import deprecated

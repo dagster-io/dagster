@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -6,9 +6,9 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.core.component import ComponentGenerateRequest
+from dagster_components.core.component import ComponentGenerator
 from dagster_components.core.component_decl_builder import YamlComponentDecl
-from dagster_components.generate import generate_component_yaml
+from dagster_components.core.component_generator import DefaultComponentGenerator
 
 if TYPE_CHECKING:
     from dagster_components.core.component import ComponentDeclNode
@@ -24,8 +24,8 @@ class AllMetadataEmptyAsset(Component):
         return cls()
 
     @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: Any) -> None:
-        generate_component_yaml(request, params)
+    def get_generator(cls) -> ComponentGenerator:
+        return DefaultComponentGenerator()
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @asset

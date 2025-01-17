@@ -64,7 +64,7 @@ def test_basic_tag_set_functionality() -> None:
     assert tag_set.foo == "lorem"
     assert tag_set.bar == "ipsum"
 
-    assert tag_set.extract((dict(tag_set))) == tag_set
+    assert tag_set.extract(dict(tag_set)) == tag_set
     assert tag_set.extract({}) == MyValidTagSet(foo=None, bar=None)
 
     assert dict(tag_set) == {"dagster/foo": "lorem", "dagster/bar": "ipsum"}

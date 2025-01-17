@@ -37,8 +37,8 @@ export function createSelectionLinter({
     const lintErrors = errorListener.getErrors().map((error) => ({
       message: error.message.replace('<EOF>, ', ''),
       severity: 'error',
-      from: CodeMirror.Pos(error.line, error.column),
-      to: CodeMirror.Pos(error.line, text.length),
+      from: CodeMirror.Pos(0, error.column),
+      to: CodeMirror.Pos(0, text.length),
     }));
 
     return lintErrors;

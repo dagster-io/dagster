@@ -280,6 +280,8 @@ We've also got a bunch of badges that you can use to indicate the level of suppo
 There are the available badges:
 
 - `{% experimental /%}` {% experimental /%}
+- `{% preview /%}` {% preview /%}
+- `{% beta /%}` {% beta /%}
 - `{% deprecated /%}` {% deprecated /%}
 - `{% superseded /%}` {% superseded /%}
 - `{% legacy /%}` {% legacy /%}

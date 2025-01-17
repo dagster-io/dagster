@@ -1,5 +1,3 @@
-// parser.ts
-
 import {BailErrorStrategy, CharStreams, CommonTokenStream} from 'antlr4ts';
 import {ParseTree} from 'antlr4ts/tree/ParseTree';
 import memoize from 'lodash/memoize';
@@ -60,7 +58,7 @@ export const parseInput = memoize((input: string): ParseResult => {
       // Advance currentPosition to the end of the parsed input
       const lastToken = tokenStream.get(tokenStream.index - 1);
       currentPosition += lastToken.stopIndex + 1;
-    } catch (e) {
+    } catch {
       // Parsing error occurred
       const currentErrors = errorListener.getErrors();
 

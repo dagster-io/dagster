@@ -53,6 +53,8 @@ Params loaders load the bootstrap payload from some globally accessible key-valu
 
 .. autoclass:: PipesCliArgsParamsLoader
 
+.. autoclass:: PipesMappingParamsLoader
+
 ----
 
 Message writers

@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 import graphene

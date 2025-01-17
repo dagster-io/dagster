@@ -80,7 +80,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         pass
 
     def store_event(self, event):
-        super(InMemoryEventLogStorage, self).store_event(event)
+        super().store_event(event)
         self._storage_id += 1
 
         handlers = list(self._handlers[event.run_id])

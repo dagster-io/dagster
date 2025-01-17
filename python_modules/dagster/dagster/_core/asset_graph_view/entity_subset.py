@@ -1,5 +1,5 @@
 import operator
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,

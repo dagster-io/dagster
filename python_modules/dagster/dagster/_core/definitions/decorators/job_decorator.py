@@ -1,5 +1,14 @@
+from collections.abc import Mapping
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Union, overload
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    Union,
+    overload,
+)
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description

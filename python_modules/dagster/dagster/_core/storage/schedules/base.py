@@ -1,5 +1,6 @@
 import abc
-from typing import Mapping, Optional, Sequence, Set
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -32,7 +33,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
-        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
+        instigator_statuses: Optional[set[InstigatorStatus]] = None,
     ) -> Sequence[InstigatorState]:
         """Return all InstigationStates present in storage.
 

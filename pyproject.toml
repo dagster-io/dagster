@@ -246,8 +246,8 @@ select = [
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
 
-  # (f-strings) use f-strings instead of .format()
-  "UP032",
+  # (pyupgrade) auto-upgrade syntax to newer versions of Python
+  "UP",
 
   # (invalid escape sequence) flag errant backslashes
   "W605",

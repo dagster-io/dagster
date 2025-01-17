@@ -1,9 +1,10 @@
 import os
 import subprocess
 import time
+from collections.abc import Generator, Mapping, Sequence
 from datetime import timedelta
 from pathlib import Path
-from typing import Generator, List, Mapping, NamedTuple, Sequence, Union
+from typing import NamedTuple, Union
 
 import pytest
 from dagster import AssetKey, DagsterInstance
@@ -80,7 +81,7 @@ def poll_for_expected_mats(
     af_instance: AirflowInstance,
     expected_mats_per_dag: Mapping[str, Sequence[Union[ExpectedMat, AssetKey]]],
 ) -> None:
-    resolved_expected_mats_per_dag: Mapping[str, List[ExpectedMat]] = {
+    resolved_expected_mats_per_dag: Mapping[str, list[ExpectedMat]] = {
         dag_id: [
             expected_mat
             if isinstance(expected_mat, ExpectedMat)

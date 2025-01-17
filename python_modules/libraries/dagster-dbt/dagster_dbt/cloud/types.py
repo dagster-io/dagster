@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Mapping, Optional
+from typing import Any, Optional
 
 import dagster._check as check
 from dagster._vendored.dateutil.parser import isoparse

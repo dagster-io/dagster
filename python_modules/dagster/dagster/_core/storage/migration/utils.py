@@ -1,5 +1,5 @@
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Iterator, Sequence
 
 import sqlalchemy as db
 from alembic import op

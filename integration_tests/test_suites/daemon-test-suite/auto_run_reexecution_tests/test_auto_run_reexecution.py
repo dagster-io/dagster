@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Sequence, cast
+from collections.abc import Sequence
+from typing import cast
 from unittest.mock import PropertyMock, patch
 
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEntry

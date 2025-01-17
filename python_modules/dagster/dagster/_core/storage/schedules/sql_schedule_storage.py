@@ -1,18 +1,8 @@
 from abc import abstractmethod
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import (
-    Any,
-    Callable,
-    ContextManager,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    TypeVar,
-)
+from typing import Any, Callable, ContextManager, NamedTuple, Optional, TypeVar  # noqa: UP035
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
@@ -73,7 +63,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return res
 
     def _deserialize_rows(
-        self, rows: Sequence[SqlAlchemyRow], as_type: Type[T_NamedTuple]
+        self, rows: Sequence[SqlAlchemyRow], as_type: type[T_NamedTuple]
     ) -> Sequence[T_NamedTuple]:
         return list(map(lambda r: deserialize_value(r[0], as_type), rows))
 
@@ -82,7 +72,7 @@ class SqlScheduleStorage(ScheduleStorage):
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
-        instigator_statuses: Optional[Set[InstigatorStatus]] = None,
+        instigator_statuses: Optional[set[InstigatorStatus]] = None,
     ) -> Sequence[InstigatorState]:
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 

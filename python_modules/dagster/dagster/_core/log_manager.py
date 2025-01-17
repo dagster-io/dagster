@@ -1,9 +1,8 @@
 import datetime
 import logging
 import threading
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, TypedDict, Union, cast
-
-from typing_extensions import Final
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Final, Optional, TypedDict, Union, cast
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id

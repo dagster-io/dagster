@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Callable, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import click
 
@@ -34,6 +35,12 @@ GLOBAL_OPTIONS = {
             type=str,
             default=DgConfig.builtin_component_lib,
             help="Specify a builitin component library to use.",
+        ),
+        click.Option(
+            ["--use-dg-managed-environment/--no-use-dg-managed-environment"],
+            is_flag=True,
+            default=DgConfig.use_dg_managed_environment,
+            help="Enable management of the virtual environment with uv.",
         ),
     ]
 }

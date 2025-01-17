@@ -170,9 +170,11 @@ def test_dynamic_subcommand_help_message():
               -h, --help          Show this message and exit.
 
             Global options:
-              --builtin-component-lib TEXT  Specify a builitin component library to use.
-              --verbose                     Enable verbose output for debugging.
-              --disable-cache               Disable the cache..
-              --cache-dir PATH              Specify a directory to use for the cache.
+              --use-dg-managed-environment / --no-use-dg-managed-environment
+                                              Enable management of the virtual environment with uv.
+              --builtin-component-lib TEXT    Specify a builitin component library to use.
+              --verbose                       Enable verbose output for debugging.
+              --disable-cache                 Disable the cache..
+              --cache-dir PATH                Specify a directory to use for the cache.
         """).strip()
         )

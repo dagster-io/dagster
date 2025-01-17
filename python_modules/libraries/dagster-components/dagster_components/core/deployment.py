@@ -1,16 +1,19 @@
 import os
+from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Iterable, Optional, Tuple, Type
+from typing import Final, Optional
 
 import tomli
 from dagster._core.errors import DagsterError
 from typing_extensions import Self
 
 from dagster_components.core.component import Component, ComponentTypeRegistry
+from dagster_components.utils import ensure_loadable_path, get_path_for_package
 
 # Code location
-_CODE_LOCATION_CUSTOM_COMPONENTS_DIR: Final = "lib"
-_CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
+_DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE: Final = "lib"
+_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE: Final = "components"
 
 
 def is_inside_code_location_project(path: Path) -> bool:
@@ -44,13 +47,29 @@ def _is_code_location_root(path: Path) -> bool:
     return False
 
 
+@dataclass
+class CodeLocationConfig:
+    components_package: Optional[str] = None
+
+
+def _load_code_location_config(path: Path) -> CodeLocationConfig:
+    with open(path / "pyproject.toml") as f:
+        toml = tomli.loads(f.read())
+        raw_dg_config = toml.get("tool", {}).get("dg", {})
+        raw_config = {
+            k: v for k, v in raw_dg_config.items() if k in CodeLocationConfig.__annotations__
+        }
+        return CodeLocationConfig(**raw_config)
+
+
 class CodeLocationProjectContext:
     @classmethod
     def from_code_location_path(
         cls,
         path: Path,
         component_registry: "ComponentTypeRegistry",
-        components_folder: Optional[Path] = None,
+        components_path: Optional[Path] = None,
+        components_package_name: Optional[str] = None,
     ) -> Self:
         if not _is_code_location_root(path):
             raise DagsterError(
@@ -58,13 +77,24 @@ class CodeLocationProjectContext:
             )
 
         name = os.path.basename(path)
+        config = _load_code_location_config(path)
+        components_package_name = (
+            config.components_package or f"{name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE}"
+        )
+        if not components_path:
+            with ensure_loadable_path(path):
+                components_path = (
+                    Path(get_path_for_package(config.components_package))
+                    if config.components_package
+                    else path / name / _DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE
+                )
 
         return cls(
             root_path=str(path),
             name=name,
             component_registry=component_registry,
-            components_folder=components_folder
-            or path / name / _CODE_LOCATION_COMPONENT_INSTANCES_DIR,
+            components_path=components_path,
+            components_package_name=components_package_name,
         )
 
     def __init__(
@@ -72,20 +102,14 @@ class CodeLocationProjectContext:
         root_path: str,
         name: str,
         component_registry: "ComponentTypeRegistry",
-        components_folder: Path,
+        components_path: Path,
+        components_package_name: str,
     ):
         self._root_path = root_path
         self._name = name
         self._component_registry = component_registry
-        self._components_folder = components_folder
-
-    @property
-    def component_types_root_path(self) -> str:
-        return os.path.join(self._root_path, self._name, _CODE_LOCATION_CUSTOM_COMPONENTS_DIR)
-
-    @property
-    def component_types_root_module(self) -> str:
-        return f"{self._name}.{_CODE_LOCATION_CUSTOM_COMPONENTS_DIR}"
+        self._components_path = components_path
+        self._components_package_name = components_package_name
 
     @property
     def component_registry(self) -> "ComponentTypeRegistry":
@@ -94,27 +118,31 @@ class CodeLocationProjectContext:
     def has_component_type(self, name: str) -> bool:
         return self._component_registry.has(name)
 
-    def get_component_type(self, name: str) -> Type[Component]:
+    def get_component_type(self, name: str) -> type[Component]:
         if not self.has_component_type(name):
             raise DagsterError(f"No component type named {name}")
         return self._component_registry.get(name)
 
-    def list_component_types(self) -> Iterable[Tuple[str, Type[Component]]]:
+    def list_component_types(self) -> Iterable[tuple[str, type[Component]]]:
         for key in sorted(self._component_registry.keys()):
             yield key, self._component_registry.get(key)
 
     def get_component_instance_path(self, name: str) -> str:
         if name not in self.component_instances:
             raise DagsterError(f"No component instance named {name}")
-        return os.path.join(self.component_instances_root_path, name)
+        return os.path.join(self.components_path, name)
 
     @property
-    def component_instances_root_path(self) -> str:
-        return str(self._components_folder)
+    def components_package_name(self) -> str:
+        return self._components_package_name
+
+    @property
+    def components_path(self) -> str:
+        return str(self._components_path)
 
     @property
     def component_instances(self) -> Iterable[str]:
-        return sorted(os.listdir(self.component_instances_root_path))
+        return sorted(os.listdir(self.components_path))
 
     def has_component_instance(self, name: str) -> bool:
-        return os.path.exists(os.path.join(self.component_instances_root_path, name))
+        return os.path.exists(os.path.join(self.components_path, name))

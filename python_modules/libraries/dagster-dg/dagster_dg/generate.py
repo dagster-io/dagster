@@ -1,7 +1,8 @@
 import json
 import os
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 import click
 
@@ -124,7 +125,7 @@ def generate_code_location(
     )
 
     # Build the venv
-    if not skip_venv:
+    if dg_context.config.use_dg_managed_environment and not skip_venv:
         ensure_uv_lock(path)
         fetch_component_registry(path, dg_context)  # Populate the cache
 
@@ -135,7 +136,7 @@ def generate_code_location(
 
 
 def generate_component_type(context: CodeLocationDirectoryContext, name: str) -> None:
-    root_path = Path(context.local_component_types_root_path)
+    root_path = Path(context.components_lib_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
 
     generate_subtree(
@@ -148,9 +149,7 @@ def generate_component_type(context: CodeLocationDirectoryContext, name: str) ->
     )
 
     with open(root_path / "__init__.py", "a") as f:
-        f.write(
-            f"from {context.local_component_types_root_module_name}.{name} import {camelcase(name)}\n"
-        )
+        f.write(f"from {context.components_lib_package_name}.{name} import {camelcase(name)}\n")
 
 
 # ########################

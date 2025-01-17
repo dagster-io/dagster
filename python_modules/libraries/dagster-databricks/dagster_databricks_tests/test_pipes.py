@@ -1,7 +1,8 @@
 import os
 import re
+from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, Optional
 
 import dagster._check as check
 import pytest
@@ -90,7 +91,7 @@ def make_submit_task_dict(
     dagster_pipes_whl_path: str,
     forward_logs: bool,
     cluster_id: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     submit_spec = {
         "libraries": [
             {"whl": dagster_pipes_whl_path},

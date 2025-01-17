@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Optional, Union, cast
 
 import dagster._check as check
 import graphene
@@ -33,7 +34,7 @@ GrapheneAssetCheckExecutionResolvedStatus = graphene.Enum.from_enum(
 
 
 class GrapheneAssetCheckEvaluationTargetMaterializationData(graphene.ObjectType):
-    storageId = graphene.NonNull(graphene.Int)
+    storageId = graphene.NonNull(graphene.ID)
     runId = graphene.NonNull(graphene.String)
     timestamp = graphene.NonNull(graphene.Float)
 

@@ -1,7 +1,7 @@
 # ruff: isort: skip_file
 
 
-from typing import Dict, List
+from typing import Dict, List  # noqa: UP035
 
 
 class Engine:
@@ -115,11 +115,11 @@ def execute_with_config() -> None:
 def basic_data_structures_config() -> None:
     # start_basic_data_structures_config
     from dagster import Config, materialize, asset, RunConfig
-    from typing import List, Dict
+    from typing import List, Dict  # noqa: UP035
 
     class MyDataStructuresConfig(Config):
-        user_names: List[str]
-        user_scores: Dict[str, int]
+        user_names: list[str]
+        user_scores: dict[str, int]
 
     @asset
     def scoreboard(config: MyDataStructuresConfig): ...
@@ -142,7 +142,7 @@ def basic_data_structures_config() -> None:
 def nested_schema_config() -> None:
     # start_nested_schema_config
     from dagster import asset, materialize, Config, RunConfig
-    from typing import Dict
+    from typing import Dict  # noqa: UP035
 
     class UserData(Config):
         age: int
@@ -150,7 +150,7 @@ def nested_schema_config() -> None:
         profile_picture_url: str
 
     class MyNestedConfig(Config):
-        user_data: Dict[str, UserData]
+        user_data: dict[str, UserData]
 
     @asset
     def average_age(config: MyNestedConfig): ...
@@ -315,7 +315,7 @@ def enum_schema_config() -> None:
         ADMIN = "admin"
 
     class ProcessUsersConfig(Config):
-        users_list: Dict[str, UserPermissions]
+        users_list: dict[str, UserPermissions]
 
     @op
     def process_users(config: ProcessUsersConfig):

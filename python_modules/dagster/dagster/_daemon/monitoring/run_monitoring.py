@@ -1,7 +1,8 @@
 import logging
 import sys
 import time
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 from dagster import (
     DagsterInstance,

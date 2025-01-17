@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Mapping
 from datetime import datetime, timezone
-from typing import Any, Iterator, Mapping, Optional, Union
+from typing import Any, Optional, Union
 
 from dagster import (
     AssetExecutionContext,

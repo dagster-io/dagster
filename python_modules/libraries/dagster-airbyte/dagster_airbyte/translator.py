@@ -1,5 +1,6 @@
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, List, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 from dagster._annotations import deprecated, experimental
 from dagster._core.definitions.asset_key import AssetKey
@@ -164,7 +165,7 @@ class AirbyteWorkspaceData:
         """Method that converts a `AirbyteWorkspaceData` object
         to a collection of `AirbyteConnectionTableProps` objects.
         """
-        data: List[AirbyteConnectionTableProps] = []
+        data: list[AirbyteConnectionTableProps] = []
 
         for connection in self.connections_by_id.values():
             destination = self.destinations_by_id[connection.destination_id]

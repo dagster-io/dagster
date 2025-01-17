@@ -8,7 +8,8 @@ These should only be invoked from contexts where we know this
 to be the case.
 """
 
-from typing import AbstractSet, Iterable, Optional
+from collections.abc import Iterable
+from typing import AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey

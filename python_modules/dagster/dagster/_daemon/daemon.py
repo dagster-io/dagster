@@ -7,10 +7,11 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections import deque
+from collections.abc import Generator, Mapping
 from contextlib import AbstractContextManager, ExitStack
 from enum import Enum
 from threading import Event
-from typing import Any, Generator, Generic, Mapping, Optional, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar, Union
 
 from typing_extensions import TypeAlias
 

@@ -1,5 +1,6 @@
 import base64
-from typing import NamedTuple, Sequence
+from collections.abc import Sequence
+from typing import NamedTuple
 
 from dagster._seven import json
 

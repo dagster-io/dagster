@@ -2,21 +2,14 @@ import itertools
 import json
 import warnings
 from collections import defaultdict
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
     TypeVar,
     Union,
     cast,
@@ -288,7 +281,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 partitions_def=partitions_def,
             )
 
-        normalized_specs: List[AssetSpec] = []
+        normalized_specs: list[AssetSpec] = []
 
         for spec in resolved_specs:
             if spec.owners:
@@ -415,7 +408,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+        internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -531,7 +524,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+        internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         group_name: Optional[str] = None,
@@ -631,7 +624,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+        internal_asset_deps: Optional[Mapping[str, set[AssetKey]]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
@@ -679,7 +672,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
-        transformed_internal_asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
+        transformed_internal_asset_deps: dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
                 if output_name not in keys_by_output_name:
@@ -693,7 +686,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             check_specs, list(keys_by_output_name.values())
         )
 
-        keys_by_output_name_with_prefix: Dict[str, AssetKey] = {}
+        keys_by_output_name_with_prefix: dict[str, AssetKey] = {}
         key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
         for output_name, key in keys_by_output_name.items():
             # add key_prefix to the beginning of each asset key
@@ -1210,7 +1203,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
     ) -> "AssetsDefinition":
-        conflicts_by_attr_name: Dict[str, Set[AssetKey]] = defaultdict(set)
+        conflicts_by_attr_name: dict[str, set[AssetKey]] = defaultdict(set)
         replaced_specs = []
 
         for key, spec in self._specs_by_key.items():
@@ -1479,7 +1472,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> set[str]:
         """Set[str]: The set of keys for resources that must be provided to this AssetsDefinition."""
         return {
             requirement.key
@@ -1492,7 +1485,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         if len(self.keys) == 1:
             return f"AssetsDefinition with key {self.key.to_string()}"
         else:
-            asset_keys = ", ".join(sorted(([asset_key.to_string() for asset_key in self.keys])))
+            asset_keys = ", ".join(sorted([asset_key.to_string() for asset_key in self.keys]))
             return f"AssetsDefinition with keys {asset_keys}"
 
     @cached_property
@@ -1509,7 +1502,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         with disable_dagster_warnings():
             return self.__class__(**attributes_dict)
 
-    def get_attributes_dict(self) -> Dict[str, Any]:
+    def get_attributes_dict(self) -> dict[str, Any]:
         return dict(
             keys_by_input_name=self.node_keys_by_input_name,
             keys_by_output_name=self.node_keys_by_output_name,
@@ -1541,7 +1534,7 @@ def _infer_keys_by_input_names(
 
     # If asset key is not supplied in keys_by_input_name, create asset key
     # from input name
-    inferred_input_names_by_asset_key: Dict[str, AssetKey] = {
+    inferred_input_names_by_asset_key: dict[str, AssetKey] = {
         input_name: keys_by_input_name.get(input_name, AssetKey([input_name]))
         for input_name in all_input_names
     }
@@ -1576,7 +1569,7 @@ def _infer_keys_by_output_names(
             f" {union_asset_and_check_outputs} \nexpected keys: {set(output_names)}",
         )
 
-    inferred_keys_by_output_names: Dict[str, AssetKey] = {
+    inferred_keys_by_output_names: dict[str, AssetKey] = {
         output_name: asset_key for output_name, asset_key in keys_by_output_name.items()
     }
 
@@ -1659,7 +1652,7 @@ def _resolve_selections(
     all_check_keys: AbstractSet[AssetCheckKey],
     selected_asset_keys: Optional[AbstractSet[AssetKey]],
     selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
-) -> Tuple[AbstractSet[AssetKey], AbstractSet[AssetCheckKey]]:
+) -> tuple[AbstractSet[AssetKey], AbstractSet[AssetCheckKey]]:
     # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
     if selected_asset_keys is None and selected_asset_check_keys is None:
         # if no selections, include everything
@@ -1755,7 +1748,7 @@ def _asset_specs_from_attr_key_params(
         for key in dep_keys_from_keys_by_input_name
     ]
 
-    result: List[AssetSpec] = []
+    result: list[AssetSpec] = []
     for key in all_asset_keys:
         if deps_by_asset_key:
             dep_objs = [
@@ -1842,7 +1835,7 @@ def get_self_dep_time_window_partition_mapping(
 
 
 def get_partition_mappings_from_deps(
-    partition_mappings: Dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
+    partition_mappings: dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
 ) -> Mapping[AssetKey, PartitionMapping]:
     # Add PartitionMappings specified via AssetDeps to partition_mappings dictionary. Error on duplicates
     for dep in deps:

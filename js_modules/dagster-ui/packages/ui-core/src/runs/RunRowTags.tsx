@@ -25,12 +25,14 @@ export const RunRowTags = ({
   isHovered,
   isJob,
   hideTags,
+  hidePartition,
 }: {
   run: Pick<RunTableRunFragment, 'tags' | 'assetSelection' | 'mode'>;
   onAddTag?: (token: RunFilterToken) => void;
   isHovered: boolean;
   isJob: boolean;
   hideTags?: string[];
+  hidePartition?: boolean;
 }) => {
   const {isTagPinned, onToggleTagPin} = useTagPinning();
   const [showRunTags, setShowRunTags] = React.useState(false);
@@ -66,12 +68,15 @@ export const RunRowTags = ({
       if (hideTags?.includes(tag.key)) {
         return;
       }
+      if (hidePartition && tag.key === DagsterTag.Partition) {
+        return;
+      }
       if (tag.pinned) {
         tags.push(tag);
       }
     });
     return tags;
-  }, [allTagsWithPinned, hideTags, run.assetSelection?.length]);
+  }, [allTagsWithPinned, hideTags, hidePartition, run.assetSelection?.length]);
 
   return (
     <>

@@ -8,9 +8,11 @@ from pydantic import BaseModel, TypeAdapter
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.core.component import ComponentGenerateRequest
 from dagster_components.core.component_decl_builder import YamlComponentDecl
-from dagster_components.generate import generate_component_yaml
+from dagster_components.core.component_generator import (
+    ComponentGenerator,
+    DefaultComponentGenerator,
+)
 
 if TYPE_CHECKING:
     from dagster_components.core.component import ComponentDeclNode
@@ -25,18 +27,20 @@ class SimpleAssetParams(BaseModel):
 class SimpleAsset(Component):
     """A simple asset that returns a constant string value."""
 
-    params_schema = SimpleAssetParams
+    @classmethod
+    def get_component_schema_type(cls):
+        return SimpleAssetParams
 
     @classmethod
-    def generate_files(cls, request: ComponentGenerateRequest, params: SimpleAssetParams) -> None:
-        generate_component_yaml(request, params.model_dump())
+    def get_generator(cls) -> ComponentGenerator:
+        return DefaultComponentGenerator()
 
     @classmethod
     def from_decl_node(
         cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
     ) -> Self:
         assert isinstance(decl_node, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(
+        loaded_params = TypeAdapter(cls.get_component_schema_type()).validate_python(
             decl_node.component_file_model.params
         )
         return cls(

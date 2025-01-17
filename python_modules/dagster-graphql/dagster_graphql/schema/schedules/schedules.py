@@ -1,5 +1,6 @@
 import time
-from typing import List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 import dagster._check as check
 import graphene
@@ -146,7 +147,7 @@ class GrapheneSchedule(graphene.ObjectType):
     ):
         cursor = cursor or time.time()
 
-        tick_times: List[float] = []
+        tick_times: list[float] = []
         time_iter = self._remote_schedule.execution_time_iterator(cursor)
 
         if until:
@@ -193,13 +194,13 @@ class GrapheneSchedule(graphene.ObjectType):
         upper_limit = upper_limit or 10
         lower_limit = lower_limit or 10
 
-        tick_times: List[float] = []
+        tick_times: list[float] = []
         ascending_tick_iterator = self._remote_schedule.execution_time_iterator(start_timestamp)
         descending_tick_iterator = self._remote_schedule.execution_time_iterator(
             start_timestamp, ascending=False
         )
 
-        tick_times_below_timestamp: List[float] = []
+        tick_times_below_timestamp: list[float] = []
         first_past_tick = next(descending_tick_iterator)
 
         # execution_time_iterator starts at first tick <= timestamp (or >= timestamp in
@@ -226,7 +227,7 @@ class GrapheneSchedule(graphene.ObjectType):
             for key, value in (self._remote_schedule.tags or {}).items()
         ]
 
-    def resolve_metadataEntries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
+    def resolve_metadataEntries(self, _graphene_info: ResolveInfo) -> list[GrapheneMetadataEntry]:
         return list(iterate_metadata_entries(self._remote_schedule.metadata))
 
 

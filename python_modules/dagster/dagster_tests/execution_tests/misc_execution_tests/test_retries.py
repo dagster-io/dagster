@@ -2,7 +2,7 @@ import os
 import tempfile
 import time
 from collections import defaultdict
-from typing import Sequence
+from collections.abc import Sequence
 
 import pytest
 from dagster import (

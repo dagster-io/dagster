@@ -1,5 +1,6 @@
 import sys
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 from dagster._config import validate_config_from_snap

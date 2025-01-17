@@ -1,7 +1,8 @@
 import datetime
 import time
 from abc import ABC
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 import requests
 from dagster import _check as check
@@ -73,7 +74,7 @@ class AirflowInstance:
     def get_api_url(self) -> str:
         return f"{self.auth_backend.get_webserver_url()}/api/v1"
 
-    def list_dags(self) -> List["DagInfo"]:
+    def list_dags(self) -> list["DagInfo"]:
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags", params={"limit": 1000}
         )
@@ -93,7 +94,7 @@ class AirflowInstance:
                 f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def list_variables(self) -> List[Dict[str, Any]]:
+    def list_variables(self) -> list[dict[str, Any]]:
         response = self.auth_backend.get_session().get(f"{self.get_api_url()}/variables")
         if response.status_code == 200:
             return response.json()["variables"]
@@ -104,7 +105,7 @@ class AirflowInstance:
 
     def get_task_instance_batch(
         self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
-    ) -> List["TaskInstance"]:
+    ) -> list["TaskInstance"]:
         """Get all task instances for a given dag_id, task_ids, and run_id."""
         task_instances = []
         task_id_chunks = [
@@ -156,7 +157,7 @@ class AirflowInstance:
                 f"Failed to fetch task instance for {dag_id}/{task_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
 
-    def get_task_infos(self, *, dag_id: str) -> List["TaskInfo"]:
+    def get_task_infos(self, *, dag_id: str) -> list["TaskInfo"]:
         response = self.auth_backend.get_session().get(f"{self.get_api_url()}/dags/{dag_id}/tasks")
 
         if response.status_code != 200:
@@ -205,7 +206,7 @@ class AirflowInstance:
 
     def get_dag_runs(
         self, dag_id: str, start_date: datetime.datetime, end_date: datetime.datetime
-    ) -> List["DagRun"]:
+    ) -> list["DagRun"]:
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/dags/{dag_id}/dagRuns",
             params={
@@ -236,7 +237,7 @@ class AirflowInstance:
         end_date_gte: datetime.datetime,
         end_date_lte: datetime.datetime,
         offset: int = 0,
-    ) -> List["DagRun"]:
+    ) -> list["DagRun"]:
         """Return a batch of dag runs for a list of dag_ids. Ordered by end_date."""
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/~/dagRuns/list",
@@ -368,7 +369,7 @@ class TaskInstance:
     dag_id: str
     task_id: str
     run_id: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @property
     def state(self) -> str:
@@ -414,7 +415,7 @@ class DagRun:
     webserver_url: str
     dag_id: str
     run_id: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @property
     def note(self) -> str:
@@ -441,7 +442,7 @@ class DagRun:
         return self.metadata["run_type"]
 
     @property
-    def config(self) -> Dict[str, Any]:
+    def config(self) -> dict[str, Any]:
         return self.metadata["conf"]
 
     @property

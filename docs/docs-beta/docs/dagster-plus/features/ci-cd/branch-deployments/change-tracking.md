@@ -76,7 +76,7 @@ def customers(): ...
 
 Change Tracking can detect when an asset's upstream dependencies have changed, whether they've been added or removed.
 
-**Note**: If an asset is marked as having changed dependencies, it means that the <PyObject object="AssetKey" pluralize /> defining its upstream dependencies have changed. It doesn't mean that an upstream dependency has new data.
+**Note**: If an asset is marked as having changed dependencies, it means that the <PyObject section="assets" module="dagster" object="AssetKey" pluralize /> defining its upstream dependencies have changed. It doesn't mean that an upstream dependency has new data.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">
@@ -97,7 +97,7 @@ def returns(): ...
 
 ### Partitions definitions
 
-Change Tracking can detect if an asset's <PyObject object="PartitionsDefinition" /> has been changed, whether it's been added, removed, or updated.
+Change Tracking can detect if an asset's <PyObject section="partitions" object="PartitionsDefinition" /> has been changed, whether it's been added, removed, or updated.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">
@@ -118,7 +118,7 @@ Click the **Asset definition** tab to see the code change that created this labe
 def weekly_orders(): ...
 ```
 
-**In the pull request**, we updated the <PyObject object="WeeklyPartitionsDefinition" /> to start one year earlier:
+**In the pull request**, we updated the <PyObject section="partitions" object="WeeklyPartitionsDefinition" /> to start one year earlier:
 
 ```python file=/dagster_cloud/branch_deployments/change_tracking_partitions_definition.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(partitions_def=WeeklyPartitionsDefinition(start_date="2023-01-01"))

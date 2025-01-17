@@ -9,11 +9,12 @@ import sys
 import textwrap
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 from threading import Event
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Literal
 from uuid import uuid4
 
 import boto3
@@ -978,7 +979,7 @@ EMR_SERVERLESS_APP_NAME = "Example"
 @pytest.fixture
 def emr_serverless_setup(
     moto_server, external_s3_glue_script, s3_client
-) -> Tuple["EMRServerlessClient", str]:
+) -> tuple["EMRServerlessClient", str]:
     client = boto3.client("emr-serverless", region_name="us-east-1", endpoint_url=_MOTO_SERVER_URL)
     resp = client.create_application(
         type="SPARK",
@@ -988,7 +989,7 @@ def emr_serverless_setup(
     return client, resp["applicationId"]
 
 
-def test_emr_serverless_manual(emr_serverless_setup: Tuple["EMRServerlessClient", str]):
+def test_emr_serverless_manual(emr_serverless_setup: tuple["EMRServerlessClient", str]):
     client, application_id = emr_serverless_setup
 
     @asset

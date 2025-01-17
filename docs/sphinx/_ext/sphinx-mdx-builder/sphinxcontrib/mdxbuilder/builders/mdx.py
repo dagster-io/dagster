@@ -1,5 +1,5 @@
+from collections.abc import Iterator
 from os import path
-from typing import Iterator
 
 from docutils import nodes
 from docutils.io import StringOutput
@@ -69,7 +69,7 @@ class MdxBuilder(Builder):
         try:
             with open(outfilename, "w", encoding="utf-8") as f:
                 f.write(self.writer.output)
-        except (IOError, OSError) as err:
+        except OSError as err:
             logger.warning(f"error writing file {outfilename}: {err}")
             raise err
 

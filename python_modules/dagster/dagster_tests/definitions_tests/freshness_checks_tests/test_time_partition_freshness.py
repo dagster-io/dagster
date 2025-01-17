@@ -3,7 +3,7 @@
 import datetime
 import json
 import time
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from dagster import asset

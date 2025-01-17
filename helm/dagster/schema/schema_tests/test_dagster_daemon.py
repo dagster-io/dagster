@@ -195,7 +195,9 @@ def test_queued_run_coordinator_unique_values(
                     queuedRunCoordinator=QueuedRunCoordinatorConfig.construct(
                         tagConcurrencyLimits=[
                             TagConcurrencyLimit.construct(
-                                key="foo", value={"applyLimitPerUniqueValue": True}, limit=1
+                                key="foo",
+                                value={"applyLimitPerUniqueValue": True},
+                                limit=1,
                             )
                         ]
                     ),
@@ -428,7 +430,11 @@ def test_run_retries_retry_on_asset_op_op_failure(
 
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
-            runRetries={"enabled": True, "maxRetries": 4, "retryOnAssetOrOpFailure": True}
+            runRetries={
+                "enabled": True,
+                "maxRetries": 4,
+                "retryOnAssetOrOpFailure": True,
+            }
         )
     )
 
@@ -462,7 +468,10 @@ def test_daemon_labels(template: HelmTemplate):
 def test_daemon_volumes(template: HelmTemplate):
     volumes = [
         {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
-        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+        {
+            "name": "test-pvc",
+            "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False},
+        },
     ]
 
     volume_mounts = [
@@ -491,7 +500,8 @@ def test_daemon_volumes(template: HelmTemplate):
     deployed_volumes = daemon_deployment.spec.template.spec.volumes
     assert deployed_volumes[2:] == [
         k8s_model_from_dict(
-            k8s_client.models.V1Volume, k8s_snake_case_dict(k8s_client.models.V1Volume, volume)
+            k8s_client.models.V1Volume,
+            k8s_snake_case_dict(k8s_client.models.V1Volume, volume),
         )
         for volume in volumes
     ]
@@ -580,7 +590,10 @@ def test_scheduler_name(template: HelmTemplate):
 
 
 def test_init_container_resources(template: HelmTemplate):
-    init_container_resources = {"limits": {"cpu": "200m"}, "requests": {"memory": "1Gi"}}
+    init_container_resources = {
+        "limits": {"cpu": "200m"},
+        "requests": {"memory": "1Gi"},
+    }
     helm_values = DagsterHelmValues.construct(
         dagsterDaemon=Daemon.construct(
             initContainerResources=kubernetes.Resources.parse_obj(init_container_resources)
@@ -706,3 +719,43 @@ def test_check_db_container_toggle(template: HelmTemplate):
     assert "check-db-ready" in [
         container.name for container in daemon_deployment.spec.template.spec.init_containers
     ]
+
+
+def test_daemon_extra_containers(template: HelmTemplate):
+    extra_containers = [
+        {
+            "name": "extra-container",
+            "image": "busybox",
+        }
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(extraContainers=extra_containers)
+    )
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert any(
+        container.name == "extra-container" and container.image == "busybox"
+        for container in daemon_deployment.spec.template.spec.containers
+    )
+
+
+def test_daemon_extra_prepend_init_containers(template: HelmTemplate):
+    extra_init_containers = [
+        {
+            "name": "extra-init-container",
+            "image": "busybox",
+        }
+    ]
+
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(extraPrependedInitContainers=extra_init_containers)
+    )
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert any(
+        container.name == "extra-init-container" and container.image == "busybox"
+        for container in daemon_deployment.spec.template.spec.init_containers
+    )

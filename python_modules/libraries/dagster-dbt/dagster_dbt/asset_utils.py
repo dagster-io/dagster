@@ -2,19 +2,9 @@ import hashlib
 import os
 import textwrap
 from collections import defaultdict
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional  # noqa: UP035
 
 from dagster import (
     AssetCheckKey,
@@ -352,13 +342,13 @@ def build_schedule_from_dbt_selection(
 
 def get_manifest_and_translator_from_dbt_assets(
     dbt_assets: Sequence[AssetsDefinition],
-) -> Tuple[Mapping[str, Any], "DagsterDbtTranslator"]:
+) -> tuple[Mapping[str, Any], "DagsterDbtTranslator"]:
     check.invariant(len(dbt_assets) == 1, "Exactly one dbt AssetsDefinition is required")
     dbt_assets_def = dbt_assets[0]
     metadata_by_key = dbt_assets_def.metadata_by_key or {}
     first_asset_key = next(iter(dbt_assets_def.metadata_by_key.keys()))
     first_metadata = metadata_by_key.get(first_asset_key, {})
-    manifest_wrapper: Optional["DbtManifestWrapper"] = first_metadata.get(
+    manifest_wrapper: Optional[DbtManifestWrapper] = first_metadata.get(
         DAGSTER_DBT_MANIFEST_METADATA_KEY
     )
     if manifest_wrapper is None:
@@ -579,7 +569,7 @@ def default_asset_check_fn(
         return None
 
     test_resource_props = dbt_nodes[test_unique_id]
-    parent_unique_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
+    parent_unique_ids: set[str] = set(manifest["parent_map"].get(test_unique_id, []))
 
     asset_check_key = get_asset_check_key_for_test(
         manifest=manifest,
@@ -799,7 +789,7 @@ def build_dbt_specs(
     exclude: str,
     io_manager_key: Optional[str],
     project: Optional["DbtProject"],
-) -> Tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
+) -> tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
     dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
     group_props = {group["name"]: group for group in manifest.get("groups", {}).values()}
 
@@ -807,9 +797,9 @@ def build_dbt_specs(
         select=select, exclude=exclude, manifest_json=manifest
     )
 
-    specs: List[AssetSpec] = []
-    check_specs: List[AssetCheckSpec] = []
-    key_by_unique_id: Dict[str, AssetKey] = {}
+    specs: list[AssetSpec] = []
+    check_specs: list[AssetCheckSpec] = []
+    key_by_unique_id: dict[str, AssetKey] = {}
     for unique_id in selected_unique_ids:
         resource_props = dbt_nodes[unique_id]
         resource_type = resource_props["resource_type"]
@@ -932,7 +922,7 @@ def get_asset_check_key_for_test(
         if not ref_package:
             ref_package = project_name
 
-        unique_id_by_ref: Mapping[Tuple[str, str, Optional[str]], str] = {
+        unique_id_by_ref: Mapping[tuple[str, str, Optional[str]], str] = {
             (
                 dbt_resource_props["name"],
                 dbt_resource_props["package_name"],

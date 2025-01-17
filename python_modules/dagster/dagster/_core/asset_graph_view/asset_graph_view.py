@@ -1,17 +1,13 @@
 import functools
+from collections.abc import Awaitable, Iterable
 from datetime import datetime, timedelta
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
-    Awaitable,
     Callable,
-    Dict,
-    Iterable,
     Literal,
     NamedTuple,
     Optional,
-    Tuple,
-    Type,
     TypeVar,
 )
 
@@ -147,7 +143,7 @@ class AssetGraphView(LoadingContext):
         return self._instance
 
     @property
-    def loaders(self) -> Dict[Type, DataLoader]:
+    def loaders(self) -> dict[type, DataLoader]:
         return self._loaders
 
     @property
@@ -261,7 +257,7 @@ class AssetGraphView(LoadingContext):
 
     def compute_parent_subset_and_required_but_nonexistent_subset(
         self, parent_key, subset: EntitySubset[T_EntityKey]
-    ) -> Tuple[EntitySubset[AssetKey], EntitySubset[AssetKey]]:
+    ) -> tuple[EntitySubset[AssetKey], EntitySubset[AssetKey]]:
         check.invariant(
             parent_key in self.asset_graph.get(subset.key).parent_entity_keys,
         )

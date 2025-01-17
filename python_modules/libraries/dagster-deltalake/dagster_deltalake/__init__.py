@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.storage.db_io_manager import DbTypeHandler

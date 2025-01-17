@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 import yaml
 from dagster_snowflake import SnowflakeResource

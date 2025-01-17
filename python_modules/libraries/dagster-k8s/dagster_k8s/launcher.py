@@ -1,6 +1,7 @@
 import logging
 import sys
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import kubernetes
 from dagster import _check as check

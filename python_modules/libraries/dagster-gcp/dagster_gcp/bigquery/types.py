@@ -116,7 +116,7 @@ def _is_valid_table(config_value):
 
 class _Dataset(ConfigScalar):
     def __init__(self):
-        super(_Dataset, self).__init__(
+        super().__init__(
             key=type(self).__name__,
             given_name=type(self).__name__,
             scalar_kind=ConfigScalarKind.STRING,
@@ -130,7 +130,7 @@ class _Dataset(ConfigScalar):
 
 class _Table(ConfigScalar):
     def __init__(self):
-        super(_Table, self).__init__(
+        super().__init__(
             key=type(self).__name__,
             given_name=type(self).__name__,
             scalar_kind=ConfigScalarKind.STRING,

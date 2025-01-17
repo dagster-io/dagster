@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 from unittest import mock
 
 from dagster import (
@@ -1196,7 +1196,7 @@ def _get_backfill_data(
     launch_backfill_result: GqlResult,
     instance: DagsterInstance,
     repo,
-) -> Tuple[str, AssetBackfillData]:
+) -> tuple[str, AssetBackfillData]:
     assert launch_backfill_result
     assert launch_backfill_result.data
     assert (

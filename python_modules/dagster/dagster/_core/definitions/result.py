@@ -1,4 +1,5 @@
-from typing import Mapping, NamedTuple, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental

@@ -1,4 +1,5 @@
-from typing import Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Optional
 
 import graphene
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
@@ -127,7 +128,7 @@ def create_graphene_auto_materialize_rule_evaluation(
 
 def _create_rules_with_rule_evaluations_for_decision_type(
     evaluation: AutomationConditionEvaluation, decision_type: AutoMaterializeDecisionType
-) -> Tuple[
+) -> tuple[
     Sequence[GrapheneAutoMaterializeRule], Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]
 ]:
     rules = []
@@ -170,7 +171,7 @@ def _create_rules_with_rule_evaluations_for_decision_type(
 
 def create_graphene_auto_materialize_rules_with_rule_evaluations(
     evaluation: AutomationConditionEvaluation,
-) -> Tuple[
+) -> tuple[
     Sequence[GrapheneAutoMaterializeRule], Sequence[GrapheneAutoMaterializeRuleWithRuleEvaluations]
 ]:
     rules, rules_with_rule_evaluations = [], []

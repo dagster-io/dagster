@@ -1,8 +1,9 @@
 import logging
 import os
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Optional
 
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import is_dagster_home_set

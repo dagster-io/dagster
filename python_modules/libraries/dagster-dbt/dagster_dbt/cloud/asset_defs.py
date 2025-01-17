@@ -1,20 +1,9 @@
 import json
 import shlex
 from argparse import ArgumentParser, Namespace
+from collections.abc import Mapping, Sequence
 from contextlib import suppress
-from typing import (
-    Any,
-    Callable,
-    FrozenSet,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Optional, Union, cast
 
 import dagster._check as check
 from dagster import (
@@ -84,7 +73,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._job_id = job_id
         self._project_id: int
         self._has_generate_docs: bool
-        self._job_commands: List[str]
+        self._job_commands: list[str]
         self._job_materialization_command_step: int
         self._node_info_to_asset_key = node_info_to_asset_key
         self._node_info_to_group_fn = node_info_to_group_fn
@@ -120,7 +109,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         return Namespace(**vars(Flags(args_to_context(args + ["--profiles-dir", "."]))))
 
     @staticmethod
-    def get_job_materialization_command_step(execute_steps: List[str]) -> int:
+    def get_job_materialization_command_step(execute_steps: list[str]) -> int:
         materialization_command_filter = [
             DbtCloudCacheableAssetsDefinition.parse_dbt_command(command).which in ["run", "build"]
             for command in execute_steps
@@ -135,8 +124,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         return materialization_command_filter.index(True)
 
     @staticmethod
-    def get_compile_filters(parsed_args: Namespace) -> List[str]:
-        dbt_compile_options: List[str] = []
+    def get_compile_filters(parsed_args: Namespace) -> list[str]:
+        dbt_compile_options: list[str] = []
 
         selected_models = parsed_args.select or []
         if selected_models:
@@ -154,7 +143,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         return dbt_compile_options
 
-    def _get_cached_compile_dbt_cloud_job_run(self, compile_run_id: int) -> Tuple[int, int]:
+    def _get_cached_compile_dbt_cloud_job_run(self, compile_run_id: int) -> tuple[int, int]:
         # If the compile run is ongoing, allow it a grace period of 10 minutes to finish.
         with suppress(Exception):
             self._dbt_cloud.poll_run(run_id=compile_run_id, poll_timeout=600)
@@ -182,7 +171,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         return compile_run_id, compile_job_materialization_command_step
 
-    def _compile_dbt_cloud_job(self, dbt_cloud_job: Mapping[str, Any]) -> Tuple[int, int]:
+    def _compile_dbt_cloud_job(self, dbt_cloud_job: Mapping[str, Any]) -> tuple[int, int]:
         # Retrieve the filters options from the dbt Cloud job's materialization command.
         #
         # There are three filters: `--select`, `--exclude`, and `--selector`.
@@ -244,7 +233,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     def _get_manifest_json_and_executed_unique_ids(
         self,
-    ) -> Tuple[Mapping[str, Any], FrozenSet[str]]:
+    ) -> tuple[Mapping[str, Any], frozenset[str]]:
         """For a given dbt Cloud job, fetch the latest run's dependency structure of executed nodes."""
         # Fetch information about the job.
         job = self._dbt_cloud.get_job(job_id=self._job_id)
@@ -296,7 +285,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
 
         # Filter the manifest to only include the nodes that were executed.
-        executed_node_ids: Set[str] = set(
+        executed_node_ids: set[str] = set(
             result["unique_id"] for result in run_results_json["results"]
         )
 
@@ -314,7 +303,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         return manifest_json, frozenset(sorted(executed_node_ids))
 
     def _build_dbt_cloud_assets_cacheable_data(
-        self, manifest_json: Mapping[str, Any], executed_unique_ids: FrozenSet[str]
+        self, manifest_json: Mapping[str, Any], executed_unique_ids: frozenset[str]
     ) -> AssetsDefinitionCacheableData:
         """Given all of the nodes and dependencies for a dbt Cloud job, build the cacheable
         representation that generate the asset definition for the job.
@@ -442,9 +431,9 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     ) -> AssetsDefinition:
         metadata = cast(Mapping[str, Any], assets_definition_cacheable_data.extra_metadata)
         job_id = cast(int, metadata["job_id"])
-        job_commands = cast(List[str], list(metadata["job_commands"]))
+        job_commands = cast(list[str], list(metadata["job_commands"]))
         job_materialization_command_step = cast(int, metadata["job_materialization_command_step"])
-        fqns_by_output_name = cast(Mapping[str, List[str]], metadata["fqns_by_output_name"])
+        fqns_by_output_name = cast(Mapping[str, list[str]], metadata["fqns_by_output_name"])
 
         @multi_asset(
             name=f"dbt_cloud_job_{job_id}",
@@ -458,7 +447,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             dbt_cloud = cast(DbtCloudClient, context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.
-            dbt_options: List[str] = []
+            dbt_options: list[str] = []
             if context.has_partition_key and self._partition_key_to_vars_fn:
                 partition_var = self._partition_key_to_vars_fn(context.partition_key)
 

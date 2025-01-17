@@ -22,6 +22,12 @@ spec:
       automountServiceAccountToken: true
       securityContext: {{ $_.Values.dagsterWebserver.podSecurityContext | toYaml | nindent 8 }}
       restartPolicy: Never
+      {{- if .Values.migrate.initContainers }}
+      initContainers:
+      {{- range $container := .Values.migrate.initContainers }}
+      - {{ toYaml $container | nindent 8 | trim }}
+      {{- end }}
+      {{- end }}
       containers:
         - name: dagster-instance-migrate
           securityContext: {{ $_.Values.dagsterWebserver.securityContext | toYaml | nindent 12 }}
@@ -58,6 +64,11 @@ spec:
             {{- end }}
             {{- end }}
           resources: {{ $_.Values.dagsterWebserver.resources | toYaml | nindent 12 }}
+      {{- if .Values.migrate.extraContainers }}
+      {{- range $container := .Values.migrate.extraContainers }}
+      - {{ toYaml $container | nindent 10 | trim }}
+      {{- end }}
+      {{- end }}
       volumes:
         - name: dagster-instance
           configMap:

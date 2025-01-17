@@ -1,7 +1,8 @@
 import pkgutil
+from collections.abc import Iterable, Iterator, Mapping
 from importlib import import_module
 from types import ModuleType
-from typing import Iterable, Iterator, Mapping, Tuple, Type, Union
+from typing import Union
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -11,7 +12,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 
 def find_objects_in_module_of_types(
     module: ModuleType,
-    types: Union[Type, Tuple[Type, ...]],
+    types: Union[type, tuple[type, ...]],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
@@ -24,7 +25,7 @@ def find_objects_in_module_of_types(
 
 def find_subclasses_in_module(
     module: ModuleType,
-    types: Union[Type, Tuple[Type, ...]],
+    types: Union[type, tuple[type, ...]],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):

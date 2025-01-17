@@ -1,6 +1,7 @@
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional, Set
+from typing import Any, Optional
 
 from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public
@@ -210,7 +211,7 @@ class DagsterSlingTranslator:
         return {}
 
     @public
-    def get_kinds(self, stream_definition: Mapping[str, Any]) -> Set[str]:
+    def get_kinds(self, stream_definition: Mapping[str, Any]) -> set[str]:
         """Retrieves the kinds for a given stream definition.
 
         This method returns "sling" by default. This method can be overridden to provide custom kinds.

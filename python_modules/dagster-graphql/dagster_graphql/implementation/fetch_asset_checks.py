@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 from dagster import (
     AssetKey,
@@ -31,7 +32,7 @@ def fetch_asset_check_executions(
     asset_check_key: AssetCheckKey,
     limit: int,
     cursor: Optional[str],
-) -> List["GrapheneAssetCheckExecution"]:
+) -> list["GrapheneAssetCheckExecution"]:
     from dagster_graphql.schema.asset_checks import GrapheneAssetCheckExecution
 
     check_records = loading_context.instance.event_log_storage.get_asset_check_execution_history(

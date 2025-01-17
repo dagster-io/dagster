@@ -119,8 +119,6 @@ def test_code_location_generate_editable_dagster_success(mode: str, monkeypatch)
 
 
 def test_code_location_generate_skip_venv_success() -> None:
-    # Don't use the test component lib because it is not present in published dagster-components,
-    # which this test is currently accessing since we are not doing an editable install.
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("code-location", "generate", "--skip-venv", "bar")
         assert_runner_result(result)
@@ -131,7 +129,25 @@ def test_code_location_generate_skip_venv_success() -> None:
         assert Path("bar/bar_tests").exists()
         assert Path("bar/pyproject.toml").exists()
 
-        # Check venv created
+        # Check venv not created
+        assert not Path("bar/.venv").exists()
+        assert not Path("bar/uv.lock").exists()
+
+
+def test_code_location_generate_no_use_dg_managed_environment_success() -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke(
+            "code-location", "generate", "--no-use-dg-managed-environment", "bar"
+        )
+        assert_runner_result(result)
+        assert Path("bar").exists()
+        assert Path("bar/bar").exists()
+        assert Path("bar/bar/lib").exists()
+        assert Path("bar/bar/components").exists()
+        assert Path("bar/bar_tests").exists()
+        assert Path("bar/pyproject.toml").exists()
+
+        # Check venv not created
         assert not Path("bar/.venv").exists()
         assert not Path("bar/uv.lock").exists()
 

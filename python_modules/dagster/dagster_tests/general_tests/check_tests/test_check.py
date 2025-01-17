@@ -1,23 +1,23 @@
+# ruff: noqa: UP006, UP035
+#
 import collections.abc
 import re
 import sys
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
+    Annotated,
     Any,
     Callable,
     Dict,
     Generic,
-    Iterable,
     List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     Set,
-    Type,
     TypedDict,
     TypeVar,
     Union,
@@ -36,7 +36,6 @@ from dagster._check import (
     build_check_call_str,
 )
 from dagster._record import record
-from typing_extensions import Annotated
 
 if TYPE_CHECKING:
     from dagster._core.test_utils import TestType  # used in lazy import ForwardRef test case
@@ -1734,7 +1733,7 @@ BUILD_CASES = [
 
 @pytest.mark.parametrize("ttype, should_succeed, should_fail", BUILD_CASES)
 def test_build_check_call(
-    ttype: Type, should_succeed: Sequence[object], should_fail: Sequence[object]
+    ttype: type, should_succeed: Sequence[object], should_fail: Sequence[object]
 ) -> None:
     eval_ctx = EvalContext(globals(), locals(), {})
     check_call = build_check_call(ttype, "test_param", eval_ctx)

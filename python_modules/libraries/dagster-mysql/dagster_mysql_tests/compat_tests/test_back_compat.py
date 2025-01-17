@@ -64,9 +64,7 @@ def test_0_13_17_mysql_convert_float_cols(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -96,9 +94,7 @@ def test_instigators_table_backcompat(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -128,9 +124,7 @@ def test_asset_observation_backcompat(conn_string):
         asset_op()
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -155,9 +149,7 @@ def test_jobs_selector_id_migration(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -215,9 +207,7 @@ def test_add_bulk_actions_columns(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -239,9 +229,7 @@ def test_add_kvs_table(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -271,9 +259,7 @@ def test_add_asset_event_tags_table(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -308,9 +294,7 @@ def test_add_cached_status_data_column(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -329,9 +313,7 @@ def test_add_dynamic_partitions_table(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -373,9 +355,7 @@ def test_add_primary_keys(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -453,9 +433,7 @@ def test_bigint_migration(conn_string):
                 assert id_col["autoincrement"]
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -498,9 +476,7 @@ def test_add_backfill_id_column(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -573,9 +549,7 @@ def test_add_runs_by_backfill_id_idx(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -598,9 +572,7 @@ def test_add_backfill_tags(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -697,9 +669,7 @@ def test_add_bulk_actions_job_name_column(conn_string):
         ),
     )
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
@@ -803,9 +773,7 @@ def test_add_run_tags_run_id_idx(conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(
-            file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8"
-        ) as template_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), encoding="utf8") as template_fd:
             with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname, port=port)
                 target_fd.write(template)
