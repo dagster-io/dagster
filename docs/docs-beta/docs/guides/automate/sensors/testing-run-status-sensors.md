@@ -7,6 +7,7 @@ As with other sensors, you can directly invoke run status sensors. However, the 
 
 If you had written a status sensor like this (assuming you implemented the function `email_alert` elsewhere):
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_simple_success_sensor endbefore=end_simple_success_sensor
 @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
 def my_email_sensor(context: RunStatusSensorContext):
@@ -16,6 +17,7 @@ def my_email_sensor(context: RunStatusSensorContext):
 
 We can first write a simple job that will succeed:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_run_status_sensor_testing_with_context_setup endbefore=end_run_status_sensor_testing_with_context_setup
 @op
 def succeeds():
@@ -29,6 +31,7 @@ def my_job_succeeds():
 
 Then we can execute this job and pull the attributes we need to build the `context`. We provide a function <PyObject object="build_run_status_sensor_context" /> that will return the correct context object:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_run_status_sensor_testing_marker endbefore=end_run_status_sensor_testing_marker
 # execute the job
 instance = DagsterInstance.ephemeral()
@@ -56,6 +59,7 @@ We have provided convenience functions <PyObject object="ExecuteInProcessResult"
 
 We can use the same pattern to build the context for <PyObject object="run_failure_sensor" />. If we wanted to test this run failure sensor:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_simple_fail_sensor endbefore=end_simple_fail_sensor
 @run_failure_sensor
 def my_email_failure_sensor(context: RunFailureSensorContext):
@@ -68,6 +72,7 @@ def my_email_failure_sensor(context: RunFailureSensorContext):
 
 We first need to make a simple job that will fail:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_failure_sensor_testing_with_context_setup endbefore=end_failure_sensor_testing_with_context_setup
 from dagster import op, job
 
@@ -84,6 +89,7 @@ def my_job_fails():
 
 Then we can execute the job and create our context:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_sensor_testing_with_context_marker endbefore=end_alert_sensor_testing_with_context_marker
 from dagster import DagsterInstance, build_run_status_sensor_context
 

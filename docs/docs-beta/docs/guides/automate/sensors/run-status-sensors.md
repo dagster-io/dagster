@@ -7,6 +7,7 @@ If you want to act on the status of a run, Dagster provides a way to create a se
 
 Here is an example of a run status sensor that launches a run of `status_reporting_job` if a run is successful:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start endbefore=end
 @run_status_sensor(
     run_status=DagsterRunStatus.SUCCESS,
@@ -31,6 +32,7 @@ Note that in `report_status_sensor` we conditionally return a `RunRequest`. This
 
 Here is an example of a sensor that reports job success in a Slack message:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_success_sensor_marker endbefore=end_success_sensor_marker
 from dagster import run_status_sensor, RunStatusSensorContext, DagsterRunStatus
 
@@ -49,6 +51,7 @@ When a run status sensor is triggered by a run but doesn't return anything, Dags
 
 Once you have written your sensor, you can add the sensor to a <PyObject object="Definitions" /> object so it can be enabled and used the same as other sensors:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_definitions_marker endbefore=end_definitions_marker
 from dagster import Definitions
 
