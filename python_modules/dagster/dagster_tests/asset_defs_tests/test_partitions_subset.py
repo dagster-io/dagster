@@ -2,8 +2,14 @@ from typing import cast
 from unittest.mock import Mock
 
 import pytest
-from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
+from dagster import (
+    DailyPartitionsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
     PersistedTimeWindow,
     TimeWindowPartitionsDefinition,
@@ -210,39 +216,55 @@ def test_partitions_set_short_circuiting() -> None:
     # Test short-circuiting of -. Returns an empty DefaultPartitionsSubset
     assert (default_ps - all_ps) == DefaultPartitionsSubset.create_empty_subset()
 
-def test_multi_partition_subset_computed_the_same():
-    date_partition = DailyPartitionsDefinition(start_date="2024-12-01")
+
+def test_multi_partition_subset_to_range_conversion():
+    # Test that converting from a list of partitions keys to a subset, to a list of ranges, and back to
+    # a list of partition keys for MultiPartitionsDefinitions does not lose any partitions.
     color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    number_partition = StaticPartitionsDefinition(["1", "2", "3", "4"])
     multi_partitions_def = MultiPartitionsDefinition(
         {
-            "date": date_partition,
-            "z_color": color_partition,  # the name of this dimension must be alphabetically after "date" in order to create the test scenario
+            "number": number_partition,
+            "color": color_partition,
         }
     )
-
-    num_partitions = 4
-    # ['2024-12-01|red', '2024-12-01|yellow', '2024-12-01|blue', '2024-12-02|red']
-    target_partitions = multi_partitions_def.get_partition_keys()[0:num_partitions]
-
+    target_partitions = [
+        MultiPartitionKey({"number": "1", "color": "red"}),
+        MultiPartitionKey({"number": "2", "color": "red"}),
+        MultiPartitionKey({"number": "4", "color": "red"}),
+        MultiPartitionKey({"number": "1", "color": "blue"}),
+        MultiPartitionKey({"number": "2", "color": "blue"}),
+        MultiPartitionKey({"number": "1", "color": "yellow"}),
+        MultiPartitionKey({"number": "2", "color": "yellow"}),
+        MultiPartitionKey({"number": "3", "color": "yellow"}),
+    ]
+    # getting ranges from subsets for a multi partition definition contructs ranges for each
+    # key of the primary dimension
+    expected_ranges = [
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "number": "1"}),
+            end=MultiPartitionKey({"color": "red", "number": "2"}),
+        ),
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "number": "4"}),
+            end=MultiPartitionKey({"color": "red", "number": "4"}),
+        ),
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "blue", "number": "1"}),
+            end=MultiPartitionKey({"color": "blue", "number": "2"}),
+        ),
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "yellow", "number": "1"}),
+            end=MultiPartitionKey({"color": "yellow", "number": "3"}),
+        ),
+    ]
     partition_subset = multi_partitions_def.subset_with_partition_keys(target_partitions)
-    # [PartitionKeyRange(start='2024-12-01|red', end='2024-12-02|red')]
     partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
-
-    # old version of the method works
-    prev_implementation_keys_from_ranges = []
-    for partition_key_range in partition_key_ranges:
-        prev_implementation_keys_from_ranges.extend(
-            multi_partitions_def.old_get_partition_keys_in_range(partition_key_range)
-        )
-
-    assert prev_implementation_keys_from_ranges == target_partitions
+    assert sorted(partition_key_ranges) == sorted(expected_ranges)
 
     partition_keys_from_ranges = []
     for partition_key_range in partition_key_ranges:
         partition_keys_from_ranges.extend(
             multi_partitions_def.get_partition_keys_in_range(partition_key_range)
         )
-
-    # this will fail because the partition_keys_from_ranges is not the same as target_partitions
-    # partition_keys_from_ranges = ['2024-12-01|red', '2024-12-02|red']
-    assert partition_keys_from_ranges == target_partitions
+    assert sorted(partition_keys_from_ranges) == sorted(target_partitions)
