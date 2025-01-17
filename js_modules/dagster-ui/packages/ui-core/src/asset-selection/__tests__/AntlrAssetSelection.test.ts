@@ -7,7 +7,7 @@ import {
   buildRepositoryLocation,
   buildUserAssetOwner,
 } from '../../graphql/types';
-import {parseAssetSelectionQuery} from '../AntlrAssetSelection';
+import {parseAssetSelectionQuery} from '../filterAssetSelectionByQuery';
 
 const TEST_GRAPH: AssetGraphQueryItem[] = [
   // Top Layer
