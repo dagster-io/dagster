@@ -7,7 +7,7 @@ sidebar_position: 10
 sidebar_class_name: hidden
 ---
 
-# Fine-Tune an LLM
+# Fine-tune an LLM
 
 In this tutorial, you'll build a pipeline with Dagster that:
 
