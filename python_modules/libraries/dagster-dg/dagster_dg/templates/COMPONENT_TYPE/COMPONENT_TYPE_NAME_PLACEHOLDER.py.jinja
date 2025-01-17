@@ -2,6 +2,7 @@ from dagster import Definitions
 from dagster_components import (
     Component,
     ComponentLoadContext,
+    ComponentSchemaBaseModel,
     DefaultComponentScaffolder,
     component_type,
 )
@@ -18,7 +19,7 @@ class {{ component_type_class_name }}(Component):
     """
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return {{ component_type_class_name }}Params
 
     @classmethod
@@ -31,7 +32,6 @@ class {{ component_type_class_name }}(Component):
 
         # Add logic for mapping schema parameters to constructor args here.
         return cls()
-
 
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         # Add definition construction logic here.

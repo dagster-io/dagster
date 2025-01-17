@@ -51,18 +51,19 @@ class DbtProjectComponent(Component):
         self.asset_attributes = asset_attributes
         self.transforms = transforms
         self.value_resolver = value_resolver
+        self.translator = self._get_wrapped_translator()
 
     @classmethod
     def get_scaffolder(cls) -> "DbtProjectComponentScaffolder":
         return DbtProjectComponentScaffolder()
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return DbtProjectParams
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
 
         return cls(
             dbt_resource=loaded_params.dbt,
@@ -91,7 +92,7 @@ class DbtProjectComponent(Component):
     ) -> DbtManifestAssetSelection:
         return DbtManifestAssetSelection.build(
             manifest=self.project.manifest_path,
-            dagster_dbt_translator=self._get_wrapped_translator(),
+            dagster_dbt_translator=self.translator,
             select=select,
             exclude=exclude,
         )
@@ -104,7 +105,7 @@ class DbtProjectComponent(Component):
             project=self.project,
             name=self.op_spec.name if self.op_spec else self.project.name,
             op_tags=self.op_spec.tags if self.op_spec else None,
-            dagster_dbt_translator=self._get_wrapped_translator(),
+            dagster_dbt_translator=self.translator,
         )
         def _fn(context: AssetExecutionContext):
             yield from self.execute(context=context, dbt=self.dbt_resource)

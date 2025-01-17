@@ -403,6 +403,12 @@ def execute_k8s_job(
                     print(log_entry)  # noqa: T201
                 except StopIteration:
                     break
+                except Exception:
+                    context.log.warning(
+                        "Error reading pod logs. Giving up and waiting for the pod to finish",
+                        exc_info=True,
+                    )
+                    break
         else:
             context.log.info("Pod logs are disabled, because restart_policy is not Never")
 

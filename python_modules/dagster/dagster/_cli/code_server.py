@@ -20,6 +20,8 @@ from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
+DEFAULT_HEARTBEAT_TIMEOUT = 30
+
 
 @click.group(name="code-server")
 def code_server_cli():
@@ -145,6 +147,21 @@ def code_server_cli():
     envvar="DAGSTER_CODE_SERVER_STARTUP_TIMEOUT",
 )
 @click.option(
+    "--heartbeat",
+    is_flag=True,
+    help=(
+        "If set, the GRPC server will shut itself down when it fails to receive a heartbeat "
+        "after a timeout configurable with --heartbeat-timeout."
+    ),
+)
+@click.option(
+    "--heartbeat-timeout",
+    type=click.INT,
+    required=False,
+    default=DEFAULT_HEARTBEAT_TIMEOUT,
+    help="How long to wait for a heartbeat from the caller before timing out. Only comes into play if --heartbeat is set. Defaults to 30 seconds.",
+)
+@click.option(
     "--instance-ref",
     type=click.STRING,
     required=False,
@@ -165,6 +182,8 @@ def start_command(
     location_name: Optional[str] = None,
     inject_env_vars_from_instance: bool = False,
     startup_timeout: int = 0,
+    heartbeat: bool = False,
+    heartbeat_timeout: int = DEFAULT_HEARTBEAT_TIMEOUT,
     instance_ref=None,
     **kwargs,
 ):
@@ -231,6 +250,8 @@ def start_command(
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         server_termination_event=server_termination_event,
         logger=logger,
+        server_heartbeat=heartbeat,
+        server_heartbeat_timeout=heartbeat_timeout,
     )
     server = DagsterGrpcServer(
         server_termination_event=server_termination_event,

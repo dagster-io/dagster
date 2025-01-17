@@ -43,6 +43,7 @@ class AssetAttributesModel(ComponentSchemaBaseModel):
     tags: Annotated[
         Union[str, Mapping[str, str]], ResolvableFieldInfo(output_type=Mapping[str, str])
     ] = {}
+    kinds: Optional[Sequence[str]] = None
     automation_condition: Annotated[
         Optional[str], ResolvableFieldInfo(output_type=Optional[AutomationCondition])
     ] = None
@@ -62,7 +63,7 @@ class AssetSpecTransformModel(ComponentSchemaBaseModel):
         value_resolver: TemplatedValueResolver,
     ) -> AssetSpec:
         # add the original spec to the context and resolve values
-        attributes = self.attributes.render_properties(value_resolver.with_context(asset=spec))
+        attributes = self.attributes.resolve_properties(value_resolver.with_scope(asset=spec))
 
         if self.operation == "merge":
             mergeable_attributes = {"metadata", "tags"}

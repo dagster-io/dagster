@@ -153,7 +153,7 @@ def _generate_changelog_text(new_version: str, prev_version: str) -> str:
             # default to ignoring undocumented internal commits
             undocumented.append(commit)
 
-    header = f"# Changelog \n\n# {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
+    header = f"# Changelog \n\n## {new_version} (core) / {_get_libraries_version(new_version)} (libraries)"
     return f"{header}{_get_documented_section(documented)}\n\n{_get_undocumented_section(undocumented)}"
 
 

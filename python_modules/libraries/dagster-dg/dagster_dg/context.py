@@ -35,7 +35,8 @@ class DgContext:
     def __init__(self, config: DgConfig, root_path: Path):
         self.config = config
         self.root_path = root_path
-        if config.disable_cache or not config.use_dg_managed_environment:
+        # self.use_dg_managed_environment is a property derived from self.config
+        if config.disable_cache or not self.use_dg_managed_environment:
             self._cache = None
         else:
             self._cache = DgCache.from_config(config)
@@ -200,7 +201,7 @@ class DgContext:
     # ########################
 
     def external_components_command(self, command: list[str]) -> str:
-        if self.config.use_dg_managed_environment:
+        if self.use_dg_managed_environment:
             code_location_command_prefix = ["uv", "run", "dagster-components"]
             env = get_uv_command_env()
         else:
@@ -224,3 +225,7 @@ class DgContext:
         with pushd(path):
             if not (path / "uv.lock").exists():
                 subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
+
+    @property
+    def use_dg_managed_environment(self) -> bool:
+        return self.config.use_dg_managed_environment and self.is_code_location

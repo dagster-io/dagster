@@ -58,6 +58,7 @@ Hudi
 IAM
 JavaScript
 Jupyter
+Jinja
 JWT
 Lakehouse
 Looker
@@ -113,6 +114,7 @@ Weights & Biases
 \bDagster\b
 auditable
 chatbot
+cli
 composable
 dagster-.*
 dbt
@@ -126,6 +128,7 @@ hardcode
 lakeFS
 lookback
 namespace
+params
 performant
 plaintext
 pluggable

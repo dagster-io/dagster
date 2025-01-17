@@ -11,7 +11,7 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
-    isolated_example_code_location_bar,
+    isolated_example_code_location_foo_bar,
     isolated_example_deployment_foo,
     modify_pyproject_toml,
 )
@@ -22,7 +22,7 @@ from dagster_dg_tests.utils import (
 
 
 def test_component_scaffold_dynamic_subcommand_generation() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         result = runner.invoke("component", "scaffold", "--help")
         assert_runner_result(result)
         assert (
@@ -39,7 +39,10 @@ def test_component_scaffold_dynamic_subcommand_generation() -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_component_scaffold_no_params_success(in_deployment: bool) -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_code_location_foo_bar(runner, in_deployment),
+    ):
         result = runner.invoke(
             "component",
             "scaffold",
@@ -47,8 +50,8 @@ def test_component_scaffold_no_params_success(in_deployment: bool) -> None:
             "qux",
         )
         assert_runner_result(result)
-        assert Path("bar/components/qux").exists()
-        component_yaml_path = Path("bar/components/qux/component.yaml")
+        assert Path("foo_bar/components/qux").exists()
+        component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
             "type: dagster_components.test.all_metadata_empty_asset"
@@ -58,7 +61,10 @@ def test_component_scaffold_no_params_success(in_deployment: bool) -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_component_scaffold_json_params_success(in_deployment: bool) -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_code_location_foo_bar(runner, in_deployment),
+    ):
         result = runner.invoke(
             "component",
             "scaffold",
@@ -68,9 +74,9 @@ def test_component_scaffold_json_params_success(in_deployment: bool) -> None:
             '{"asset_key": "foo", "filename": "hello.py"}',
         )
         assert_runner_result(result)
-        assert Path("bar/components/qux").exists()
-        assert Path("bar/components/qux/hello.py").exists()
-        component_yaml_path = Path("bar/components/qux/component.yaml")
+        assert Path("foo_bar/components/qux").exists()
+        assert Path("foo_bar/components/qux/hello.py").exists()
+        component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
             "type: dagster_components.test.simple_pipes_script_asset"
@@ -80,7 +86,10 @@ def test_component_scaffold_json_params_success(in_deployment: bool) -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_component_scaffold_key_value_params_success(in_deployment: bool) -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_code_location_foo_bar(runner, in_deployment),
+    ):
         result = runner.invoke(
             "component",
             "scaffold",
@@ -90,9 +99,9 @@ def test_component_scaffold_key_value_params_success(in_deployment: bool) -> Non
             "--filename=hello.py",
         )
         assert_runner_result(result)
-        assert Path("bar/components/qux").exists()
-        assert Path("bar/components/qux/hello.py").exists()
-        component_yaml_path = Path("bar/components/qux/component.yaml")
+        assert Path("foo_bar/components/qux").exists()
+        assert Path("foo_bar/components/qux/hello.py").exists()
+        component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
             "type: dagster_components.test.simple_pipes_script_asset"
@@ -101,7 +110,7 @@ def test_component_scaffold_key_value_params_success(in_deployment: bool) -> Non
 
 
 def test_component_scaffold_json_params_and_key_value_params_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         result = runner.invoke(
             "component",
             "scaffold",
@@ -126,7 +135,10 @@ def test_component_scaffold_outside_code_location_fails() -> None:
 
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_component_scaffold_already_exists_fails(in_deployment: bool) -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner, in_deployment):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_code_location_foo_bar(runner, in_deployment),
+    ):
         result = runner.invoke(
             "component",
             "scaffold",
@@ -145,11 +157,11 @@ def test_component_scaffold_already_exists_fails(in_deployment: bool) -> None:
 
 
 def test_component_scaffold_succeeds_non_default_component_package() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
-        alt_lib_path = Path("bar/_components")
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+        alt_lib_path = Path("foo_bar/_components")
         alt_lib_path.mkdir(parents=True)
         with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["component_package"] = "bar._components"
+            pyproject_toml["tool"]["dg"]["component_package"] = "foo_bar._components"
         result = runner.invoke(
             "component",
             "scaffold",
@@ -157,8 +169,8 @@ def test_component_scaffold_succeeds_non_default_component_package() -> None:
             "qux",
         )
         assert_runner_result(result)
-        assert Path("bar/_components/qux").exists()
-        component_yaml_path = Path("bar/_components/qux/component.yaml")
+        assert Path("foo_bar/_components/qux").exists()
+        component_yaml_path = Path("foo_bar/_components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
             "type: dagster_components.test.all_metadata_empty_asset"
@@ -167,7 +179,7 @@ def test_component_scaffold_succeeds_non_default_component_package() -> None:
 
 
 def test_component_scaffold_fails_components_package_does_not_exist() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         with modify_pyproject_toml() as pyproject_toml:
             pyproject_toml["tool"]["dg"]["component_package"] = "bar._components"
         result = runner.invoke(
@@ -181,17 +193,17 @@ def test_component_scaffold_fails_components_package_does_not_exist() -> None:
 
 
 def test_component_scaffold_succeeds_scaffolded_component_type() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result)
-        assert Path("bar/lib/baz.py").exists()
+        assert Path("foo_bar/lib/baz.py").exists()
 
-        result = runner.invoke("component", "scaffold", "bar.baz", "qux")
+        result = runner.invoke("component", "scaffold", "foo_bar.baz", "qux")
         assert_runner_result(result)
-        assert Path("bar/components/qux").exists()
-        component_yaml_path = Path("bar/components/qux/component.yaml")
+        assert Path("foo_bar/components/qux").exists()
+        component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
-        assert "type: bar.baz" in component_yaml_path.read_text()
+        assert "type: foo_bar.baz" in component_yaml_path.read_text()
 
 
 # ##### REAL COMPONENTS
@@ -210,7 +222,7 @@ dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffl
 def test_scaffold_dbt_project_instance(params) -> None:
     with (
         ProxyRunner.test(use_test_component_lib=False) as runner,
-        isolated_example_code_location_bar(runner),
+        isolated_example_code_location_foo_bar(runner),
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
@@ -223,9 +235,9 @@ def test_scaffold_dbt_project_instance(params) -> None:
             *params,
         )
         assert_runner_result(result)
-        assert Path("bar/components/my_project").exists()
+        assert Path("foo_bar/components/my_project").exists()
 
-        component_yaml_path = Path("bar/components/my_project/component.yaml")
+        component_yaml_path = Path("foo_bar/components/my_project/component.yaml")
         assert component_yaml_path.exists()
         assert "type: dagster_components.dbt_project" in component_yaml_path.read_text()
         assert (
@@ -240,7 +252,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
 
 def test_list_components_succeeds():
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         result = runner.invoke(
             "component",
             "scaffold",

@@ -60,12 +60,12 @@ class SlingReplicationCollectionComponent(Component):
         return SlingReplicationComponentScaffolder()
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return SlingReplicationCollectionParams
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
         return cls(
             dirpath=context.path,
             resource=loaded_params.sling or SlingResource(),
