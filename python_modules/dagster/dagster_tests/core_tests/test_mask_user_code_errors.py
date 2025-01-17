@@ -99,6 +99,8 @@ def test_masking_nested_user_code_err_boundaries_reraise(enable_masking_user_cod
 
                 hunter2()
         except Exception as e:
+            # Mimics behavior of resource teardown, which runs in a
+            # user_code_error_boundary after the user code raises an error
             with user_code_error_boundary(
                 error_cls=DagsterUserCodeExecutionError,
                 msg_fn=lambda: "teardown after we raised hunter2 error",

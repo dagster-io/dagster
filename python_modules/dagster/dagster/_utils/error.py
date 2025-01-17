@@ -103,7 +103,12 @@ error_id_by_exception: ContextVar[Mapping[int, str]] = ContextVar(
 
 
 @contextlib.contextmanager
-def log_and_redact_stacktrace_if_enabled():
+def redact_user_stacktrace_if_enabled():
+    """Context manager which, if a user has enabled redacting user code errors, logs exceptions raised from within,
+    and clears the stacktrace from the exception. It also marks the exception to be redacted if it was to be persisted
+    or otherwise serialized to be sent to Dagster Plus. This is useful for preventing sensitive information from
+    being leaked in error messages.
+    """
     if not _should_redact_user_code_error():
         yield
     else:
@@ -118,6 +123,8 @@ def log_and_redact_stacktrace_if_enabled():
 
             if not existing_error_id:
                 error_id = str(uuid.uuid4())
+
+                # Track the error ID for this exception so we can redact it later
                 error_id_by_exception.set({**error_id_by_exception.get(), id(e): error_id})
                 masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
 
@@ -126,6 +133,7 @@ def log_and_redact_stacktrace_if_enabled():
                     exc_info=exc_info,
                 )
 
+            # Redact the stacktrace to ensure it will not be passed to Dagster Plus
             raise e.with_traceback(None) from None
 
 
