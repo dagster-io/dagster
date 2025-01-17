@@ -418,6 +418,7 @@ def build_failed_and_in_progress_partition_subset(
         incomplete_materializations = instance.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
             asset_key, after_storage_id=after_storage_id
         )
+        print(incomplete_materializations)
 
     failed_partitions: set[str] = set()
 
