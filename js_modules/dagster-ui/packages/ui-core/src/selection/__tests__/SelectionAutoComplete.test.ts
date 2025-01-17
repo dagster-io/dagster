@@ -1,5 +1,3 @@
-import {Hint, Hints} from 'codemirror';
-
 import {generateAutocompleteResults} from '../SelectionAutoComplete';
 
 describe('createAssetSelectionHint', () => {
@@ -16,20 +14,16 @@ describe('createAssetSelectionHint', () => {
     functions: ['sinks', 'roots'],
   });
 
-  type HintsModified = Omit<Hints, 'list'> & {
-    list: Array<Hint>;
-  };
-
   function testAutocomplete(testString: string) {
     const cursorIndex = testString.indexOf('|');
     const string = testString.split('|').join('');
 
-    const hints = selectionHint(string, cursorIndex) as HintsModified;
+    const hints = selectionHint(string, cursorIndex);
 
     return {
-      list: hints.list,
-      from: hints.from,
-      to: hints.to,
+      list: hints?.list,
+      from: hints?.from,
+      to: hints?.to,
     };
   }
 
