@@ -622,7 +622,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   },
   openai: {
     icon: openai,
-    content: 'Open AI',
+    content: 'OpenAI',
   },
   vercel: {
     icon: vercel,
