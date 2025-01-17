@@ -34,7 +34,14 @@ import {NextApiRequest, NextApiResponse} from 'next';
 
 // This makes sure the code snippets feature works in both development and production
 const getSnippetsPath = async () => {
-  const devPath = path.join(process.cwd(), '..', '..', 'examples', 'docs_snippets', 'docs_snippets');
+  const devPath = path.join(
+    process.cwd(),
+    '..',
+    '..',
+    'examples',
+    'docs_snippets',
+    'docs_snippets',
+  );
   try {
     await fs.access(devPath);
     console.log('Using development snippets path:', devPath);
@@ -61,8 +68,8 @@ const limitSnippetLines = (
   startafter?: string,
   endbefore?: string,
 ): string => {
-  console.log('limitSnippetLines input:', { 
-    contentLength: content.length, 
+  console.log('limitSnippetLines input:', {
+    contentLength: content.length,
     lines,
     dedent,
     startafter,
@@ -76,7 +83,7 @@ const limitSnippetLines = (
     const startIndex = result.indexOf(startafter);
     if (startIndex !== -1) {
       result = result.slice(startIndex + startafter.length);
-      console.log('After startafter:', { resultLength: result.length });
+      console.log('After startafter:', {resultLength: result.length});
     } else {
       console.log('startafter string not found');
     }
@@ -87,7 +94,7 @@ const limitSnippetLines = (
     const endIndex = result.indexOf(endbefore);
     if (endIndex !== -1) {
       result = result.slice(0, endIndex);
-      console.log('After endbefore:', { resultLength: result.length });
+      console.log('After endbefore:', {resultLength: result.length});
     } else {
       console.log('endbefore string not found');
     }
@@ -95,7 +102,7 @@ const limitSnippetLines = (
 
   if (lines) {
     console.log('Applying lines filter:', lines);
-    const lineNumbers = lines.split(',').flatMap(range => {
+    const lineNumbers = lines.split(',').flatMap((range) => {
       const [start, end] = range.split('-').map(Number);
       return end ? Array.from({length: end - start + 1}, (_, i) => start + i) : [start];
     });
@@ -103,14 +110,17 @@ const limitSnippetLines = (
     const allLines = result.split('\n');
     console.log('Total lines in content:', allLines.length);
     result = allLines.filter((_, i) => lineNumbers.includes(i + 1)).join('\n');
-    console.log('After lines filter:', { resultLength: result.length, filteredLines: result.split('\n').length });
+    console.log('After lines filter:', {
+      resultLength: result.length,
+      filteredLines: result.split('\n').length,
+    });
   }
 
   if (dedent) {
     console.log('Applying dedent:', dedent);
     const dedentRegex = new RegExp(`^\\s{${dedent}}`, 'gm');
     result = result.replace(dedentRegex, '');
-    console.log('After dedent:', { resultLength: result.length });
+    console.log('After dedent:', {resultLength: result.length});
   }
 
   console.log('limitSnippetLines output length:', result.length);
@@ -118,20 +128,24 @@ const limitSnippetLines = (
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-if (!DOCS_SNIPPET) {
+  if (!DOCS_SNIPPET) {
     await initializeSnippetsPath();
   }
 
-  const { file, lines, startafter, endbefore, dedent, trim } = req.query;
+  const {file, lines, startafter, endbefore, dedent, trim} = req.query;
 
   console.log('Snippets path:', DOCS_SNIPPET);
   console.log('Received query parameters:', req.query);
 
   if (typeof file !== 'string') {
     console.log('File parameter is missing or not a string');
-    return res.status(400).json({ error: 'File parameter is required' });
+    return res.status(400).json({error: 'File parameter is required'});
   }
 
+  if (file.includes('.') || file.includes(':')) {
+    console.log('File path contains invalid characters');
+    return res.status(400).json({error: 'Invalid file path'});
+  }
   const filePath = path.join(DOCS_SNIPPET, file);
   console.log('Attempting to read file:', filePath);
 
