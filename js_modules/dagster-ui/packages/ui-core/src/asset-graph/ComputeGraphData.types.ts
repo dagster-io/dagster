@@ -1,3 +1,4 @@
+import {AssetKey} from '../assets/types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {AssetGraphFetchScope, AssetGraphQueryItem} from './useAssetGraphData';
 
@@ -13,6 +14,7 @@ export type ComputeGraphDataMessageType = BaseType & {
   opsQuery: string;
   kinds: AssetGraphFetchScope['kinds'];
   hideEdgesToNodesOutsideQuery?: boolean;
+  supplementaryData?: Record<string, AssetKey[]> | null;
 };
 
 export type BuildGraphDataMessageType = BaseType & {

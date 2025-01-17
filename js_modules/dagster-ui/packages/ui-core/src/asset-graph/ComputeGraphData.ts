@@ -13,6 +13,7 @@ export function computeGraphData({
   opsQuery,
   kinds: _kinds,
   hideEdgesToNodesOutsideQuery,
+  supplementaryData,
 }: Omit<ComputeGraphDataMessageType, 'id' | 'type'>): GraphDataState {
   if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
     return {
@@ -26,7 +27,11 @@ export function computeGraphData({
   // In the future it might be ideal to move this server-side, but we currently
   // get to leverage the useQuery cache almost 100% of the time above, making this
   // super fast after the first load vs a network fetch on every page view.
-  const {all: allFilteredByOpQuery} = filterAssetSelectionByQuery(graphQueryItems, opsQuery);
+  const {all: allFilteredByOpQuery} = filterAssetSelectionByQuery(
+    graphQueryItems,
+    opsQuery,
+    supplementaryData,
+  );
   const kinds = _kinds?.map((c) => c.toLowerCase());
   const all = kinds?.length
     ? allFilteredByOpQuery.filter(

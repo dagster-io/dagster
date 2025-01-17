@@ -3,6 +3,7 @@ import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
 import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
@@ -160,8 +161,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const lastProcessedRequestRef = useRef(0);
   const currentRequestRef = useRef(0);
 
+  const {loading: supplementaryDataLoading, data: supplementaryData} =
+    useAssetGraphSupplementaryData(opsQuery);
+
   useEffect(() => {
-    if (options.loading) {
+    if (options.loading || supplementaryDataLoading) {
       return;
     }
     const requestId = ++currentRequestRef.current;
@@ -173,6 +177,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       kinds,
       hideEdgesToNodesOutsideQuery,
       flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
+      supplementaryData,
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -197,6 +202,8 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     kinds,
     hideEdgesToNodesOutsideQuery,
     options.loading,
+    supplementaryData,
+    supplementaryDataLoading,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading;
