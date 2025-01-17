@@ -84,7 +84,9 @@ TResValue = TypeVar("TResValue")
 
 
 def _convert_pydantic_field(
-    pydantic_field: ModelFieldCompat, model_cls: Optional[type] = None
+    pydantic_field: ModelFieldCompat,
+    model_cls: Optional[type] = None,
+    default: Optional[Mapping[str, Any]] = None,
 ) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field.
 
@@ -104,9 +106,11 @@ def _convert_pydantic_field(
 
     field_type = pydantic_field.annotation
     if safe_is_subclass(field_type, Config):
+        default = None
+        if pydantic_field.default and isinstance(pydantic_field.default, Config):
+            default = pydantic_field.default._get_non_default_public_field_values()  # noqa: SLF001
         inferred_field = infer_schema_from_config_class(
-            field_type,
-            description=pydantic_field.description,
+            field_type, description=pydantic_field.description, default=default
         )
         return inferred_field
     else:
@@ -116,9 +120,13 @@ def _convert_pydantic_field(
         config_type = _config_type_for_type_on_pydantic_field(field_type)
 
         default_to_pass = (
-            pydantic_field.default
-            if pydantic_field.default is not PydanticUndefined
-            else FIELD_NO_DEFAULT_PROVIDED
+            default
+            if default
+            else (
+                pydantic_field.default
+                if pydantic_field.default is not PydanticUndefined
+                else FIELD_NO_DEFAULT_PROVIDED
+            )
         )
         if isinstance(default_to_pass, Enum):
             default_to_pass = default_to_pass.name
