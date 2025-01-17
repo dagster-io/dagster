@@ -32,11 +32,11 @@ When launching a run using the Launchpad in the UI, you can provide a run config
 
 On any page with a **Materialize** button, click the **options menu > Open launchpad** to access the Launchpad:
 
-![Highlighted Open Launchpad option in the Materialize options menu of the Dagster UI](/img/placeholder.svg)
+![Highlighted Open Launchpad option in the Materialize options menu of the Dagster UI](/images/guides/build/assets/configuring-assets-in-the-ui/open-launchpad.png)
 
 This will open the Launchpad, where you can scaffold the config, customize its values, and manually materialize the asset:
 
-![Dagster Launchpad that configures an asset to have a lookback window of 7 days](/img/placeholder.svg)
+![Dagster Launchpad that configures an asset to have a lookback window of 7 days](/images/guides/build/assets/configuring-assets-in-the-ui/look-back-7.png)
 
 ## Next steps
 
