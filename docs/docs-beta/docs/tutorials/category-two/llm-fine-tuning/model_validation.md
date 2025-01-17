@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 60
 ---
 
-We are going to use another asset check and tie this to our `fine_tuned_model` asset. This will be slightly more sophisticated than our file validation asset check since it will need to use both the OpenAI resource and the output of the `enriched_graphic_novels` asset.
+We are going to use another asset check and tie this to our `fine_tuned_model` asset. This will be slightly more sophisticated than our file validation asset check, since it will need to use both the OpenAI resource and the output of the `enriched_graphic_novels` asset.
 
 What we will do is take another sample of data (100 records) from our `enriched_graphic_novels`. Even though our asset check is for the `fine_tuned_model` model we can still use the `enriched_graphic_novels` asset by including it as an `additional_ins`. Now that we have another sample of data, we can use OpenAI to try and determine the category. We will run the same sample record against the base model (`gpt-4o-mini-2024-07-18`) and our fine-tuned model (`ft:gpt-4o-mini-2024-07-18:test:goodreads:AoAYW0x3`). We can then compare the number of correct answers for both models:
 
