@@ -265,9 +265,11 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
         from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
         from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
+        from dagster._grpc.server import GrpcServerCommand
 
         with GrpcServerRegistry(
             instance_ref=instance.get_ref(),
+            server_command=GrpcServerCommand.API_GRPC,
             heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=(
                 instance.code_server_process_startup_timeout
@@ -293,7 +295,8 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(
-    storage_name="GrpcServerRepositoryLocationOrigin", skip_when_empty_fields={"use_ssl"}
+    storage_name="GrpcServerRepositoryLocationOrigin",
+    skip_when_empty_fields={"use_ssl", "additional_metadata"},
 )
 class GrpcServerCodeLocationOrigin(
     NamedTuple(
@@ -304,6 +307,7 @@ class GrpcServerCodeLocationOrigin(
             ("socket", Optional[str]),
             ("location_name", str),
             ("use_ssl", Optional[bool]),
+            ("additional_metadata", Optional[Mapping[str, Any]]),
         ],
     ),
     CodeLocationOrigin,
@@ -319,6 +323,7 @@ class GrpcServerCodeLocationOrigin(
         socket: Optional[str] = None,
         location_name: Optional[str] = None,
         use_ssl: Optional[bool] = None,
+        additional_metadata: Optional[Mapping[str, Any]] = None,
     ):
         return super().__new__(
             cls,
@@ -331,6 +336,7 @@ class GrpcServerCodeLocationOrigin(
                 else _assign_grpc_location_name(port, socket, host)
             ),
             use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
+            additional_metadata=check.opt_mapping_param(additional_metadata, "additional_metadata"),
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -338,6 +344,7 @@ class GrpcServerCodeLocationOrigin(
             "host": self.host,
             "port": str(self.port) if self.port else None,
             "socket": self.socket,
+            **(self.additional_metadata if self.additional_metadata else {}),
         }
         return {key: value for key, value in metadata.items() if value is not None}
 

@@ -122,7 +122,7 @@ def scaffold_code_location(
 
     # Build the venv
     cl_dg_context = dg_context.with_root_path(path)
-    if cl_dg_context.config.use_dg_managed_environment and not skip_venv:
+    if cl_dg_context.use_dg_managed_environment and not skip_venv:
         cl_dg_context.ensure_uv_lock()
         RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
@@ -142,7 +142,7 @@ def scaffold_component_type(dg_context: DgContext, name: str) -> None:
         templates_path=os.path.join(os.path.dirname(__file__), "templates", "COMPONENT_TYPE"),
         project_name=name,
         component_type_class_name=camelcase(name),
-        component_type=name,
+        name=name,
     )
 
     with open(root_path / "__init__.py", "a") as f:

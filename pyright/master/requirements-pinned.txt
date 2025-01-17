@@ -113,7 +113,7 @@ daff==1.3.46
 -e python_modules/libraries/dagster-celery-k8s
 -e python_modules/libraries/dagster-census
 -e python_modules/libraries/dagster-components
-dagster-contrib-modal==0.0.2
+dagster-modal==0.0.2
 -e python_modules/libraries/dagster-dask
 -e python_modules/libraries/dagster-databricks
 -e python_modules/libraries/dagster-datadog
@@ -384,6 +384,7 @@ msgpack==1.1.0
 multidict==6.1.0
 mypy-boto3-ecs==1.35.93
 mypy-boto3-emr==1.35.93
+mypy-boto3-emr-containers==1.35.93
 mypy-boto3-emr-serverless==1.35.93
 mypy-boto3-glue==1.35.93
 mypy-boto3-logs==1.35.93

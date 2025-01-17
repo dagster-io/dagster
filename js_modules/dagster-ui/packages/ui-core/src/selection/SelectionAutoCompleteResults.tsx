@@ -14,7 +14,7 @@ type SelectionAutoCompleteResultsProps = {
   selectedIndex: number;
   setSelectedIndex: React.Dispatch<React.SetStateAction<{current: number}>>;
   scheduleUpdateValue: () => void;
-  scrollOnNavigate: MutableRefObject<boolean>;
+  scrollToSelection: MutableRefObject<boolean>;
 };
 
 export const SelectionAutoCompleteResults = ({
@@ -24,7 +24,7 @@ export const SelectionAutoCompleteResults = ({
   selectedIndex,
   scheduleUpdateValue,
   setSelectedIndex,
-  scrollOnNavigate,
+  scrollToSelection,
 }: SelectionAutoCompleteResultsProps) => {
   if (!results) {
     return null;
@@ -40,9 +40,9 @@ export const SelectionAutoCompleteResults = ({
             text={
               <div
                 ref={
-                  index === selectedIndex && scrollOnNavigate.current
+                  index === selectedIndex && scrollToSelection.current
                     ? (el) => {
-                        scrollOnNavigate.current = false;
+                        scrollToSelection.current = false;
                         if (el) {
                           el.scrollIntoView({
                             behavior: 'instant',

@@ -37,7 +37,7 @@ BASIC_MISSING_VALUE = ComponentValidationTestCase(
     component_path="validation/basic_component_missing_value",
     component_type_filepath=Path(__file__).parent / "basic_components.py",
     should_error=True,
-    validate_error_msg=msg_includes_all_of("component.yaml:4", "params.an_int", "required"),
+    validate_error_msg=msg_includes_all_of("component.yaml:3", "params.an_int", "required"),
     validate_error_msg_additional_cli=msg_includes_all_of(
         "Field `an_int` is required but not provided"
     ),
@@ -77,7 +77,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=Path(__file__).parent / "basic_components.py",
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:6", "params.nested.foo.an_int", "required"
+            "component.yaml:5", "params.nested.foo.an_int", "required"
         ),
         validate_error_msg_additional_cli=msg_includes_all_of(
             "Field `a_string` is required but not provided"

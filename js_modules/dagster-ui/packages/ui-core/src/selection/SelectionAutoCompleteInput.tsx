@@ -90,13 +90,16 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
 
   const [selectedIndexRef, setSelectedIndex] = useState({current: 0});
 
+  const scrollToSelectionRef = useRef(false);
+
   useDangerousRenderEffect(() => {
     // Rather then using a useEffect + setState (extra render), we just set the current value directly
     selectedIndexRef.current = 0;
     if (!autocompleteResults?.list.length) {
       showResults.current = false;
     }
-  }, [autocompleteResults, showResults.current]);
+    scrollToSelectionRef.current = true;
+  }, [autocompleteResults]);
 
   const scheduleUpdateValue = useCallback(() => {
     if (setValueTimeoutRef.current) {
@@ -188,15 +191,6 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         applyStaticSyntaxHighlighting(cmInstance.current);
       });
     }
-
-    return () => {
-      const cm = cmInstance.current;
-      if (cm) {
-        // Clean up the instance...
-        cm.closeHint();
-        cm.getWrapperElement()?.parentNode?.removeChild(cm.getWrapperElement());
-      }
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -265,8 +259,6 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     [autocompleteResults],
   );
 
-  const navigationTriggeredByKeyboard = useRef(false);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (!showResults) {
@@ -275,7 +267,7 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
       scheduleUpdateValue();
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        navigationTriggeredByKeyboard.current = true;
+        scrollToSelectionRef.current = true;
       }
 
       if (e.key === 'ArrowDown') {
@@ -311,7 +303,7 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
               results={autocompleteResults}
               width={width}
               selectedIndex={selectedIndexRef.current}
-              scrollOnNavigate={navigationTriggeredByKeyboard}
+              scrollToSelection={scrollToSelectionRef}
               onSelect={onSelect}
               scheduleUpdateValue={scheduleUpdateValue}
               setSelectedIndex={setSelectedIndex}

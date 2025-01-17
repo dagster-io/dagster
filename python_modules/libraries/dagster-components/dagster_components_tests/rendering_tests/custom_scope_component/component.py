@@ -21,7 +21,7 @@ class CustomScopeParams(BaseModel):
 @component_type(name="custom_scope_component")
 class HasCustomScope(Component):
     @classmethod
-    def get_rendering_scope(cls) -> Mapping[str, Any]:
+    def get_additional_scope(cls) -> Mapping[str, Any]:
         return {
             "custom_str": "xyz",
             "custom_dict": {"a": "b"},
@@ -33,12 +33,12 @@ class HasCustomScope(Component):
         self.attributes = attributes
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return CustomScopeParams
 
     @classmethod
     def load(cls, context: ComponentLoadContext):
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
         return cls(attributes=loaded_params.attributes)
 
     def build_defs(self, context: ComponentLoadContext):

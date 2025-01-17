@@ -28,13 +28,13 @@ class DefinitionsComponent(Component):
         return DefinitionsComponentScaffolder()
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return DefinitionsParamSchema
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
         # all paths should be resolved relative to the directory we're in
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
 
         return cls(definitions_path=Path(loaded_params.definitions_path or "definitions.py"))
 

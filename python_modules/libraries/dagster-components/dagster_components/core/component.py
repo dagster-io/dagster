@@ -36,7 +36,7 @@ class Component(ABC):
     name: ClassVar[Optional[str]] = None
 
     @classmethod
-    def get_component_schema_type(cls) -> Optional[type[BaseModel]]:
+    def get_schema(cls) -> Optional[type[BaseModel]]:
         return None
 
     @classmethod
@@ -51,7 +51,7 @@ class Component(ABC):
         return DefaultComponentScaffolder()
 
     @classmethod
-    def get_rendering_scope(cls) -> Mapping[str, Any]:
+    def get_additional_scope(cls) -> Mapping[str, Any]:
         return {}
 
     @abstractmethod
@@ -73,7 +73,7 @@ class Component(ABC):
                 f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
             )
 
-        component_params = cls.get_component_schema_type()
+        component_params = cls.get_schema()
         scaffold_params = scaffolder.get_params_schema_type()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
@@ -247,7 +247,7 @@ class ComponentLoadContext:
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
             self,
-            templated_value_resolver=self.templated_value_resolver.with_context(**rendering_scope),
+            templated_value_resolver=self.templated_value_resolver.with_scope(**rendering_scope),
         )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
@@ -264,7 +264,7 @@ class ComponentLoadContext:
         from dagster_components.core.component_decl_builder import YamlComponentDecl
 
         with pushd(str(self.path)):
-            preprocessed_params = self.templated_value_resolver.render_params(
+            preprocessed_params = self.templated_value_resolver.resolve_params(
                 self._raw_params(), params_schema
             )
             yaml_decl = cast(YamlComponentDecl, self.decl_node)
