@@ -46,7 +46,7 @@ import urllib.request
 @asset
 def cereal_ratings_zip() -> None:
     urllib.request.urlretrieve(
-        "https://dagster-git-tutorial-nothing-elementl.vercel.app/assets/cereal-ratings.csv.zip",
+        "https://docs.dagster.io/assets/cereal-ratings.csv.zip",
         "cereal-ratings.csv.zip",
     )
 
