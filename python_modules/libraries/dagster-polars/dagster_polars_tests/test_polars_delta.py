@@ -1,16 +1,21 @@
 from datetime import datetime
+from typing import Optional, Union
 
 import polars as pl
 import polars.testing as pl_testing
+import pytest
+import pytest_mock
 from dagster import (
     AssetExecutionContext,
     AssetIn,
     Config,
     DagsterInstance,
     DailyPartitionsDefinition,
+    InputContext,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     OpExecutionContext,
+    OutputContext,
     RunConfig,
     StaticPartitionsDefinition,
     asset,
@@ -224,8 +229,9 @@ def test_polars_delta_io_manager_overwrite_schema_lazy(
     )
 
 
+@pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_partitioning(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -237,7 +243,7 @@ def test_polars_delta_native_partitioning(
         partitions_def=partitions_def,
         metadata={
             "partition_by": "partition",
-            "delta_write_options": {"engine": "pyarrow"},
+            "delta_write_options": {"engine": engine},
         },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
@@ -268,8 +274,9 @@ def test_polars_delta_native_partitioning(
     )
 
 
+@pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_multi_partitions(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -286,7 +293,7 @@ def test_polars_delta_native_multi_partitions(
         partitions_def=partitions_def,
         metadata={
             "partition_by": {"time": "date", "category": "category"},
-            "delta_write_options": {"engine": "pyarrow"},
+            "delta_write_options": {"engine": engine},
         },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
@@ -321,8 +328,9 @@ def test_polars_delta_native_multi_partitions(
     )
 
 
+@pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_partitioning_loading_single_partition(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame
+    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -334,7 +342,7 @@ def test_polars_delta_native_partitioning_loading_single_partition(
         partitions_def=partitions_def,
         metadata={
             "partition_by": "partition",
-            "delta_write_options": {"engine": "pyarrow"},
+            "delta_write_options": {"engine": engine},
         },
     )
     def upstream_partitioned(context: OpExecutionContext) -> pl.DataFrame:
@@ -394,3 +402,64 @@ def test_polars_delta_time_travel(
             downstream_1,
         ]
     )
+
+
+@pytest.mark.parametrize(
+    "partition_by, partition_keys, expected_filters, expected_predicate",
+    [
+        ("col_name", ["a"], [("col_name", "in", ["a"])], "col_name = 'a'"),
+        ("col_name", ["a", "b"], [("col_name", "in", ["a", "b"])], "col_name in ('a', 'b')"),
+        (
+            {"col_name": "mapped_col"},
+            [{"col_name": "a"}],
+            [("mapped_col", "in", ["a"])],
+            "mapped_col in ('a')",
+        ),
+        (
+            {"col_name": "mapped_col"},
+            [{"col_name": "a"}, {"col_name": "b"}],
+            [("mapped_col", "in", ["a", "b"])],
+            "mapped_col in ('a', 'b')",
+        ),
+        (None, [], [], None),
+    ],
+)
+@pytest.mark.parametrize("context", [InputContext, OutputContext])
+def test_partition_filters_predicate(
+    mocker: pytest_mock.MockerFixture,
+    partition_by: Optional[Union[str, dict[str, str]]],
+    partition_keys: Union[list[str], list[dict[str, str]]],
+    expected_filters: list[tuple[str, str, list[str]]],
+    expected_predicate: str,
+    context: type[Union[InputContext, OutputContext]],
+):
+    """Test that the partition filters and predicate are generated correctly."""
+    if context == InputContext:
+        context = mocker.MagicMock(InputContext)
+        mock_upstream_output = mocker.MagicMock(OutputContext)
+        type(mock_upstream_output).definition_metadata = mocker.PropertyMock(
+            return_value={"partition_by": partition_by}
+        )
+        type(context).upstream_output = mocker.PropertyMock(return_value=mock_upstream_output)
+    else:
+        context = mocker.MagicMock(OutputContext)
+        type(context).definition_metadata = mocker.PropertyMock(
+            return_value={"partition_by": partition_by}
+        )
+
+    type(context).has_asset_partitions = mocker.PropertyMock(return_value=True)
+
+    if len(partition_keys) and isinstance(partition_keys[0], dict):
+        mock_keys = []
+
+        for keys in partition_keys:
+            mock_partition_keys = mocker.MagicMock(MultiPartitionKey)
+            type(mock_partition_keys).keys_by_dimension = mocker.PropertyMock(return_value=keys)
+            mock_keys.append(mock_partition_keys)
+
+        type(context).asset_partition_keys = mocker.PropertyMock(return_value=mock_keys)
+    else:
+        type(context).asset_partition_keys = mocker.PropertyMock(return_value=partition_keys)
+
+    assert PolarsDeltaIOManager.get_partition_filters(context) == expected_filters
+    assert PolarsDeltaIOManager.get_predicate(context) == expected_predicate
