@@ -10,16 +10,20 @@ This guide covers how to run JavaScript with Dagster using Pipes, however, the s
 
 To follow this guide, you'll need:
 
-- Familiarity with [Assets](/guides/build/assets/index.mdx
+- Familiarity with [Assets](/guides/build/assets/)
 - A basic understanding of JavaScript and Node.js
 
 To run the examples, you'll need to install:
 
 - [Node.js](https://nodejs.org/en/download/package-manager/)
-- The following packages:
+- The following Python packages:
 
    ```bash
-   pip install dagster dagster-webserver tensorflow
+   pip install dagster dagster-webserver
+   ```
+- The following Node packages:
+   ```bash
+   npm install @tensorflow/tfjs
    ```
 </details>
 
@@ -41,8 +45,6 @@ In Dagster, create an asset that:
 <CodeExample filePath="guides/non-python/pipes-asset.py" language="python" />
 
 When the asset is materialized, the stdout and stderr will be captured automatically and shown in the asset logs. If the command passed to Pipes returns a successful exit code, Dagster will produce an asset materialization result.
-
-![Image of captured stdout](/img/placeholder.svg)
 
 ## Step 3: Send and receive data from the script
 
