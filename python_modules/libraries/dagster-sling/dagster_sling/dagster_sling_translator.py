@@ -119,10 +119,8 @@ class DagsterSlingTranslator:
                 'object': 'public.all_users'}
             }
 
-        By default, this returns the class's target_prefix paramater concatenated with the stream name.
+        This returns the class's target_prefix parameter concatenated with the stream name.
         A stream named "public.accounts" will create an AssetKey named "target_public_accounts".
-
-        Override this function to customize how to map a Sling stream to a Dagster AssetKey.
 
         Alternatively, you can provide metadata in your Sling replication config to specify the
         Dagster AssetKey for a stream as follows:
@@ -166,7 +164,7 @@ class DagsterSlingTranslator:
         By default, this returns the stream name. For example, a stream named "public.accounts"
         will create an AssetKey named "target_public_accounts" and a dependency named "public_accounts".
 
-        Override this function to customize how to map a Sling stream to a Dagster depenency.
+        Override this function to customize how to map a Sling stream to a Dagster dependency.
         Alternatively, you can provide metadata in your Sling replication config to specify the
         Dagster AssetKey for a stream as follows:
 
@@ -178,7 +176,7 @@ class DagsterSlingTranslator:
                         deps: "sourcedb_users"
 
         Args:
-            stream_name (str): The name of the stream.
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition
 
         Returns:
             AssetKey: The Dagster AssetKey dependency for the replication stream.
@@ -200,10 +198,9 @@ class DagsterSlingTranslator:
         """A function that takes a stream name from a Sling replication config and returns a
         Dagster AssetKey for the dependencies of the replication stream.
 
-        By default, this returns the stream name. For example, a stream named "public.accounts"
+        This returns the stream name. For example, a stream named "public.accounts"
         will create an AssetKey named "target_public_accounts" and a dependency named "public_accounts".
 
-        Override this function to customize how to map a Sling stream to a Dagster depenency.
         Alternatively, you can provide metadata in your Sling replication config to specify the
         Dagster AssetKey for a stream as follows:
 
@@ -215,7 +212,7 @@ class DagsterSlingTranslator:
                         deps: "sourcedb_users"
 
         Args:
-            stream_name (str): The name of the stream.
+            stream_definition (Mapping[str, Any]): A dictionary representing the stream definition
 
         Returns:
             AssetKey: The Dagster AssetKey dependency for the replication stream.
