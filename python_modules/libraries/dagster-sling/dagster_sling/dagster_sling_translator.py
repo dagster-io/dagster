@@ -1,7 +1,7 @@
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public
@@ -20,16 +20,49 @@ class DagsterSlingTranslator:
         the value is a dictionary representing the Sling Replication Stream Config.
         """
         return AssetSpec(
-            key=self._default_asset_key_fn(stream_definition),
-            deps=self._default_deps_fn(stream_definition),
-            description=self._default_description_fn(stream_definition),
-            metadata=self._default_metadata_fn(stream_definition),
-            tags=self._default_tags_fn(stream_definition),
-            kinds=self._default_kinds_fn(stream_definition),
-            group_name=self._default_group_name_fn(stream_definition),
-            freshness_policy=self._default_freshness_policy_fn(stream_definition),
-            auto_materialize_policy=self._default_auto_materialize_policy_fn(stream_definition),
+            key=self._resolve_back_compat_method(
+                "get_asset_key", self._default_asset_key_fn, stream_definition
+            ),
+            deps=self._resolve_back_compat_method(
+                "get_deps_asset_key", self._default_deps_fn, stream_definition
+            ),
+            description=self._resolve_back_compat_method(
+                "get_description", self._default_description_fn, stream_definition
+            ),
+            metadata=self._resolve_back_compat_method(
+                "get_metadata", self._default_metadata_fn, stream_definition
+            ),
+            tags=self._resolve_back_compat_method(
+                "get_tags", self._default_tags_fn, stream_definition
+            ),
+            kinds=self._resolve_back_compat_method(
+                "get_kinds", self._default_kinds_fn, stream_definition
+            ),
+            group_name=self._resolve_back_compat_method(
+                "get_group_name", self._default_group_name_fn, stream_definition
+            ),
+            freshness_policy=self._resolve_back_compat_method(
+                "get_freshness_policy", self._default_freshness_policy_fn, stream_definition
+            ),
+            auto_materialize_policy=self._resolve_back_compat_method(
+                "get_auto_materialize_policy",
+                self._default_auto_materialize_policy_fn,
+                stream_definition,
+            ),
         )
+
+    def _resolve_back_compat_method(
+        self,
+        method_name: str,
+        default_fn: Callable[[Mapping[str, Any]], Any],
+        stream_definition: Mapping[str, Any],
+    ):
+        method = getattr(type(self), method_name)
+        base_method = getattr(DagsterSlingTranslator, method_name)
+        if method is not base_method:  # user defined this
+            return method(self, stream_definition)
+        else:
+            return default_fn(stream_definition)
 
     @public
     def sanitize_stream_name(self, stream_name: str) -> str:
