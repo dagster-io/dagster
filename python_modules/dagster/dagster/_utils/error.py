@@ -102,6 +102,10 @@ error_id_by_exception: ContextVar[Mapping[int, str]] = ContextVar(
 )
 
 
+class DagsterRedactedUserCodeError(DagsterUserCodeExecutionError):
+    pass
+
+
 @contextlib.contextmanager
 def redact_user_stacktrace_if_enabled():
     """Context manager which, if a user has enabled redacting user code errors, logs exceptions raised from within,
@@ -132,6 +136,29 @@ def redact_user_stacktrace_if_enabled():
                     f"Error occurred during user code execution, error ID {error_id}",
                     exc_info=exc_info,
                 )
+            else:
+                error_id = existing_error_id
+
+            if isinstance(e, DagsterUserCodeExecutionError):
+                # Raise a dummy exception to mask the original exception
+                try:
+                    raise Exception("Masked").with_traceback(None) from None
+                except Exception as dummy_exception:
+                    redacted_exception = DagsterRedactedUserCodeError(
+                        f"Error occurred during user code execution, error ID {error_id}. "
+                        "The error has been masked to prevent leaking sensitive information. "
+                        "Search in logs for this error ID for more details.",
+                        user_exception=e.user_exception,
+                        original_exc_info=sys.exc_info(),
+                    ).with_traceback(None)
+                    error_id_by_exception.set(
+                        {
+                            **error_id_by_exception.get(),
+                            id(dummy_exception): error_id,
+                            id(redacted_exception): error_id,
+                        }
+                    )
+                    raise redacted_exception from None
 
             # Redact the stacktrace to ensure it will not be passed to Dagster Plus
             raise e.with_traceback(None) from None
