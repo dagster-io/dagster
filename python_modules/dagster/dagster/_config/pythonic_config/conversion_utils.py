@@ -117,7 +117,8 @@ TResValue = TypeVar("TResValue")
 
 
 def _convert_pydantic_field(
-    pydantic_field: ModelFieldCompat, model_cls: Optional[type] = None
+    pydantic_field: ModelFieldCompat,
+    model_cls: Optional[type] = None,
 ) -> Field:
     """Transforms a Pydantic field into a corresponding Dagster config field.
 
@@ -138,9 +139,13 @@ def _convert_pydantic_field(
     field_type = pydantic_field.annotation
     if safe_is_subclass(field_type, Config):
         inferred_field = infer_schema_from_config_class(
-            field_type,
-            description=pydantic_field.description,
+            field_type, description=pydantic_field.description
         )
+        if pydantic_field.default and isinstance(pydantic_field.default, Config):
+            inferred_field = _apply_defaults_to_schema_field(
+                inferred_field,
+                pydantic_field.default._convert_to_config_dictionary(),  # noqa: SLF001
+            )
         return inferred_field
     else:
         if not pydantic_field.is_required() and not is_closed_python_optional_type(field_type):
