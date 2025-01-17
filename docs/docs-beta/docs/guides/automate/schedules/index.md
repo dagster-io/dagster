@@ -1,5 +1,5 @@
 ---
-title: "Cron-based schedules"
+title: "Schedules"
 sidebar_position: 10
 ---
 

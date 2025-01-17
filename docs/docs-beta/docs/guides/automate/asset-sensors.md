@@ -1,5 +1,5 @@
 ---
-title: Define cross-job dependencies with asset sensors
+title: "Asset sensors"
 sidebar_position: 40
 ---
 

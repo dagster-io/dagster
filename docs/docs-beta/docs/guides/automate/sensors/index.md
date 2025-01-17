@@ -1,5 +1,5 @@
 ---
-title: Create event-based pipelines with sensors
+title: "Sensors"
 sidebar_position: 30
 ---
 
