@@ -231,7 +231,7 @@ def _build_backfill_request(
         if isinstance(k, AssetKey):
             node = asset_graph.get(k)
             if not node.is_materializable:
-                # if the asset is not materializable, we should not backfill it
+                # if the asset is not materializable, it cannot be included in a backfill
                 return
             subset = cast(EntitySubset[AssetKey], entity_subsets_by_key.pop(k))
             backfill_subsets.append(subset)
