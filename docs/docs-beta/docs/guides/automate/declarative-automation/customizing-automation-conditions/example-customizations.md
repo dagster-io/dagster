@@ -60,38 +60,39 @@ condition = AutomationCondition.eager().replace(
 
 ## Ignoring dependencies when using AutomationCondition.on_cron()
 
-By default, `AutomationCondition.on_cron()` will wait for all upstream dependencies to be updated before executing the asset it's attached to. In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be ignored:
+By default, `AutomationCondition.on_cron()` will wait for all upstream dependencies to be updated before executing the asset it's attached to. In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject object="AssetSelection" /> to be ignored:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=concepts/declarative_automation/ignore_dependencies_cron.py
 import dagster as dg
 
-all_deps_except_foo_updated = dg.AutomationCondition.all_deps_updated_since_cron(
-    "@hourly"
-).ignore(dg.AssetSelection.assets("foo"))
-
-condition = (
-    dg.AutomationCondition.on_cron("@hourly").without(
-        dg.AutomationCondition.all_deps_updated_since_cron("@hourly")
-    )
-) & all_deps_except_foo_updated
+condition = dg.AutomationCondition.on_cron("@hourly").ignore(
+    dg.AssetSelection.assets("foo")
+)
 ```
 
-Alternatively, you can pass in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be allowed:
+Alternatively, you can pass in an <PyObject object="AssetSelection" /> to be allowed:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=concepts/declarative_automation/allow_dependencies_cron.py
 import dagster as dg
 
-group_abc_updated = dg.AutomationCondition.all_deps_updated_since_cron("@hourly").allow(
+condition = dg.AutomationCondition.on_cron("@hourly").allow(
     dg.AssetSelection.groups("abc")
 )
+```
+
+### Wait for all blocking asset checks to complete before executing
+
+The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes true after all upstream blocking checks have passed. This can be combined with built-in conditions such as `AutomationCondition.on_cron()` and `AutomationCondition.eager()` to ensure that your asset does not execute if upstream data is in a bad state:
+
+```python file=concepts/declarative_automation/blocking_checks_condition.py
+import dagster as dg
 
 condition = (
-    dg.AutomationCondition.on_cron("@hourly").without(
-        dg.AutomationCondition.all_deps_updated_since_cron("@hourly")
-    )
-) & group_abc_updated
+    dg.AutomationCondition.eager()
+    & dg.AutomationCondition.all_deps_blocking_checks_passed()
+)
 ```
 
 ## Waiting for all blocking asset checks to complete before executing
