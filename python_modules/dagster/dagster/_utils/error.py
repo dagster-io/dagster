@@ -4,10 +4,9 @@ import os
 import sys
 import traceback
 import uuid
-from collections.abc import Mapping, Sequence
-from contextvars import ContextVar
+from collections.abc import Sequence
 from types import TracebackType
-from typing import Any, Dict, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 from typing_extensions import TypeAlias
 
@@ -98,7 +97,11 @@ _REDACTED_ERROR_LOGGER_NAME = os.getenv(
 )
 
 
-redacted_exception_id_to_user_facing_identifier: Dict[int, str] = {}
+redacted_exception_id_to_user_facing_identifier: dict[int, str] = {}
+
+
+class DagsterRedactedUserCodeError(DagsterUserCodeExecutionError):
+    pass
 
 
 @contextlib.contextmanager
@@ -124,13 +127,36 @@ def redact_user_stacktrace_if_enabled():
                 error_id = str(uuid.uuid4())
 
                 # Track the error ID for this exception so we can redact it later
-                redacted_exception_id_to_user_facing_identifier[id(e)]= error_id
+                redacted_exception_id_to_user_facing_identifier[id(e)] = error_id
                 masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
 
                 masked_logger.error(
                     f"Error occurred during user code execution, error ID {error_id}",
                     exc_info=exc_info,
                 )
+            else:
+                error_id = existing_error_id
+
+            if isinstance(e, DagsterUserCodeExecutionError):
+                # To be especially sure that user code error information doesn't leak from
+                # outside the context, we raise a new exception with a cleared original_exc_info
+                # The only remnant that remains is user_exception, which we only use to allow the user
+                # to retrieve exceptions in hooks
+                try:
+                    raise Exception("Masked").with_traceback(None) from None
+                except Exception as dummy_exception:
+                    redacted_exception = DagsterRedactedUserCodeError(
+                        f"Error occurred during user code execution, error ID {error_id}. "
+                        "The error has been masked to prevent leaking sensitive information. "
+                        "Search in logs for this error ID for more details.",
+                        user_exception=e.user_exception,
+                        original_exc_info=sys.exc_info(),
+                    ).with_traceback(None)
+                    redacted_exception_id_to_user_facing_identifier[id(dummy_exception)] = error_id
+                    redacted_exception_id_to_user_facing_identifier[id(redacted_exception)] = (
+                        error_id
+                    )
+                    raise redacted_exception from None
 
             # Redact the stacktrace to ensure it will not be passed to Dagster Plus
             raise e.with_traceback(None) from None
@@ -204,7 +230,7 @@ def serializable_error_info_from_exc_info(
         else:
             # For all other errors (framework errors, interrupts),
             # we want to redact the error message, but keep the stacktrace
-            return _generate_partly_redacted_framework_error_message(exc_info, err_id)s
+            return _generate_partly_redacted_framework_error_message(exc_info, err_id)
 
     if (
         hoist_user_code_error
