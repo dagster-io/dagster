@@ -9,7 +9,7 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 :::note
 
-This documentation assumes familiarity with [assets](/guides/build/assets/index.md) and [jobs](/guides/build/assets/asset-jobs)
+This documentation assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/assets/asset-jobs)
 
 :::
 
@@ -87,9 +87,10 @@ For example, you might use a sensor to trigger a job when an asset is materializ
 <CodeExample filePath="guides/automation/asset-sensor-with-config.py" language="python" />
 
 ## Monitoring multiple assets
+
 :::note
 
-The experimental `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system.
+The experimental `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system. For more information, see the [Declarative Automation documentation](/guides/automate/declarative-automation/).
 
 :::
 
@@ -101,5 +102,4 @@ The following example uses a `@multi_asset_sensor` to monitor multiple assets an
 
 ## Next steps
 
-- Learn more about asset sensors in [Understanding Automation](/guides/automate)
-- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to asset sensors
+- Explore [Declarative Automation](/guides/automate/declarative-automation/) as an alternative to asset sensors
