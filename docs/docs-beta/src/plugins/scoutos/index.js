@@ -40,9 +40,11 @@ const scoutos_embedded_html = `
       flex-direction: row;
       align-items: center;
       gap: 8px;
+      font-weight: 500;
+      font-family: "Geist", "Inter", "Arial", sans-serif;
     "
   >
-    <div className="pt-1">
+    <div style="padding-top: 4px;">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
