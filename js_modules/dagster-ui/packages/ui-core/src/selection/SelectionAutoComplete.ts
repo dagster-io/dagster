@@ -43,6 +43,11 @@ export type Suggestion =
       displayText?: string;
       type: 'attribute';
       attributeName?: string;
+    }
+  | {
+      text: string;
+      displayText?: string;
+      type: 'traversal';
     };
 
 type TextCallback = (value: string) => string;
@@ -238,6 +243,7 @@ export class SelectionAutoCompleteVisitor
         text: textCallback(substringMatchText),
         displayText: substringMatchDisplayText,
         type: 'attribute' as const,
+        attributeName: `${this.nameBase}_substring`,
       });
     }
     this.addAttributeResults(value, textCallback);
@@ -268,13 +274,13 @@ export class SelectionAutoCompleteVisitor
         this.list.push({
           text: textCallback('+'),
           displayText: '+',
-          type: 'logical_operator' as const,
+          type: 'traversal' as const,
         });
       }
       this.list.push({
         text: textCallback('()'),
         displayText: '(',
-        type: 'function' as const,
+        type: 'parenthesis' as const,
       });
     }
   }
@@ -313,7 +319,7 @@ export class SelectionAutoCompleteVisitor
     );
 
     if (!options.excludePlus) {
-      this.list.push({text: '+', displayText: '+', type: 'logical_operator' as const});
+      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
     }
 
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {
@@ -338,16 +344,16 @@ export class SelectionAutoCompleteVisitor
 
   visitUpTraversal(ctx: UpTraversalContext) {
     if (ctx.text.includes('+')) {
-      this.list.push({text: '+', displayText: '+', type: 'logical_operator' as const});
+      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
     }
-    this.list.push({text: '()', displayText: '(', type: 'function' as const});
+    this.list.push({text: '()', displayText: '(', type: 'parenthesis' as const});
   }
 
   visitDownTraversal(ctx: DownTraversalContext) {
     this.list.push({text: ' and ', displayText: 'and', type: 'logical_operator' as const});
     this.list.push({text: ' or ', displayText: 'or', type: 'logical_operator' as const});
     if (ctx.text.includes('+')) {
-      this.list.push({text: '+', displayText: '+', type: 'logical_operator' as const});
+      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
     }
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {
       this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
@@ -461,6 +467,7 @@ export class SelectionAutoCompleteVisitor
     }
     this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
       excludeNot: true,
+      excludePlus: true,
     });
   }
 
@@ -484,7 +491,9 @@ export class SelectionAutoCompleteVisitor
   }
 
   visitPostNeighborTraversalWhitespace(_ctx: PostNeighborTraversalWhitespaceContext) {
-    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK);
+    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
+      excludePlus: true,
+    });
   }
 
   visitPostUpwardTraversalWhitespace(_ctx: PostUpwardTraversalWhitespaceContext) {
