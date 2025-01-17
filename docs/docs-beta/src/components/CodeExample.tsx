@@ -7,6 +7,8 @@ interface CodeExampleProps {
   title?: string;
   lineStart?: number;
   lineEnd?: number;
+  startAfter?: string; // marker that indicates beginning of code snippet
+  endBefore?: string; // marker that indicates ending of code snippet
 }
 
 /**
@@ -33,36 +35,53 @@ function processModule({
   module,
   lineStart,
   lineEnd,
+  startAfter,
+  endBefore,
 }: {
   cacheKey: string;
   module: any;
   lineStart?: number;
   lineEnd?: number;
+  startAfter?: string;
+  endBefore?: string;
 }) {
   var lines = module.default.split('\n');
 
-  const sliceStart = lineStart && lineStart > 0 ? lineStart : 0;
-  const sliceEnd = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
-  lines = lines.slice(sliceStart, sliceEnd);
+  // limit to range of `lineStart` and `lineEnd`
+  const lineStartIndex = lineStart && lineStart > 0 ? lineStart : 0;
+  const lineEndIndex = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
+
+  // limit to range of `startAfter` and `endBefore`
+  let startAfterIndex = startAfter
+    ? lines.findIndex((line: string) => line.includes(startAfter)) + 1
+    : 0;
+
+  const endAfterIndex = endBefore
+    ? lines.findIndex((line: string) => line.includes(endBefore))
+    : lines.length;
+
+  const ix1 = Math.max(lineStartIndex, startAfterIndex);
+  const ix2 = Math.min(lineEndIndex, endAfterIndex);
+
+  lines = lines.slice(ix1, ix2);
 
   lines = filterNoqaComments(lines);
   lines = trimMainBlock(lines);
   contentCache[cacheKey] = {content: lines.join('\n')};
 }
 
-function useLoadModule(cacheKey: string, path: string, lineStart: number, lineEnd: number) {
+function useLoadModule(
+  cacheKey: string,
+  path: string,
+  lineStart: number,
+  lineEnd: number,
+  startAfter: string,
+  endBefore: string,
+) {
   const isServer = typeof window === 'undefined';
   if (isServer) {
-    /**
-     * Note: Remove the try/catch to cause a hard error on build once all of the bad code examples are cleaned up.
-     */
-    try {
-      const module = require(`!!raw-loader!/../../examples/${path}`);
-      processModule({cacheKey, module, lineStart, lineEnd});
-    } catch (e) {
-      console.error(e);
-      contentCache[cacheKey] = {error: e.toString()};
-    }
+    const module = require(`!!raw-loader!/../../examples/${path}`);
+    processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
   }
 
   if (!contentCache[cacheKey]) {
@@ -72,7 +91,7 @@ function useLoadModule(cacheKey: string, path: string, lineStart: number, lineEn
      */
     throw import(`!!raw-loader!/../../examples/${path}`)
       .then((module) => {
-        processModule({cacheKey, module, lineStart, lineEnd});
+        processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
       })
       .catch((e) => {
         contentCache[cacheKey] = {error: e.toString()};
@@ -91,11 +110,20 @@ const CodeExample: React.FC<CodeExampleProps> = ({...props}) => {
 };
 
 const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
-  const {filePath, title, lineStart, lineEnd, language = 'python', ...extraProps} = props;
+  const {
+    filePath,
+    title,
+    lineStart,
+    lineEnd,
+    startAfter,
+    endBefore,
+    language = 'python',
+    ...extraProps
+  } = props;
 
   const path = 'docs_beta_snippets/docs_beta_snippets/' + filePath;
   const cacheKey = JSON.stringify(props);
-  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd);
+  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd, startAfter, endBefore);
 
   if (error) {
     return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;

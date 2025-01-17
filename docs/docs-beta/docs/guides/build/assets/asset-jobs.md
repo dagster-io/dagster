@@ -14,8 +14,7 @@ Jobs are the main unit of execution and monitoring for [asset definitions](/guid
 
 In this section, we'll demonstrate how to create a few asset jobs that target the following assets:
 
-{/* Original code example in https://github.com/dagster-io/dagster/blob/master/examples/docs_snippets/docs_snippets/concepts/assets/non_argument_deps.py between start_marker and end_marker */}
-<CodeExample filePath="" language="python" lineStart="" lineEnd=""/>
+<CodeExample filePath="guides/data-modeling/asset-jobs/asset-jobs.py" language="python" lineStart="5" lineEnd="18"/>
 
 To create an asset job, use the [`define_asset_job`](/api/python-api/assets#dagster.define_asset_job) method. An asset-based job is based on the assets the job targets and their dependencies.
 
@@ -24,29 +23,28 @@ You can target one or multiple assets, or create multiple jobs that target overl
 - `all_assets_job` targets all assets
 - `sugary_cereals_job` targets only the `sugary_cereals` asset
 
-{/* Original code example in https://github.com/dagster-io/dagster/blob/master/examples/docs_snippets/docs_snippets/concepts/assets/build_job.py between start_marker and end_marker */}
-<CodeExample filePath="" language="python" lineStart="" lineEnd=""/>
+<CodeExample filePath="guides/data-modeling/asset-jobs/asset-jobs.py" language="python" lineStart="20" lineEnd="33"/>
 
 ## Making asset jobs available to Dagster tools
 
 Including the jobs in a [`Definitions`](/api/python-api/definitions) object located at the top level of a Python module or file makes asset jobs available to the UI, GraphQL, and the command line. The Dagster tool loads that module as a code location. If you include schedules or sensors, the [code location](/guides/deploy/code-locations) will automatically include jobs that those schedules or sensors target.
 
 ```python file=/concepts/assets/jobs_to_definitions.py
-from dagster import Definitions, MaterializeResult, asset, define_asset_job
+import dagster as dg
 
 
-@asset
+@dg.asset
 def number_asset():
-    yield MaterializeResult(
+    yield dg.MaterializeResult(
         metadata={
             "number": 1,
         }
     )
 
 
-number_asset_job = define_asset_job(name="number_asset_job", selection="number_asset")
+number_asset_job = dg.define_asset_job(name="number_asset_job", selection="number_asset")
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[number_asset],
     jobs=[number_asset_job],
 )

@@ -1240,8 +1240,14 @@ type LogsCapturedEvent implements MessageEvent {
   externalUrl: String
   externalStdoutUrl: String
   externalStderrUrl: String
+  shellCmd: LogRetrievalShellCommand
   pid: Int
   logKey: String!
+}
+
+type LogRetrievalShellCommand {
+  stdout: String
+  stderr: String
 }
 
 type AlertStartEvent implements MessageEvent & RunEvent {
@@ -1660,6 +1666,7 @@ enum InstigationStatus {
 type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
+  assetChecks: [AssetCheckhandle!]!
   assets: [Asset!]!
   assetsOrError: AssetsOrError!
 }

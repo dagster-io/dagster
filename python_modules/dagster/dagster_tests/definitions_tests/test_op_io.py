@@ -1,5 +1,9 @@
 import sys
-from collections.abc import Generator, Iterable, Iterator
+from collections.abc import Generator, Iterator
+from typing import (  # noqa:UP035
+    Iterable as TypingIterable,
+    Iterator as TypingIterator,
+)
 
 import pytest
 from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, op
@@ -151,7 +155,7 @@ def test_not_type_input():
         def _create(
             _context,
             # invalid since Iterator is not a python type or DagsterType
-            arg_b: Iterator[int],
+            arg_b: TypingIterator[int],
         ):
             return arg_b
 
@@ -167,7 +171,7 @@ def test_not_type_input():
         def _combine(
             _context,
             # invalid since Iterator is not a python type or DagsterType
-            arg_b: Iterator[int],
+            arg_b: TypingIterator[int],
         ):
             return arg_b
 
@@ -180,5 +184,5 @@ def test_not_type_input():
     ):
 
         @op
-        def _out(_context) -> Iterable[int]:
+        def _out(_context) -> TypingIterable[int]:
             return [1]

@@ -87,6 +87,11 @@ For example, you might use a sensor to trigger a job when an asset is materializ
 <CodeExample filePath="guides/automation/asset-sensor-with-config.py" language="python" />
 
 ## Monitoring multiple assets
+:::note
+
+The experimental `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system.
+
+:::
 
 When building a pipeline, you may want to monitor multiple assets with a single sensor. This can be accomplished with a multi-asset sensor.
 

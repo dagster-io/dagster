@@ -5,12 +5,12 @@ from pathlib import Path
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
-    isolated_example_code_location_bar,
+    isolated_example_code_location_foo_bar,
 )
 
 # For all cache tests, avoid setting up venv in example code location so we do not prepopulate the
 # cache (which is part of the venv setup routine).
-example_code_location = partial(isolated_example_code_location_bar, skip_venv=True)
+example_code_location = partial(isolated_example_code_location_foo_bar, skip_venv=True)
 
 
 def test_load_from_cache():
@@ -60,7 +60,7 @@ def test_cache_no_invalidation_modified_pkg():
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
 
-        Path("bar/submodule.py").write_text("print('hello')")
+        Path("foo_bar/submodule.py").write_text("print('hello')")
 
         result = runner.invoke("component-type", "list")
         assert_runner_result(result)

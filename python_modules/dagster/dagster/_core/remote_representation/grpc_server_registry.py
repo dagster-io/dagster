@@ -14,7 +14,7 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.server import GrpcServerCommand, GrpcServerProcess
 from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -67,6 +67,7 @@ class GrpcServerRegistry(AbstractContextManager):
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
+        server_command: GrpcServerCommand,
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that any processes returned by this registry have at least one
         # GrpcServerCodeLocation hitting the server with a heartbeat while you want the
@@ -82,6 +83,7 @@ class GrpcServerRegistry(AbstractContextManager):
         additional_timeout_msg: Optional[str] = None,
     ):
         self.instance_ref = instance_ref
+        self.server_command = server_command
 
         # map of servers being currently returned, keyed by origin ID
         self._active_entries: dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
@@ -187,6 +189,7 @@ class GrpcServerRegistry(AbstractContextManager):
                 new_server_id = str(uuid.uuid4())
                 server_process = GrpcServerProcess(
                     instance_ref=self.instance_ref,
+                    server_command=self.server_command,
                     location_name=code_location_origin.location_name,
                     loadable_target_origin=loadable_target_origin,
                     heartbeat=True,

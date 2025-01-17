@@ -384,6 +384,7 @@ msgpack==1.1.0
 multidict==6.1.0
 mypy-boto3-ecs==1.35.93
 mypy-boto3-emr==1.35.93
+mypy-boto3-emr-containers==1.35.93
 mypy-boto3-emr-serverless==1.35.93
 mypy-boto3-glue==1.35.93
 mypy-boto3-logs==1.35.93

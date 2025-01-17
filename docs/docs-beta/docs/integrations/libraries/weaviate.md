@@ -6,14 +6,14 @@ title: Dagster & Weaviate
 sidebar_label: Weaviate
 excerpt: 'Using this integration, you can seamlessly integrate Weaviate into your Dagster workflows, leveraging Weaviates data warehousing capabilities for your data pipelines.'
 partnerlink: https://weaviate.io/
-logo: /integrations/weaviate.svg
+logo: /integrations/weaviate.png
 categories:
   - Storage
 enabledBy:
 enables:
 tags: [dagster-supported, storage]
 sidebar_custom_props:
-  logo: images/integrations/weaviate.svg
+  logo: images/integrations/weaviate.png
 ---
 
 The `dagster-weaviate` library allows you to easily interact with Weaviate's vector database capabilities to build AI-powered data pipelines in Dagster. You can perform vector similarity searches, manage schemas, and handle data operations directly from your Dagster assets.

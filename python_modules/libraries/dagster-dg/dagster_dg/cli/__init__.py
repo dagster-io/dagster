@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 import click
@@ -11,7 +10,7 @@ from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.utils import DgClickGroup
+from dagster_dg.utils import DgClickGroup, exit_with_error
 from dagster_dg.version import __version__
 
 DG_CLI_MAX_OUTPUT_WIDTH = 120
@@ -59,12 +58,7 @@ def create_dg_cli():
     ):
         """CLI for working with Dagster components."""
         if clear_cache and rebuild_component_registry:
-            click.echo(
-                click.style(
-                    "Cannot specify both --clear-cache and --rebuild-component-registry.", fg="red"
-                )
-            )
-            sys.exit(1)
+            exit_with_error("Cannot specify both --clear-cache and --rebuild-component-registry.")
         elif clear_cache:
             cli_config = normalize_cli_config(global_options, context)
             dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
@@ -75,12 +69,7 @@ def create_dg_cli():
             cli_config = normalize_cli_config(global_options, context)
             dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
             if context.invoked_subcommand is not None:
-                click.echo(
-                    click.style(
-                        "Cannot specify --rebuild-component-registry with a subcommand.", fg="red"
-                    )
-                )
-                sys.exit(1)
+                exit_with_error("Cannot specify --rebuild-component-registry with a subcommand.")
             _rebuild_component_registry(dg_context)
         elif context.invoked_subcommand is None:
             click.echo(context.get_help())
@@ -91,25 +80,13 @@ def create_dg_cli():
 
 def _rebuild_component_registry(dg_context: DgContext):
     if not dg_context.is_code_location:
-        click.echo(
-            click.style(
-                "This command must be run inside a Dagster code location directory.", fg="red"
-            )
-        )
-        sys.exit(1)
+        exit_with_error("This command must be run inside a Dagster code location directory.")
     elif not dg_context.has_cache:
-        click.echo(
-            click.style("Cache is disabled. This command cannot be run without a cache.", fg="red")
-        )
-        sys.exit(1)
+        exit_with_error("Cache is disabled. This command cannot be run without a cache.")
     elif not dg_context.config.use_dg_managed_environment:
-        click.echo(
-            click.style(
-                "Cannot rebuild the component registry with environment management disabled.",
-                fg="red",
-            )
+        exit_with_error(
+            "Cannot rebuild the component registry with environment management disabled."
         )
-        sys.exit(1)
     dg_context.ensure_uv_lock()
     key = dg_context.get_cache_key("component_registry_data")
     dg_context.cache.clear_key(key)

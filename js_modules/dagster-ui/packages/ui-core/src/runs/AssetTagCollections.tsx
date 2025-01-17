@@ -15,6 +15,13 @@ import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {
+  labelForAssetCheck,
+  renderItemAssetCheck,
+  renderItemAssetKey,
+  sortItemAssetCheck,
+  sortItemAssetKey,
+} from '../assets/AssetListUtils';
+import {
   assetDetailsPathForAssetCheck,
   assetDetailsPathForKey,
 } from '../assets/assetDetailsPathForKey';
@@ -23,30 +30,6 @@ import {AssetKey} from '../assets/types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
-
-const sortItemAssetKey = (a: AssetKey, b: AssetKey) => {
-  return displayNameForAssetKey(a).localeCompare(displayNameForAssetKey(b));
-};
-
-const sortItemAssetCheck = (a: Check, b: Check) => {
-  return labelForAssetCheck(a).localeCompare(labelForAssetCheck(b));
-};
-
-const renderItemAssetKey = (assetKey: AssetKey) => (
-  <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
-    <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
-  </Link>
-);
-
-const renderItemAssetCheck = (assetCheck: Check) => (
-  <Link to={assetDetailsPathForAssetCheck(assetCheck)} style={{display: 'block', width: '100%'}}>
-    <MiddleTruncate text={labelForAssetCheck(assetCheck)} />
-  </Link>
-);
-
-const labelForAssetCheck = (check: Check) => {
-  return `${check.name} on ${displayNameForAssetKey(check.assetKey)}`;
-};
 
 function useShowMoreDialog<T>(
   dialogTitle: string,
