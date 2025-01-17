@@ -37,15 +37,13 @@ from dagster._utils.typing_api import is_closed_python_optional_type
 def _create_new_default_from_subfields(
     old_field: Field, updated_sub_fields: dict[str, Field], additional_default_values: dict
 ) -> Any:
-    """Generates a replacement default value for a field based on its updated subfields.
+    """Generates a replacement default value for a field based on its updated subfields,
+    if possible.
 
-    If all required subfields have defaults, or the field is a Selector,
-    then we can construct a new default value composed of the defaults of the subfields.
+    We can only build a replacement default if all required subfields have defaults,
+    or the field is a Selector. In this case, we can construct a new default value
+    composed of the defaults of the subfields.
     """
-    new_default = (
-        old_field.default_value if old_field.default_provided else FIELD_NO_DEFAULT_PROVIDED
-    )
-
     if all(
         sub_field.default_provided or not sub_field.is_required
         for sub_field in updated_sub_fields.values()
@@ -53,12 +51,12 @@ def _create_new_default_from_subfields(
         old_field.config_type.kind == ConfigTypeKind.SELECTOR
         and any(sub_field.default_provided for sub_field in updated_sub_fields.values())
     ):
-        new_default = {
+        return {
             **additional_default_values,
             **{k: v.default_value for k, v in updated_sub_fields.items() if v.default_provided},
         }
-
-    return new_default
+    else:
+        return old_field.default_value if old_field.default_provided else FIELD_NO_DEFAULT_PROVIDED
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
