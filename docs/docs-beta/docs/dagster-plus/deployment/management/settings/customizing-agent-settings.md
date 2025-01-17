@@ -1,19 +1,19 @@
 ---
-title: Customizing agent settings in dagster.yaml
-sidebar_position: 80
-unlisted: true
+title: "Customizing Dagster+ agent settings in dagster.yaml"
+sidebar_position: 300
 ---
 
 :::note
 This guide is applicable to Dagster+.
 :::
 
-{/* /deployment/dagster-instance */}
 The Dagster+ Agent is a special variant of the Dagster instance used in [Dagster Open Source](/todo.md) and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.
 
 :::note
+
 {/* /dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent */}
 For [Kubernetes agents](/todo.md) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
+
 :::
 
 ## Enabling user code server TTL

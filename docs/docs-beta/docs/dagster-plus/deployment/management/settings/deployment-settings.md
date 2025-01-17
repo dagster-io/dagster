@@ -1,7 +1,6 @@
 ---
 title: "Deployment settings"
 sidebar_position: 200
-unlisted: true
 ---
 
 # Dagster+ deployment settings reference
