@@ -4,16 +4,7 @@
 //
 // USAGE
 //
-//     Requires including the `copilot.js` script in your `docusaurus.config.js`:
-//
-//         scripts: [
-//           {
-//             src: 'https://ui.scoutos.com/copilot.js',
-//             async: true,
-//           },
-//         ],
-//
-//     And inclusion in your `plugins` definition:
+//     Include the plugin in your `docusaurus.config.js`:
 //
 //          plugins: [
 //            require.resolve('./src/plugins/scoutos'),
