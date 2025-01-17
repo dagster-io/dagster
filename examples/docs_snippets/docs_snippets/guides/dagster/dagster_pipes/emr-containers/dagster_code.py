@@ -64,12 +64,7 @@ defs = Definitions(
         "pipes_emr_containers_client": PipesEMRContainersClient(
             message_reader=PipesCloudWatchMessageReader(
                 client=boto3.client("logs"),
-                include_stdio_in_messages=True,
             ),
-            # context_injector=PipesS3ContextInjector(
-            #     bucket="dagster-pipes-20250109123428055900000004",
-            #     client=boto3.client("s3"),
-            # )
         )
     },
 )
