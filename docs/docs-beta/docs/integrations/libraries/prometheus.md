@@ -28,7 +28,7 @@ pip install dagster-prometheus
 
 ### Example
 
-<CodeExample filePath="integrations/prometheus.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/prometheus.py" language="python" />
 
 ### About Prometheus
 

@@ -26,10 +26,10 @@ You can manually construct a set of definitions for your components using `build
 
 <Tabs>
     <TabItem value='before' label='Before'>
-        <CodeExample filePath="guides/components/existing-project/definitions-before.py" language="python" />
+        <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/existing-project/definitions-before.py" language="python" />
     </TabItem>
     <TabItem value='after' label='After'>
-        <CodeExample filePath="guides/components/existing-project/definitions-after.py" language="python" />
+        <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/existing-project/definitions-after.py" language="python" />
     </TabItem>
 </Tabs>
 

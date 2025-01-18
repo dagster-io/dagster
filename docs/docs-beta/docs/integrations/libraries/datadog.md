@@ -29,7 +29,7 @@ pip install dagster-datadog
 
 ### Example
 
-<CodeExample filePath="integrations/datadog.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/datadog.py" language="python" />
 
 ### About Datadog
 

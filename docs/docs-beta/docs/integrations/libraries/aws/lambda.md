@@ -29,7 +29,7 @@ pip install dagster-aws
 
 ### Examples
 
-<CodeExample filePath="integrations/aws-lambda.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/aws-lambda.py" language="python" />
 
 ### About AWS Lambda
 

@@ -41,19 +41,19 @@ dagster-etl-tutorial/
 
 Assets make up a majority of our project and this will be our largest file. 
 
-<CodeExample filePath="guides/tutorials/etl_tutorial_completed/etl_tutorial/assets.py" language="python" lineStart="1" lineEnd="292"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/assets.py" language="python" lineStart="1" lineEnd="292"/>
 
 ### Schedules
 
 The schedules file will only contain the `weekly_update_schedule`.
 
-<CodeExample filePath="guides/tutorials/etl_tutorial_completed/etl_tutorial/schedules.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/schedules.py" language="python" />
 
 ### Sensors
 
 The sensors file will have the job and sensor for the `adhoc_request` asset. 
 
-<CodeExample filePath="guides/tutorials/etl_tutorial_completed/etl_tutorial/sensors.py" language="python" lineStart="1" lineEnd="47"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/sensors.py" language="python" lineStart="1" lineEnd="47"/>
 
 ## Refactoring the Definitions object
 
@@ -66,7 +66,7 @@ Additionally, Dagster has functions to load all assets and asset checks from a m
 
 To bring your project together, copy the following code into your `definitions.py` file:
 
-<CodeExample filePath="guides/tutorials/etl_tutorial_completed/etl_tutorial/definitions.py" language="python" lineStart="1" lineEnd="19"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/definitions.py" language="python" lineStart="1" lineEnd="19"/>
 
 ## Quick validation
 
