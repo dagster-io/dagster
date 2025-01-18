@@ -1,11 +1,12 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 import click
 from click.core import ParameterSource
 from jsonschema import Draft202012Validator, ValidationError
 
+from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import (
@@ -264,7 +265,7 @@ def component_check_command(
 
     component_registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
-    validation_errors: List[Tuple[str, ValidationError]] = []
+    validation_errors: list[tuple[str, ValidationError]] = []
     for component_dir in (
         dg_context.root_path / dg_context.root_package_name / "components"
     ).iterdir():
@@ -279,14 +280,12 @@ def component_check_command(
             component_name = component_doc_tree.value.get("type")
             json_schema = component_registry.get(component_name).component_params_schema
 
-            v = Draft202012Validator(json_schema)
+            v = Draft202012Validator(json_schema)  # type: ignore
             for err in v.iter_errors(component_doc_tree.value["params"]):
                 validation_errors.append((component_name, err))
 
     if validation_errors:
         for component_name, error in validation_errors:
-            from .check_utils import error_dict_to_formatted_error
-
             click.echo(
                 error_dict_to_formatted_error(
                     component_name,
