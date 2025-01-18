@@ -1,6 +1,5 @@
 ---
 title: 'Migrating from Airflow to Dagster'
-unlisted: true
 ---
 
 This tutorial demonstrates using [`dagster-airlift`](/api/python-api/libraries/dagster-airlift) to migrate an Airflow DAG to Dagster.
