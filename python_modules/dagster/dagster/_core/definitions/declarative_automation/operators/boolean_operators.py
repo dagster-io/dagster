@@ -1,6 +1,8 @@
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, TypeVar, Union, get_args
+
+from typing_extensions import TypeIs
 
 import dagster._check as check
 from dagster._annotations import public
@@ -21,16 +23,19 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
 
 
-def _has_allow_ignore(condition: AutomationCondition) -> bool:
-    return isinstance(
-        condition,
-        (
-            DepsAutomationCondition,
-            AndAutomationCondition,
-            OrAutomationCondition,
-            NotAutomationCondition,
-        ),
-    )
+T_HasAllowIgnore = TypeVar(
+    "T_HasAllowIgnore",
+    bound=Union[
+        DepsAutomationCondition,
+        "AndAutomationCondition",
+        "OrAutomationCondition",
+        "NotAutomationCondition",
+    ],
+)
+
+
+def _has_allow_ignore(condition: AutomationCondition) -> TypeIs[T_HasAllowIgnore]:
+    return isinstance(condition, get_args(T_HasAllowIgnore.__bound__))
 
 
 @whitelist_for_serdes(storage_name="AndAssetCondition")
