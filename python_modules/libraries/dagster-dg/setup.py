@@ -36,6 +36,7 @@ setup(
         "tomli",
         "click>=8",
         "typing_extensions>=4.4.0,<5",
+        "markdown",
     ],
     include_package_data=True,
     zip_safe=False,

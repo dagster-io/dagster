@@ -82,6 +82,14 @@ def make_new_run_id() -> str:
     return str(uuid.uuid4())
 
 
+def is_valid_run_id(run_id: str):
+    try:
+        uuid.UUID(run_id, version=4)
+        return True
+    except ValueError:
+        return False
+
+
 def make_new_backfill_id() -> str:
     return "".join(random.choice(string.ascii_lowercase) for x in range(BACKFILL_TAG_LENGTH))
 

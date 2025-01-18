@@ -385,6 +385,8 @@ def test_reuse_task_definition(instance, ecs):
         ],
         "cpu": "256",
         "memory": "512",
+        "taskRoleArn": "arn:aws:iam::12345:role/dagstertest-TaskRole-kQcbapXu8MZg",
+        "executionRoleArn": "arn:aws:iam::12345:role/dagstertest-ExecutionRole-kQcbapXu8MZg",
     }
 
     task_definition_config = DagsterEcsTaskDefinitionConfig.from_task_definition_dict(
@@ -463,7 +465,9 @@ def test_reuse_task_definition(instance, ecs):
 
     # Changed execution role fails
     task_definition = copy.deepcopy(original_task_definition)
-    task_definition["executionRoleArn"] = "new-role"
+    task_definition["executionRoleArn"] = (
+        "arn:aws:iam::12345:role/dagstertest-OtherExecutionRole-kQcbapXu8MZg"
+    )
     assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
@@ -471,16 +475,18 @@ def test_reuse_task_definition(instance, ecs):
 
     # Changed task role fails
     task_definition = copy.deepcopy(original_task_definition)
-    task_definition["taskRoleArn"] = "new-role"
+    task_definition["taskRoleArn"] = (
+        "arn:aws:iam::12345:role/dagstertest-OtherTaskRole-kQcbapXu8MZg"
+    )
     assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
     )
 
-    # Changed runtime platform fails
+    # Changed runtime platform does not fail
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["runtimePlatform"] = {"operatingSystemFamily": "WINDOWS_SERVER_2019_FULL"}
-    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+    assert instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
     )
@@ -499,12 +505,12 @@ def test_reuse_task_definition(instance, ecs):
         "capabilities": {"add": ["SYS_PTRACE"]},
         "initProcessEnabled": True,
     }
-    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+    assert instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
     )
 
-    # Changed healthCheck fails
+    # Changed healthCheck does not fail
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][0]["healthCheck"] = {
         "command": ["CMD-SHELL", "curl -f http://localhost/ || exit 1"],
@@ -513,7 +519,7 @@ def test_reuse_task_definition(instance, ecs):
         "retries": 3,
         "startPeriod": 0,
     }
-    assert not instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+    assert instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,
     )
@@ -567,6 +573,24 @@ def test_reuse_task_definition(instance, ecs):
     # Other changes to sidecars do not fail
     task_definition = copy.deepcopy(original_task_definition)
     task_definition["containerDefinitions"][1]["cpu"] = "256"
+    assert instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
+    # Matches if the only difference between the task role arns is that they remove the arn prefix
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["taskRoleArn"] = "dagstertest-TaskRole-kQcbapXu8MZg"
+
+    assert instance.run_launcher._reuse_task_definition(  # noqa: SLF001
+        DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
+        container_name,
+    )
+
+    # Matches if the only difference between the execution role arns is that they remove the arn prefix
+    task_definition = copy.deepcopy(original_task_definition)
+    task_definition["executionRoleArn"] = "dagstertest-ExecutionRole-kQcbapXu8MZg"
+
     assert instance.run_launcher._reuse_task_definition(  # noqa: SLF001
         DagsterEcsTaskDefinitionConfig.from_task_definition_dict(task_definition, container_name),
         container_name,

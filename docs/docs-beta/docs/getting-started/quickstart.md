@@ -125,7 +125,7 @@ However, in Dagster, you'll model your pipelines using assets as the fundamental
 
 5. In the popup that displays, click **View**. This will open the **Run details** page, allowing you to view the run as it executes.
 
-   ![Screenshot of Dagster Asset Lineage](/img/placeholder.svg)
+   ![2048 resolution](/images/getting-started/quickstart/run-details.png)
 
    Use the **view buttons** in near the top left corner of the page to change how the run is displayed. You can also click the asset to view logs and metadata.
 

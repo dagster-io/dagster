@@ -1,6 +1,7 @@
 import logging
 import sys
 import threading
+import time
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Optional
 
@@ -12,6 +13,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.__generated__ import api_pb2
 from dagster._grpc.__generated__.api_pb2_grpc import DagsterApiServicer
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
+from dagster._grpc.server import GrpcServerCommand
 from dagster._grpc.types import (
     CancelExecutionRequest,
     CancelExecutionResult,
@@ -48,6 +50,8 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         server_termination_event: threading.Event,
         instance_ref: Optional[InstanceRef],
         logger: logging.Logger,
+        server_heartbeat: bool,
+        server_heartbeat_timeout: int,
     ):
         super().__init__()
 
@@ -63,8 +67,8 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         self._client = None
         self._load_error = None
-        self._heartbeat_shutdown_event = None
-        self._heartbeat_thread = None
+        self._client_heartbeat_shutdown_event = None
+        self._client_heartbeat_thread = None
 
         self._exit_stack = ExitStack()
 
@@ -73,6 +77,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         self._grpc_server_registry = self._exit_stack.enter_context(
             GrpcServerRegistry(
                 instance_ref=self._instance_ref,
+                server_command=GrpcServerCommand.API_GRPC,
                 heartbeat_ttl=30,
                 startup_timeout=startup_timeout,
                 log_level=self._log_level,
@@ -100,6 +105,17 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             daemon=True,
         )
 
+        self.__last_heartbeat_time = time.time()
+        self.__server_heartbeat_thread = None
+        if server_heartbeat:
+            self.__server_heartbeat_thread = threading.Thread(
+                target=self._server_heartbeat_thread,
+                args=(server_heartbeat_timeout,),
+                name="grpc-server-heartbeat",
+                daemon=True,
+            )
+            self.__server_heartbeat_thread.start()
+
         self.__cleanup_thread.start()
 
         # Map runs to the client that launched them, so that we can route
@@ -121,22 +137,22 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             self._logger.exception("Failure while loading code")
 
         if self._client:
-            self._heartbeat_shutdown_event = threading.Event()
-            self._heartbeat_thread = threading.Thread(
+            self._client_heartbeat_shutdown_event = threading.Event()
+            self._client_heartbeat_thread = threading.Thread(
                 target=client_heartbeat_thread,
                 args=(
                     self._client,
-                    self._heartbeat_shutdown_event,
+                    self._client_heartbeat_shutdown_event,
                 ),
                 name="grpc-client-heartbeat",
                 daemon=True,
             )
-            self._heartbeat_thread.start()
+            self._client_heartbeat_thread.start()
 
     def ReloadCode(self, request, context):
         with self._reload_lock:  # can only call this method once at a time
-            old_heartbeat_shutdown_event = self._heartbeat_shutdown_event
-            old_heartbeat_thread = self._heartbeat_thread
+            old_heartbeat_shutdown_event = self._client_heartbeat_shutdown_event
+            old_heartbeat_thread = self._client_heartbeat_thread
             old_client = self._client
 
             self._reload_location()  # Creates and starts a new heartbeat thread
@@ -155,14 +171,19 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def cleanup(self):
         # In case ShutdownServer was not called
         self._shutdown_once_executions_finish_event.set()
+        self._grpc_server_registry.shutdown_all_processes()
 
-        if self._heartbeat_shutdown_event:
-            self._heartbeat_shutdown_event.set()
-            self._heartbeat_shutdown_event = None
+        if self._client_heartbeat_shutdown_event:
+            self._client_heartbeat_shutdown_event.set()
+            self._client_heartbeat_shutdown_event = None
 
-        if self._heartbeat_thread:
-            self._heartbeat_thread.join()
-            self._heartbeat_thread = None
+        if self._client_heartbeat_thread:
+            self._client_heartbeat_thread.join()
+            self._client_heartbeat_thread = None
+
+        if self.__server_heartbeat_thread:
+            self.__server_heartbeat_thread.join()
+            self.__server_heartbeat_thread = None
 
         self._exit_stack.close()
 
@@ -177,6 +198,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             if self._shutdown_once_executions_finish_event.is_set():
                 if self._grpc_server_registry.are_all_servers_shut_down():
                     self._server_termination_event.set()
+                    self._grpc_server_registry.shutdown_all_processes()
 
     def _get_grpc_client(self):
         return self._client
@@ -185,6 +207,19 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         if not self._client:
             raise Exception("No available client to code serer")
         return check.not_none(self._client)._get_response(api_name, request, timeout)  # noqa
+
+    def _server_heartbeat_thread(self, heartbeat_timeout: int) -> None:
+        while True:
+            if self._server_termination_event.is_set():
+                break
+
+            self._shutdown_once_executions_finish_event.wait(heartbeat_timeout)
+            if self._shutdown_once_executions_finish_event.is_set():
+                break
+
+            if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
+                self._shutdown_once_executions_finish_event.set()
+                self._grpc_server_registry.shutdown_all_processes()
 
     def _streaming_query(
         self, api_name: str, request, _context, timeout: int = DEFAULT_GRPC_TIMEOUT
@@ -206,8 +241,12 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def Ping(self, request, context):
         return self._query("Ping", request, context)
 
-    def GetServerId(self, request, context):
-        return self._fixed_server_id or self._query("GetServerId", request, context)
+    def GetServerId(self, request, context) -> api_pb2.GetServerIdReply:
+        return (
+            api_pb2.GetServerIdReply(server_id=self._fixed_server_id)
+            if self._fixed_server_id
+            else self._query("GetServerId", request, context)
+        )
 
     def GetCurrentImage(self, request, context):
         return self._query("GetCurrentImage", request, context)
@@ -216,7 +255,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         return self._streaming_query("StreamingExternalRepository", request, context)
 
     def Heartbeat(self, request, context):
-        return self._query("Heartbeat", request, context)
+        self.__last_heartbeat_time = time.time()
 
     def StreamingPing(self, request, context):
         return self._streaming_query("StreamingPing", request, context)

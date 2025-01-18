@@ -8,6 +8,9 @@ from unittest.mock import MagicMock, patch
 import dagster as dg
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.module_loaders.load_assets_from_modules import (
+    load_assets_from_modules,
+)
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_current_module,
     load_definitions_from_module,
@@ -333,4 +336,68 @@ def test_load_with_executor() -> None:
     assert (
         defs.executor is not None
         and cast(dg.ExecutorDefinition, defs.executor).name == "my_executor"
+    )
+
+
+def test_asset_loader_optional_spec_loading() -> None:
+    @dg.asset
+    def my_asset(): ...
+
+    spec = dg.AssetSpec("other_asset")
+
+    module_fake = build_module_fake("foo", {"my_asset": my_asset, "other_asset": spec})
+    assets = load_assets_from_modules([module_fake], key_prefix="prefix")
+    assert len(assets) == 1
+    assert isinstance(assets[0], dg.AssetsDefinition)
+    assert assets[0].key.path == ["prefix", "my_asset"]
+
+    assets = load_assets_from_modules([module_fake], key_prefix="prefix", include_specs=True)
+    assert len(assets) == 2
+    assert (
+        len(
+            [
+                asset
+                for asset in assets
+                if isinstance(asset, dg.AssetsDefinition)
+                and asset.key.path == ["prefix", "my_asset"]
+            ]
+        )
+        == 1
+    )
+    assert (
+        len(
+            [
+                asset
+                for asset in assets
+                if isinstance(asset, dg.AssetSpec) and asset.key.path == ["other_asset"]
+            ]
+        )
+        == 1
+    )
+
+    assets = load_assets_from_modules(
+        [module_fake], key_prefix="prefix", source_key_prefix="other_prefix", include_specs=True
+    )
+    assert len(assets) == 2
+    assert (
+        len(
+            [
+                asset
+                for asset in assets
+                if isinstance(asset, dg.AssetsDefinition)
+                and asset.key.path == ["prefix", "my_asset"]
+            ]
+        )
+        == 1
+    )
+    assert (
+        len(
+            [
+                asset
+                for asset in assets
+                if isinstance(asset, dg.AssetSpec)
+                and asset.key.path == ["other_prefix", "other_asset"]
+            ]
+        )
+        == 1
     )

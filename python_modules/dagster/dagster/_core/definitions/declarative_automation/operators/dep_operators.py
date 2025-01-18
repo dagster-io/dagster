@@ -1,7 +1,8 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Union  # noqa: UP035
 
 import dagster._check as check
+from dagster._annotations import public
 from dagster._core.asset_graph_view.asset_graph_view import U_EntityKey
 from dagster._core.definitions.asset_key import AssetKey, T_EntityKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
@@ -57,6 +58,25 @@ class EntityMatchesCondition(
         )
         return AutomationResult(context=context, true_subset=true_subset, child_results=[to_result])
 
+    @public
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(self, operand=self.operand.replace(old, new))
+        )
+
 
 @record
 class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
@@ -87,6 +107,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     def requires_cursor(self) -> bool:
         return False
 
+    @public
     def allow(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
         AssetSelection.
@@ -99,6 +120,7 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         )
         return copy(self, allow_selection=allow_selection)
 
+    @public
     def ignore(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will ignore dependencies within the provided
         AssetSelection.
@@ -120,6 +142,25 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         if self.ignore_selection is not None:
             dep_keys -= self.ignore_selection.resolve(asset_graph)
         return dep_keys
+
+    @public
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(self, operand=self.operand.replace(old, new))
+        )
 
 
 @whitelist_for_serdes

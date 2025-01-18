@@ -9,7 +9,7 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
-    isolated_example_code_location_bar,
+    isolated_example_code_location_foo_bar,
 )
 
 # ########################
@@ -154,14 +154,14 @@ def test_sub_command_with_option_help_message():
 
 
 def test_dynamic_subcommand_help_message():
-    with ProxyRunner.test() as runner, isolated_example_code_location_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         result = runner.invoke(
-            "component", "generate", "dagster_components.test.simple_pipes_script_asset", "--help"
+            "component", "scaffold", "dagster_components.test.simple_pipes_script_asset", "--help"
         )
         assert (
             result.output.strip()
             == textwrap.dedent("""
-            Usage: dg component generate [GLOBAL OPTIONS] dagster_components.test.simple_pipes_script_asset [OPTIONS] COMPONENT_NAME
+            Usage: dg component scaffold [GLOBAL OPTIONS] dagster_components.test.simple_pipes_script_asset [OPTIONS] COMPONENT_NAME
 
             Options:
               --json-params TEXT  JSON string of component parameters.

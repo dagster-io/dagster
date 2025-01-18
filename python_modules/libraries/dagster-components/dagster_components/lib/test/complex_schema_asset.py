@@ -1,28 +1,20 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import Annotated, Optional
 
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster_components import (
+from dagster_components import Component, ComponentLoadContext, component_type
+from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
+from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.objects import (
+    AssetAttributesModel,
     AssetSpecTransformModel,
-    Component,
-    ComponentLoadContext,
-    ResolvableFieldInfo,
-    component_type,
+    OpSpecBaseModel,
 )
-from dagster_components.core.component_decl_builder import YamlComponentDecl
-from dagster_components.core.component_generator import (
-    ComponentGenerator,
-    DefaultComponentGenerator,
-)
-from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecBaseModel
-
-if TYPE_CHECKING:
-    from dagster_components.core.component import ComponentDeclNode
 
 
 class ComplexAssetParams(BaseModel):
@@ -39,21 +31,16 @@ class ComplexSchemaAsset(Component):
     """An asset that has a complex params schema."""
 
     @classmethod
-    def get_params_schema_type(cls):
+    def get_schema(cls):
         return ComplexAssetParams
 
     @classmethod
-    def get_generator(cls) -> ComponentGenerator:
-        return DefaultComponentGenerator()
+    def get_scaffolder(cls) -> DefaultComponentScaffolder:
+        return DefaultComponentScaffolder()
 
     @classmethod
-    def from_decl_node(
-        cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
-    ) -> Self:
-        assert isinstance(decl_node, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.get_params_schema_type()).validate_python(
-            decl_node.component_file_model.params
-        )
+    def load(cls, context: "ComponentLoadContext") -> Self:
+        loaded_params = context.load_params(cls.get_schema())
         return cls(
             value=loaded_params.value,
             op_spec=loaded_params.op,

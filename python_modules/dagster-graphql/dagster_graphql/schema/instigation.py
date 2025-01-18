@@ -23,6 +23,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
+from dagster._core.utils import is_valid_run_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
@@ -284,7 +285,11 @@ class GrapheneInstigationTick(graphene.ObjectType):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         instance = graphene_info.context.instance
-        run_ids = self._tick.origin_run_ids or self._tick.run_ids
+        run_ids = self._tick.origin_run_ids or self._tick.run_ids or []
+
+        # filter out backfills
+        run_ids = [run_id for run_id in run_ids if is_valid_run_id(run_id)]
+
         if not run_ids:
             return []
 

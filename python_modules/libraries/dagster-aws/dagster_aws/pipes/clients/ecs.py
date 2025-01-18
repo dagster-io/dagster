@@ -1,5 +1,5 @@
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Optional, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
 import botocore
@@ -17,8 +17,8 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
-from typing_extensions import NotRequired
 
+from dagster_aws.pipes.clients.utils import WaiterConfig
 from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 
 if TYPE_CHECKING:
@@ -28,20 +28,6 @@ if TYPE_CHECKING:
         RunTaskRequestRequestTypeDef,
         RunTaskResponseTypeDef,
     )
-
-
-class WaiterConfig(TypedDict):
-    """A WaiterConfig representing the configuration of the waiter.
-
-    Args:
-        Delay (NotRequired[int]): The amount of time in seconds to wait between attempts. Defaults to 6.
-        MaxAttempts (NotRequired[int]): The maximum number of attempts to be made. Defaults to 1000000
-            By default the waiter is configured to wait up to 70 days (waiter_delay*waiter_max_attempts).
-            See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/waiter/TasksStopped.html>`_
-    """
-
-    Delay: NotRequired[int]
-    MaxAttempts: NotRequired[int]
 
 
 @experimental

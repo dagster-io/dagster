@@ -19,6 +19,8 @@ module_name = "{{ project_name }}.definitions"
 project_name = "{{ project_name }}"
 
 [tool.dg]
+is_code_location = true
+is_component_lib = true
 
 [tool.setuptools.packages.find]
 exclude=["{{ project_name }}_tests"]

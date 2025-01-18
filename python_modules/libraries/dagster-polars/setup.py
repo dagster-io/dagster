@@ -49,6 +49,7 @@ setup(
             "hypothesis[zoneinfo]>=6.89.0",
             "deepdiff>=6.3.0",
             "pytest-cases>=3.6.14",
+            "pyarrow<19.0.0",  # temporary pin until https://github.com/apache/arrow/issues/45283 is fixed
         ],
     },
     zip_safe=False,

@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.module_loaders.object_list import ModuleScopedDagsterDefs
 from dagster._core.definitions.module_loaders.utils import find_modules_in_package
 
@@ -35,7 +36,7 @@ def load_asset_checks_from_modules(
         asset_key_prefix, "asset_key_prefix"
     )
     return (
-        ModuleScopedDagsterDefs.from_modules(modules, allow_spec_collisions=True)
+        ModuleScopedDagsterDefs.from_modules(modules, types_to_load=(AssetsDefinition,))
         .get_object_list()
         .with_attributes(
             key_prefix=asset_key_prefix,

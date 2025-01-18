@@ -5,7 +5,7 @@ from dagster_components import component_type
 from dagster_components.lib.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
-from dagster_embedded_elt.sling import SlingResource
+from dagster_sling import SlingResource
 
 
 @component_type(name="debug_sling_replication")

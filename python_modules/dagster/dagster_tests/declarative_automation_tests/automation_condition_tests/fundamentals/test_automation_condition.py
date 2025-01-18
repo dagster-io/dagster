@@ -4,6 +4,7 @@ import operator
 import pytest
 from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
 from dagster._check.functions import CheckError
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.operators import (
@@ -161,6 +162,9 @@ def test_without_automation_condition() -> None:
     assert orig.without(AutomationCondition.in_latest_time_window()) == b & c
     assert orig.without(~AutomationCondition.any_deps_in_progress()) == a & b
 
+    # ensure label is preserved
+    assert orig.with_label("my_label").without(a) == (b & c).with_label("my_label")
+
     # make sure it errors if an invalid condition is passed
     with pytest.raises(CheckError, match="Condition not found"):
         orig.without(AutomationCondition.in_progress())
@@ -179,6 +183,46 @@ def test_without_automation_condition() -> None:
 
     with pytest.raises(CheckError, match="fewer than 2 operands"):
         orig.without(a).without(b)
+
+
+def test_replace_automation_conditions() -> None:
+    a = AutomationCondition.in_latest_time_window().with_label("in_latest_time_window")
+    b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+    c = (~AutomationCondition.any_deps_in_progress()).with_label("not_any_deps_in_progress")
+    d = AutomationCondition.missing()
+
+    orig = a & b | c
+
+    assert orig.replace(a, d) == d & b | c
+    assert orig.replace(
+        AutomationCondition.in_progress(), d
+    ) == a & AutomationCondition.any_deps_match(d) | (
+        ~AutomationCondition.any_deps_match(d).with_label("any_deps_in_progress")
+    ).with_label("not_any_deps_in_progress")
+    assert orig.replace("not_any_deps_in_progress", d) == a & b | d
+    assert orig.replace("any_deps_in_progress", d) == a & b | (~d).with_label(
+        "not_any_deps_in_progress"
+    )
+
+
+@pytest.mark.parametrize("method", ["allow", "ignore"])
+def test_filter_automation_condition(method: str) -> None:
+    a = AutomationCondition.in_latest_time_window()
+    b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+    c = ~AutomationCondition.any_deps_in_progress()
+
+    orig = a & b | c
+
+    # simple case
+    apply_filter = operator.methodcaller(method, AssetSelection.keys("A"))
+    assert apply_filter(orig) == a & apply_filter(b) | apply_filter(c)
+
+    # propagate to children
+    complex_condition = orig & orig | orig
+    assert apply_filter(complex_condition) == (
+        (a & apply_filter(b) | apply_filter(c)) & (a & apply_filter(b) | apply_filter(c))
+        | (a & apply_filter(b) | apply_filter(c))
+    )
 
 
 @pytest.mark.parametrize(

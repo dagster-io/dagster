@@ -92,36 +92,9 @@ def task_definitions_match(
         existing_task_definition, container_name
     )
 
-    # sidecars are checked separately below
-    match_without_sidecars = existing_task_definition_config._replace(
-        sidecars=[],
-    ) == desired_task_definition_config._replace(
-        sidecars=[],
+    return existing_task_definition_config.matches_other_task_definition_config(
+        desired_task_definition_config
     )
-    if not match_without_sidecars:
-        return False
-
-    # Just match sidecars on certain fields
-    if not [
-        (
-            sidecar["name"],
-            sidecar["image"],
-            sidecar.get("environment", []),
-            sidecar.get("secrets", []),
-        )
-        for sidecar in existing_task_definition_config.sidecars
-    ] == [
-        (
-            sidecar["name"],
-            sidecar["image"],
-            sidecar.get("environment", []),
-            sidecar.get("secrets", []),
-        )
-        for sidecar in desired_task_definition_config.sidecars
-    ]:
-        return False
-
-    return True
 
 
 def get_task_logs(ecs, logs_client, cluster, task_arn, container_name, limit=10):

@@ -6,14 +6,14 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
-from dagster_embedded_elt.sling import DagsterSlingTranslator, SlingResource, sling_assets
-from dagster_embedded_elt.sling.resources import AssetExecutionContext
+from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
+from dagster_sling.resources import AssetExecutionContext
 from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import component_type
-from dagster_components.core.component_generator import ComponentGenerator
+from dagster_components.core.component_scaffolder import ComponentScaffolder
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
@@ -52,20 +52,20 @@ class SlingReplicationCollectionComponent(Component):
         self.transforms = transforms
 
     @classmethod
-    def get_generator(cls) -> ComponentGenerator:
-        from dagster_components.lib.sling_replication_collection.generator import (
-            SlingReplicationComponentGenerator,
+    def get_scaffolder(cls) -> ComponentScaffolder:
+        from dagster_components.lib.sling_replication_collection.scaffolder import (
+            SlingReplicationComponentScaffolder,
         )
 
-        return SlingReplicationComponentGenerator()
+        return SlingReplicationComponentScaffolder()
 
     @classmethod
-    def get_component_schema_type(cls):
+    def get_schema(cls):
         return SlingReplicationCollectionParams
 
     @classmethod
     def load(cls, context: ComponentLoadContext) -> Self:
-        loaded_params = context.load_params(cls.get_component_schema_type())
+        loaded_params = context.load_params(cls.get_schema())
         return cls(
             dirpath=context.path,
             resource=loaded_params.sling or SlingResource(),
