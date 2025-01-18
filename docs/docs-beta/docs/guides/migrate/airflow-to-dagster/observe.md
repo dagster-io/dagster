@@ -1,10 +1,9 @@
 ---
-title: "Airflow Migration Part 3: Observing Assets"
+title: "Observe assets"
+sidebar_position: 300
 ---
 
-# Airflow Migration Tutorial: Observing Assets
-
-Previously, we completed the ["Peering" stage](/guides/migrate/airflow-to-dagster/peer) of the Airflow migration process by peering the Airflow instance with a Dagster code location.
+Previously, we completed the ["Peering" stage](peer) of the Airflow migration process by peering the Airflow instance with a Dagster code location.
 
 The next step is to represent our Airflow workflows more richly by observing the data assets that are produced by our tasks. Similar to the peering step, this stage does not require _any changes_ to Airflow code.
 
@@ -36,12 +35,7 @@ Then, we will construct our assets:
 
 Once your assets are set up, you should be able to reload your Dagster definitions and see a full representation of the dbt project and other data assets in your code.
 
-<Image
-alt="Observed asset graph in Dagster"
-src="/images/integrations/airlift/observe.svg"
-width={2040}
-height={860}
-/>
+![Observed asset graph in Dagster](/images/guides/migrate/airlift/observe.svg)
 
 Kicking off a run of the DAG in Airflow, you should see the newly created assets materialize in Dagster as each task completes.
 
@@ -71,12 +65,7 @@ airflow dags backfill rebuild_customers_list --start-date $(date +"%Y-%m-%d")
 
 After this dag run completes, you should see a partitioned materialization appear in Dagster.
 
-<Image
-alt="Partitioned Materialization in Dagster"
-src="/images/integrations/airlift/partitioned_mat.png"
-width={822}
-height={178}
-/>
+![Partitioned materialization in Dagster](/images/guides/migrate/airlift/partitioned_mat.png)
 
 Let's clear our Airflow runs so that we can kick off this backfill again for testing in the future.
 
@@ -91,4 +80,4 @@ In order for partitioned assets to work out of the box with `dagster-airlift`, t
 
 ## Next steps
 
-Next, it's time to begin migrating our Airflow DAG code to Dagster. Follow along with the Migrate step [here](/guides/migrate/airflow-to-dagster/migrate)
+Next, it's time to begin migrating our Airflow DAG code to Dagster. Follow along with the Migrate step [here](migrate).

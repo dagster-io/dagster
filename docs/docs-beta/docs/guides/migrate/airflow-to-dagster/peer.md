@@ -1,10 +1,9 @@
 ---
-title: "Airflow Migration Part 2: Peering"
+title: "Peer your Airflow instance with a Dagster code location"
+sidebar_position: 200
 ---
 
-# Airflow Migration Tutorial: Peering
-
-At this point, we should have finished the [setup](/guides/migrate/airflow-to-dagster/setup) step, and now we have the example code setup with a fresh virtual environment, and Airflow running locally. Now, we can start writing Dagster code.
+At this point, we should have finished the [setup](setup) step, and now we have the example code setup with a fresh virtual environment, and Airflow running locally. Now, we can start writing Dagster code.
 
 We call the first stage of migration from Airflow to Dagster the "Peering" stage, at which we will "peer" the Airflow instance with a Dagster code location, which will create an asset representation of each Airflow DAG that you can view in Dagster. This process does not require any changes to your Airflow instance.
 
@@ -33,14 +32,7 @@ export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/d
 export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
 dagster dev -f tutorial_example/dagster_defs/definitions.py
 ```
-
-<Image
-alt="Peered asset in Dagster UI"
-src="/images/integrations/airlift/peer.svg"
-width={320}
-height={198}
-/>
-
+![Peered asset in Dagster UI](/images/guides/migrate/airlift/peer.svg)
 
 Let's kick off a run of the `reubild_customers_list` DAG in Airflow.
 
@@ -50,14 +42,7 @@ airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%
 
 When this run has completed in Airflow, we should be able to navigate to the Dagster UI, and see that the Dagster has registered a materialization corresponding to that successful run.
 
-
-<Image
-alt="Materialized peer asset in Dagster UI"
-src="/images/integrations/airlift/peer_materialize.svg"
-width={320}
-height={198}
-/>
-
+![Materialized peer asset in Dagster UI](/images/guides/migrate/airlift/peer_materialize.svg)
 
 Run the following command to clean the Airflow and Dagster run history (we just do this so we can run the same example backfill in the future). Under the hood, this just deletes runs from Airflow and asset materializations from Dagster.
 
@@ -79,12 +64,7 @@ For example, we're going to add an asset check to ensure that the final `custome
 
 Once we reload the code location, we'll see a tab `checks` indicating the presence of an asset check on our `rebuild_customers_list` asset.
 
-<Image
-alt="Asset Check on Peered Dag"
-src="/images/integrations/airlift/asset_check_peered_dag.png"
-width={822}
-height={178}
-/>
+![Asset check on peer DAG](/images/guides/migrate/airlift/asset_check_peered_dag.png)
 
 Let's run the backfill again:
 
@@ -94,12 +74,7 @@ airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%
 
 And we'll see that the asset check executed successfully in Dagster (indicated by the green check mark).
 
-<Image
-alt="Asset Check Success!"
-src="/images/integrations/airlift/peer_check_success.png"
-width={822}
-height={178}
-/>
+![Asset check success](/images/guides/migrate/airlift/peer_check_success.png)
 
 Let's again wipe materializations and runs for tutorial purposes.
 
@@ -107,6 +82,6 @@ Let's again wipe materializations and runs for tutorial purposes.
 make clean
 ```
 
-## Next Steps
+## Next steps
 
-The next step is to start observing the asset dependencies within your DAG. Follow along at the Observe stage of the tutorial [here](/guides/migrate/airflow-to-dagster/observe)
+The next step is to start observing the asset dependencies within your DAG. Follow along at the Observe stage of the tutorial [here](observe)

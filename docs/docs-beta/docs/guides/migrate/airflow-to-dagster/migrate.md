@@ -1,10 +1,9 @@
 ---
-title: "Airflow Migration Part 4: Migrating Assets"
+title: "Migrate assets"
+sidebar_position: 400
 ---
 
-# Airflow Migration Tutorial: Migrating Assets
-
-Previously, we completed the ["Observe" stage](/guides/migrate/airflow-to-dagster/observe) of the Airflow migration process by encoding the assets that are produced by each task. We also introduced partitioning to those assets.
+Previously, we completed the ["Observe" stage](observe) of the Airflow migration process by encoding the assets that are produced by each task. We also introduced partitioning to those assets.
 
 Up until now, we have not touched the Airflow code base at all. Now it's time to begin the actual migration process.
 
@@ -24,12 +23,7 @@ Set `PROXYING` to `True` or eliminate the `if` statement.
 
 The DAG will now display its proxied state in the Airflow UI. (There is some latency as Airflow evaluates the Python file periodically.)
 
-<Image
-alt="Migration state rendering in Airflow UI"
-src="/images/integrations/airlift/state_in_airflow.png"
-width={528}
-height={102}
-/>
+![Migration state rendering in Airflow UI](/images/guides/migrate/airlift/state_in_airflow.png)
 
 ### Migrating individual tasks
 
@@ -54,12 +48,7 @@ For some common operator patterns, like our dbt operator, Dagster supplies facto
 
 You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run:
 
-<Image
-alt="dbt build executing in Dagster"
-src="/images/integrations/airlift/proxied_dag.png"
-width={1314}
-height={178}
-/>
+![dbt build executing in Dagster](/images/guides/migrate/airlift/proxied_dag.png)
 
 You'll note that we proxied a task in the _middle_ of the Airflow DAG. The Airflow DAG structure and execution history is stable in the Airflow UI, but execution of `build_dbt_models` has moved to Dagster.
 
@@ -77,4 +66,4 @@ We can then toggle the proxied state of the remaining tasks in the `proxied_stat
 
 ## Next steps
 
-Now that we've completed migration of the Airflow DAG, we can decomission it. Follow along [here](/guides/migrate/airflow-to-dagster/decomission)
+Now that we've completed migration of the Airflow DAG, we can decomission it. Follow along [here](decomission).

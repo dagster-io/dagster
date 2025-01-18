@@ -1,11 +1,11 @@
 ---
-title: 'Migrating from Airflow to Dagster: Overview'
+title: 'Migrating from Airflow to Dagster'
 unlisted: true
 ---
 
-This tutorial demonstrates using `dagster-airlift` to migrate an Airflow DAG to Dagster.
+This tutorial demonstrates using [`dagster-airlift`](/api/python-api/libraries/dagster-airlift) to migrate an Airflow DAG to Dagster.
 
-Using `dagster-airlift` we can
+Using `dagster-airlift` we can:
 
 - Observe Airflow DAGs and their execution history with no changes to Airflow code
 - Model and observe assets orchestrated by Airflow with no changes to Airflow code
@@ -26,7 +26,3 @@ This is a high level overview of the steps to migrate an Airflow DAG to Dagster:
   - The sensor used for peering also polls for task execution history, and adds materializations to an observed asset when its corresponding task successfully executes
 - **Migrate**
   - Selectively move execution of Airflow tasks to Dagster Software Defined Assets
-
-import DocCardList from '@theme/DocCardList';
-
-<DocCardList />

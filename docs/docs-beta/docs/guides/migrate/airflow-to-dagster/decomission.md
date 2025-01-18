@@ -1,10 +1,9 @@
 ---
-title: "Airflow Migration Part 5: Decommissioning the DAG"
+title: "Decommission the Airflow DAG"
+sidebar_position: 500
 ---
 
-# Decommissioning an Airflow DAG
-
-Previously, we completed migration of our Airflow DAG to Dagster assets. If you haven't finished that stage yet, please follow along [here](/guides/migrate/airflow-to-dagster/migrate).
+Previously, we completed migration of our Airflow DAG to Dagster assets. If you haven't finished that stage yet, please follow along [here](migrate).
 
 Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG. First, we can remove the DAG from our Airflow DAG directory.
 

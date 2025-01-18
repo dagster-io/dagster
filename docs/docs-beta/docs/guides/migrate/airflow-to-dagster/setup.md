@@ -1,5 +1,6 @@
 ---
-title: "Airflow Migration Part 1: Setup"
+title: "Set up a local environment"
+sidebar_position: 100
 ---
 
 In this step, we'll
@@ -8,7 +9,7 @@ In this step, we'll
 - Set up a local environment
 - Ensure we can run Airflow locally.
 
-## Installation & Project Structure
+## Installation & project structure
 
 First, we'll create a fresh virtual environment using `uv`.
 
@@ -31,7 +32,7 @@ First, we'll create a fresh virtual environment using `uv`.
 dagster project from-example --name airlift-migration-tutorial --example airlift-migration-tutorial
 ```
 
-### Project Structure
+### Project structure
 
 The following explains the structure of the repo.
 
@@ -74,13 +75,8 @@ This will run the Airflow Web UI in a shell. You should now be able to access th
 
 You should be able to see the `rebuild_customers_list` DAG in the Airflow UI, made up of three tasks: `load_raw_customers`, `run_dbt_model`, and `export_customers`.
 
-<Image
-alt="rebuild_customers_list DAG"
-src="/images/integrations/airlift/rebuild_customers_dag.png"
-width={1484}
-height={300}
-/>
+![Rebuild customers list DAG](/images/migrate/airlift/rebuild_customers_dag.png)
 
-## Next Steps
+## Next steps
 
-The next step is to peer a Dagster installation with the Airflow Instance. [Click here](/guides/migrate/airflow-to-dagster/peer) to follow along for part 2.
+The next step is to peer a Dagster installation with the Airflow Instance. [Click here](peer) to follow along for part 2.
