@@ -29,7 +29,7 @@ uv pip install 'dagster-airlift[dbt]'
 
 Then, we will construct our assets:
 
-<CodeExample filePath="guides/migrate/airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe.py" language="python"/>
 
 ### Viewing observed assets
 
@@ -47,13 +47,13 @@ Now that we've introduced an asset explicitly for the `customers.csv` file outpu
 
 When done, our code will look like this.
 
-<CodeExample filePath="guides/migrate/airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py" language="python"/>
 
 ### Adding partitions
 
 If your Airflow tasks produce time-partitioned assets, Airlift can automatically associate your materializations to the relevant partitions. In the case of `rebuild_customers_list`, data is daily partitioned in each created table, and and the Airflow DAG runs on a `@daily` cron schedule. We can likewise add a `DailyPartitionsDefinition` to each of our assets.
 
-<CodeExample filePath="guides/migrate/airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_with_partitions.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_with_partitions.py" language="python"/>
 
 Now, every time the sensor synthesizes a materialization for an asset, it will automatically have a partition associated with it.
 
