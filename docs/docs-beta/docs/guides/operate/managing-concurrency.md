@@ -26,7 +26,7 @@ run_queue:
 ```
 
 
-<CodeExample filePath="guides/tbd/concurrency-global.py" language="python" title="Global concurrency limits" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-global.py" language="python" title="Global concurrency limits" />
 
 ## Limit how many ops or assets can be running at the same time
 
@@ -34,12 +34,12 @@ You can control the number of assets or ops that are running concurrently within
 
 <Tabs>
   <TabItem value="Assets" label="Asset job">
-    <CodeExample filePath="guides/tbd/concurrency-job-asset.py" language="python" title="Asset concurrency limits in a job" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-job-asset.py" language="python" title="Asset concurrency limits in a job" />
 
   </TabItem>
 
   <TabItem value="Ops" label="Op job">
-    <CodeExample filePath="guides/tbd/concurrency-job-op.py" language="python" title="Op concurrency limits in a job" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-job-op.py" language="python" title="Op concurrency limits in a job" />
 
   </TabItem>
 </Tabs>
@@ -87,11 +87,11 @@ concurrency:
 
 <Tabs>
   <TabItem value="Asset Tag" label="Asset tag concurrency limits">
-    <CodeExample filePath="guides/tbd/concurrency-tag-key-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' across all runs" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-tag-key-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' across all runs" />
 
   </TabItem>
   <TabItem value="Op Tag" label="Op tag concurrency limits">
-  <CodeExample filePath="guides/tbd/concurrency-tag-key-op.py" language="python" title="No more than 1 op running with a tag of 'database' across all runs" />
+  <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-tag-key-op.py" language="python" title="No more than 1 op running with a tag of 'database' across all runs" />
 
   </TabItem>
 </Tabs>
@@ -100,11 +100,11 @@ You can also limit concurrency for a tag within the job definition, for example 
 
 <Tabs>
   <TabItem value="Asset Tag with Job" label="Asset tag concurrency limits in a run">
-    <CodeExample filePath="guides/tbd/concurrency-tag-key-job-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' within a run" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-tag-key-job-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' within a run" />
 
   </TabItem>
   <TabItem value="Op Tag with Job" label="Op tag concurrency limits in a run">
-  <CodeExample filePath="guides/tbd/concurrency-tag-key-job-op.py" language="python" title="No more than 1 op running with a tag of 'database' within a run" />
+  <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-tag-key-job-op.py" language="python" title="No more than 1 op running with a tag of 'database' within a run" />
   </TabItem>
 </Tabs>
 
@@ -120,7 +120,7 @@ Need screenshot here
 You can use Dagster's rich metadata to use a schedule or a sensor to only start a run when there are no currently running jobs.
 
 {/* TODO fix this code example */}
-<CodeExample filePath="guides/tbd/concurrency-no-more-than-1-job.py" language="python" title="No more than 1 running job from a schedule" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-no-more-than-1-job.py" language="python" title="No more than 1 running job from a schedule" />
 
 
 ## Troubleshooting

@@ -28,7 +28,7 @@ pip install dagster-github
 
 ### Example
 
-<CodeExample filePath="integrations/github.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/github.py" language="python" />
 
 ### About GitHub
 

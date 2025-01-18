@@ -25,7 +25,7 @@ Using these Dagster concepts we will:
 
 ## Setup
 
-{/* TODO turn back into <CodeReferenceLink filePath="examples/development_to_production/" /> once that's implemented */}
+{/* TODO turn back into <CodeReferenceLink path="docs_beta_snippets/docs_beta_snippets/examples/development_to_production/" /> once that's implemented */}
 
 :::tip
 

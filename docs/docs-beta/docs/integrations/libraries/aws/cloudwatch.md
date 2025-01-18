@@ -30,7 +30,7 @@ pip install dagster-aws
 
 ### Examples
 
-<CodeExample filePath="integrations/aws-cloudwatch.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/aws-cloudwatch.py" language="python" />
 
 ### About AWS CloudWatch
 
