@@ -203,10 +203,10 @@ Here's a note.
 To include code snippets, use the following format:
 
 ```
-<CodeExample filePath="path/to/file.py" />
+<CodeExample path="path/to/file.py" />
 ```
 
-The `filePath` is relative to the `./examples/docs_beta_snippets/docs_beta_snippets/` directory.
+The `path` is relative to the `./examples/` directory for maximum flexibility; it is sometimes useful to be able to reference the fully-featured projects in `/examples/`. However, if you're writing new example code for docs that consists of one or a few short scripts to demonstrate the use of a single feature, you should put that code in the `/examples/docs_beta_snippets/docs_beta_snippets/` directory.
 
 At minimum, all `.py` files in the `docs_beta_snippets` directory are tested by attempting to load the Python files.
 You can write additional tests for them in the `docs_beta_snippets_test` folder. See the folder for more information.
