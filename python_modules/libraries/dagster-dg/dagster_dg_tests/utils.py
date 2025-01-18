@@ -111,7 +111,10 @@ class ProxyRunner:
 
         # For some reason the context setting `max_content_width` is not respected when using the
         # CliRunner, so we have to set it manually.
-        return self.original.invoke(dg_cli, all_args, terminal_width=DG_CLI_MAX_OUTPUT_WIDTH)
+        result = self.original.invoke(dg_cli, all_args, terminal_width=DG_CLI_MAX_OUTPUT_WIDTH)
+        if result.exception:
+            traceback.print_exception(*result.exc_info)
+        return result
 
     @contextmanager
     def isolated_filesystem(self) -> Iterator[None]:

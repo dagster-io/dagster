@@ -1,7 +1,8 @@
 import copy
 import json
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_dg.utils import is_valid_json
@@ -22,6 +23,30 @@ class RemoteComponentType:
     @property
     def key(self) -> str:
         return self.name
+
+
+class LocalComponentTypes:
+    @classmethod
+    def from_dg_context(cls, dg_context: "DgContext", component_dirs: Sequence[Path]):
+        # TODO: cache
+
+        raw_local_component_data = dg_context.external_components_command(
+            ["list", "local-component-types", *component_dirs]
+        )
+        local_component_data = json.loads(raw_local_component_data)
+
+        components_by_path = {str(path): {} for path in component_dirs}
+        for entry in local_component_data:
+            components_by_path[entry["directory"]][entry["key"]] = RemoteComponentType(
+                **entry["metadata"]
+            )
+        return cls(components_by_path)
+
+    def __init__(self, components_by_path: dict[str, dict[str, RemoteComponentType]]):
+        self._components_by_path = copy.copy(components_by_path)
+
+    def get(self, path: Path, key: str) -> RemoteComponentType:
+        return self._components_by_path[str(path)][key]
 
 
 class RemoteComponentRegistry:
