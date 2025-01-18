@@ -18,7 +18,9 @@ Examples of actions include:
 - inserting a row into a database
 
 :::tip
+
 An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/automate#graphql-endpoint).
+
 :::
 
 <details>

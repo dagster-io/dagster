@@ -76,8 +76,8 @@ dagster instance concurrency set database 1
 
 A default concurrency limit can be configured for the instance, for any concurrency keys that don't have an explicit limit set:
 
-* Dagster+: Use the Dagster+ UI or the dagster-cloud CLI
-* Dagster Open Source: Use your instance's dagster.yaml
+* Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/todo) or the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/).
+* Dagster Open Source: Use your instance's [dagster.yaml](/guides/deploy/dagster-yaml)
 
 To enable this default value, use `concurrency.default_op_concurrency_limit`. For example, the following would set the default concurrency value for the deployment to 1:
 ```yaml
