@@ -41,7 +41,7 @@ To create a new catalog view, you have two options:
 
 ![Screenshot of new catalog view modal](/images/dagster-plus/asset-catalog/new-catalog-view.png)
 
-Give your view a name and optionally a description and icon. Next, you can select one or more filters to apply to your view by clicking the **Add filters** button. Filters can select a subset of assets based on their [metadata](/guides/build/assets/organizing-assets-with-tags-and-metadata), tags, kinds, owners, asset groups, or other properties.
+Give your view a name and optionally a description and icon. Next, you can select one or more filters to apply to your view by clicking the **Add filters** button. Filters can select a subset of assets based on their [metadata](/guides/build/assets/metadata-tags/organizing-assets-with-tags-and-metadata), tags, kinds, owners, asset groups, or other properties.
 
 ### Creating a new catalog view from your current set of filters
 

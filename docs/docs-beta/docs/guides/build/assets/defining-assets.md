@@ -74,6 +74,6 @@ flowchart LR
 
 ## Next steps
 
-- Enrich Dagster's built-in data catalog with [asset metadata](/guides/build/assets/organizing-assets-with-tags-and-metadata)
+- Enrich Dagster's built-in data catalog with [asset metadata](/guides/build/assets/metadata-tags/organizing-assets-with-tags-and-metadata)
 - Learn to [pass data between assets](/guides/build/assets/passing-data-between-assets)
 - Learn to use a [factory pattern](/guides/build/assets/creating-asset-factories) to create multiple, similar assets
