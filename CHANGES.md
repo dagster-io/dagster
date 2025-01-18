@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.9.9 (core) / 0.25.9 (libraries)
+
+### New
+
+- Added a new function `load_definitions_from_module`, which can load all the assets, checks, schedules, sensors, and job objects within a module scope into a single Definitions object. Check out [the documentation to learn more](https://docs.dagster.io/_apidocs/definitions#dagster.load_definitions_from_module).
+- When using the `DAGSTER_REDACT_USER_CODE_ERRORS` environment variable to mask user code errors, the unmasked log lines are now written using a `dagster.masked` Python logger instead of being written to stderr, allowing the format of those log lines to be customized.
+- The `croniter` package is now vendored in dagster.
+- [ui] Corrected the `minstral` typo and updated the Mistral logo for asset `kinds` tag.
+- [ui] The relevant runs are now shown within the same dialog when viewing details of an automation evaluation.
+- [ui] Clicking to view runs with a specific status from the backfill overview now switches to the new backfill runs tab with your filters applied, instead of the global runs page.
+- [ui] In the run timeline, all run ids and timings are now shown in the hover popover.
+- [ui] Added a new tab on the Runs page that shows a filterable list of recent backfills.
+- [dagster-airlift] Added support for Python 3.7.
+- [dagster-aws] Added a `task_definition_prefix` argument to `EcsRunLauncher`, allowing the name of the task definition families for launched runs to be customized. Previously, the task definition families always started with `run`.
+- [dagster-azure] Moved azure fake implementations to its own submodule, paving the way for fake implementations to not be imported by default. (Thanks [@futurwasfree](https://github.com/futurwasfree)!)
+- [dagster-dlt] The `dagster-dlt` library is added. It replaces the dlt module of `dagster-embedded-elt`.
+- [dagster-sling] The `dagster-sling` library is added. It replaces the Sling module of `dagster-embedded-elt`.
+- [helm] Added support for sidecar containers for all Dagster pods, for versions of K8s after 1.29 ([Native Sidecars](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/)). (Thanks [@hom3r](https://github.com/hom3r)!)
+
+### Bugfixes
+
+- Fixed an issue where the tick timeline wouldn't load for an automation condition sensor that emitted a backfill.
+- Fixed a bug with asset checks where additional_deps/additional_ins were not being threaded through properly in certain cases, and would result in errors at job creation.
+- Fixed a bug where the UI will hit an unexpected error when loading details for a run containing a step retry before the step has started.
+- Fixed a bug with load_assets_from_x functions where we began erroring when a spec and AssetsDefinition had the same key in a given module. We now only error in this case if include_specs=True.
+- Fixed a bug with `load_assets_from_modules` where AssetSpec objects were being given the key_prefix instead of the source_key_prefix. Going forward, when load_specs is set to True, only the source_key_prefix will affect AssetSpec objects.
+- Fixed a bug with the run queue criteria UI for branch deployments in Dagster Plus.
+- [ui] Fixed the "View evaluation" links from the "Automation condition" tag popover on Runs.
+- [dagster-aws] Fixed an issue with the EcsRunLauncher where it would sometimes create a new task definition revision for each run if the "task_role_arn" or "execution_role_arn" parameters were specified without the `arn:aws:iam:` prefix.
+- [dagster-aws] Fixed a bug with `PipesEMRServerlessClient` trying to get the dashboard URL for a run before it transitions to RUNNING state.
+- [dagster-dbt] Fixed an issue where group names set on partitioned dbt assets created using the `@dbt_assets` decorator would be ignored.
+- [dagster-azure] Fixed the default configuration for the `show_url_only` parameter on the `AzureBlobComputeLogManager`. (Thanks [@ion-elgreco](https://github.com/ion-elgreco)!)
+- [dagster-aws] Fixed an issue handling null `networkConfiguration` parameters for the ECS run launcher. (Thanks [@markgrin](https://github.com/markgrin)!)
+
+### Documentation
+
+- Added example potential use cases for sensors. (Thanks [@gianfrancodemarco](https://github.com/gianfrancodemarco)!)
+- Updated the tutorial to match the outlined structure. (Thanks [@vincent0426](https://github.com/vincent0426)!)
+
+### Deprecations
+
+- [dagster-embedded-elt] the `dagster-embedded-elt` library is deprecated in favor of `dagster-dlt` and `dagster-sling`.
+
+### Dagster Plus
+
+- The Alert Policies page will now show a warning if a slack channel for a policy no longer exists.
+
 ## 1.9.8 (core) / 0.25.8 (libraries)
 
 ### Bugfixes

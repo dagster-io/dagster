@@ -15,7 +15,7 @@ To follow the steps in this guide, you'll need:
 - To install the following packages:
 
   ```shell
-  pip install dagster duckdb plotly dagster-dbt dbt-duckdb
+  pip install dagster duckdb plotly pandas dagster-dbt dbt-duckdb
   ```
 </details>
 
@@ -58,7 +58,7 @@ Next, create a `_source.yml` file that points dbt to the upstream `raw_customers
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/basic-dbt-project/models/example/_source.yml" language="yaml" title="_source.yml_" />
 
-![Screenshot of dbt lineage](/img/placeholder.svg)
+![Screenshot of dbt lineage](/images/integrations/libraries/dbt/dbt-lineage.png)
 
 ## Adding downstream dependencies
 

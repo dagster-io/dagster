@@ -24,7 +24,7 @@ To follow the steps in this guide, you'll need:
 1. In the Dagster+ UI, navigate to the **Deployment > Agents** page.
 2. Click the drop down arrow on the right of the page and select **Switch to Hybrid**.
 
-![PRODUCT NOTE - this arrow drop down is pretty small and easy to confuse with the one in the row for the agent](/img/placeholder.svg)
+![PRODUCT NOTE - this arrow drop down is pretty small and easy to confuse with the one in the row for the agent](/images/dagster-plus/deployment/switch-agent-to-hybrid.png)
 
 It may take a few minutes for the agent to deactivate and be removed from the list of agents.
 
@@ -41,7 +41,7 @@ Next, you'll need to create a Hybrid agent to execute your code. Follow the setu
 
 Once you've set up a Hybrid agent, navigate to the **Deployment > Agents** page in the UI. The new agent should display in the list with a `RUNNING` status:
 
-![Screenshot](/img/placeholder.svg)
+![Screenshot](/images/dagster-plus/deployment/running-agent.png)
 
 ## Next steps
 
