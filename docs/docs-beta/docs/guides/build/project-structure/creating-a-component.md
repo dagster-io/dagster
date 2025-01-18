@@ -43,7 +43,7 @@ dg component-type generate shell_command
 
 This will add a new file to your project in the `lib` directory:
 
-<CodeExample filePath="guides/components/shell-script-component/empty.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/empty.py" language="python" />
 
 This file contains the basic structure for the new component type. There are two methods that you'll need to implement:
 
@@ -68,7 +68,7 @@ To simplify common use cases, `dagster-components` provides schemas for common b
 
 We can the schema for our component and add it to our class as follows:
 
-<CodeExample filePath="guides/components/shell-script-component/with-config-schema.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" />
 
 ## Building definitions
 
@@ -83,7 +83,7 @@ In our case, our `load` method will check the loaded parameters against our sche
 
 Our `build_defs` method will create a single `@asset` that executes the provided shell script. By convention, we'll put the code to actually execute this asset inside of a function called `evaluate`. This makes it easier for future developers to create subclasses of this component.
 
-<CodeExample filePath="guides/components/shell-script-component/with-build-defs.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-build-defs.py" language="python" />
 
 ## Component registration
 
@@ -115,7 +115,7 @@ When creating a schema for your component, if you have a field that should have 
 - Any post-processing that should be done on the resolved value of that field
 - Any additional scope that will be available to use when resolving that field
 
-<CodeExample filePath="guides/components/shell-script-component/defining-resolvable-field.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/defining-resolvable-field.py" language="python" />
 
 ### Resolving fields
 
@@ -125,7 +125,7 @@ The `ComponentSchemaBaseModel` class supports a `resolve_properties` method, whi
 
 If your resolvable field requires additional scope to be available, you can do so by using the `with_scope` method on the `templated_value_resolver`. This scope can be anything, such as a dictionary of properties related to an asset, or a function that returns a complex object type.
 
-<CodeExample filePath="guides/components/shell-script-component/resolving-resolvable-field.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/resolving-resolvable-field.py" language="python" />
 
 The `ComponentSchemaBaseModel` class will ensure that the output type of the resolved field matches the type specified in the `ResolvableFieldInfo` annotation.
 

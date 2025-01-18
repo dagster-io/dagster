@@ -29,7 +29,7 @@ pip install dagster-dlt
 
 ### Example
 
-<CodeExample filePath="integrations/dlt.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/dlt.py" language="python" />
 
 ### About dlt
 

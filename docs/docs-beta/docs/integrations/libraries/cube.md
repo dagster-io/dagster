@@ -29,7 +29,7 @@ pip install dagster_cube
 
 ### Example
 
-<CodeExample filePath="integrations/cube.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/cube.py" language="python" />
 
 ### About Cube
 

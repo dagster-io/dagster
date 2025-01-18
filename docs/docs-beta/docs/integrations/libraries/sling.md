@@ -28,7 +28,7 @@ pip install dagster-sling
 
 ### Example
 
-<CodeExample filePath="integrations/sling.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/sling.py" language="python" />
 
 ### About dlt
 
