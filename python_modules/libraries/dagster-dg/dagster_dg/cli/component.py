@@ -1,11 +1,10 @@
-import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from subprocess import CalledProcessError
-from typing import Any, Optional
+from typing import Any, List, Optional, Tuple
 
 import click
 from click.core import ParameterSource
+from jsonschema import Draft202012Validator, ValidationError
 
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
@@ -247,6 +246,7 @@ def component_list_command(context: click.Context, **global_options: object) -> 
 # ########################
 # ##### CHECK
 # ########################
+from dagster._utils.yaml_utils import parse_yaml_with_source_positions
 
 
 @component_group.command(name="check", cls=DgClickCommand)
@@ -262,7 +262,38 @@ def component_check_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
 
-    try:
-        dg_context.external_components_command(["check", "component", *paths])
-    except CalledProcessError:
-        sys.exit(1)
+    component_registry = RemoteComponentRegistry.from_dg_context(dg_context)
+
+    validation_errors: List[Tuple[str, ValidationError]] = []
+    for component_dir in (
+        dg_context.root_path / dg_context.root_package_name / "components"
+    ).iterdir():
+        component_path = component_dir / "component.yaml"
+
+        if component_path.exists():
+            text = component_path.read_text()
+            component_doc_tree = parse_yaml_with_source_positions(
+                text, filename=str(component_path)
+            )
+
+            component_name = component_doc_tree.value.get("type")
+            json_schema = component_registry.get(component_name).component_params_schema
+
+            v = Draft202012Validator(json_schema)
+            for err in v.iter_errors(component_doc_tree.value["params"]):
+                validation_errors.append((component_name, err))
+
+    if validation_errors:
+        for component_name, error in validation_errors:
+            from .check_utils import error_dict_to_formatted_error
+
+            click.echo(
+                error_dict_to_formatted_error(
+                    component_name,
+                    error,
+                    source_position_tree=component_doc_tree.source_position_tree,
+                )
+            )
+        context.exit(1)
+    else:
+        click.echo("All components validated successfully.")
