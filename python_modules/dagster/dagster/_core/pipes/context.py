@@ -202,7 +202,8 @@ class PipesMessageHandler:
                     }
                 )
             )
-
+        elif metadata_type == "timestamp":
+            return MetadataValue.timestamp(float(check.numeric_param(value, "timestamp")))
         elif metadata_type == "null":
             return MetadataValue.null()
         else:
