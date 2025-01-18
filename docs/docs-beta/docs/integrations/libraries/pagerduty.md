@@ -28,7 +28,7 @@ pip install dagster_pagerduty
 
 ### Example
 
-<CodeExample filePath="integrations/pagerduty.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/pagerduty.py" language="python" />
 
 ### About PagerDuty
 

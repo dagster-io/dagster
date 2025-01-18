@@ -126,6 +126,36 @@ Column lineage enables data and analytics engineers alike to understand how a co
 
 ---
 
+## Ensuring table schema consistency
+
+When column schemas are defined at runtime through materialization metadata, it can be helpful to detect and alert on schema changes between materializations. Dagster provides <PyObject object="build_column_schema_change_checks"/> API to help detect these changes.
+
+This function creates asset checks which compare the current materialization's schema against the schema from the previous materialization. These checks can detect:
+
+- Added columns
+- Removed columns
+- Changed column types
+
+Let's define a column schema change check for our asset from the example above that defines table schema at runtime, `my_other_asset`.
+
+```python file=/concepts/metadata-tags/schema_change_checks.py startafter=start_check endbefore=end_check
+from dagster import build_column_schema_change_checks
+
+schema_checks = build_column_schema_change_checks(assets=[my_other_asset])
+```
+
+If any schema changes are detected between materializations, they will be reported in the asset's check results in the Dagster UI. This can help catch unexpected schema changes and prevent downstream issues.
+
+### Alerting on schema change (Dagster+ only)
+
+In Dagster+, you can set up alerts to notify you when assets have had a schema change. By default, schema change checks will fail with a severity of `WARN`, but you can override this to fail with `ERROR`.
+
+To alert on schema changes, create an alert policy with the following settings:
+
+<AssetCheckAlerts />
+
+---
+
 ## APIs in this guide
 
 | Name                                         | Description                                                      |

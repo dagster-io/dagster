@@ -31,7 +31,7 @@ pip install dagster-meltano
 
 ### Example
 
-<CodeExample filePath="integrations/meltano.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/meltano.py" language="python" />
 
 ### About Meltano
 
