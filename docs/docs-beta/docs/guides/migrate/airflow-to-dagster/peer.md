@@ -16,7 +16,7 @@ uv pip install 'dagster-airlift[core]' dagster-webserver dagster
 
 Next, create a `Definitions` object using `build_defs_from_airflow_instance`. You can use the empty `tutorial_example/dagster_defs/definitions.py` file as a starting point:
 
-<CodeExample filePath="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer.py" language="python"/>
+<CodeExample filePath="guides/migrate/airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer.py" language="python"/>
 
 This function creates:
 
@@ -60,7 +60,7 @@ Asset checks can both act as useful _user acceptance tests_ to ensure that any m
 
 For example, we're going to add an asset check to ensure that the final `customers` CSV output exists, and has a nonzero number of rows.
 
-<CodeExample filePath="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer_with_check.py" language="python"/>
+<CodeExample filePath="guides/migrate/airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer_with_check.py" language="python"/>
 
 Once we reload the code location, we'll see a tab `checks` indicating the presence of an asset check on our `rebuild_customers_list` asset.
 

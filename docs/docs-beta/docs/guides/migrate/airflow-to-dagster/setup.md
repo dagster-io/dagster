@@ -75,7 +75,7 @@ This will run the Airflow Web UI in a shell. You should now be able to access th
 
 You should be able to see the `rebuild_customers_list` DAG in the Airflow UI, made up of three tasks: `load_raw_customers`, `run_dbt_model`, and `export_customers`.
 
-![Rebuild customers list DAG](/images/migrate/airlift/rebuild_customers_dag.png)
+![Rebuild customers list DAG](/images/guides/migrate/airlift/rebuild_customers_dag.png)
 
 ## Next steps
 
