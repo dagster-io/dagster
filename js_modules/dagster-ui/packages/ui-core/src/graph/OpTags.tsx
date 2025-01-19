@@ -51,6 +51,7 @@ import doris from './kindtag-images/tool-doris-color.svg';
 import druid from './kindtag-images/tool-druid-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
 import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
+import elixir from './kindtag-images/tool-elixir-color.svg';
 import excel from './kindtag-images/tool-excel-color.svg';
 import facebook from './kindtag-images/tool-facebook-color.svg';
 import fivetran from './kindtag-images/tool-fivetran-color.svg';
@@ -403,7 +404,8 @@ export type KnownTagType =
   | 'scylladb'
   | 'starrocks'
   | 'superset'
-  | 'spanner';
+  | 'spanner'
+  | 'elixir';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   jupyter: {
@@ -1235,6 +1237,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   spanner: {
     icon: spanner,
     content: 'Spanner',
+  },
+  elixir: {
+    icon: elixir,
+    content: 'Elixir',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
