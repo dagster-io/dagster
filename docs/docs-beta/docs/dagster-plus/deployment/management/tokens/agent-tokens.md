@@ -1,26 +1,24 @@
 ---
-title: 'Agent tokens'
+title: 'Managing agent tokens in Dagster+'
 sidebar_position: 200
-unlisted: true
 ---
 
-# Managing agent tokens in Dagster+
-
 :::note
+
 This guide is applicable to Dagster+.
+
 :::
 
 In this guide, we'll walk you through creating and revoking agent tokens in Dagster+.
 
 ## Managing agent tokens
 :::note
-{/* /dagster-plus/account/managing-users */}
-To manage agent tokens, you need to be an [Organization Admin](/todo.md) in
-Dagster+.
+
+To manage agent tokens, you need to be an [Organization Admin](/features/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) in Dagster+.
+
 :::
 
-{/* /dagster-plus/deployment/agents */}
-Agent tokens are used to authenticate [Hybrid agents](/todo.md) with the Dagster+ Agents API.
+Agent tokens are used to authenticate [Hybrid agents](/dagster-plus/deployment/deployment-types/hybrid/) with the Dagster+ Agents API.
 
 ### Creating agent tokens
 
