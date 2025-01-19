@@ -27,6 +27,8 @@ After:
 />
 ```
 
+Note that the `method` property causes the build to break -- use `object` instead.
+
 ### Images
 
 #### Location
