@@ -23,7 +23,7 @@ This integration allows you to use [dlt](https://dlthub.com/) to easily ingest a
 
 :::note
 
-This feature is currently **experimental**.
+This integration is currently **experimental**.
 
 :::
 

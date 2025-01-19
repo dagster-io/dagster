@@ -7,7 +7,7 @@ sidebar_label: Power BI
 excerpt: Represent your Power BI assets in Dagster.
 date: 
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-powerbi
-docslink:
+docslink: https://docs.dagster.io/integrations/powerbi
 partnerlink:
 categories:
 enabledBy:
@@ -21,7 +21,7 @@ This guide provides instructions for using Dagster with Power BI using the `dags
 
 :::note
 
-This feature is currently **experimental**.
+This integration is currently **experimental**.
 
 :::
 

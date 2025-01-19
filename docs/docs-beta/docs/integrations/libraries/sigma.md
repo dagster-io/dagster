@@ -7,21 +7,21 @@ sidebar_label: Sigma
 excerpt: Represent your Sigma assets in Dagster.
 date: 
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-sigma
-docslink:
+docslink: https://docs.dagster.io/integrations/sigma
 partnerlink:
 categories:
 enabledBy:
 enables:
 tags: [dagster-supported, bi]
 sidebar_custom_props:
-  logo:
+  logo: images/integrations/sigma.svg
 ---
 
 This guide provides instructions for using Dagster with Sigma using the `dagster-sigma` library. Your Sigma assets, including datasets and workbooks, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Sigma assets and upstream data assets you are already modeling in Dagster.
 
 :::note
 
-This feature is currently **experimental**.
+This integration is currently **experimental**.
 
 :::
 

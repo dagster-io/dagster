@@ -22,7 +22,7 @@ This integration allows you to use [Sling](https://slingdata.io/) to extract and
 
 :::note
 
-This feature is currently **experimental**.
+This integration is currently **experimental**.
 
 :::
 
