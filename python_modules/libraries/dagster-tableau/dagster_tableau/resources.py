@@ -59,7 +59,8 @@ class BaseTableauClient:
         self.connected_app_secret_value = connected_app_secret_value
         self.username = username
         self.site_name = site_name
-        self._server = TSC.Server(self.base_url)
+        http_options = {'verify': False}
+        self._server = TSC.Server(self.base_url, http_options = http_options)
         self._server.use_server_version()
 
     @property
@@ -277,12 +278,44 @@ class BaseTableauClient:
                   updatedAt
                   path
                   parentEmbeddedDatasources {
+                    id
+                    name
+                    hasExtracts
+                    upstreamTables {
+                        id
+                        name
+                        connectionType
+                        schema
+                        isEmbedded
+                        tableType
+                        fullName
+                        projectName
+                        database {
+                            id
+                            name
+                            projectName
+                        }
+                    }   
                     parentPublishedDatasources {
-                      luid
-                      name
+                        luid
+                        name
+                        id
+                        name
+                        hasExtracts
+                        upstreamTables {
+                            name
+                            fullName
+                            connectionType
+                            schema
+                            database {
+                                id
+                                name
+                                projectName
+                            }
+                        }
                     }
-                  }
                 }
+            }
                 dashboards {
                   luid
                   name
@@ -436,20 +469,30 @@ class BaseTableauWorkspace(ConfigurableResource):
                                 properties=augmented_sheet_data,
                             )
                         )
-
                     for embedded_data_source_data in sheet_data.get(
-                        "parentEmbeddedDatasources", []
+                            "parentEmbeddedDatasources", []
                     ):
-                        for published_data_source_data in embedded_data_source_data.get(
-                            "parentPublishedDatasources", []
-                        ):
-                            data_source_id = published_data_source_data["luid"]
+                        published_data_source_list = embedded_data_source_data.get("parentPublishedDatasources", [])
+                        if len(published_data_source_list) > 0:
+                            for published_data_source_data in published_data_source_list:
+                                data_source_id = published_data_source_data["luid"]
+                                if data_source_id and data_source_id not in data_source_ids:
+                                    data_source_ids.add(data_source_id)
+                                    data_sources.append(
+                                        TableauContentData(
+                                            content_type=TableauContentType.DATA_SOURCE,
+                                            properties=published_data_source_data,
+                                        )
+                                    )
+                        else:
+                            data_source_id = sheet_id
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
+                                embedded_data_source_data["luid"] = data_source_id
                                 data_sources.append(
                                     TableauContentData(
                                         content_type=TableauContentType.DATA_SOURCE,
-                                        properties=published_data_source_data,
+                                        properties=embedded_data_source_data,
                                     )
                                 )
 
