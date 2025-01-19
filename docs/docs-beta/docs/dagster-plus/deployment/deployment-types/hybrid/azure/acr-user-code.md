@@ -157,21 +157,11 @@ locations:
 
 Now, commit and push the changes to your repository. The GitHub Actions workflow should run automatically. You can check the status of the workflow in the `Actions` tab of your repository.
 
-<Image
-src="/images/dagster-cloud/azure/github-actions-workflow.png"
-alt="GitHub Actions workflow for deploying user code to Azure Container Registry"
-width={970}
-height={794}
-/>
+![GitHub Actions workflow for deploying user code to Azure Container Registry](/images/dagster-plus/deployment/azure/github-actions-workflow.png)
 
 When the workflow completes, you should see the new code location in Dagster+. Navigate to the `Status` page, and click the `Code Locations` tab. You should see your new code location listed.
 
-<Image
-src="/images/dagster-cloud/azure/dagster-cloud-code-locations.png"
-alt="Dagster+ code locations page showing the new code location"
-width={1152}
-height={320}
-/>
+![Dagster+ code locations page showing the new code location](/images/dagster-plus/deployment/azure/dagster-cloud-code-locations.png)
 
 ## Next steps
 

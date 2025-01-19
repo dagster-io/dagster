@@ -7,7 +7,7 @@ In this article, we'll show you how to use the Dagster UI and Python to test you
 
 ## Testing schedules in the Dagster UI
 
-Using the UI, you can manually trigger test evaluations of a schedule and view the results. This can be helpful when [creating a schedule](/concepts/automation/schedules/automating-assets-schedules-jobs) or for [troubleshooting unexpected scheduling behavior](troubleshooting-schedules).
+Using the UI, you can manually trigger test evaluations of a schedule and view the results. This can be helpful when [creating a schedule](defining-schedules) or for [troubleshooting unexpected scheduling behavior](troubleshooting-schedules).
 
 1. In the UI, click **Overview > Schedules tab**.
 
@@ -19,14 +19,7 @@ Using the UI, you can manually trigger test evaluations of a schedule and view t
 
    For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see past and future evaluation times along that cadence:
 
-   <!-- ![Selecting a mock evaluation time for a schedule in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/testing-select-timestamp-page.png) -->
-
-   <Image
-   alt="Selecting a mock evaluation time for a schedule in the Dagster UI"
-   src="/images/concepts/automation/schedules/testing-select-timestamp-page.png"
-   width={2638}
-   height={1388}
-   />
+    ![Selecting a mock evaluation time for a schedule in the Dagster UI](/images/guides/automate/schedules/testing-select-timestamp-page.png)
 
 5. After selecting an evaluation time, click the **Evaluate** button.
 
@@ -84,7 +77,7 @@ def test_configurable_job_schedule():
     assert validate_run_config(configurable_job, run_request.run_config)
 ```
 
-If your <PyObject object="schedule" decorator />-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
+If your <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
 
 ### Testing schedules with resources
 

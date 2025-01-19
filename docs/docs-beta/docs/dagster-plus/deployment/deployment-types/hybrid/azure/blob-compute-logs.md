@@ -34,7 +34,7 @@ Then, we'll create a new managed identity for the AKS agent.
 az identity create --resource-group <resource-group> --name agent-identity
 ```
 
-We will need to find the name of the service account used by the Dagster+ Agent. If you used the [Dagster+ Helm chart](/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent), it should be `user-cloud-dagster-cloud-agent`. You can confirm by using this command:
+We will need to find the name of the service account used by the Dagster+ Agent. If you used the [Dagster+ Helm chart](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration), it should be `user-cloud-dagster-cloud-agent`. You can confirm by using this command:
 
 ```bash
 kubectl get serviceaccount -n <dagster-agent-namespace>
@@ -138,12 +138,7 @@ helm upgrade user-cloud dagster-cloud/dagster-cloud-agent -n <dagster-agent-name
 
 It's time to kick off a run in Dagster to test your new configuration. If following along with the quickstart repo, you should be able to kick off a run of the `all_assets_job`, which will generate logs for you to test against. Otherwise, use any job that emits logs. When you go to the stdout/stderr window of the run page, you should see a log file that directs you to the Azure Blob Storage container.
 
-<Image
-src="/images/dagster-cloud/azure/azure-blob-storage-logs.png"
-alt="Azure Blob Storage logs in Dagster"
-width={970}
-height={794}
-/>
+![Azure Blob Storage logs in Dagster](/images/dagster-plus/deployment/azure/azure-blob-storage-logs.png)
 
 :::tip
 

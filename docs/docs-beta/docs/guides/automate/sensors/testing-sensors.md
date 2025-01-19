@@ -22,27 +22,15 @@ In the UI, you can manually trigger a test evaluation of a sensor and view the r
 
 3. Click the **Test Sensor** button, located near the top right corner of the page.
 
-   <Image
-   src="/images/concepts/partitions-schedules-sensors/sensors/test-sensor-button.png"
-   width={592}
-   height={270}
-   />
+    ![Test sensor button](/images/guides/automate/sensors/test-sensor-button.png)
 
 4. You'll be prompted to provide a cursor value. You can use the existing cursor for the sensor (which will be prepopulated) or enter a different value. If you're not using cursors, leave this field blank.
 
-   <Image
-   src="/images/concepts/partitions-schedules-sensors/sensors/provide-cursor-page.png"
-   width={900}
-   height={454}
-   />
+    ![Cursor value field](/images/guides/automate/sensors/provide-cursor-page.png)
 
 5. Click **Evaluate** to fire the sensor. A window containing the result of the evaluation will display, whether it's run requests, a skip reason, or a Python error:
 
-   <Image
-   src="/images/concepts/partitions-schedules-sensors/sensors/eval-result-page.png"
-   width={898}
-   height={455}
-   />
+    ![Evaluation result page](/images/guides/automate/sensors/eval-result-page.png)
 
    If the run was successful, then for each produced run request, you can open the launchpad pre-scaffolded with the config produced by that run request. You'll also see a new computed cursor value from the evaluation, with the option to persist the value.
 

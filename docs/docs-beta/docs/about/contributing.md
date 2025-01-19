@@ -20,7 +20,7 @@ We love to see our community members get involved! If you are planning to contri
    source .venv/bin/activate
    ```
 
-   <DagsterVersion />
+   Dagster supports Python 3.9 through 3.12.
 
 3. Ensure that you have node installed by running `node -v`, and that you have [yarn](https://yarnpkg.com/lang/en/) installed. If you are on macOS, you can install yarn with Homebrew:
 
@@ -108,11 +108,11 @@ The majority of our code snippets are pulled from real Python files. This allows
 
 In `.mdx` files, you'll see a code snippet with `python file=/path/to/file.py startafter=start_marker endbefore=end_marker` at the beginning of the block. For example:
 
-<Image src="/images/community/md-code-block.png" width={1434} height={368} />
+![Code snippet](/images/about/community/md-code-block.png)
 
 You can find the corresponding Python file at `dagster/examples/docs_snippets/docs_snippets/concepts/asset/asset_dependency.py`. The code included in each snippet is the code in the file between the `# start_marker` and `# end_marker` comments.
 
-<Image src="/images/community/py-code-block.png" width={736} height={496} />
+![Code snippet between marker comments](/images/about/community/py-code-block.png)
 
 To change the code snippet, update the `.py` file, then run the following from the `docs` directory:
 

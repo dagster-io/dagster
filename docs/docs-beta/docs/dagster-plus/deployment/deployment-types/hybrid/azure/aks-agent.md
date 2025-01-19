@@ -48,7 +48,7 @@ kubectl config current-context
 
 ## Step 3: Install the Dagster+ agent on the AKS cluster.
 
-Next, we'll install the agent helm chart. You should be able to follow the guide [here](/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent) to install the agent on the AKS cluster.
+Next, we'll install the agent helm chart. You should be able to follow the guide [here](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration) to install the agent on the AKS cluster.
 
 ## Next steps
 

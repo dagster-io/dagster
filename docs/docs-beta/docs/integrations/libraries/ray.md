@@ -12,7 +12,7 @@ partnerlink:
 categories:
 enabledBy:
 enables:
-tags: [community-supported, ETL]
+tags: [community-supported, etl]
 sidebar_custom_props:
   logo:
 ---

@@ -24,14 +24,7 @@ For more information. see the [code locations documentation](/guides/deploy/code
 1. In the Dagster UI, click **Overview > Schedules tab**.
 2. Locate the schedule. Schedules that have been started will have an enabled toggle in the **Running** column:
 
-   <!-- ![Enabled toggle next to a schedule in the Schedules tab of the Overview page](/images/concepts/automation/schedules/schedules-enabled-toggle.png) -->
-
-   <Image
-   alt="Enabled toggle next to a schedule in the Schedules tab of the Overview page"
-   src="/images/concepts/automation/schedules/schedules-enabled-toggle.png"
-   width={1716}
-   height={226}
-   />
+   ![Enabled toggle next to a schedule in the Schedules tab of the Overview page](/images/guides/automate/schedules/schedules-enabled-toggle.png)
 
 ## Step 3: Check for execution failures
 
@@ -43,12 +36,7 @@ If the scheduled failed to execute, this column will contain a **Failed** badge.
 
 Next, verify that the schedule is using the time interval you expect. In the **Schedules** tab, locate the schedule and look at the **Schedule** column:
 
-<Image
-alt="Highlighted Next tick value for a schedule in the Dagster UI"
-src="/images/concepts/automation/schedules/schedules-next-tick.png"
-width={1716}
-height={226}
-/>
+![Highlighted Next tick value for a schedule in the Dagster UI](/images/guides/automate/schedules/schedules-next-tick.png)
 
 The **Next tick** value indicates when the schedule is next expected to run. In the above image, the next tick is `May 2, 12:00 AM UTC`.
 
