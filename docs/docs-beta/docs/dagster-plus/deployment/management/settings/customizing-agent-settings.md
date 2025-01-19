@@ -7,7 +7,7 @@ sidebar_position: 300
 This guide is applicable to Dagster+.
 :::
 
-The Dagster+ Agent is a special variant of the Dagster instance used in [Dagster Open Source](/todo.md) and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.
+The Dagster+ Agent is a special variant of the Dagster instance used in Dagster Open Source and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.
 
 :::note
 

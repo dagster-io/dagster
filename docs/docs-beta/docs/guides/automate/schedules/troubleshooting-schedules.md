@@ -7,7 +7,7 @@ If you have issues with a schedule, use the following steps to diagnose and reso
 
 ## Step 1: Verify the schedule is included in the Definitions object
 
-First, verify that the schedule has been included in a <PyObject object="Definitions" /> object. This ensures that the schedule is detectable and loadable by Dagster tools like the Dagster UI and CLI:
+First, verify that the schedule has been included in a <PyObject section="definitions" module="dagster" object="Definitions" /> object. This ensures that the schedule is detectable and loadable by Dagster tools like the Dagster UI and CLI:
 
 ```python
 defs = Definitions(
@@ -90,7 +90,7 @@ If there isn't a clear error on this page or if the daemon should be sending hea
 
 Next, check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of the schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
 
-If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](guides/deploy/code-locations/workspace-yaml) for more information.
+If the daemon output contains error indicating the schedule couldn't be found, verify that the daemon is using the same `workspace.yaml` file as the webserver. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file. Refer to the [Workspace files documentation](/guides/deploy/code-locations/workspace-yaml) for more information.
 
 If the logs don't indicate the cause of the issue, move on to the next step.
 

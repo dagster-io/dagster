@@ -66,7 +66,7 @@ asset_partitioned_schedule = build_schedule_from_partitioned_job(
 
 **Op jobs**
 
-Op jobs are defined using the <PyObject object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject object="build_schedule_from_partitioned_job"/>:
+Op jobs are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="partitions" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
@@ -159,7 +159,7 @@ Let's look at an example schedule that's partitioned by day and how different `e
 
 ## Working with static partitions
 
-Next, we'll demonstrate how to create a schedule for a job with a static partition. To do this, we'll construct the schedule from scratch using the <PyObject object="schedule" decorator /> decorator, rather than using a helper function like <PyObject object="build_schedule_from_partitioned_job"/>. This will allow more flexibility in determining which partitions should be run by the schedule.
+Next, we'll demonstrate how to create a schedule for a job with a static partition. To do this, we'll construct the schedule from scratch using the <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator /> decorator, rather than using a helper function like <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>. This will allow more flexibility in determining which partitions should be run by the schedule.
 
 In this example, the job is partitioned by continent:
 

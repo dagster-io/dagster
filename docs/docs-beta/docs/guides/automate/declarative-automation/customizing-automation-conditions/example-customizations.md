@@ -60,7 +60,7 @@ condition = AutomationCondition.eager().replace(
 
 ## Ignoring dependencies when using AutomationCondition.on_cron()
 
-By default, `AutomationCondition.on_cron()` will wait for all upstream dependencies to be updated before executing the asset it's attached to. In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject object="AssetSelection" /> to be ignored:
+By default, `AutomationCondition.on_cron()` will wait for all upstream dependencies to be updated before executing the asset it's attached to. In some cases, it can be useful to ignore some upstream dependencies in this calculation. This can be done by passing in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be ignored:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=concepts/declarative_automation/ignore_dependencies_cron.py
@@ -71,7 +71,7 @@ condition = dg.AutomationCondition.on_cron("@hourly").ignore(
 )
 ```
 
-Alternatively, you can pass in an <PyObject object="AssetSelection" /> to be allowed:
+Alternatively, you can pass in an <PyObject section="assets" module="dagster" object="AssetSelection" /> to be allowed:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=concepts/declarative_automation/allow_dependencies_cron.py

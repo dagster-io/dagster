@@ -19,7 +19,7 @@ def my_asset():
     pass
 ```
 
-Kinds can also be specified on an <PyObject object="AssetSpec" />, for use in multi-assets:
+Kinds can also be specified on an <PyObject section="assets" module="dagster" object="AssetSpec" />, for use in multi-assets:
 
 ```python file=/concepts/metadata-tags/asset_kinds_multi.py
 from dagster import AssetSpec, multi_asset
@@ -35,7 +35,7 @@ def my_multi_asset():
     pass
 ```
 
-On the backend, these kind inputs are stored as tags on the asset. For more information, see [Tags](/concepts/metadata-tags/tags).
+On the backend, these kind inputs are stored as tags on the asset. For more information, see [Tags](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata#tags).
 
 When viewing the asset in the lineage view, the attached kinds will be visible at the bottom the asset.
 

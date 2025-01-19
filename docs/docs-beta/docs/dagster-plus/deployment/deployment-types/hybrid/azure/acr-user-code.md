@@ -98,7 +98,7 @@ This command will output a JSON object with the service principal details. Make 
 
 We'll add the service principal details as secrets in our repository. Go to your repository in GitHub, and navigate to `Settings` -> `Secrets`. Add the following secrets:
 
-- `DAGSTER_CLOUD_API_TOKEN`: An agent token. For more details see [Managing agent tokens](/dagster-plus/account/managing-user-agent-tokens#managing-agent-tokens).
+- `DAGSTER_CLOUD_API_TOKEN`: An agent token. For more details see [Managing agent tokens](/dagster-plus/deployment/management/tokens/agent-tokens).
 - `AZURE_CLIENT_ID`: The `appId` from the service principal JSON object.
 - `AZURE_CLIENT_SECRET`: The `password` from the service principal JSON object.
 

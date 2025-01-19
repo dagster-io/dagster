@@ -26,7 +26,7 @@ Dagster's compute logs are handled by the configured [`ComputeLogManager`](/api/
 
 If using the Kubernetes agent, you can instead forward logs to your own S3 bucket by using the [`S3ComputeLogManager`](/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager).
 
-You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/management/settings/customizing-agent-configuration):
+You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/management/settings/customizing-agent-settings):
 
 ```yaml
 compute_logs:
@@ -56,7 +56,7 @@ computeLogs:
 
 If your organization has its own logging solution which ingests `stdout` and `stderr` from your compute environment, you may want to disable compute log upload entirely. You can do this with the <PyObject section="internals" module="dagster._core.storage.noop_compute_log_manager" object="NoOpComputeLogManager" />.
 
-You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/management/settings/cutomizing-agent-settings):
+You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/management/settings/customizing-agent-settings):
 
 ```yaml
 compute_logs:
