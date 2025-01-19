@@ -31,6 +31,12 @@ pip install dagster-dlt
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/dlt.py" language="python" />
 
+:::note
+
+If you are using the [sql_database](https://dlthub.com/docs/api_reference/sources/sql_database/__init__#sql_database) source, consider setting `defer_table_reflect=True` to reduce database reads. By default, the Dagster daemon will refresh definitions roughly every minute, which will query the database for resource definitions.
+
+:::
+
 ### About dlt
 
 [Data Load Tool (dlt)](https://dlthub.com/) is an open source library for creating efficient data pipelines. It offers features like secret management, data structure conversion, incremental updates, and pre-built sources and destinations, simplifying the process of loading messy data into well-structured datasets.
