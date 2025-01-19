@@ -66,7 +66,7 @@ asset_partitioned_schedule = build_schedule_from_partitioned_job(
 
 **Op jobs**
 
-Op jobs are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="partitions" module="dagster" object="build_schedule_from_partitioned_job"/>:
+Op jobs are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
@@ -234,6 +234,6 @@ def antarctica_schedule():
 | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
 | <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
-| <PyObject section="execution" module="dagster" object="RunRequest" />                          | A class that represents all the information required to launch a single run.                        |
+| <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />                          | A class that represents all the information required to launch a single run.                        |
 | <PyObject section="assets" module="dagster" object="define_asset_job" />                    | A function for defining a job from a selection of assets.                                           |
 | <PyObject section="jobs" module="dagster" object="job" decorator />                       | The decorator used to define a job.                                                                 |

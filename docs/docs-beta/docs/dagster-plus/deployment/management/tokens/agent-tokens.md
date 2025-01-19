@@ -14,7 +14,7 @@ In this guide, we'll walk you through creating and revoking agent tokens in Dags
 ## Managing agent tokens
 :::note
 
-To manage agent tokens, you need to be an [Organization Admin](/features/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) in Dagster+.
+To manage agent tokens, you need to be an [Organization Admin](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions#user-permissions-reference) in Dagster+.
 
 :::
 

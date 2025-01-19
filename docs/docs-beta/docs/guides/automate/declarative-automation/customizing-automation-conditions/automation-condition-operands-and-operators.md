@@ -84,9 +84,7 @@ The [operands](#operands) can be built into more complex expressions using the f
         <code>AutomationCondition.any_deps_match(A)</code>
       </td>
       <td>
-        Condition A is true for any upstream partition. Can be used with <code>.allow()</code> and <code>.ignore()</code> to target specific
-        upstream assets. <br /><br />
-        For an example, see "[Targeting upstream dependencies](example-customizations#targeting-upstream-dependencies)".
+        Condition A is true for any upstream partition. Can be used with <code>.allow()</code> and <code>.ignore()</code> to target specific upstream assets.
       </td>
     </tr>
     <tr>
@@ -96,8 +94,7 @@ The [operands](#operands) can be built into more complex expressions using the f
       <td>
         Condition A is true for at least one partition of each upstream asset.
         Can be used with <code>.allow()</code> and <code>.ignore()</code> to
-        target specific upstream assets.<br /><br />
-        For an example, see "[Targeting upstream dependencies](example-customizations#targeting-upstream-dependencies)".
+        target specific upstream assets.
       </td>
     </tr>
     <tr>

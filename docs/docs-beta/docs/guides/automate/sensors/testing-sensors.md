@@ -113,7 +113,7 @@ def test_my_directory_sensor_cursor():
 
 For sensors which utilize [resources](/guides/build/external-resources/), you can provide the necessary resources when invoking the sensor function.
 
-Below is a test for the `process_new_users_sensor` that we defined in the [Using resources in sensors](#using-resources-in-sensors) section, which uses the `users_api` resource.
+Below is a test for the `process_new_users_sensor` that we defined in "[Using resources in sensors](using-resources-in-sensors)", which uses the `users_api` resource.
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_sensor endbefore=end_test_resource_on_sensor dedent=4

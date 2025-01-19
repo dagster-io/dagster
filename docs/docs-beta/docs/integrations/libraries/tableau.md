@@ -61,7 +61,7 @@ pip install dagster dagster-tableau
 
 To load Tableau assets into the Dagster asset graph, you must first construct a Tableau resource, which allows Dagster to communicate with your Tableau workspace. The Tableau resource to create depends on your Tableau deployment type - use <PyObject section="libraries" module="dagster_tableau" object="TableauCloudWorkspace" /> if you are using Tableau Cloud or <PyObject section="libraries" module="dagster_tableau" object="TableauServerWorkspace" /> if you are using Tableau Server. To connect to the Tableau workspace, you'll need to [configure a connected app with direct trust](https://help.tableau.com/current/online/en-gb/connected_apps_direct.htm) in Tableau, then supply your Tableau site information and connected app credentials to the resource. The Tableau resource uses the JSON Web Token (JWT) authentication to connect to the Tableau workspace.
 
-Dagster can automatically load all data sources, sheets, and dashboards from your Tableau workspace as asset specs. Call the <PyObject section="libraries" module="dagster_tableau" method="load_tableau_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Tableau assets. You can then include these asset specs in your <PyObject section="definitions" object="dagster" object="Definitions" /> object:
+Dagster can automatically load all data sources, sheets, and dashboards from your Tableau workspace as asset specs. Call the <PyObject section="libraries" module="dagster_tableau" object="load_tableau_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Tableau assets. You can then include these asset specs in your <PyObject section="definitions" object="dagster" object="Definitions" /> object:
 
 <Tabs>
 <TabItem value="Using Dagster with Tableau Cloud">
@@ -118,7 +118,7 @@ defs = dg.Definitions(assets=[*tableau_specs], resources={"tableau": tableau_wor
 
 ### Customize asset definition metadata for Tableau assets
 
-By default, Dagster will generate asset specs for each Tableau asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_tableau" object="DagsterTableauTranslator" /> subclass to the <PyObject section="libraries" module="dagster_tableau" method="load_tableau_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Tableau asset type.
+By default, Dagster will generate asset specs for each Tableau asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_tableau" object="DagsterTableauTranslator" /> subclass to the <PyObject section="libraries" module="dagster_tableau" object="load_tableau_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Tableau asset type.
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/integrations/tableau/customize-tableau-asset-defs.py
@@ -336,7 +336,7 @@ defs = dg.Definitions(
 
 ### Customizing how Tableau assets are materialized
 
-Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_tableau" method="build_tableau_materializable_assets_definition" /> utility, you can build your own assets definition that trigger the refresh of your Tableau workbooks. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
+Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_tableau" object="build_tableau_materializable_assets_definition" /> utility, you can build your own assets definition that trigger the refresh of your Tableau workbooks. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/integrations/tableau/materialize-tableau-assets-advanced.py
