@@ -1,6 +1,7 @@
 ---
 title: "Kind tags for categorizing assets"
 description: "Use kind tags to easily categorize assets within you Dagster project."
+sidebar_position: 300
 ---
 
 Kind tags can help you quickly identify the underlying system or technology used for a given asset in the Dagster UI. These tags allow you to organize assets within a Dagster project and can be used to filter or search across all your assets.

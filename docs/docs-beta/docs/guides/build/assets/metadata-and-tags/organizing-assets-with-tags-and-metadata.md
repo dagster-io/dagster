@@ -1,5 +1,6 @@
 ---
 title: "Organizing assets with tags and metadata"
+sidebar_position: 100
 ---
 
 Assets feature prominently in the Dagster UI. Attaching information to assets allows you to understand where they're stored, what they contain, and how they should be organized.
@@ -31,7 +32,7 @@ With Dagster+ Pro, you can create asset-based alerts that automatically notify a
 
 ## Organizing assets with tags \{#tags}
 
-**Tags** are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/todo). They're structured as key-value pairs of strings.
+[**Tags**](tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/todo). They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
 
