@@ -150,48 +150,14 @@ class DagsterTableauTranslator:
     def get_sheet_spec(self, data: TableauTranslatorData) -> AssetSpec:
         sheet_embedded_data_sources = data.properties.get("parentEmbeddedDatasources", [])
 
-        #data_source_ids = {
-        #    published_data_source["luid"]
-        #    for embedded_data_source in sheet_embedded_data_sources
-        #    for published_data_source in embedded_data_source.get("parentPublishedDatasources", [])
-        #}
-
-        #data_source_ids = {
-        #    embedded_data_source["id"]
-        #    if len(embedded_data_source.get("parentPublishedDatasources", [])) <= 0
-        #    else published_data_source["luid"]
-        #    for embedded_data_source in sheet_embedded_data_sources
-        #    for published_data_source in embedded_data_source.get("parentPublishedDatasources", [])
-        #}
-
-        #data_source_ids = {
-        #embedded_data_source["id"] if len(embedded_data_source.get("parentPublishedDatasources", [])) <= 0
-        #else published_data_source["luid"]
-        #for embedded_data_source in sheet_embedded_data_sources
-        #for published_data_source in embedded_data_source.get("parentPublishedDatasources", [])
-        #}
-
         data_source_ids = []
         for embedded_data_source in sheet_embedded_data_sources:
-            if len(embedded_data_source.get("parentPublishedDatasources", [])) <= 0:
+            embedded_data_source_list = embedded_data_source.get("parentPublishedDatasources", [])
+            if not embedded_data_source_list:
                 data_source_ids.append(embedded_data_source["id"])
             else:
-                for published_data_source in embedded_data_source.get("parentPublishedDatasources", []):
+                for published_data_source in embedded_data_source_list:
                     data_source_ids.append(published_data_source["luid"])
-
-        #data_source_ids1 = {
-        #    embedded_data_source["id"]
-        #    for embedded_data_source in sheet_embedded_data_sources
-        #    if len(embedded_data_source.get("parentPublishedDatasources", [])) <= 0
-        #}
-
-        #data_source_ids2 = {
-        #    published_data_source["luid"]
-        #    for embedded_data_source in sheet_embedded_data_sources
-        #    for published_data_source in embedded_data_source.get("parentPublishedDatasources", [])
-        #}
-
-        #data_source_ids = data_source_ids1.union(data_source_ids2)
 
         data_source_keys = [
             self.get_asset_spec(

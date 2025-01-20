@@ -59,8 +59,7 @@ class BaseTableauClient:
         self.connected_app_secret_value = connected_app_secret_value
         self.username = username
         self.site_name = site_name
-        http_options = {'verify': False}
-        self._server = TSC.Server(self.base_url, http_options = http_options)
+        self._server = TSC.Server(self.base_url)
         self._server.use_server_version()
 
     @property
@@ -485,7 +484,7 @@ class BaseTableauWorkspace(ConfigurableResource):
                                         )
                                     )
                         else:
-                            data_source_id = sheet_id
+                            data_source_id = embedded_data_source_data["id"]
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)
                                 embedded_data_source_data["luid"] = data_source_id
