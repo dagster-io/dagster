@@ -26,7 +26,7 @@ To mitigate this, you can:
 - Capture only the most critical logs
 - Avoid including debug information if a large amount of run history will be maintained
 
-## Capturing Python logs (Experimental) {#capturing-python-logs}
+## Capturing Python logs (Experimental) \{#capturing-python-logs}
 
 By default, logs generated using the Python logging module aren't captured into the Dagster ecosystem. This means that they aren't stored in the Dagster event log, will not be associated with any Dagster metadata (such as step key, run ID, etc.), and won't show up in the default view of the [Dagster UI](/guides/deploy/webserver).
 
@@ -51,7 +51,7 @@ If `python_log_level` is set, the loggers listed here will be set to the given l
 :::
 
 
-## Configuring global log levels (Experimental) {#configuring-global-log-levels}
+## Configuring global log levels (Experimental) \{#configuring-global-log-levels}
 
 To set a global log level in a Dagster instance, set the `python_log_level` parameter in your instance's `dagster.yaml` file.
 

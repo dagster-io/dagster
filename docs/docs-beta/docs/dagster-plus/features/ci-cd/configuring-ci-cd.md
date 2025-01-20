@@ -38,7 +38,7 @@ After you make the above changes and commit the workflow file, the CI process sh
 
 During the deployment, the agent will attempt to load your code and update the metadata in Dagster+. When that has finished, you should see the GitHub Action complete successfully, and also be able to see the code location under the **Deployment** tag in Dagster+.
 
-## Non-GitHub CI/CD provider {#non-github}
+## Non-GitHub CI/CD provider \{#non-github}
 
 If you are using a non-GitHub CI/CD provider, your system should use the `dagster-cloud ci` command to deploy code locations to Dagster+.
 
