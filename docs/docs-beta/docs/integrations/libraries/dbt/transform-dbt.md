@@ -71,7 +71,3 @@ You may also have assets that depend on the output of dbt models. Next, create a
 You can schedule your dbt models by using the `dagster-dbt`'s `build_schedule_from_dbt_selection` function:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions_with_schedule.py" language="python" title="Scheduling our dbt models" />
-
-## Next steps
-
-{/* TODO: Add link to dbt partitioning guide */}

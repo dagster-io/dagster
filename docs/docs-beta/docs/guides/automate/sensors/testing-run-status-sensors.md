@@ -55,7 +55,9 @@ run_status_sensor_context = build_run_status_sensor_context(
 my_email_sensor(run_status_sensor_context)
 ```
 
+{/* TODO the methods and statuses below do not exist in API docs
 We have provided convenience functions <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" method="get_job_success_event" /> and <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" method="get_job_failure_event" /> for retrieving `DagsterRunStatus.SUCCESS` and `DagsterRunStatus.FAILURE` events, respectively. If you have a run status sensor triggered on another status, you can retrieve all events from `result` and filter based on your event type.
+*/}
 
 We can use the same pattern to build the context for <PyObject section="schedules-sensors" module="dagster" object="run_failure_sensor" />. If we wanted to test this run failure sensor:
 

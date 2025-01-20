@@ -29,12 +29,12 @@ Migrating the operator breaks down into a few steps:
 
 First, you'll need to make the dbt project available to the Dagster runtime and build the manifest.
 
-{/* TODO fix link - If you're building your Dagster deployment in a monorepo alongside your dbt and Airflow projects, you can follow this guide: [Monorepo setup](/integrations/dbt/reference#deploying-a-dagster-project-with-a-dbt-project). */}
-{/* TODO fix link - If you're deploying within a separate repository, you can follow this guide: [Separate repository setup](/integrations/dbt/reference#deploying-a-dbt-project-from-a-separate-git-repository). */}
+- If you're building your Dagster deployment in a monorepo alongside your dbt and Airflow projects, you can follow this guide: [Monorepo setup](/integrations/libraries/dbt/reference#deploying-a-dagster-project-with-a-dbt-project).
+- If you're deploying within a separate repository, you can follow this guide: [Separate repository setup](/integrations/libraries/dbt/reference#deploying-a-dbt-project-from-a-separate-git-repository). */}
 
 ### Step 2: Writing a @dbt_asset-decorated function
 
-Once your dbt project is available, you can write a function that runs your dbt commands using the <PyObject section="libraries" object="dbt_assets" module="dagster_dbt"/> decorator and <PyObject section="libraries" object="DbtCliResource" module="dagster_dbt"/>. {/* TODO fix links Most dbt CLI commands and flags are supported - to learn more about using `@dbt_assets`, check out the [dagster-dbt quickstart](/integrations/dbt/quickstart) and [reference](/integrations/dbt/reference). */}
+Once your dbt project is available, you can write a function that runs your dbt commands using the <PyObject section="libraries" object="dbt_assets" module="dagster_dbt"/> decorator and <PyObject section="libraries" object="DbtCliResource" module="dagster_dbt"/>. Most dbt CLI commands and flags are supported - to learn more about using `@dbt_assets`, check out the [dagster-dbt quickstart](/integrations/libraries/dbt/transform-dbt) and [reference](/integrations/libraries/dbt/reference).
 
 ### Step 3: Using dagster-airlift to proxy execution
 
