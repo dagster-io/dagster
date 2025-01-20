@@ -23,7 +23,7 @@ Set `PROXYING` to `True` or eliminate the `if` statement.
 
 The DAG will now display its proxied state in the Airflow UI. (There is some latency as Airflow evaluates the Python file periodically.)
 
-![Migration state rendering in Airflow UI](/images/guides/migrate/airlift/state_in_airflow.png)
+![Migration state rendering in Airflow UI](/images/integrations/airlift/state_in_airflow.png)
 
 ### Migrating individual tasks
 
@@ -48,7 +48,7 @@ For some common operator patterns, like our dbt operator, Dagster supplies facto
 
 You can now run the `rebuild_customers_list` DAG in Airflow, and the `build_dbt_models` task will be executed in a Dagster run:
 
-![dbt build executing in Dagster](/images/guides/migrate/airlift/proxied_dag.png)
+![dbt build executing in Dagster](/images/integrations/airlift/proxied_dag.png)
 
 You'll note that we proxied a task in the _middle_ of the Airflow DAG. The Airflow DAG structure and execution history is stable in the Airflow UI, but execution of `build_dbt_models` has moved to Dagster.
 

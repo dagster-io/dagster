@@ -35,7 +35,7 @@ Then, we will construct our assets:
 
 Once your assets are set up, you should be able to reload your Dagster definitions and see a full representation of the dbt project and other data assets in your code.
 
-![Observed asset graph in Dagster](/images/guides/migrate/airlift/observe.svg)
+![Observed asset graph in Dagster](/images/integrations/airlift/observe.svg)
 
 Kicking off a run of the DAG in Airflow, you should see the newly created assets materialize in Dagster as each task completes.
 
@@ -53,7 +53,7 @@ When done, our code will look like this.
 
 If your Airflow tasks produce time-partitioned assets, Airlift can automatically associate your materializations to the relevant partitions. In the case of `rebuild_customers_list`, data is daily partitioned in each created table, and and the Airflow DAG runs on a `@daily` cron schedule. We can likewise add a `DailyPartitionsDefinition` to each of our assets.
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_with_partitions.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_with_partitions.py" language="python" />
 
 Now, every time the sensor synthesizes a materialization for an asset, it will automatically have a partition associated with it.
 
@@ -65,7 +65,7 @@ airflow dags backfill rebuild_customers_list --start-date $(date +"%Y-%m-%d")
 
 After this dag run completes, you should see a partitioned materialization appear in Dagster.
 
-![Partitioned materialization in Dagster](/images/guides/migrate/airlift/partitioned_mat.png)
+![Partitioned materialization in Dagster](/images/integrations/airlift/partitioned_mat.png)
 
 Let's clear our Airflow runs so that we can kick off this backfill again for testing in the future.
 

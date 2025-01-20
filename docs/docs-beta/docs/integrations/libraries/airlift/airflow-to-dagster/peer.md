@@ -32,7 +32,7 @@ export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/d
 export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
 dagster dev -f tutorial_example/dagster_defs/definitions.py
 ```
-![Peered asset in Dagster UI](/images/guides/migrate/airlift/peer.svg)
+![Peered asset in Dagster UI](/images/integrations/airlift/peer.svg)
 
 Let's kick off a run of the `reubild_customers_list` DAG in Airflow.
 
@@ -42,7 +42,7 @@ airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%
 
 When this run has completed in Airflow, we should be able to navigate to the Dagster UI, and see that the Dagster has registered a materialization corresponding to that successful run.
 
-![Materialized peer asset in Dagster UI](/images/guides/migrate/airlift/peer_materialize.svg)
+![Materialized peer asset in Dagster UI](/images/integrations/airlift/peer_materialize.svg)
 
 Run the following command to clean the Airflow and Dagster run history (we just do this so we can run the same example backfill in the future). Under the hood, this just deletes runs from Airflow and asset materializations from Dagster.
 
@@ -64,7 +64,7 @@ For example, we're going to add an asset check to ensure that the final `custome
 
 Once we reload the code location, we'll see a tab `checks` indicating the presence of an asset check on our `rebuild_customers_list` asset.
 
-![Asset check on peer DAG](/images/guides/migrate/airlift/asset_check_peered_dag.png)
+![Asset check on peer DAG](/images/integrations/airlift/asset_check_peered_dag.png)
 
 Let's run the backfill again:
 
@@ -74,7 +74,7 @@ airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%
 
 And we'll see that the asset check executed successfully in Dagster (indicated by the green check mark).
 
-![Asset check success](/images/guides/migrate/airlift/peer_check_success.png)
+![Asset check success](/images/integrations/airlift/peer_check_success.png)
 
 Let's again wipe materializations and runs for tutorial purposes.
 
