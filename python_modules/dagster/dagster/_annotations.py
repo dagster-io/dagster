@@ -294,6 +294,105 @@ def get_beta_info(obj: Annotatable) -> BetaInfo:
 
 
 # ########################
+# ##### BETA PARAM
+# ########################
+
+_BETA_PARAM_ATTR_NAME: Final[str] = "_beta_params"
+
+
+@overload
+def beta_param(
+    __obj: T_Annotatable,
+    *,
+    param: str,
+    additional_warn_text: Optional[str] = ...,
+    emit_runtime_warning: bool = ...,
+) -> T_Annotatable: ...
+
+
+@overload
+def beta_param(
+    __obj: None = ...,
+    *,
+    param: str,
+    additional_warn_text: Optional[str] = ...,
+    emit_runtime_warning: bool = ...,
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
+
+
+def beta_param(
+    __obj: Optional[T_Annotatable] = None,
+    *,
+    param: str,
+    additional_warn_text: Optional[str] = None,
+    emit_runtime_warning: bool = True,
+) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
+    """Mark a parameter of a class initializer or function/method as beta. This appends some
+    metadata to the decorated object that causes the specified argument to be rendered with an
+    "beta" tag and associated warning in the docs.
+
+    If `emit_runtime_warning` is True, a warning will also be emitted when the function is called
+    and a non-None value is passed for the parameter. For consistency between docs and runtime
+    warnings, this decorator is preferred to manual calls to `beta_warning`. Note that the
+    warning will only be emitted if the value is passed as a keyword argument.
+
+    Args:
+        param (str): The name of the parameter to mark as beta.
+        additional_warn_text (str): Additional text to display after the deprecation warning.
+            Typically this should suggest a newer API.
+        emit_runtime_warning (bool): Whether to emit a warning when the function is called.
+    """
+    if __obj is None:
+        return lambda obj: beta_param(
+            obj,
+            param=param,
+            additional_warn_text=additional_warn_text,
+            emit_runtime_warning=emit_runtime_warning,
+        )
+    else:
+        check.invariant(
+            _annotatable_has_param(__obj, param),
+            f"Attempted to mark undefined parameter `{param}` beta.",
+        )
+        target = _get_annotation_target(__obj)
+
+        if not hasattr(target, _BETA_PARAM_ATTR_NAME):
+            setattr(target, _BETA_PARAM_ATTR_NAME, {})
+        getattr(target, _BETA_PARAM_ATTR_NAME)[param] = BetaInfo(
+            additional_warn_text=additional_warn_text,
+        )
+
+        if emit_runtime_warning:
+            condition = lambda *_, **kwargs: kwargs.get(param) is not None
+            warning_fn = lambda: beta_warning(
+                _get_subject(__obj, param=param),
+                additional_warn_text=additional_warn_text,
+                stacklevel=4,
+            )
+            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)
+        else:
+            return __obj
+
+
+def has_beta_params(obj: Annotatable) -> bool:
+    return hasattr(_get_annotation_target(obj), _BETA_PARAM_ATTR_NAME)
+
+
+def get_beta_params(obj: Annotatable) -> Mapping[str, BetaInfo]:
+    return getattr(_get_annotation_target(obj), _BETA_PARAM_ATTR_NAME)
+
+
+def is_beta_param(obj: Annotatable, param_name: str) -> bool:
+    target = _get_annotation_target(obj)
+    return param_name in getattr(target, _BETA_PARAM_ATTR_NAME, {})
+
+
+def get_beta_param_info(obj: Annotatable, param_name: str) -> BetaInfo:
+    target = _get_annotation_target(obj)
+    return getattr(target, _BETA_PARAM_ATTR_NAME)[param_name]
+
+
+# ########################
 # ##### SUPERSEDED
 # ########################
 
