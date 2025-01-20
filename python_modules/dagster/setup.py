@@ -133,6 +133,9 @@ setup(
             "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
             "flaky",
+            # External processes launched with Pipes can run on IPython (example: Databricks)
+            # so it's used for some of the tests
+            "ipython",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [

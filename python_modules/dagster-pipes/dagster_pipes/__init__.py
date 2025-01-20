@@ -76,6 +76,14 @@ def _make_message(method: Method, params: Optional[Mapping[str, Any]]) -> "Pipes
     }
 
 
+def _is_ipython() -> bool:
+    try:
+        get_ipython()  # type: ignore
+        return True
+    except NameError:
+        return False
+
+
 # Can't use a constant for TypedDict key so this value is repeated in `ExtMessage` defn.
 PIPES_PROTOCOL_VERSION_FIELD = "__dagster_pipes_version"
 
@@ -812,6 +820,8 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
 
         self.error_messages = Queue()
 
+        self.is_ipython = _is_ipython()
+
     @property
     def name(self) -> str:
         return self._name
@@ -830,16 +840,28 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         with tempfile.NamedTemporaryFile() as temp_file:
             sys.stderr.write(f"Starting {self.name}\n")
 
-            capturing_started, capturing_should_stop = Event(), Event()
+            if not self.is_ipython:
+                capturing_started, capturing_should_stop = Event(), Event()
 
-            tee = subprocess.Popen(["tee", str(temp_file.name)], stdin=subprocess.PIPE)
+                tee = subprocess.Popen(["tee", str(temp_file.name)], stdin=subprocess.PIPE)
 
-            # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
-            # of any child processes we spawn)
+                # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
+                # of any child processes we spawn)
 
-            stdio_fileno = self.stdio.fileno()
-            prev_fd = os.dup(stdio_fileno)
-            os.dup2(cast(IO[bytes], tee.stdin).fileno(), stdio_fileno)
+                stdio_fileno = self.stdio.fileno()
+                prev_fd = os.dup(stdio_fileno)
+                os.dup2(cast(IO[bytes], tee.stdin).fileno(), stdio_fileno)
+
+                ipython_capturer = None
+            else:
+                from IPython.utils.capture import capture_output
+
+                ipython_capturer = capture_output(
+                    stdout=self.stream == "stdout",
+                    stderr=self.stream == "stderr",
+                    display=False,
+                )
+                ipython_capturer.__enter__()
 
             thread = ExcThread(
                 target=self.handler,
@@ -857,15 +879,26 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
                 capturing_started.wait()
                 yield
             finally:
-                self.stdio.flush()
-                time.sleep(self.WAIT_FOR_TEE_SECONDS)
-                tee.terminate()
+                if self.is_ipython and ipython_capturer:
+                    ipython_capturer.__exit__(None, None, None)
+
+                    if self.stream == "stdout":
+                        temp_file.write(ipython_capturer.stdout)
+                        self.stdio.write(ipython_capturer.stdout)
+                    else:
+                        temp_file.write(ipython_capturer.stderr)
+                        self.stdio.write(ipython_capturer.stderr)
+
+                    self.stdio.flush()
+                else:
+                    self.stdio.flush()
+                    time.sleep(self.WAIT_FOR_TEE_SECONDS)
+                    tee.terminate()
+                    # undo dup2
+                    os.dup2(prev_fd, stdio_fileno)
+
                 capturing_should_stop.set()
                 thread.join()
-
-                # undo dup2
-
-                os.dup2(prev_fd, stdio_fileno)
 
                 sys.stderr.write(f"Stopped {self.name}\n")
 

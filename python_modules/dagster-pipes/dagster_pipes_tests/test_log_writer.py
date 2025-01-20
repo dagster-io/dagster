@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from time import sleep
@@ -9,7 +10,30 @@ from dagster_pipes import (
     PipesDefaultMessageWriter,
     PipesFileMessageWriterChannel,
     PipesStdioFileLogWriter,
+    _is_ipython,
 )
+import inspect
+import pytest
+from pathlib import Path
+
+
+def test_is_ipython(
+    tmpdir,
+):
+    assert _is_ipython() is False
+
+    # now check if it works in an IPython environment
+
+
+    script = """from dagster_pipes import _is_ipython; print(_is_ipython())"""
+
+    with open(tmpdir / "script.py", "w") as f:
+        f.write(script)
+
+    result = subprocess.run(["ipython", tmpdir / "script.py"], stdout=subprocess.PIPE, check=False)
+    assert result.stdout.decode().strip() == "True"
+
+
 
 
 def test_pipes_stdio_file_log_writer(capsys):
@@ -81,3 +105,36 @@ def test_pipes_default_log_writer(capsys):
 
             assert "Writing this to stdout" in stdout_text
             assert "And this to stderr" in stderr_text
+
+
+
+def external_script_source():
+    from dagster_pipes import open_dagster_pipes
+    import sys
+
+    with open_dagster_pipes():
+        print("Hello from stdout")
+        print("Hello from stderr", file=sys.stderr)
+
+
+
+@pytest.fixture
+def external_script(tmpdir: Path) -> Path:
+    path = tmpdir / "script.py"
+
+    with open(path, "w") as f:
+        code = inspect.getsource(external_script_source)
+
+    return path
+
+
+@pytest.mark.parametrize(
+    "runtime",
+    [
+        "python",
+        "ipython",
+    ],
+)
+def test_with_external_script(external_script: Path):
+    @asset
+    def my_asset(context: AssetExecutionContext, pipes_client: PipesSub

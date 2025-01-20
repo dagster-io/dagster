@@ -56,7 +56,7 @@ def main(
         "helm/dagster/schema[test]",
         "python_modules/automation",
         "python_modules/dagster[pyright,ruff,test]",
-        "python_modules/dagster-pipes",
+        "python_modules/dagster-pipes[test]",
         "python_modules/dagster-graphql",
         "python_modules/dagster-test",
         "python_modules/dagster-webserver",

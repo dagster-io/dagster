@@ -129,6 +129,7 @@ class PipesSubprocessClient(PipesClient, TreatAsResourceParam):
             try:
                 process.wait()
                 if process.returncode != 0:
+                    breakpoint()
                     raise DagsterPipesExecutionError(
                         f"External execution process failed with code {process.returncode}"
                     )
