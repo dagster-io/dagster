@@ -11,7 +11,7 @@ This article is applicable to Dagster+.
 
 This reference describes the settings that can be configured for full deployments in Dagster+.
 
-Refer to the [Managing deployments in Dagster+ guide](managing-deployments-in-dagster-plus) for information about configuring settings in the Dagster+ interface or using the `dagster-cloud` CLI.
+Refer to the [Managing deployments in Dagster+ guide](managing-deployments) for information about configuring settings in the Dagster+ interface or using the `dagster-cloud` CLI.
 
 ## Settings schema
 

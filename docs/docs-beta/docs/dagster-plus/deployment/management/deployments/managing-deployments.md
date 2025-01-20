@@ -21,17 +21,17 @@ Deployments are standalone environments, allowing you to operate independent ins
 
 When a Dagster+ organization is created, a single deployment named `prod` will also be created. To create additional deployments, a [Pro plan](https://dagster.io/pricing) is required.
 
-Each deployment can have one or multiple [code locations](/dagster-plus/managing-deployments/code-locations).
+Each deployment can have one or multiple [code locations](/dagster-plus/deployment/code-locations).
 
 **Concerned about testing environments?** We recommend using Branch Deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster+ users, regardless of plan.
 
-Refer to the [Branch Deployment docs](/dagster-plus/managing-deployments/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/guides/dagster/branch_deployments) for a real-world example.
+Refer to the [Branch Deployment docs](/dagster-plus/features/ci-cd/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/dagster-plus/features/ci-cd/branch-deployments/testing) for a real-world example.
 
 ## Viewing and switching deployments
 
 In Dagster+, you can view and switch between deployments using the **deployment switcher**:
 
-![The deployment switcher in Dagster+](/images/dagster-cloud/developing-testing/deployments/deployment-switcher.png)
+![The deployment switcher in Dagster+](/images/dagster-plus/full-deployments/deployment-switcher.png)
 
 To view all deployments, click **View all deployments**.
 
@@ -83,7 +83,7 @@ To delete a deployment:
 
 :::
 
-Deployment settings can be configured in the Dagster+ interface or using the `dagster-cloud` CLI. Refer to the [deployment settings reference](/dagster-plus/managing-deployments/deployment-settings-reference) for more info about individual settings.
+Deployment settings can be configured in the Dagster+ interface or using the `dagster-cloud` CLI. Refer to the [deployment settings reference](/dagster-plus/deployment/management/deployments/deployment-settings-reference) for more info about individual settings.
 
 <Tabs>
   <TabItem value="Dagster+">
