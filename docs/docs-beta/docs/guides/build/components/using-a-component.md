@@ -1,6 +1,6 @@
 ---
 title: "Adding a component to a project"
-sidebar_position: 100
+sidebar_position: 200
 unlisted: true
 ---
 
