@@ -3,7 +3,7 @@ title: 'Defining assets'
 sidebar_position: 100
 ---
 
-The most common way to create a data asset in Dagster is by annotating a Python function with an asset decorator. The function computes the contents of the asset, such as a database table or file.
+The most common way to create a data asset in Dagster is by annotating a Python function with an <PyObject section="assets" module="dagster" object="asset" decorator /> decorator. The function computes the contents of the asset, such as a database table or file.
 
 An asset definition includes the following:
 
@@ -31,7 +31,7 @@ Dagster has four types of asset decorators:
 
 ## Defining operations that create a single asset \{#single-asset}
 
-The simplest way to define a data asset in Dagster is by using the `@asset` decorator. This decorator marks a Python function as an asset.
+The simplest way to define a data asset in Dagster is by using the <PyObject section="assets" module="dagster" object="asset" decorator />  decorator. This decorator marks a Python function as an asset.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/data-assets/asset_decorator.py" language="python" title="Using @dg.asset decorator" />
 
@@ -39,7 +39,7 @@ In this example, `my_data_asset` is an asset that logs its output. Dagster autom
 
 ## Defining operations that create multiple assets \{#multi-asset}
 
-When you need to generate multiple assets from a single operation, you can use the `@multi_asset` decorator. This allows you to output multiple assets while maintaining a single processing function, which could be useful for:
+When you need to generate multiple assets from a single operation, you can use the <PyObject section="assets" module="dagster" object="multi_asset" decorator />  decorator. This allows you to output multiple assets while maintaining a single processing function, which could be useful for:
 
 - Making a single call to an API that updates multiple tables
 - Using the same in-memory object to compute multiple assets
@@ -58,7 +58,7 @@ flowchart LR
 
 ## Defining multiple operations that create a single asset \{#graph-asset}
 
-For cases where you need to perform multiple operations to produce a single asset, you can use the `@graph_asset` decorator. This approach encapsulates a series of operations and exposes them as a single asset, allowing you to model complex pipelines while only exposing the final output.
+For cases where you need to perform multiple operations to produce a single asset, you can use the <PyObject section="assets" module="dagster" object="graph_asset" decorator /> decorator. This approach encapsulates a series of operations and exposes them as a single asset, allowing you to model complex pipelines while only exposing the final output.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/data-assets/graph_asset_decorator.py" language="python" title="Using @dg.graph_asset decorator" />
 
