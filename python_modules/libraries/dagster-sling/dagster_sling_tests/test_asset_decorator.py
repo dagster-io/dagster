@@ -1,12 +1,15 @@
 import os
 import sqlite3
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
 from dagster import (
     AssetExecutionContext,
     AssetKey,
+    AssetSpec,
     Config,
     FreshnessPolicy,
     JsonMetadataValue,
@@ -219,6 +222,32 @@ def test_base_with_meta_config_translator():
 
 
 def test_base_with_custom_tags_translator() -> None:
+    replication_config_path = file_relative_path(
+        __file__, "replication_configs/base_with_default_meta/replication.yaml"
+    )
+
+    class CustomSlingTranslator(DagsterSlingTranslator):
+        def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+            default_spec = super().get_asset_spec(stream_definition)
+            return default_spec.replace_attributes(
+                kinds={"sling", "foo"}, tags={"custom_tag": "custom_value"}
+            )
+
+    @sling_assets(
+        replication_config=replication_config_path,
+        dagster_sling_translator=CustomSlingTranslator(),
+    )
+    def my_sling_assets(): ...
+
+    for asset_key in my_sling_assets.keys:
+        assert my_sling_assets.tags_by_key[asset_key] == {
+            "custom_tag": "custom_value",
+            **build_kind_tag("sling"),
+            **build_kind_tag("foo"),
+        }
+
+
+def test_base_with_custom_tags_translator_legacy() -> None:
     replication_config_path = file_relative_path(
         __file__, "replication_configs/base_with_default_meta/replication.yaml"
     )

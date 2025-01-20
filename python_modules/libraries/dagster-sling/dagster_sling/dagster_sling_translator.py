@@ -1,7 +1,7 @@
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public
@@ -20,16 +20,49 @@ class DagsterSlingTranslator:
         the value is a dictionary representing the Sling Replication Stream Config.
         """
         return AssetSpec(
-            key=self.get_asset_key(stream_definition),
-            deps=self.get_deps_asset_key(stream_definition),
-            description=self.get_description(stream_definition),
-            metadata=self.get_metadata(stream_definition),
-            tags=self.get_tags(stream_definition),
-            kinds=self.get_kinds(stream_definition),
-            group_name=self.get_group_name(stream_definition),
-            freshness_policy=self.get_freshness_policy(stream_definition),
-            auto_materialize_policy=self.get_auto_materialize_policy(stream_definition),
+            key=self._resolve_back_compat_method(
+                "get_asset_key", self._default_asset_key_fn, stream_definition
+            ),
+            deps=self._resolve_back_compat_method(
+                "get_deps_asset_key", self._default_deps_fn, stream_definition
+            ),
+            description=self._resolve_back_compat_method(
+                "get_description", self._default_description_fn, stream_definition
+            ),
+            metadata=self._resolve_back_compat_method(
+                "get_metadata", self._default_metadata_fn, stream_definition
+            ),
+            tags=self._resolve_back_compat_method(
+                "get_tags", self._default_tags_fn, stream_definition
+            ),
+            kinds=self._resolve_back_compat_method(
+                "get_kinds", self._default_kinds_fn, stream_definition
+            ),
+            group_name=self._resolve_back_compat_method(
+                "get_group_name", self._default_group_name_fn, stream_definition
+            ),
+            freshness_policy=self._resolve_back_compat_method(
+                "get_freshness_policy", self._default_freshness_policy_fn, stream_definition
+            ),
+            auto_materialize_policy=self._resolve_back_compat_method(
+                "get_auto_materialize_policy",
+                self._default_auto_materialize_policy_fn,
+                stream_definition,
+            ),
         )
+
+    def _resolve_back_compat_method(
+        self,
+        method_name: str,
+        default_fn: Callable[[Mapping[str, Any]], Any],
+        stream_definition: Mapping[str, Any],
+    ):
+        method = getattr(type(self), method_name)
+        base_method = getattr(DagsterSlingTranslator, method_name)
+        if method is not base_method:  # user defined this
+            return method(self, stream_definition)
+        else:
+            return default_fn(stream_definition)
 
     @public
     def sanitize_stream_name(self, stream_name: str) -> str:
@@ -101,7 +134,7 @@ class DagsterSlingTranslator:
                         map = {"stream1": "asset1", "stream2": "asset2"}
                         return AssetKey(map[stream_definition["name"]])
         """
-        return self._default_asset_key_fn(stream_definition)
+        return self.get_asset_spec(stream_definition).key
 
     def _default_asset_key_fn(self, stream_definition: Mapping[str, Any]) -> AssetKey:
         """A function that takes a stream definition from a Sling replication config and returns a
@@ -192,7 +225,7 @@ class DagsterSlingTranslator:
                         return AssetKey(map[stream_definition["name"]])
 
         """
-        return self._default_deps_fn(stream_definition)
+        return [dep.asset_key for dep in self.get_asset_spec(stream_definition).deps]
 
     def _default_deps_fn(self, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
         """A function that takes a stream definition from a Sling replication config and returns a
@@ -253,7 +286,7 @@ class DagsterSlingTranslator:
         Returns:
             Optional[str]: The description of the stream if found, otherwise None.
         """
-        return self._default_description_fn(stream_definition)
+        return self.get_asset_spec(stream_definition).description
 
     def _default_description_fn(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         """Retrieves the description for a given stream definition.
@@ -290,7 +323,7 @@ class DagsterSlingTranslator:
         Returns:
             Mapping[str, Any]: A dictionary containing the stream configuration as JSON metadata.
         """
-        return self._default_metadata_fn(stream_definition)
+        return self.get_asset_spec(stream_definition).metadata
 
     def _default_metadata_fn(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
         """Retrieves the metadata for a given stream definition.
@@ -321,7 +354,7 @@ class DagsterSlingTranslator:
         Returns:
             Mapping[str, Any]: An empty dictionary.
         """
-        return self._default_tags_fn(stream_definition)
+        return self.get_asset_spec(stream_definition).tags
 
     def _default_tags_fn(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
         """Retrieves the tags for a given stream definition.
@@ -351,7 +384,7 @@ class DagsterSlingTranslator:
         Returns:
             Set[str]: A set containing kinds for the stream's assets.
         """
-        return self._default_kinds_fn(stream_definition)
+        return self.get_asset_spec(stream_definition).kinds
 
     def _default_kinds_fn(self, stream_definition: Mapping[str, Any]) -> set[str]:
         """Retrieves the kinds for a given stream definition.
@@ -381,7 +414,7 @@ class DagsterSlingTranslator:
         Returns:
             Optional[str]: The group name if found, otherwise None.
         """
-        return self._default_group_name_fn(stream_definition)
+        return self.get_asset_spec(stream_definition).group_name
 
     def _default_group_name_fn(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         """Retrieves the group name for a given stream definition.
@@ -419,7 +452,7 @@ class DagsterSlingTranslator:
             Optional[FreshnessPolicy]: A FreshnessPolicy object if the configuration is found,
             otherwise None.
         """
-        return self._default_freshness_policy_fn(stream_definition)
+        return self.get_asset_spec(stream_definition).freshness_policy
 
     def _default_freshness_policy_fn(
         self, stream_definition: Mapping[str, Any]
@@ -467,7 +500,7 @@ class DagsterSlingTranslator:
             Optional[AutoMaterializePolicy]: An eager auto-materialize policy if the configuration
             is found, otherwise None.
         """
-        return self._default_auto_materialize_policy_fn(stream_definition)
+        return self.get_asset_spec(stream_definition).auto_materialize_policy
 
     def _default_auto_materialize_policy_fn(
         self, stream_definition: Mapping[str, Any]
