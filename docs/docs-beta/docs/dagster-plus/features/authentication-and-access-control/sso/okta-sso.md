@@ -38,7 +38,7 @@ To complete the steps in this guide, you'll need:
 
   For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, you'd enter `hooli` into the **Organization** field:
 
-   ![Okta Subdomain Configuration](/images/dagster-plus/authentication-and-access-control/okta/subdomain-configuration.png)
+   ![Okta Subdomain Configuration](/images/dagster-plus/features/authentication-and-access-control/okta/subdomain-configuration.png)
 
 4. When finished, click **Done**.
 
@@ -51,13 +51,13 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
 2. Click the **Actions** button of the **Active** certificate.
 3. Click **View IdP metadata**:
 
-   ![Okta IdP metadata options](/images/dagster-plus/authentication-and-access-control/okta/save-identity-provider-metadata.png)
+   ![Okta IdP metadata options](/images/dagster-plus/features/authentication-and-access-control/okta/save-identity-provider-metadata.png)
 
    This will open a new page in your browser with the IdP metadata in XML format.
 
 4. Right-click the page and use **Save As** or **Save Page As**:
 
-   ![Save IdP metadata as XML](/images/dagster-plus/authentication-and-access-control/okta/save-xml-as-page.png)
+   ![Save IdP metadata as XML](/images/dagster-plus/features/authentication-and-access-control/okta/save-xml-as-page.png)
 
    In Chrome and Edge, the file will be downloaded as an XML file. In Firefox, choose **Save Page As > Save as type**, then select **All files**.
 
@@ -88,6 +88,6 @@ import TestSSO from '../../../../partials/\_TestSSO.md';
 
 In the Okta **Applications** page, click the **Dagster+** icon:
 
-![Okta idP Login](/images/dagster-plus/authentication-and-access-control/okta/idp-login.png)
+![Okta idP Login](/images/dagster-plus/features/authentication-and-access-control/okta/idp-login.png)
 
 If successful, you'll be automatically signed into your Dagster+ organization.

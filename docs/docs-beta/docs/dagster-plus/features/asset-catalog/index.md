@@ -13,4 +13,4 @@ The Dagster+ version of the asset catalog page displays assets broken out by com
 
 To access the asset catalog, click **Catalog** in the top navigation.
 
-![The Asset Catalog page in the Dagster UI](/images/dagster-plus/asset-catalog/asset-catalog-cloud-pro.png)
+![The Asset Catalog page in the Dagster UI](/images/dagster-plus/features/asset-catalog/asset-catalog-cloud-pro.png)

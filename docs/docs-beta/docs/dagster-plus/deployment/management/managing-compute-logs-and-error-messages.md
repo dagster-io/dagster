@@ -84,8 +84,8 @@ To mask error messages in a Dagster+ Deployment, set the environment variable `D
   alt="Environment variable UI showing DAGSTER_REDACT_USER_CODE_ERRORS set to 1"
   style={{width:'100%', height: 'auto'}}
   sources={{
-    light: '/images/dagster-cloud/logs-error-messages/configure-redact-env-var.png',
-    dark: '/images/dagster-cloud/logs-error-messages/configure-redact-env-var.png',
+    light: '/images/dagster-plus/management/configure-redact-env-var.png',
+    dark: '/images/dagster-plus/management/configure-redact-env-var.png',
   }}
 />
 
@@ -96,7 +96,7 @@ Once set, error messages from your code locations will be masked in the UI. A un
   alt="Error message in Dagster event logs showing unique error ID"
   style={{width:'100%', height: 'auto'}}
   sources={{
-    light: '/images/dagster-cloud/logs-error-messages/masked-err-message.png',
-    dark: '/images/dagster-cloud/logs-error-messages/masked-err-message.png',
+    light: '/images/dagster-plus/management/masked-err-message.png',
+    dark: '/images/dagster-plus/management/masked-err-message.png',
   }}
 />

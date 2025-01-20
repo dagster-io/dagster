@@ -30,7 +30,7 @@ To follow the steps in this guide, you'll need:
 3. On the **Applications** page, click **Add App**.
 4. On the **Find Applications** page, search for `Dagster+`:
 
-   ![Find Applications in OneLogin](/images/dagster-plus/authentication-and-access-control/onelogin/find-applications.png)
+   ![Find Applications in OneLogin](/images/dagster-plus/features/authentication-and-access-control/onelogin/find-applications.png)
 
 5. Add and save the application.
 
@@ -71,7 +71,7 @@ Next, you'll assign users to the Dagster+ application in OneLogin. This will all
 3. On the user's page, click **Applications**.
 4. Assign the user to Dagster+. In the following image, the user `Test D'Test` has been assigned to Dagster+:
 
-   ![Screenshot of Assign New Login in OneLogin](/images/dagster-plus/authentication-and-access-control/onelogin/new-login.png)
+   ![Screenshot of Assign New Login in OneLogin](/images/dagster-plus/features/authentication-and-access-control/onelogin/new-login.png)
 
 5. Click **Continue**.
 6. Click **Save User.**
@@ -84,6 +84,6 @@ import TestSSO from '../../../../partials/\_TestSSO.md';
 
 In the OneLogin portal, click the Dagster+ icon:
 
-![Screenshot of the Dagster+ icon in OneLogin](/images/dagster-plus/authentication-and-access-control/onelogin/onelogin-dagster.png)
+![Screenshot of the Dagster+ icon in OneLogin](/images/dagster-plus/features/authentication-and-access-control/onelogin/onelogin-dagster.png)
 
 If successful, you'll be automatically signed into your Dagster+ organization.

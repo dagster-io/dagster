@@ -68,11 +68,11 @@ After the stack is installed, you'll be prompted to configure it. In the ECS wiz
 
 The page should look similar to the following image. In this example, our organization name is `hooli` and our deployment is `prod`:
 
-![Example Configuration for the ECS Agent CloudFormation Template](/images/dagster-cloud/agents/aws-ecs-stack-wizard-new.png)
+![Example Configuration for the ECS Agent CloudFormation Template](/images/dagster-plus/deployment/agents/aws-ecs-stack-wizard-new.png)
 
 After you've finished configuring the stack in AWS, you can view the agent in Dagster+. To do so, navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
 
-![Instance Status](/images/dagster-cloud/agents/dagster-cloud-instance-status.png)
+![Instance Status](/images/dagster-plus/deployment/agents/dagster-cloud-instance-status.png)
 
 ## Next steps
 

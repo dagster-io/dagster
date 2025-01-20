@@ -74,7 +74,7 @@ locations:
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
-!["Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
+!["Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 
 </TabItem>
 <TabItem value="Docker agents">
@@ -99,7 +99,7 @@ The `container_context.docker.env_vars` property is a list, where each item can 
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
-![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
+![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 
 </TabItem>
 <TabItem value="Kubernetes agents">
@@ -130,7 +130,7 @@ locations:
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
-![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
+![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 
 </TabItem>
 </Tabs>
@@ -164,7 +164,7 @@ To make environment variables accessible to a full deployment with an Amazon ECS
 
 6. In the section displaying the template YAML, locate the `AgentTaskDefinition` section:
 
-   ![Highlighted AgentTaskDefinition section of the AWS ECS agent CloudFormation template in the AWS Console](/images/dagster-cloud/developing-testing/environment-variables/aws-ecs-cloudformation-template.png)
+   ![Highlighted AgentTaskDefinition section of the AWS ECS agent CloudFormation template in the AWS Console](/images/dagster-plus/deployment/environment-variables/aws-ecs-cloudformation-template.png)
 
 
 7. In the `user_code_launcher.config` portion of the `AgentTaskDefinition` section, add the environment variables as follows:
@@ -188,7 +188,7 @@ To make environment variables accessible to a full deployment with an Amazon ECS
 
 8. When finished, click the **Create Stack** button:
 
-   ![Highlighted Create Stack button in the AWS Console](/images/dagster-cloud/developing-testing/environment-variables/aws-ecs-save-template.png)
+   ![Highlighted Create Stack button in the AWS Console](/images/dagster-plus/deployment/environment-variables/aws-ecs-save-template.png)
 
 9. You'll be redirected back to the **Update stack** wizard, where the new template will be populated. Click **Next**.
 

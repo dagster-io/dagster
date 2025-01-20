@@ -37,7 +37,7 @@ By default, users will be granted Viewer permissions on each deployment. The def
 
 After the user is created, they will be notified via email, and you can [add the user to teams](#teams) and [assign user roles for each deployment](#user-roles).
 
-![Screenshot of assigning roles to a user](/images/dagster-plus/authentication-and-access-control/adding-new-user.png)
+![Screenshot of assigning roles to a user](/images/dagster-plus/features/authentication-and-access-control/adding-new-user.png)
 
 ## Adding users to teams \{#teams}
 
@@ -47,7 +47,7 @@ Teams are a Dagster+ Pro feature.
 
 Teams are useful for centralizing permission sets for different types of users. Refer to [Managing teams](teams) for more information about creating and managing teams.
 
-![Screenshot of Managing teams page](/images/dagster-plus/authentication-and-access-control/mananging-teams.png)
+![Screenshot of Managing teams page](/images/dagster-plus/features/authentication-and-access-control/mananging-teams.png)
 
 :::note
 When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to [Managing user roles and permissions](user-roles-permissions) for more information.
