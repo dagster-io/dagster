@@ -4,37 +4,24 @@ description: Job run configuration allows providing parameters to jobs at the ti
 sidebar_position: 100
 ---
 
-<Note>
-  This guide covers using the new Pythonic config system introduced in Dagster
-  1.3. If your code is still using the legacy APIs, see the{" "}
-  <a href="/concepts/configuration/config-schema-legacy">
-    legacy configuration guide
-  </a>
-  . To migrate your code, refer to the <a href="/guides/dagster/migrating-to-pythonic-resources-and-config">
-    migrating to Pythonic resources and config
-  </a> guide.
-</Note>
-
 Run configuration allows providing parameters to jobs at the time they're executed.
 
 It's often useful to provide user-chosen values to Dagster jobs or asset definitions at runtime. For example, you might want to provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
 
 Various Dagster entities (assets, ops, resources) can be individually configured. When launching a job that materializes (assets), executes (ops), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration through the `config` parameter. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the asset/op/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 
-A common use of configuration is for a [schedule](/concepts/automation/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the assets as a config value, and that asset might use that config value to decide what day's data to read.
+A common use of configuration is for a [schedule](/guides/automate/schedules/) or [sensor](/guides/automate/sensors/) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the assets as a config value, and that asset might use that config value to decide what day's data to read.
 
 ## Defining and accessing configuration
 
-Configurable parameters accepted by an asset or op are specified by defining a config model subclass of <PyObject object="Config"/> and a `config` parameter to the corresponding asset or op function. Under the hood, these config models utilize [Pydantic](https://docs.pydantic.dev/), a popular Python library for data validation and serialization.
+Configurable parameters accepted by an asset or op are specified by defining a config model subclass of <PyObject section="config" module="dagster" object="Config"/> and a `config` parameter to the corresponding asset or op function. Under the hood, these config models utilize [Pydantic](https://docs.pydantic.dev/), a popular Python library for data validation and serialization.
 
 During execution, the specified config is accessed within the body of the op or asset using the `config` parameter.
 
 <Tabs persistentKey="assetsorops">
 <TabItem value="Using software-defined-assets">
 
-#### Using asset definitions
-
-Here, we define a subclass of <PyObject object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the asset body.
+Here, we define a subclass of <PyObject section="config" module="dagster" object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the asset body.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_basic_asset_config endbefore=end_basic_asset_config dedent=4
 from dagster import asset, Config
@@ -50,8 +37,6 @@ def greeting(config: MyAssetConfig) -> str:
 </TabItem>
 <TabItem value="Using ops and jobs">
 
-#### Using ops
-
 Here, we define a subclass of <PyObject object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the op body.
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_basic_op_config endbefore=end_basic_op_config dedent=4
@@ -65,12 +50,12 @@ def print_greeting(config: MyOpConfig):
     print(f"hello {config.person_name}")
 ```
 
-You can also build config into [jobs](/concepts/ops-jobs-graphs/jobs).
+You can also build config into jobs.
 
 </TabItem>
 </Tabs>
 
-These examples showcase the most basic config types that can be used. For more information on the set of config types Dagster supports, see [the advanced config types documentation](/concepts/configuration/advanced-config-types).
+These examples showcase the most basic config types that can be used. For more information on the set of config types Dagster supports, see [the advanced config types documentation](advanced-config-types).
 
 ## Defining and accessing Pythonic configuration for a resource
 
@@ -86,7 +71,7 @@ class MyDatabaseResource(ConfigurableResource):
         return get_engine(self.connection_url).execute(query)
 ```
 
-For more information on using resources, refer to the [Resources guide](/concepts/resources).
+For more information on using resources, refer to the [Resources guide](/guides/build/external-resources/).
 
 ## Specifying runtime configuration
 
@@ -98,8 +83,6 @@ To execute a job or materialize an asset that specifies config, you'll need to p
 
 <Tabs persistentKey="configtype">
 <TabItem value="Python">
-
-### Python
 
 When specifying config from the Python API, we can use the `run_config` argument for <PyObject object="JobDefinition" method="execute_in_process"/> or <PyObject object="materialize"/>. This takes a <PyObject object="RunConfig"/> object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
@@ -123,18 +106,11 @@ asset_result = materialize(
 </TabItem>
 <TabItem value="Dagster UI">
 
-### Dagster UI
-
 From the UI's [Launchpad](/concepts/webserver/ui#launchpad-tab), you can supply config as YAML using the config editor. Here, the YAML schema matches the layout of the defined config class. The editor has typeahead, schema validation, and schema documentation.
 
 You can also click the **Scaffold Missing Config** button to generate dummy values based on the config schema. Note that a modal containing the Launchpad editor will pop up if you attempt to materialize an asset with a defined `config`.
 
-<Image
-alt="Config in the Dagster UI"
-src="/images/concepts/config-ui.png"
-width={3808}
-height={2414}
-/>
+![Config in the Dagster UI](/images/concepts/config-ui.png)
 
 </TabItem>
 <TabItem value="Command line">
@@ -161,7 +137,7 @@ dagster job execute --config my_config.yaml
 
 ## Validation
 
-Dagster validates any provided run config against the corresponding Pydantic model. It will abort execution with a <PyObject object="DagsterInvalidConfigError"/> or Pydantic `ValidationError` if validation fails. For example, both of the following will fail, because there is no `nonexistent_config_value` in the config schema:
+Dagster validates any provided run config against the corresponding Pydantic model. It will abort execution with a <PyObject section="config" module="dagster" object="DagsterInvalidConfigError"/> or Pydantic `ValidationError` if validation fails. For example, both of the following will fail, because there is no `nonexistent_config_value` in the config schema:
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_bad_config endbefore=end_execute_with_bad_config dedent=4
 @job
@@ -182,7 +158,7 @@ asset_result = materialize(
 
 ### Using environment variables with config
 
-Assets and ops can be configured using environment variables by passing an <PyObject object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/dagster/using-environment-variables-and-secrets).
+Assets and ops can be configured using environment variables by passing an <PyObject object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/deploy/using-environment-variables-and-secrets).
 
 ```python file=/guides/dagster/pythonic_config/pythonic_config.py startafter=start_execute_with_config_envvar endbefore=end_execute_with_config_envvar dedent=4
 from dagster import job, materialize, op, RunConfig, EnvVar
@@ -201,8 +177,8 @@ asset_result = materialize(
 )
 ```
 
-Refer to the [Environment variables and secrets guide](/guides/dagster/using-environment-variables-and-secrets) for more general info about environment variables in Dagster.
+Refer to the [Environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more general info about environment variables in Dagster.
 
 ## Next steps
 
-Config is a powerful tool for making Dagster pipelines more flexible and observable. For a deeper dive into the supported config types, see [the advanced config types documentation](/concepts/configuration/advanced-config-types). For more information on using resources, which are a powerful way to encapsulate reusable logic, see [the Resources guide](/concepts/resources).
+Config is a powerful tool for making Dagster pipelines more flexible and observable. For a deeper dive into the supported config types, see [the advanced config types documentation](advanced-config-types). For more information on using resources, which are a powerful way to encapsulate reusable logic, see [the Resources guide](/guides/build/external-resources).

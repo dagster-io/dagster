@@ -4,21 +4,11 @@ description: Dagster's config system supports a variety of more advanced config 
 sidebar_position: 200
 ---
 
-:::note
-
-  This guide covers using the new Pythonic config system introduced in Dagster
-  1.3. If your code is still using the legacy APIs, see the{" "}
-  <a href="/concepts/configuration/config-schema-legacy">
-    legacy configuration guide
-  </a>
-
-:::
-
-In some cases, you may want to define a more complex [config schema](/concepts/configuration/config-schema) for your ops and assets. For example, you may want to define a config schema that takes in a list of files or complex data. In this guide, we'll walk through some common patterns for defining more complex config schemas.
+In some cases, you may want to define a more complex [config schema](run-configuration) for your assets and ops. For example, you may want to define a config schema that takes in a list of files or complex data. In this guide, we'll walk through some common patterns for defining more complex config schemas.
 
 ## Attaching metadata to config fields
 
-Config fields can be annotated with metadata, which can be used to provide additional information about the field, using the Pydantic <PyObject object="Field"/> class.
+Config fields can be annotated with metadata, which can be used to provide additional information about the field, using the Pydantic <PyObject section="config" module="dagster" object="Field"/> class.
 
 For example, we can annotate a config field with a description, which will be displayed in the documentation for the config field. We can add a value range to a field, which will be validated when config is specified.
 
@@ -203,7 +193,7 @@ filtered_listings(FilterConfig(title="hotel", beds=4))
 
 ## Union types
 
-Union types are supported using Pydantic [discriminated unions](https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions). Each union type must be a subclass of <PyObject object="Config"/>. The `discriminator` argument to <PyObject object="Field"/> specifies the field that will be used to determine which union type to use. Discriminated unions provide comparable functionality to the `Selector` type in the legacy Dagster config APIs.
+Union types are supported using Pydantic [discriminated unions](https://docs.pydantic.dev/usage/types/#discriminated-unions-aka-tagged-unions). Each union type must be a subclass of <PyObject section="config" module="dagster" object="Config"/>. The `discriminator` argument to <PyObject section="config" module="dagster" object="Field"/> specifies the field that will be used to determine which union type to use. Discriminated unions provide comparable functionality to the `Selector` type in the legacy Dagster config APIs.
 
 Here, we define a config schema which takes in a `pet` field, which can be either a `Cat` or a `Dog`, as indicated by the `pet_type` field.
 

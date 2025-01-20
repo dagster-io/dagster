@@ -9,11 +9,9 @@ sidebar_position: 200
 This article is applicable to Dagster+.
 :::
 
-{/* /dagster-plus */}
-This reference describes the settings that can be configured for full deployments in [Dagster+](/todo.md).
+This reference describes the settings that can be configured for full deployments in Dagster+.
 
-{/* /dagster-plus/managing-deployments/managing-deployments#configuring-deployment-settings */}
-Refer to the [Managing deployments in Dagster+ guide](/todo.md) for info about configuring settings in the Dagster+ interface or using the `dagster-cloud` CLI.
+Refer to the [Managing deployments in Dagster+ guide](managing-deployments-in-dagster-plus) for information about configuring settings in the Dagster+ interface or using the `dagster-cloud` CLI.
 
 ## Settings schema
 
