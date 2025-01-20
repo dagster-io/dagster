@@ -64,7 +64,8 @@ class DagsterSlingTranslator:
             supersession_warning(
                 subject=method_name,
                 additional_warn_text=(
-                    "Use `DagsterSlingTranslator.get_asset_spec(...)` to access the attribute instead."
+                    f"Instead of overriding DagsterSlingTranslator.{method_name}(), "
+                    f"override DagsterSlingTranslator.get_asset_spec()."
                 ),
             )
             return method(self, stream_definition)
