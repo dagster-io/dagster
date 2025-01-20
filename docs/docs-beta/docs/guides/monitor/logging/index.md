@@ -3,7 +3,7 @@ title: "Logging"
 sidebar_position: 20
 ---
 
-Dagster supports a variety of [built-in logging options](/api/python-api/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/guides/deploy/webserver) and daemon.
+Dagster supports a variety of [built-in logging options](/api/python-api/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/guides/operate/webserver) and daemon.
 
 By default, Dagster automatically tracks and captures all execution events, which includes:
 

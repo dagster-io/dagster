@@ -6,7 +6,7 @@ sidebar_position: 400
 
 :::note
 
-The GraphQL API is still evolving and is subject to breaking changes. A large portion of the API is primarily for internal use by the [Dagster webserver](/guides/deploy/webserver).
+The GraphQL API is still evolving and is subject to breaking changes. A large portion of the API is primarily for internal use by the [Dagster webserver](/guides/operate/webserver).
 For any of the queries below, we will be clear about breaking changes in release notes.
 
 :::
@@ -20,7 +20,7 @@ Dagster exposes a GraphQL API that allows clients to interact with Dagster progr
 
 ## Using the GraphQL API
 
-The GraphQL API is served from the[webserver](/guides/deploy/webserver). To start the server, run the following:
+The GraphQL API is served from the[webserver](/guides/operate/webserver). To start the server, run the following:
 
 ```shell
 dagster dev
