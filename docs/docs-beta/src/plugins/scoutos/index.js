@@ -27,7 +27,7 @@ const SCOUTOS_INNER_HTML = `
       <div
         slot="fab"
         style="
-          background-color: #E6E6FA; /* lavender */
+          background-color: var(--prism-background-color); 
           padding-left: 24px;
           padding-right: 24px;
           padding-top: 4px;
