@@ -1,5 +1,5 @@
 ---
-title: Projects and components
+title: "Project"
 sidebar_position: 40
 ---
 
