@@ -8,7 +8,7 @@ setup(
         "dagster-cloud",
         "dagster-duckdb",
         "geopandas",
-        "kaleido",
+        "kaleido==0.1.*",
         "pandas",
         "plotly",
         "shapely",
