@@ -43,7 +43,7 @@ To add a package from a private GitHub repository, see [Use private Python packa
 
 ## Use a different Python version
 
-The default Python version for Dagster+ Serverless is Python 3.9. Python versions 3.10 through 3.12 are also supported. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
+Python versions 3.9 through 3.12 are all supported for Serverless deployments. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
@@ -74,7 +74,7 @@ dagster-cloud serverless deploy-python-executable --python-version=3.11 --locati
 
 Dagster+ runs your code on a Docker image that we build as follows:
 
-- The standard Python "slim" Docker image, such as python:3.8-slim is used as the base
+- The standard Python "slim" Docker image, such as python:3.10-slim is used as the base
 - The dagster-cloud[serverless] module installed in the image
 
 You can [add dependencies](#add-dependencies) in your `setup.py` file, but when that is not possible you can build and upload a custom base image that will be used to run your Python code:

@@ -1,5 +1,5 @@
 ---
-title: Create event-based pipelines with sensors
+title: "Sensors"
 sidebar_position: 30
 ---
 
@@ -18,7 +18,9 @@ Examples of actions include:
 - inserting a row into a database
 
 :::tip
-An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/automate#graphql-endpoint).
+
+An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/operate/graphql/).
+
 :::
 
 <details>

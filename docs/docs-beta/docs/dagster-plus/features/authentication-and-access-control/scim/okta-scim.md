@@ -1,7 +1,6 @@
 ---
 title: 'Okta SCIM provisioning'
 sidebar_position: 200
-unlisted: true
 ---
 
 The [System for Cross-domain Identity Management specification](https://scim.cloud/) (SCIM) is a standard designed to manage user identity information. When enabled in Dagster+, SCIM allows you to efficiently and easily manage users in your Identity Provider (IdP) - in this case, Okta - and sync their information to Dagster+.

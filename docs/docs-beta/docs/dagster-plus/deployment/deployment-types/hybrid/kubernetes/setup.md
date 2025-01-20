@@ -385,7 +385,9 @@ If you want completely separate environments with their own asset graph, run his
 ### Request resources such as CPU, memory, or GPU
 
 :::tip
+
 Dagster+ makes it easy to monitor CPU and memory used by code location servers and individual runs. Follow [this guide](/todo) for details.
+
 :::
 
 First determine if you want to change the requested resource for everything in a code location, or for a specific job or asset.

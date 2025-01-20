@@ -1,9 +1,15 @@
 ---
-title: "Custom loggers"
-sidebar_position: 200
+title: "Customizing Dagster's built-in loggers"
+sidebar_position: 100
 ---
 
-Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems.
+Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems. For a list of all built-in loggers, see the [API documentation](/api/python-api/loggers#built-in-loggers).
+
+:::note Limitations
+
+It's not currently possible to globally configure the logger for all jobs in a repository.
+
+:::
 
 <details>
   <summary>Prerequisites</summary>
@@ -15,12 +21,9 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-
 ## Step 1: Add a prebuilt custom logger to your jobs
 
-This step shows how to add an existing custom logger, the `json_console_logger`, to your jobs. This will
-override the default `colored_console_logger` and produce logs in JSON format.
-
+This step shows how to add an existing custom logger, the <PyObject section="loggers" module="dagster" object="_loggers.json_console_logger" />, to your jobs. This will override the default <PyObject section="loggers" module="dagster" object="_loggers.colored_console_logger" /> and produce logs in JSON format.
 
 ### Add the custom logger to your asset jobs
 
@@ -87,7 +90,7 @@ Here's an example of the output for reference, formatted for readability:
 
 ### Changing the logger configuration in the Dagster UI
 
-You can also change the logger configuration in the Dagster UI. This is useful if you want to change the logger configuration without changing the code, to use the custom logger on a manual asset materialization launch, or change the verbosity of the logs.
+You can also change the logger configuration in the Dagster UI. This is useful if you want to change the logger configuration without changing the code, to use the custom logger on a manual asset materialization launch, or change the verbosity of the logs. Add the following lines to your `config.yaml`:
 
 ```yaml
 loggers:
@@ -124,11 +127,3 @@ It contains the following fields:
 - `op_name`: string
 - `run_id`: string
 - `step_key`: string
-
-## Next steps
-
-Import your own custom logger by modifying the example provided in step 1.
-
-## Limitations
-
-It's not currently possible to globally configure the logger for all jobs in a repository.

@@ -20,6 +20,12 @@ sidebar_custom_props:
 
 This integration allows you to use [Sling](https://slingdata.io/) to extract and load data from popular data sources to destinations with high performance and ease.
 
+:::note
+
+This integration is currently **experimental**.
+
+:::
+
 ### Installation
 
 ```bash

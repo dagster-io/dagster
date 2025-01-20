@@ -18,7 +18,7 @@ This article assumes familiarity with [assets](/guides/build/assets/) and [jobs]
 
 
 * Dagster Core, add the following to your [dagster.yaml](/guides/deploy/dagster-yaml)
-* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/settings/deployment-settings)
+* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/deployments/deployment-settings-reference)
 
 ```yaml
 run_queue:
@@ -76,8 +76,8 @@ dagster instance concurrency set database 1
 
 A default concurrency limit can be configured for the instance, for any concurrency keys that don't have an explicit limit set:
 
-* Dagster+: Use the Dagster+ UI or the dagster-cloud CLI
-* Dagster Open Source: Use your instance's dagster.yaml
+* Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/todo) or the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/).
+* Dagster Open Source: Use your instance's [dagster.yaml](/guides/deploy/dagster-yaml)
 
 To enable this default value, use `concurrency.default_op_concurrency_limit`. For example, the following would set the default concurrency value for the deployment to 1:
 ```yaml
@@ -151,7 +151,7 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
 
   **Troubleshoot the Dagster daemon**
 
-    * **Verify the Dagster daemon is set up and running.** In the Dagster UI, navigate to **Deployment > Daemons** and verify that the daemon is running. The **Run queue** should also be running. If you used [dagster dev](/guides/deploy/execution/webserver) to start the Dagster UI, the daemon should have been started for you. If the daemon isn't running, proceed to step 2.
+    * **Verify the Dagster daemon is set up and running.** In the Dagster UI, navigate to **Deployment > Daemons** and verify that the daemon is running. The **Run queue** should also be running. If you used [dagster dev](/guides/deploy/webserver) to start the Dagster UI, the daemon should have been started for you. If the daemon isn't running, proceed to step 2.
     * **Verify the Dagster daemon can access the same storage as the Dagster webserver process.** Both the webserver process and the Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used dagster dev to start the Dagster UI, both processes should be using the same storage. Refer to the [Dagster Instance docs](/todo) for more information.
 
   **Troubleshoot the run queue configuration**

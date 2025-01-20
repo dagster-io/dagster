@@ -21,6 +21,12 @@ sidebar_custom_props:
 
 This integration allows you to use [dlt](https://dlthub.com/) to easily ingest and replicate data between systems through Dagster.
 
+:::note
+
+This integration is currently **experimental**.
+
+:::
+
 ### Installation
 
 ```bash
@@ -30,6 +36,12 @@ pip install dagster-dlt
 ### Example
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/dlt.py" language="python" />
+
+:::note
+
+If you are using the [sql_database](https://dlthub.com/docs/api_reference/sources/sql_database/__init__#sql_database) source, consider setting `defer_table_reflect=True` to reduce database reads. By default, the Dagster daemon will refresh definitions roughly every minute, which will query the database for resource definitions.
+
+:::
 
 ### About dlt
 

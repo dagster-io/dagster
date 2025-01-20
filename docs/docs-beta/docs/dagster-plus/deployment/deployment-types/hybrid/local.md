@@ -1,6 +1,6 @@
 ---
 title: Running a local agent
-sidebar_position: 50
+sidebar_position: 60
 sidebar_label: Local agent
 ---
 

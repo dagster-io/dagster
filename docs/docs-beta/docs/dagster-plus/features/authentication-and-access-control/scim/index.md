@@ -1,7 +1,6 @@
 ---
 title: "SCIM provisioning"
 sidebar_position: 30
-unlisted: true
 ---
 
 SCIM provisioning eases the burden of manually provisioning users across your cloud applications. When enabled, you can automatically sync user information from your IdP to Dagster+ and back again, ensuring user data is always up-to-date.

@@ -1,5 +1,5 @@
 ---
-title: "Cron-based schedules"
+title: "Schedules"
 sidebar_position: 10
 ---
 
@@ -32,6 +32,8 @@ daily_schedule = ScheduleDefinition(
     timezone="America/Los_Angeles",
 )
 ```
+
+For more information, see "[Customizing a schedule's execution timezone](customizing-execution-timezone)".
 
 ## Create schedules from partitions
 
