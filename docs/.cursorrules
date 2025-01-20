@@ -25,7 +25,7 @@ Guides
         - **Organization**, **Admin**, or **Editor** permissions on Dagster+
       </details>
 - Code examples should be in the following format
-<CodeExample filePath="getting-started/hello-world.py" language="python" /
+<CodeExample filePath="getting-started/hello-world.py" language="python" />
   
 
 Output Formatting
