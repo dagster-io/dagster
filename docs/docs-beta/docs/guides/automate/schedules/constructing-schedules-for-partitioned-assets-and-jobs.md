@@ -1,10 +1,8 @@
 ---
-title: "Constructing schedules from partitioned assets and jobs | Dagster Docs"
+title: "Constructing schedules from partitioned assets and jobs"
 description: "Learn to construct schedules for your partitioned jobs."
 sidebar_position: 400
 ---
-
-# Constructing schedules from partitioned jobs
 
 In this guide, we'll walk you through how to construct schedules from partitioned [assets](/guides/build/assets/) and jobs. By the end, you'll be able to:
 
