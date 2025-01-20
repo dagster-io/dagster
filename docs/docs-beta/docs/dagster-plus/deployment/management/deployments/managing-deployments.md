@@ -31,28 +31,17 @@ Refer to the [Branch Deployment docs](/dagster-plus/managing-deployments/branch-
 
 In Dagster+, you can view and switch between deployments using the **deployment switcher**:
 
-<Image
-alt="The deployment switcher in Dagster+"
-src="/images/dagster-cloud/developing-testing/deployments/deployment-switcher.png"
-width={660}
-height={207}
-/>
+![The deployment switcher in Dagster+](/images/dagster-cloud/developing-testing/deployments/deployment-switcher.png)
 
 To view all deployments, click **View all deployments**.
 
 ## Creating deployments
 
-<Note>
-  <a href="/dagster-plus/account/managing-users#understanding-user-permissions">
-    Organization Admin permissions
-  </a>{" "}
-  are required to create deployments. Additionally, note that creating multiple
-  deployments requires an{" "}
-  <a href="https://dagster.io/pricing" target="new">
-    Pro plan
-  </a>
-  .
-</Note>
+:::note
+
+[Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) are required to create deployments. Additionally, note that creating multiple deployments requires a [Pro plan](https://dagster.io/pricing).
+
+:::
 
 To create a deployment:
 
@@ -70,14 +59,11 @@ To create a deployment:
 
 ## Deleting deployments
 
-<Note>
-  <a href="/dagster-plus/account/managing-users#understanding-user-permissions">
-    Organization Admin permissions
-  </a>{" "}
-  are required to delete deployments. Additionally, note that deleting a
-  deployment also deletes all its associated data, including code locations,
-  jobs, schedules, and sensors.
-</Note>
+:::note
+
+[Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) are required to delete deployments. Additionally, note that deleting a deployment also deletes all its associated data, including code locations, jobs, schedules, and sensors.
+
+:::
 
 To delete a deployment:
 
@@ -91,12 +77,11 @@ To delete a deployment:
 
 ## Configuring deployment settings
 
-<Note>
-  <a href="/dagster-plus/account/managing-users#understanding-user-permissions">
-    Editor permissions
-  </a>{" "}
-  are required to modify deployment settings.
-</Note>
+:::note
+
+[Editor permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) are required to modify deployment settings.
+
+:::
 
 Deployment settings can be configured in the Dagster+ interface or using the `dagster-cloud` CLI. Refer to the [deployment settings reference](/dagster-plus/managing-deployments/deployment-settings-reference) for more info about individual settings.
 
@@ -104,24 +89,22 @@ Deployment settings can be configured in the Dagster+ interface or using the `da
   <TabItem value="Dagster+">
    To configure deployment settings in the Dagster+ UI:
 
-   <ol>
-    <li>Sign in to your Dagster+ account.</li>
-    <li>Access the <strong>Deployments</strong> page using one of the following:
-     <ul>
-      <li>Click the <strong>deployment switcher > View all deployments</strong>.</li>
-      <li>Click the <strong>deployment switcher</strong>, then the <strong>gear icon</strong> next to the deployment.</li>
-      <li>Click <strong>your user icon > Organization Settings > Deployments</strong>.</li>
-     </ul>
-    </li>
-    <li>Click the <strong>Settings</strong> button next to the deployment you want to configure.</li>
-    <li>In the window that displays, configure settings for the deployment.</li>
-    <li>When finished, click <strong>Save deployment settings</strong>.</li>
-   </ol>
+  1. Sign in to your Dagster+ account.
+  2. Access the **Deployments** page using one of the following:
+    - Click the **deployment switcher > View all deployments**.
+    - Click the **deployment switcher**, then the **gear icon** next to the deployment.
+    - Click **your user icon > Organization Settings > Deployments**.
+  3. Click the **Settings** button next to the deployment you want to configure.
+  4. In the window that displays, configure settings for the deployment.
+  5. When finished, click **Save deployment settings**.
   </TabItem>
   <TabItem value="dagster-cloud CLI">
-<Note>
-<strong>Note:</strong> <code>dagster-cloud</code> 0.13.14 or later must be installed to run the CLI. Agent and/or job code doesn't need to be upgraded.
-</Note>
+
+:::note
+
+`dagster-cloud` 0.13.14 or later must be installed to run the CLI. Agent and/or job code doesn't need to be upgraded.
+
+:::
 
 Create a file with the settings you'd like to configure. For example:
 
