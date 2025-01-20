@@ -9,7 +9,7 @@ In this guide, we'll show you a few approaches to subsetting asset checks in <Py
 
 :::note
 
-This article assumes familiarity with [asset checks](asset-checks) and [multi-assets](/guides/build/assets/multi-assets).
+This article assumes familiarity with [asset checks](asset-checks) and [multi-assets](/guides/build/assets/defining-assets#multi-asset).
 
 :::
 
@@ -61,7 +61,7 @@ def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]
 
 ## Subsetting checks in @multi_assets
 
-When using [multi-assets](/guides/build/assets/multi-assets), Dagster assumes that all checks specified on the asset should be executed after it is materialized. This means that attempting to execute some, but not all, of the checks defined by a multi-asset will result in an error.
+When using [multi-assets](/guides/build/assets/defining-assets#multi-asset), Dagster assumes that all checks specified on the asset should be executed after it is materialized. This means that attempting to execute some, but not all, of the checks defined by a multi-asset will result in an error.
 
 In the following example, we only want to execute a check when the `multi_asset_piece_1` asset produced by the `multi_asset_1_and_2` multi-asset is materialized:
 
@@ -118,5 +118,5 @@ Let's review what we did to accomplish this:
 | <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" />            | The class returned by asset checks.                                                                                                   |
 | <PyObject section="asset-checks" module="dagster" object="AssetCheckSeverity" />          | Defines the severity of a given asset check result.                                                                                   |
 | <PyObject section="asset-checks" module="dagster" object="AssetCheckSpec" />              | A class that's passed to asset decorators to define checks that execute in the same op as the asset. |
-| <PyObject section="assets" module="dagster" object="multi_asset" decorator />       | A decorator used to define [multi-assets](/guides/build/assets/multi-assets).                                                             |
+| <PyObject section="assets" module="dagster" object="multi_asset" decorator />       | A decorator used to define [multi-assets](/guides/build/assets/defining-assets#multi-asset).                                                             |
 

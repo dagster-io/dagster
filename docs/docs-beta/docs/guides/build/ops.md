@@ -12,6 +12,4 @@ An individual op should perform relatively simple tasks, such as:
 - Querying an API and storing the result in a data warehouse
 - Sending an email or Slack message
 
-
-<Image alt="ops" src="/images/ops.png" width={3200} height={1040} />
-
+![ops](/images/guides/build/ops/ops.png)

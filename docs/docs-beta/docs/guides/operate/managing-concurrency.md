@@ -18,7 +18,7 @@ This article assumes familiarity with [assets](/guides/build/assets/) and [jobs]
 
 
 * Dagster Core, add the following to your [dagster.yaml](/guides/deploy/dagster-yaml)
-* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/settings/deployment-settings)
+* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/deployments/deployment-settings-reference)
 
 ```yaml
 run_queue:

@@ -38,10 +38,10 @@ Tag values must:
 
 While tags are primarily used for labeling and organization, some run execution features are controlled using run tags:
 
-- [Customizing Kubernetes config](/deployment/guides/kubernetes/customizing-your-deployment)
-- [Specifying Celery config](/deployment/guides/kubernetes/deploying-with-helm-advanced#configuring-celery-queues)
-- [Setting concurrency limits when using the `QueuedRunCoordinator`](/guides/limiting-concurrency-in-data-pipelines)
-- [Setting the priority of different runs](/guides/customizing-run-queue-priority)
+- [Customizing Kubernetes config](/guides/deploy/deployment-options/kubernetes/customizing-your-deployment)
+- [Specifying Celery config](/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery)
+- [Setting concurrency limits when using the `QueuedRunCoordinator`](/guides/operate/managing-concurrency)
+- [Setting the priority of different runs](/guides/deploy/execution/customizing-run-queue-priority)
 
 ### System tags
 

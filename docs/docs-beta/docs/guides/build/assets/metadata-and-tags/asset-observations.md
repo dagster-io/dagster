@@ -18,162 +18,61 @@ An asset observation is an event that records metadata about a given asset. Unli
 <PyObject section="assets" module="dagster" object="AssetObservation" /> events are used to record metadata in Dagster
 about a given asset. Asset observation events can be logged at runtime within ops and assets. An asset must be defined using the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator or have existing materializations in order for its observations to be displayed.
 
-## Logging an AssetObservation from an Op
+## Logging an AssetObservation from an op
 
-To make Dagster aware that we have recorded metadata about an asset, we can log an <PyObject object="AssetObservation" /> event from within an op. To do this, we use the method <PyObject object="OpExecutionContext" method="log_event" /> on the context:
+To make Dagster aware that we have recorded metadata about an asset, we can log an <PyObject section="assets" module="dagster" object="AssetObservation" /> event from within an op. To do this, we use the method <PyObject section="execution" module="dagster" object="OpExecutionContext.log_event" /> on the context:
 
-```python file=/concepts/assets/observations.py startafter=start_observation_asset_marker_0 endbefore=end_observation_asset_marker_0
-from dagster import AssetObservation, op
-
-
-@op
-def observation_op(context: OpExecutionContext):
-    df = read_df()
-    context.log_event(
-        AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
-    )
-    return 5
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_0" endBefore="end_observation_asset_marker_0" />
 
 We should now see an observation event in the event log when we execute this asset.
 
-<Image
-alt="asset-observation"
-src="/images/concepts/assets/observation.png"
-width={1417}
-height={917}
-/>
+![asset observation](/images/guides/build/assets/asset-observations/observation.png)
 
 ### Attaching Metadata to an AssetObservation
 
-There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the [Asset Details](/concepts/webserver/ui#asset-details) page. Check our API docs for <PyObject object="MetadataValue" /> for more details on the types of event metadata available.
+There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject section="metadata" module="dagster" object="MetadataValue" /> class. Each observation event optionally takes a dictionary of metadata that is then displayed in the event log and the **Asset Details** page. Check our API docs for <PyObject section="metadata" module="dagster" object="MetadataValue" /> for more details on the types of event metadata available.
 
-```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
-from dagster import AssetObservation, MetadataValue, op
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_observation_asset_marker_2" endBefore="end_observation_asset_marker_2" />
 
+In the **Asset Details** page, we can see observations in the Asset Activity table:
 
-@op
-def observes_dataset_op(context: OpExecutionContext):
-    df = read_df()
-    remote_storage_path = persist_to_storage(df)
-    context.log_event(
-        AssetObservation(
-            asset_key="my_dataset",
-            metadata={
-                "text_metadata": "Text-based metadata for this event",
-                "path": MetadataValue.path(remote_storage_path),
-                "dashboard_url": MetadataValue.url(
-                    "http://mycoolsite.com/url_for_my_data"
-                ),
-                "size (bytes)": calculate_bytes(df),
-            },
-        )
-    )
-    return remote_storage_path
-```
-
-In the [Asset Details](/concepts/webserver/ui#asset-details) page, we can see observations in the Asset Activity table.
-
-<Image
-alt="asset-activity-observation"
-src="/images/concepts/assets/asset-activity-observation.png"
-width={1758}
-height={1146}
-/>
+![asset activity observation](/images/guides/build/assets/asset-observations/asset-activity-observation.png)
 
 ### Specifying a partition for an AssetObservation
 
 If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
 
-```python file=/concepts/assets/observations.py startafter=start_partitioned_asset_observation endbefore=end_partitioned_asset_observation
-from dagster import Config, op, OpExecutionContext
-
-
-class MyOpConfig(Config):
-    date: str
-
-
-@op
-def partitioned_dataset_op(context: OpExecutionContext, config: MyOpConfig):
-    partition_date = config.date
-    df = read_df_for_date(partition_date)
-    context.log_event(
-        AssetObservation(asset_key="my_partitioned_dataset", partition=partition_date)
-    )
-    return df
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observations.py" startAfter="start_partitioned_asset_observation" endBefore="end_partitioned_asset_observation" />
 
 ### Observable source assets
 
-<PyObject object="SourceAsset" /> objects may have a user-defined observation function
-that returns a <PyObject object="DataVersion" />. Whenever the observation
-function is run, an <PyObject object="AssetObservation" /> will be generated for
+<PyObject section="assets" module="dagster" object="SourceAsset" /> objects may have a user-defined observation function
+that returns a `DataVersion`. Whenever the observation
+function is run, an <PyObject section="assets" module="dagster" object="AssetObservation" /> will be generated for
 the source asset and tagged with the returned data version. When an asset is
 observed to have a newer data version than the data version it had when a
 downstream asset was materialized, then the downstream asset will be given a
 label in the Dagster UI that indicates that upstream data has changed.
 
-<PyObject object="AutomationCondition" pluralize /> can be used to automatically
+<PyObject section="assets" module="dagster" object="AutomationCondition" pluralize /> can be used to automatically
 materialize downstream assets when this occurs.
 
-The <PyObject object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the data version. Every time you run the observation function, a new observation will be generated with this hash set as its data version.
+The <PyObject section="assets" module="dagster" object="observable_source_asset" /> decorator provides a convenient way to define source assets with observation functions. The below observable source asset takes a file hash and returns it as the data version. Every time you run the observation function, a new observation will be generated with this hash set as its data version.
 
-```python file=/concepts/assets/observable_source_assets.py startafter=start_plain endbefore=end_plain
-from hashlib import sha256
-
-from dagster import DataVersion, observable_source_asset
-
-
-@observable_source_asset
-def foo_source_asset():
-    content = read_some_file()
-    hash_sig = sha256()
-    hash_sig.update(bytearray(content, "utf8"))
-    return DataVersion(hash_sig.hexdigest())
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observable_source_assets.py" startAfter="start_plain" endBefore="end_plain" />
 
 When the file content changes, the hash and therefore the data version will change - this will notify Dagster that downstream assets derived from an older value (i.e. a different data version) of this source asset might need to be updated.
 
 Source asset observations can be triggered via the "Observe sources" button in the UI graph explorer view. Note that this button will only be visible if at least one source asset in the current graph defines an observation function.
 
-<Image
-alt="observable-source-asset"
-src="/images/concepts/assets/observe-sources.png"
-width={1768}
-height={1282}
-/>
+![observable source asset](/images/guides/build/assets/asset-observations/observe-sources.png)
 
 Source asset observations can also be run as part of an asset job. This allows you to run source asset observations on a schedule:
 
-```python file=/concepts/assets/observable_source_assets.py startafter=start_schedule endbefore=end_schedule
-from dagster import (
-    DataVersion,
-    ScheduleDefinition,
-    define_asset_job,
-    observable_source_asset,
-)
-
-
-@observable_source_asset
-def foo_source_asset():
-    content = read_some_file()
-    hash_sig = sha256()
-    hash_sig.update(bytearray(content, "utf8"))
-    return DataVersion(hash_sig.hexdigest())
-
-
-observation_job = define_asset_job("observation_job", [foo_source_asset])
-
-# schedule that will run the observation on foo_source_asset every day
-observation_schedule = ScheduleDefinition(
-    name="observation_schedule",
-    cron_schedule="@daily",
-    job=observation_job,
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/observable_source_assets.py" startAfter="start_schedule" endBefore="end_schedule" />
 
 :::note
 
-Currently, source asset observations cannot be run as part of a standard asset job that materializes assets. The `selection` argument to <PyObject object="define_asset_job" /> must target only observable source assets-- an error will be thrown if a mix of regular assets and observable source assets is selected.
+Currently, source asset observations cannot be run as part of a standard asset job that materializes assets. The `selection` argument to <PyObject section="assets" module="dagster" object="define_asset_job" /> must target only observable source assets-- an error will be thrown if a mix of regular assets and observable source assets is selected.
 
 :::

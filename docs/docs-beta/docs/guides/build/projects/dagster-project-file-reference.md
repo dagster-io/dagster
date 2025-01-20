@@ -31,7 +31,7 @@ The following demonstrates a Dagster project using the default project skeleton,
 
 :::note
 
-While this specific example uses a project created by scaffolding, projects created [using an official example](/creating-a-new-project#using-an-official-example) will also contain these files. In official examples, `assets.py` will be a subdirectory instead of a Python file.
+While this specific example uses a project created by scaffolding, projects created [using an official example](creating-a-new-project#using-an-official-example) will also contain these files. In official examples, `assets.py` will be a subdirectory instead of a Python file.
 
 :::
 
@@ -59,7 +59,7 @@ A description and starter guide for your Dagster project.
 
 A file that specifies package core metadata in a static, tool-agnostic way.
 
-This file includes a `tool.dagster` section which references the Python module with your Dagster definitions defined and discoverable at the top level. This allows you to use the `dagster dev` command to load your Dagster code without any parameters. For more information. see the [code locations documentation](/deploy/code-locations/).
+This file includes a `tool.dagster` section which references the Python module with your Dagster definitions defined and discoverable at the top level. This allows you to use the `dagster dev` command to load your Dagster code without any parameters. For more information. see the [code locations documentation](/guides/deploy/code-locations/).
 
 **Note:** `pyproject.toml` was introduced in [PEP-518](https://peps.python.org/pep-0518/) and meant to replace `setup.py`, but we may still include a `setup.py` for compatibility with tools that do not use this spec.
 
@@ -79,7 +79,7 @@ Depending on your use case or if you're using Dagster+, you may also need to add
 
 | File/Directory | Description | OSS | Dagster+ |
 |----------------|-------------|-----|----------|
-| dagster.yaml   | Configures your Dagster instance, including defining storage locations, run launchers, sensors, and schedules. For more information. including a list of use cases and available options, see the [`dagster.yaml`](/guides/deploy/dagster-yaml) reference.<br /><br />For [Dagster+ Hybrid deployments](/dagster-plus/deployment/deployment-options/hybrid/), this file can be used to customize the [Hybrid agent](/dagster-plus/deployment/management/settings/customizing-agent-settings). | Optional | Optional |
+| dagster.yaml   | Configures your Dagster instance, including defining storage locations, run launchers, sensors, and schedules. For more information. including a list of use cases and available options, see the [`dagster.yaml`](/guides/deploy/dagster-yaml) reference.<br /><br />For [Dagster+ Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/), this file can be used to customize the [Hybrid agent](/dagster-plus/deployment/management/settings/customizing-agent-settings). | Optional | Optional |
 | dagster_cloud.yaml | Defines code locations for Dagster+. For more information, see the [`dagster_cloud.yaml` reference](/dagster-plus/deployment/code-locations/dagster-cloud-yaml). | Not applicable | Recommended |
 | deployment_settings.yaml | Configures settings for full deployments in Dagster+, including run queue priority and concurrency limits. Refer to the Deployment settings reference for more info.<br /><br />**Note:** This file can be named anything, but we recommend choosing an easily understandable name. | Not applicable | Optional |
 | workspace.yaml | Defines multiple code locations for local development or deploying to your infrastructure. For more information and available options, see the [`workspace.yaml` file reference](/guides/deploy/code-locations/workspace-yaml) | Optional | Not applicable |
@@ -143,7 +143,7 @@ For local development, a project with multiple code locations might look like th
 
 ### Dagster Open Source deployment
 
-Once you're ready to move from working locally to deploying Dagster to your infrastructure, use our [deployment guides](/deployment/guides) to get up and running.
+Once you're ready to move from working locally to deploying Dagster to your infrastructure, use our [deployment guides](/guides/deploy/deployment-options/) to get up and running.
 
 A Dagster project deployed to your infrastructure might look like this:
 
@@ -221,4 +221,4 @@ For a Dagster+ Hybrid deployment, a project might look like this:
 
 You learned about the default files in a Dagster project and where they should be located, but what about the files containing your Dagster code?
 
-To sustainably scale your project, check out our best practices and recommendations in the [Structuring your project guide](/structuring-your-dagster-project).
+To sustainably scale your project, check out our best practices and recommendations in the [Structuring your project guide](structuring-your-dagster-project).

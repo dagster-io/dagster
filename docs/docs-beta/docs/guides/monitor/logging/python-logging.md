@@ -26,43 +26,23 @@ To mitigate this, you can:
 - Capture only the most critical logs
 - Avoid including debug information if a large amount of run history will be maintained
 
-## Capturing Python logs (Experimental)
+## Capturing Python logs (Experimental) {#capturing-python-logs}
 
-By default, logs generated using the Python logging module aren't captured into the Dagster ecosystem. This means that they aren't stored in the Dagster event log, will not be associated with any Dagster metadata (such as step key, run ID, etc.), and won't show up in the default view of the [Dagster UI](/concepts/webserver/ui).
+By default, logs generated using the Python logging module aren't captured into the Dagster ecosystem. This means that they aren't stored in the Dagster event log, will not be associated with any Dagster metadata (such as step key, run ID, etc.), and won't show up in the default view of the [Dagster UI](/guides/deploy/webserver).
 
 For example, imagine you have the following code:
 
-```python file=/concepts/logging/python_logger.py startafter=start_python_logger endbefore=end_python_logger dedent=4
-import logging
-
-from dagster import graph, op
-
-@op
-def ambitious_op():
-    my_logger = logging.getLogger("my_logger")
-    try:
-        x = 1 / 0
-        return x
-    except ZeroDivisionError:
-        my_logger.error("Couldn't divide by zero!")
-
-    return None
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/logging/python_logger.py" startAfter="start_python_logger" endBefore="end_python_logger" /> 
 
 Because this code uses a custom Python logger instead of `context.log`, the log statement won't be added as an event to the Dagster event log or show up in the UI.
 
 However, this default behavior can be changed to treat these sort of log statements the same as `context.log` calls. This can be accomplished by setting the `managed_python_loggers` key in `dagster.yaml` file to a list of Python logger names that you would like to capture:
 
-```yaml file=/concepts/logging/python_logging_managed_loggers_config.yaml
-python_logs:
-  managed_python_loggers:
-    - my_logger
-    - my_other_logger
-```
+<CodeExample language="yaml" path="docs_snippets/docs_snippets/concepts/logging/python_logging_managed_loggers_config.yaml" />
 
 Once this key is set, Dagster will treat any normal Python log call from one of the listed loggers in the exact same way as a `context.log` call. This means you should be able to see this log statement in the UI:
 
-![Log Python error](/images/concepts/logging/log-python-error.png)
+![Log Python error](/images/guides/monitor/logging/log-python-error.png)
 
 :::note
 
@@ -71,7 +51,7 @@ If `python_log_level` is set, the loggers listed here will be set to the given l
 :::
 
 
-## Configuring global log levels (Experimental)
+## Configuring global log levels (Experimental) {#configuring-global-log-levels}
 
 To set a global log level in a Dagster instance, set the `python_log_level` parameter in your instance's `dagster.yaml` file.
 
@@ -79,10 +59,7 @@ This setting controls the log level of all loggers managed by Dagster. By defaul
 
 Setting a global log level allows you to filter out logs below a given level. For example, setting a log level of `INFO` will filter out all `DEBUG` level logs:
 
-```yaml file=/concepts/logging/python_logging_python_log_level_config.yaml
-python_logs:
-  python_log_level: INFO
-```
+<CodeExample language="yaml" path="docs_snippets/docs_snippets/concepts/logging/python_logging_python_log_level_config.yaml" />
 
 ## Configuring Python log handlers (Experimental)
 
@@ -90,53 +67,23 @@ In your `dagster.yaml` file, you can configure handlers, formatters and filters 
 
 For example:
 
-```yaml file=/concepts/logging/python_logging_handler_config.yaml
-python_logs:
-  dagster_handler_config:
-    handlers:
-      myHandler:
-        class: logging.StreamHandler
-        level: INFO
-        stream: ext://sys.stdout
-        formatter: myFormatter
-        filters:
-          - myFilter
-    formatters:
-      myFormatter:
-        format: "My formatted message: %(message)s"
-    filters:
-      myFilter:
-        name: dagster
-```
+<CodeExample language="yaml" path="docs_snippets/docs_snippets/concepts/logging/python_logging_handler_config.yaml" />
 
 Handler, filter and formatter configuration follows the [dictionary config schema format](https://docs.python.org/3/library/logging.config.html#logging-config-dictschema) in the Python logging module. Only the `handlers`, `formatters` and `filters` dictionary keys will be accepted, as Dagster creates loggers internally.
 
 From there, standard `context.log` calls will output with the configured handlers, formatters and filters. After execution, read the output log file `my_dagster_logs.log`. As expected, the log file contains the formatted log:
 
-![Log file output](/images/concepts/logging/log-file-output.png)
+![Log file output](/images/guides/monitor/logging/log-file-output.png)
 
 ## Examples
 
 ### Creating a captured Python logger without modifying dagster.yaml
 
-To create a logger that's captured by Dagster without modifying your `dagster.yaml` file, use the <PyObject module="dagster" object="get_dagster_logger"/> utility function. This pattern is useful when logging from inside nested functions, or other cases where it would be inconvenient to thread through the context parameter to enable calls to `context.log`.
+To create a logger that's captured by Dagster without modifying your `dagster.yaml` file, use the <PyObject section="utilities" module="dagster" object="get_dagster_logger"/> utility function. This pattern is useful when logging from inside nested functions, or other cases where it would be inconvenient to thread through the context parameter to enable calls to `context.log`.
 
 For example:
 
-```python file=/concepts/logging/python_logger.py startafter=start_get_logger endbefore=end_get_logger dedent=4
-from dagster import get_dagster_logger, graph, op
-
-@op
-def ambitious_op():
-    my_logger = get_dagster_logger()
-    try:
-        x = 1 / 0
-        return x
-    except ZeroDivisionError:
-        my_logger.error("Couldn't divide by zero!")
-
-    return None
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/logging/python_logger.py" startAfter="start_get_logger" endBefore="end_get_logger" />
 
 :::note
 
@@ -150,36 +97,15 @@ If you want to output all Dagster logs to a file, use the Python logging module'
 
 To enable this, define a new `myHandler` handler in your `dagster.yaml` file to be a `logging.FileHandler` object:
 
-```yaml file=/concepts/logging/python_logging_file_output_config.yaml
-python_logs:
-  dagster_handler_config:
-    handlers:
-      myHandler:
-        class: logging.FileHandler
-        level: INFO
-        filename: "my_dagster_logs.log"
-        mode: "a"
-        formatter: timeFormatter
-    formatters:
-      timeFormatter:
-        format: "%(asctime)s :: %(message)s"
-```
+
+<CodeExample language="yaml" path="docs_snippets/docs_snippets/concepts/logging/python_logging_file_output_config.yaml" />
 
 You can also configure a formatter to apply a custom format to the logs. For example, to include a timestamp with the logs, we defined a custom formatter named `timeFormatter` and attached it to `myHandler`.
 
 If we execute the following job:
 
-```python file=/concepts/logging/file_output_pipeline.py startafter=start_custom_file_output_log endbefore=end_custom_file_output_log
-@op
-def file_log_op(context: OpExecutionContext):
-    context.log.info("Hello world!")
-
-
-@job
-def file_log_job():
-    file_log_op()
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/logging/file_output_pipeline.py" startAfter="start_custom_file_output_log" endBefore="end_custom_file_output_log" />
 
 And then read the `my_dagster_logs.log` output log file, we'll see the log file contains the formatted log:
 
-![Log file output](/images/concepts/logging/log-file-output.png)
+![Log file output](/images/guides/monitor/logging/log-file-output.png)

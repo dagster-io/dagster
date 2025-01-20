@@ -42,11 +42,11 @@ Structured logs are enriched and categorized with metadata. For example, a label
 
 #### Logs streaming back to the UI in real time
 
-![Real time logs in the Dagster UI](/images/concepts/logging/job-log-ui.png)
+![Real time logs in the Dagster UI](/images/guides/monitor/logging/job-log-ui.png)
 
 #### Log messages filtered based on execution steps and log levels
 
-![Log filtering in the Dagster UI](/images/concepts/logging/job-ui-filter.png)
+![Log filtering in the Dagster UI](/images/guides/monitor/logging/job-ui-filter.png)
 
 ### Raw compute logs
 
@@ -54,7 +54,7 @@ The raw compute logs contain logs for both [`stdout` and `stderr`](https://stack
 
 Custom log messages are also included in these logs. Notice in the following image that the `Hello world!` message is included on line three:
 
-![Raw compute logs in the Run details page](/images/concepts/logging/loggers-compute-logs.png)
+![Raw compute logs in the Run details page](/images/guides/monitor/logging/loggers-compute-logs.png)
 
 :::note
 

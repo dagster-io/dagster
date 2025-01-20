@@ -23,7 +23,7 @@ To follow the steps in this guide, you'll need:
 
 ## Step 1: Add a prebuilt custom logger to your jobs
 
-This step shows how to add an existing custom logger, the <PyObject section="loggers" module="dagser" object="_loggers.json_console_logger" />, to your jobs. This will override the default <PyObject section="loggers" module="dagser" object="_loggers.colored_console_logger" /> and produce logs in JSON format.
+This step shows how to add an existing custom logger, the <PyObject section="loggers" module="dagster" object="_loggers.json_console_logger" />, to your jobs. This will override the default <PyObject section="loggers" module="dagster" object="_loggers.colored_console_logger" /> and produce logs in JSON format.
 
 ### Add the custom logger to your asset jobs
 

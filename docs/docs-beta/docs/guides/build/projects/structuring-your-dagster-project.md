@@ -152,4 +152,4 @@ For these projects, it's recommended to store them outside your Dagster project.
 
 ## Next steps
 
-- Explore the [Definitions.merge](https://docs.dagster.io/_apidocs/definitions#dagster.Definitions.merge) API docs
+- Explore the <PyObject section="definitions" module="dagster" object="Definitions.merge" /> API docs
