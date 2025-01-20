@@ -40,11 +40,9 @@ We will similarly use `proxying_to_dagster` at the end of our DAG file (the code
 
 Once the `proxied` bit is flipped to True, we can go to the Airflow UI, and we'll see that our tasks have been replaced with a single task.
 
-<p align="center">
 ![Before DAG proxying](/images/integrations/airlift/before_dag_override.png)
 
 ![After DAG proxying](/images/integrations/airlift/after_dag_override.png)
-</p>
 
 When performing dag-level mapping, we don't preserve task structure in the Airflow dags. This single task will materialize all mapped Dagster assets instead of executing the original Airflow task business logic.
 
