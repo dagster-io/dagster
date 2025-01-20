@@ -73,6 +73,46 @@ const SCOUTOS_COPILOT_INNER_HTML = `
   document.addEventListener('DOMContentLoaded', function() {
     var copilot = document.createElement('scout-copilot');
     copilot.setAttribute('copilot_id', 'copilot_cm61kissp00010es61qxro4dq');
+    
+    copilot.initial_activities = [
+      {
+        activity_type: 'llm.chat.message',
+        img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+        role: 'assistant',
+        content: 'Welcome to Dagster docs! How can I help you learn about data orchestration today?',
+      },
+      {
+        activity_type: 'action_list',
+        header: 'Popular Topics',
+        items: [
+          {
+            action_item_type: 'suggested_query',
+            img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+            title: 'Getting Started',
+            query: 'How do I get started with Dagster?',
+          },
+          {
+            action_item_type: 'suggested_query',
+            img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+            title: 'What are Assets?',
+            query: 'What are software-defined assets in Dagster?',
+          },
+          {
+            action_item_type: 'suggested_query',
+            img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+            title: 'Dagster and dbt',
+            query: 'How do I integrate Dagster with dbt?',
+          },
+          {
+            action_item_type: 'link',
+            img_url: 'https://dagster.io/images/brand/logos/dagster-primary-mark.svg',
+            title: 'Join Dagster Community',
+            url: 'https://dagster.io/slack',
+          }
+        ],
+      },
+    ];
+
     document.body.appendChild(copilot);
 
     var script = document.createElement('script');
