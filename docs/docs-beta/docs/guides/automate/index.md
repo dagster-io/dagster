@@ -21,4 +21,4 @@ Consider these factors when selecting an automation method:
 | [Declarative automation](declarative-automation/) |  A framework that allows you to set automation conditions on assets and asset checks | Asset-centric, condition-based updates | Assets only         |
 | [Sensors](sensors/)     |  Trigger runs based on events or conditions that you define, like the arrival of a new file or a change to an external system | Event-driven automation                | Assets, Ops, Graphs |
 | [Asset sensors](asset-sensors) | Trigger jobs when specified assets are materialized, allowing you to create dependencies between jobs or code locations. | Cross-job/location asset dependencies  | Assets only         |
-| [GraphQL triggers](graphql-triggers) | Trigger materializations and jobs from the GraphQL endpoint      | Event triggers from external systems   | Assets, Ops, Jobs   |
+| [GraphQL triggers](/guides/operate/graphql/) | Trigger materializations and jobs from the GraphQL endpoint      | Event triggers from external systems   | Assets, Ops, Jobs   |
