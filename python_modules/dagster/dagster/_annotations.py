@@ -328,7 +328,7 @@ def beta_param(
     emit_runtime_warning: bool = True,
 ) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
     """Mark a parameter of a class initializer or function/method as beta. This appends some
-    metadata to the decorated object that causes the specified argument to be rendered with an
+    metadata to the decorated object that causes the specified argument to be rendered with a
     "beta" tag and associated warning in the docs.
 
     If `emit_runtime_warning` is True, a warning will also be emitted when the function is called
@@ -338,8 +338,8 @@ def beta_param(
 
     Args:
         param (str): The name of the parameter to mark as beta.
-        additional_warn_text (str): Additional text to display after the deprecation warning.
-            Typically this should suggest a newer API.
+        additional_warn_text (str): Additional text to display after the beta warning.
+            Typically, this should suggest a newer API.
         emit_runtime_warning (bool): Whether to emit a warning when the function is called.
     """
     if __obj is None:
