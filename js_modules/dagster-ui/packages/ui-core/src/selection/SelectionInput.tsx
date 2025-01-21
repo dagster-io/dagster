@@ -136,7 +136,7 @@ export const SelectionAutoCompleteInput = ({
 
       // Enforce single line by preventing newlines
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
-        if (change.text.some((line) => line.includes('\n'))) {
+        if (change.text.length !== 1 || change.text[0]?.includes('\n')) {
           change.cancel();
         }
       });
@@ -263,27 +263,25 @@ export const SelectionAutoCompleteInput = ({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
-      if (!showResults) {
+      if (!showResults.current) {
         return;
       }
       scheduleUpdateValue();
-
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         scrollToSelectionRef.current = true;
       }
-
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
         setSelectedIndex((prev) => ({
           current: (prev.current + 1) % (autoCompleteResults?.list.length ?? 0),
         }));
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === 'ArrowUp' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
         setSelectedIndex((prev) => ({
           current:
             prev.current - 1 < 0 ? (autoCompleteResults?.list.length ?? 1) - 1 : prev.current - 1,
         }));
-      } else if (e.key === 'Enter' || e.key === 'Tab') {
+      } else if (e.key === 'Tab') {
         e.preventDefault();
         if (selectedItem) {
           onSelect(selectedItem);
@@ -295,6 +293,26 @@ export const SelectionAutoCompleteInput = ({
     },
     [showResults, scheduleUpdateValue, autoCompleteResults, selectedItem, onSelect],
   );
+
+  /**
+   * Popover doesn't seem to support canOutsideClickClose, so we have to do this ourselves.
+   */
+  React.useLayoutEffect(() => {
+    const listener = (e: MouseEvent) => {
+      if (
+        inputRef.current?.contains(e.target as Node) ||
+        hintContainerRef.current?.contains(e.target as Node) ||
+        !document.contains(e.target as Node)
+      ) {
+        return;
+      }
+      setShowResults({current: false});
+    };
+    document.body.addEventListener('mousedown', listener);
+    return () => {
+      document.body.removeEventListener('mousedown', listener);
+    };
+  }, [setShowResults]);
 
   return (
     <>

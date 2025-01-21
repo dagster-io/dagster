@@ -754,7 +754,9 @@ const AssetGraphExplorerWithData = ({
                       />
                     </Tooltip>
                   )}
-                  <div>{filterButton}</div>
+                  {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (
+                    <div>{filterButton}</div>
+                  )}
                   <GraphQueryInputFlexWrap>
                     {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
                       <AssetSelectionInput
