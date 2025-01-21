@@ -3,7 +3,7 @@ import logging
 import re
 from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Literal, Optional, cast
+from typing import Any, Callable, Literal, Optional, cast
 
 from dagster import AssetKey, AssetSpec
 from dagster._annotations import experimental, public
@@ -207,14 +207,41 @@ class DagsterLookerLkmlTranslator:
             AssetSpec: The Dagster asset spec that represents the LookML structure.
         """
         return AssetSpec(
-            key=self.get_asset_key(lookml_structure),
-            deps=self.get_deps(lookml_structure),
-            description=self.get_description(lookml_structure),
-            metadata=self.get_metadata(lookml_structure),
-            group_name=self.get_group_name(lookml_structure),
-            owners=self.get_owners(lookml_structure),
-            tags=self.get_tags(lookml_structure),
+            key=self._resolve_back_compat_method(
+                "get_asset_key", self._default_asset_key_fn, lookml_structure
+            ),
+            deps=self._resolve_back_compat_method(
+                "get_deps", self._default_deps_fn, lookml_structure
+            ),
+            description=self._resolve_back_compat_method(
+                "get_description", self._default_description_fn, lookml_structure
+            ),
+            metadata=self._resolve_back_compat_method(
+                "get_metadata", self._default_metadata_fn, lookml_structure
+            ),
+            group_name=self._resolve_back_compat_method(
+                "get_group_name", self._default_group_name_fn, lookml_structure
+            ),
+            owners=self._resolve_back_compat_method(
+                "get_owners", self._default_owners_fn, lookml_structure
+            ),
+            tags=self._resolve_back_compat_method(
+                "get_tags", self._default_tags_fn, lookml_structure
+            ),
         )
+
+    def _resolve_back_compat_method(
+        self,
+        method_name: str,
+        default_fn: Callable[[tuple[Path, LookMLStructureType, Mapping[str, Any]]], Any],
+        lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
+    ):
+        method = getattr(type(self), method_name)
+        base_method = getattr(DagsterLookerLkmlTranslator, method_name)
+        if method is not base_method:  # user defined this
+            return method(self, lookml_structure)
+        else:
+            return default_fn(lookml_structure)
 
     @public
     def get_asset_key(
