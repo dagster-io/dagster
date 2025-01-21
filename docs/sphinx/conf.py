@@ -68,7 +68,7 @@ extensions = [
 ]
 
 # MDX Builder configuration
-mdx_title_suffix = " | Dagster Python API Reference"
+mdx_title_suffix = ""
 mdx_title_meta = (
     " API Documentation - Build Better Data Pipelines | Python Reference Documentation for Dagster"
 )
