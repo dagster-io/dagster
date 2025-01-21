@@ -1,7 +1,7 @@
 ---
-title: Run executors
+title: "Run executors"
 description: Executors are responsible for executing steps within a job run.
-sidebar_position: 300
+sidebar_position: 40
 ---
 
 Executors are responsible for executing steps within a job run. Once a run has launched and the process for the run (the [run worker](/guides/deploy/oss-deployment-architecture#job-execution-flow)) is allocated and started, the executor assumes responsibility for execution.
