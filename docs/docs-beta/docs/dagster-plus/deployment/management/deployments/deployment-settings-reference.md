@@ -1,5 +1,5 @@
 ---
-title: "Deployment settings"
+title: "Full deployment settings"
 sidebar_position: 200
 ---
 
