@@ -38,6 +38,10 @@ Context loaders load the context payload from the location specified in the boot
 
 .. autoclass:: PipesDefaultContextLoader
 
+.. autoclass:: PipesS3ContextLoader
+
+.. autoclass:: PipesGCSContextLoader
+
 .. autoclass:: PipesDbfsContextLoader
 
 ----
@@ -70,6 +74,8 @@ Message writers write messages to the location specified in the bootstrap payloa
 
 .. autoclass:: PipesS3MessageWriter
 
+.. autoclass:: PipesGCSMessageWriter
+
 .. autoclass:: PipesDbfsMessageWriter
 
 ----
@@ -90,6 +96,8 @@ Message writer channels are objects that write messages back to the Dagster orch
 .. autoclass:: PipesStreamMessageWriterChannel
 
 .. autoclass:: PipesS3MessageWriterChannel
+
+.. autoclass:: PipesGCSMessageWriterChannel
 
 ----
 

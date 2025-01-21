@@ -19,7 +19,7 @@ DATABRICKS_JOB_ID = 1
 
 def scope_define_databricks_custom_asset():
     # start_define_databricks_custom_asset
-    from databricks_cli.sdk import JobsService
+    from databricks.sdk import JobsService
 
     from dagster import AssetExecutionContext, AssetSelection, asset, define_asset_job
 
@@ -42,7 +42,7 @@ def scope_define_databricks_custom_op():
     from dagster_databricks import databricks_client as databricks_client_instance
 
     # start_define_databricks_custom_op
-    from databricks_cli.sdk import DbfsService
+    from databricks.sdk import DbfsService
 
     from dagster import AssetExecutionContext, job, op
 

@@ -42,7 +42,7 @@ BigQuery Ops
 .. autofunction:: import_gcs_paths_to_bq
 
 
-Data Freshness 
+Data Freshness
 ^^^^^^^^^^^^^^
 
 .. autofunction:: fetch_last_updated_timestamps
@@ -102,6 +102,22 @@ Dataproc Ops
 
 .. autoconfigurable:: dataproc_op
 
+.. currentmodule:: dagster_gcp.pipes
+
+Pipes
+--------------
+
+Context Injectors
+^^^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_gcp.pipes.PipesGCSContextInjector
+
+Message Readers
+^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_gcp.pipes.PipesGCSMessageReader
+
+.. currentmodule:: dagster_gcp
 
 Legacy
 ------
