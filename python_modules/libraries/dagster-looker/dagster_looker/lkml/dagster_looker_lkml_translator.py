@@ -302,7 +302,7 @@ class DagsterLookerLkmlTranslator:
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Sequence[AssetKey]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
-        returns the Dagster dependencies of that the structure.
+        returns the Dagster dependencies of the structure.
 
         The LookML structure is parsed using ``lkml``. You can learn more about this here:
         https://lkml.readthedocs.io/en/latest/simple.html.
@@ -321,7 +321,7 @@ class DagsterLookerLkmlTranslator:
                 representing a LookML structure.
 
         Returns:
-            AssetKey: The Dagster dependencies for the LookML structure.
+            Sequence[AssetKey]: The Dagster dependencies for the LookML structure.
         """
         return self._default_deps_fn(lookml_structure)
 
@@ -329,7 +329,7 @@ class DagsterLookerLkmlTranslator:
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Sequence[AssetKey]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
-        returns the Dagster dependencies of that the structure.
+        returns the Dagster dependencies of the structure.
 
         The LookML structure is parsed using ``lkml``. You can learn more about this here:
         https://lkml.readthedocs.io/en/latest/simple.html.
@@ -346,7 +346,7 @@ class DagsterLookerLkmlTranslator:
                 representing a LookML structure.
 
         Returns:
-            AssetKey: The Dagster dependencies for the LookML structure.
+            Sequence[AssetKey]: The Dagster dependencies for the LookML structure.
         """
         lookml_structure_path, lookml_structure_type, _ = lookml_structure
 
