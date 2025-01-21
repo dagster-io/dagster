@@ -202,15 +202,20 @@ class AssetDaemonScenarioState(ScenarioState):
                 # start sensor if it hasn't started already
                 self.instance.start_sensor(sensor)
 
-            def _stop_tick():
-                use_auto_materialize_sensors = self.instance.auto_materialize_use_sensors
-                if use_auto_materialize_sensors:
-                    if sensor:
-                        self.instance.stop_sensor(
-                            sensor.get_remote_origin_id(), sensor.selector_id, sensor
-                        )
-                else:
-                    set_auto_materialize_paused(instance=self.instance, paused=True)
+            def _stop_sensor():
+                if sensor:
+                    self.instance.stop_sensor(
+                        sensor.get_remote_origin_id(), sensor.selector_id, sensor
+                    )
+
+            def _stop_amp():
+                set_auto_materialize_paused(instance=self.instance, paused=True)
+
+            use_auto_materialize_sensors = self.instance.auto_materialize_use_sensors
+            if use_auto_materialize_sensors:
+                _stop_tick = _stop_sensor
+            else:
+                _stop_tick = _stop_amp
 
             def _run_daemon():
                 amp_tick_futures = {}
