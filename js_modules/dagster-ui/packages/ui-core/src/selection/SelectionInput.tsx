@@ -14,6 +14,7 @@ import {
 } from './SelectionInputHighlighter';
 import {useTrackEvent} from '../app/analytics';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/lib/codemirror.css';
@@ -75,9 +76,6 @@ export const SelectionAutoCompleteInput = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const cmInstance = useRef<CodeMirror.Editor | null>(null);
 
-  const currentPendingValueRef = useRef(value);
-  const setValueTimeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
-
   const [showResults, setShowResults] = useState({current: false});
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
@@ -100,15 +98,6 @@ export const SelectionAutoCompleteInput = ({
     }
     scrollToSelectionRef.current = true;
   }, [autoCompleteResults, loading]);
-
-  const scheduleUpdateValue = useCallback(() => {
-    if (setValueTimeoutRef.current) {
-      clearTimeout(setValueTimeoutRef.current);
-    }
-    setValueTimeoutRef.current = setTimeout(() => {
-      onSelectionChange(currentPendingValueRef.current);
-    }, 2000);
-  }, [onSelectionChange]);
 
   useLayoutEffect(() => {
     if (editorRef.current && !cmInstance.current) {
@@ -143,9 +132,7 @@ export const SelectionAutoCompleteInput = ({
 
       cmInstance.current.on('change', (instance: Editor) => {
         const newValue = instance.getValue().replace(/\s+/g, ' ');
-        currentPendingValueRef.current = newValue;
         setInnerValue(newValue);
-        scheduleUpdateValue();
         setShowResults({current: true});
         adjustHeight();
         setCursorPosition(instance.getCursor().ch);
@@ -247,13 +234,12 @@ export const SelectionAutoCompleteInput = ({
           'complete',
         );
         editor.focus();
-        const cursor = editor.getCursor();
         let offset = 0;
         if (suggestion.text.endsWith('()')) {
           offset = -1;
         }
         editor.setCursor({
-          ...cursor,
+          line: 0,
           ch: autoCompleteResults.from + suggestion.text.length + offset,
         });
       }
@@ -261,12 +247,16 @@ export const SelectionAutoCompleteInput = ({
     [autoCompleteResults],
   );
 
+  const innerValueRef = useUpdatingRef(innerValue);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'Enter') {
+        onSelectionChange(innerValueRef.current);
+      }
       if (!showResults.current) {
         return;
       }
-      scheduleUpdateValue();
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         scrollToSelectionRef.current = true;
       }
@@ -291,7 +281,14 @@ export const SelectionAutoCompleteInput = ({
         setShowResults({current: false});
       }
     },
-    [showResults, scheduleUpdateValue, autoCompleteResults, selectedItem, onSelect],
+    [
+      showResults,
+      onSelectionChange,
+      innerValueRef,
+      autoCompleteResults?.list.length,
+      selectedItem,
+      onSelect,
+    ],
   );
 
   /**
@@ -314,18 +311,22 @@ export const SelectionAutoCompleteInput = ({
     };
   }, [setShowResults]);
 
+  const isCommitted = innerValue === value;
+  useLayoutEffect(() => {
+    adjustHeight();
+  }, [isCommitted, adjustHeight]);
+
   return (
     <>
       <Popover
         content={
-          <div ref={hintContainerRef} onMouseMove={scheduleUpdateValue} onKeyDown={handleKeyDown}>
+          <div ref={hintContainerRef} onKeyDown={handleKeyDown}>
             <SelectionInputAutoCompleteResults
               results={autoCompleteResults}
               width={width}
               selectedIndex={selectedIndexRef.current}
               scrollToSelection={scrollToSelectionRef}
               onSelect={onSelect}
-              scheduleUpdateValue={scheduleUpdateValue}
               setSelectedIndex={setSelectedIndex}
               loading={loading}
             />
@@ -340,7 +341,6 @@ export const SelectionAutoCompleteInput = ({
           style={{
             display: 'grid',
             gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-            alignItems: 'flex-start',
           }}
           ref={inputRef}
           onKeyDownCapture={handleKeyDown} // Added keyboard event handler
@@ -349,8 +349,15 @@ export const SelectionAutoCompleteInput = ({
             setShowResults({current: true});
           }}
         >
-          <Icon name="op_selector" style={{marginTop: 2}} />
+          <div style={{alignSelf: 'flex-start'}}>
+            <Icon name="op_selector" style={{marginTop: 2}} />
+          </div>
           <div ref={editorRef} />
+          {innerValue !== value ? (
+            <div style={{alignSelf: 'flex-end'}}>
+              <EnterHint>Enter</EnterHint>
+            </div>
+          ) : null}
         </InputDiv>
       </Popover>
     </>
@@ -372,4 +379,15 @@ export const iconStyle = (img: string) => css`
 
 export const InputDiv = styled.div`
   ${SelectionAutoCompleteInputCSS}
+`;
+
+const EnterHint = styled.div`
+  border-radius: 5px;
+  border: 1px solid ${Colors.borderDefault()};
+  background: ${Colors.backgroundDefault()};
+  font-weight: 500;
+  font-size: 12px;
+  color: ${Colors.textLight()};
+  padding: 2px 6px;
+  margin: -2px 0px;
 `;
