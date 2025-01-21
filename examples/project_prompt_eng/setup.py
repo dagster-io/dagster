@@ -5,9 +5,9 @@ setup(
     packages=find_packages(exclude=["project_prompt_eng_tests"]),
     install_requires=[
         "dagster",
-        "dagster-openai",
-        "openai",
+        "dagster-anthropic",
         "pydantic",
+        "requests",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest", "ruff"]},
 )

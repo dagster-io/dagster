@@ -12,13 +12,20 @@ class NRELResource(dg.ConfigurableResource):
         )
     )
 
-    def alt_fuel_stations(self, latitude: float, longitude: float):
+    def alt_fuel_stations(self, latitude: float, longitude: float, radius: float = 5.0, fuel_type: str = "all"):
+        if fuel_type not in {"BD", "ELEC", "all"}:
+            raise ValueError(f"{fuel_type} is not a valid fuel type")
+
         url = "https://developer.nrel.gov/api/alt-fuel-stations/v1/nearest.json"
 
         params = {
             "api_key": self.api_key,
             "latitude": latitude,
-            "longitude": longitude
+            "longitude": longitude,
+            "radius": radius,
+            "fuel_type": fuel_type,
+            "status": "E",
         }
 
-        return requests.get(url, params=params)
+        resp = requests.get(url, params=params)
+        return resp.json()["fuel_stations"]

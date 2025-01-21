@@ -1,69 +1,154 @@
+import json
+from datetime import datetime
 import dagster as dg
 
-from resources import NRELResource
-from dagster_openai import OpenAIResource
+from project_prompt_eng.resources import NRELResource
+from dagster_anthropic import AnthropicResource
 
 
-PROMPT = """
-Given a location, return the latitude (as a decimal, range -90 to 90)
-and longitude (as a decimal, range -180 to 180). If the location
-cannot be found return the status a zero. Return everything as a JSON
-object.
+PROMPT_LOCATION = """
+Given a location and vechicle, return the latitude (as a decimal, range -90 to 90)
+and longitude (as a decimal, range -180 to 180) and fuel type of the vechicle
+(enum "ELEC", "BD" or "all").
+
+If the location cannot be found return the status a zero. Electric vechicles map to "ELEC",
+biodiesel to "BD", anything else should be marked as "all".
+
+Return everything as a JSON object.
 
 <example>
-Input: I live at 1600 Pennsylvania Avenue NW, Washington, DC 20500
+Input: I'm at 1600 Pennsylvania Avenue NW, Washington, DC 20500 with a Tesla Model 3
 
 Output:
-{
-    "Latitude": 38.8977,
-    "Longitude": -77.0365,
-    "status": 1,
-}
+{{
+    "latitude": 38.8977,
+    "longitude": -77.0365,
+    "fuel_type": "ELEC",
+}}
 </example>
 
-Here is the location: {location}
+Input: {location}
 """
 
-# https://developer.nrel.gov/docs/transportation/alt-fuel-stations-v1/nearest/
+PROMPT_FUEL_STATION_OPEN = """
+Given the hours of operation ("hours_of_operation": str) and and timestamp ("datetime": str).
+Determine if the datetime ("%Y-%m-%d %H:%M:%S") falls within the hours of operation.
+
+Return everything as a JSON object containing the status (as a boolean).
+
+<example>
+Input: {{
+    "hours_of_operation": "7am-7pm M-Th and Sat, 7am-8pm F, 9am-5pm Sun", 
+    "datetime": "2025-01-21 18:00:00,
+}}
+
+Output:
+{{
+    "status": True,
+}}
+</example>
+
+<example>
+Input: {{
+    "hours_of_operation": "7am-7pm M-Th and Sat, 7am-8pm F, 9am-5pm Sun", 
+    "datetime": "2025-01-21 6:00:00,
+}}
+
+Output:
+{{
+    "status": False,
+}}
+</example>
+
+Input: {fuel_station}
+"""
 
 
 class InputLocation(dg.Config):
-    location: str
-    limit: int = 3
+    location: str = "At The Art Institute of Chicago with a Kia EV9"
 
 
 @dg.asset(
-    kinds={"openai"},
+    kinds={"anthropic"},
+    description="Determine location and vechicle type from an input",
 )
-def location(
+def user_input_prompt(
+    context: dg.AssetExecutionContext,
     config: InputLocation,
-    openai: OpenAIResource,
+    anthropic: AnthropicResource,
 ) -> dict:
-    prompt = PROMPT.format(location = config.location)
+    prompt = PROMPT_LOCATION.format(location = config.location)
 
+    with anthropic.get_client(context) as client:
+        resp = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1024,
+            messages=[{"role": "user", "content": prompt}],
+        )
 
+    message = resp.content[0].text
+    data = json.loads(message)
 
-    if location["status"] == 1:
-        return location
-
+    context.log.info(data)
+    return data
 
 
 @dg.asset(
     kinds={"python"},
+    description="Find the nearest alt fuel stations",
 )
-def nearest_(
-    context: dg.AssetCheckExecutionContext,
+def nearest_fuel_stations(
     nrel: NRELResource,
-    location
-):
-    nrel.alt_fuel_stations(
-        latitude=location["latitude"],
-        longitude=location["longitude"],
+    user_input_prompt
+) -> list[dict]:
+    fuel_stations = nrel.alt_fuel_stations(
+        latitude=user_input_prompt["latitude"],
+        longitude=user_input_prompt["longitude"],
+        fuel_type=user_input_prompt["fuel_type"]
     )
+    nearest_stations_with_hours = []
+    for fuel_station in fuel_stations:
+        if fuel_station.get("access_days_time"):
+            nearest_stations_with_hours.append(fuel_station)
+            if len(nearest_stations_with_hours) == 3:
+                break
+    return nearest_stations_with_hours
 
-    context.add_output_metadata(
-        {
-            "latitude": location["latitude"],
-            "longitude": location["longitude"],
-        }
-    )
+
+@dg.asset(
+    kinds={"anthropic"},
+    description="Determine if the nearest statiions are available",
+)
+def fuel_station_available(
+    context: dg.AssetExecutionContext,
+    anthropic: AnthropicResource,
+    nearest_fuel_stations,
+):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    fuel_stations_open = 0
+    with anthropic.get_client(context) as client:
+        for fuel_station in nearest_fuel_stations:
+            input = {
+                "access_days_time": fuel_station["access_days_time"],
+                "zip": fuel_station["zip"],
+                "datetime": current_time,
+            }
+
+            prompt = PROMPT_FUEL_STATION_OPEN.format(fuel_station = input)
+            resp = client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=1024,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            message = resp.content[0].text
+            data = json.loads(message)
+            context.log.info(data)
+
+            if data["status"]:
+                context.log.info(f"{fuel_station["station_name"]} is {fuel_station["distance"]} miles away")
+                fuel_stations_open += 1
+
+    if fuel_stations_open == 0:
+        context.log.info("Sorry, no available fuel stations right now")

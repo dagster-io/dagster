@@ -7,3 +7,4 @@
 .envrc
 __pycache__/
 tmp*/
+.venv
