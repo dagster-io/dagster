@@ -178,3 +178,6 @@ scripts/.build
 
 # exponent config
 exponent.txt
+
+# google cloud storage emulater
+.cloudstorage/

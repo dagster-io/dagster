@@ -36,4 +36,9 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     zip_safe=False,
+    extras_require={
+        "stubs": [
+            "google-cloud-storage",
+        ]
+    },
 )

@@ -108,7 +108,7 @@ class PipesS3MessageReader(PipesBlobStoreMessageReader):
     Args:
         interval (float): interval in seconds between attempts to download a chunk
         bucket (str): The S3 bucket to read from.
-        client (WorkspaceClient): A boto3 client.
+        client (boto3.client): A boto3 S3 client.
         log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers for logs on S3.
         include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
     """
