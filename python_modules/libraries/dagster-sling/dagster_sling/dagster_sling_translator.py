@@ -114,7 +114,7 @@ class DagsterSlingTranslator:
                 'object': 'public.all_users'}
             }
 
-        By default, this returns the class's target_prefix paramater concatenated with the stream name.
+        By default, this returns the class's target_prefix parameter concatenated with the stream name.
         A stream named "public.accounts" will create an AssetKey named "target_public_accounts".
 
         Override this function to customize how to map a Sling stream to a Dagster AssetKey.
