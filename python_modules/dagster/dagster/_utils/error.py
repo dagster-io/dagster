@@ -7,6 +7,7 @@ import uuid
 from collections.abc import Sequence
 from types import TracebackType
 from typing import Any, NamedTuple, Optional, Union
+from weakref import WeakKeyDictionary
 
 from typing_extensions import TypeAlias
 
@@ -97,7 +98,9 @@ _REDACTED_ERROR_LOGGER_NAME = os.getenv(
 )
 
 
-redacted_exception_id_to_user_facing_identifier: dict[int, str] = {}
+redacted_exception_id_to_user_facing_identifier: WeakKeyDictionary[BaseException, str] = (
+    WeakKeyDictionary({})
+)
 
 
 class DagsterRedactedUserCodeError(DagsterUserCodeExecutionError):
@@ -121,13 +124,13 @@ def redact_user_stacktrace_if_enabled():
 
             # Generate a unique error ID for this error, or re-use an existing one
             # if this error has already been seen
-            existing_error_id = redacted_exception_id_to_user_facing_identifier.get(id(e))
+            existing_error_id = redacted_exception_id_to_user_facing_identifier.get(e)
 
             if not existing_error_id:
                 error_id = str(uuid.uuid4())
 
                 # Track the error ID for this exception so we can redact it later
-                redacted_exception_id_to_user_facing_identifier[id(e)] = error_id
+                redacted_exception_id_to_user_facing_identifier[e] = error_id
                 masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
 
                 masked_logger.error(
@@ -152,10 +155,8 @@ def redact_user_stacktrace_if_enabled():
                         user_exception=e.user_exception,
                         original_exc_info=sys.exc_info(),
                     ).with_traceback(None)
-                    redacted_exception_id_to_user_facing_identifier[id(dummy_exception)] = error_id
-                    redacted_exception_id_to_user_facing_identifier[id(redacted_exception)] = (
-                        error_id
-                    )
+                    redacted_exception_id_to_user_facing_identifier[dummy_exception] = error_id
+                    redacted_exception_id_to_user_facing_identifier[redacted_exception] = error_id
                     raise redacted_exception from None
 
             # Redact the stacktrace to ensure it will not be passed to Dagster Plus
@@ -180,7 +181,7 @@ def _generate_partly_redacted_framework_error_message(
     exc_info: ExceptionInfo, err_id: str
 ) -> SerializableErrorInfo:
     exc_type, e, tb = exc_info
-    tb_exc = traceback.TracebackException(exc_type, e, tb)
+    tb_exc = traceback.TracebackException(check.not_none(exc_type), check.not_none(e), tb)
     error_info = _serializable_error_info_from_tb(tb_exc)
 
     return SerializableErrorInfo(
@@ -221,7 +222,7 @@ def serializable_error_info_from_exc_info(
 
     from dagster._core.errors import DagsterUserCodeProcessError
 
-    err_id = redacted_exception_id_to_user_facing_identifier.get(id(e))
+    err_id = redacted_exception_id_to_user_facing_identifier.get(e)
     if err_id:
         if isinstance(e, DagsterUserCodeExecutionError):
             # For user code, we want to completely mask the error message, since
