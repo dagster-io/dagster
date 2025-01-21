@@ -28,7 +28,7 @@ To mitigate this, you can:
 
 ## Capturing Python logs (Experimental) \{#capturing-python-logs}
 
-By default, logs generated using the Python logging module aren't captured into the Dagster ecosystem. This means that they aren't stored in the Dagster event log, will not be associated with any Dagster metadata (such as step key, run ID, etc.), and won't show up in the default view of the [Dagster UI](/guides/deploy/webserver).
+By default, logs generated using the Python logging module aren't captured into the Dagster ecosystem. This means that they aren't stored in the Dagster event log, will not be associated with any Dagster metadata (such as step key, run ID, etc.), and won't show up in the default view of the [Dagster UI](/guides/operate/webserver).
 
 For example, imagine you have the following code:
 

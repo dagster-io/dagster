@@ -79,7 +79,7 @@ pip install -e ".[dev]"
 
 ## Step 3: Start the Dagster UI
 
-To start the [Dagster UI](/guides/deploy/webserver), run:
+To start the [Dagster UI](/guides/operate/webserver), run:
 
 ```bash
 dagster dev
