@@ -39,7 +39,7 @@ class DagsterDltTranslator:
             metadata=self.get_metadata(data.resource),
             owners=self.get_owners(data.resource),
             tags=self.get_tags(data.resource),
-            kinds=self.get_kinds(data.resource, data.destination),
+            kinds=self.get_kinds(data.resource, data.destination),  # type: ignore
         )
 
     @public
