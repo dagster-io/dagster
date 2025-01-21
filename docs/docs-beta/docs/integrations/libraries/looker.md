@@ -29,7 +29,7 @@ pip install dagster-looker
 
 ### Represent Looker assets in the asset graph
 
-To load Looker assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" module="dagster_looker" object="LookerResource" />, which allows Dagster to communicate with your Looker instance. You'll need to supply your Looker instance URL and API credentials, which can be passed directly or accessed from the environment using <PyObject section="definitions" module="dagster" object="EnvVar" />.
+To load Looker assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" module="dagster_looker" object="LookerResource" />, which allows Dagster to communicate with your Looker instance. You'll need to supply your Looker instance URL and API credentials, which can be passed directly or accessed from the environment using <PyObject section="resources" module="dagster" object="EnvVar" />.
 
 Dagster can automatically load all views, explores, and dashboards from your Looker instance as asset specs. Call the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> representing your Looker assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
