@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Callable, NamedTuple, Optional, cast
+from unittest import mock
 
 import dagster._check as check
 from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
@@ -38,7 +39,6 @@ from dagster._core.remote_representation.origin import (
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import freeze_time, wait_for_futures
-from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
@@ -202,21 +202,6 @@ class AssetDaemonScenarioState(ScenarioState):
                 # start sensor if it hasn't started already
                 self.instance.start_sensor(sensor)
 
-            def _stop_sensor():
-                if sensor:
-                    self.instance.stop_sensor(
-                        sensor.get_remote_origin_id(), sensor.selector_id, sensor
-                    )
-
-            def _stop_amp():
-                set_auto_materialize_paused(instance=self.instance, paused=True)
-
-            use_auto_materialize_sensors = self.instance.auto_materialize_use_sensors
-            if use_auto_materialize_sensors:
-                _stop_tick = _stop_sensor
-            else:
-                _stop_tick = _stop_amp
-
             def _run_daemon():
                 amp_tick_futures = {}
 
@@ -236,14 +221,11 @@ class AssetDaemonScenarioState(ScenarioState):
                 wait_for_futures(amp_tick_futures)
 
             if stop_mid_iteration:
-                test_futures = {}
-                sensor_controller_threadpool = InheritContextThreadPoolExecutor(
-                    max_workers=2,
-                    thread_name_prefix="unit_test_worker",
-                )
-                test_futures["daemon"] = sensor_controller_threadpool.submit(_run_daemon)
-                test_futures["stop"] = sensor_controller_threadpool.submit(_stop_tick)
-                wait_for_futures(test_futures)
+                with mock.patch(
+                    "dagster._daemon.asset_daemon.AssetDaemon._sensor_is_enabled"
+                ) as sensor_enabled_mock:
+                    sensor_enabled_mock.return_value = False
+                    _run_daemon()
             else:
                 _run_daemon()
 
