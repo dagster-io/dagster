@@ -638,7 +638,8 @@ def _get_output_asset_events(
                     **all_unpartitioned_asset_metadata,
                     **(partition_scoped_metadata or {}),
                 }
-                all_tags.update(
+                tags_for_event = {**all_tags}
+                tags_for_event.update(
                     get_tags_from_multi_partition_key(partition)
                     if isinstance(partition, MultiPartitionKey)
                     else {}
@@ -648,7 +649,7 @@ def _get_output_asset_events(
                     asset_key=asset_key,
                     partition=partition,
                     metadata=all_metadata_for_partitioned_event,
-                    tags=all_tags,
+                    tags=tags_for_event,
                 )
     else:
         with disable_dagster_warnings():
