@@ -1,7 +1,6 @@
 # Dagster Docs - Beta
 
-This is the home of the new Dagster documentation. It is currently in beta and incomplete.
-The documentation site is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+This is the home of the Dagster documentation. The documentation site is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
 ---
 
@@ -10,11 +9,11 @@ The documentation site is built using [Docusaurus](https://docusaurus.io/), a mo
 - `./src` contains custom components, styles, themes, and layouts.
 - `./content-templates` contains the templates for the documentation pages.
 - `./docs/` is the source of truth for the documentation.
-- `/examples/docs_beta_snippets/docs_beta_snippets/` contains all code examples for the documentation.
+- `/examples/docs_beta_snippets/docs_beta_snippets/` contains code examples for the documentation. Some code examples also live in `/examples/` and `/examples/docs_snippets/docs_snippets/`.
 
-The docs are broken down into the following sections:
+The docs are organized into the following sections:
 
-- Docs - includes content from [getting-started](./docs/getting-started/) and [guides](./docs/guides/)
+- Docs - includes content from [getting-started](./docs/getting-started/), [etl-pipeline-tutorial](./docs/etl-pipeline-tutorial/), [guides](./docs/guides/), and [about](./docs/about/)
 - [Integrations](./docs/integrations/)
 - [Dagster+](./docs/dagster-plus/)
 - [API reference](./docs/api/)
@@ -38,7 +37,7 @@ corepack enable
 yarn install
 ```
 
-It also uses [Vale](https://vale.sh/) to check for issues in the documentation.
+The docs site also uses [Vale](https://vale.sh/) to check for issues in the documentation.
 
 Install Vale with:
 
@@ -54,7 +53,7 @@ pip install vale
 
 ---
 
-## Local Development
+## Local development
 
 To start the local development server:
 
@@ -97,7 +96,7 @@ This command generates static content into the `build` directory and can be serv
 
 This site is built and deployed using Vercel.
 
-### API Documentation
+### API documentation
 
 API documentation is built in Vercel by overriding the _Build Command_ to the following:
 
