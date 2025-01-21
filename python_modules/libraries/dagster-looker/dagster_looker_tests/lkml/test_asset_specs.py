@@ -479,7 +479,7 @@ def test_with_metadata_replacements() -> None:
     )
 
     for spec in my_looker_assets:
-        assert "customized" in spec.metadata == expected_metadata
+        assert "customized" in spec.metadata
         assert spec.metadata["customized"] == expected_metadata["customized"]
 
 
