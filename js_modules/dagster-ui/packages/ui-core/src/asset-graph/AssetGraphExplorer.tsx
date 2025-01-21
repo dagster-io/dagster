@@ -784,7 +784,7 @@ const AssetGraphExplorerWithData = ({
                     }
                   />
                 </Box>
-                {filterBar}
+                {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterBar}
               </Box>
             </TopbarWrapper>
           </ErrorBoundary>

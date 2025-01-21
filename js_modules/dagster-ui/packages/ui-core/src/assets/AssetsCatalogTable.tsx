@@ -291,11 +291,13 @@ export const AssetsCatalogTable = ({
         </div>
       }
       belowActionBarComponents={
-        <AssetGraphFilterBar
-          activeFiltersJsx={activeFiltersJsx}
-          assetSelection={assetSelection}
-          setAssetSelection={setAssetSelection}
-        />
+        featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (
+          <AssetGraphFilterBar
+            activeFiltersJsx={activeFiltersJsx}
+            assetSelection={assetSelection}
+            setAssetSelection={setAssetSelection}
+          />
+        )
       }
       refreshState={refreshState}
       prefixPath={prefixPath || emptyArray}
