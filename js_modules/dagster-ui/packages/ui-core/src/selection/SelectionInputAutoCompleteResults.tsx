@@ -1,9 +1,10 @@
 import {Menu, MenuItem} from '@dagster-io/ui-components';
 import {MutableRefObject} from 'react';
 
-import {Suggestion} from './SelectionAutoComplete';
+import {Suggestion} from './SelectionAutoCompleteVisitor';
+import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 
-type SelectionAutoCompleteResultsProps = {
+type SelectionInputAutoCompleteResultsProps = {
   results: {
     list: Suggestion[];
     from: number;
@@ -15,9 +16,10 @@ type SelectionAutoCompleteResultsProps = {
   setSelectedIndex: React.Dispatch<React.SetStateAction<{current: number}>>;
   scheduleUpdateValue: () => void;
   scrollToSelection: MutableRefObject<boolean>;
+  loading?: boolean;
 };
 
-export const SelectionAutoCompleteResults = ({
+export const SelectionInputAutoCompleteResults = ({
   results,
   width,
   onSelect,
@@ -25,8 +27,9 @@ export const SelectionAutoCompleteResults = ({
   scheduleUpdateValue,
   setSelectedIndex,
   scrollToSelection,
-}: SelectionAutoCompleteResultsProps) => {
-  if (!results) {
+  loading,
+}: SelectionInputAutoCompleteResultsProps) => {
+  if (!results && !loading) {
     return null;
   }
 
@@ -62,6 +65,7 @@ export const SelectionAutoCompleteResults = ({
           />
         ))}
       </Menu>
+      <IndeterminateLoadingBar $loading={loading} />
     </div>
   );
 };

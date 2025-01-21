@@ -4,8 +4,8 @@ import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionIn
 import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
-import {useAssetSelectionFiltering} from './useAssetSelectionFiltering';
-import {featureEnabled} from '../app/Flags';
+import {featureEnabled} from '../../app/Flags';
+import {useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
 
 export const useAssetSelectionInput = <
   T extends {

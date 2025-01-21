@@ -4,7 +4,7 @@ import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import CodeMirror from 'codemirror';
 import {css} from 'styled-components';
 
-import {parseInput} from './SelectionAutoCompleteInputParser';
+import {parseInput} from './SelectionInputParser';
 import {
   AllExpressionContext,
   AttributeExpressionContext,
@@ -151,6 +151,10 @@ export class SyntaxHighlightingVisitor
     this.visitChildren(ctx);
   }
   visitAndExpression(ctx: ParserRuleContext) {
+    this.addClass(ctx, 'expression');
+    this.visitChildren(ctx);
+  }
+  visitIncompleteAttributeExpressionMissingSecondValue(ctx: ParserRuleContext) {
     this.addClass(ctx, 'expression');
     this.visitChildren(ctx);
   }
