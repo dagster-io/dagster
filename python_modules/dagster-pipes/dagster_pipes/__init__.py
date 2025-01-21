@@ -15,7 +15,7 @@ import zlib
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager, nullcontext
-from io import StringIO
+from io import StringIO, TextIOWrapper
 from queue import Queue
 from threading import Event, Thread
 from traceback import TracebackException
@@ -821,11 +821,16 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         return self._name
 
     @property
-    def stdio(self) -> IO[str]:
+    def stdio(self) -> TextIOWrapper:
+        # this property is a handy way to access the correct underlying original IO stream (typically for reading)
+        # specifically, it used `sys.__stdout__`/`sys.__stderr__` dunder attributes to access the underlying IO stream
+        # instead of the more common `sys.stdout`/`sys.stderr` attributes which are often
+        # replaced by various tools and environments (e.g. Databricks) and no longer point to the original IO stream
+        # more info in Python docs: https://docs.python.org/3.8/library/sys.html#sys.__stdout__
         if self.stream == "stdout":
-            return sys.stdout
+            return cast(TextIOWrapper, sys.__stdout__)
         elif self.stream == "stderr":
-            return sys.stderr
+            return cast(TextIOWrapper, sys.__stderr__)
         else:
             raise ValueError(f"stream must be 'stdout' or 'stderr', got {self.stream}")
 
