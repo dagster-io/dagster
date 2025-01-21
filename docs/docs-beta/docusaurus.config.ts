@@ -1,10 +1,9 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
-import {groupCollapsed} from 'console';
 
 const config: Config = {
-  title: 'Dagster Docs - Beta',
+  title: 'Dagster Docs',
   tagline: 'Dagster is a Python framework for building production-grade data platforms.',
   url: 'https://docs.dagster.io',
   favicon: 'img/favicon.ico',
