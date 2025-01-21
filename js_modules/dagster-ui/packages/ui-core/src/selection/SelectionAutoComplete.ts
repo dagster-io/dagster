@@ -2,7 +2,6 @@ import {ParserRuleContext} from 'antlr4ts';
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import {ParseTree} from 'antlr4ts/tree/ParseTree';
 import {RuleNode} from 'antlr4ts/tree/RuleNode';
-import CodeMirror from 'codemirror';
 
 import {parseInput} from './SelectionAutoCompleteInputParser';
 import {
@@ -33,7 +32,24 @@ import {
 } from './generated/SelectionAutoCompleteParser';
 import {SelectionAutoCompleteVisitor as _SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
 
-type Suggestion = {text: string; displayText?: string};
+export type Suggestion =
+  | {
+      text: string;
+      displayText?: string;
+      type: 'function' | 'logical_operator' | 'parenthesis';
+    }
+  | {
+      text: string;
+      displayText?: string;
+      type: 'attribute';
+      attributeName?: string;
+    }
+  | {
+      text: string;
+      displayText?: string;
+      type: 'traversal';
+    };
+
 type TextCallback = (value: string) => string;
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
@@ -183,7 +199,12 @@ export class SelectionAutoCompleteVisitor
         .filter((attr) => attr.startsWith(value.trim()))
         .map((val) => {
           const suggestionValue = `${val}:`;
-          return {text: textCallback(suggestionValue), displayText: suggestionValue};
+          return {
+            text: textCallback(suggestionValue),
+            displayText: suggestionValue,
+            type: 'attribute' as const,
+            attributeName: val,
+          };
         }),
     );
   }
@@ -201,6 +222,7 @@ export class SelectionAutoCompleteVisitor
           return {
             text: textCallback(suggestionValue),
             displayText: suggestionValue,
+            type: 'function' as const,
           };
         }),
     );
@@ -220,6 +242,8 @@ export class SelectionAutoCompleteVisitor
       this.list.push({
         text: textCallback(substringMatchText),
         displayText: substringMatchDisplayText,
+        type: 'attribute' as const,
+        attributeName: `${this.nameBase}_substring`,
       });
     }
     this.addAttributeResults(value, textCallback);
@@ -231,19 +255,33 @@ export class SelectionAutoCompleteVisitor
           this.list.push({
             text: textCallback(`${attribute.key}:"${attribute.value}"`),
             displayText: `${attribute.key}:${attribute.value}`,
+            type: 'attribute' as const,
+            attributeName: attribute.key,
           });
         }
       });
     }
 
     if (!options.excludeNot && 'not'.startsWith(value)) {
-      this.list.push({text: textCallback('not '), displayText: 'not'});
+      this.list.push({
+        text: textCallback('not '),
+        displayText: 'not',
+        type: 'logical_operator' as const,
+      });
     }
     if (value === '') {
       if (!options.excludePlus) {
-        this.list.push({text: textCallback('+'), displayText: '+'});
+        this.list.push({
+          text: textCallback('+'),
+          displayText: '+',
+          type: 'traversal' as const,
+        });
       }
-      this.list.push({text: textCallback('()'), displayText: '('});
+      this.list.push({
+        text: textCallback('()'),
+        displayText: '(',
+        type: 'parenthesis' as const,
+      });
     }
   }
 
@@ -262,6 +300,8 @@ export class SelectionAutoCompleteVisitor
         this.list.push({
           text: textCallback(`"${attributeValue}"`),
           displayText: attributeValue,
+          type: 'attribute' as const,
+          attributeName: attributeKey,
         });
       }
     });
@@ -273,14 +313,17 @@ export class SelectionAutoCompleteVisitor
       excludePlus?: boolean;
     } = {},
   ) {
-    this.list.push({text: ' and ', displayText: 'and'}, {text: ' or ', displayText: 'or'});
+    this.list.push(
+      {text: ' and ', displayText: 'and', type: 'logical_operator' as const},
+      {text: ' or ', displayText: 'or', type: 'logical_operator' as const},
+    );
 
     if (!options.excludePlus) {
-      this.list.push({text: '+', displayText: '+'});
+      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
     }
 
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {
-      this.list.push({text: ')', displayText: ')'});
+      this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
     }
   }
 
@@ -294,26 +337,26 @@ export class SelectionAutoCompleteVisitor
         excludePlus: true,
       });
       if (isInsideExpressionlessParenthesizedExpression(ctx)) {
-        this.list.push({text: ')', displayText: ')'});
+        this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
       }
     }
   }
 
   visitUpTraversal(ctx: UpTraversalContext) {
     if (ctx.text.includes('+')) {
-      this.list.push({text: '+', displayText: '+'});
+      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
     }
-    this.list.push({text: '()', displayText: '('});
+    this.list.push({text: '()', displayText: '(', type: 'parenthesis' as const});
   }
 
   visitDownTraversal(ctx: DownTraversalContext) {
-    this.list.push({text: ' and ', displayText: 'and'});
-    this.list.push({text: ' or ', displayText: 'or'});
+    this.list.push({text: ' and ', displayText: 'and', type: 'logical_operator' as const});
+    this.list.push({text: ' or ', displayText: 'or', type: 'logical_operator' as const});
     if (ctx.text.includes('+')) {
-      this.list.push({text: '+', displayText: '+'});
+      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
     }
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {
-      this.list.push({text: ')', displayText: ')'});
+      this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
     }
   }
 
@@ -387,7 +430,10 @@ export class SelectionAutoCompleteVisitor
     } else {
       this.startReplacementIndex = ctx.start.startIndex;
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
-      this.list.push({text: 'or', displayText: 'or'}, {text: 'and', displayText: 'and'});
+      this.list.push(
+        {text: 'or', displayText: 'or', type: 'logical_operator' as const},
+        {text: 'and', displayText: 'and', type: 'logical_operator' as const},
+      );
     }
   }
 
@@ -397,7 +443,10 @@ export class SelectionAutoCompleteVisitor
     } else {
       this.startReplacementIndex = ctx.start.startIndex;
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
-      this.list.push({text: 'and', displayText: 'and'}, {text: 'or', displayText: 'or'});
+      this.list.push(
+        {text: 'and', displayText: 'and', type: 'logical_operator' as const},
+        {text: 'or', displayText: 'or', type: 'logical_operator' as const},
+      );
     }
   }
 
@@ -418,6 +467,7 @@ export class SelectionAutoCompleteVisitor
     }
     this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
       excludeNot: true,
+      excludePlus: true,
     });
   }
 
@@ -441,7 +491,9 @@ export class SelectionAutoCompleteVisitor
   }
 
   visitPostNeighborTraversalWhitespace(_ctx: PostNeighborTraversalWhitespaceContext) {
-    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK);
+    this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {
+      excludePlus: true,
+    });
   }
 
   visitPostUpwardTraversalWhitespace(_ctx: PostUpwardTraversalWhitespaceContext) {
@@ -493,7 +545,7 @@ export class SelectionAutoCompleteVisitor
   }
 }
 
-export function createSelectionHint<T extends Record<string, string[]>, N extends keyof T>({
+export function generateAutocompleteResults<T extends Record<string, string[]>, N extends keyof T>({
   nameBase: _nameBase,
   attributesMap,
   functions,
@@ -501,15 +553,13 @@ export function createSelectionHint<T extends Record<string, string[]>, N extend
   nameBase: N;
   attributesMap: T;
   functions: string[];
-}): CodeMirror.HintFunction {
+}) {
   const nameBase = _nameBase as string;
 
-  return function (cm: CodeMirror.Editor, _options: CodeMirror.ShowHintOptions): any {
-    const line = cm.getLine(0);
+  return function (line: string, actualCursorIndex: number) {
     const {parseTrees} = parseInput(line);
 
     let start = 0;
-    const actualCursorIndex = cm.getCursor().ch;
 
     let visitorWithAutoComplete;
     if (!parseTrees.length) {
@@ -545,10 +595,11 @@ export function createSelectionHint<T extends Record<string, string[]>, N extend
     if (visitorWithAutoComplete) {
       return {
         list: visitorWithAutoComplete.list,
-        from: cm.posFromIndex(start + visitorWithAutoComplete.startReplacementIndex),
-        to: cm.posFromIndex(start + visitorWithAutoComplete.stopReplacementIndex),
+        from: start + visitorWithAutoComplete.startReplacementIndex,
+        to: start + visitorWithAutoComplete.stopReplacementIndex,
       };
     }
+    return null;
   };
 }
 

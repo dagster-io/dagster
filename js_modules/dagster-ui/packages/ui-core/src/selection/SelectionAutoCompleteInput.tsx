@@ -1,23 +1,22 @@
-import {Colors, Icon} from '@dagster-io/ui-components';
-import CodeMirror, {Editor, HintFunction} from 'codemirror';
+import {Colors, Icon, Popover} from '@dagster-io/ui-components';
+import useResizeObserver from '@react-hook/resize-observer';
+import CodeMirror, {Editor} from 'codemirror';
 import {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
-import {useCallback, useLayoutEffect, useMemo, useRef} from 'react';
-import ReactDOM from 'react-dom';
-import styled, {createGlobalStyle, css} from 'styled-components';
+import {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import styled, {css} from 'styled-components';
 
 import {
   SelectionAutoCompleteInputCSS,
   applyStaticSyntaxHighlighting,
 } from './SelectionAutoCompleteHighlighter';
+import {SelectionAutoCompleteResults} from './SelectionAutoCompleteResults';
 import {useTrackEvent} from '../app/analytics';
-import {useUpdatingRef} from '../hooks/useUpdatingRef';
-import {createSelectionHint} from '../selection/SelectionAutoComplete';
+import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {Suggestion, generateAutocompleteResults} from '../selection/SelectionAutoComplete';
 
 import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/lib/codemirror.css';
-import 'codemirror/addon/hint/show-hint';
-import 'codemirror/addon/hint/show-hint.css';
 import 'codemirror/addon/lint/lint.css';
 import 'codemirror/addon/display/placeholder';
 
@@ -70,25 +69,46 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
   const editorRef = useRef<HTMLDivElement>(null);
   const cmInstance = useRef<CodeMirror.Editor | null>(null);
 
-  const currentValueRef = useUpdatingRef(value);
   const currentPendingValueRef = useRef(value);
   const setValueTimeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
 
-  const hintRef = useUpdatingRef(
-    useMemo(() => {
-      return createSelectionHint({nameBase, attributesMap, functions});
-    }, [nameBase, attributesMap, functions]),
-  );
+  const hintFn = useMemo(() => {
+    return generateAutocompleteResults({nameBase, attributesMap, functions});
+  }, [nameBase, attributesMap, functions]);
+
+  const [showResults, setShowResults] = useState({current: false});
+  const [cursorPosition, setCursorPosition] = useState<number>(0);
+  const [innerValue, setInnerValue] = useState(value);
+
+  const autocompleteResults = useMemo(() => {
+    return hintFn(innerValue, cursorPosition);
+  }, [hintFn, innerValue, cursorPosition]);
 
   const hintContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const _showHint = useCallback(() => {
-    if (hintContainerRef.current && cmInstance.current) {
-      showHint(cmInstance.current, hintRef.current, hintContainerRef.current);
-    }
-  }, [hintRef]);
-
   const focusRef = useRef(false);
+
+  const [selectedIndexRef, setSelectedIndex] = useState({current: 0});
+
+  const scrollToSelectionRef = useRef(false);
+
+  useDangerousRenderEffect(() => {
+    // Rather then using a useEffect + setState (extra render), we just set the current value directly
+    selectedIndexRef.current = 0;
+    if (!autocompleteResults?.list.length) {
+      showResults.current = false;
+    }
+    scrollToSelectionRef.current = true;
+  }, [autocompleteResults]);
+
+  const scheduleUpdateValue = useCallback(() => {
+    if (setValueTimeoutRef.current) {
+      clearTimeout(setValueTimeoutRef.current);
+    }
+    setValueTimeoutRef.current = setTimeout(() => {
+      onSelectionChange(currentPendingValueRef.current);
+    }, 2000);
+  }, [onSelectionChange]);
 
   useLayoutEffect(() => {
     if (editorRef.current && !cmInstance.current) {
@@ -112,15 +132,6 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         },
       });
 
-      function scheduleUpdateValue(newValue: string) {
-        if (setValueTimeoutRef.current) {
-          clearTimeout(setValueTimeoutRef.current);
-        }
-        setValueTimeoutRef.current = setTimeout(() => {
-          onSelectionChange(newValue);
-        }, 2000);
-      }
-
       cmInstance.current.setSize('100%', 20);
 
       // Enforce single line by preventing newlines
@@ -130,39 +141,33 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         }
       });
 
-      cmInstance.current.on('change', (instance: Editor, change) => {
+      cmInstance.current.on('change', (instance: Editor) => {
         const newValue = instance.getValue().replace(/\s+/g, ' ');
         currentPendingValueRef.current = newValue;
-        scheduleUpdateValue(newValue);
-
-        if (change.origin === 'complete' && change.text[0]?.endsWith('()')) {
-          // Set cursor inside the right parenthesis
-          const cursor = instance.getCursor();
-          instance.setCursor({...cursor, ch: cursor.ch - 1});
-        }
-        requestAnimationFrame(() => {
-          _showHint();
-        });
+        setInnerValue(newValue);
+        scheduleUpdateValue();
+        setShowResults({current: true});
         adjustHeight();
       });
 
       cmInstance.current.on('inputRead', (_instance: Editor) => {
-        _showHint();
+        setShowResults({current: true});
       });
 
       cmInstance.current.on('focus', (instance: Editor) => {
         focusRef.current = true;
         instance.setOption('lineWrapping', true);
         adjustHeight();
-        _showHint();
+        setShowResults({current: true});
       });
 
       cmInstance.current.on('cursorActivity', (instance: Editor) => {
         applyStaticSyntaxHighlighting(instance);
-        _showHint();
+        setCursorPosition(instance.getCursor().ch);
+        setShowResults({current: true});
       });
 
-      cmInstance.current.on('blur', (instance: Editor) => {
+      cmInstance.current.on('blur', (instance: Editor, ev: FocusEvent) => {
         focusRef.current = false;
         instance.setOption('lineWrapping', false);
         instance.setSize('100%', '20px');
@@ -173,10 +178,8 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
           hintContainerRef.current?.contains(current) ||
           hintsVisible
         ) {
+          ev.preventDefault();
           return;
-        }
-        if (currentPendingValueRef.current !== currentValueRef.current) {
-          onSelectionChange(currentPendingValueRef.current);
         }
       });
 
@@ -188,15 +191,6 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         applyStaticSyntaxHighlighting(cmInstance.current);
       });
     }
-
-    return () => {
-      const cm = cmInstance.current;
-      if (cm) {
-        // Clean up the instance...
-        cm.closeHint();
-        cm.getWrapperElement()?.parentNode?.removeChild(cm.getWrapperElement());
-      }
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -221,24 +215,123 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
       const cursor = instance.getCursor();
       instance.setValue(noNewLineValue);
       instance.setCursor(cursor);
-      _showHint();
+      setCursorPosition(cursor.ch);
+      setShowResults({current: true});
+      requestAnimationFrame(() => {
+        // Reset selected index on value change
+        setSelectedIndex({current: 0});
+      });
     }
-  }, [_showHint, hintRef, value]);
+  }, [value]);
+
+  const inputRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useResizeObserver(inputRef, () => {
+    if (inputRef.current) {
+      setWidth(inputRef.current.clientWidth);
+    }
+  });
+
+  const selectedItem = autocompleteResults?.list[selectedIndexRef.current];
+
+  const onSelect = useCallback(
+    (suggestion: Suggestion) => {
+      if (autocompleteResults && suggestion && cmInstance.current) {
+        const editor = cmInstance.current;
+        editor.replaceRange(
+          suggestion.text,
+          {line: 0, ch: autocompleteResults.from},
+          {line: 0, ch: autocompleteResults.to},
+          'complete',
+        );
+        editor.focus();
+        const cursor = editor.getCursor();
+        let offset = 0;
+        if (suggestion.text.endsWith('()')) {
+          offset = -1;
+        }
+        editor.setCursor({
+          ...cursor,
+          ch: autocompleteResults.from + suggestion.text.length + offset,
+        });
+      }
+    },
+    [autocompleteResults],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (!showResults) {
+        return;
+      }
+      scheduleUpdateValue();
+
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        scrollToSelectionRef.current = true;
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => ({
+          current: (prev.current + 1) % (autocompleteResults?.list.length ?? 0),
+        }));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) => ({
+          current:
+            prev.current - 1 < 0 ? (autocompleteResults?.list.length ?? 1) - 1 : prev.current - 1,
+        }));
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        if (selectedItem) {
+          onSelect(selectedItem);
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowResults({current: false});
+      }
+    },
+    [showResults, scheduleUpdateValue, autocompleteResults, selectedItem, onSelect],
+  );
 
   return (
     <>
-      <GlobalHintStyles />
-      <InputDiv
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-          alignItems: 'flex-start',
-        }}
+      <Popover
+        content={
+          <div ref={hintContainerRef} onMouseMove={scheduleUpdateValue}>
+            <SelectionAutoCompleteResults
+              results={autocompleteResults}
+              width={width}
+              selectedIndex={selectedIndexRef.current}
+              scrollToSelection={scrollToSelectionRef}
+              onSelect={onSelect}
+              scheduleUpdateValue={scheduleUpdateValue}
+              setSelectedIndex={setSelectedIndex}
+            />
+          </div>
+        }
+        placement="bottom-start"
+        isOpen={autocompleteResults?.list.length ? showResults.current : false}
+        targetTagName="div"
+        canEscapeKeyClose={true}
       >
-        <Icon name="op_selector" style={{marginTop: 2}} />
-        <div ref={editorRef} />
-      </InputDiv>
-      {ReactDOM.createPortal(<div ref={hintContainerRef} />, document.body)}
+        <InputDiv
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+            alignItems: 'flex-start',
+          }}
+          ref={inputRef}
+          onKeyDownCapture={handleKeyDown} // Added keyboard event handler
+          tabIndex={0} // Make the div focusable to capture keyboard events
+          onClick={() => {
+            setShowResults({current: true});
+          }}
+        >
+          <Icon name="op_selector" style={{marginTop: 2}} />
+          <div ref={editorRef} />
+        </InputDiv>
+      </Popover>
     </>
   );
 };
@@ -259,46 +352,3 @@ export const iconStyle = (img: string) => css`
 export const InputDiv = styled.div`
   ${SelectionAutoCompleteInputCSS}
 `;
-
-// Z-index: 21 to beat out Dialog's z-index: 20
-const GlobalHintStyles = createGlobalStyle`
-  .CodeMirror-hints {
-    z-index: 21;
-    background: ${Colors.popoverBackground()};
-    border: none;
-    border-radius: 4px;
-    padding: 8px 4px;
-    .CodeMirror-hint {
-      border-radius: 4px;
-      font-size: 14px;
-      padding: 6px 8px 6px 12px;
-      color: ${Colors.textDefault()};
-      &:hover,
-      &.CodeMirror-hint-active {
-        background-color: ${Colors.backgroundBlue()};
-        color: ${Colors.textDefault()};
-      }
-    }
-  }
-`;
-
-function showHint(instance: Editor, hint: HintFunction, container: HTMLDivElement) {
-  if (container.querySelector('.CodeMirror-hints')) {
-    // Hints already visible
-    return;
-  }
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (instance.getWrapperElement().contains(document.activeElement)) {
-        instance.showHint({
-          hint,
-          completeSingle: false,
-          moveOnOverlap: true,
-          updateOnCursorActivity: true,
-          completeOnSingleClick: true,
-          container,
-        });
-      }
-    });
-  });
-}
