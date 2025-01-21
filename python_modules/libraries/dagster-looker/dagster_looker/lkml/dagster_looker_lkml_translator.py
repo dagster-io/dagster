@@ -18,6 +18,159 @@ LookMLStructureType = Literal["dashboard", "explore", "table", "view"]
 logger = logging.getLogger("dagster_looker")
 
 
+def build_deps_for_looker_dashboard(
+    dagster_looker_translator: "DagsterLookerLkmlTranslator",
+    lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
+) -> Sequence[AssetKey]:
+    lookml_view_path, _, lookml_dashboard_props = lookml_structure
+
+    return list(
+        {
+            dagster_looker_translator.get_asset_spec(
+                lookml_structure=(
+                    lookml_view_path,
+                    "explore",
+                    lookml_element_from_dashboard_props,
+                )
+            ).key
+            for lookml_element_from_dashboard_props in itertools.chain(
+                # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#elements_2
+                lookml_dashboard_props.get("elements", []),
+                # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#filters
+                lookml_dashboard_props.get("filters", []),
+            )
+            if lookml_element_from_dashboard_props.get("explore")
+        }
+    )
+
+
+def build_deps_for_looker_explore(
+    dagster_looker_translator: "DagsterLookerLkmlTranslator",
+    lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
+) -> Sequence[AssetKey]:
+    lookml_explore_path, _, lookml_explore_props = lookml_structure
+
+    # https://cloud.google.com/looker/docs/reference/param-explore-from
+    explore_base_view = [{"name": lookml_explore_props.get("from") or lookml_explore_props["name"]}]
+
+    # https://cloud.google.com/looker/docs/reference/param-explore-join
+    explore_join_views: Sequence[Mapping[str, Any]] = lookml_explore_props.get("joins", [])
+
+    return list(
+        {
+            dagster_looker_translator.get_asset_spec(
+                lookml_structure=(
+                    lookml_explore_path,
+                    "view",
+                    lookml_view_from_explore_props,
+                )
+            ).key
+            for lookml_view_from_explore_props in itertools.chain(
+                explore_base_view, explore_join_views
+            )
+        }
+    )
+
+
+def build_deps_for_looker_view(
+    dagster_looker_translator: "DagsterLookerLkmlTranslator",
+    lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
+) -> Sequence[AssetKey]:
+    lookml_view_path, _, lookml_view_props = lookml_structure
+
+    # https://cloud.google.com/looker/docs/derived-tables
+    derived_table_sql: Optional[str] = lookml_view_props.get("derived_table", {}).get("sql")
+    if not derived_table_sql:
+        # https://cloud.google.com/looker/docs/reference/param-view-sql-table-name
+        sql_table_name = lookml_view_props.get("sql_table_name") or lookml_view_props["name"]
+        try:
+            sqlglot_table = to_table(
+                sql_table_name.replace("`", ""), dialect=custom_bigquery_dialect_inst
+            )
+        except ParseError as e:
+            logger.warn(
+                f"Failed to parse derived table SQL for view `{sql_table_name}`"
+                f" in file `{lookml_view_path.name}`."
+                " The upstream dependencies for the view will be omitted.\n\n"
+                f"Exception: {e}"
+            )
+            return []
+
+        return [
+            dagster_looker_translator.get_asset_spec(
+                lookml_structure=(
+                    lookml_view_path,
+                    "table",
+                    {"table": sqlglot_table, "from_structure": lookml_view_props},
+                )
+            ).key
+        ]
+
+    # We need to handle the Looker substitution operator ($) properly since the lkml
+    # compatible SQL may not be parsable yet by sqlglot.
+    #
+    # https://cloud.google.com/looker/docs/sql-and-referring-to-lookml#substitution_operator_
+    upstream_view_pattern = re.compile(r"\${(.*?)\.SQL_TABLE_NAME\}")
+    if upstream_looker_views_from_substitution := upstream_view_pattern.findall(derived_table_sql):
+        return [
+            dagster_looker_translator.get_asset_spec(
+                lookml_structure=(
+                    lookml_view_path,
+                    "view",
+                    {"name": upstream_looker_view_name},
+                )
+            ).key
+            for upstream_looker_view_name in set(upstream_looker_views_from_substitution)
+        ]
+
+    upstream_sqlglot_tables: Sequence[exp.Table] = []
+    try:
+        rendered_liquid_sql = best_effort_render_liquid_sql(
+            lookml_view_props["name"], lookml_view_path.name, derived_table_sql
+        )
+        parsed_derived_table_ast = parse_one(
+            sql=rendered_liquid_sql, dialect=custom_bigquery_dialect_inst
+        )
+        ast_to_evaluate = parsed_derived_table_ast
+        try:
+            optimized_derived_table_ast = optimize(
+                parsed_derived_table_ast,
+                dialect=custom_bigquery_dialect_inst,
+                validate_qualify_columns=False,
+            )
+            ast_to_evaluate = optimized_derived_table_ast
+        except ParseError:
+            pass
+        root_scope = build_scope(ast_to_evaluate)
+
+        upstream_sqlglot_tables = [
+            source
+            for scope in cast(Iterator[Scope], root_scope.traverse() if root_scope else [])
+            for (_, source) in scope.selected_sources.values()
+            if isinstance(source, exp.Table)
+        ]
+    except Exception as e:
+        logger.warn(
+            f"Failed to parse derived table SQL for view `{lookml_view_props['name']}`"
+            f" in file `{lookml_view_path.name}`."
+            " The upstream dependencies for the view will be omitted.\n\n"
+            f"Exception: {e}"
+        )
+
+    return list(
+        {
+            dagster_looker_translator.get_asset_spec(
+                lookml_structure=(
+                    lookml_view_path,
+                    "table",
+                    {"table": sqlglot_table, "from_structure": lookml_view_props},
+                )
+            ).key
+            for sqlglot_table in upstream_sqlglot_tables
+        }
+    )
+
+
 @experimental
 class DagsterLookerLkmlTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
@@ -198,171 +351,25 @@ class DagsterLookerLkmlTranslator:
         lookml_structure_path, lookml_structure_type, _ = lookml_structure
 
         if lookml_structure_type == "dashboard":
-            return self._build_deps_for_looker_dashboard(lookml_structure)
+            return build_deps_for_looker_dashboard(
+                dagster_looker_translator=self, lookml_structure=lookml_structure
+            )
 
         if lookml_structure_type == "explore":
-            return self._build_deps_for_looker_explore(lookml_structure)
+            return build_deps_for_looker_explore(
+                dagster_looker_translator=self, lookml_structure=lookml_structure
+            )
 
         if lookml_structure_type == "view":
-            return self._build_deps_for_looker_view(lookml_structure)
+            return build_deps_for_looker_view(
+                dagster_looker_translator=self, lookml_structure=lookml_structure
+            )
 
         if lookml_structure_type == "table":
             return []
 
         raise ValueError(
             f"Unsupported LookML structure type `{lookml_structure_type}` at path `{lookml_structure_path}`"
-        )
-
-    def _build_deps_for_looker_dashboard(
-        self,
-        lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
-    ) -> Sequence[AssetKey]:
-        lookml_view_path, _, lookml_dashboard_props = lookml_structure
-
-        return list(
-            {
-                self.get_asset_spec(
-                    lookml_structure=(
-                        lookml_view_path,
-                        "explore",
-                        lookml_element_from_dashboard_props,
-                    )
-                ).key
-                for lookml_element_from_dashboard_props in itertools.chain(
-                    # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#elements_2
-                    lookml_dashboard_props.get("elements", []),
-                    # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#filters
-                    lookml_dashboard_props.get("filters", []),
-                )
-                if lookml_element_from_dashboard_props.get("explore")
-            }
-        )
-
-    def _build_deps_for_looker_explore(
-        self,
-        lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
-    ) -> Sequence[AssetKey]:
-        lookml_explore_path, _, lookml_explore_props = lookml_structure
-
-        # https://cloud.google.com/looker/docs/reference/param-explore-from
-        explore_base_view = [
-            {"name": lookml_explore_props.get("from") or lookml_explore_props["name"]}
-        ]
-
-        # https://cloud.google.com/looker/docs/reference/param-explore-join
-        explore_join_views: Sequence[Mapping[str, Any]] = lookml_explore_props.get("joins", [])
-
-        return list(
-            {
-                self.get_asset_spec(
-                    lookml_structure=(
-                        lookml_explore_path,
-                        "view",
-                        lookml_view_from_explore_props,
-                    )
-                ).key
-                for lookml_view_from_explore_props in itertools.chain(
-                    explore_base_view, explore_join_views
-                )
-            }
-        )
-
-    def _build_deps_for_looker_view(
-        self,
-        lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]],
-    ) -> Sequence[AssetKey]:
-        lookml_view_path, _, lookml_view_props = lookml_structure
-
-        # https://cloud.google.com/looker/docs/derived-tables
-        derived_table_sql: Optional[str] = lookml_view_props.get("derived_table", {}).get("sql")
-        if not derived_table_sql:
-            # https://cloud.google.com/looker/docs/reference/param-view-sql-table-name
-            sql_table_name = lookml_view_props.get("sql_table_name") or lookml_view_props["name"]
-            try:
-                sqlglot_table = to_table(
-                    sql_table_name.replace("`", ""), dialect=custom_bigquery_dialect_inst
-                )
-            except ParseError as e:
-                logger.warn(
-                    f"Failed to parse derived table SQL for view `{sql_table_name}`"
-                    f" in file `{lookml_view_path.name}`."
-                    " The upstream dependencies for the view will be omitted.\n\n"
-                    f"Exception: {e}"
-                )
-                return []
-
-            return [
-                self.get_asset_spec(
-                    lookml_structure=(
-                        lookml_view_path,
-                        "table",
-                        {"table": sqlglot_table, "from_structure": lookml_view_props},
-                    )
-                ).key
-            ]
-
-        # We need to handle the Looker substitution operator ($) properly since the lkml
-        # compatible SQL may not be parsable yet by sqlglot.
-        #
-        # https://cloud.google.com/looker/docs/sql-and-referring-to-lookml#substitution_operator_
-        upstream_view_pattern = re.compile(r"\${(.*?)\.SQL_TABLE_NAME\}")
-        if upstream_looker_views_from_substitution := upstream_view_pattern.findall(derived_table_sql):
-            return [
-                self.get_asset_spec(
-                    lookml_structure=(
-                        lookml_view_path,
-                        "view",
-                        {"name": upstream_looker_view_name},
-                    )
-                ).key
-                for upstream_looker_view_name in set(upstream_looker_views_from_substitution)
-            ]
-
-        upstream_sqlglot_tables: Sequence[exp.Table] = []
-        try:
-            rendered_liquid_sql = best_effort_render_liquid_sql(
-                lookml_view_props["name"], lookml_view_path.name, derived_table_sql
-            )
-            parsed_derived_table_ast = parse_one(
-                sql=rendered_liquid_sql, dialect=custom_bigquery_dialect_inst
-            )
-            ast_to_evaluate = parsed_derived_table_ast
-            try:
-                optimized_derived_table_ast = optimize(
-                    parsed_derived_table_ast,
-                    dialect=custom_bigquery_dialect_inst,
-                    validate_qualify_columns=False,
-                )
-                ast_to_evaluate = optimized_derived_table_ast
-            except ParseError:
-                pass
-            root_scope = build_scope(ast_to_evaluate)
-
-            upstream_sqlglot_tables = [
-                source
-                for scope in cast(Iterator[Scope], root_scope.traverse() if root_scope else [])
-                for (_, source) in scope.selected_sources.values()
-                if isinstance(source, exp.Table)
-            ]
-        except Exception as e:
-            logger.warn(
-                f"Failed to parse derived table SQL for view `{lookml_view_props['name']}`"
-                f" in file `{lookml_view_path.name}`."
-                " The upstream dependencies for the view will be omitted.\n\n"
-                f"Exception: {e}"
-            )
-
-        return list(
-            {
-                self.get_asset_spec(
-                    lookml_structure=(
-                        lookml_view_path,
-                        "table",
-                        {"table": sqlglot_table, "from_structure": lookml_view_props},
-                    )
-                ).key
-                for sqlglot_table in upstream_sqlglot_tables
-            }
         )
 
     @public
