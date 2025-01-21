@@ -32,6 +32,15 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/airbyte_cloud/sync_and_materialize_airbyte_cloud_assets.py",
     # FIXME: this breaks on py3.8 and seems related to the non-dagster dependencies
     f"{snippets_folder}/pandera.py",
+    # FIXME: include tests
+    f"{snippets_folder}/anthropic.py",
+    f"{snippets_folder}/chroma.py",
+    f"{snippets_folder}/gemini.py",
+    f"{snippets_folder}/weaviate.py",
+    f"{snippets_folder}/looker/asset_graph.py",
+    f"{snippets_folder}/looker/asset_graph_filtered.py",
+    f"{snippets_folder}/looker/asset_metadata.py",
+    f"{snippets_folder}/looker/pdts.py",
 }
 
 

@@ -7,7 +7,7 @@ from dagster_dbt import (
     dbt_assets,
 )
 
-from dagster import AssetExecutionContext, Definitions
+import dagster as dg
 
 RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my_dbt_project"
 
@@ -20,7 +20,7 @@ my_project.prepare_if_dev()
 
 
 @dbt_assets(manifest=my_project.manifest_path)
-def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+def my_dbt_assets(context: dg.AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
@@ -31,7 +31,7 @@ my_schedule = build_schedule_from_dbt_selection(
     dbt_select="fqn:*",
 )
 
-defs = Definitions(
+defs = dg.Definitions(
     assets=[my_dbt_assets],
     schedules=[my_schedule],
     resources={
