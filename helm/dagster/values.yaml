@@ -1144,6 +1144,8 @@ dagsterDaemon:
     startTimeoutSeconds: 300
     # Timeout for runs to cancel (avoids runs hanging in CANCELING)
     # cancelTimeoutSeconds: 300
+    # Timeout for runs to finish (avoids runs hanging in RUNNING)
+    # maxRuntimeSeconds: 7200
     # How often to check on in progress runs
     pollIntervalSeconds: 120
     # [Experimental] Max number of times to attempt to resume a run with a new run worker instead
