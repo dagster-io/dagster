@@ -147,7 +147,7 @@ def build_output_def_snap(output_def: OutputDefinition) -> OutputDefSnap:
     )
 
 
-@whitelist_for_serdes(storage_name="CompositeSolidDefSnap")
+@whitelist_for_serdes(storage_name="CompositeSolidDefSnap", skip_when_empty_fields={"pools"})
 @record
 class GraphDefSnap:
     name: str
@@ -159,7 +159,7 @@ class GraphDefSnap:
     dep_structure_snapshot: DependencyStructureSnapshot
     input_mapping_snaps: Sequence[InputMappingSnap]
     output_mapping_snaps: Sequence[OutputMappingSnap]
-    pools: Set[str]
+    pools: Set[str] = set()
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -176,7 +176,7 @@ class GraphDefSnap:
         return _get_output_snap(self, name)
 
 
-@whitelist_for_serdes(storage_name="SolidDefSnap")
+@whitelist_for_serdes(storage_name="SolidDefSnap", skip_when_none_fields={"pool"})
 @record
 class OpDefSnap:
     name: str
