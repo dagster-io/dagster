@@ -32,7 +32,7 @@ It may take a few minutes for the agent to deactivate and be removed from the li
 
 Next, you'll need to create a Hybrid agent to execute your code. Follow the setup instructions for the agent of your choice:
 
-- **[Amazon Web Services (AWS)](/todo)**, which launches user code as Amazon Elastic Container Service (ECS) tasks.
+- **[Amazon Web Services (AWS)](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs)**, which launches user code as Amazon Elastic Container Service (ECS) tasks.
 - **[Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)**, which launches user code in Docker containers on your machine
 - **[Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)**, which launches user code on a Kubernetes cluster
 - **[Local](/dagster-plus/deployment/deployment-types/hybrid/local)**, which launches user code in operating system subprocesses on your machine
@@ -45,4 +45,4 @@ Once you've set up a Hybrid agent, navigate to the **Deployment > Agents** page 
 
 ## Next steps
 
-- Learn about the configuration options for [dagster.yaml](/todo)
+- Learn about the configuration options for [dagster.yaml](/guides/deploy/dagster-yaml)

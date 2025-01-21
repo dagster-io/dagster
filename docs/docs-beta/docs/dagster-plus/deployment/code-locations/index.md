@@ -122,7 +122,7 @@ Overall, the Git repository should contain:
             ...
     ```
 
-2. A [`dagster_cloud.yaml` file](/todo) with the settings for your code location. Here is an example:
+2. A [`dagster_cloud.yaml` file](/dagster-plus/deployment/code-locations/dagster-cloud-yaml) with the settings for your code location. Here is an example:
 
     ```yaml title="dagster_cloud.yaml
     locations:
@@ -234,4 +234,4 @@ The monorepo should have CI/CD configured to deploy your changes and add or upda
 ## Next steps
 
 - After adding a code location, you may want to setup access controls
-- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [changing the IAM role for ECS](/todo).
+- You may want to add additional configuration to your code location. This configuration will vary by agent type, but see examples for [setting default resource limits for Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [changing the IAM role for ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/configuration-reference).

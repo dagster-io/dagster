@@ -29,7 +29,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use **GitHub** for version control
 - You want Dagster to fully automate Branch Deployments
 
-This approach is simplified if you use the [GitHub integration](/todo) to import your project into Dagster+.
+This approach is simplified if you use the [GitHub integration](/integrations/libraries/dagster-github) to import your project into Dagster+.
 
   </TabItem>
   <TabItem value="gitlab" label="GitLab">
@@ -355,7 +355,7 @@ The last step is to verify that the GitLab pipeline runs successfully.
 
 Whenever the state of your branch is updated, Dagster+ expects the following steps to occur:
 
-1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/todo) to learn more.
+1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/dagster-plus/deployment/code-locations/) to learn more.
 
 2. The new image is pushed to a Docker registry accessible to your agent.
 

@@ -204,8 +204,7 @@ locations:
 
 For Dagster+ Hybrid deployments, the Python executable that is installed globally in the image, or the default Python executable on the local system if you use the local agent, will be used. To use a different Python executable, specify it using the `executable_path` setting. It can be useful to have different Python executables for different code locations.
 
-{/* For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/dagster-plus/deployment/deployment-types/serverless/runtime-environment#python-version). */}
-For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/todo).
+For Dagster+ Serverless deployments, you can specify a different Python version by [following these instructions](/dagster-plus/deployment/deployment-types/serverless/runtime-environment#use-a-different-python-version).
 
 ```yaml
 # dagster_cloud.yaml
@@ -231,9 +230,6 @@ If using Hybrid deployment, you can define additional configuration options for 
 
 Refer to the configuration reference for your agent for more info:
 
-{/* - [Docker agent configuration reference](/dagster-plus/deployment/agents/docker/configuration-reference) */}
-- [Docker agent configuration reference](/todo)
-{/* - [Amazon ECS agent configuration reference](/dagster-plus/deployment/agents/amazon-ecs/configuration-reference) */}
-- [Amazon ECS agent configuration reference](/todo)
-{/* - [Kubernetes agent configuration reference](/dagster-plus/deployment/agents/kubernetes/configuration-reference) */}
-- [Kubernetes agent configuration reference](/todo)
+- [Docker agent configuration reference](/dagster-plus/deployment/agents/docker/configuration)
+- [Amazon ECS agent configuration reference](/dagster-plus/deployment/agents/amazon-ecs/configuration)
+- [Kubernetes agent configuration reference](/dagster-plus/deployment/agents/kubernetes/configuration)

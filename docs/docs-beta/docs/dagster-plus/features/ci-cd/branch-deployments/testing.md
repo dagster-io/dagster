@@ -17,8 +17,8 @@ With these tools, we can merge changes with confidence in the impact on our data
 Here's an overview of the main concepts we'll be using:
 
 - [Assets](/guides/build/assets/) - We'll define three assets that each persist a table to Snowflake.
-- [Ops](/todo) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
-- [Graphs](/todo) - We'll build graphs that define the order our ops should run.
+- [Ops](/guides/build/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
+- [Graphs](/guides/build/graphs) - We'll build graphs that define the order our ops should run.
 - [Jobs](/guides/build/assets/asset-jobs) - We'll define jobs by binding our graphs to resources.
 - [Resources](/guides/build/external-resources/) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" /> to swap in different Snowflake connections to our jobs depending on environment.
 - [I/O managers](/guides/build/io-managers/) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
@@ -27,7 +27,7 @@ Here's an overview of the main concepts we'll be using:
 
 :::note
 
-This guide is an extension of the [Transitioning data pipelines from development to production](/todo) guide, illustrating a workflow for staging deployments. We'll use the examples from this guide to build a workflow atop Dagster+'s branch deployment feature.
+This guide is an extension of the [Transitioning data pipelines from development to production](/guides/deploy/dev-to-prod) guide, illustrating a workflow for staging deployments. We'll use the examples from this guide to build a workflow atop Dagster+'s branch deployment feature.
 
 :::
 

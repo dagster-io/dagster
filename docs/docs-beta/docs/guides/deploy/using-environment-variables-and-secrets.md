@@ -1,9 +1,7 @@
 ---
-title: Using environment variables and secrets
+title: "Using environment variables and secrets in Dagster code"
 sidebar_position: 400
 ---
-
-# Using environment variables and secrets
 
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.
 
@@ -37,6 +35,21 @@ When using a `.env` file, keep the following in mind:
 - The `.env` file must be in the same folder where `dagster-webserver` or `dagster-daemon` is launched
 - Any time the `.env` file is modified, the workspace must be re-loaded to make the Dagster webserver/UI aware of the changes
 
+<TabItem value="Dagster+">
+
+**Dagster+**
+
+Environment variables can be set a variety of ways in Dagster+:
+
+- Directly in the UI
+- Via agent configuration (Hybrid deployments only)
+
+If using the UI, you can also [export locally-scoped variables to a `.env` file](/dagster-plus/management/environment-variables/dagster-ui#export), which you can then use to develop locally.
+
+Refer to the [Dagster+ environment variables guide](/dagster-plus/management/environment-variables/) for more info.
+
+</TabItem>
+
 </TabItem>
 <TabItem value="Dagster open source">
 
@@ -69,6 +82,16 @@ import os
 database_name = os.getenv("DATABASE_NAME")
 ```
 
+This approach also works for accessing [built-in environment variables for Dagster+](/dagster-plus/deployment/management/environment-variables/built-in):
+
+```python
+import os
+
+deployment_name = os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME")
+```
+
+For a real-world example, see the [Dagster+ branch deployments example](#dagster-branch-deployments).
+
 You can also call the `get_value()` method on the `EnvVar`:
 
 ```python
@@ -79,7 +102,7 @@ database_name = EnvVar('DATABASE_NAME').get_value()
 
 ### From Dagster configuration
 
-[Configurable Dagster objects](/todo) - such as ops, assets, resources, I/O managers, and so on - can accept configuration from environment variables. Dagster provides a native way to specify environment variables in your configuration. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`. Refer to the [next section](#using-envvar-vs-osgetenv) for more info.
+[Configurable Dagster objects](/guides/operate/configuration/)- such as ops, assets, resources, I/O managers, and so on - can accept configuration from environment variables. Dagster provides a native way to specify environment variables in your configuration. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`. Refer to the [next section](#using-envvar-vs-osgetenv) for more info.
 
 <Tabs>
 <TabItem value="In Python code">
@@ -241,6 +264,31 @@ Let's review what's happening here:
 - We've created a dictionary of resource definitions, `resources`, named after our `local` and `production` environments. In this example, we're using a [Pandas Snowflake I/O manager](/api/python-api/libraries/dagster-snowflake-pandas).
 - For both `local` and `production`, we constructed the I/O manager using environment-specific run configuration. Note the differences in configuration between `local` and `production`, specifically where environment variables were used.
 - Following the `resources` dictionary, we define the `deployment_name` variable, which determines the current executing environment. This variable defaults to `local`, ensuring that `DAGSTER_DEPLOYMENT=PRODUCTION` must be set to use the `production` configuration.
+
+### Dagster+ branch deployments
+
+:::note
+
+This section is only applicable to Dagster+.
+
+:::
+
+This example demonstrates how to determine the current deployment type at runtime - [branch deployment](/dagster-plus/features/ci-cd/branch-deployments/) or [full deployment](/dagster-plus/deployment/management/deployments/) - without using resources or configuration.
+
+Let's look at a function that determines the current deployment using the `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` environment variable:
+
+```python
+
+def get_current_env():
+  is_branch_depl = os.getenv("DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT") == "1"
+  assert is_branch_depl != None  # env var must be set
+  return "branch" if is_branch_depl else "prod"
+
+```
+
+This function checks the value of `DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT` and, if equal to `1`, returns a variable with the value of `branch`. This indicates that the current deployment is a branch deployment. Otherwise, the deployment is a full deployment and is_branch_depl will be returned with a value of prod.
+
+Using this info, we can write code that executes differently when in a branch deployment or a full deployment.
 
 ## Troubleshooting
 

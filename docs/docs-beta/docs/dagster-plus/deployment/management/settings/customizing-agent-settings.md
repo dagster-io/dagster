@@ -11,8 +11,7 @@ The Dagster+ Agent is a special variant of the Dagster instance used in Dagster 
 
 :::note
 
-{/* /dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent */}
-For [Kubernetes agents](/todo.md) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
+For [Kubernetes agents](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
 
 :::
 
@@ -94,7 +93,7 @@ compute_logs:
 ## Writing compute logs to AWS S3
 
 {/* /api/python-api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager */}
-You can write compute logs to an AWS S3 bucket by configuring the [dagster_aws.s3.compute_log_manager](/todo.md) module.
+You can write compute logs to an AWS S3 bucket by configuring the <PyObject section="libraries" module="dagster_aws" object="s3.S3ComputeLogManager" /> module.
 
 You are also able to stream partial compute log files by configuring the log upload interval (in seconds) using the `upload_interval` parameter.
 
