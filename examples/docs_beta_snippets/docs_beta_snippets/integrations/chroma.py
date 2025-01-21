@@ -15,7 +15,8 @@ def my_table(chroma: ChromaResource):
                 "This is a document about oranges",
                 "This is a document about pineapples",
                 "This is a document about strawberries",
-                "This is a document about cucumbers"],
+                "This is a document about cucumbers",
+            ],
             ids=["oranges", "pineapples", "strawberries", "cucumbers"],
         )
 
@@ -24,13 +25,14 @@ def my_table(chroma: ChromaResource):
             n_results=1,
         )
 
+
 defs = dg.Definitions(
     assets=[my_table],
     resources={
         "chroma": ChromaResource(
-            connection_config=
-                LocalConfig(persistence_path="./chroma") if os.getenv("DEV") else
-                    HttpConfig(host="192.168.0.10", port=8000)
+            connection_config=LocalConfig(persistence_path="./chroma")
+            if os.getenv("DEV")
+            else HttpConfig(host="192.168.0.10", port=8000)
         ),
-    }
+    },
 )
