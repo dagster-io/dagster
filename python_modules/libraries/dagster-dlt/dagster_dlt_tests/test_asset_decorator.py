@@ -699,6 +699,7 @@ def test_with_group_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     for group in my_dlt_assets.group_names_by_key.values():
         assert group == expected_group
 
+
 def test_with_owner_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_owners = ["custom@custom.com"]
 
