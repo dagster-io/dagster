@@ -47,9 +47,9 @@ class ShellCommand(Component):
 
         @dg.asset(**resolved_asset_attributes, **resolved_op_properties)
         def _asset(context: dg.AssetExecutionContext):
-            self.evaluate(context)
+            self.execute(context)
 
         return dg.Definitions(assets=[_asset])
 
-    def evaluate(self, context: dg.AssetExecutionContext):
+    def execute(self, context: dg.AssetExecutionContext):
         subprocess.run(["sh", self.params.script_path], check=False)

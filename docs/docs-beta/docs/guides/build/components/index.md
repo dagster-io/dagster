@@ -309,7 +309,7 @@ $ duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"
 We'll now download a pre-existing sample DBT project from github. We're going to use the data we are ingesting with Sling as an input for the DBT project. Clone the project (and delete the embedded git repo):
 
 ```bash
-$ git clone --depth=1 https://github.com/dagster-io/jaffle_platform.git dbt && rm -rf dbt/.git
+$ git clone --depth=1 https://github.com/dagster-io/jaffle-platform.git dbt && rm -rf dbt/.git
 ```
 
 We'll need to create a Dagster DBT project component to interface with the dbt project. We can access the DBT project component by installing `dagster-components[dbt]` and `dbt-duckdb`:
