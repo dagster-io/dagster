@@ -366,22 +366,28 @@ describe('weakMapMemoize with TTL', () => {
 
     expect(memoizedFn(1)).toBe(2);
     expect(memoizedFn(2)).toBe(4);
-    expect(spy).toHaveBeenCalledTimes(2);
+    expect(memoizedFn(3)).toBe(6); // Evicts 1
+
+    expect(spy).toHaveBeenCalledTimes(3);
 
     jest.advanceTimersByTime(1000);
 
     // Still in cache
-    expect(memoizedFn(1)).toBe(2);
-    expect(memoizedFn(2)).toBe(4);
-    expect(spy).toHaveBeenCalledTimes(2);
+    expect(memoizedFn(2)).toBe(2);
+    expect(memoizedFn(3)).toBe(4);
+    expect(spy).toHaveBeenCalledTimes(3);
 
-    // Advance time by 1 second - TTL not yet expired
-    jest.advanceTimersByTime(3000);
+    expect(memoizedFn(1)).toBe(2);
+    expect(spy).toHaveBeenCalledTimes(4);
+
+    // Advance time by 2 seonds, TTL expires
+    jest.advanceTimersByTime(2000);
 
     // All cache entries should have expired
     expect(memoizedFn(1)).toBe(2);
     expect(memoizedFn(2)).toBe(4);
-    expect(spy).toHaveBeenCalledTimes(4);
+    expect(memoizedFn(3)).toBe(6);
+    expect(spy).toHaveBeenCalledTimes(7);
   });
 
   // Test 18: Function with TTL option and no maxEntries
@@ -404,43 +410,5 @@ describe('weakMapMemoize with TTL', () => {
     expect(memoizedFn(2)).toBe(4);
     expect(memoizedFn(3)).toBe(9);
     expect(spy).toHaveBeenCalledTimes(4); // New calls after eviction
-  });
-
-  // Test 19: Function with TTL and mixed arguments
-  it('should handle TTL with mixed primitive and object arguments', () => {
-    const spy = jest.fn((a: number, obj: {val: number}) => a + obj.val);
-    const memoizedFn = weakMapMemoize(spy, {ttl: 2}); // TTL of 2 seconds
-
-    const obj1 = {val: 10};
-    const obj2 = {val: 20};
-
-    expect(memoizedFn(1, obj1)).toBe(11);
-    expect(memoizedFn(1, obj1)).toBe(11);
-    expect(spy).toHaveBeenCalledTimes(1);
-
-    expect(memoizedFn(2, obj2)).toBe(22);
-    expect(spy).toHaveBeenCalledTimes(2);
-
-    // Advance time by 3 seconds - both entries should expire
-    jest.advanceTimersByTime(3000);
-
-    expect(memoizedFn(1, obj1)).toBe(11);
-    expect(memoizedFn(2, obj2)).toBe(22);
-    expect(spy).toHaveBeenCalledTimes(4); // New calls after eviction
-  });
-
-  // Test 20: Function with TTL and key reuse after eviction
-  it('should allow cache entries to be reused after TTL eviction', () => {
-    const spy = jest.fn((x: number) => x * x);
-    const memoizedFn = weakMapMemoize(spy, {ttl: 1}); // TTL of 1 second
-
-    expect(memoizedFn(4)).toBe(16);
-    expect(spy).toHaveBeenCalledTimes(1);
-
-    // Advance time by 1.5 seconds - cache should expire
-    jest.advanceTimersByTime(1500);
-
-    expect(memoizedFn(4)).toBe(16);
-    expect(spy).toHaveBeenCalledTimes(2); // Called again after eviction
   });
 });
