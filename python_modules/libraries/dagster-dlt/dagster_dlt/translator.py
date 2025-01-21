@@ -61,7 +61,7 @@ class DagsterDltTranslator:
     def get_auto_materialize_policy(self, resource: DltResource) -> Optional[AutoMaterializePolicy]:
         """Defines resource specific auto materialize policy.
 
-        This method can be overrdidden to provide custom auto materialize policy for a dlt resource.
+        This method can be overridden to provide custom auto materialize policy for a dlt resource.
 
         Args:
             resource (DltResource): dlt resource
