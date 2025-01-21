@@ -208,23 +208,30 @@ const sidebars: SidebarsConfig = {
     },
   ],
   components: [
-    'guides/build/components/index',
     {
       type: 'category',
       label: 'Components',
       collapsed: false,
       items: [
         {
-          type: 'doc',
-          id: 'guides/build/components/creating-a-component',
+          type: 'link',
+          label: 'Components',
+          href: '/guides/build/components',
         },
         {
-          type: 'doc',
-          id: 'guides/build/components/using-a-component',
+          type: 'link',
+          label: 'Creating a New Component Type',
+          href: '/guides/build/components/creating-a-component',
         },
         {
-          type: 'doc',
-          id: 'guides/build/components/existing-code-location',
+          type: 'link',
+          label: 'Adding a component to a project',
+          href: '/guides/build/components/using-a-component',
+        },
+        {
+          type: 'link',
+          label: 'Making an existing code location components-compatible',
+          href: '/guides/build/components/existing-code-location',
         },
       ],
     },
