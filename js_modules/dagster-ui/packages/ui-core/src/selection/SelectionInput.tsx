@@ -311,6 +311,11 @@ export const SelectionAutoCompleteInput = ({
     };
   }, [setShowResults]);
 
+  const isCommitted = innerValue === value;
+  useLayoutEffect(() => {
+    adjustHeight();
+  }, [isCommitted, adjustHeight]);
+
   return (
     <>
       <Popover
@@ -349,21 +354,10 @@ export const SelectionAutoCompleteInput = ({
           </div>
           <div ref={editorRef} />
           {innerValue !== value ? (
-            <div
-              style={{alignSelf: 'flex-end'}}
-              ref={() => {
-                adjustHeight();
-              }}
-            >
+            <div style={{alignSelf: 'flex-end'}}>
               <EnterHint>Enter</EnterHint>
             </div>
-          ) : (
-            <div
-              ref={() => {
-                adjustHeight();
-              }}
-            />
-          )}
+          ) : null}
         </InputDiv>
       </Popover>
     </>
