@@ -230,6 +230,6 @@ If using Hybrid deployment, you can define additional configuration options for 
 
 Refer to the configuration reference for your agent for more info:
 
-- [Docker agent configuration reference](/dagster-plus/deployment/agents/docker/configuration)
-- [Amazon ECS agent configuration reference](/dagster-plus/deployment/agents/amazon-ecs/configuration)
-- [Kubernetes agent configuration reference](/dagster-plus/deployment/agents/kubernetes/configuration)
+- [Docker agent configuration reference](/dagster-plus/deployment/deployment-types/hybrid/docker/configuration)
+- [Amazon ECS agent configuration reference](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/configuration-reference)
+- [Kubernetes agent configuration reference](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration)

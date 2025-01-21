@@ -279,7 +279,7 @@ If you need to request secrets from a secret manager like AWS Secrets Manager or
 
 ### Use a different service account for a specific code location
 
-Modify the [`dagster_cloud.yaml` file](/dagster-cloud/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
+Modify the [`dagster_cloud.yaml` file](/dagster-plus/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
 locations:

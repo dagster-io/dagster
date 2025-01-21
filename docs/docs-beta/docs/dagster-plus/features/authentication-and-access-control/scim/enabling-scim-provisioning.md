@@ -22,5 +22,5 @@ Use the setup guide for your IdP to get started.
 
 ## Related
 
-- [Managing user roles and permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissons)
+- [Managing user roles and permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions)
 - [Managing teams](/dagster-plus/features/authentication-and-access-control/rbac/teams)

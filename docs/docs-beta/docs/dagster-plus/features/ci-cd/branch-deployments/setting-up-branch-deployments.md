@@ -29,7 +29,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use **GitHub** for version control
 - You want Dagster to fully automate Branch Deployments
 
-This approach is simplified if you use the [GitHub integration](/integrations/libraries/dagster-github) to import your project into Dagster+.
+This approach is simplified if you use the [GitHub integration](/integrations/libraries/github) to import your project into Dagster+.
 
   </TabItem>
   <TabItem value="gitlab" label="GitLab">

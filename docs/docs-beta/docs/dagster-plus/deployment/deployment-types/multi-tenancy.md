@@ -108,7 +108,7 @@ If you have no specific requirements for isolation beyond the ability to deploy 
 Agent queues are only available on [Hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid/).
 :::
 
-Using the [agent routing feature](/dagster-plus/deployment/deployment-options/multiple#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
+Using the [agent routing feature](/dagster-plus/deployment/deployment-types/hybrid/multiple#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
 
 Motivations for utilizing this approach could include:
 

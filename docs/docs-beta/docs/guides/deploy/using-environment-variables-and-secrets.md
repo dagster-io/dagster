@@ -44,9 +44,9 @@ Environment variables can be set a variety of ways in Dagster+:
 - Directly in the UI
 - Via agent configuration (Hybrid deployments only)
 
-If using the UI, you can also [export locally-scoped variables to a `.env` file](/dagster-plus/management/environment-variables/dagster-ui#export), which you can then use to develop locally.
+If using the UI, you can also [export locally-scoped variables to a `.env` file](/dagster-plus/deployment/management/environment-variables/dagster-ui#export), which you can then use to develop locally.
 
-Refer to the [Dagster+ environment variables guide](/dagster-plus/management/environment-variables/) for more info.
+Refer to the [Dagster+ environment variables guide](/dagster-plus/deployment/management/environment-variables/) for more info.
 
 </TabItem>
 
@@ -102,7 +102,7 @@ database_name = EnvVar('DATABASE_NAME').get_value()
 
 ### From Dagster configuration
 
-[Configurable Dagster objects](/guides/operate/configuration/)- such as ops, assets, resources, I/O managers, and so on - can accept configuration from environment variables. Dagster provides a native way to specify environment variables in your configuration. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`. Refer to the [next section](#using-envvar-vs-osgetenv) for more info.
+[Configurable Dagster objects](/guides/operate/configuration/run-configuration) - such as ops, assets, resources, I/O managers, and so on - can accept configuration from environment variables. Dagster provides a native way to specify environment variables in your configuration. These environment variables are retrieved at launch time, rather than on initialization as with `os.getenv`. Refer to the [next section](#using-envvar-vs-osgetenv) for more info.
 
 <Tabs>
 <TabItem value="In Python code">
