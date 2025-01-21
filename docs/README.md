@@ -1,3 +1,6 @@
+[!IMPORTANT]
+This is the directory for the legacy documentation. Please make documentation changes to the [docs-beta directory](https://github.com/dagster-io/dagster/blob/master/docs/docs-beta/README.md) instead.
+
 # Running the docs, v2
 
 > **Submitting a pull request to update the docs?** If so, please verify that the updates follow the [docs style checklist](https://github.com/dagster-io/dagster/blob/master/docs/DOC_CHECKLIST.md).
