@@ -62,12 +62,6 @@ When you materialize `home_sunrise`, Dagster will read the values set for the `H
 The initialized `SunResource` will be provided to the `sun_resource` parameter.
 
 :::note
-You can also fetch environment variables using the `os` library. Dagster treats each approach to fetching environment variables differently, such as when they're fetched or how they display in the UI. Refer to the [Environment variables guide](/todo) for more information.
+You can also fetch environment variables using the `os` library. Dagster treats each approach to fetching environment variables differently, such as when they're fetched or how they display in the UI. Refer to the [Environment variables guide](/guides/deploy/using-environment-variables-and-secrets) for more information.
 :::
 
-## Next steps
-
-- [Authenticate to a resource](/todo)
-- [Use different resources in different execution environments](/todo)
-- [Set environment variables in Dagster+](/todo)
-- Learn what [Dagster-provided resources](/todo) are available

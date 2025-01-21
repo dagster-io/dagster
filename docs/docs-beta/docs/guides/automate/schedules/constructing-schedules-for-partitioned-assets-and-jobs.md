@@ -18,7 +18,7 @@ This article assumes familiarity with:
 - [Schedules](index.md)
 - [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
 - [Asset definitions](/guides/build/assets/defining-assets)
-- [Asset jobs](/guides/build/assets/asset-jobs) and [op jobs](/todo)
+- [Asset jobs](/guides/build/assets/asset-jobs) and op jobs
 
 :::
 

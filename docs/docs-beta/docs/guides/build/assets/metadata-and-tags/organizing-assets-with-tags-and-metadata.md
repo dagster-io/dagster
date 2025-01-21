@@ -32,7 +32,7 @@ With Dagster+ Pro, you can create asset-based alerts that automatically notify a
 
 ## Organizing assets with tags \{#tags}
 
-[**Tags**](tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/todo). They're structured as key-value pairs of strings.
+[**Tags**](tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
 
@@ -77,16 +77,16 @@ The following metadata keys are given special treatment in the Dagster UI.
 | Key                           | Description                                                                                                                                                                                                                                                                                                                                                     |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `dagster/uri`                 | **Type:** `str` <br/><br/> The URI for the asset, for example: "s3://my_bucket/my_object"                                                                                                                                                                                                                                                                               |
-| `dagster/column_schema`       | **Type:** [`TableSchema`](/todo) <br/><br/> For an asset that's a table, the schema of the columns in the table. Refer to the [Table and column metadata](#table-schema) section for details.                                                                                                                                                      |
-| `dagster/column_lineage`      | **Type:** [`TableColumnLineage`](/todo) <br/><br/> For an asset that's a table, the lineage of column inputs to column outputs for the table. Refer to the [Table and column metadata](#table-schema) section for details.                                                                                                                         |
+| `dagster/column_schema`       | **Type:** <PyObject section="metadata" module="dagster" object="TableSchema" /> <br/><br/> For an asset that's a table, the schema of the columns in the table. Refer to the [Table and column metadata](#table-column) section for details.                                                                                                                                                      |
+| `dagster/column_lineage`      | **Type:** <PyObject section="metadata" module="dagster" object="TableColumnLineage" /><br/><br/> For an asset that's a table, the lineage of column inputs to column outputs for the table. Refer to the [Table and column metadata](#table-column) section for details.                                                                                                                         |
 | `dagster/row_count`           | **Type:** `int` <br/><br/> For an asset that's a table, the number of rows in the table. Refer to the Table metadata documentation for details.                                                                                                                                                                                                                 |
 | `dagster/partition_row_count` | **Type:** `int` <br/><br/> For a partition of an asset that's a table, the number of rows in the partition.                                                                                                                                                                                                                                                     |
 | `dagster/table_name`          | **Type:** `str` <br/><br/> A unique identifier for the table/view, typically fully qualified. For example, my_database.my_schema.my_table                                                                                                                                                                                                                       |
-| `dagster/code_references`     | **Type:** [`CodeReferencesMetadataValue`](/todo) <br/><br/> A list of code references for the asset, such as file locations or references to GitHub URLs. Refer to the [Linking assets with their source code](#source-code) section for details. Should only be provided in definition-level metadata, not materialization metadata. |
+| `dagster/code_references`     | **Type:** <PyObject section="metadata" module="dagster" object="CodeReferencesMetadataValue" /><br/><br/> A list of code references for the asset, such as file locations or references to GitHub URLs. Refer to the [Linking assets with their source code](#source-code) section for details. Should only be provided in definition-level metadata, not materialization metadata. |
 
 ## Table and column metadata \{#table-column}
 
-Two of the most powerful metadata types are [`TableSchema`](/todo) and [`TableColumnLineage`](/todo). These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate the [Asset catalog](/todo) with the column lineage.
+Two of the most powerful metadata types are <PyObject section="metadata" module="dagster" object="TableSchema" /> and <PyObject section="metadata" module="dagster" object="TableColumnLineage" />. These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate to the [Asset catalog](/dagster-plus/features/asset-catalog/) with the column lineage.
 
 ### Table schema metadata \{#table-schema}
 
@@ -94,7 +94,7 @@ The following example attaches table and column schema metadata at both definiti
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/table-schema-metadata.py" language="python" />
 
-There are several data types and constraints available on [`TableColumn`](/todo) objects. Refer to the API documentation for more information.
+There are several data types and constraints available on <PyObject section="metadata" module="dagster" object="TableColumn" /> objects. Refer to the API documentation for more information.
 
 ### Column lineage metadata \{#column-lineage}
 
@@ -107,7 +107,7 @@ Column lineage metadata is a powerful way to track how columns in a table are de
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/table-column-lineage-metadata.py" language="python" title="Table column lineage metadata" />
 
 :::tip
-Dagster+ provides rich visualization and navigation of column lineage in the Asset catalog. Refer to the [Dagster+ documentation](/dagster-plus) for more information.
+Dagster+ provides rich visualization and navigation of column lineage in the Asset catalog. Refer to the [Dagster+ documentation](/dagster-plus/features/asset-catalog/) for more information.
 :::
 
 ## Linking assets with source code \{#source-code}

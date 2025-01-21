@@ -14,7 +14,7 @@ Using Dagster resources, you can standardize connections and integrations to the
 
 Resources allow you to:
 
-- **Plug in different implementations in different environments** - If you have a heavy external dependency that you want to use in production but avoid using in testing, you can accomplish this by providing different resources in each environment. Refer to the [Separating business logic from environments](/todo) section of the Testing documentation for more info about this capability.
+- **Plug in different implementations in different environments** - If you have a heavy external dependency that you want to use in production but avoid using in testing, you can accomplish this by providing different resources in each environment.
 - **Surface configuration in the Dagster UI** - Resources and their configuration are surfaced in the UI, making it easy to see where resources are used and how they're configured.
 - **Share configuration across multiple assets or ops** - Resources are configurable and shared, so configuration can be supplied in one place instead of individually.
 - **Share implementations across multiple assets or ops** - When multiple assets access the same external services, resources provide a standard way to structure your code to share the implementations.

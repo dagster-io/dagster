@@ -164,7 +164,7 @@ Using the `EnvVar` approach has a few unique benefits:
 
 ## Handling secrets
 
-Using environment variables to provide secrets ensures sensitive info won't be visible in your code or the launchpad in the UI. In Dagster, best practice for handling secrets uses [configuration](/todo) and [resources](/guides/build/external-resources/).
+Using environment variables to provide secrets ensures sensitive info won't be visible in your code or the launchpad in the UI. In Dagster, best practice for handling secrets uses [configuration](/guides/operate/configuration/run-configuration) and [resources](/guides/build/external-resources/).
 
 A resource is typically used to connect to an external service or system, such as a database. Resources can be configured separately from the rest of your app, allowing you to define it once and reuse it as needed.
 
@@ -223,7 +223,7 @@ Using environment variables, you define how your code should execute at runtime.
 
 ### Per-environment configuration example
 
-In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/todo) (specifically the configured API) and [resources](/guides/build/external-resources/).
+In this example, we'll demonstrate how to use different I/O manager configurations for `local` and `production` environments using [configuration](/guides/operate/configuration/run-configuration) (specifically the configured API) and [resources](/guides/build/external-resources/).
 
 This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/deploy/dev-to-prod):
 
