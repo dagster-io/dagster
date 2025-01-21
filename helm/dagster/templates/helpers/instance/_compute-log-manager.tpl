@@ -130,6 +130,18 @@ config:
   {{- end }}
 {{- end }}
 
+{{- define "dagsterYaml.computeLogManager.local" }}
+{{- $localComputeLogManagerConfig := .Values.computeLogManager.config.localComputeLogManager }}
+module: dagster.core.storage.local_compute_log_manager
+class: LocalComputeLogManager
+config:
+  base_dir: {{ include "stringSource" $localComputeLogManagerConfig.baseDir }}
+
+  {{- if $localComputeLogManagerConfig.pollingTimeout }}
+  polling_timeout: {{ $localComputeLogManagerConfig.pollingTimeout }}
+  {{- end }}
+{{- end }}
+
 {{- define "dagsterYaml.computeLogManager.custom" }}
 {{- $customComputeLogManagerConfig := .Values.computeLogManager.config.customComputeLogManager }}
 module: {{ $customComputeLogManagerConfig.module | quote }}
