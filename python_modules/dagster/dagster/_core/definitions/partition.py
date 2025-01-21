@@ -1170,7 +1170,7 @@ class DefaultPartitionsSubset(
                     ]
                 )
 
-            # for efficienty, group the keys by whichever dimension has fewer distinct keys
+            # for efficiency, group the keys by whichever dimension has fewer distinct keys
             grouping_dimension = (
                 primary_dimension
                 if len(primary_keys_in_subset) <= len(secondary_keys_in_subset)
