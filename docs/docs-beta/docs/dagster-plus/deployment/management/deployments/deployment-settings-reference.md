@@ -98,7 +98,7 @@ run_retries:
 ### SSO default role
 
 {/* dagster-plus/account/managing-users/managing-user-roles-permissions#user-permissions-reference */}
-The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster+ permissions reference](/todo.md).
+The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster+ permissions reference](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions).
 
 ```yaml
 sso_default_role: EDITOR
@@ -110,8 +110,7 @@ sso_default_role: EDITOR
 
 ### Non-isolated runs
 
-{/* /dagster-plus/deployment/serverless */}
-Configure [non-isolated runs](/todo.md) on your deployment.
+Configure [non-isolated runs](/dagster-plus/deployment/deployment-types/serverless/) on your deployment.
 
 ```yaml
 non_isolated_runs:

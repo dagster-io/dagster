@@ -72,6 +72,38 @@ flowchart LR
   two((step_two)) --> asset(complex_asset)
 ```
 
+## Asset context
+
+When defining an asset, you can optionally provide a first parameter, `context`. When this parameter is supplied, Dagster will supply an <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> object to the body of the asset which provides access to system information like loggers and the current run ID.
+
+For example, to access the logger and log an info message:
+
+```python
+from dagster import AssetExecutionContext, asset
+
+
+@asset
+def context_asset(context: AssetExecutionContext):
+    context.log.info(f"My run ID is {context.run.run_id}")
+    ...
+
+```
+
+## Asset code versions
+
+Assets may be assigned a `code_version`. Versions let you help Dagster track what assets haven't been re-materialized since their code has changed, and avoid performing redundant computation.
+
+```python
+
+@asset(code_version="1")
+def asset_with_version():
+    with open("data/asset_with_version.json", "w") as f:
+        json.dump(100, f)
+
+```
+
+When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.
+
 ## Next steps
 
 - Enrich Dagster's built-in data catalog with [asset metadata]/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata)

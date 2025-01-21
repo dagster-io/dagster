@@ -248,7 +248,7 @@ You can set up alerts to fire when any code location fails to load due to an err
 
 ## Alerting when a Hybrid agent becomes unavailable
 :::note
-This is only available for [Hybrid](/todo) deployments.
+This is only available for [Hybrid](/dagster-plus/deployment/deployment-types/hybrid/) deployments.
 :::
 
 You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in the last 5 minutes.

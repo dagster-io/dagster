@@ -14,10 +14,10 @@ To complete the steps in this guide, you'll need:
 - **The following in PingOne:**
   - An existing PingOne account
   - Organization admin permissions
-- **To install the [`dagster-cloud` CLI](/todo)**
+- **To install the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
-  - [Access to a user token](/todo)
+  - [Access to a user token](/dagster-plus/deployment/management/tokens/user-tokens)
   - [Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) in your organization
 
 </details>

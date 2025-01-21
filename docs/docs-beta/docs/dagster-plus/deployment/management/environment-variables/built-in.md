@@ -4,7 +4,7 @@ sidebar_position: 100
 sidebar_label: "Built-in variables"
 ---
 
-[Dagster+](/todo) provides a set of built-in, automatically populated environment variables, such as the name of a deployment or details about a branch deployment commit, that can be used to modify behavior based on environment.
+Dagster+ provides a set of built-in, automatically populated environment variables, such as the name of a deployment or details about a branch deployment commit, that can be used to modify behavior based on environment.
 
 ### All deployment variables
 
@@ -18,7 +18,7 @@ The following variables are available in every deployment of your Dagster+ insta
 
 ### Branch deployment variables
 
-The following environment variables are available only in a [branch deployment](/todo).
+The following environment variables are available only in a [branch deployment](/dagster-plus/features/ci-cd/branch-deployments/).
 
 For every commit made to a branch, the following environment variables are available:
 

@@ -15,7 +15,7 @@ In the first step of the tutorial, you created your Dagster project with the raw
 
 ## 1. Create a definitions object
 
-In Dagster, the [Definitions API docs](/todo) object is where you define and organize various components within your project, such as assets and resources.
+In Dagster, the <PyObject section="definitions" module="dagster" object="Definitions" /> object is where you define and organize various components within your project, such as assets and resources.
 
 Open the `definitions.py` file in the `etl_tutorial` directory and copy the following code into it:
 
@@ -35,7 +35,7 @@ Open the `definitions.py` file in the `etl_tutorial` directory and copy the foll
 
 ## 2. Define the DuckDB resource
 
-In Dagster, [Resources API docs](/todo) are the external services, tools, and storage backends you need to do your job. For the storage backend in this project, we'll use [DuckDB](https://duckdb.org/), a fast, in-process SQL database that runs inside your application. We'll define it once in the definitions object, making it available to all assets and objects that need it.
+In Dagster, [Resources](/api/python-api/resources) are the external services, tools, and storage backends you need to do your job. For the storage backend in this project, we'll use [DuckDB](https://duckdb.org/), a fast, in-process SQL database that runs inside your application. We'll define it once in the definitions object, making it available to all assets and objects that need it.
 
   ```python
   defs = dg.Definitions(
@@ -46,7 +46,7 @@ In Dagster, [Resources API docs](/todo) are the external services, tools, and st
 
 ## 3. Create assets
 
-Software defined [assets API docs](/todo) are the main building blocks in Dagster. An asset is composed of three components:
+Software defined <PyObject section="assets" module="dagster" object="asset" pluralize /> are the main building blocks in Dagster. An asset is composed of three components:
 1. Asset key or unique identifier.
 2. An op which is a function that is invoked to produce the asset.
 3. Upstream dependencies that the asset depends on. 

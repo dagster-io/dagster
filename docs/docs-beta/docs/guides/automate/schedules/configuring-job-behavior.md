@@ -29,6 +29,10 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
     )
 ```
 
-| Notes | Related docs | APIs in this example |
-|-------|--------------|----------------------|
-|       | [Op jobs](/todo) | <PyObject section="ops" module="dagster" object="op" decorator />, <PyObject section="jobs" module="dagster" object="job" decorator />, <PyObject section="execution" module="dagster" object="OpExecutionContext" />, <PyObject section="schedules-sensors" object="ScheduleEvaluationContext" />, <PyObject section="schedules-sensors" module="dagster" object="RunRequest" /> |
+## APIs in this example
+
+* <PyObject section="ops" module="dagster" object="op" decorator />
+* <PyObject section="jobs" module="dagster" object="job" decorator />
+* <PyObject section="execution" module="dagster" object="OpExecutionContext" />
+* <PyObject section="schedules-sensors" object="ScheduleEvaluationContext" />
+* <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />

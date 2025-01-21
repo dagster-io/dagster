@@ -164,8 +164,7 @@ Next, configure an agent to handle your agent queue.
 
 #### In Docker
 
-Add the following to your project's [`dagster.yaml`](/todo.md) file:
-{/* [lDagster Instance](https://docs.dagster.io/deployment/dagster-instance) */}
+Add the following to your project's [`dagster.yaml`](/guides/deploy/dagster-yaml) file:
 
 ```yaml
 agent_queues:

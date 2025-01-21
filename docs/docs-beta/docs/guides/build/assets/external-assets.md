@@ -29,7 +29,7 @@ Because the raw transaction data isn't materialized by Dagster, it makes sense t
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/external-assets/creating-external-assets.py" language="python" />
 
-Refer to the [`AssetSpec` API docs](/todo) for the parameters you can provide to an external asset.
+Refer to the <PyObject section="assets" module="dagster" object="AssetSpec" /> for the parameters you can provide to an external asset.
 
 ## Recording materializations and metadata
 
@@ -98,7 +98,7 @@ curl \
 </TabItem>
 </Tabs>
 
-Refer to the [External assets REST API documentation](/todo) for more information.
+Refer to the [External assets REST API documentation](/api/python-api/external-assets) for more information.
 
 ## Modeling a graph of external assets
 

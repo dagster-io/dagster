@@ -9,14 +9,14 @@ You'll often want to be able to adjust parameters when materializing assets, whi
 
 :::note
 
-This article assume familiarity with [assets](/guides/build/assets/defining-assets) and [Pydantic](https://docs.pydantic.dev/latest/).
+This article assume familiarity with [assets](index.md) and [Pydantic](https://docs.pydantic.dev/latest/).
 
 :::
 
 
 ## Making assets configurable
 
-For an asset to be configurable, first define a schema that inherits from the Dagster `Config` class.
+For an asset to be configurable, first define a [run configuration schema](/guides/operate/configuration/run-configuration) that inherits from the Dagster <PyObject section="config" module="dagster" object="Config" /> class.
 
 For example, you want to allow your team to change the lookback time window for the computation that materializes an asset:
 
@@ -25,7 +25,9 @@ For example, you want to allow your team to change the lookback time window for 
 ## Specifying config using the Dagster UI
 
 :::note
-Run configurations reference an `op` which is the underlying compute associated with an asset.
+
+Run configurations reference an <PyObject section="ops" module="dagster" object="op" /> which is the underlying compute associated with an asset.
+
 :::
 
 When launching a run using the Launchpad in the UI, you can provide a run config file as YAML or JSON that overrides the default configuration for your asset.

@@ -21,7 +21,7 @@ To follow the steps in this guide, you'll need:
   - **An existing Kubernetes cluster**. To follow along on your local machine, [install Docker Desktop](https://docs.docker.com/desktop/kubernetes/) and turn on the included Kubernetes server.
 - **Familiarity with [Helm](https://helm.sh/docs/)**, and:
   - **To have Helm 3 installed**. [Helm installation guide](https://helm.sh/docs/intro/install/)
-- A Dagster project to deploy. You can also use the [example project](/todo):
+- A Dagster project to deploy. You can also use the example project:
   ```bash
   dagster project from-example --example deploy_k8s_beta --name deploy_k8s_beta
   ```
