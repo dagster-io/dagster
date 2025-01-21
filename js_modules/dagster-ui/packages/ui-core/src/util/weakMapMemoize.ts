@@ -4,6 +4,7 @@ type AnyFunction = (...args: any[]) => any;
 
 interface WeakMapMemoizeOptions {
   maxEntries?: number; // Optional limit for cached entries
+  ttl?: number; // Time-To-Live in seconds
 }
 
 interface CacheNode {
@@ -14,6 +15,7 @@ interface CacheNode {
   parentKey?: any;
   lruKey?: any; // Reference to the key in the LRU cache
   childCount: number; // Number of child nodes
+  timeoutId?: ReturnType<typeof setTimeout>; // Timer for TTL eviction
 }
 
 /**
@@ -41,6 +43,11 @@ function recursivelyDeleteParent(cacheNode: CacheNode) {
       parent.map.delete(parentKey);
     }
 
+    // Clear the TTL timer if set
+    if (cacheNode.timeoutId) {
+      clearTimeout(cacheNode.timeoutId);
+    }
+
     // Decrement the parent's child count
     parent.childCount--;
 
@@ -53,14 +60,14 @@ function recursivelyDeleteParent(cacheNode: CacheNode) {
 
 /**
  * Memoizes a function using nested Maps and WeakMaps based on the arguments.
- * Optionally limits the number of cached entries using an LRU cache.
+ * Optionally limits the number of cached entries using an LRU cache and sets TTL for cache entries.
  * Handles both primitive and object arguments efficiently.
  * @param fn - The function to memoize.
  * @param options - Optional settings for memoization.
  * @returns A memoized version of the function.
  */
 export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMemoizeOptions): T {
-  const {maxEntries} = options || {};
+  const {maxEntries, ttl} = options || {};
 
   // Initialize the root cache node
   const cacheRoot: CacheNode = {
@@ -78,6 +85,11 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
       dispose: (_key, cacheNode) => {
         // Remove the cached result
         delete cacheNode.result;
+
+        // Clear the TTL timer if set
+        if (cacheNode.timeoutId) {
+          clearTimeout(cacheNode.timeoutId);
+        }
 
         // If there are no child nodes, proceed to remove this node from its parent
         if (cacheNode.childCount === 0 && cacheNode.parent && cacheNode.parentKey !== undefined) {
@@ -144,6 +156,28 @@ export function weakMapMemoize<T extends AnyFunction>(fn: T, options?: WeakMapMe
 
     // Cache the result
     currentCache.result = result;
+
+    // If TTL is specified, set a timeout to evict the cache entry
+    if (ttl) {
+      currentCache.timeoutId = setTimeout(() => {
+        // Remove the result
+        delete currentCache.result;
+
+        // Remove from LRU if applicable
+        if (lruCache && currentCache.lruKey) {
+          lruCache.del(currentCache.lruKey);
+        }
+
+        // Recursively delete parent nodes if necessary
+        if (
+          currentCache.childCount === 0 &&
+          currentCache.parent &&
+          currentCache.parentKey !== undefined
+        ) {
+          recursivelyDeleteParent(currentCache);
+        }
+      }, ttl * 1000); // Convert seconds to milliseconds
+    }
 
     // If LRU cache is enabled, manage the cache entries
     if (lruCache && !currentCache.lruKey) {
