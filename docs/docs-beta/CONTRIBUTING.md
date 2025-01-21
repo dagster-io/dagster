@@ -1,8 +1,6 @@
-# Contributing
+# Contributing documentation
 
-## Migration from legacy docs
-
-There are some features in the previous docs that require changes to be made to work in the new Docusaurus-based documentation site.
+## Formatting
 
 ### PyObject references
 
@@ -27,28 +25,16 @@ After:
 />
 ```
 
-Note that the `method` property causes the build to break -- use `object` instead.
+Note that the `method` property causes the build to break -- use `object` instead, and prepend the class name to the method, if it is different from the module.
+
 
 ### Images
 
 #### Location
 
-Old images are in the [/docs/next/public/images](https://github.com/dagster-io/dagster/tree/master/docs/next/public/images) directory. You will need to copy them to [/docs/docs-beta/static/images](https://github.com/dagster-io/dagster/tree/master/docs/docs-beta/static/images).
+Images are located in [/docs/docs-beta/static/images](https://github.com/dagster-io/dagster/tree/master/docs/docs-beta/static/images).
 
 #### Formatting
-
-Before:
-
-```
-<Image
-  alt="Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+"
-  src="/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png"
-  width={1920}
-  height={284}
-/>
-```
-
-After:
 
 ```
 ![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
@@ -56,40 +42,10 @@ After:
 
 ### Notes
 
-Before:
-
-```
-<Note>This guide is applicable to Dagster+.</Note>
-```
-
-After:
-
 ```
 :::note
 This guide is applicable to Dagster+
 :::
-```
-
-### Tabs
-
-Before:
-
-```
-<TabGroup>
-  <TabItem name="Amazon ECS">
-  ...
-  </TabItem>
-</TabGroup>
-```
-
-After:
-
-```
-<Tabs>
-  <TabItem value="Amazon ECS">
-  ...
-  </TabItem>
-</Tabs>
 ```
 
 ### Header boundaries
@@ -100,26 +56,7 @@ This is no longer required, as the horizontal rule has been included in the CSS 
 
 ### Reference tables
 
-Before:
-
-```
-<ReferenceTable>
-  <ReferenceTableItem propertyName="DAGSTER_CLOUD_DEPLOYMENT_NAME">
-    The name of the Dagster+ deployment. For example, <code>prod</code>.
-  </ReferenceTableItem>
-  <ReferenceTableItem propertyName="DAGSTER_CLOUD_IS_BRANCH_DEPLOYMENT">
-    If <code>1</code>, the deployment is a{" "}
-    <a href="/dagster-plus/managing-deployments/branch-deployments">
-      branch deployment
-    </a>
-    . Refer to the <a href="#reserved-branch-deployment-variables">
-      Branch Deployment variables section
-    </a> for a list of variables available in branch deployments.
-  </ReferenceTableItem>
-</ReferenceTable>
-```
-
-After:
+Use Markdown tables for reference tables.
 
 | Key                                  | Value                                                                                                     |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
@@ -130,22 +67,9 @@ After:
 
 [Use HTML](https://www.markdownguide.org/hacks/#table-formatting) to add line breaks and lists to tables.
 
-### Whitespace via `{" "}`
-
-Forcing empty space using the `{" "}` interpolation is not supported, and must be removed.
-
 ### Prerequisites
 
-Before:
-
-```
-## Prerequisites
-
-- Install this
-- Configure that
-```
-
-After:
+Use `<details>` for prerequisites:
 
 ```
 <details>
@@ -157,7 +81,7 @@ After:
 </details>
 ```
 
-A prerequisites section should only include steps that the reader must take in order to run the example code in the article. Recommended reading should be formatted as a note:
+A prerequisites section should only include steps that the reader must take in order to successfully complete the steps in the documentation. Recommended reading should be formatted as a note:
 
 ```
 :::note
@@ -166,9 +90,8 @@ This article assumes familiarity with [assets](example-link).
 
 :::
 ```
----
 
-## Admonitions
+### Admonitions
 
 [Admonitions](https://docusaurus.io/docs/next/markdown-features/admonitions) are formatted as follows:
 
@@ -198,9 +121,7 @@ Here's a note.
 :::
 ```
 
----
-
-## Code examples
+### Code examples
 
 To include code snippets, use the following format:
 
@@ -226,9 +147,7 @@ This will run `pyright` on all new/changed files relative to the master branch.
 make quick_pyright
 ```
 
----
-
-## Diagrams
+### Diagrams
 
 You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
 
@@ -239,11 +158,9 @@ flowchart LR
 
 Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
 
----
+### Tabs
 
-## Tabs
-
-[Tabs](https://docusaurus.io/docs/markdown-features/tabs) are formatted as follows:
+Tabs are formatted as follows:
 
 ```
 <Tabs>
@@ -256,4 +173,6 @@ Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
 </Tabs>
 ```
 
-Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, since that will generate confusing items in the right sidebar for the page.
+You can add labels to tags, customize headings, and sync tab choices with the `groupId` prop. For more information, see the [Docusaurus Tabs docs](https://docusaurus.io/docs/markdown-features/tabs).
+
+Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, since those will generate confusing items in the right sidebar.
