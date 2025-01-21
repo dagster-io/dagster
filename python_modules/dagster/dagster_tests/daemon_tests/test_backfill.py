@@ -540,6 +540,8 @@ def the_repo():
         asset_e,
         asset_f,
         asset_g,
+        multi_partitioned_asset_with_single_run_bp,
+        multi_partitioned_asset,
         fails_once_asset_a,
         downstream_of_fails_once_asset_b,
         downstream_of_fails_once_asset_c,
@@ -3743,3 +3745,21 @@ def test_multi_partitioned_asset_with_single_run_bp_backfill(
     wait_for_all_runs_to_start(instance, timeout=30)
     wait_for_all_runs_to_finish(instance, timeout=30)
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+
+    # assert the expected asset materialization events exist with the expected partitions
+    from dagster._core.event_api import AssetRecordsFilter
+
+    result = instance.fetch_materializations(
+        AssetRecordsFilter(
+            asset_key=asset_selection[0],
+        ),
+        limit=10,
+    )
+    records_in_backfill = []
+    for record in result.records:
+        run = instance.get_run_by_id(record.run_id)
+        if run and run.tags.get(BACKFILL_ID_TAG) == backfill_id:
+            records_in_backfill.append(record)
+
+    partitions_materialized = {record.partition_key for record in records_in_backfill}
+    assert partitions_materialized == set(target_partitions)
