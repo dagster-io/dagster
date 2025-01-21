@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
-from dagster._annotations import public
+from dagster._annotations import public, superseded
+from dagster._utils.warnings import supersession_warning
 
 
 @dataclass
@@ -60,6 +61,13 @@ class DagsterSlingTranslator:
         method = getattr(type(self), method_name)
         base_method = getattr(DagsterSlingTranslator, method_name)
         if method is not base_method:  # user defined this
+            supersession_warning(
+                subject=method_name,
+                additional_warn_text=(
+                    f"Instead of overriding DagsterSlingTranslator.{method_name}(), "
+                    f"override DagsterSlingTranslator.get_asset_spec()."
+                ),
+            )
             return method(self, stream_definition)
         else:
             return default_fn(stream_definition)
@@ -86,6 +94,9 @@ class DagsterSlingTranslator:
         """
         return re.sub(r"[^a-zA-Z0-9_.]", "_", stream_name.replace('"', "").lower())
 
+    @superseded(
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).key` instead.",
+    )
     @public
     def get_asset_key(self, stream_definition: Mapping[str, Any]) -> AssetKey:
         """A function that takes a stream definition from a Sling replication config and returns a
@@ -130,9 +141,10 @@ class DagsterSlingTranslator:
             .. code-block:: python
 
                 class CustomSlingTranslator(DagsterSlingTranslator):
-                    def get_asset_key_for_target(self, stream_definition: Mapping[str, Any]) -> AssetKey:
+                    def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetKey:
+                        default_spec = super().get_asset_spec(stream_definition)
                         map = {"stream1": "asset1", "stream2": "asset2"}
-                        return AssetKey(map[stream_definition["name"]])
+                        return default_spec.replace_attributes(key=AssetKey(map[stream_definition["name"]]))
         """
         return self.get_asset_spec(stream_definition).key
 
@@ -170,6 +182,17 @@ class DagsterSlingTranslator:
 
         Returns:
             AssetKey: The Dagster AssetKey for the replication stream.
+
+        Examples:
+            Using a custom mapping for streams:
+
+            .. code-block:: python
+
+                class CustomSlingTranslator(DagsterSlingTranslator):
+                    def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetKey:
+                        default_spec = super().get_asset_spec(stream_definition)
+                        map = {"stream1": "asset1", "stream2": "asset2"}
+                        return default_spec.replace_attributes(key=AssetKey(map[stream_definition["name"]]))
         """
         config = stream_definition.get("config", {}) or {}
         object_key = config.get("object")
@@ -189,10 +212,15 @@ class DagsterSlingTranslator:
         sanitized_components = self.sanitize_stream_name(stream_name).split(".")
         return AssetKey([self.target_prefix] + sanitized_components)
 
+    @superseded(
+        additional_warn_text=(
+            "Iterate over `DagsterSlingTranslator.get_asset_spec(...).deps` to access `AssetDep.asset_key` instead."
+        ),
+    )
     @public
     def get_deps_asset_key(self, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
-        """A function that takes a stream name from a Sling replication config and returns a
-        Dagster AssetKey for the dependencies of the replication stream.
+        """A function that takes a stream definition from a Sling replication config and returns a
+        Dagster AssetKey for each dependency of the replication stream.
 
         By default, this returns the stream name. For example, a stream named "public.accounts"
         will create an AssetKey named "target_public_accounts" and a dependency named "public_accounts".
@@ -212,24 +240,13 @@ class DagsterSlingTranslator:
             stream_definition (Mapping[str, Any]): A dictionary representing the stream definition
 
         Returns:
-            AssetKey: The Dagster AssetKey dependency for the replication stream.
-
-        Examples:
-            Using a custom mapping for streams:
-
-            .. code-block:: python
-
-                class CustomSlingTranslator(DagsterSlingTranslator):
-                    def get_deps_asset_key(self, stream_definition: Mapping[str, Any]) -> AssetKey:
-                        map = {"stream1": "asset1", "stream2": "asset2"}
-                        return AssetKey(map[stream_definition["name"]])
-
+            Iterable[AssetKey]: A list of Dagster AssetKey for each dependency of the replication stream.
         """
         return [dep.asset_key for dep in self.get_asset_spec(stream_definition).deps]
 
     def _default_deps_fn(self, stream_definition: Mapping[str, Any]) -> Iterable[AssetKey]:
         """A function that takes a stream definition from a Sling replication config and returns a
-        Dagster AssetKey for the dependencies of the replication stream.
+        Dagster AssetKey for each dependency of the replication stream.
 
         This returns the stream name. For example, a stream named "public.accounts"
         will create an AssetKey named "target_public_accounts" and a dependency named "public_accounts".
@@ -248,7 +265,7 @@ class DagsterSlingTranslator:
             stream_definition (Mapping[str, Any]): A dictionary representing the stream definition
 
         Returns:
-            AssetKey: The Dagster AssetKey dependency for the replication stream.
+            Iterable[AssetKey]: A list of Dagster AssetKey for each dependency of the replication stream.
         """
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})
@@ -271,6 +288,9 @@ class DagsterSlingTranslator:
         components = self.sanitize_stream_name(stream_name).split(".")
         return [AssetKey(components)]
 
+    @superseded(
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).description` instead.",
+    )
     @public
     def get_description(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         """Retrieves the description for a given stream definition.
@@ -309,6 +329,9 @@ class DagsterSlingTranslator:
         description = meta.get("dagster", {}).get("description")
         return description
 
+    @superseded(
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).metadata` instead.",
+    )
     @public
     def get_metadata(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
         """Retrieves the metadata for a given stream definition.
@@ -340,6 +363,9 @@ class DagsterSlingTranslator:
         """
         return {"stream_config": MetadataValue.json(stream_definition.get("config", {}))}
 
+    @superseded(
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).tags` instead.",
+    )
     @public
     def get_tags(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
         """Retrieves the tags for a given stream definition.
@@ -371,6 +397,9 @@ class DagsterSlingTranslator:
         """
         return {}
 
+    @superseded(
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).kinds` instead.",
+    )
     @public
     def get_kinds(self, stream_definition: Mapping[str, Any]) -> set[str]:
         """Retrieves the kinds for a given stream definition.
@@ -400,6 +429,9 @@ class DagsterSlingTranslator:
         """
         return {"sling"}
 
+    @superseded(
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).group_name` instead.",
+    )
     @public
     def get_group_name(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         """Retrieves the group name for a given stream definition.
@@ -433,6 +465,9 @@ class DagsterSlingTranslator:
         meta = config.get("meta", {})
         return meta.get("dagster", {}).get("group")
 
+    @superseded(
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).freshness_policy` instead.",
+    )
     @public
     def get_freshness_policy(
         self, stream_definition: Mapping[str, Any]
@@ -482,6 +517,9 @@ class DagsterSlingTranslator:
                 cron_schedule_timezone=freshness_policy_config.get("cron_schedule_timezone"),
             )
 
+    @superseded(
+        additional_warn_text="Use `DagsterSlingTranslator.get_asset_spec(...).auto_materialize_policy` instead.",
+    )
     @public
     def get_auto_materialize_policy(
         self, stream_definition: Mapping[str, Any]

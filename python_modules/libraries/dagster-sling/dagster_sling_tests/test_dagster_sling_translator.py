@@ -28,16 +28,16 @@ def test_sling_translator_sanitize(test, expected):
         ),
     ],
 )
-def test_get_asset_key(stream, expected):
+def test_asset_key_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
-    assert translator.get_asset_key(stream) == AssetKey.from_user_string(expected)
+    assert translator.get_asset_spec(stream).key == AssetKey.from_user_string(expected)
 
 
-def test_get_asset_key_error():
+def test_asset_key_from_get_asset_spec_error():
     stream_definition = {"name": "foo", "config": {"meta": {"dagster": {"asset_key": "foo$bar"}}}}
     translator = DagsterSlingTranslator()
     with pytest.raises(ValueError):
-        translator.get_asset_key(stream_definition)
+        translator.get_asset_spec(stream_definition).key  # noqa
 
 
 @pytest.mark.parametrize(
@@ -55,16 +55,18 @@ def test_get_asset_key_error():
         ),
     ],
 )
-def test_get_deps_asset_key(stream, expected):
+def test_deps_asset_key_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
-    assert translator.get_deps_asset_key(stream) == [AssetKey.from_user_string(e) for e in expected]
+    assert [dep.asset_key for dep in translator.get_asset_spec(stream).deps] == [
+        AssetKey.from_user_string(e) for e in expected
+    ]
 
 
-def test_get_deps_asset_key_error():
+def test_deps_asset_key_from_get_asset_spec_error():
     stream_definition = {"name": "foo", "config": {"meta": {"dagster": {"deps": "foo$bar"}}}}
     translator = DagsterSlingTranslator()
     with pytest.raises(ValueError):
-        translator.get_deps_asset_key(stream_definition)
+        translator.get_asset_spec(stream_definition).deps  # noqa
 
 
 @pytest.mark.parametrize(
@@ -78,9 +80,9 @@ def test_get_deps_asset_key_error():
         ),
     ],
 )
-def test_get_description(stream, expected):
+def test_description_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
-    assert translator.get_description(stream) == expected
+    assert translator.get_asset_spec(stream).description == expected
 
 
 @pytest.mark.parametrize(
@@ -93,10 +95,12 @@ def test_get_description(stream, expected):
         ),
     ],
 )
-def test_get_metadata(stream, expected):
+def test_metadata_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
     stream = {"name": "foo", "config": {"foo": "bar"}}
-    assert translator.get_metadata(stream) == {"stream_config": JsonMetadataValue(stream["config"])}
+    assert translator.get_asset_spec(stream).metadata == {
+        "stream_config": JsonMetadataValue(stream["config"])
+    }
 
 
 @pytest.mark.parametrize(
@@ -109,9 +113,9 @@ def test_get_metadata(stream, expected):
         ),
     ],
 )
-def test_get_group_name(stream, expected):
+def test_group_name_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
-    assert translator.get_group_name(stream) == expected
+    assert translator.get_asset_spec(stream).group_name == expected
 
 
 @pytest.mark.parametrize(
@@ -127,9 +131,9 @@ def test_get_group_name(stream, expected):
         ),
     ],
 )
-def test_get_freshness_policy(stream, expected):
+def test_freshness_policy_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
-    assert translator.get_freshness_policy(stream) == expected
+    assert translator.get_asset_spec(stream).freshness_policy == expected
 
 
 @pytest.mark.parametrize(
@@ -145,6 +149,6 @@ def test_get_freshness_policy(stream, expected):
         ),
     ],
 )
-def test_get_auto_materialize_policy(stream, expected):
+def test_auto_materialize_policy_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
-    assert translator.get_auto_materialize_policy(stream) == expected
+    assert translator.get_asset_spec(stream).auto_materialize_policy == expected
