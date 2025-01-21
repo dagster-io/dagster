@@ -1,10 +1,9 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
-import {groupCollapsed} from 'console';
 
 const config: Config = {
-  title: 'Dagster Docs - Beta',
+  title: 'Dagster Docs',
   tagline: 'Dagster is a Python framework for building production-grade data platforms.',
   url: 'https://docs.dagster.io',
   favicon: 'img/favicon.ico',
@@ -41,7 +40,7 @@ const config: Config = {
           },
     announcementBar: {
       id: 'announcementBar',
-      content: `<div><h3>This is the preview of the new documentation site.</h3> If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/discussions/24816">GitHub</a>. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</div>`,
+      content: `<div><h3>Welcome to Dagster's new and improved documentation site!</h3> You can find the legacy documentation with content for versions 1.9.8 and earlier at <a target="_blank" href="https://legacy-docs.dagster.io/">legacy-docs.dagster.io</a>.</div>`,
     },
     colorMode: {
       defaultMode: 'light',

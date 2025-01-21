@@ -374,6 +374,7 @@ class GrapheneISolidDefinition(graphene.Interface):
     input_definitions = non_null_list(GrapheneInputDefinition)
     output_definitions = non_null_list(GrapheneOutputDefinition)
     assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    pools = non_null_list(graphene.String)
 
     class Meta:
         name = "ISolidDefinition"
@@ -454,10 +455,18 @@ class ISolidDefinitionMixin:
                 for remote_node in remote_nodes
             ]
 
+    def resolve_pools(self, _graphene_info) -> Sequence[str]:
+        if isinstance(self._solid_def_snap, OpDefSnap):
+            return [self._solid_def_snap.pool] if self._solid_def_snap.pool else []
+        if isinstance(self._solid_def_snap, GraphDefSnap):
+            return list(self._solid_def_snap.pools)
+        return []
+
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     config_field = graphene.Field(GrapheneConfigTypeField)
     required_resources = non_null_list(GrapheneResourceRequirement)
+    pool = graphene.String()
 
     class Meta:
         interfaces = (GrapheneISolidDefinition,)
@@ -490,6 +499,9 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         return [
             GrapheneResourceRequirement(key) for key in self._solid_def_snap.required_resource_keys
         ]
+
+    def resolve_pool(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._solid_def_snap.pool
 
 
 class GrapheneSolidStepStatsUnavailableError(graphene.ObjectType):

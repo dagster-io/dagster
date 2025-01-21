@@ -3,44 +3,50 @@ import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor} from 'codemirror';
 import {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
-import {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import styled, {css} from 'styled-components';
 
+import {Suggestion} from './SelectionAutoCompleteVisitor';
+import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteResults';
 import {
   SelectionAutoCompleteInputCSS,
   applyStaticSyntaxHighlighting,
-} from './SelectionAutoCompleteHighlighter';
-import {SelectionAutoCompleteResults} from './SelectionAutoCompleteResults';
+} from './SelectionInputHighlighter';
 import {useTrackEvent} from '../app/analytics';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
-import {Suggestion, generateAutocompleteResults} from '../selection/SelectionAutoComplete';
 
 import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/addon/lint/lint.css';
 import 'codemirror/addon/display/placeholder';
 
-type SelectionAutoCompleteInputProps<T extends Record<string, string[]>, N extends keyof T> = {
+type SelectionAutoCompleteInputProps = {
   id: string; // Used for logging
-  nameBase: N;
-  attributesMap: T;
   placeholder: string;
-  functions: string[];
   linter: Linter<any>;
   value: string;
   onChange: (value: string) => void;
+  useAutoComplete: (
+    selection: string,
+    cursor: number,
+  ) => {
+    autoCompleteResults: {
+      list: Suggestion[];
+      from: number;
+      to: number;
+    };
+    loading: boolean;
+  };
 };
 
-export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N extends keyof T>({
+export const SelectionAutoCompleteInput = ({
   id,
   value,
-  nameBase,
   placeholder,
   onChange,
-  functions,
   linter,
-  attributesMap,
-}: SelectionAutoCompleteInputProps<T, N>) => {
+  useAutoComplete,
+}: SelectionAutoCompleteInputProps) => {
   const trackEvent = useTrackEvent();
 
   const trackSelection = useMemo(() => {
@@ -72,17 +78,11 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
   const currentPendingValueRef = useRef(value);
   const setValueTimeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
 
-  const hintFn = useMemo(() => {
-    return generateAutocompleteResults({nameBase, attributesMap, functions});
-  }, [nameBase, attributesMap, functions]);
-
   const [showResults, setShowResults] = useState({current: false});
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
 
-  const autocompleteResults = useMemo(() => {
-    return hintFn(innerValue, cursorPosition);
-  }, [hintFn, innerValue, cursorPosition]);
+  const {autoCompleteResults, loading} = useAutoComplete(innerValue, cursorPosition);
 
   const hintContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -95,11 +95,11 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
   useDangerousRenderEffect(() => {
     // Rather then using a useEffect + setState (extra render), we just set the current value directly
     selectedIndexRef.current = 0;
-    if (!autocompleteResults?.list.length) {
+    if (!autoCompleteResults?.list.length && !loading) {
       showResults.current = false;
     }
     scrollToSelectionRef.current = true;
-  }, [autocompleteResults]);
+  }, [autoCompleteResults, loading]);
 
   const scheduleUpdateValue = useCallback(() => {
     if (setValueTimeoutRef.current) {
@@ -136,7 +136,7 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
 
       // Enforce single line by preventing newlines
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
-        if (change.text.some((line) => line.includes('\n'))) {
+        if (change.text.length !== 1 || change.text[0]?.includes('\n')) {
           change.cancel();
         }
       });
@@ -148,10 +148,12 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         scheduleUpdateValue();
         setShowResults({current: true});
         adjustHeight();
+        setCursorPosition(instance.getCursor().ch);
       });
 
-      cmInstance.current.on('inputRead', (_instance: Editor) => {
+      cmInstance.current.on('inputRead', (instance: Editor) => {
         setShowResults({current: true});
+        setCursorPosition(instance.getCursor().ch);
       });
 
       cmInstance.current.on('focus', (instance: Editor) => {
@@ -232,16 +234,16 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     }
   });
 
-  const selectedItem = autocompleteResults?.list[selectedIndexRef.current];
+  const selectedItem = autoCompleteResults?.list[selectedIndexRef.current];
 
   const onSelect = useCallback(
     (suggestion: Suggestion) => {
-      if (autocompleteResults && suggestion && cmInstance.current) {
+      if (autoCompleteResults && suggestion && cmInstance.current) {
         const editor = cmInstance.current;
         editor.replaceRange(
           suggestion.text,
-          {line: 0, ch: autocompleteResults.from},
-          {line: 0, ch: autocompleteResults.to},
+          {line: 0, ch: autoCompleteResults.from},
+          {line: 0, ch: autoCompleteResults.to},
           'complete',
         );
         editor.focus();
@@ -252,36 +254,34 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         }
         editor.setCursor({
           ...cursor,
-          ch: autocompleteResults.from + suggestion.text.length + offset,
+          ch: autoCompleteResults.from + suggestion.text.length + offset,
         });
       }
     },
-    [autocompleteResults],
+    [autoCompleteResults],
   );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
-      if (!showResults) {
+      if (!showResults.current) {
         return;
       }
       scheduleUpdateValue();
-
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         scrollToSelectionRef.current = true;
       }
-
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
         setSelectedIndex((prev) => ({
-          current: (prev.current + 1) % (autocompleteResults?.list.length ?? 0),
+          current: (prev.current + 1) % (autoCompleteResults?.list.length ?? 0),
         }));
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === 'ArrowUp' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
         setSelectedIndex((prev) => ({
           current:
-            prev.current - 1 < 0 ? (autocompleteResults?.list.length ?? 1) - 1 : prev.current - 1,
+            prev.current - 1 < 0 ? (autoCompleteResults?.list.length ?? 1) - 1 : prev.current - 1,
         }));
-      } else if (e.key === 'Enter' || e.key === 'Tab') {
+      } else if (e.key === 'Tab') {
         e.preventDefault();
         if (selectedItem) {
           onSelect(selectedItem);
@@ -291,27 +291,48 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
         setShowResults({current: false});
       }
     },
-    [showResults, scheduleUpdateValue, autocompleteResults, selectedItem, onSelect],
+    [showResults, scheduleUpdateValue, autoCompleteResults, selectedItem, onSelect],
   );
+
+  /**
+   * Popover doesn't seem to support canOutsideClickClose, so we have to do this ourselves.
+   */
+  React.useLayoutEffect(() => {
+    const listener = (e: MouseEvent) => {
+      if (
+        inputRef.current?.contains(e.target as Node) ||
+        hintContainerRef.current?.contains(e.target as Node) ||
+        !document.contains(e.target as Node)
+      ) {
+        return;
+      }
+      setShowResults({current: false});
+    };
+    document.body.addEventListener('mousedown', listener);
+    return () => {
+      document.body.removeEventListener('mousedown', listener);
+    };
+  }, [setShowResults]);
 
   return (
     <>
       <Popover
         content={
           <div ref={hintContainerRef} onMouseMove={scheduleUpdateValue} onKeyDown={handleKeyDown}>
-            <SelectionAutoCompleteResults
-              results={autocompleteResults}
+            <SelectionInputAutoCompleteResults
+              results={autoCompleteResults}
               width={width}
               selectedIndex={selectedIndexRef.current}
               scrollToSelection={scrollToSelectionRef}
               onSelect={onSelect}
               scheduleUpdateValue={scheduleUpdateValue}
               setSelectedIndex={setSelectedIndex}
+              loading={loading}
             />
           </div>
         }
         placement="bottom-start"
-        isOpen={autocompleteResults?.list.length ? showResults.current : false}
+        isOpen={loading || autoCompleteResults?.list.length ? showResults.current : false}
         targetTagName="div"
         canEscapeKeyClose={true}
       >

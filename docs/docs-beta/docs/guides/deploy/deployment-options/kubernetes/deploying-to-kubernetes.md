@@ -22,7 +22,7 @@ To follow the steps in this guide, you'll need:
   - **To have Helm 3 installed**. [Helm installation guide](https://helm.sh/docs/intro/install/)
 - A Dagster project to deploy. You can also use the example project:
   ```bash
-  dagster project from-example --example deploy_k8s_beta --name deploy_k8s_beta
+  dagster project from-example --example deploy_k8s --name deploy_k8s
   ```
 
 </details>
@@ -185,7 +185,7 @@ This command gets the full name of the `webserver` pod from the output of `kubec
 
 The webserver has been port-forwarded to `8080`, so you can visit the Dagster deployment by going to [http://127.0.0.1:8080](http://127.0.0.1:8080). You should see the Dagster landing page
 
-![Screenshot of Dagster landing page](/img/placeholder.svg)
+![Screenshot of Dagster landing page](/images/guides/deploy/kubernetes/dagster-kubernetes-deploy.png)
 
 ### Step 6.3: Materialize an asset
 In the Dagster UI, navigate to the Asset catalog and click the **Materialize** button to materialize an asset. Dagster will start a Kubernetes job to materialize the asset. You can introspect on the Kubernetes cluster to see this job:
