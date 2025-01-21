@@ -219,7 +219,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     f"[pipes] {self.AWS_SERVICE_NAME} job {job_run_id} completed with state: {state}"
                 )
                 return response
-            elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING"]:
+            elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING", "QUEUED"]:
                 time.sleep(self.poll_interval)
                 continue
             else:

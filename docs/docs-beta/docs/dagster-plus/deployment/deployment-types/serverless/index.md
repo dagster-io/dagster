@@ -4,15 +4,13 @@ sidebar_label: Serverless
 sidebar_position: 10
 ---
 
-# Serverless deployment
-
 Dagster+ Serverless is a fully managed version of Dagster+ and is the easiest way to get started with Dagster. With a Serverless deployment, you can run your Dagster jobs without spinning up any infrastructure yourself.
 
 ## Serverless vs Hybrid
 
 Serverless works best with workloads that primarily orchestrate other services or perform light computation. Most workloads fit into this category, especially those that orchestrate third-party SaaS products like cloud data warehouses and ETL tools.
 
-If any of the following are applicable, you should select [Hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid):
+If any of the following are applicable, you should select [Hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid/):
 
 - You require substantial computational resources. For example, training a large machine learning (ML) model in-process
 - Your dataset is too large to fit in memory. For example, training a large ML model in-process on a terabyte of data
@@ -34,4 +32,7 @@ Dagster+ Pro customers may request a quota increase by [contacting Sales](https:
 
 ## Next steps
 
-To start using Dagster+ Serverless, follow the steps in [Getting started with Dagster+](/dagster-plus/getting-started).
+To start using Dagster+ Serverless, you must [create a Dagster+ organization](https://dagster.plus/signup) if you have not already done so. You can sign up with:
+- a Google email address
+- a GitHub account
+- a one-time email link (ideal if you are using a corporate email). You can set up SSO after completing these steps.

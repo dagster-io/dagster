@@ -1,12 +1,9 @@
 ---
-title: 'User tokens'
+title: 'Managing user tokens in Dagster+'
 sidebar_position: 100
-unlisted: true
 ---
 
 import ThemedImage from '@theme/ThemedImage';
-
-# Managing user tokens in Dagster+
 
 :::note
 This guide is applicable to Dagster+.

@@ -1,5 +1,5 @@
 ---
-title: Create event-based pipelines with sensors
+title: "Sensors"
 sidebar_position: 30
 ---
 
@@ -18,7 +18,9 @@ Examples of actions include:
 - inserting a row into a database
 
 :::tip
-An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/automate#graphql-endpoint).
+
+An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/operate/graphql/).
+
 :::
 
 <details>
@@ -36,7 +38,7 @@ Sensors are defined with the `@sensor` decorator. The following example includes
 
 If the sensor finds new files, it starts a run of `my_job`. If not, it skips the run and logs `No new files found` in the Dagster UI.
 
-<CodeExample filePath="guides/automation/simple-sensor-example.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/simple-sensor-example.py" language="python" />
 
 :::tip
 Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
@@ -73,7 +75,7 @@ When dealing with a large number of events, you may want to implement a cursor t
 
 The following example demonstrates how you might use a cursor to only create `RunRequests` for files in a directory that have been updated since the last time the sensor ran.
 
-<CodeExample filePath="guides/automation/sensor-cursor.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/sensor-cursor.py" language="python" />
 
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
 

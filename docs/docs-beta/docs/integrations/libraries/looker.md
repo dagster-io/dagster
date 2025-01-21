@@ -29,7 +29,7 @@ pip install dagster-looker
 
 ### Example
 
-<CodeExample filePath="integrations/looker.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/looker.py" language="python" />
 
 ### About Looker
 

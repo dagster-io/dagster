@@ -3,13 +3,13 @@ title: "Configuring run retries"
 sidebar_position: 600
 ---
 
-If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op retries](/todo), the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
+If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op](/guides/build/ops) retries, the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
 
 ## Configuration
 
 How to configure run retries depends on whether you're using Dagster+ or Dagster Open Source:
 
-- **Dagster+**: Use the [Dagster+ UI or the dagster-cloud CLI](/dagster-plus/deployment/management/settings/deployment-settings) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
+- **Dagster+**: Use the [Dagster+ UI or the dagster-cloud CLI](/dagster-plus/deployment/management/deployments/deployment-settings-reference) to set a default maximum number of retries. Run retries do not need to be explicitly enabled.
 - **Dagster Open Source**: Use your instance's `dagster.yaml` to enable run retries.
 
 For example, the following will set a default maximum number of retries of `3` for all runs:
@@ -20,7 +20,7 @@ run_retries:
   max_retries: 3
 ```
 
-In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/guides/deploy/execution/webserver).
+In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/guides/operate/webserver).
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/deploying/job_retries.py

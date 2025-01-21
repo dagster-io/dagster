@@ -230,6 +230,9 @@ def _build_backfill_request(
         visited.add(k)
         if isinstance(k, AssetKey):
             node = asset_graph.get(k)
+            if not node.is_materializable:
+                # if the asset is not materializable, it cannot be included in a backfill
+                return
             subset = cast(EntitySubset[AssetKey], entity_subsets_by_key.pop(k))
             backfill_subsets.append(subset)
             for sk in [

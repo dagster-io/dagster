@@ -5,7 +5,7 @@ name: dbt
 title: Dagster & dbt
 sidebar_label: dbt
 sidebar_custom_props: 
-  logo: images/integrations/dbt.svg
+  logo: images/integrations/dbt/dbt.svg
   categories:
     - etl
 ---

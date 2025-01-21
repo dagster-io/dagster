@@ -30,7 +30,7 @@ pip install dagster-hashicorp
 
 ### Example
 
-<CodeExample filePath="integrations/hashicorp.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/hashicorp.py" language="python" />
 
 ### About HashiCorp Vault
 

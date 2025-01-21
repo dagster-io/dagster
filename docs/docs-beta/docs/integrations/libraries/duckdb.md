@@ -18,7 +18,7 @@ sidebar_custom_props:
   logo: images/integrations/duckdb.svg
 ---
 
-This library provides an integration with the DuckDB database, and allows for an out-of-the-box [I/O Manager](/todo) so that you can make DuckDB your storage of choice.
+This library provides an integration with the DuckDB database, and allows for an out-of-the-box [I/O Manager](/guides/build/io-managers/) so that you can make DuckDB your storage of choice.
 
 ### Installation
 
@@ -28,7 +28,7 @@ pip install dagster-duckdb
 
 ### Example
 
-<CodeExample filePath="integrations/duckdb.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/duckdb.py" language="python" />
 
 ### About DuckDB
 

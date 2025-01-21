@@ -18,7 +18,7 @@ This article assumes familiarity with [assets](/guides/build/assets/) and [jobs]
 
 
 * Dagster Core, add the following to your [dagster.yaml](/guides/deploy/dagster-yaml)
-* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/settings/deployment-settings)
+* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/deployments/deployment-settings-reference)
 
 ```yaml
 run_queue:
@@ -26,7 +26,7 @@ run_queue:
 ```
 
 
-<CodeExample filePath="guides/tbd/concurrency-global.py" language="python" title="Global concurrency limits" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-global.py" language="python" title="Global concurrency limits" />
 
 ## Limit how many ops or assets can be running at the same time
 
@@ -34,12 +34,12 @@ You can control the number of assets or ops that are running concurrently within
 
 <Tabs>
   <TabItem value="Assets" label="Asset job">
-    <CodeExample filePath="guides/tbd/concurrency-job-asset.py" language="python" title="Asset concurrency limits in a job" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-job-asset.py" language="python" title="Asset concurrency limits in a job" />
 
   </TabItem>
 
   <TabItem value="Ops" label="Op job">
-    <CodeExample filePath="guides/tbd/concurrency-job-op.py" language="python" title="Op concurrency limits in a job" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-job-op.py" language="python" title="Op concurrency limits in a job" />
 
   </TabItem>
 </Tabs>
@@ -76,8 +76,8 @@ dagster instance concurrency set database 1
 
 A default concurrency limit can be configured for the instance, for any concurrency keys that don't have an explicit limit set:
 
-* Dagster+: Use the Dagster+ UI or the dagster-cloud CLI
-* Dagster Open Source: Use your instance's dagster.yaml
+* Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/).
+* Dagster Open Source: Use your instance's [dagster.yaml](/guides/deploy/dagster-yaml)
 
 To enable this default value, use `concurrency.default_op_concurrency_limit`. For example, the following would set the default concurrency value for the deployment to 1:
 ```yaml
@@ -87,11 +87,11 @@ concurrency:
 
 <Tabs>
   <TabItem value="Asset Tag" label="Asset tag concurrency limits">
-    <CodeExample filePath="guides/tbd/concurrency-tag-key-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' across all runs" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-tag-key-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' across all runs" />
 
   </TabItem>
   <TabItem value="Op Tag" label="Op tag concurrency limits">
-  <CodeExample filePath="guides/tbd/concurrency-tag-key-op.py" language="python" title="No more than 1 op running with a tag of 'database' across all runs" />
+  <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-tag-key-op.py" language="python" title="No more than 1 op running with a tag of 'database' across all runs" />
 
   </TabItem>
 </Tabs>
@@ -100,11 +100,11 @@ You can also limit concurrency for a tag within the job definition, for example 
 
 <Tabs>
   <TabItem value="Asset Tag with Job" label="Asset tag concurrency limits in a run">
-    <CodeExample filePath="guides/tbd/concurrency-tag-key-job-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' within a run" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-tag-key-job-asset.py" language="python" title="No more than 1 asset running with a tag of 'database' within a run" />
 
   </TabItem>
   <TabItem value="Op Tag with Job" label="Op tag concurrency limits in a run">
-  <CodeExample filePath="guides/tbd/concurrency-tag-key-job-op.py" language="python" title="No more than 1 op running with a tag of 'database' within a run" />
+  <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-tag-key-job-op.py" language="python" title="No more than 1 op running with a tag of 'database' within a run" />
   </TabItem>
 </Tabs>
 
@@ -120,7 +120,7 @@ Need screenshot here
 You can use Dagster's rich metadata to use a schedule or a sensor to only start a run when there are no currently running jobs.
 
 {/* TODO fix this code example */}
-<CodeExample filePath="guides/tbd/concurrency-no-more-than-1-job.py" language="python" title="No more than 1 running job from a schedule" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-no-more-than-1-job.py" language="python" title="No more than 1 running job from a schedule" />
 
 
 ## Troubleshooting
@@ -151,8 +151,8 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
 
   **Troubleshoot the Dagster daemon**
 
-    * **Verify the Dagster daemon is set up and running.** In the Dagster UI, navigate to **Deployment > Daemons** and verify that the daemon is running. The **Run queue** should also be running. If you used [dagster dev](/guides/deploy/execution/webserver) to start the Dagster UI, the daemon should have been started for you. If the daemon isn't running, proceed to step 2.
-    * **Verify the Dagster daemon can access the same storage as the Dagster webserver process.** Both the webserver process and the Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used dagster dev to start the Dagster UI, both processes should be using the same storage. Refer to the [Dagster Instance docs](/todo) for more information.
+    * **Verify the Dagster daemon is set up and running.** In the Dagster UI, navigate to **Deployment > Daemons** and verify that the daemon is running. The **Run queue** should also be running. If you used [dagster dev](/guides/operate/webserver) to start the Dagster UI, the daemon should have been started for you. If the daemon isn't running, proceed to step 2.
+    * **Verify the Dagster daemon can access the same storage as the Dagster webserver process.** Both the webserver process and the Dagster daemon should access the same storage, meaning they should use the same `dagster.yaml`. Locally, this means both processes should have the same set `DAGSTER_HOME` environment variable. If you used dagster dev to start the Dagster UI, both processes should be using the same storage. Refer to the [Dagster Instance docs](/guides/deploy/dagster-instance-configuration) for more information.
 
   **Troubleshoot the run queue configuration**
     If the daemon is running, runs may intentionally be left in the queue due to concurrency rules. To investigate:

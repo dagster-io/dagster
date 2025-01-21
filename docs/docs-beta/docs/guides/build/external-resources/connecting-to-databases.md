@@ -31,13 +31,13 @@ To run the example code in this article, you'll need:
 
 This example creates a resource that represents a Snowflake database. Using `SnowflakeResource`, define a Dagster resource that connects to a Snowflake database:
 
-<CodeExample filePath="guides/external-systems/databases/snowflake-resource.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/external-systems/databases/snowflake-resource.py" language="python" />
 
 ## Step 2: Use the resource in an asset \{#step-two}
 
 To use the resource, provide it as a parameter to an asset and include it in the `Definitions` object:
 
-<CodeExample filePath="guides/external-systems/databases/use-in-asset.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/external-systems/databases/use-in-asset.py" language="python" />
 
 When you materialize these assets, Dagster will provide an initialized `SnowflakeResource` to the assets' `iris_db` parameter.
 
@@ -47,14 +47,14 @@ Resources can be configured using environment variables, allowing you to connect
 
 In this example, a second instance of the Snowflake resource, named `production` has been added:
 
-<CodeExample filePath="guides/external-systems/databases/use-envvars.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/external-systems/databases/use-envvars.py" language="python" />
 
 When the assets are materialized, Dagster will use the `deployment_name` environment variable to determine which Snowflake resource to use (`local` or `production`). Then, Dagster will read the values set for each resource's environment variables (ex: `DEV_SNOWFLAKE_PASSWORD`) and initialize a `SnowflakeResource` with those values.
 
 The initialized `SnowflakeResource` will be provided to the assets' `iris_db` parameter.
 
 :::note
-You can also fetch environment variables using the `os` library. Dagster treats each approach to fetching environment variables differently, such as when they're fetched or how they display in the UI. Refer to the [Environment variables guide](/todo) for more information.
+You can also fetch environment variables using the `os` library. Dagster treats each approach to fetching environment variables differently, such as when they're fetched or how they display in the UI. Refer to the [Environment variables guide](/guides/deploy/using-environment-variables-and-secrets) for more information.
 :::
 
 ## Next steps

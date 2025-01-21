@@ -2,7 +2,7 @@ import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
 interface CodeExampleProps {
-  filePath: string;
+  path: string;
   language?: string;
   title?: string;
   lineStart?: number;
@@ -111,7 +111,7 @@ const CodeExample: React.FC<CodeExampleProps> = ({...props}) => {
 
 const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
   const {
-    filePath,
+    path,
     title,
     lineStart,
     lineEnd,
@@ -121,7 +121,6 @@ const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
     ...extraProps
   } = props;
 
-  const path = 'docs_beta_snippets/docs_beta_snippets/' + filePath;
   const cacheKey = JSON.stringify(props);
   const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd, startAfter, endBefore);
 

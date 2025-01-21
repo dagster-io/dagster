@@ -24,7 +24,7 @@ To follow the steps in this guide, you'll need:
 1. In the Dagster+ UI, navigate to the **Deployment > Agents** page.
 2. Click the drop down arrow on the right of the page and select **Switch to Hybrid**.
 
-![PRODUCT NOTE - this arrow drop down is pretty small and easy to confuse with the one in the row for the agent](/img/placeholder.svg)
+![PRODUCT NOTE - this arrow drop down is pretty small and easy to confuse with the one in the row for the agent](/images/dagster-plus/deployment/switch-agent-to-hybrid.png)
 
 It may take a few minutes for the agent to deactivate and be removed from the list of agents.
 
@@ -32,7 +32,7 @@ It may take a few minutes for the agent to deactivate and be removed from the li
 
 Next, you'll need to create a Hybrid agent to execute your code. Follow the setup instructions for the agent of your choice:
 
-- **[Amazon Web Services (AWS)](/todo)**, which launches user code as Amazon Elastic Container Service (ECS) tasks.
+- **[Amazon Web Services (AWS)](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs)**, which launches user code as Amazon Elastic Container Service (ECS) tasks.
 - **[Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)**, which launches user code in Docker containers on your machine
 - **[Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)**, which launches user code on a Kubernetes cluster
 - **[Local](/dagster-plus/deployment/deployment-types/hybrid/local)**, which launches user code in operating system subprocesses on your machine
@@ -41,8 +41,8 @@ Next, you'll need to create a Hybrid agent to execute your code. Follow the setu
 
 Once you've set up a Hybrid agent, navigate to the **Deployment > Agents** page in the UI. The new agent should display in the list with a `RUNNING` status:
 
-![Screenshot](/img/placeholder.svg)
+![Screenshot](/images/dagster-plus/deployment/running-agent.png)
 
 ## Next steps
 
-- Learn about the configuration options for [dagster.yaml](/todo)
+- Learn about the configuration options for [dagster.yaml](/guides/deploy/dagster-yaml)

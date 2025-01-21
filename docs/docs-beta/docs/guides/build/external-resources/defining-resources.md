@@ -3,7 +3,7 @@ title: Defining resources
 sidebar_position: 100
 ---
 
-Typically, resources are defined by subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/todo), which are used to specify information like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
+Typically, resources are defined by subclassing <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. Resources typically have a set of [configuration values](/guides/operate/configuration/run-configuration), which are used to specify information like account identifiers, API keys, or database names when interfacing with an external tool or service. This configuration schema is specified by attributes on the class.
 
 The configuration system has a few advantages over plain Python parameter passing. Configured values can be:
 
@@ -95,4 +95,4 @@ defs = Definitions(
 )
 ```
 
-There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/todo) for a more comprehensive overview of the available config types.
+There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/guides/operate/configuration/advanced-config-types) for a more comprehensive overview of the available config types.

@@ -65,7 +65,7 @@ Next, execute this job with Celery by running the following:
 dagster dev -f celery_job.py
 ```
 
-Now you can execute the parallel job from the [Dagster UI](/guides/deploy/execution/webserver).
+Now you can execute the parallel job from the [Dagster UI](/guides/operate/webserver).
 
 ## Part 2: Ensuring workers are in sync
 

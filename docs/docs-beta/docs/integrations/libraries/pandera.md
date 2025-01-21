@@ -22,6 +22,12 @@ The `dagster-pandera` integration library provides an API for generating Dagster
 
 Like all Dagster types, Dagster-Pandera-generated types can be used to annotate op inputs and outputs. This provides runtime type-checking with rich error reporting and allows Dagster UI to display information about a DataFrame's structure.
 
+:::note
+
+Currently, `dagster-pandera` only supports pandas and Polars dataframes, despite Pandera supporting validation on other dataframe backends.
+
+:::
+
 ### Installation
 
 ```bash
@@ -30,7 +36,7 @@ pip install dagster-pandera
 
 ### Example
 
-<CodeExample filePath="integrations/pandera.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/pandera.py" language="python" />
 
 ### About Pandera
 
