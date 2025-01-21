@@ -25,6 +25,7 @@ from dagster import (
     DailyPartitionsDefinition,
     Field,
     In,
+    MultiPartitionsDefinition,
     Nothing,
     Out,
     Output,
@@ -408,6 +409,26 @@ def daily_1():
 @asset(partitions_def=daily_partitions_def)
 def daily_2(daily_1):
     return 1
+
+
+multi_partitions_def = MultiPartitionsDefinition(
+    {"day": daily_partitions_def, "name": static_partitions}
+)
+
+
+@asset(
+    partitions_def=multi_partitions_def,
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def multi_partitioned_asset_with_single_run_bp() -> None:
+    return
+
+
+@asset(
+    partitions_def=multi_partitions_def,
+)
+def multi_partitioned_asset() -> None:
+    return
 
 
 @asset(
