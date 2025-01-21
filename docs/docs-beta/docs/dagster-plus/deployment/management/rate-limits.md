@@ -1,6 +1,6 @@
 ---
 title: Dagster+ rate limits
-sidebar_position: 60
+sidebar_position: 100
 ---
 
 Dagster+ enforces several rate limits to smoothly distribute the load. Deployments are limited to:

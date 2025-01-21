@@ -1,6 +1,6 @@
 ---
 title: Managing compute logs and error messages
-sidebar_position: 50
+sidebar_position: 200
 ---
 
 import ThemedImage from '@theme/ThemedImage';
