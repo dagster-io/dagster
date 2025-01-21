@@ -4,8 +4,8 @@ from typing import Any, Callable, Optional, Union
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public, superseded
-from dagster._utils.warnings import supersession_warning
 from dagster._record import record
+from dagster._utils.warnings import supersession_warning
 from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
 
@@ -182,7 +182,7 @@ class DagsterDltTranslator:
 
     @superseded(
         additional_warn_text=(
-                "Iterate over `DagsterDltTranslator.get_asset_spec(...).deps` to access `AssetDep.asset_key` instead."
+            "Iterate over `DagsterDltTranslator.get_asset_spec(...).deps` to access `AssetDep.asset_key` instead."
         ),
     )
     @public
