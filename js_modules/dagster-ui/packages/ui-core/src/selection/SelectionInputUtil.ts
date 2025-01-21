@@ -7,19 +7,6 @@ export const removeQuotesFromString = (value: string) => {
   return value;
 };
 
-export function getValueNodeValue(ctx: ParserRuleContext) {
-  let nodeValue = ctx.text;
-  const nodeType = ctx.constructor.name;
-  if (nodeType === 'QuotedStringValueContext') {
-    nodeValue = nodeValue.slice(1, -1);
-  } else if (nodeType === 'IncompleteLeftQuotedStringValueContext') {
-    nodeValue = nodeValue.slice(1);
-  } else if (nodeType === 'IncompleteRightQuotedStringValueContext') {
-    nodeValue = nodeValue.slice(0, -1);
-  }
-  return nodeValue.trim();
-}
-
 export function isInsideExpressionlessParenthesizedExpression(context: ParserRuleContext) {
   if (context.parent) {
     const nodeType = context.parent.constructor.name;
@@ -29,4 +16,19 @@ export function isInsideExpressionlessParenthesizedExpression(context: ParserRul
     return isInsideExpressionlessParenthesizedExpression(context.parent);
   }
   return false;
+}
+
+export function getValueNodeValue(ctx: ParserRuleContext | null) {
+  switch (ctx?.constructor.name) {
+    case 'UnquotedStringValueContext':
+      return ctx.text;
+    case 'IncompleteLeftQuotedStringValueContext':
+      return ctx.text.slice(1);
+    case 'IncompleteRightQuotedStringValueContext':
+      return ctx.text.slice(0, -1);
+    case 'QuotedStringValueContext':
+      return ctx.text.slice(1, -1);
+    default:
+      return ctx?.text ?? '';
+  }
 }

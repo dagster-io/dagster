@@ -272,16 +272,6 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => Result;
 
   /**
-   * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitIncompleteAttributeExpressionMissingValue?: (
-    ctx: IncompleteAttributeExpressionMissingValueContext,
-  ) => Result;
-
-  /**
    * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingSecondValue`
    * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
@@ -289,6 +279,16 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    */
   visitIncompleteAttributeExpressionMissingSecondValue?: (
     ctx: IncompleteAttributeExpressionMissingSecondValueContext,
+  ) => Result;
+
+  /**
+   * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompleteAttributeExpressionMissingValue?: (
+    ctx: IncompleteAttributeExpressionMissingValueContext,
   ) => Result;
 
   /**

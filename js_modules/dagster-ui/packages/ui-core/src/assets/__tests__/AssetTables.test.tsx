@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
-import {useAssetSelectionInput} from '../../asset-selection/useAssetSelectionInput';
+import {useAssetSelectionInput} from '../../asset-selection/input/useAssetSelectionInput';
 import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';

@@ -393,23 +393,6 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => void;
 
   /**
-   * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
-   * @param ctx the parse tree
-   */
-  enterIncompleteAttributeExpressionMissingValue?: (
-    ctx: IncompleteAttributeExpressionMissingValueContext,
-  ) => void;
-  /**
-   * Exit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
-   * @param ctx the parse tree
-   */
-  exitIncompleteAttributeExpressionMissingValue?: (
-    ctx: IncompleteAttributeExpressionMissingValueContext,
-  ) => void;
-
-  /**
    * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingSecondValue`
    * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
@@ -424,6 +407,23 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    */
   exitIncompleteAttributeExpressionMissingSecondValue?: (
     ctx: IncompleteAttributeExpressionMissingSecondValueContext,
+  ) => void;
+
+  /**
+   * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterIncompleteAttributeExpressionMissingValue?: (
+    ctx: IncompleteAttributeExpressionMissingValueContext,
+  ) => void;
+  /**
+   * Exit a parse tree produced by the `IncompleteAttributeExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitIncompleteAttributeExpressionMissingValue?: (
+    ctx: IncompleteAttributeExpressionMissingValueContext,
   ) => void;
 
   /**

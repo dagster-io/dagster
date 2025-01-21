@@ -26,7 +26,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {useAssetSelectionInput} from '../asset-selection/useAssetSelectionInput';
+import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
