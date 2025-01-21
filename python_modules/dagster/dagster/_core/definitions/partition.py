@@ -1129,7 +1129,10 @@ class DefaultPartitionsSubset(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
-        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+        from dagster._core.definitions.multi_dimensional_partitions import (
+            MultiPartitionKey,
+            MultiPartitionsDefinition,
+        )
 
         def _get_ranges_for_keys(partition_keys: Sequence[str]) -> Sequence[PartitionKeyRange]:
             cur_range_start = None
@@ -1150,16 +1153,39 @@ class DefaultPartitionsSubset(
             return result
 
         if isinstance(partitions_def, MultiPartitionsDefinition):
-            # For multi partitions, we construct the ranges by holding one dimension constant
-            # and constructing the range for the other dimension.
+            # For multi-partitions, we construct the ranges by holding one dimension constant
+            # and constructing the range for the other dimension
             primary_dimension = partitions_def.primary_dimension
-            grouping_keys = primary_dimension.partitions_def.get_partition_keys(
-                current_time, dynamic_partitions_store=dynamic_partitions_store
+            secondary_dimension = partitions_def.secondary_dimension
+
+            primary_keys_in_subset = set()
+            secondary_keys_in_subset = set()
+            for partition_key in self.subset:
+                primary_keys_in_subset.add(
+                    cast(MultiPartitionKey, partition_key).keys_by_dimension[primary_dimension.name]
+                )
+                secondary_keys_in_subset.add(
+                    cast(MultiPartitionKey, partition_key).keys_by_dimension[
+                        secondary_dimension.name
+                    ]
+                )
+
+            # for efficienty, group the keys by whichever dimension has fewer distinct keys
+            grouping_dimension = (
+                primary_dimension
+                if len(primary_keys_in_subset) <= len(secondary_keys_in_subset)
+                else secondary_dimension
             )
+            grouping_keys = (
+                primary_keys_in_subset
+                if grouping_dimension == primary_dimension
+                else secondary_keys_in_subset
+            )
+
             results = []
             for grouping_key in grouping_keys:
                 keys = partitions_def.get_multipartition_keys_with_dimension_value(
-                    dimension_name=primary_dimension.name,
+                    dimension_name=grouping_dimension.name,
                     dimension_partition_key=grouping_key,
                     current_time=current_time,
                     dynamic_partitions_store=dynamic_partitions_store,
