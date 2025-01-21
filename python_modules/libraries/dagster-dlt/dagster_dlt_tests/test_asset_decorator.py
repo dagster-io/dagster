@@ -562,7 +562,7 @@ def test_with_asset_key_replacements(dlt_pipeline: Pipeline) -> None:
 def test_with_asset_key_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     class CustomDagsterDltTranslator(DagsterDltTranslator):
         def get_asset_key(self, resource: DltResource) -> AssetKey:
-            return super().get_asset_key(resource).with_prefix("prefix")
+            return super()._default_asset_key_fn(resource).with_prefix("prefix")
 
     @dlt_assets(
         dlt_source=dlt_source(),

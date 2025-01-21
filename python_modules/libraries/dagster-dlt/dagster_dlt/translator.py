@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Union
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public
@@ -31,16 +31,49 @@ class DagsterDltTranslator:
 
         """
         return AssetSpec(
-            key=self.get_asset_key(data.resource),
-            automation_condition=self.get_automation_condition(data.resource),
-            deps=self.get_deps_asset_keys(data.resource),
-            description=self.get_description(data.resource),
-            group_name=self.get_group_name(data.resource),
-            metadata=self.get_metadata(data.resource),
-            owners=self.get_owners(data.resource),
-            tags=self.get_tags(data.resource),
-            kinds=self.get_kinds(data.resource, data.destination),  # type: ignore
+            key=self._resolve_back_compat_method(
+                "get_asset_key", self._default_asset_key_fn, data.resource
+            ),
+            automation_condition=self._resolve_back_compat_method(
+                "get_automation_condition", self._default_automation_condition_fn, data.resource
+            ),
+            deps=self._resolve_back_compat_method(
+                "get_deps_asset_keys", self._default_deps_fn, data.resource
+            ),
+            description=self._resolve_back_compat_method(
+                "get_description", self._default_description_fn, data.resource
+            ),
+            group_name=self._resolve_back_compat_method(
+                "get_group_name", self._default_group_name_fn, data.resource
+            ),
+            metadata=self._resolve_back_compat_method(
+                "get_metadata", self._default_metadata_fn, data.resource
+            ),
+            owners=self._resolve_back_compat_method(
+                "get_owners", self._default_owners_fn, data.resource
+            ),
+            tags=self._resolve_back_compat_method("get_tags", self._default_tags_fn, data.resource),
+            kinds=self._resolve_back_compat_method(
+                "get_kinds", self._default_kinds_fn, data.resource, data.destination
+            ),
         )
+
+    def _resolve_back_compat_method(
+        self,
+        method_name: str,
+        default_fn: Callable[[Union[DltResource, Destination]], Any],
+        resource: DltResource,
+        destination: Optional[Destination] = None,
+    ):
+        method = getattr(type(self), method_name)
+        base_method = getattr(DagsterDltTranslator, method_name)
+        args = [resource]
+        if method_name == "get_kinds":
+            args.append(destination)
+        if method is not base_method:  # user defined this
+            return method(self, *args)
+        else:
+            return default_fn(*args)
 
     @public
     def get_asset_key(self, resource: DltResource) -> AssetKey:
@@ -55,7 +88,9 @@ class DagsterDltTranslator:
             AssetKey of Dagster asset derived from dlt resource
 
         """
-        return self._default_asset_key_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).key
 
     def _default_asset_key_fn(self, resource: DltResource) -> AssetKey:
         """Defines asset key for a given dlt resource key and dataset name.
@@ -82,7 +117,9 @@ class DagsterDltTranslator:
             Optional[AutoMaterializePolicy]: The auto-materialize policy for a resource
 
         """
-        return self._default_auto_materialize_policy_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).auto_materialize_policy
 
     def _default_auto_materialize_policy_fn(
         self, resource: DltResource
@@ -111,7 +148,9 @@ class DagsterDltTranslator:
             Optional[AutomationCondition]: The automation condition for a resource
 
         """
-        return self._default_automation_condition_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).automation_condition
 
     def _default_automation_condition_fn(
         self, resource: DltResource
@@ -143,7 +182,9 @@ class DagsterDltTranslator:
             Iterable[AssetKey]: The Dagster asset keys upstream of `dlt_resource_key`.
 
         """
-        return self._default_deps_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).deps
 
     def _default_deps_fn(self, resource: DltResource) -> Iterable[AssetKey]:
         """Defines upstream asset dependencies given a dlt resource.
@@ -174,7 +215,9 @@ class DagsterDltTranslator:
         Returns:
             Optional[str]: The Dagster description for the dlt resource.
         """
-        return self._default_description_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).description
 
     def _default_description_fn(self, resource: DltResource) -> Optional[str]:
         """A method that takes in a dlt resource returns the Dagster description of the resource.
@@ -204,7 +247,9 @@ class DagsterDltTranslator:
         Returns:
             Optional[str]: A Dagster group name for the dlt resource.
         """
-        return self._default_group_name_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).group_name
 
     def _default_group_name_fn(self, resource: DltResource) -> Optional[str]:
         """A method that takes in a dlt resource and returns the Dagster group name of the resource.
@@ -227,7 +272,9 @@ class DagsterDltTranslator:
         Returns:
             Mapping[str, Any]: The custom metadata entries for this resource.
         """
-        return self._default_metadata_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).metadata
 
     def _default_metadata_fn(self, resource: DltResource) -> Mapping[str, Any]:
         """Defines resource specific metadata.
@@ -252,7 +299,9 @@ class DagsterDltTranslator:
         Returns:
             Optional[Sequence[str]]: A sequence of Dagster owners for the dlt resource.
         """
-        return self._default_owners_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).owners
 
     def _default_owners_fn(self, resource: DltResource) -> Optional[Sequence[str]]:
         """A method that takes in a dlt resource and returns the Dagster owners of the resource.
@@ -278,7 +327,9 @@ class DagsterDltTranslator:
             Optional[Mapping[str, str]]: A dictionary representing the Dagster tags for the
                 dlt resource.
         """
-        return self._default_tags_fn(resource)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=None)
+        ).tags
 
     def _default_tags_fn(self, resource: DltResource) -> Mapping[str, str]:
         """A method that takes in a dlt resource and returns the Dagster tags of the structure.
@@ -306,17 +357,23 @@ class DagsterDltTranslator:
         Returns:
             Set[str]: The kinds of the asset.
         """
-        return self._default_kinds_fn(resource, destination)
+        return self.get_asset_spec(
+            DltResourceTranslatorData(resource=resource, destination=destination)
+        ).kinds
 
-    def _default_kinds_fn(self, resource: DltResource, destination: Destination) -> set[str]:
+    def _default_kinds_fn(
+        self, resource: DltResource, destination: Optional[Destination]
+    ) -> set[str]:
         """A method that takes in a dlt resource and returns the kinds which should be
         attached. Defaults to the destination type and "dlt".
 
         Args:
             resource (DltResource): dlt resource
-            destination (Destination): dlt destination
+            destination (Optional[Destination]): dlt destination
 
         Returns:
             Set[str]: The kinds of the asset.
         """
-        return {"dlt", destination.destination_name}
+        kinds = {"dlt"}
+        destination = {destination.destination_name} if destination else set()
+        return kinds.union(destination)
