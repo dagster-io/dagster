@@ -253,11 +253,34 @@ def test_base_with_custom_tags_translator_legacy() -> None:
     )
 
     class CustomSlingTranslator(DagsterSlingTranslator):
+        def get_asset_key(self, stream_definition):
+            return super().get_asset_key(stream_definition)
+
+        def get_deps_asset_key(self, stream_definition):
+            return super().get_deps_asset_key(stream_definition)
+
+        def get_description(self, stream_definition):
+            return super().get_description(stream_definition)
+
+        def get_metadata(self, stream_definition):
+            return super().get_metadata(stream_definition)
+
         def get_tags(self, stream_definition):
-            return {"custom_tag": "custom_value"}
+            default_tags = super().get_tags(stream_definition)
+            return {**default_tags, "custom_tag": "custom_value"}
 
         def get_kinds(self, stream_definition):
-            return ["sling", "foo"]
+            default_kinds = super().get_kinds(stream_definition)
+            return default_kinds.union({"sling", "foo"})
+
+        def get_group_name(self, stream_definition):
+            return super().get_group_name(stream_definition)
+
+        def get_freshness_policy(self, stream_definition):
+            return super().get_freshness_policy(stream_definition)
+
+        def get_auto_materialize_policy(self, stream_definition):
+            return super().get_auto_materialize_policy(stream_definition)
 
     @sling_assets(
         replication_config=replication_config_path,
