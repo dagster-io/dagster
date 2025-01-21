@@ -207,6 +207,28 @@ const sidebars: SidebarsConfig = {
       ],
     },
   ],
+  components: [
+    'guides/build/components/index',
+    {
+      type: 'category',
+      label: 'Components',
+      collapsed: false,
+      items: [
+        {
+          type: 'doc',
+          id: 'guides/build/components/creating-a-component',
+        },
+        {
+          type: 'doc',
+          id: 'guides/build/components/using-a-component',
+        },
+        {
+          type: 'doc',
+          id: 'guides/build/components/existing-code-location',
+        },
+      ],
+    },
+  ]
 };
 
 export default sidebars;
