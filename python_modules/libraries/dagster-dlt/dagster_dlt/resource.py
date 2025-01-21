@@ -258,7 +258,11 @@ class DagsterDltResource(ConfigurableResource):
 
         """
         asset_key_dlt_source_resource_mapping = {
-            dagster_dlt_translator.get_asset_spec(DltResourceTranslatorData(resource=dlt_source_resource, destination=dlt_pipeline.destination)).key: dlt_source_resource
+            dagster_dlt_translator.get_asset_spec(
+                DltResourceTranslatorData(
+                    resource=dlt_source_resource, destination=dlt_pipeline.destination
+                )
+            ).key: dlt_source_resource
             for dlt_source_resource in dlt_source.selected_resources.values()
         }
 
