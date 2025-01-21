@@ -152,6 +152,9 @@ def test_masking_op_execution(
 
     step_error = next(event for event in result.all_events if event.is_step_failure)
 
+    # Certain exceptions will not be fully redacted, just the stack trace
+    # For example, system errors and interrupts may contain useful information
+    # or information that the framework itself relies on
     if expect_exc_name_in_error:
         assert (
             step_error.step_failure_data.error
