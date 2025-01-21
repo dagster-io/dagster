@@ -35,7 +35,9 @@ def build_dlt_asset_specs(
     dagster_dlt_translator = dagster_dlt_translator or DagsterDltTranslator()
     return [
         dagster_dlt_translator.get_asset_spec(
-            DltResourceTranslatorData(resource=dlt_source_resource, destination=dlt_pipeline.destination)
+            DltResourceTranslatorData(
+                resource=dlt_source_resource, destination=dlt_pipeline.destination
+            )
         ).merge_attributes(
             metadata={
                 META_KEY_SOURCE: dlt_source,
