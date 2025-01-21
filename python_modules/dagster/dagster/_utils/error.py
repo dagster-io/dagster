@@ -98,7 +98,7 @@ _REDACTED_ERROR_LOGGER_NAME = os.getenv(
 )
 
 
-exception_id_to_masked_error_id: Dict[int, str] = {}
+redacted_exception_id_to_user_facing_identifier: Dict[int, str] = {}
 
 
 @contextlib.contextmanager
@@ -118,13 +118,13 @@ def redact_user_stacktrace_if_enabled():
 
             # Generate a unique error ID for this error, or re-use an existing one
             # if this error has already been seen
-            existing_error_id = exception_id_to_masked_error_id.get(id(e))
+            existing_error_id = redacted_exception_id_to_user_facing_identifier.get(id(e))
 
             if not existing_error_id:
                 error_id = str(uuid.uuid4())
 
                 # Track the error ID for this exception so we can redact it later
-                exception_id_to_masked_error_id[id(e)]= error_id
+                redacted_exception_id_to_user_facing_identifier[id(e)]= error_id
                 masked_logger = logging.getLogger(_REDACTED_ERROR_LOGGER_NAME)
 
                 masked_logger.error(
@@ -195,7 +195,7 @@ def serializable_error_info_from_exc_info(
 
     from dagster._core.errors import DagsterUserCodeProcessError
 
-    err_id = exception_id_to_masked_error_id.get(id(e))
+    err_id = redacted_exception_id_to_user_facing_identifier.get(id(e))
     if err_id:
         if isinstance(e, DagsterUserCodeExecutionError):
             # For user code, we want to completely mask the error message, since
