@@ -7,17 +7,6 @@ export const removeQuotesFromString = (value: string) => {
   return value;
 };
 
-export function isInsideExpressionlessParenthesizedExpression(context: ParserRuleContext) {
-  if (context.parent) {
-    const nodeType = context.parent.constructor.name;
-    if (nodeType.startsWith('Unclosed')) {
-      return true;
-    }
-    return isInsideExpressionlessParenthesizedExpression(context.parent);
-  }
-  return false;
-}
-
 export function getValueNodeValue(ctx: ParserRuleContext | null) {
   switch (ctx?.constructor.name) {
     case 'UnquotedStringValueContext':
@@ -31,4 +20,15 @@ export function getValueNodeValue(ctx: ParserRuleContext | null) {
     default:
       return ctx?.text ?? '';
   }
+}
+
+export function isInsideExpressionlessParenthesizedExpression(context: ParserRuleContext) {
+  if (context.parent) {
+    const nodeType = context.parent.constructor.name;
+    if (nodeType.startsWith('Unclosed')) {
+      return true;
+    }
+    return isInsideExpressionlessParenthesizedExpression(context.parent);
+  }
+  return false;
 }
