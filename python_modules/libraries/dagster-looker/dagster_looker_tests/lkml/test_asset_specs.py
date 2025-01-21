@@ -386,11 +386,6 @@ def test_with_asset_key_replacements_legacy() -> None:
         ) -> AssetKey:
             return super().get_asset_key(lookml_structure).with_prefix("prefix")
 
-        def get_deps(
-            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
-        ) -> Sequence[AssetKey]:
-            return [key.with_prefix("prefix") for key in super().get_deps(lookml_structure)]
-
     my_looker_assets = build_looker_asset_specs(
         project_dir=test_retail_demo_path,
         dagster_looker_translator=CustomDagsterLookerTranslator(),
