@@ -39,10 +39,10 @@ const config: Config = {
             indexName: process.env.ALGOLIA_INDEX_NAME,
             contextualSearch: false,
           },
-    // announcementBar: {
-    //   id: 'announcementBar',
-    //   content: `<div><h3>This is the preview of the new documentation site.</h3> If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/discussions/24816">GitHub</a>. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</div>`,
-    // },
+    announcementBar: {
+      id: 'announcementBar',
+      content: `<div><h3>Welcome to Dagster's new and improved documentation site!</h3> You can find the legacy documentation with content for versions 1.9.8 and earlier at <a target="_blank" href="https://legacy-docs.dagster.io/">legacy-docs.dagster.io</a>.</div>`,
+    },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
