@@ -23,7 +23,7 @@ from dlt.pipeline.pipeline import Pipeline
 
 from dagster_dlt.constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
 from dagster_dlt.dlt_event_iterator import DltEventIterator, DltEventType
-from dagster_dlt.translator import DagsterDltTranslator
+from dagster_dlt.translator import DagsterDltTranslator, DltResourceTranslatorData
 
 
 @experimental
@@ -258,7 +258,11 @@ class DagsterDltResource(ConfigurableResource):
 
         """
         asset_key_dlt_source_resource_mapping = {
-            dagster_dlt_translator.get_asset_key(dlt_source_resource): dlt_source_resource
+            dagster_dlt_translator.get_asset_spec(
+                DltResourceTranslatorData(
+                    resource=dlt_source_resource, destination=dlt_pipeline.destination
+                )
+            ).key: dlt_source_resource
             for dlt_source_resource in dlt_source.selected_resources.values()
         }
 
