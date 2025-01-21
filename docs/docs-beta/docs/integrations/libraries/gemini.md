@@ -27,7 +27,7 @@ pip install dagster dagster-gemini
 
 ### Example
 
-<CodeExample filePath="integrations/gemini.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/gemini.py" language="python" />
 
 ### About Gemini
 
