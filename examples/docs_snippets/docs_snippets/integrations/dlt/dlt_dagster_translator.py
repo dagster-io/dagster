@@ -1,10 +1,8 @@
-from collections.abc import Iterable
-
 import dlt
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
-from dlt.extract.resource import DltResource
+from dagster_dlt.translator import DltResourceTranslatorData
 
-from dagster import AssetExecutionContext, AssetKey
+from dagster import AssetExecutionContext, AssetKey, AssetSpec
 
 
 @dlt.source
@@ -15,13 +13,16 @@ def example_dlt_source():
 
 
 class CustomDagsterDltTranslator(DagsterDltTranslator):
-    def get_asset_key(self, resource: DltResource) -> AssetKey:
-        """Overrides asset key to be the dlt resource name."""
-        return AssetKey(f"{resource.name}")
-
-    def get_deps_asset_keys(self, resource: DltResource) -> Iterable[AssetKey]:
-        """Overrides upstream asset key to be a single source asset."""
-        return [AssetKey("common_upstream_dlt_dependency")]
+    def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
+        """Overrides asset spec to:
+        - Override asset key to be the dlt resource name,
+        - Override upstream asset key to be a single source asset.
+        """
+        default_spec = super().get_asset_spec(data)
+        return default_spec.replace_attributes(
+            key=AssetKey(f"{data.resource.name}"),
+            deps=[AssetKey("common_upstream_dlt_dependency")],
+        )
 
 
 @dlt_assets(
