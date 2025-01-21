@@ -14,3 +14,4 @@ Asset definitions enable a declarative approach to data management, in which cod
 Behind the scenes, the Python function in an asset is an [op](/guides/build/ops). A crucial distinction between asset definitions and ops is that asset definitions know about their dependencies, while ops do not. Ops aren't connected to dependencies until they're placed inside a graph. You do not need to use ops to use Dagster.
 
 :::
+

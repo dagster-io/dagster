@@ -182,7 +182,7 @@ Also, update the dbt command in your `@dbt_assets` definition to pass the defer 
 
 {/* Similar to Dagster software-defined assets, `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema). This allows to provide parameters to jobs at the time they're executed. */}
 
-Similar to Dagster software-defined assets, `@dbt_assets` can use a config system to enable [run configuration](/todo). This allows to provide parameters to jobs at the time they're executed.
+Similar to Dagster software-defined assets, `@dbt_assets` can use a config system to enable [run configuration](/guides/operate/configuration/run-configuration). This allows to provide parameters to jobs at the time they're executed.
 
 In the context of dbt, this can be useful if you want to run commands or flags for specific use cases. For instance, you may want to add [the --full-refresh flag](https://docs.getdbt.com/reference/resource-configs/full_refresh) to your dbt commands in some cases. Using a config system, the `@dbt_assets` object can be easily modified to support this use case.
 
@@ -347,7 +347,7 @@ Dagster also supports fetching additional metadata at dbt execution time to atta
 #### Attaching code reference metadata
 
 {/* Dagster's dbt integration can automatically attach [code reference](/guides/dagster/code-references) metadata to the SQL files backing your dbt assets. */}
-Dagster's dbt integration can automatically attach [code reference](/todo) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />:
+Dagster's dbt integration can automatically attach [code reference](/guides/build/assets/metadata-and-tags/code-references) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/code_references/with_dbt_code_references.py" />
 
@@ -375,8 +375,7 @@ To override the <PyObject section="assets" module="dagster" object="AutomationCo
 
 ## dbt models, code versions, and "Unsynced"
 
-{/* Note that Dagster allows the optional specification of a [`code_version`](/concepts/assets/software-defined-assets#asset-code-versions) for each asset definition, which are used to track changes. */}
-Note that Dagster allows the optional specification of a [`code_version`](/todo) for each asset definition, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to use the "Unsynced" status to indicate which dbt models have new SQL since they were last materialized.
+Note that Dagster allows the optional specification of a [`code_version`](/guides/build/assets/defining-assets#asset-code-versions) for each asset definition, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to use the "Unsynced" status to indicate which dbt models have new SQL since they were last materialized.
 
 ## Loading dbt tests as asset checks
 
