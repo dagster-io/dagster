@@ -1,4 +1,5 @@
 import {ParserRuleContext} from 'antlr4ts';
+import {AttributeValueContext} from './generated/SelectionAutoCompleteParser';
 
 export const removeQuotesFromString = (value: string) => {
   if (value.length > 1 && value[0] === '"' && value[value.length - 1] === '"') {
@@ -17,6 +18,8 @@ export function getValueNodeValue(ctx: ParserRuleContext | null) {
       return ctx.text.slice(0, -1);
     case 'QuotedStringValueContext':
       return ctx.text.slice(1, -1);
+    case 'AttributeValueContext':
+      return getValueNodeValue((ctx as AttributeValueContext).value());
     default:
       return ctx?.text ?? '';
   }
