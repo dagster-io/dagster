@@ -50,6 +50,7 @@ class _Op:
         retry_policy: Optional[RetryPolicy] = None,
         ins: Optional[Mapping[str, In]] = None,
         out: Optional[Union[Out, Mapping[str, Out]]] = None,
+        pool: Optional[str] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.decorator_takes_context = check.bool_param(
@@ -63,6 +64,7 @@ class _Op:
         self.tags = tags
         self.code_version = code_version
         self.retry_policy = retry_policy
+        self.pool = pool
 
         # config will be checked within OpDefinition
         self.config_schema = config_schema
@@ -130,6 +132,7 @@ class _Op:
             code_version=self.code_version,
             retry_policy=self.retry_policy,
             version=None,  # code_version has replaced version
+            pool=self.pool,
         )
         update_wrapper(op_def, compute_fn.decorated_fn)
         return op_def
@@ -152,6 +155,7 @@ def op(
     version: Optional[str] = ...,
     retry_policy: Optional[RetryPolicy] = ...,
     code_version: Optional[str] = ...,
+    pool: Optional[str] = None,
 ) -> _Op: ...
 
 
@@ -171,6 +175,7 @@ def op(
     version: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
+    pool: Optional[str] = None,
 ) -> Union["OpDefinition", _Op]:
     """Create an op with the specified parameters from the decorated function.
 
@@ -264,6 +269,7 @@ def op(
         retry_policy=retry_policy,
         ins=ins,
         out=out,
+        pool=pool,
     )
 
 
