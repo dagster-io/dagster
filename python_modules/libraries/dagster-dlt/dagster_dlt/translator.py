@@ -207,7 +207,7 @@ class DagsterDltTranslator:
         return self._default_group_name_fn(resource)
 
     def _default_group_name_fn(self, resource: DltResource) -> Optional[str]:
-        """A method that takes in a dlt resource and returns the Dagster group name of the resource..
+        """A method that takes in a dlt resource and returns the Dagster group name of the resource.
 
         Args:
             resource (DltResource): dlt resource
