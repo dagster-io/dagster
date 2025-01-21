@@ -6,14 +6,17 @@ import {
   Recognizer,
 } from 'antlr4ts';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
+import {AntlrAssetSelectionVisitor} from 'shared/asset-selection/AntlrAssetSelectionVisitor.oss';
+import {
+  AssetSelectionLexer,
+  AssetSelectionParser,
+} from 'shared/asset-selection/AssetSelectionAntlr.oss';
 
-import {AntlrAssetSelectionVisitor} from './AntlrAssetSelectionVisitor';
-import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
-import {weakMapMemoize} from '../util/weakMapMemoize';
-import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
-import {AssetSelectionParser} from './generated/AssetSelectionParser';
 import {featureEnabled} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 export class AntlrInputErrorListener implements ANTLRErrorListener<any> {
   syntaxError(
@@ -39,6 +42,7 @@ type AssetSelectionQueryResult = {
 export const parseAssetSelectionQuery = (
   all_assets: AssetGraphQueryItem[],
   query: string,
+  supplementaryData?: SupplementaryInformation,
 ): AssetSelectionQueryResult | Error => {
   try {
     const lexer = new AssetSelectionLexer(CharStreams.fromString(query));
@@ -53,7 +57,8 @@ export const parseAssetSelectionQuery = (
 
     const tree = parser.start();
 
-    const visitor = new AntlrAssetSelectionVisitor(all_assets);
+    const visitor = new AntlrAssetSelectionVisitor(all_assets, supplementaryData);
+
     const all_selection = visitor.visit(tree);
     const focus_selection = visitor.focus_assets;
 
@@ -67,9 +72,13 @@ export const parseAssetSelectionQuery = (
 };
 
 export const filterAssetSelectionByQuery = weakMapMemoize(
-  (all_assets: AssetGraphQueryItem[], query: string): AssetSelectionQueryResult => {
+  (
+    all_assets: AssetGraphQueryItem[],
+    query: string,
+    supplementaryData: SupplementaryInformation,
+  ): AssetSelectionQueryResult => {
     if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-      const result = parseAssetSelectionQuery(all_assets, query);
+      const result = parseAssetSelectionQuery(all_assets, query, supplementaryData);
       if (result instanceof Error) {
         // fall back to old behavior
         return filterByQuery(all_assets, query);

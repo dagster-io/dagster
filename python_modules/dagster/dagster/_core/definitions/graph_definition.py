@@ -1,5 +1,5 @@
 from collections import OrderedDict, defaultdict
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
@@ -808,6 +808,13 @@ class GraphDefinition(NodeDefinition):
         """The tags associated with the graph."""
         return super().tags
 
+    @property
+    def pools(self) -> Set[str]:
+        pools = set()
+        for node_def in self.node_defs:
+            pools.update(node_def.pools)
+        return pools
+
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
         """Aliases the graph with a new name.
@@ -1043,7 +1050,7 @@ def _validate_in_mappings(
     from dagster._core.definitions.composition import MappedInputPlaceholder
 
     input_defs_by_name: dict[str, InputDefinition] = OrderedDict()
-    mapping_keys: set[str] = set()
+    mapping_keys: Set[str] = set()
 
     target_input_types_by_graph_input_name: dict[str, set[DagsterType]] = defaultdict(set)
 

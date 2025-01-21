@@ -1,14 +1,13 @@
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
-
+import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 import {
   AllExpressionContext,
   AndExpressionContext,
+  AssetSelectionVisitor,
   AttributeExpressionContext,
   CodeLocationAttributeExprContext,
-  DownTraversalContext,
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
-  FunctionNameContext,
   GroupAttributeExprContext,
   KeyExprContext,
   KeySubstringExprContext,
@@ -21,42 +20,13 @@ import {
   TagAttributeExprContext,
   TraversalAllowedExpressionContext,
   UpAndDownTraversalExpressionContext,
-  UpTraversalContext,
   UpTraversalExpressionContext,
-  ValueContext,
-} from './generated/AssetSelectionParser';
-import {AssetSelectionVisitor} from './generated/AssetSelectionVisitor';
+} from 'shared/asset-selection/AssetSelectionAntlr.oss';
+
+import {getFunctionName, getTraversalDepth, getValue} from './util';
 import {GraphTraverser} from '../app/GraphQueryImpl';
 import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-
-export function getTraversalDepth(ctx: UpTraversalContext | DownTraversalContext): number {
-  const digits = ctx.DIGITS();
-  if (digits) {
-    return parseInt(ctx.text);
-  }
-  return Number.MAX_SAFE_INTEGER;
-}
-
-export function getFunctionName(ctx: FunctionNameContext): string {
-  if (ctx.SINKS()) {
-    return 'sinks';
-  }
-  if (ctx.ROOTS()) {
-    return 'roots';
-  }
-  throw new Error('Invalid function name');
-}
-
-export function getValue(ctx: ValueContext): string {
-  if (ctx.QUOTED_STRING()) {
-    return ctx.text.slice(1, -1);
-  }
-  if (ctx.UNQUOTED_STRING()) {
-    return ctx.text;
-  }
-  throw new Error('Invalid value');
-}
 
 export class AntlrAssetSelectionVisitor
   extends AbstractParseTreeVisitor<Set<AssetGraphQueryItem>>
@@ -70,7 +40,8 @@ export class AntlrAssetSelectionVisitor
     return new Set<AssetGraphQueryItem>();
   }
 
-  constructor(all_assets: AssetGraphQueryItem[]) {
+  // Supplementary data is not used in oss
+  constructor(all_assets: AssetGraphQueryItem[], _supplementaryData?: SupplementaryInformation) {
     super();
     this.all_assets = new Set(all_assets);
     this.focus_assets = new Set();
@@ -192,15 +163,15 @@ export class AntlrAssetSelectionVisitor
 
   visitTagAttributeExpr(ctx: TagAttributeExprContext) {
     const key: string = getValue(ctx.value(0));
+    let value: string | undefined = undefined;
     if (ctx.EQUAL()) {
-      const value: string = getValue(ctx.value(1));
-      return new Set(
-        [...this.all_assets].filter((i) =>
-          i.node.tags.some((t) => t.key === key && t.value === value),
-        ),
-      );
+      value = getValue(ctx.value(1));
     }
-    return new Set([...this.all_assets].filter((i) => i.node.tags.some((t) => t.key === key)));
+    return new Set(
+      [...this.all_assets].filter((i) =>
+        i.node.tags.some((t) => t.key === key && (!value || t.value === value)),
+      ),
+    );
   }
 
   visitOwnerAttributeExpr(ctx: OwnerAttributeExprContext) {

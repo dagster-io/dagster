@@ -3,7 +3,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrOpSelectionVisitor} from './AntlrOpSelectionVisitor';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
-import {AntlrInputErrorListener} from '../asset-selection/AntlrAssetSelection';
+import {AntlrInputErrorListener} from '../asset-selection/filterAssetSelectionByQuery';
 import {OpSelectionLexer} from './generated/OpSelectionLexer';
 import {OpSelectionParser} from './generated/OpSelectionParser';
 import {featureEnabled} from '../app/Flags';

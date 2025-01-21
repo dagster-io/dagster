@@ -20,11 +20,7 @@ import {
   UpTraversalExpressionContext,
 } from './generated/RunSelectionParser';
 import {RunSelectionVisitor} from './generated/RunSelectionVisitor';
-import {
-  getFunctionName,
-  getTraversalDepth,
-  getValue,
-} from '../asset-selection/AntlrAssetSelectionVisitor';
+import {getFunctionName, getTraversalDepth, getValue} from '../asset-selection/util';
 
 export class AntlrRunSelectionVisitor
   extends AbstractParseTreeVisitor<Set<RunGraphQueryItem>>

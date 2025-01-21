@@ -1,9 +1,7 @@
-import {Hint, Hints, Position} from 'codemirror';
-
-import {createSelectionHint} from '../SelectionAutoComplete';
+import {generateAutocompleteResults} from '../SelectionAutoComplete';
 
 describe('createAssetSelectionHint', () => {
-  const selectionHint = createSelectionHint({
+  const selectionHint = generateAutocompleteResults({
     nameBase: 'key',
     attributesMap: {
       key: ['asset1', 'asset2', 'asset3'],
@@ -16,35 +14,18 @@ describe('createAssetSelectionHint', () => {
     functions: ['sinks', 'roots'],
   });
 
-  type HintsModified = Omit<Hints, 'list'> & {
-    list: Array<Hint>;
-  };
-
   function testAutocomplete(testString: string) {
     const cursorIndex = testString.indexOf('|');
     const string = testString.split('|').join('');
 
-    mockEditor.getCursor.mockReturnValue({ch: cursorIndex});
-    mockEditor.getLine.mockReturnValue(string);
-
-    const hints = selectionHint(mockEditor, {}) as HintsModified;
+    const hints = selectionHint(string, cursorIndex);
 
     return {
-      list: hints.list,
-      from: hints.from.ch,
-      to: hints.to.ch,
+      list: hints?.list,
+      from: hints?.from,
+      to: hints?.to,
     };
   }
-
-  const mockEditor = {
-    getCursor: jest.fn(),
-    getLine: jest.fn(),
-    posFromIndex: (index: number) =>
-      ({
-        ch: index,
-        line: 0,
-      }) as Position,
-  } as any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -54,9 +35,24 @@ describe('createAssetSelectionHint', () => {
     // cursorIndex 14
     expect(testAutocomplete('key_substring:|')).toEqual({
       list: [
-        {text: '"asset1"', displayText: 'asset1'},
-        {text: '"asset2"', displayText: 'asset2'},
-        {text: '"asset3"', displayText: 'asset3'},
+        {
+          text: '"asset1"',
+          displayText: 'asset1',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {
+          text: '"asset2"',
+          displayText: 'asset2',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {
+          text: '"asset3"',
+          displayText: 'asset3',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
       ],
       from: 14, // cursor location
       to: 14, // cursor location
@@ -69,10 +65,14 @@ describe('createAssetSelectionHint', () => {
         {
           text: '"marco@dagsterlabs.com"',
           displayText: 'marco@dagsterlabs.com',
+          type: 'attribute',
+          attributeName: 'owner',
         },
         {
           text: '"team:frontend"',
           displayText: 'team:frontend',
+          type: 'attribute',
+          attributeName: 'owner',
         },
       ],
       from: 6, // cursor location
@@ -83,9 +83,9 @@ describe('createAssetSelectionHint', () => {
   it('should suggest tag names after typing tag:', () => {
     expect(testAutocomplete('tag:|')).toEqual({
       list: [
-        {text: '"tag1"', displayText: 'tag1'},
-        {text: '"tag2"', displayText: 'tag2'},
-        {text: '"tag3"', displayText: 'tag3'},
+        {text: '"tag1"', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
+        {text: '"tag2"', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
+        {text: '"tag3"', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
       ],
       from: 4, // cursor location
       to: 4, // cursor location
@@ -93,9 +93,9 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('tag:"|"')).toEqual({
       list: [
-        {text: '"tag1"', displayText: 'tag1'},
-        {text: '"tag2"', displayText: 'tag2'},
-        {text: '"tag3"', displayText: 'tag3'},
+        {text: '"tag1"', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
+        {text: '"tag2"', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
+        {text: '"tag3"', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
       ],
       from: 4, // cursor location
       to: 6, // cursor location
@@ -105,9 +105,9 @@ describe('createAssetSelectionHint', () => {
   it('should suggest logical operators after an expression', () => {
     expect(testAutocomplete('key:"asset1" |')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 13, // cursor location
       to: 13, // cursor location
@@ -115,9 +115,9 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('key:"asset1"|')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 12, // cursor location
       to: 12, // cursor location
@@ -130,6 +130,8 @@ describe('createAssetSelectionHint', () => {
         {
           text: '"marco@dagsterlabs.com"',
           displayText: 'marco@dagsterlabs.com',
+          type: 'attribute',
+          attributeName: 'owner',
         },
       ],
       from: 6, // start of value "marco"
@@ -141,18 +143,53 @@ describe('createAssetSelectionHint', () => {
     // empty case
     expect(testAutocomplete('|')).toEqual({
       list: [
-        {displayText: 'key_substring:', text: 'key_substring:'},
-        {displayText: 'key:', text: 'key:'},
-        {displayText: 'tag:', text: 'tag:'},
-        {displayText: 'owner:', text: 'owner:'},
-        {displayText: 'group:', text: 'group:'},
-        {displayText: 'kind:', text: 'kind:'},
-        {displayText: 'code_location:', text: 'code_location:'},
-        {displayText: 'sinks()', text: 'sinks()'},
-        {displayText: 'roots()', text: 'roots()'},
-        {displayText: 'not', text: 'not '},
-        {displayText: '+', text: '+'},
-        {displayText: '(', text: '()'},
+        {
+          displayText: 'key_substring:',
+          text: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {
+          displayText: 'key:',
+          text: 'key:',
+          type: 'attribute',
+          attributeName: 'key',
+        },
+        {
+          displayText: 'tag:',
+          text: 'tag:',
+          type: 'attribute',
+          attributeName: 'tag',
+        },
+        {
+          displayText: 'owner:',
+          text: 'owner:',
+          type: 'attribute',
+          attributeName: 'owner',
+        },
+        {
+          displayText: 'group:',
+          text: 'group:',
+          type: 'attribute',
+          attributeName: 'group',
+        },
+        {
+          displayText: 'kind:',
+          text: 'kind:',
+          type: 'attribute',
+          attributeName: 'kind',
+        },
+        {
+          displayText: 'code_location:',
+          text: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {displayText: 'sinks()', text: 'sinks()', type: 'function'},
+        {displayText: 'roots()', text: 'roots()', type: 'function'},
+        {displayText: 'not', text: 'not ', type: 'logical_operator'},
+        {displayText: '+', text: '+', type: 'traversal'},
+        {displayText: '(', text: '()', type: 'parenthesis'},
       ],
       from: 0, // cursor location
       to: 0, // cursor location
@@ -161,14 +198,49 @@ describe('createAssetSelectionHint', () => {
     // filtered case
     expect(testAutocomplete('o|')).toEqual({
       list: [
-        {displayText: 'key_substring:o', text: 'key_substring:"o"'},
-        {displayText: 'owner:', text: 'owner:'},
-        {displayText: 'owner:marco@dagsterlabs.com', text: 'owner:"marco@dagsterlabs.com"'},
-        {displayText: 'owner:team:frontend', text: 'owner:"team:frontend"'},
-        {displayText: 'group:group1', text: 'group:"group1"'},
-        {displayText: 'group:group2', text: 'group:"group2"'},
-        {displayText: 'code_location:repo1@location1', text: 'code_location:"repo1@location1"'},
-        {displayText: 'code_location:repo2@location2', text: 'code_location:"repo2@location2"'},
+        {
+          displayText: 'key_substring:o',
+          text: 'key_substring:"o"',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {displayText: 'owner:', text: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {
+          displayText: 'owner:marco@dagsterlabs.com',
+          text: 'owner:"marco@dagsterlabs.com"',
+          type: 'attribute',
+          attributeName: 'owner',
+        },
+        {
+          displayText: 'owner:team:frontend',
+          text: 'owner:"team:frontend"',
+          type: 'attribute',
+          attributeName: 'owner',
+        },
+        {
+          displayText: 'group:group1',
+          text: 'group:"group1"',
+          type: 'attribute',
+          attributeName: 'group',
+        },
+        {
+          displayText: 'group:group2',
+          text: 'group:"group2"',
+          type: 'attribute',
+          attributeName: 'group',
+        },
+        {
+          displayText: 'code_location:repo1@location1',
+          text: 'code_location:"repo1@location1"',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {
+          displayText: 'code_location:repo2@location2',
+          text: 'code_location:"repo2@location2"',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
       ],
       from: 0, // start of input
       to: 1, // cursor location
@@ -176,19 +248,28 @@ describe('createAssetSelectionHint', () => {
   });
 
   it('should handle traversal operators correctly', () => {
-    expect(testAutocomplete('*|')).toEqual({
+    expect(testAutocomplete('+|')).toEqual({
       list: [
-        {displayText: 'key_substring:', text: 'key_substring:'},
-        {displayText: 'key:', text: 'key:'},
-        {displayText: 'tag:', text: 'tag:'},
-        {displayText: 'owner:', text: 'owner:'},
-        {displayText: 'group:', text: 'group:'},
-        {displayText: 'kind:', text: 'kind:'},
-        {displayText: 'code_location:', text: 'code_location:'},
-        {displayText: 'sinks()', text: 'sinks()'},
-        {displayText: 'roots()', text: 'roots()'},
-        {displayText: 'not', text: 'not '},
-        {displayText: '(', text: '()'},
+        {
+          displayText: 'key_substring:',
+          text: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {displayText: 'key:', text: 'key:', type: 'attribute', attributeName: 'key'},
+        {displayText: 'tag:', text: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {displayText: 'owner:', text: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {displayText: 'group:', text: 'group:', type: 'attribute', attributeName: 'group'},
+        {displayText: 'kind:', text: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          displayText: 'code_location:',
+          text: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {displayText: 'sinks()', text: 'sinks()', type: 'function'},
+        {displayText: 'roots()', text: 'roots()', type: 'function'},
+        {displayText: '(', text: '()', type: 'parenthesis'},
       ],
       from: 1, // cursor location
       to: 1, // cursor location
@@ -197,9 +278,9 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('* |')).toEqual({
       from: 2,
       list: [
-        {displayText: 'and', text: ' and '},
-        {displayText: 'or', text: ' or '},
-        {displayText: '+', text: '+'},
+        {displayText: 'and', text: ' and ', type: 'logical_operator'},
+        {displayText: 'or', text: ' or ', type: 'logical_operator'},
+        {displayText: '+', text: '+', type: 'traversal'},
       ],
       to: 2,
     });
@@ -207,18 +288,27 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('+ |')).toEqual({
       from: 2,
       list: [
-        {displayText: 'key_substring:', text: 'key_substring:'},
-        {displayText: 'key:', text: 'key:'},
-        {displayText: 'tag:', text: 'tag:'},
-        {displayText: 'owner:', text: 'owner:'},
-        {displayText: 'group:', text: 'group:'},
-        {displayText: 'kind:', text: 'kind:'},
-        {displayText: 'code_location:', text: 'code_location:'},
-        {displayText: 'sinks()', text: 'sinks()'},
-        {displayText: 'roots()', text: 'roots()'},
-        {displayText: 'not', text: 'not '},
-        {displayText: '+', text: '+'},
-        {displayText: '(', text: '()'},
+        {
+          displayText: 'key_substring:',
+          text: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {displayText: 'key:', text: 'key:', type: 'attribute', attributeName: 'key'},
+        {displayText: 'tag:', text: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {displayText: 'owner:', text: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {displayText: 'group:', text: 'group:', type: 'attribute', attributeName: 'group'},
+        {displayText: 'kind:', text: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          displayText: 'code_location:',
+          text: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {displayText: 'sinks()', text: 'sinks()', type: 'function'},
+        {displayText: 'roots()', text: 'roots()', type: 'function'},
+        {displayText: 'not', text: 'not ', type: 'logical_operator'},
+        {displayText: '(', text: '()', type: 'parenthesis'},
       ],
       to: 2,
     });
@@ -226,17 +316,26 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('+|')).toEqual({
       from: 1,
       list: [
-        {displayText: 'key_substring:', text: 'key_substring:'},
-        {displayText: 'key:', text: 'key:'},
-        {displayText: 'tag:', text: 'tag:'},
-        {displayText: 'owner:', text: 'owner:'},
-        {displayText: 'group:', text: 'group:'},
-        {displayText: 'kind:', text: 'kind:'},
-        {displayText: 'code_location:', text: 'code_location:'},
-        {displayText: 'sinks()', text: 'sinks()'},
-        {displayText: 'roots()', text: 'roots()'},
-        {displayText: '+', text: '+'},
-        {displayText: '(', text: '()'},
+        {
+          displayText: 'key_substring:',
+          text: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {displayText: 'key:', text: 'key:', type: 'attribute', attributeName: 'key'},
+        {displayText: 'tag:', text: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {displayText: 'owner:', text: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {displayText: 'group:', text: 'group:', type: 'attribute', attributeName: 'group'},
+        {displayText: 'kind:', text: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          displayText: 'code_location:',
+          text: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {displayText: 'sinks()', text: 'sinks()', type: 'function'},
+        {displayText: 'roots()', text: 'roots()', type: 'function'},
+        {displayText: '(', text: '()', type: 'parenthesis'},
       ],
       to: 1,
     });
@@ -245,8 +344,18 @@ describe('createAssetSelectionHint', () => {
   it('should suggest code locations after typing code_location:', () => {
     expect(testAutocomplete('code_location:|')).toEqual({
       list: [
-        {text: '"repo1@location1"', displayText: 'repo1@location1'},
-        {text: '"repo2@location2"', displayText: 'repo2@location2'},
+        {
+          text: '"repo1@location1"',
+          displayText: 'repo1@location1',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {
+          text: '"repo2@location2"',
+          displayText: 'repo2@location2',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
       ],
       from: 14,
       to: 14,
@@ -256,17 +365,27 @@ describe('createAssetSelectionHint', () => {
   it('should handle incomplete "not" expressions', () => {
     expect(testAutocomplete('not|')).toEqual({
       list: [
-        {text: ' key_substring:', displayText: 'key_substring:'},
-        {text: ' key:', displayText: 'key:'},
-        {text: ' tag:', displayText: 'tag:'},
-        {text: ' owner:', displayText: 'owner:'},
-        {text: ' group:', displayText: 'group:'},
-        {text: ' kind:', displayText: 'kind:'},
-        {text: ' code_location:', displayText: 'code_location:'},
-        {text: ' sinks()', displayText: 'sinks()'},
-        {text: ' roots()', displayText: 'roots()'},
-        {text: ' +', displayText: '+'},
-        {text: ' ()', displayText: '('},
+        {
+          text: ' key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: ' key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: ' tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: ' owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: ' group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: ' kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: ' code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: ' sinks()', displayText: 'sinks()', type: 'function'},
+        {text: ' roots()', displayText: 'roots()', type: 'function'},
+        {text: ' +', displayText: '+', type: 'traversal'},
+        {text: ' ()', displayText: '(', type: 'parenthesis'},
       ],
       from: 3, // cursor location
       to: 3, // cursor location
@@ -274,17 +393,27 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('not |')).toEqual({
       list: [
-        {text: 'key_substring:', displayText: 'key_substring:'},
-        {text: 'key:', displayText: 'key:'},
-        {text: 'tag:', displayText: 'tag:'},
-        {text: 'owner:', displayText: 'owner:'},
-        {text: 'group:', displayText: 'group:'},
-        {text: 'kind:', displayText: 'kind:'},
-        {text: 'code_location:', displayText: 'code_location:'},
-        {text: 'sinks()', displayText: 'sinks()'},
-        {text: 'roots()', displayText: 'roots()'},
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {
+          text: 'key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: 'key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: 'tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: 'owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: 'group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: 'kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: 'code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: 'sinks()', displayText: 'sinks()', type: 'function'},
+        {text: 'roots()', displayText: 'roots()', type: 'function'},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 4, // cursor location
       to: 4, // cursor location
@@ -294,18 +423,28 @@ describe('createAssetSelectionHint', () => {
   it('should handle incomplete and expressions', () => {
     expect(testAutocomplete('key:"asset1" and |')).toEqual({
       list: [
-        {text: 'key_substring:', displayText: 'key_substring:'},
-        {text: 'key:', displayText: 'key:'},
-        {text: 'tag:', displayText: 'tag:'},
-        {text: 'owner:', displayText: 'owner:'},
-        {text: 'group:', displayText: 'group:'},
-        {text: 'kind:', displayText: 'kind:'},
-        {text: 'code_location:', displayText: 'code_location:'},
-        {text: 'sinks()', displayText: 'sinks()'},
-        {text: 'roots()', displayText: 'roots()'},
-        {text: 'not ', displayText: 'not'},
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {
+          text: 'key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: 'key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: 'tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: 'owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: 'group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: 'kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: 'code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: 'sinks()', displayText: 'sinks()', type: 'function'},
+        {text: 'roots()', displayText: 'roots()', type: 'function'},
+        {text: 'not ', displayText: 'not', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 17, // cursor location
       to: 17, // cursor location
@@ -315,18 +454,28 @@ describe('createAssetSelectionHint', () => {
   it('should handle incomplete or expressions', () => {
     expect(testAutocomplete('key:"asset1" or |')).toEqual({
       list: [
-        {text: 'key_substring:', displayText: 'key_substring:'},
-        {text: 'key:', displayText: 'key:'},
-        {text: 'tag:', displayText: 'tag:'},
-        {text: 'owner:', displayText: 'owner:'},
-        {text: 'group:', displayText: 'group:'},
-        {text: 'kind:', displayText: 'kind:'},
-        {text: 'code_location:', displayText: 'code_location:'},
-        {text: 'sinks()', displayText: 'sinks()'},
-        {text: 'roots()', displayText: 'roots()'},
-        {text: 'not ', displayText: 'not'},
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {
+          text: 'key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: 'key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: 'tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: 'owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: 'group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: 'kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: 'code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: 'sinks()', displayText: 'sinks()', type: 'function'},
+        {text: 'roots()', displayText: 'roots()', type: 'function'},
+        {text: 'not ', displayText: 'not', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 16, // cursor location
       to: 16, // cursor location
@@ -336,9 +485,24 @@ describe('createAssetSelectionHint', () => {
   it('should handle incomplete quoted strings gracefully', () => {
     expect(testAutocomplete('key:"asse|')).toEqual({
       list: [
-        {displayText: 'asset1', text: '"asset1"'},
-        {displayText: 'asset2', text: '"asset2"'},
-        {displayText: 'asset3', text: '"asset3"'},
+        {
+          displayText: 'asset1',
+          text: '"asset1"',
+          type: 'attribute',
+          attributeName: 'key',
+        },
+        {
+          displayText: 'asset2',
+          text: '"asset2"',
+          type: 'attribute',
+          attributeName: 'key',
+        },
+        {
+          displayText: 'asset3',
+          text: '"asset3"',
+          type: 'attribute',
+          attributeName: 'key',
+        },
       ],
       from: 4, // start of value
       to: 9, // end of value
@@ -350,18 +514,28 @@ describe('createAssetSelectionHint', () => {
       testAutocomplete('sinks(key_substring:"FIVETRAN/google_ads/ad_group_history" or |)'),
     ).toEqual({
       list: [
-        {text: 'key_substring:', displayText: 'key_substring:'},
-        {text: 'key:', displayText: 'key:'},
-        {text: 'tag:', displayText: 'tag:'},
-        {text: 'owner:', displayText: 'owner:'},
-        {text: 'group:', displayText: 'group:'},
-        {text: 'kind:', displayText: 'kind:'},
-        {text: 'code_location:', displayText: 'code_location:'},
-        {text: 'sinks()', displayText: 'sinks()'},
-        {text: 'roots()', displayText: 'roots()'},
-        {text: 'not ', displayText: 'not'},
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {
+          text: 'key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: 'key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: 'tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: 'owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: 'group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: 'kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: 'code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: 'sinks()', displayText: 'sinks()', type: 'function'},
+        {text: 'roots()', displayText: 'roots()', type: 'function'},
+        {text: 'not ', displayText: 'not', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 62, // cursor location
       to: 62, // cursor location
@@ -374,18 +548,28 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       list: [
         // Inserts a space before the string
-        {text: ' key_substring:', displayText: 'key_substring:'},
-        {text: ' key:', displayText: 'key:'},
-        {text: ' tag:', displayText: 'tag:'},
-        {text: ' owner:', displayText: 'owner:'},
-        {text: ' group:', displayText: 'group:'},
-        {text: ' kind:', displayText: 'kind:'},
-        {text: ' code_location:', displayText: 'code_location:'},
-        {text: ' sinks()', displayText: 'sinks()'},
-        {text: ' roots()', displayText: 'roots()'},
-        {text: ' not ', displayText: 'not'},
-        {text: ' +', displayText: '+'},
-        {text: ' ()', displayText: '('},
+        {
+          text: ' key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: ' key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: ' tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: ' owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: ' group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: ' kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: ' code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: ' sinks()', displayText: 'sinks()', type: 'function'},
+        {text: ' roots()', displayText: 'roots()', type: 'function'},
+        {text: ' not ', displayText: 'not', type: 'logical_operator'},
+        {text: ' +', displayText: '+', type: 'traversal'},
+        {text: ' ()', displayText: '(', type: 'parenthesis'},
       ],
       from: 61, // cursor location
       to: 61, // cursor location
@@ -402,14 +586,20 @@ describe('createAssetSelectionHint', () => {
         {
           text: '"asset1"',
           displayText: 'asset1',
+          type: 'attribute',
+          attributeName: 'key_substring',
         },
         {
           text: '"asset2"',
           displayText: 'asset2',
+          type: 'attribute',
+          attributeName: 'key_substring',
         },
         {
           text: '"asset3"',
           displayText: 'asset3',
+          type: 'attribute',
+          attributeName: 'key_substring',
         },
       ],
       from: 76, // cursor location
@@ -420,9 +610,9 @@ describe('createAssetSelectionHint', () => {
   it('suggestions after downtraversal "+"', () => {
     expect(testAutocomplete('key:"value"+|')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 12, // cursor location
       to: 12, // cursor location
@@ -431,9 +621,9 @@ describe('createAssetSelectionHint', () => {
     // UpAndDownTraversal
     expect(testAutocomplete('+key:"value"|+')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 12, // cursor location
       to: 12, // cursor location
@@ -442,9 +632,9 @@ describe('createAssetSelectionHint', () => {
     // DownTraversal
     expect(testAutocomplete('key:"value"|+')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 11, // cursor location
       to: 11, // cursor location
@@ -457,18 +647,28 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       list: [
         // Inserts a space before the string
-        {text: 'key_substring:', displayText: 'key_substring:'},
-        {text: 'key:', displayText: 'key:'},
-        {text: 'tag:', displayText: 'tag:'},
-        {text: 'owner:', displayText: 'owner:'},
-        {text: 'group:', displayText: 'group:'},
-        {text: 'kind:', displayText: 'kind:'},
-        {text: 'code_location:', displayText: 'code_location:'},
-        {text: 'sinks()', displayText: 'sinks()'},
-        {text: 'roots()', displayText: 'roots()'},
-        {text: 'not ', displayText: 'not'},
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {
+          text: 'key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: 'key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: 'tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: 'owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: 'group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: 'kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: 'code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: 'sinks()', displayText: 'sinks()', type: 'function'},
+        {text: 'roots()', displayText: 'roots()', type: 'function'},
+        {text: 'not ', displayText: 'not', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 71, // cursor position
       to: 71, // cursor position
@@ -479,18 +679,28 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('(|)')).toEqual({
       list: [
         // Inserts a space before the string
-        {text: 'key_substring:', displayText: 'key_substring:'},
-        {text: 'key:', displayText: 'key:'},
-        {text: 'tag:', displayText: 'tag:'},
-        {text: 'owner:', displayText: 'owner:'},
-        {text: 'group:', displayText: 'group:'},
-        {text: 'kind:', displayText: 'kind:'},
-        {text: 'code_location:', displayText: 'code_location:'},
-        {text: 'sinks()', displayText: 'sinks()'},
-        {text: 'roots()', displayText: 'roots()'},
-        {text: 'not ', displayText: 'not'},
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {
+          text: 'key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: 'key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: 'tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: 'owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: 'group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: 'kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: 'code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: 'sinks()', displayText: 'sinks()', type: 'function'},
+        {text: 'roots()', displayText: 'roots()', type: 'function'},
+        {text: 'not ', displayText: 'not', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 1, // cursor location
       to: 1, // cursor location
@@ -500,18 +710,28 @@ describe('createAssetSelectionHint', () => {
   it('suggestions outside parenthesized expression before', () => {
     expect(testAutocomplete('|()')).toEqual({
       list: [
-        {text: 'key_substring:', displayText: 'key_substring:'},
-        {text: 'key:', displayText: 'key:'},
-        {text: 'tag:', displayText: 'tag:'},
-        {text: 'owner:', displayText: 'owner:'},
-        {text: 'group:', displayText: 'group:'},
-        {text: 'kind:', displayText: 'kind:'},
-        {text: 'code_location:', displayText: 'code_location:'},
-        {text: 'sinks()', displayText: 'sinks()'},
-        {text: 'roots()', displayText: 'roots()'},
-        {text: 'not ', displayText: 'not'},
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {
+          text: 'key_substring:',
+          displayText: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {text: 'key:', displayText: 'key:', type: 'attribute', attributeName: 'key'},
+        {text: 'tag:', displayText: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {text: 'owner:', displayText: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {text: 'group:', displayText: 'group:', type: 'attribute', attributeName: 'group'},
+        {text: 'kind:', displayText: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          text: 'code_location:',
+          displayText: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {text: 'sinks()', displayText: 'sinks()', type: 'function'},
+        {text: 'roots()', displayText: 'roots()', type: 'function'},
+        {text: 'not ', displayText: 'not', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 0, // cursor position
       to: 0, // cursor position
@@ -521,9 +741,9 @@ describe('createAssetSelectionHint', () => {
   it('suggestions outside parenthesized expression after', () => {
     expect(testAutocomplete('()|')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 2, // cursor position
       to: 2, // cursor position
@@ -533,9 +753,9 @@ describe('createAssetSelectionHint', () => {
   it('suggestions within parenthesized expression', () => {
     expect(testAutocomplete('(tag:"dagster/kind/dlt"|)')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 23, // cursor position
       to: 23, // cursor position
@@ -543,25 +763,32 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('sinks(key_substring:"set" or key_substring:"asset"|)')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 50, // cursor position
       to: 50, // cursor position
     });
 
     expect(testAutocomplete('sinks(key_substring:"asset" or key_substring:"s|et2")')).toEqual({
-      list: [{text: '"asset2"', displayText: 'asset2'}],
+      list: [
+        {
+          text: '"asset2"',
+          displayText: 'asset2',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+      ],
       from: 45, // start of value
       to: 51, // end of value
     });
 
     expect(testAutocomplete('sinks(key_substring:"sset1"| or key_substring:"set")')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 27, // cursor position
       to: 27, // cursor position
@@ -571,9 +798,9 @@ describe('createAssetSelectionHint', () => {
   it('makes suggestions around traversals', () => {
     expect(testAutocomplete('sinks()+2|')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 9, // start of value
       to: 9, // end of value
@@ -581,9 +808,9 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('sinks()+|+')).toEqual({
       list: [
-        {text: ' and ', displayText: 'and'},
-        {text: ' or ', displayText: 'or'},
-        {text: '+', displayText: '+'},
+        {text: ' and ', displayText: 'and', type: 'logical_operator'},
+        {text: ' or ', displayText: 'or', type: 'logical_operator'},
+        {text: '+', displayText: '+', type: 'traversal'},
       ],
       from: 8, // start of value
       to: 8, // end of value
@@ -591,8 +818,8 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('|2+sinks()+2')).toEqual({
       list: [
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 0, // start of value
       to: 0, // end of value
@@ -600,8 +827,8 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('2|+sinks()+2')).toEqual({
       list: [
-        {text: '+', displayText: '+'},
-        {text: '()', displayText: '('},
+        {text: '+', displayText: '+', type: 'traversal'},
+        {text: '()', displayText: '(', type: 'parenthesis'},
       ],
       from: 1, // start of value
       to: 1, // end of value
@@ -611,18 +838,28 @@ describe('createAssetSelectionHint', () => {
   it('makes suggestions for IncompleteExpression inside of the ParenthesizedExpression', () => {
     expect(testAutocomplete('(key:tag and |)')).toEqual({
       list: [
-        {displayText: 'key_substring:', text: 'key_substring:'},
-        {displayText: 'key:', text: 'key:'},
-        {displayText: 'tag:', text: 'tag:'},
-        {displayText: 'owner:', text: 'owner:'},
-        {displayText: 'group:', text: 'group:'},
-        {displayText: 'kind:', text: 'kind:'},
-        {displayText: 'code_location:', text: 'code_location:'},
-        {displayText: 'sinks()', text: 'sinks()'},
-        {displayText: 'roots()', text: 'roots()'},
-        {displayText: 'not', text: 'not '},
-        {displayText: '+', text: '+'},
-        {displayText: '(', text: '()'},
+        {
+          displayText: 'key_substring:',
+          text: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {displayText: 'key:', text: 'key:', type: 'attribute', attributeName: 'key'},
+        {displayText: 'tag:', text: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {displayText: 'owner:', text: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {displayText: 'group:', text: 'group:', type: 'attribute', attributeName: 'group'},
+        {displayText: 'kind:', text: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          displayText: 'code_location:',
+          text: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {displayText: 'sinks()', text: 'sinks()', type: 'function'},
+        {displayText: 'roots()', text: 'roots()', type: 'function'},
+        {displayText: 'not', text: 'not ', type: 'logical_operator'},
+        {displayText: '+', text: '+', type: 'traversal'},
+        {displayText: '(', text: '()', type: 'parenthesis'},
       ],
       from: 13,
       to: 13,
@@ -630,18 +867,28 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('(key:tag and|)')).toEqual({
       list: [
-        {displayText: 'key_substring:', text: ' key_substring:'},
-        {displayText: 'key:', text: ' key:'},
-        {displayText: 'tag:', text: ' tag:'},
-        {displayText: 'owner:', text: ' owner:'},
-        {displayText: 'group:', text: ' group:'},
-        {displayText: 'kind:', text: ' kind:'},
-        {displayText: 'code_location:', text: ' code_location:'},
-        {displayText: 'sinks()', text: ' sinks()'},
-        {displayText: 'roots()', text: ' roots()'},
-        {displayText: 'not', text: ' not '},
-        {displayText: '+', text: ' +'},
-        {displayText: '(', text: ' ()'},
+        {
+          displayText: 'key_substring:',
+          text: ' key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {displayText: 'key:', text: ' key:', type: 'attribute', attributeName: 'key'},
+        {displayText: 'tag:', text: ' tag:', type: 'attribute', attributeName: 'tag'},
+        {displayText: 'owner:', text: ' owner:', type: 'attribute', attributeName: 'owner'},
+        {displayText: 'group:', text: ' group:', type: 'attribute', attributeName: 'group'},
+        {displayText: 'kind:', text: ' kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          displayText: 'code_location:',
+          text: ' code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {displayText: 'sinks()', text: ' sinks()', type: 'function'},
+        {displayText: 'roots()', text: ' roots()', type: 'function'},
+        {displayText: 'not', text: ' not ', type: 'logical_operator'},
+        {displayText: '+', text: ' +', type: 'traversal'},
+        {displayText: '(', text: ' ()', type: 'parenthesis'},
       ],
       from: 12,
       to: 12,
@@ -649,18 +896,28 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('(key:tag and| )')).toEqual({
       list: [
-        {displayText: 'key_substring:', text: ' key_substring:'},
-        {displayText: 'key:', text: ' key:'},
-        {displayText: 'tag:', text: ' tag:'},
-        {displayText: 'owner:', text: ' owner:'},
-        {displayText: 'group:', text: ' group:'},
-        {displayText: 'kind:', text: ' kind:'},
-        {displayText: 'code_location:', text: ' code_location:'},
-        {displayText: 'sinks()', text: ' sinks()'},
-        {displayText: 'roots()', text: ' roots()'},
-        {displayText: 'not', text: ' not '},
-        {displayText: '+', text: ' +'},
-        {displayText: '(', text: ' ()'},
+        {
+          displayText: 'key_substring:',
+          text: ' key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {displayText: 'key:', text: ' key:', type: 'attribute', attributeName: 'key'},
+        {displayText: 'tag:', text: ' tag:', type: 'attribute', attributeName: 'tag'},
+        {displayText: 'owner:', text: ' owner:', type: 'attribute', attributeName: 'owner'},
+        {displayText: 'group:', text: ' group:', type: 'attribute', attributeName: 'group'},
+        {displayText: 'kind:', text: ' kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          displayText: 'code_location:',
+          text: ' code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {displayText: 'sinks()', text: ' sinks()', type: 'function'},
+        {displayText: 'roots()', text: ' roots()', type: 'function'},
+        {displayText: 'not', text: ' not ', type: 'logical_operator'},
+        {displayText: '+', text: ' +', type: 'traversal'},
+        {displayText: '(', text: ' ()', type: 'parenthesis'},
       ],
       from: 12,
       to: 12,
@@ -673,10 +930,10 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       from: 59,
       list: [
-        {displayText: 'and', text: ' and '},
-        {displayText: 'or', text: ' or '},
-        {displayText: '+', text: '+'},
-        {displayText: ')', text: ')'},
+        {displayText: 'and', text: ' and ', type: 'logical_operator'},
+        {displayText: 'or', text: ' or ', type: 'logical_operator'},
+        {displayText: '+', text: '+', type: 'traversal'},
+        {displayText: ')', text: ')', type: 'parenthesis'},
       ],
       to: 59,
     });
@@ -688,18 +945,28 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       from: 35,
       list: [
-        {displayText: 'key_substring:', text: 'key_substring:'},
-        {displayText: 'key:', text: 'key:'},
-        {displayText: 'tag:', text: 'tag:'},
-        {displayText: 'owner:', text: 'owner:'},
-        {displayText: 'group:', text: 'group:'},
-        {displayText: 'kind:', text: 'kind:'},
-        {displayText: 'code_location:', text: 'code_location:'},
-        {displayText: 'sinks()', text: 'sinks()'},
-        {displayText: 'roots()', text: 'roots()'},
-        {displayText: 'not', text: 'not '},
-        {displayText: '+', text: '+'},
-        {displayText: '(', text: '()'},
+        {
+          displayText: 'key_substring:',
+          text: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
+        },
+        {displayText: 'key:', text: 'key:', type: 'attribute', attributeName: 'key'},
+        {displayText: 'tag:', text: 'tag:', type: 'attribute', attributeName: 'tag'},
+        {displayText: 'owner:', text: 'owner:', type: 'attribute', attributeName: 'owner'},
+        {displayText: 'group:', text: 'group:', type: 'attribute', attributeName: 'group'},
+        {displayText: 'kind:', text: 'kind:', type: 'attribute', attributeName: 'kind'},
+        {
+          displayText: 'code_location:',
+          text: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
+        },
+        {displayText: 'sinks()', text: 'sinks()', type: 'function'},
+        {displayText: 'roots()', text: 'roots()', type: 'function'},
+        {displayText: 'not', text: 'not ', type: 'logical_operator'},
+        {displayText: '+', text: '+', type: 'traversal'},
+        {displayText: '(', text: '()', type: 'parenthesis'},
       ],
       to: 35,
     });
@@ -714,10 +981,12 @@ describe('createAssetSelectionHint', () => {
         {
           displayText: 'or',
           text: 'or',
+          type: 'logical_operator',
         },
         {
           displayText: 'and',
           text: 'and',
+          type: 'logical_operator',
         },
       ],
       to: 34,
@@ -731,10 +1000,12 @@ describe('createAssetSelectionHint', () => {
         {
           displayText: 'and',
           text: 'and',
+          type: 'logical_operator',
         },
         {
           displayText: 'or',
           text: 'or',
+          type: 'logical_operator',
         },
       ],
       to: 35,
@@ -744,7 +1015,7 @@ describe('createAssetSelectionHint', () => {
   it('suggests attribute names when cursor left of the colon', () => {
     expect(testAutocomplete('tag:"dagster/kind/fivetran" or t|:"a"')).toEqual({
       from: 31,
-      list: [{displayText: 'tag:', text: 'tag:'}],
+      list: [{displayText: 'tag:', text: 'tag:', type: 'attribute', attributeName: 'tag'}],
       to: 33,
     });
   });
@@ -753,9 +1024,9 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('tag:"tag|"')).toEqual({
       from: 4,
       list: [
-        {text: '"tag1"', displayText: 'tag1'},
-        {text: '"tag2"', displayText: 'tag2'},
-        {text: '"tag3"', displayText: 'tag3'},
+        {text: '"tag1"', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
+        {text: '"tag2"', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
+        {text: '"tag3"', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
       ],
       to: 9,
     });
@@ -770,12 +1041,16 @@ describe('createAssetSelectionHint', () => {
       from: 54,
       list: [
         {
+          attributeName: 'key_substring',
           displayText: 'key_substring:',
           text: 'key_substring:',
+          type: 'attribute',
         },
         {
           displayText: 'key:',
           text: 'key:',
+          type: 'attribute',
+          attributeName: 'key',
         },
       ],
       to: 58,
@@ -786,9 +1061,9 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       from: 58,
       list: [
-        {text: '"asset1"', displayText: 'asset1'},
-        {text: '"asset2"', displayText: 'asset2'},
-        {text: '"asset3"', displayText: 'asset3'},
+        {text: '"asset1"', displayText: 'asset1', type: 'attribute', attributeName: 'key'},
+        {text: '"asset2"', displayText: 'asset2', type: 'attribute', attributeName: 'key'},
+        {text: '"asset3"', displayText: 'asset3', type: 'attribute', attributeName: 'key'},
       ],
       to: 60,
     });
@@ -801,50 +1076,69 @@ describe('createAssetSelectionHint', () => {
         {
           displayText: 'key_substring:',
           text: 'key_substring:',
+          type: 'attribute',
+          attributeName: 'key_substring',
         },
         {
           displayText: 'key:',
           text: 'key:',
+          type: 'attribute',
+          attributeName: 'key',
         },
         {
           displayText: 'tag:',
           text: 'tag:',
+          type: 'attribute',
+          attributeName: 'tag',
         },
         {
           displayText: 'owner:',
           text: 'owner:',
+          type: 'attribute',
+          attributeName: 'owner',
         },
         {
           displayText: 'group:',
           text: 'group:',
+          type: 'attribute',
+          attributeName: 'group',
         },
         {
           displayText: 'kind:',
           text: 'kind:',
+          type: 'attribute',
+          attributeName: 'kind',
         },
         {
           displayText: 'code_location:',
           text: 'code_location:',
+          type: 'attribute',
+          attributeName: 'code_location',
         },
         {
           displayText: 'sinks()',
           text: 'sinks()',
+          type: 'function',
         },
         {
           displayText: 'roots()',
           text: 'roots()',
+          type: 'function',
         },
         {
           displayText: 'not',
           text: 'not ',
+          type: 'logical_operator',
         },
         {
           displayText: '+',
           text: '+',
+          type: 'traversal',
         },
         {
           displayText: '(',
           text: '()',
+          type: 'parenthesis',
         },
       ],
       to: 51,
