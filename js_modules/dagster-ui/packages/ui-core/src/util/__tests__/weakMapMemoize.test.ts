@@ -373,8 +373,8 @@ describe('weakMapMemoize with TTL', () => {
     jest.advanceTimersByTime(1000);
 
     // Still in cache
-    expect(memoizedFn(2)).toBe(2);
-    expect(memoizedFn(3)).toBe(4);
+    expect(memoizedFn(2)).toBe(4);
+    expect(memoizedFn(3)).toBe(6);
     expect(spy).toHaveBeenCalledTimes(3);
 
     expect(memoizedFn(1)).toBe(2);
