@@ -1123,6 +1123,24 @@ class DefaultPartitionsSubset(
     def get_partition_keys(self) -> Iterable[str]:
         return self.subset
 
+    def get_ranges_for_keys(self, partition_keys: Sequence[str]) -> Sequence[PartitionKeyRange]:
+        cur_range_start = None
+        cur_range_end = None
+        result = []
+        for partition_key in partition_keys:
+            if partition_key in self.subset:
+                if cur_range_start is None:
+                    cur_range_start = partition_key
+                cur_range_end = partition_key
+            else:
+                if cur_range_start is not None and cur_range_end is not None:
+                    result.append(PartitionKeyRange(cur_range_start, cur_range_end))
+                cur_range_start = cur_range_end = None
+
+        if cur_range_start is not None and cur_range_end is not None:
+            result.append(PartitionKeyRange(cur_range_start, cur_range_end))
+        return result
+
     def get_partition_key_ranges(
         self,
         partitions_def: PartitionsDefinition,
@@ -1133,24 +1151,6 @@ class DefaultPartitionsSubset(
             MultiPartitionKey,
             MultiPartitionsDefinition,
         )
-
-        def _get_ranges_for_keys(partition_keys: Sequence[str]) -> Sequence[PartitionKeyRange]:
-            cur_range_start = None
-            cur_range_end = None
-            result = []
-            for partition_key in partition_keys:
-                if partition_key in self.subset:
-                    if cur_range_start is None:
-                        cur_range_start = partition_key
-                    cur_range_end = partition_key
-                else:
-                    if cur_range_start is not None and cur_range_end is not None:
-                        result.append(PartitionKeyRange(cur_range_start, cur_range_end))
-                    cur_range_start = cur_range_end = None
-
-            if cur_range_start is not None and cur_range_end is not None:
-                result.append(PartitionKeyRange(cur_range_start, cur_range_end))
-            return result
 
         if isinstance(partitions_def, MultiPartitionsDefinition):
             # For multi-partitions, we construct the ranges by holding one dimension constant
@@ -1190,7 +1190,7 @@ class DefaultPartitionsSubset(
                     current_time=current_time,
                     dynamic_partitions_store=dynamic_partitions_store,
                 )
-                results.extend(_get_ranges_for_keys(keys))
+                results.extend(self.get_ranges_for_keys(keys))
             return results
 
         else:
@@ -1198,7 +1198,7 @@ class DefaultPartitionsSubset(
                 current_time, dynamic_partitions_store=dynamic_partitions_store
             )
 
-            return _get_ranges_for_keys(partition_keys)
+            return self.get_ranges_for_keys(partition_keys)
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(

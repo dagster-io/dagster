@@ -11,6 +11,7 @@ from dagster import (
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
+    HourlyPartitionsDefinition,
     PersistedTimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -332,6 +333,75 @@ def test_multi_partition_subset_to_range_conversion_grouping_choices():
         PartitionKeyRange(
             start=MultiPartitionKey({"color": "blue", "number": "4"}),
             end=MultiPartitionKey({"color": "blue", "number": "4"}),
+        ),
+    ]
+    partition_subset = multi_partitions_def.subset_with_partition_keys(
+        group_by_color_target_partitions
+    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
+    assert sorted(partition_key_ranges) == sorted(expected_ranges)
+
+    partition_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        partition_keys_from_ranges.extend(
+            multi_partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+    assert sorted(partition_keys_from_ranges) == sorted(group_by_color_target_partitions)
+
+
+def test_multi_partition_subset_to_range_conversion_time_partition():
+    # Test that converting from a list of partitions keys to a subset, to a list of ranges, and back to
+    # a list of partition keys for MultiPartitionsDefinitions does not lose any partitions.
+    color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    hour_partition = HourlyPartitionsDefinition(
+        start_date="2023-01-01-00:00", end_date="2025-01-01-01:00"
+    )
+    multi_partitions_def = MultiPartitionsDefinition(
+        {
+            "a_date": hour_partition,  # prefix with a so that it is the primary dimension
+            "color": color_partition,
+        }
+    )
+
+    # we expect the grouping to happen by the dimension with the fewest unique values
+    # in this case a_date
+    group_by_hour_target_partitions = [
+        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "red"}),
+        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "yellow"}),
+        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "blue"}),
+    ]
+    # getting ranges from subsets for a multi partition definition contructs ranges for each
+    # key of the primary dimension
+    expected_ranges = [
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "a_date": "2023-01-01-00:00"}),
+            end=MultiPartitionKey({"color": "blue", "a_date": "2023-01-01-00:00"}),
+        ),
+    ]
+    partition_subset = multi_partitions_def.subset_with_partition_keys(
+        group_by_hour_target_partitions
+    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
+    assert sorted(partition_key_ranges) == sorted(expected_ranges)
+
+    partition_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        partition_keys_from_ranges.extend(
+            multi_partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+    assert sorted(partition_keys_from_ranges) == sorted(group_by_hour_target_partitions)
+
+    # we expect the grouping to happen by the dimension with the fewest unique values
+    # in this case color
+    group_by_color_target_partitions = (
+        multi_partitions_def.get_multipartition_keys_with_dimension_value(
+            dimension_name="color", dimension_partition_key="red"
+        )
+    )
+    expected_ranges = [
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "a_date": "2023-01-01-00:00"}),
+            end=MultiPartitionKey({"color": "red", "a_date": "2025-01-01-00:00"}),
         ),
     ]
     partition_subset = multi_partitions_def.subset_with_partition_keys(
