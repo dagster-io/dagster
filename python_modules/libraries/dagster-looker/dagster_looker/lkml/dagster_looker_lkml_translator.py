@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Any, Callable, Literal, Optional, cast
 
 from dagster import AssetKey, AssetSpec
-from dagster._annotations import experimental, public
+from dagster._annotations import experimental, public, superseded
+from dagster._utils.warnings import supersession_warning
 from sqlglot import ParseError, exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
 
@@ -239,10 +240,20 @@ class DagsterLookerLkmlTranslator:
         method = getattr(type(self), method_name)
         base_method = getattr(DagsterLookerLkmlTranslator, method_name)
         if method is not base_method:  # user defined this
+            supersession_warning(
+                subject=method_name,
+                additional_warn_text=(
+                    f"Instead of overriding DagsterLookerLkmlTranslator.{method_name}(), "
+                    f"override DagsterLookerLkmlTranslator.get_asset_spec()."
+                ),
+            )
             return method(self, lookml_structure)
         else:
             return default_fn(lookml_structure)
 
+    @superseded(
+        additional_warn_text="Use `DagsterLookerLkmlTranslator.get_asset_spec(...).key` instead.",
+    )
     @public
     def get_asset_key(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
@@ -324,6 +335,12 @@ class DagsterLookerLkmlTranslator:
             f"Unsupported LookML structure type `{lookml_structure_type}` at path `{lookml_structure_path}`"
         )
 
+    @superseded(
+        additional_warn_text=(
+            "Iterate over `DagsterLookerLkmlTranslator.get_asset_spec(...).deps` "
+            "to access `AssetDep.asset_key` instead."
+        ),
+    )
     @public
     def get_deps(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
@@ -399,6 +416,9 @@ class DagsterLookerLkmlTranslator:
             f"Unsupported LookML structure type `{lookml_structure_type}` at path `{lookml_structure_path}`"
         )
 
+    @superseded(
+        additional_warn_text="Use `DagsterLookerLkmlTranslator.get_asset_spec(...).description` instead.",
+    )
     @public
     def get_description(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
@@ -454,6 +474,9 @@ class DagsterLookerLkmlTranslator:
 
         return lookml_structure_props.get("description")
 
+    @superseded(
+        additional_warn_text="Use `DagsterLookerLkmlTranslator.get_asset_spec(...).metadata` instead.",
+    )
     @public
     def get_metadata(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
@@ -510,6 +533,9 @@ class DagsterLookerLkmlTranslator:
         """
         return None
 
+    @superseded(
+        additional_warn_text="Use `DagsterLookerLkmlTranslator.get_asset_spec(...).group_name` instead.",
+    )
     @public
     def get_group_name(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
@@ -563,6 +589,9 @@ class DagsterLookerLkmlTranslator:
         """
         return None
 
+    @superseded(
+        additional_warn_text="Use `DagsterLookerLkmlTranslator.get_asset_spec(...).owners` instead.",
+    )
     @public
     def get_owners(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
@@ -616,6 +645,9 @@ class DagsterLookerLkmlTranslator:
         """
         return None
 
+    @superseded(
+        additional_warn_text="Use `DagsterLookerLkmlTranslator.get_asset_spec(...).tags` instead.",
+    )
     @public
     def get_tags(
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
