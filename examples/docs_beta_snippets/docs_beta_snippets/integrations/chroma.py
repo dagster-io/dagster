@@ -1,6 +1,9 @@
 import os
+
+from dagster_chroma import ChromaResource, HttpConfig, LocalConfig
+
 import dagster as dg
-from dagster_chroma import ChromaResource, LocalConfig, HttpConfig
+
 
 @dg.asset
 def my_table(chroma: ChromaResource):
