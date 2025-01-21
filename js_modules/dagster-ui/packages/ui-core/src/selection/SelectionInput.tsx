@@ -84,8 +84,6 @@ export const SelectionAutoCompleteInput = ({
 
   const {autoCompleteResults, loading} = useAutoComplete(innerValue, cursorPosition);
 
-  console.log({autoCompleteResults, loading});
-
   const hintContainerRef = useRef<HTMLDivElement | null>(null);
 
   const focusRef = useRef(false);
@@ -98,7 +96,6 @@ export const SelectionAutoCompleteInput = ({
     // Rather then using a useEffect + setState (extra render), we just set the current value directly
     selectedIndexRef.current = 0;
     if (!autoCompleteResults?.list.length && !loading) {
-      console.log('hiding results cuz not loading');
       showResults.current = false;
     }
     scrollToSelectionRef.current = true;
