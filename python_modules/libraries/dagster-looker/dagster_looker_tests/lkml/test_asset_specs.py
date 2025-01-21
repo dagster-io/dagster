@@ -366,7 +366,6 @@ def test_with_asset_key_replacements() -> None:
             default_spec = super().get_asset_spec(lookml_structure)
             return default_spec.replace_attributes(
                 key=default_spec.key.with_prefix("prefix"),
-                deps=[dep.asset_key.with_prefix("prefix") for dep in default_spec.deps],
             )
 
     my_looker_assets = build_looker_asset_specs(

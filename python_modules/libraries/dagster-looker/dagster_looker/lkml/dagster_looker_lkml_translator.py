@@ -26,13 +26,13 @@ def build_deps_for_looker_dashboard(
 
     return list(
         {
-            dagster_looker_translator.get_asset_key(
+            dagster_looker_translator.get_asset_spec(
                 lookml_structure=(
                     lookml_view_path,
                     "explore",
                     lookml_element_from_dashboard_props,
                 )
-            )
+            ).key
             for lookml_element_from_dashboard_props in itertools.chain(
                 # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#elements_2
                 lookml_dashboard_props.get("elements", []),
@@ -58,13 +58,13 @@ def build_deps_for_looker_explore(
 
     return list(
         {
-            dagster_looker_translator.get_asset_key(
+            dagster_looker_translator.get_asset_spec(
                 lookml_structure=(
                     lookml_explore_path,
                     "view",
                     lookml_view_from_explore_props,
                 )
-            )
+            ).key
             for lookml_view_from_explore_props in itertools.chain(
                 explore_base_view, explore_join_views
             )
@@ -83,18 +83,27 @@ def build_deps_for_looker_view(
     if not derived_table_sql:
         # https://cloud.google.com/looker/docs/reference/param-view-sql-table-name
         sql_table_name = lookml_view_props.get("sql_table_name") or lookml_view_props["name"]
-        sqlglot_table = to_table(
-            sql_table_name.replace("`", ""), dialect=custom_bigquery_dialect_inst
-        )
+        try:
+            sqlglot_table = to_table(
+                sql_table_name.replace("`", ""), dialect=custom_bigquery_dialect_inst
+            )
+        except ParseError as e:
+            logger.warn(
+                f"Failed to parse derived table SQL for view `{sql_table_name}`"
+                f" in file `{lookml_view_path.name}`."
+                " The upstream dependencies for the view will be omitted.\n\n"
+                f"Exception: {e}"
+            )
+            return []
 
         return [
-            dagster_looker_translator.get_asset_key(
+            dagster_looker_translator.get_asset_spec(
                 lookml_structure=(
                     lookml_view_path,
                     "table",
                     {"table": sqlglot_table, "from_structure": lookml_view_props},
                 )
-            )
+            ).key
         ]
 
     # We need to handle the Looker substitution operator ($) properly since the lkml
@@ -104,13 +113,13 @@ def build_deps_for_looker_view(
     upstream_view_pattern = re.compile(r"\${(.*?)\.SQL_TABLE_NAME\}")
     if upstream_looker_views_from_substitution := upstream_view_pattern.findall(derived_table_sql):
         return [
-            dagster_looker_translator.get_asset_key(
+            dagster_looker_translator.get_asset_spec(
                 lookml_structure=(
                     lookml_view_path,
                     "view",
                     {"name": upstream_looker_view_name},
                 )
-            )
+            ).key
             for upstream_looker_view_name in set(upstream_looker_views_from_substitution)
         ]
 
@@ -150,13 +159,13 @@ def build_deps_for_looker_view(
 
     return list(
         {
-            dagster_looker_translator.get_asset_key(
+            dagster_looker_translator.get_asset_spec(
                 lookml_structure=(
                     lookml_view_path,
                     "table",
                     {"table": sqlglot_table, "from_structure": lookml_view_props},
                 )
-            )
+            ).key
             for sqlglot_table in upstream_sqlglot_tables
         }
     )
@@ -305,6 +314,9 @@ class DagsterLookerLkmlTranslator:
             return build_deps_for_looker_view(
                 dagster_looker_translator=self, lookml_structure=lookml_structure
             )
+
+        if lookml_structure_type == "table":
+            return []
 
         raise ValueError(
             f"Unsupported LookML structure type `{lookml_structure_type}` at path `{lookml_structure_path}`"
