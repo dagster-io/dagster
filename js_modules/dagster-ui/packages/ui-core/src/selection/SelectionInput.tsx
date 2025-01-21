@@ -76,8 +76,6 @@ export const SelectionAutoCompleteInput = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const cmInstance = useRef<CodeMirror.Editor | null>(null);
 
-  const [currentPendingValue, setCurrentPendingValue] = useState(value);
-
   const [showResults, setShowResults] = useState({current: false});
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
