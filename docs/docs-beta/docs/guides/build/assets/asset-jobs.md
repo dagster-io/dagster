@@ -14,7 +14,7 @@ Jobs are the main unit of execution and monitoring for [asset definitions](/guid
 
 In this section, we'll demonstrate how to create a few asset jobs that target the following assets:
 
-<CodeExample filePath="guides/data-modeling/asset-jobs/asset-jobs.py" language="python" lineStart="5" lineEnd="18"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-jobs/asset-jobs.py" language="python" lineStart="5" lineEnd="18"/>
 
 To create an asset job, use the [`define_asset_job`](/api/python-api/assets#dagster.define_asset_job) method. An asset-based job is based on the assets the job targets and their dependencies.
 
@@ -23,7 +23,7 @@ You can target one or multiple assets, or create multiple jobs that target overl
 - `all_assets_job` targets all assets
 - `sugary_cereals_job` targets only the `sugary_cereals` asset
 
-<CodeExample filePath="guides/data-modeling/asset-jobs/asset-jobs.py" language="python" lineStart="20" lineEnd="33"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-jobs/asset-jobs.py" language="python" lineStart="20" lineEnd="33"/>
 
 ## Making asset jobs available to Dagster tools
 

@@ -28,7 +28,7 @@ pip install dagster-msteams
 
 ### Example
 
-<CodeExample filePath="integrations/microsoft-teams.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/microsoft-teams.py" language="python" />
 
 ### About Microsoft Teams
 

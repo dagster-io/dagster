@@ -753,3 +753,38 @@ def test_observable_source_asset() -> None:
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
             runs = _get_runs_for_latest_ticks(context)
             assert len(runs) == 0
+
+
+def test_observable_source_asset_is_not_backfilled() -> None:
+    with (
+        get_grpc_workspace_request_context("hourly_observable_with_partitions") as context,
+        get_threadpool_executor() as executor,
+    ):
+        asset_graph = context.create_request_context().asset_graph
+
+        time = datetime.datetime(2024, 8, 16, 1, 35)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+            backfills = _get_backfills_for_latest_ticks(context)
+            assert len(backfills) == 0
+
+        time += datetime.timedelta(hours=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 3
+            assert all(run.asset_selection == {AssetKey("obs")} for run in runs)
+            backfills = _get_backfills_for_latest_ticks(context)
+            assert len(backfills) == 1
+            subsets_by_key = _get_subsets_by_key(backfills[0], asset_graph)
+            assert subsets_by_key.keys() == {AssetKey("mat")}
+
+        time += datetime.timedelta(minutes=1)
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 0
+            backfills = _get_backfills_for_latest_ticks(context)
+            assert len(backfills) == 0

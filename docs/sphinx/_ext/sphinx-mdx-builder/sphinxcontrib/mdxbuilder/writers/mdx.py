@@ -2,6 +2,7 @@ import logging
 import re
 import textwrap
 from collections.abc import Sequence
+from datetime import datetime
 from itertools import groupby
 from typing import TYPE_CHECKING, Any
 
@@ -128,7 +129,7 @@ class MdxWriter(writers.Writer):
     settings_defaults = {}
     output: str
 
-    def __init__(self, builder: "MdxBuilder"):
+    def __init__(self, builder: "MdxBuilder") -> None:
         super().__init__()
         self.builder = builder
 
@@ -341,8 +342,39 @@ class MdxTranslator(SphinxTranslator):
         self.new_state(0)
 
     def depart_document(self, node: Element) -> None:
+        title = next(iter(node.nameids.keys()), "Dagster Python API Reference")
+        title_suffix = self.builder.config.mdx_title_suffix
+        title_meta = self.builder.config.mdx_title_meta
+        meta_description = self.builder.config.mdx_description_meta
+
+        # Escape single quotes in strings
+        title = title.replace("'", "\\'")
+        if title_suffix:
+            title_suffix = title_suffix.replace("'", "\\'")
+        if title_meta:
+            title_meta = title_meta.replace("'", "\\'")
+        if meta_description:
+            meta_description = meta_description.replace("'", "\\'")
+
+        frontmatter = "---\n"
+        frontmatter += f"title: '{title}"
+        if title_suffix:
+            frontmatter += f" {title_suffix}"
+        frontmatter += "'\n"
+
+        if title_meta:
+            frontmatter += f"title_meta: '{title}{title_meta}'\n"
+
+        if meta_description:
+            frontmatter += f"description: '{title}{meta_description}'\n"
+
+        last_update = datetime.now().strftime("%Y-%m-%d")
+        frontmatter += "last_update:\n"
+        frontmatter += f"  date: '{last_update}'\n"
+        frontmatter += "---\n\n"
         self.end_state()
-        self.body = self.nl.join(
+        self.body = frontmatter
+        self.body += self.nl.join(
             line and (" " * indent + line) for indent, lines in self.states[0] for line in lines
         )
         if self.messages:
@@ -352,6 +384,9 @@ class MdxTranslator(SphinxTranslator):
             logger.info("---End MDX Translator messages---")
 
     def visit_section(self, node: Element) -> None:
+        self.end_state(wrap=False, end="\n")
+        self.new_state(0)
+
         self.sectionlevel += 1
         self.add_text(self.starttag(node, "div", CLASS="section"))
 

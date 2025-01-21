@@ -26,7 +26,7 @@ The following example creates two partitions: `daily_sales_data` and `daily_sale
 <details>
 <summary>Show example</summary>
 
-<CodeExample filePath="guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
 
 </details>
 
@@ -34,7 +34,7 @@ However, sometimes you might want to define dependencies between different time-
 
 Consider the following example:
 
-<CodeExample filePath="guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" />
 
 In this example:
 

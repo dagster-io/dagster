@@ -1,12 +1,15 @@
 import os
 import sqlite3
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
 from dagster import (
     AssetExecutionContext,
     AssetKey,
+    AssetSpec,
     Config,
     FreshnessPolicy,
     JsonMetadataValue,
@@ -224,11 +227,60 @@ def test_base_with_custom_tags_translator() -> None:
     )
 
     class CustomSlingTranslator(DagsterSlingTranslator):
+        def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+            default_spec = super().get_asset_spec(stream_definition)
+            return default_spec.replace_attributes(
+                kinds={"sling", "foo"}, tags={"custom_tag": "custom_value"}
+            )
+
+    @sling_assets(
+        replication_config=replication_config_path,
+        dagster_sling_translator=CustomSlingTranslator(),
+    )
+    def my_sling_assets(): ...
+
+    for asset_key in my_sling_assets.keys:
+        assert my_sling_assets.tags_by_key[asset_key] == {
+            "custom_tag": "custom_value",
+            **build_kind_tag("sling"),
+            **build_kind_tag("foo"),
+        }
+
+
+def test_base_with_custom_tags_translator_legacy() -> None:
+    replication_config_path = file_relative_path(
+        __file__, "replication_configs/base_with_default_meta/replication.yaml"
+    )
+
+    class CustomSlingTranslator(DagsterSlingTranslator):
+        def get_asset_key(self, stream_definition):
+            return super().get_asset_key(stream_definition)
+
+        def get_deps_asset_key(self, stream_definition):
+            return super().get_deps_asset_key(stream_definition)
+
+        def get_description(self, stream_definition):
+            return super().get_description(stream_definition)
+
+        def get_metadata(self, stream_definition):
+            return super().get_metadata(stream_definition)
+
         def get_tags(self, stream_definition):
-            return {"custom_tag": "custom_value"}
+            default_tags = super().get_tags(stream_definition)
+            return {**default_tags, "custom_tag": "custom_value"}
 
         def get_kinds(self, stream_definition):
-            return ["sling", "foo"]
+            default_kinds = super().get_kinds(stream_definition)
+            return default_kinds.union({"sling", "foo"})
+
+        def get_group_name(self, stream_definition):
+            return super().get_group_name(stream_definition)
+
+        def get_freshness_policy(self, stream_definition):
+            return super().get_freshness_policy(stream_definition)
+
+        def get_auto_materialize_policy(self, stream_definition):
+            return super().get_auto_materialize_policy(stream_definition)
 
     @sling_assets(
         replication_config=replication_config_path,

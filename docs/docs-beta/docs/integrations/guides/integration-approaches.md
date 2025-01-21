@@ -85,7 +85,7 @@ A guide for writing a factory method based integrations is coming soon!
 
 ## Multi-asset decorators
 
-In the scenario where a single API call or configuration can result in multiple assets, with a shared runtime or dependencies, one may consider creating a multi-asset decorator. Example implementations of this approach include [dbt](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt), [dlt](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-embedded-elt/dagster_embedded_elt/dlt), and [Sling](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-embedded-elt/dagster_embedded_elt/sling).
+In the scenario where a single API call or configuration can result in multiple assets, with a shared runtime or dependencies, one may consider creating a multi-asset decorator. Example implementations of this approach include [dbt](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt), [dlt](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dlt), and [Sling](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/sling).
 
 ### Pros
 

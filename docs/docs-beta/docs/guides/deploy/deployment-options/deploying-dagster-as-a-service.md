@@ -113,5 +113,5 @@ A deployment can have multiple instances of `dagster-webserver`, but should incl
 
 Now that you have Dagster running as a service, you might want to explore:
 
-- [Configuring your Dagster instance](/todo)
+- [Configuring your Dagster instance](/guides/deploy/dagster-instance-configuration)
 - [Setting up schedules and sensors](/guides/automate/schedules)

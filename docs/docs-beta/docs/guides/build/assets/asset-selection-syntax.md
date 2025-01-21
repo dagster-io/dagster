@@ -34,7 +34,7 @@ A query includes a list of clauses. Clauses are separated by commas, except in t
 
 The examples in this section use the following asset graph from the [Dagster University Essentials project](https://github.com/dagster-io/project-dagster-university) to demonstrate how to use the selection syntax:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/asset-selection-syntax-dag.png)
 
 ### Selecting a single asset \{#single-asset}
 
@@ -64,7 +64,7 @@ taxi_zones_file
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-single-asset.png)
 
 </TabItem>
 </Tabs>
@@ -109,7 +109,7 @@ manhattan/manhattan_stats
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-multiple-components.png)
 
 </TabItem>
 </Tabs>
@@ -150,7 +150,7 @@ taxi_zones_file taxi_trips_file
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-disjointed-lineages.png)
 
 </TabItem>
 </Tabs>
@@ -189,7 +189,7 @@ dagster asset materialize --select "*taxi_zones*"
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-entire-lineage.png)
 
 </TabItem>
 </Tabs>
@@ -230,7 +230,7 @@ dagster asset materialize --select "*manhattan_map"
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-upstream-dependencies.png)
 
 </TabItem>
 </Tabs>
@@ -267,7 +267,7 @@ dagster asset materialize --select "++manhattan_map"
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-two-upstream-layers.png)
 
 </TabItem>
 </Tabs>
@@ -308,7 +308,7 @@ taxi_zones_file*
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-downstream-dependencies.png)
 
 </TabItem>
 </Tabs>
@@ -345,7 +345,7 @@ taxi_zones_file++
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/img/placeholder.svg)
+![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-two-downstream-layers.png)
 
 </TabItem>
 </Tabs>
