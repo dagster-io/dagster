@@ -1,6 +1,6 @@
 ---
 title: External resources
-sidebar_position: 20
+sidebar_position: 40
 ---
 
 Dagster resources are objects that provide access to external systems, databases, or services. Resources are used to manage connections to external systems, and are used by Dagster assets and ops. For example, a simple ETL (Extract Transform Load) pipeline fetches data from an API, ingests it into a database, and updates a dashboard. External tools and services this pipeline uses could be:
