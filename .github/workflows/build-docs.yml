@@ -80,13 +80,12 @@ jobs:
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
         if: |
-          github.event_name == 'pull_request' ||
           (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-project-id: ${{ secrets.LEGACY_DOCS_VERCEL_PROJECT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.dagster.dagster-docs.io

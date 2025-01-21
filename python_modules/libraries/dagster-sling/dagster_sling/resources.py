@@ -198,7 +198,7 @@ class SlingResource(ConfigurableResource):
             streams = streams_with_default_dagster_meta(raw_streams, replication_config)
             selected_asset_keys = context.selected_asset_keys
             for stream in streams:
-                asset_key = dagster_sling_translator.get_asset_key(stream)
+                asset_key = dagster_sling_translator.get_asset_spec(stream).key
                 if asset_key in selected_asset_keys:
                     context_streams.update({stream["name"]: stream["config"]})
 
@@ -401,7 +401,7 @@ class SlingResource(ConfigurableResource):
             # TODO: In the future, it'd be nice to yield these materializations as they come in
             # rather than waiting until the end of the replication
             for stream in stream_definitions:
-                asset_key = dagster_sling_translator.get_asset_key(stream)
+                asset_key = dagster_sling_translator.get_asset_spec(stream).key
 
                 object_key = (stream.get("config") or {}).get("object")
                 destination_stream_name = object_key or stream["name"]

@@ -95,7 +95,7 @@ setup(
         "tabulate",
         "tomli<3",
         "tqdm<5",
-        "typing_extensions>=4.4.0,<5",
+        "typing_extensions>=4.10.0,<5",
         'tzdata; platform_system=="Windows"',
         "structlog",
         "sqlalchemy>=1.0,<3",

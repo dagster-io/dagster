@@ -1,6 +1,6 @@
 ---
 title: dagster-cloud CLI
-sidebar_position: 90
+sidebar_position: 40
 ---
 
 The dagster-cloud CLI is a command-line toolkit designed to work with Dagster+.

@@ -1,7 +1,6 @@
 ---
 title: "SCIM provisioning"
 sidebar_position: 30
-unlisted: true
 ---
 
 SCIM provisioning eases the burden of manually provisioning users across your cloud applications. When enabled, you can automatically sync user information from your IdP to Dagster+ and back again, ensuring user data is always up-to-date.
@@ -26,8 +25,7 @@ If you choose to disable SCIM provisioning in Dagster+, users and teams will rem
 
 ## Managing teams
 
-{/* In addition to the above user management changes, there are a few things to keep in mind when managing user groups, otherwise known as Dagster+ [teams](/dagster-plus/account/managing-users/managing-teams). */}
-In addition to the above user management changes, there are a few things to keep in mind when managing user groups, otherwise known as Dagster+ [teams](/todo).
+In addition to the above user management changes, there are a few things to keep in mind when managing user groups, otherwise known as Dagster+ [teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
 
 User groups in your IdP can be mapped to Dagster+ teams, allowing you to centralize the management of user groups and memberships. When SCIM is enabled:
 

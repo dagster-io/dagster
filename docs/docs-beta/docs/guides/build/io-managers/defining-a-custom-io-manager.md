@@ -65,7 +65,7 @@ class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
 
 ### Defining Pythonic I/O managers
 
-Pythonic I/O managers are defined as subclasses of <PyObject section="io-managers" module="dagster" object="ConfigurableIOManager"/>, and similarly to [Pythonic resources](/todo) specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
+Pythonic I/O managers are defined as subclasses of <PyObject section="io-managers" module="dagster" object="ConfigurableIOManager"/>, and similarly to [Pythonic resources](/guides/build/external-resources/) specify any configuration fields as attributes. Each subclass must implement a `handle_output` and `load_input` method, which are called by Dagster at runtime to handle the storing and loading of data.
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/concepts/resources/pythonic_resources.py startafter=start_new_io_manager endbefore=end_new_io_manager dedent=4

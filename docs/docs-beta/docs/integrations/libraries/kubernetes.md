@@ -28,7 +28,7 @@ pip install dagster-k8s
 
 ### Example
 
-<CodeExample filePath="integrations/kubernetes.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/kubernetes.py" language="python" />
 
 ### Deploying to Kubernetes?
 

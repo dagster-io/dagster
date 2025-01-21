@@ -29,9 +29,9 @@ pip install dagster-databricks
 
 ### Example
 
-<CodeExample filePath="integrations/databricks/dagster_code.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/databricks/dagster_code.py" language="python" />
 
-<CodeExample filePath="integrations/databricks/databricks_code.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/databricks/databricks_code.py" language="python" />
 
 ### About Databricks
 
