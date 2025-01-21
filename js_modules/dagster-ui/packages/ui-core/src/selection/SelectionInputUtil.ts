@@ -1,4 +1,5 @@
 import {ParserRuleContext} from 'antlr4ts';
+
 import {AttributeValueContext} from './generated/SelectionAutoCompleteParser';
 
 export const removeQuotesFromString = (value: string) => {
