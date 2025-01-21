@@ -40,11 +40,11 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
     Args:
         client (Optional[boto3.client]): The boto3 AWS EMR containers client used to interact with AWS EMR Containers.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
-            context into AWS EMR containers workload. Defaults to :py:class:`PipesEnvContextInjector`.
+            context into AWS EMR Containers workload. Defaults to :py:class:`PipesEnvContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
-            from the AWS EMR containers workload. It's recommended to use :py:class:`PipesS3MessageReader`.
-        forward_termination (bool): Whether to cancel the AWS EMR containers workload if the Dagster process receives a termination signal.
-        pipes_params_bootstrap_method (Literal["args", "env"]): The method to use to inject parameters into the AWS EMR containers workload. Defaults to "args".
+            from the AWS EMR Containers workload. It's recommended to use :py:class:`PipesS3MessageReader`.
+        forward_termination (bool): Whether to cancel the AWS EMR Containers workload if the Dagster process receives a termination signal.
+        pipes_params_bootstrap_method (Literal["args", "env"]): The method to use to inject parameters into the AWS EMR Containers workload. Defaults to "args".
         waiter_config (Optional[WaiterConfig]): Optional waiter configuration to use. Defaults to 70 days (Delay: 6, MaxAttempts: 1000000).
     """
 

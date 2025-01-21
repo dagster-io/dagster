@@ -1,16 +1,14 @@
 import sys
 
 import boto3
-from dagster_pipes import PipesS3ContextLoader, PipesS3MessageWriter, open_dagster_pipes
+from dagster_pipes import PipesS3MessageWriter, open_dagster_pipes
 from pyspark.sql import SparkSession
 
 
 def main():
     s3_client = boto3.client("s3")
-
     with open_dagster_pipes(
         message_writer=PipesS3MessageWriter(client=s3_client),
-        context_loader=PipesS3ContextLoader(client=s3_client),
     ) as pipes:
         pipes.log.info("Hello from AWS EMR Containers!")
 
@@ -36,11 +34,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# import os
-# import sys
-
-# print(os.getcwd())
-# print(os.environ)
-# print(sys.path)
-# print(sys.executable)
