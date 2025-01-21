@@ -14,7 +14,6 @@ type SelectionInputAutoCompleteResultsProps = {
   onSelect: (suggestion: Suggestion) => void;
   selectedIndex: number;
   setSelectedIndex: React.Dispatch<React.SetStateAction<{current: number}>>;
-  scheduleUpdateValue: () => void;
   scrollToSelection: MutableRefObject<boolean>;
   loading?: boolean;
 };
@@ -24,7 +23,6 @@ export const SelectionInputAutoCompleteResults = ({
   width,
   onSelect,
   selectedIndex,
-  scheduleUpdateValue,
   setSelectedIndex,
   scrollToSelection,
   loading,
@@ -35,8 +33,7 @@ export const SelectionInputAutoCompleteResults = ({
 
   return (
     <div style={{width}}>
-      {/* Call scheduleUpdateValue on scroll to reschedule the updateValue timeout */}
-      <Menu style={{maxHeight: '300px', overflowY: 'auto'}} onScroll={scheduleUpdateValue}>
+      <Menu style={{maxHeight: '300px', overflowY: 'auto'}}>
         {results?.list.map((result, index) => (
           <MenuItem
             key={result.text}
