@@ -61,19 +61,19 @@ class DagsterDltTranslator:
     def _resolve_back_compat_method(
         self,
         method_name: str,
-        default_fn: Callable[[Union[DltResource, Destination]], Any],
+        default_fn: Union[Callable[[DltResource], Any], Callable[[DltResource, Destination], Any]],
         resource: DltResource,
         destination: Optional[Destination] = None,
     ):
         method = getattr(type(self), method_name)
         base_method = getattr(DagsterDltTranslator, method_name)
-        args = [resource]
+        args = (resource,)
         if method_name == "get_kinds":
-            args.append(destination)
+            args += (destination,)
         if method is not base_method:  # user defined this
             return method(self, *args)
         else:
-            return default_fn(*args)
+            return default_fn(*args)  # type: ignore
 
     @public
     def get_asset_key(self, resource: DltResource) -> AssetKey:
@@ -182,9 +182,12 @@ class DagsterDltTranslator:
             Iterable[AssetKey]: The Dagster asset keys upstream of `dlt_resource_key`.
 
         """
-        return self.get_asset_spec(
-            DltResourceTranslatorData(resource=resource, destination=None)
-        ).deps
+        return [
+            dep.asset_key
+            for dep in self.get_asset_spec(
+                DltResourceTranslatorData(resource=resource, destination=None)
+            ).deps
+        ]
 
     def _default_deps_fn(self, resource: DltResource) -> Iterable[AssetKey]:
         """Defines upstream asset dependencies given a dlt resource.
@@ -375,5 +378,5 @@ class DagsterDltTranslator:
             Set[str]: The kinds of the asset.
         """
         kinds = {"dlt"}
-        destination = {destination.destination_name} if destination else set()
-        return kinds.union(destination)
+        destination_set = {destination.destination_name} if destination else set()
+        return kinds.union(destination_set)
