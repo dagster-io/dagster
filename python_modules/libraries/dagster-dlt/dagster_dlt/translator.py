@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from typing import Any, Callable, Optional, Union
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
-from dagster._annotations import public
+from dagster._annotations import public, superseded
+from dagster._utils.warnings import supersession_warning
 from dagster._record import record
 from dlt.common.destination import Destination
 from dlt.extract.resource import DltResource
@@ -71,10 +72,20 @@ class DagsterDltTranslator:
         if method_name == "get_kinds":
             args += (destination,)
         if method is not base_method:  # user defined this
+            supersession_warning(
+                subject=method_name,
+                additional_warn_text=(
+                    f"Instead of overriding DagsterDltTranslator.{method_name}(), "
+                    f"override DagsterDltTranslator.get_asset_spec()."
+                ),
+            )
             return method(self, *args)
         else:
             return default_fn(*args)  # type: ignore
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).key` instead.",
+    )
     @public
     def get_asset_key(self, resource: DltResource) -> AssetKey:
         """Defines asset key for a given dlt resource key and dataset name.
@@ -102,6 +113,9 @@ class DagsterDltTranslator:
         """
         return AssetKey(f"dlt_{resource.source_name}_{resource.name}")
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).auto_materialize_policy` instead.",
+    )
     @public
     def get_auto_materialize_policy(self, resource: DltResource) -> Optional[AutoMaterializePolicy]:
         """Defines resource specific auto materialize policy.
@@ -131,6 +145,9 @@ class DagsterDltTranslator:
         """
         return None
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).automation_condition` instead.",
+    )
     @public
     def get_automation_condition(self, resource: DltResource) -> Optional[AutomationCondition]:
         """Defines resource specific automation condition.
@@ -163,6 +180,11 @@ class DagsterDltTranslator:
             auto_materialize_policy.to_automation_condition() if auto_materialize_policy else None
         )
 
+    @superseded(
+        additional_warn_text=(
+                "Iterate over `DagsterDltTranslator.get_asset_spec(...).deps` to access `AssetDep.asset_key` instead."
+        ),
+    )
     @public
     def get_deps_asset_keys(self, resource: DltResource) -> Iterable[AssetKey]:
         """Defines upstream asset dependencies given a dlt resource.
@@ -195,6 +217,9 @@ class DagsterDltTranslator:
             return [AssetKey(f"{resource.source_name}_{pipe.name}")]
         return [AssetKey(f"{resource.source_name}_{resource.name}")]
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).description` instead.",
+    )
     @public
     def get_description(self, resource: DltResource) -> Optional[str]:
         """A method that takes in a dlt resource returns the Dagster description of the resource.
@@ -225,6 +250,9 @@ class DagsterDltTranslator:
             return pipe.steps[0].__doc__
         return None
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).group_name` instead.",
+    )
     @public
     def get_group_name(self, resource: DltResource) -> Optional[str]:
         """A method that takes in a dlt resource and returns the Dagster group name of the resource.
@@ -250,6 +278,9 @@ class DagsterDltTranslator:
         """
         return None
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).metadata` instead.",
+    )
     @public
     def get_metadata(self, resource: DltResource) -> Mapping[str, Any]:
         """Defines resource specific metadata.
@@ -273,6 +304,9 @@ class DagsterDltTranslator:
         """
         return {}
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).owners` instead.",
+    )
     @public
     def get_owners(self, resource: DltResource) -> Optional[Sequence[str]]:
         """A method that takes in a dlt resource and returns the Dagster owners of the resource.
@@ -298,6 +332,9 @@ class DagsterDltTranslator:
         """
         return None
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).tags` instead.",
+    )
     @public
     def get_tags(self, resource: DltResource) -> Mapping[str, str]:
         """A method that takes in a dlt resource and returns the Dagster tags of the structure.
@@ -325,6 +362,9 @@ class DagsterDltTranslator:
         """
         return {}
 
+    @superseded(
+        additional_warn_text="Use `DagsterDltTranslator.get_asset_spec(...).kinds` instead.",
+    )
     @public
     def get_kinds(self, resource: DltResource, destination: Destination) -> set[str]:
         """A method that takes in a dlt resource and returns the kinds which should be
