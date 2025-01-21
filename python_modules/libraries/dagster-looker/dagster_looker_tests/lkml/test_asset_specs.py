@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import pytest
-from dagster import AssetKey, Definitions
+from dagster import AssetKey, AssetSpec, Definitions
 from dagster_looker.lkml.asset_specs import build_looker_asset_specs
 from dagster_looker.lkml.dagster_looker_lkml_translator import (
     DagsterLookerLkmlTranslator,
@@ -360,6 +360,28 @@ def test_extension_views(caplog: pytest.LogCaptureFixture):
 
 def test_with_asset_key_replacements() -> None:
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
+        def get_asset_spec(
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        ) -> AssetSpec:
+            default_spec = super().get_asset_spec(lookml_structure)
+            return default_spec.replace_attributes(
+                key=default_spec.key.with_prefix("prefix"),
+                deps=[dep.asset_key.with_prefix("prefix") for dep in default_spec.deps],
+            )
+
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+
+    for spec in my_looker_assets:
+        assert spec.deps
+        assert spec.key.has_prefix(["prefix"])
+        assert all(dep.asset_key.has_prefix(["prefix"]) for dep in spec.deps)
+
+
+def test_with_asset_key_replacements_legacy() -> None:
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_asset_key(
             self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
         ) -> AssetKey:
@@ -378,6 +400,23 @@ def test_with_asset_key_replacements() -> None:
 
 def test_with_deps_replacements() -> None:
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
+        def get_asset_spec(
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        ) -> AssetSpec:
+            default_spec = super().get_asset_spec(lookml_structure)
+            return default_spec.replace_attributes(deps=[])
+
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+
+    for spec in my_looker_assets:
+        assert not spec.deps
+
+
+def test_with_deps_replacements_legacy() -> None:
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_deps(self, _) -> Sequence[AssetKey]:
             return []
 
@@ -391,6 +430,25 @@ def test_with_deps_replacements() -> None:
 
 
 def test_with_description_replacements() -> None:
+    expected_description = "customized description"
+
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
+        def get_asset_spec(
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        ) -> AssetSpec:
+            default_spec = super().get_asset_spec(lookml_structure)
+            return default_spec.replace_attributes(description=expected_description)
+
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+
+    for spec in my_looker_assets:
+        assert spec.description == expected_description
+
+
+def test_with_description_replacements_legacy() -> None:
     expected_description = "customized description"
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
@@ -410,6 +468,26 @@ def test_with_metadata_replacements() -> None:
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
+        def get_asset_spec(
+            self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+        ) -> AssetSpec:
+            default_spec = super().get_asset_spec(lookml_structure)
+            return default_spec.merge_attributes(metadata=expected_metadata)
+
+    my_looker_assets = build_looker_asset_specs(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+
+    for spec in my_looker_assets:
+        assert "customized" in spec.metadata == expected_metadata
+        assert spec.metadata["customized"] == expected_metadata["customized"]
+
+
+def test_with_metadata_replacements_legacy() -> None:
+    expected_metadata = {"customized": "metadata"}
+
+    class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
         def get_metadata(self, _) -> Optional[Mapping[str, Any]]:
             return expected_metadata
 
@@ -422,7 +500,7 @@ def test_with_metadata_replacements() -> None:
         assert spec.metadata == expected_metadata
 
 
-def test_with_group_replacements() -> None:
+def test_with_group_replacements_legacy() -> None:
     expected_group = "customized_group"
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
@@ -438,7 +516,7 @@ def test_with_group_replacements() -> None:
         assert spec.group_name == expected_group
 
 
-def test_with_owner_replacements() -> None:
+def test_with_owner_replacements_legacy() -> None:
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
@@ -454,7 +532,7 @@ def test_with_owner_replacements() -> None:
         assert spec.owners == expected_owners
 
 
-def test_with_tag_replacements() -> None:
+def test_with_tag_replacements_legacy() -> None:
     expected_tags = {"customized": "tag"}
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):

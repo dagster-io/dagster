@@ -5,7 +5,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Literal, Optional, cast
 
-from dagster import AssetKey
+from dagster import AssetKey, AssetSpec
 from dagster._annotations import experimental, public
 from sqlglot import ParseError, exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
@@ -167,9 +167,45 @@ class DagsterLookerLkmlTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a LookML structure (dashboards, explores, views).
 
-    This class is exposed so that methods can be overriden to customize how Dagster asset metadata
+    This class is exposed so that methods can be overridden to customize how Dagster asset metadata
     is derived.
     """
+
+    @public
+    def get_asset_spec(
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+    ) -> AssetSpec:
+        """A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster asset spec that represents the structure.
+
+        The LookML structure is parsed using ``lkml``. You can learn more about this here:
+        https://lkml.readthedocs.io/en/latest/simple.html.
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/param-lookml-dashboard.
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
+
+        This method can be overridden to provide a custom asset spec for a LookML structure.
+
+        Args:
+            lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
+                defining a LookML structure, the LookML structure type, and a dictionary
+                representing a LookML structure.
+
+        Returns:
+            AssetSpec: The Dagster asset spec that represents the LookML structure.
+        """
+        return AssetSpec(
+            key=self.get_asset_key(lookml_structure),
+            deps=self.get_deps(lookml_structure),
+            description=self.get_description(lookml_structure),
+            metadata=self.get_metadata(lookml_structure),
+            group_name=self.get_group_name(lookml_structure),
+            owners=self.get_owners(lookml_structure),
+            tags=self.get_tags(lookml_structure),
+        )
 
     @public
     def get_asset_key(
@@ -187,7 +223,7 @@ class DagsterLookerLkmlTranslator:
         You can learn more about LookML explores and views and the properties available in this
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
-        This method can be overriden to provide a custom asset key for a LookML structure.
+        This method can be overridden to provide a custom asset key for a LookML structure.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
@@ -243,7 +279,7 @@ class DagsterLookerLkmlTranslator:
         You can learn more about LookML explores and views and the properties available in this
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
-        This method can be overriden to provide custom dependencies for a LookML structure.
+        This method can be overridden to provide custom dependencies for a LookML structure.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
@@ -290,7 +326,7 @@ class DagsterLookerLkmlTranslator:
         You can learn more about LookML explores and views and the properties available in this
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
-        This method can be overriden to provide a custom description for a LookML structure.
+        This method can be overridden to provide a custom description for a LookML structure.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
@@ -320,7 +356,7 @@ class DagsterLookerLkmlTranslator:
         You can learn more about LookML explores and views and the properties available in this
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
-        This method can be overriden to provide custom metadata for a LookML structure.
+        This method can be overridden to provide custom metadata for a LookML structure.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
@@ -349,7 +385,7 @@ class DagsterLookerLkmlTranslator:
         You can learn more about LookML explores and views and the properties available in this
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
-        This method can be overriden to provide a custom group name for a LookML structure.
+        This method can be overridden to provide a custom group name for a LookML structure.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
@@ -377,7 +413,7 @@ class DagsterLookerLkmlTranslator:
         You can learn more about LookML explores and views and the properties available in this
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
-        This method can be overriden to provide custom owners for a LookML structure.
+        This method can be overridden to provide custom owners for a LookML structure.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
@@ -405,7 +441,7 @@ class DagsterLookerLkmlTranslator:
         You can learn more about LookML explores and views and the properties available in this
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
-        This method can be overriden to provide custom tags for a LookML structure.
+        This method can be overridden to provide custom tags for a LookML structure.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
