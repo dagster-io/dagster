@@ -5,7 +5,7 @@
 ### New
 
 - Added a new function `load_definitions_from_module`, which can load all the assets, checks, schedules, sensors, and job objects within a module scope into a single Definitions object. Check out [the documentation to learn more](https://docs.dagster.io/_apidocs/definitions#dagster.load_definitions_from_module).
-- When using the `DAGSTER_REDACT_USER_CODE_ERRORS` environment variable to mask user code errors, the unmasked log lines are now written using a `dagster.masked` Python logger instead of being written to stderr, allowing the format of those log lines to be customized.
+- When using the `DAGSTER_REDACT_USER_CODE_ERRORS` environment variable to mask user code errors, the unmasked log lines are now written using a `dagster.redacted_errors` Python logger instead of being written to stderr, allowing the format of those log lines to be customized.
 - The `croniter` package is now vendored in dagster.
 - [ui] Corrected the `minstral` typo and updated the Mistral logo for asset `kinds` tag.
 - [ui] The relevant runs are now shown within the same dialog when viewing details of an automation evaluation.
