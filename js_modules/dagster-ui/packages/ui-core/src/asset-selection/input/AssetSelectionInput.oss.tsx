@@ -1,5 +1,9 @@
 import {Icons} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
+import {
+  AssetSelectionLexer,
+  AssetSelectionParser,
+} from 'shared/asset-selection/AssetSelectionAntlr.oss';
 import styled from 'styled-components';
 
 import {assertUnreachable} from '../../app/Util';
@@ -8,8 +12,6 @@ import {SelectionAutoCompleteInput, iconStyle} from '../../selection/SelectionAu
 import {createSelectionLinter} from '../../selection/createSelectionLinter';
 import {placeholderTextForItems} from '../../ui/GraphQueryInput';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
-import {AssetSelectionLexer} from '../generated/AssetSelectionLexer';
-import {AssetSelectionParser} from '../generated/AssetSelectionParser';
 
 import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/lib/codemirror.css';
@@ -30,66 +32,7 @@ const FUNCTIONS = ['sinks', 'roots'];
 const linter = createSelectionLinter({Lexer: AssetSelectionLexer, Parser: AssetSelectionParser});
 
 export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInputProps) => {
-  const attributesMap = useMemo(() => {
-    const assetNamesSet: Set<string> = new Set();
-    const tagNamesSet: Set<string> = new Set();
-    const ownersSet: Set<string> = new Set();
-    const groupsSet: Set<string> = new Set();
-    const kindsSet: Set<string> = new Set();
-    const codeLocationSet: Set<string> = new Set();
-
-    assets.forEach((asset) => {
-      assetNamesSet.add(asset.name);
-      asset.node.tags.forEach((tag) => {
-        if (tag.key && tag.value) {
-          // We add quotes around the equal sign here because the auto-complete suggestion already wraps the entire value in quotes.
-          // So wer end up with tag:"key"="value" as the final suggestion
-          tagNamesSet.add(`${tag.key}"="${tag.value}`);
-        } else {
-          tagNamesSet.add(tag.key);
-        }
-      });
-      asset.node.owners.forEach((owner) => {
-        switch (owner.__typename) {
-          case 'TeamAssetOwner':
-            ownersSet.add(owner.team);
-            break;
-          case 'UserAssetOwner':
-            ownersSet.add(owner.email);
-            break;
-          default:
-            assertUnreachable(owner);
-        }
-      });
-      if (asset.node.groupName) {
-        groupsSet.add(asset.node.groupName);
-      }
-      asset.node.kinds.forEach((kind) => {
-        kindsSet.add(kind);
-      });
-      const location = buildRepoPathForHuman(
-        asset.node.repository.name,
-        asset.node.repository.location.name,
-      );
-      codeLocationSet.add(location);
-    });
-
-    const assetNames = Array.from(assetNamesSet);
-    const tagNames = Array.from(tagNamesSet);
-    const owners = Array.from(ownersSet);
-    const groups = Array.from(groupsSet);
-    const kinds = Array.from(kindsSet);
-    const codeLocations = Array.from(codeLocationSet);
-
-    return {
-      key: assetNames,
-      tag: tagNames,
-      owner: owners,
-      group: groups,
-      kind: kinds,
-      code_location: codeLocations,
-    };
-  }, [assets]);
+  const attributesMap = useMemo(() => getAttributesMap(assets), [assets]);
 
   return (
     <WrapperDiv>
@@ -107,7 +50,68 @@ export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInp
   );
 };
 
-const WrapperDiv = styled.div`
+export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
+  const assetNamesSet: Set<string> = new Set();
+  const tagNamesSet: Set<string> = new Set();
+  const ownersSet: Set<string> = new Set();
+  const groupsSet: Set<string> = new Set();
+  const kindsSet: Set<string> = new Set();
+  const codeLocationSet: Set<string> = new Set();
+
+  assets.forEach((asset) => {
+    assetNamesSet.add(asset.name);
+    asset.node.tags.forEach((tag) => {
+      if (tag.key && tag.value) {
+        // We add quotes around the equal sign here because the auto-complete suggestion already wraps the entire value in quotes.
+        // So wer end up with tag:"key"="value" as the final suggestion
+        tagNamesSet.add(`${tag.key}"="${tag.value}`);
+      } else {
+        tagNamesSet.add(tag.key);
+      }
+    });
+    asset.node.owners.forEach((owner) => {
+      switch (owner.__typename) {
+        case 'TeamAssetOwner':
+          ownersSet.add(owner.team);
+          break;
+        case 'UserAssetOwner':
+          ownersSet.add(owner.email);
+          break;
+        default:
+          assertUnreachable(owner);
+      }
+    });
+    if (asset.node.groupName) {
+      groupsSet.add(asset.node.groupName);
+    }
+    asset.node.kinds.forEach((kind) => {
+      kindsSet.add(kind);
+    });
+    const location = buildRepoPathForHuman(
+      asset.node.repository.name,
+      asset.node.repository.location.name,
+    );
+    codeLocationSet.add(location);
+  });
+
+  const assetNames = Array.from(assetNamesSet);
+  const tagNames = Array.from(tagNamesSet);
+  const owners = Array.from(ownersSet);
+  const groups = Array.from(groupsSet);
+  const kinds = Array.from(kindsSet);
+  const codeLocations = Array.from(codeLocationSet);
+
+  return {
+    key: assetNames,
+    tag: tagNames,
+    owner: owners,
+    group: groups,
+    kind: kinds,
+    code_location: codeLocations,
+  };
+};
+
+export const WrapperDiv = styled.div`
   .attribute-owner {
     ${iconStyle(Icons.owner.src)};
   }

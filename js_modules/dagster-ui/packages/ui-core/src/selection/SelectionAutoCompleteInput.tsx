@@ -298,7 +298,7 @@ export const SelectionAutoCompleteInput = <T extends Record<string, string[]>, N
     <>
       <Popover
         content={
-          <div ref={hintContainerRef} onMouseMove={scheduleUpdateValue}>
+          <div ref={hintContainerRef} onMouseMove={scheduleUpdateValue} onKeyDown={handleKeyDown}>
             <SelectionAutoCompleteResults
               results={autocompleteResults}
               width={width}

@@ -18,11 +18,7 @@ import {
   UpTraversalExpressionContext,
 } from './generated/OpSelectionParser';
 import {OpSelectionVisitor} from './generated/OpSelectionVisitor';
-import {
-  getFunctionName,
-  getTraversalDepth,
-  getValue,
-} from '../asset-selection/AntlrAssetSelectionVisitor';
+import {getFunctionName, getTraversalDepth, getValue} from '../asset-selection/util';
 
 export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   extends AbstractParseTreeVisitor<Set<T>>
