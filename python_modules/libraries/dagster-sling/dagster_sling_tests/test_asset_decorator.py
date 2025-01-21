@@ -253,7 +253,6 @@ def test_base_with_custom_tags_translator_legacy() -> None:
     )
 
     class CustomSlingTranslator(DagsterSlingTranslator):
-
         def get_asset_key(self, stream_definition):
             return super().get_asset_key(stream_definition)
 
@@ -282,7 +281,6 @@ def test_base_with_custom_tags_translator_legacy() -> None:
 
         def get_auto_materialize_policy(self, stream_definition):
             return super().get_auto_materialize_policy(stream_definition)
-
 
     @sling_assets(
         replication_config=replication_config_path,
