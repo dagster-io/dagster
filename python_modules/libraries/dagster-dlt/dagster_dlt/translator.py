@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Callable, Optional, Union
 
 from dagster import AssetKey, AssetSpec, AutoMaterializePolicy, AutomationCondition
 from dagster._annotations import public
@@ -31,16 +31,49 @@ class DagsterDltTranslator:
 
         """
         return AssetSpec(
-            key=self.get_asset_key(data.resource),
-            automation_condition=self.get_automation_condition(data.resource),
-            deps=self.get_deps_asset_keys(data.resource),
-            description=self.get_description(data.resource),
-            group_name=self.get_group_name(data.resource),
-            metadata=self.get_metadata(data.resource),
-            owners=self.get_owners(data.resource),
-            tags=self.get_tags(data.resource),
-            kinds=self.get_kinds(data.resource, data.destination),  # type: ignore
+            key=self._resolve_back_compat_method(
+                "get_asset_key", self._default_asset_key_fn, data.resource
+            ),
+            automation_condition=self._resolve_back_compat_method(
+                "get_automation_condition", self._default_automation_condition_fn, data.resource
+            ),
+            deps=self._resolve_back_compat_method(
+                "get_deps_asset_keys", self._default_deps_fn, data.resource
+            ),
+            description=self._resolve_back_compat_method(
+                "get_description", self._default_description_fn, data.resource
+            ),
+            group_name=self._resolve_back_compat_method(
+                "get_group_name", self._default_group_name_fn, data.resource
+            ),
+            metadata=self._resolve_back_compat_method(
+                "get_metadata", self._default_metadata_fn, data.resource
+            ),
+            owners=self._resolve_back_compat_method(
+                "get_owners", self._default_owners_fn, data.resource
+            ),
+            tags=self._resolve_back_compat_method("get_tags", self._default_tags_fn, data.resource),
+            kinds=self._resolve_back_compat_method(
+                "get_kinds", self._default_kinds_fn, data.resource, data.destination
+            ),
         )
+
+    def _resolve_back_compat_method(
+        self,
+        method_name: str,
+        default_fn: Union[Callable[[DltResource], Any], Callable[[DltResource, Destination], Any]],
+        resource: DltResource,
+        destination: Optional[Destination] = None,
+    ):
+        method = getattr(type(self), method_name)
+        base_method = getattr(DagsterDltTranslator, method_name)
+        args = (resource,)
+        if method_name == "get_kinds":
+            args += (destination,)
+        if method is not base_method:  # user defined this
+            return method(self, *args)
+        else:
+            return default_fn(*args)  # type: ignore
 
     @public
     def get_asset_key(self, resource: DltResource) -> AssetKey:
@@ -308,15 +341,19 @@ class DagsterDltTranslator:
         """
         return self._default_kinds_fn(resource, destination)
 
-    def _default_kinds_fn(self, resource: DltResource, destination: Destination) -> set[str]:
+    def _default_kinds_fn(
+        self, resource: DltResource, destination: Optional[Destination]
+    ) -> set[str]:
         """A method that takes in a dlt resource and returns the kinds which should be
         attached. Defaults to the destination type and "dlt".
 
         Args:
             resource (DltResource): dlt resource
-            destination (Destination): dlt destination
+            destination (Optional[Destination]): dlt destination
 
         Returns:
             Set[str]: The kinds of the asset.
         """
-        return {"dlt", destination.destination_name}
+        kinds = {"dlt"}
+        destination_set = {destination.destination_name} if destination else set()
+        return kinds.union(destination_set)
