@@ -177,6 +177,12 @@ mid_iteration_terminate_scenarios = [
             run_request(
                 asset_keys=["C", "D"], partition_key=day_partition_key(state.current_time, delta=1)
             ),
+        )
+        .start_asset_daemon()  # starts the daemon again for non-sensor tests
+        .assert_requested_runs(  # next tick should request the remaining runs from the stopped tick since the cursor was reset
+            run_request(
+                asset_keys=["C", "D"], partition_key=day_partition_key(state.current_time, delta=1)
+            )
         ),
     ),
 ]
@@ -331,6 +337,7 @@ def test_asset_daemon_with_threadpool_without_sensor(
 )
 @pytest.mark.parametrize("num_threads", [0, 4])
 def test_asset_daemon_with_sensor(scenario: AssetDaemonScenario, num_threads: int) -> None:
+    # test_asset_daemon_with_sensor[0-cursor_reset_correctly]
     with get_daemon_instance(
         extra_overrides={
             "auto_materialize": {
