@@ -1,3 +1,4 @@
+import logging
 import re
 import sys
 import time
@@ -115,6 +116,9 @@ def test_masking_nested_user_code_err_boundaries_reraise(enable_masking_user_cod
     assert "hunter2" not in str(err_info)
 
 
+ERROR_ID_REGEX = r"[Ee]rror ID ([a-z0-9\-]+)"
+
+
 @pytest.mark.parametrize(
     "exc_name, expect_exc_name_in_error, build_exc",
     [
@@ -130,6 +134,7 @@ def test_masking_op_execution(
     exc_name: str,
     expect_exc_name_in_error: bool,
     build_exc: Callable[[], BaseException],
+    caplog,
 ) -> Any:
     @op
     def throws_user_error(_):
@@ -142,7 +147,8 @@ def test_masking_op_execution(
     def job_def():
         throws_user_error()
 
-    result = job_def.execute_in_process(raise_on_error=False)
+    with caplog.at_level(logging.ERROR):
+        result = job_def.execute_in_process(raise_on_error=False)
     assert not result.success
 
     # Ensure error message and contents of user code don't leak (e.g. hunter2 text or function name)
@@ -166,8 +172,13 @@ def test_masking_op_execution(
             and step_error.step_failure_data.error.cls_name == "DagsterRedactedUserCodeError"
         )
 
+    # Ensures we can match the error ID in the Dagster+ UI surfaced message to the rich error message
+    # in logs which includes the redacted error message
+    assert "Search in logs for this error ID for more details" in str(step_error)
+    error_id = re.search(ERROR_ID_REGEX, str(step_error)).group(1)  # type: ignore
 
-ERROR_ID_REGEX = r"Error occurred during user code execution, error ID ([a-z0-9\-]+)"
+    assert f"Error occurred during user code execution, error ID {error_id}" in caplog.text
+    assert "hunter2" in caplog.text
 
 
 def test_masking_sensor_execution(instance, enable_masking_user_code_errors, capsys) -> None:
