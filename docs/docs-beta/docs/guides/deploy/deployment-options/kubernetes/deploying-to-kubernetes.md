@@ -1,6 +1,5 @@
 ---
-title: "Deploying Dagster to Kubernetes"
-sidebar_label: Kubernetes
+title: "Deploying Dagster to Kubernetes with Helm"
 sidebar_position: 100
 ---
 
