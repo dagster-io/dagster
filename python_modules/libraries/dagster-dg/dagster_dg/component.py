@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 class RemoteComponentType:
     name: str
     package: str
+    component_directory: Optional[str]
     summary: Optional[str]
     description: Optional[str]
     scaffold_params_schema: Optional[Mapping[str, Any]]  # json schema
@@ -46,9 +47,9 @@ class RemoteComponentRegistry:
         return cls.from_dict(registry_data)
 
     @classmethod
-    def from_dict(cls, components: dict[str, Mapping[str, Any]]) -> "RemoteComponentRegistry":
+    def from_dict(cls, components: list[Mapping[str, Any]]) -> "RemoteComponentRegistry":
         return RemoteComponentRegistry(
-            {key: RemoteComponentType(**value) for key, value in components.items()}
+            {item["key"]: RemoteComponentType(**item["value"]) for item in components}
         )
 
     def __init__(self, components: dict[str, RemoteComponentType]):

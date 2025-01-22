@@ -14,9 +14,9 @@ from dagster_components_tests.integration_tests.validation_tests.test_cases impo
     ComponentValidationTestCase,
 )
 from dagster_components_tests.integration_tests.validation_tests.utils import (
-    create_code_location_from_components,
     load_test_component_defs_inject_component,
 )
+from dagster_components_tests.utils import create_code_location_from_components
 
 ensure_dagster_components_tests_import()
 

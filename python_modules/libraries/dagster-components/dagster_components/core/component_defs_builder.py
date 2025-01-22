@@ -67,6 +67,21 @@ def load_components_from_context(context: ComponentLoadContext) -> Sequence[Comp
     raise NotImplementedError(f"Unknown component type {context.decl_node}")
 
 
+def find_local_component_types(component_path: Path) -> list[type[Component]]:
+    """Find all component types defined in a component directory."""
+    component_types = []
+    for py_file in component_path.glob("*.py"):
+        module_name = py_file.stem
+
+        module = load_module_from_path(module_name, component_path / f"{module_name}.py")
+
+        for _name, obj in inspect.getmembers(module, inspect.isclass):
+            assert isinstance(obj, type)
+            if is_registered_component_type(obj):
+                component_types.append(obj)
+    return component_types
+
+
 def component_type_from_yaml_decl(
     registry: ComponentTypeRegistry, decl_node: YamlComponentDecl
 ) -> type[Component]:
@@ -75,18 +90,9 @@ def component_type_from_yaml_decl(
         component_registry_key = parsed_defs.type[1:]
 
         # Iterate over Python files in the folder
-        for py_file in decl_node.path.glob("*.py"):
-            module_name = py_file.stem
-
-            module = load_module_from_path(module_name, decl_node.path / f"{module_name}.py")
-
-            for _name, obj in inspect.getmembers(module, inspect.isclass):
-                assert isinstance(obj, type)
-                if (
-                    is_registered_component_type(obj)
-                    and get_component_type_name(obj) == component_registry_key
-                ):
-                    return obj
+        for component_type in find_local_component_types(decl_node.path):
+            if get_component_type_name(component_type) == component_registry_key:
+                return component_type
 
         raise Exception(
             f"Could not find component type {component_registry_key} in {decl_node.path}"

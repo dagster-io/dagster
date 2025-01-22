@@ -2,12 +2,16 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
+from dagster._core.test_utils import new_cwd
 from dagster_components.cli import cli
 from dagster_components.utils import ensure_dagster_components_tests_import
 
 ensure_dagster_components_tests_import()
 
-from dagster_components_tests.utils import temp_code_location_bar
+from dagster_components_tests.utils import (
+    create_code_location_from_components,
+    temp_code_location_bar,
+)
 
 
 # Test that the global --use-test-component-lib flag changes the registered components
@@ -17,14 +21,14 @@ def test_global_test_flag():
     # standard
     result = runner.invoke(cli, ["list", "component-types"])
     assert result.exit_code == 0
-    default_result_keys = list(json.loads(result.output).keys())
+    default_result_keys = list(item["key"] for item in json.loads(result.output))
     assert len(default_result_keys) > 0
 
     result = runner.invoke(
         cli, ["--builtin-component-lib", "dagster_components.test", "list", "component-types"]
     )
     assert result.exit_code == 0
-    test_result_keys = list(json.loads(result.output).keys())
+    test_result_keys = list(item["key"] for item in json.loads(result.output))
     assert len(default_result_keys) > 0
 
     assert default_result_keys != test_result_keys
@@ -34,19 +38,22 @@ def test_list_component_types_command():
     runner = CliRunner()
 
     result = runner.invoke(
-        cli, ["--builtin-component-lib", "dagster_components.test", "list", "component-types"]
+        cli,
+        ["--builtin-component-lib", "dagster_components.test", "list", "component-types"],
+        catch_exceptions=False,
     )
     assert result.exit_code == 0
     result = json.loads(result.output)
+    result_as_dict = {item["key"]: item["value"] for item in result}
 
-    assert list(result.keys()) == [
+    assert list(result_as_dict.keys()) == [
         "dagster_components.test.all_metadata_empty_asset",
         "dagster_components.test.complex_schema_asset",
         "dagster_components.test.simple_asset",
         "dagster_components.test.simple_pipes_script_asset",
     ]
 
-    assert result["dagster_components.test.simple_asset"] == {
+    assert result_as_dict["dagster_components.test.simple_asset"] == {
         "name": "simple_asset",
         "package": "dagster_components.test",
         "summary": "A simple asset that returns a constant string value.",
@@ -61,6 +68,7 @@ def test_list_component_types_command():
             "title": "SimpleAssetParams",
             "type": "object",
         },
+        "component_directory": None,
     }
 
     pipes_script_params_schema = {
@@ -73,14 +81,47 @@ def test_list_component_types_command():
         "type": "object",
     }
 
-    assert result["dagster_components.test.simple_pipes_script_asset"] == {
+    assert result_as_dict["dagster_components.test.simple_pipes_script_asset"] == {
         "name": "simple_pipes_script_asset",
         "package": "dagster_components.test",
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         "scaffold_params_schema": pipes_script_params_schema,
         "component_params_schema": pipes_script_params_schema,
+        "component_directory": None,
     }
+
+
+def test_list_component_types_command_include_local() -> None:
+    """Tests that the list CLI picks up on local components."""
+    runner = CliRunner()
+
+    with create_code_location_from_components(
+        "definitions/local_component_sample",
+    ) as tmpdir:
+        with new_cwd(str(tmpdir)):
+            result = runner.invoke(
+                cli,
+                ["--builtin-component-lib", "dagster_components.test", "list", "component-types"],
+            )
+
+            assert result.exit_code == 0, str(result.stdout)
+
+            result = json.loads(result.output)
+
+            my_component = next(
+                (
+                    component_type["value"]
+                    for component_type in result
+                    if component_type["key"] == ".my_component"
+                ),
+                None,
+            )
+            assert my_component is not None
+            assert (
+                "my_location/components/local_component_sample"
+                in my_component["component_directory"]
+            )
 
 
 def test_scaffold_component_command():

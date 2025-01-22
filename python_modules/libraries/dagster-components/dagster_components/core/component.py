@@ -121,6 +121,7 @@ class ComponentTypeInternalMetadata(TypedDict):
 class ComponentTypeMetadata(ComponentTypeInternalMetadata):
     name: str
     package: str
+    component_directory: Optional[str]
 
 
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
