@@ -171,6 +171,15 @@ def validate_concurrency_config(dagster_config_dict: Mapping[str, Any]):
                     [],
                     None,
                 )
+
+        granularity = concurrency_config.get("pools").get("granularity")
+        if granularity and granularity not in ["run", "op"]:
+            raise DagsterInvalidConfigError(
+                f"Found value `{granularity}` for `granularity`, Expected value 'run' or 'op'.",
+                [],
+                None,
+            )
+
     elif "default_op_concurrency_limit" in concurrency_config:
         default_concurrency_limit = check.opt_inst(
             pluck_config_value(concurrency_config, ["default_op_concurrency_limit"]), int
@@ -436,7 +445,7 @@ def get_concurrency_config() -> Field:
                         is_required=False,
                         description="The granularity of the concurrency enforcement of the pool.  One of `run` or `op`.",
                     ),
-                    "op_run_buffer": Field(
+                    "op_granularity_run_buffer": Field(
                         int,
                         is_required=False,
                         description=(
