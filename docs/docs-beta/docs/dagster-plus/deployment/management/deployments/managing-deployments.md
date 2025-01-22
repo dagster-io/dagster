@@ -1,31 +1,23 @@
 ---
-title: "Managing deployments in Dagster+"
+title: "Managing full deployments in Dagster+"
 ---
 
-:::note
+Full deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.
 
-This guide is applicable to Dagster+.
+When a Dagster+ organization is created, a single deployment named `prod` will also be created. To create additional full deployments, you must sign up for a [Pro plan](https://dagster.io/pricing).
 
-:::
+Each full deployment can have one or multiple [code locations](/dagster-plus/deployment/code-locations).
+
+:::note Full deployments vs branch deployments
 
 In Dagster+, there are two types of deployments:
 
-- [**Branch deployments**](/dagster-plus/features/ci-cd/branch-deployments), which are temporary deployments built for testing purposes.
+- [**Branch deployments**](/dagster-plus/features/ci-cd/branch-deployments), which are temporary deployments built for testing purposes. We recommend using branch deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster+ users, regardless of plan.
 - **Full deployments**, which are persistent, fully-featured deployments intended to perform actions on a recurring basis.
 
-This guide will focus on **full deployments**, hereafter referred to simply as deployments.
+This guide focuses on **full deployments**, hereafter referred to as **deployments**.
 
-## About deployments
-
-Deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.
-
-When a Dagster+ organization is created, a single deployment named `prod` will also be created. To create additional deployments, a [Pro plan](https://dagster.io/pricing) is required.
-
-Each deployment can have one or multiple [code locations](/dagster-plus/deployment/code-locations).
-
-**Concerned about testing environments?** We recommend using Branch Deployments to test your changes, even if you're able to create additional deployments. Branch deployments are available for all Dagster+ users, regardless of plan.
-
-Refer to the [Branch Deployment docs](/dagster-plus/features/ci-cd/branch-deployments) for more info, or the [Testing against production using Branch Deployments guide](/dagster-plus/features/ci-cd/branch-deployments/testing) for a real-world example.
+:::
 
 ## Viewing and switching deployments
 

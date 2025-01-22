@@ -48,52 +48,19 @@ COPY . .
 
 Call `open_dagster_pipes` in the ECS task script to create a context that can be used to send messages to Dagster:
 
-```python file=/guides/dagster/dagster_pipes/ecs/task.py
-from dagster_pipes import (
-    PipesEnvVarParamsLoader,
-    PipesS3ContextLoader,
-    open_dagster_pipes,
-)
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/task.py" />
 
+:::tip
 
-def main():
-    with open_dagster_pipes() as pipes:
-        pipes.log.info("Hello from AWS ECS task!")
-        pipes.report_asset_materialization(
-            metadata={"some_metric": {"raw_value": 0, "type": "int"}},
-            data_version="alpha",
-        )
+The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
 
-
-if __name__ == "__main__":
-    main()
-```
+:::
 
 ## Step 3: Create an asset using the PipesECSClient to launch the task
 
 In the Dagster asset/op code, use the `PipesECSClient` resource to launch the job:
 
-```python file=/guides/dagster/dagster_pipes/ecs/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
-import os
-
-# dagster_glue_pipes.py
-import boto3
-from dagster_aws.pipes import PipesECSClient
-from docutils.nodes import entry
-
-from dagster import AssetExecutionContext, asset
-
-
-@asset
-def ecs_pipes_asset(context: AssetExecutionContext, pipes_ecs_client: PipesECSClient):
-    return pipes_ecs_client.run(
-        context=context,
-        run_task_params={
-            "taskDefinition": "my-task",
-            "count": 1,
-        },
-    ).get_materialize_result()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/dagster_code.py" startAfter="start_asset_marker" endBefore="=end_asset_marker" />
 
 This will launch the AWS ECS task and wait until it reaches `"STOPPED"` status. If any of the tasks's containers fail, the Dagster process will raise an exception. If the Dagster process is interrupted while the task is still running, the task will be terminated.
 
@@ -101,15 +68,6 @@ This will launch the AWS ECS task and wait until it reaches `"STOPPED"` status. 
 
 Next, add the `PipesECSClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-```python file=/guides/dagster/dagster_pipes/ecs/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
-from dagster import Definitions  # noqa
-from dagster_aws.pipes import PipesS3MessageReader
-
-
-defs = Definitions(
-    assets=[ecs_pipes_asset],
-    resources={"pipes_ecs_client": PipesECSClient()},
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/ecs/dagster_code.py" startAfter="start_definitions_marker" endBefore="=end_definitions_marker" />
 
 Dagster will now be able to launch the AWS ECS task from the `ecs_pipes_asset` asset, and receive logs and events from the task. If using the default `message_reader` `PipesCloudwatchLogReader`, logs will be read from the Cloudwatch log group specified in the container `"logConfiguration"` field definition. Logs from all containers in the task will be read.

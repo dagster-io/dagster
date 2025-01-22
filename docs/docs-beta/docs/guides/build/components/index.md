@@ -1,6 +1,6 @@
 ---
 title: "Components"
-sidebar_position: 70
+sidebar_position: 80
 unlisted: true
 displayed_sidebar: 'components'
 ---

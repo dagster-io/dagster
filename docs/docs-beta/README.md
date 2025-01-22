@@ -1,4 +1,4 @@
-# Dagster Docs - Beta
+# Dagster Docs
 
 This is the home of the Dagster documentation. The documentation site is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
