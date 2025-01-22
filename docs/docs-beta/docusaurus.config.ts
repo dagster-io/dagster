@@ -1214,27 +1214,27 @@ const config: Config = {
           },
           {
             from: '/integrations/deltalake',
-            to: '/integrations/libraries/deltalake',
+            to: '/integrations/libraries/deltalake/',
           },
           {
             from: '/integrations/deltalake/using-deltalake-with-dagster',
-            to: '/integrations/libraries/deltalake',
+            to: '/integrations/libraries/deltalake/using-deltalake-with-dagster',
           },
           {
             from: '/integrations/deltalake/reference',
-            to: '/integrations/libraries/deltalake',
+            to: '/integrations/libraries/deltalake/reference',
           },
           {
             from: '/integrations/duckdb',
-            to: '/integrations/libraries/duckdb',
+            to: '/integrations/libraries/duckdb/',
           },
           {
             from: '/integrations/duckdb/using-duckdb-with-dagster',
-            to: '/integrations/libraries/duckdb',
+            to: '/integrations/libraries/duckdb/using-duckdb-with-dagster',
           },
           {
             from: '/integrations/duckdb/reference',
-            to: '/integrations/libraries/duckdb',
+            to: '/integrations/libraries/duckdb/reference',
           },
           {
             from: '/integrations/embedded-elt',
@@ -1242,7 +1242,7 @@ const config: Config = {
           },
           {
             from: '/integrations/embedded-elt/dlt',
-            to: '/integrations/libraries/dlt',
+            to: '/integrations/libraries/dlt/',
           },
           {
             from: '/integrations/embedded-elt/sling',
@@ -1254,51 +1254,51 @@ const config: Config = {
           },
           {
             from: '/integrations/bigquery',
-            to: '/integrations/libraries/gcp/bigquery',
+            to: '/integrations/libraries/gcp/bigquery/',
           },
           {
             from: '/integrations/bigquery/using-bigquery-with-dagster',
-            to: '/integrations/libraries/gcp/bigquery',
+            to: '/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster',
           },
           {
             from: '/integrations/bigquery/reference',
-            to: '/integrations/libraries/gcp/bigquery',
+            to: '/integrations/libraries/gcp/bigquery/reference',
           },
           {
             from: '/integrations/dagstermill',
-            to: '/integrations/libraries/jupyter',
+            to: '/integrations/libraries/jupyter/',
           },
           {
             from: '/integrations/dagstermill/using-notebooks-with-dagster',
-            to: '/integrations/libraries/',
+            to: '/integrations/libraries/jupyter/using-notebooks-with-dagster',
           },
           {
             from: '/integrations/dagstermill/reference',
-            to: '/integrations/libraries/',
+            to: '/integrations/libraries/jupyter/reference',
           },
           {
             from: '/integrations/looker',
-            to: '/integrations/libraries/looker',
+            to: '/integrations/libraries/looker/',
           },
           {
             from: '/integrations/openai',
-            to: '/integrations/libraries/openai',
+            to: '/integrations/libraries/openai/',
           },
           {
             from: '/integrations/pandas',
-            to: '/integrations/libraries/pandas',
+            to: '/integrations/libraries/pandas/',
           },
           {
             from: '/integrations/pandera',
-            to: '/integrations/libraries/pandera',
+            to: '/integrations/libraries/pandera/',
           },
           {
             from: '/integrations/powerbi',
-            to: '/integrations/libraries/powerbi',
+            to: '/integrations/libraries/powerbi/',
           },
           {
             from: '/integrations/sigma',
-            to: '/integrations/libraries/sigma',
+            to: '/integrations/libraries/sigma/',
           },
           {
             from: '/integrations/spark',
@@ -1306,19 +1306,19 @@ const config: Config = {
           },
           {
             from: '/integrations/snowflake',
-            to: '/integrations/libraries/snowflake',
+            to: '/integrations/libraries/snowflake/',
           },
           {
             from: '/integrations/snowflake/using-snowflake-with-dagster',
-            to: '/integrations/libraries/snowflake',
+            to: '/integrations/libraries/snowflake/using-snowflake-with-dagster',
           },
           {
             from: '/integrations/snowflake/using-snowflake-with-dagster-io-managers',
-            to: '/integrations/libraries/snowflake',
+            to: '/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers',
           },
           {
             from: '/integrations/snowflake/reference',
-            to: '/integrations/libraries/snowflake',
+            to: '/integrations/libraries/snowflake/reference',
           },
           {
             from: '/integrations/tableau',
