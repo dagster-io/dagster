@@ -92,7 +92,7 @@ This command:
 
 To view the agent in Dagster+, click the Dagster icon in the top left to navigate to the **Status** page and click the **Agents** tab. You should see the agent running in the **Agent statuses** section:
 
-![Instance Status](/images/dagster-cloud/agents/dagster-cloud-instance-status.png)
+![Instance Status](/images/dagster-plus/deployment/agents/dagster-cloud-instance-status.png)
 
 ## Credential Helpers
 

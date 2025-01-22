@@ -67,7 +67,7 @@ dagster-cloud agent run ~/dagster_home/
 
 To view the agent in Dagster+, click the Dagster icon in the top left to navigate to the **Deployment > Agents** page. You should see the agent running in the **Agent statuses** section:
 
-![Screenshot of Dagster Asset Lineage](/images/dagster-cloud/agents/dagster-cloud-instance-status.png)
+![Screenshot of Dagster Asset Lineage](/images/dagster-plus/deployment/agents/dagster-cloud-instance-status.png)
 
 ## Next steps
 

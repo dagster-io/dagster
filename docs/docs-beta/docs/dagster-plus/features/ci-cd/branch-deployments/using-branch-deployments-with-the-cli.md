@@ -62,7 +62,7 @@ Using the tabs, select your agent type to view instructions.
 
    In the list, locate the repository and its **URI**:
 
-   ![Highlighted repository URI in the AWS ECR console](/images/dagster-plus/branch-deployments/aws-ecr-uri.png)
+   ![Highlighted repository URI in the AWS ECR console](/images/dagster-plus/features/branch-deployments/aws-ecr-uri.png)
 
 3. [**Create an IAM user.**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html) This user must:
 
@@ -71,7 +71,7 @@ Using the tabs, select your agent type to view instructions.
 
    After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
 
-   ![Highlighted repository URI in the AWS ECR console](/images/dagster-plus/branch-deployments/aws-iam-user-keys.png)
+   ![Highlighted repository URI in the AWS ECR console](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
 
 </TabItem>
 <TabItem value="Docker">
@@ -210,4 +210,4 @@ Now that Branch Deployments are configured, you can check out the preview in Dag
 
 Click the **deployment switcher** to view your workspace's branch deployments:
 
-![Highlighted branch deployments in the Dagster+'s deployment switcher](/images/dagster-plus/branch-deployments/dagster-ui-deployment-switcher.png)
+![Highlighted branch deployments in the Dagster+'s deployment switcher](/images/dagster-plus/features/branch-deployments/dagster-ui-deployment-switcher.png)

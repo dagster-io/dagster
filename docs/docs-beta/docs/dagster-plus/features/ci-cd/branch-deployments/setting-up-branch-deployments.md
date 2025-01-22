@@ -90,7 +90,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
   In the list, locate the repository and its **URI**:
 
-  ![Show this in the UI](/images/dagster-plus/branch-deployments/aws-ecr-uri.png)
+  ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-ecr-uri.png)
 
   Keep this around, as you'll need it in a later step.
 
@@ -101,7 +101,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
      After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
 
-     ![Show this in the UI](/images/dagster-plus/branch-deployments/aws-iam-user-keys.png)
+     ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
 
   </TabItem>
   <TabItem value="docker" label="Docker">
@@ -235,7 +235,7 @@ The last step is to verify that the GitHub Action runs successfully.
 1. In the repository, click the **Actions** tab.
 2. In the list of workflows, locate the latest branch deployment run. For example:
 
-![Show this in the UI](/images/dagster-plus/branch-deployments/github-verify-run.png)
+![Show this in the UI](/images/dagster-plus/features/branch-deployments/github-verify-run.png)
 
   </TabItem>
   <TabItem value="gitlab" label="GitLab">
@@ -348,7 +348,7 @@ The last step is to verify that the GitLab pipeline runs successfully.
 1. On the project page, click the **CI/CD** tab.
 2. In the list of pipelines, locate the latest branch deployment run. For example:
 
-![Show this in the UI](/images/dagster-plus/branch-deployments/gitlab-verify-run.png)
+![Show this in the UI](/images/dagster-plus/features/branch-deployments/gitlab-verify-run.png)
 
   </TabItem>
   <TabItem value="cli" label="dagster-cloud CLI">

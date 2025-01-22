@@ -37,7 +37,7 @@ Images are located in [/docs/docs-beta/static/images](https://github.com/dagster
 #### Formatting
 
 ```
-![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-cloud/developing-testing/code-locations/redeploy-code-location.png)
+![Highlighted Redeploy option in the dropdown menu next to a code location in Dagster+](/images/dagster-plus/deployment/code-locations/redeploy-code-location.png)
 ```
 
 ### Notes

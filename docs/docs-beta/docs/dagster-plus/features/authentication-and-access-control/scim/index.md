@@ -14,7 +14,7 @@ When SCIM is enabled in Dagster+, a few things about user management will change
 - **New users must be added in the IdP.** The ability to add new users will be disabled in Dagster+ while SCIM is enabled.
 - **Only 'unsynced' users can be removed in Dagster+.** 'Synced' users will have an icon indicating they're externally managed by the IdP, while unsynced users will not. For example, the first two users in the following image are synced, while the last isn't:
 
-![Highlighted unsynced user in the Dagster+ UI](/images/dagster-cloud/sso/scim-unsynced-user.png)
+![Highlighted unsynced user in the Dagster+ UI](/images/dagster-plus/features/authentication-and-access-control/scim-unsynced-user.png)
 
   You might see unsynced users in Dagster+ when:
 
