@@ -78,7 +78,7 @@ const config: Config = {
           },
           {
             from: '/examples/conditional_execution',
-            to: '/guides/build/jobs',
+            to: '/guides/build/assets/asset-jobs',
           },
           {
             from: '/examples/config_mapping',
@@ -90,7 +90,7 @@ const config: Config = {
           },
           {
             from: '/examples/dep_dsl',
-            to: '/guides/build/jobs',
+            to: '/guides/build/assets/asset-jobs',
           },
           {
             from: '/examples/deploy_docker',
@@ -102,7 +102,7 @@ const config: Config = {
           },
           {
             from: '/examples/fan_in_pipeline',
-            to: '/guides/build/jobs',
+            to: '/guides/build/assets/asset-jobs',
           },
           {
             from: '/examples/ge_example',
@@ -118,7 +118,7 @@ const config: Config = {
           },
           {
             from: '/examples/nothing',
-            to: '/guides/build/jobs',
+            to: '/guides/build/assets/asset-jobs',
           },
           {
             from: '/examples/pipeline_tags',
@@ -130,7 +130,7 @@ const config: Config = {
           },
           {
             from: '/examples/dynamic_graph',
-            to: '/guides/build/jobs',
+            to: '/guides/build/assets/asset-jobs',
           },
           {
             from: '/examples/memoized_development',
@@ -350,11 +350,11 @@ const config: Config = {
           },
           {
             from: '/_apidocs/libraries/dagster-airflow',
-            to: '/api/python-api/dagster-airlift',
+            to: '/api/python-api/libraries/dagster-airlift',
           },
           {
             from: '/integrations/great-expectations',
-            to: '/integrations',
+            to: '/integrations/libraries/',
           },
           {
             from: '/guides/dagster/airbyte-ingestion-as-code',
@@ -362,7 +362,7 @@ const config: Config = {
           },
           {
             from: '/integrations/databricks',
-            to: '/integations/libraries/databricks',
+            to: '/integrations/libraries/databricks',
           },
           {
             from: '/getting-started',
@@ -394,7 +394,7 @@ const config: Config = {
           },
           {
             from: '/concepts',
-            to: '/guides',
+            to: '/',
           },
           {
             from: '/concepts/assets/software-defined-assets',
@@ -402,7 +402,7 @@ const config: Config = {
           },
           {
             from: '/concepts/assets/graph-backed-assets',
-            to: '/guides/build/defining-assets/#graph-asset',
+            to: '/guides/build/assets/defining-assets#graph-asset',
           },
           {
             from: '/concepts/assets/multi-assets',
@@ -418,7 +418,7 @@ const config: Config = {
           },
           {
             from: '/concepts/assets/asset-selection-syntax',
-            to: '/guides/assets/asset-selection-syntax',
+            to: '/guides/build/assets/asset-selection-syntax',
           },
           {
             from: '/concepts/assets/asset-checks',
@@ -470,11 +470,11 @@ const config: Config = {
           },
           {
             from: '/concepts/automation/schedules/testing',
-            to: '/guides/automate/testing-schedules',
+            to: '/guides/automate/schedules/testing-schedules',
           },
           {
             from: '/concepts/automation/schedules/troubleshooting',
-            to: '/guides/automate/troubleshooting-schedules',
+            to: '/guides/automate/schedules/troubleshooting-schedules',
           },
           {
             from: '/concepts/partitions-schedules-sensors/sensors',
@@ -514,7 +514,7 @@ const config: Config = {
           },
           {
             from: '/concepts/resources',
-            to: '/guides/build/external-resources',
+            to: '/guides/build/external-resources/',
           },
           {
             from: '/concepts/configuration/config-schema',
@@ -582,7 +582,7 @@ const config: Config = {
           },
           {
             from: '/concepts/ops-jobs-graphs/jobs',
-            to: '/guides/build/jobs',
+            to: '/guides/build/assets/asset-jobs',
           },
           {
             from: '/concepts/assets/asset-jobs',
@@ -590,11 +590,11 @@ const config: Config = {
           },
           {
             from: '/concepts/ops-jobs-graphs/op-jobs',
-            to: '/guides/build/jobs',
+            to: '/guides/build/assets/asset-jobs',
           },
           {
             from: '/concepts/ops-jobs-graphs/job-execution',
-            to: '/guides/build/jobs',
+            to: '/guides/build/assets/asset-jobs',
           },
           {
             from: '/concepts/metadata-tags/asset-metadata',
@@ -618,23 +618,23 @@ const config: Config = {
           },
           {
             from: '/concepts/dagster-pipes/subprocess',
-            to: '/guides/build/external-pipelines/using-pipes/',
+            to: '/guides/build/external-pipelines/using-dagster-pipes/',
           },
           {
             from: '/concepts/dagster-pipes/subprocess/create-subprocess-asset',
-            to: '/guides/build/external-pipelines/using-pipes/create-subprocess-asset',
+            to: '/guides/build/external-pipelines/using-dagster-pipes/create-subprocess-asset',
           },
           {
             from: '/concepts/dagster-pipes/subprocess/modify-external-code',
-            to: '/guides/build/external-pipelines/using-pipes/modify-external-code',
+            to: '/guides/build/external-pipelines/using-dagster-pipes/modify-external-code',
           },
           {
             from: '/concepts/dagster-pipes/subprocess/reference',
-            to: '/guides/build/external-pipelines/using-pipes/reference',
+            to: '/guides/build/external-pipelines/using-dagster-pipes/reference',
           },
           {
             from: '/concepts/dagster-pipes/aws-ecs',
-            to: '/guides/build/external-pipelines/aws-ecr-pipeline',
+            to: '/guides/build/external-pipelines/aws-ecs-pipeline',
           },
           {
             from: '/concepts/dagster-pipes/aws-glue',
@@ -646,7 +646,7 @@ const config: Config = {
           },
           {
             from: '/concepts/dagster-pipes/aws-emr-containers',
-            to: '/guides/build/external-pipelines/aws-emr-containers-pipeline',
+            to: 'guides/build/external-pipelines/aws-emr-pipeline',
           },
           {
             from: '/concepts/dagster-pipes/aws-emr-serverless',
@@ -682,7 +682,7 @@ const config: Config = {
           },
           {
             from: '/concepts/types',
-            to: '/guides/build/assets/',
+            to: '/api/python-api/types',
           },
           {
             from: '/concepts/logging/custom-loggers',
@@ -802,11 +802,11 @@ const config: Config = {
           },
           {
             from: '/dagster-plus/account/managing-users/managing-teams',
-            to: '/dagster-plus/features/authentication-and-access-control/teams',
+            to: '/dagster-plus/features/authentication-and-access-control/rbac/teams',
           },
           {
             from: '/dagster-plus/account/managing-users/managing-user-roles-permissions',
-            to: '/dagster-plus/features/authentication-and-access-control/user-roles-permissions',
+            to: '/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions',
           },
           {
             from: '/dagster-plus/account/authentication/utilizing-scim-provisioning',
@@ -822,7 +822,7 @@ const config: Config = {
           },
           {
             from: '/dagster-plus/account/authentication/okta/saml-sso',
-            to: '/dagster-plus/features/authentication-and-access-control/okta-sso',
+            to: '/dagster-plus/features/authentication-and-access-control/sso/okta-sso',
           },
           {
             from: '/dagster-plus/account/authentication/okta/scim-provisioning',
@@ -886,7 +886,7 @@ const config: Config = {
           },
           {
             from: '/dagster-plus/managing-deployments/code-locations',
-            to: '/dagster/plus/deployment/code-locations/',
+            to: '/dagster-plus/deployment/code-locations/',
           },
           {
             from: '/dagster-plus/managing-deployments/branch-deployments',
@@ -954,7 +954,7 @@ const config: Config = {
           },
           {
             from: '/dagster-plus/managing-deployments/dagster-plus-cli',
-            to: '/dagster-plus/deployment/dagster-cloud-cli',
+            to: '/dagster-plus/deployment/management/dagster-cloud-cli/',
           },
           {
             from: '/dagster-plus/references/ci-cd-file-reference',
@@ -962,11 +962,11 @@ const config: Config = {
           },
           {
             from: '/dagster-plus/managing-deployments/dagster-cloud-yaml',
-            to: '/dagster-plus/deployment/dagster-cloud-yaml',
+            to: '/dagster-plus/deployment/code-locations/dagster-cloud-yaml',
           },
           {
             from: '/dagster-plus/references/limits',
-            to: '/dagster-plus/deployment/rate-limits',
+            to: '/dagster-plus/deployment/management/rate-limits',
           },
           {
             from: '/deployment',
@@ -1142,7 +1142,7 @@ const config: Config = {
           },
           {
             from: '/integrations/airflow/from-airflow-to-dagster',
-            to: '/integrations/libraries/airlift/airflow-to-dagster',
+            to: '/integrations/libraries/airlift/airflow-to-dagster/',
           },
           {
             from: '/guides/migrations/observe-your-airflow-pipelines-with-dagster',
@@ -1150,15 +1150,15 @@ const config: Config = {
           },
           {
             from: '/guides/dagster/recommended-project-structure',
-            to: '/guides/build/project-structure/',
+            to: '/guides/build/projects/structuring-your-dagster-project',
           },
           {
             from: '/guides/dagster/ml-pipeline',
-            to: '/guides/build/ml-pipelines',
+            to: '/guides/build/ml-pipelines/',
           },
           {
             from: '/guides/dagster/managing-ml',
-            to: '/guides/build/ml-pipelines',
+            to: '/guides/build/ml-pipelines/',
           },
           {
             from: '/guides/dagster/example_project',
@@ -1174,7 +1174,7 @@ const config: Config = {
           },
           {
             from: '/guides/customizing-run-queue-priority',
-            to: '/guides/deploy/execution/customizing-run-coordinator-priority',
+            to: '/guides/deploy/execution/customizing-run-queue-priority',
           },
           {
             from: '/guides/dagster/dagster_type_factories',
