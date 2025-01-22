@@ -125,13 +125,25 @@ export const SelectionAutoCompleteInput = ({
 
       // Enforce single line by preventing newlines
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
-        if (change.text.length !== 1 || change.text[0]?.includes('\n')) {
+        if (
+          change.text.length !== 1 ||
+          change.text[0]?.includes('\n') ||
+          change.text[0]?.includes('  ')
+        ) {
           change.cancel();
         }
       });
 
       cmInstance.current.on('change', (instance: Editor) => {
         const newValue = instance.getValue().replace(/\s+/g, ' ');
+        const cursor = instance.getCursor();
+        if (instance.getValue() !== newValue) {
+          const difference = newValue.length - instance.getValue().length;
+          // In this case they added a space, we removed it,
+          // so we need to move the cursor back one character
+          instance.setValue(newValue);
+          instance.setCursor({...cursor, ch: cursor.ch - difference});
+        }
         setInnerValue(newValue);
         setShowResults({current: true});
         adjustHeight();
@@ -253,6 +265,7 @@ export const SelectionAutoCompleteInput = ({
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
         onSelectionChange(innerValueRef.current);
+        setShowResults({current: false});
       }
       if (!showResults.current) {
         return;
