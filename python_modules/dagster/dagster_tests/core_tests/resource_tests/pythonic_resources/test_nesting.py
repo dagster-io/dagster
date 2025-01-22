@@ -968,31 +968,35 @@ def test_nested_resource_yield_inner() -> None:
 
 
 def test_nested_resources_runtime_config_fully_populated() -> None:
-    class CredentialsResource(ConfigurableResource):
+    """Ensures that nested resources which have default values for all
+    fields can be overridden at runtime.
+    """
+
+    class InnermostResource(ConfigurableResource):
         username: str = "default_username"
         password: str = "default_password"
 
-    class DBConfigResource(ConfigurableResource):
-        creds: CredentialsResource
+    class NestedResource(ConfigurableResource):
+        creds: InnermostResource
         host: str = "default_host"
         database: str = "default_database"
 
-    class DBResource(ConfigurableResource):
-        config: DBConfigResource
+    class TopLevelResource(ConfigurableResource):
+        config: NestedResource
 
     completed = {}
 
     @asset
-    def my_asset(db: DBResource):
+    def my_asset(db: TopLevelResource):
         assert db.config.creds.username == "foo"
         assert db.config.creds.password == "bar"
         assert db.config.host == "localhost"
         assert db.config.database == "my_db"
         completed["yes"] = True
 
-    credentials = CredentialsResource.configure_at_launch()
-    db_config = DBConfigResource.configure_at_launch(creds=credentials)
-    db = DBResource(config=db_config)
+    credentials = InnermostResource.configure_at_launch()
+    db_config = NestedResource.configure_at_launch(creds=credentials)
+    db = TopLevelResource(config=db_config)
 
     defs = Definitions(
         assets=[my_asset],
