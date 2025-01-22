@@ -110,6 +110,7 @@ def build_run_stats_from_events(
     )
 
 
+@whitelist_for_serdes
 class StepEventStatus(Enum):
     SKIPPED = "SKIPPED"
     SUCCESS = "SUCCESS"
