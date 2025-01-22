@@ -9,7 +9,6 @@ import {isRunlessEvent} from './isRunlessEvent';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {AssetKeyInput} from '../graphql/types';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
@@ -207,7 +206,7 @@ const AssetEventListEventRow = ({
               event={{stepKey: latest.stepKey, timestamp: latest.timestamp}}
             >
               <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-                <RunStatusWithStats runId={run.id} status={run.status} size={8} />
+                <Icon name="run" />
                 {titleForRun(run)}
               </Box>
             </AssetRunLink>
