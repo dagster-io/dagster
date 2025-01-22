@@ -116,9 +116,11 @@ partition_keys = partitions_a.get_partition_keys()
 @schedule(target=asset_selection, cron_schedule="* * * * *")
 def launch_backfill_with_multiple_assets_selected(context):
     return RunRequest.from_asset_partitions(
+        asset_graph=context.repository_def.asset_graph,
         # asset_selection=asset_selection,  # implied by the target argument
         partition_names=partition_keys,
         tags={"custom_tag_key": "custom_tag_value"},
+        instance=context.instance,
         all_partitions=False,
     )
 ```
@@ -157,8 +159,10 @@ partitions = ["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04", "2023-01-0
 )
 def launch_backfill_with_single_run_backfill_policy(context):
     yield RunRequest.from_partitions_by_assets(
+        asset_graph=context.repository_def.asset_graph,
         partitions_by_assets={asset_with_single_run_backfill_policy.key: set(partitions)},
         tags={},  # optional
+        instance=context.instance,
         title=None,  # optional
         description=None,  # optional
     )
