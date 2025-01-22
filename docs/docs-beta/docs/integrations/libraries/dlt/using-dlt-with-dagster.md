@@ -21,7 +21,7 @@ In this guide, we'll explain how the dlt integration works, how to set up a Dags
 
 ## How it works
 
-The Dagster dlt integration uses [multi-assets](/guides/build/assets/defining-assets#multi-assets), a single definition that results in multiple assets. These assets are derived from the `DltSource`.
+The Dagster dlt integration uses [multi-assets](/guides/build/assets/defining-assets#multi-asset), a single definition that results in multiple assets. These assets are derived from the `DltSource`.
 
 The following is an example of a dlt source definition where a source is made up of two resources:
 

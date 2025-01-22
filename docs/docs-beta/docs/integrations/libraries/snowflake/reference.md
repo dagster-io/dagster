@@ -6,8 +6,6 @@ sidebar_position: 300
 
 This reference page provides information for working with [`dagster-snowflake`](/api/python-api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](using-snowflake-with-dagster), [I/O managers](using-snowflake-with-dagster-io-managers)).
 
-
-
 ## Authenticating using a private key
 
 In addition to password-based authentication, you can authenticate with Snowflake using a key pair. To set up private key authentication for your Snowflake account, see the instructions in the [Snowflake docs](https://docs.snowflake.com/en/user-guide/key-pair-auth.html#configuring-key-pair-authentication).
@@ -159,9 +157,9 @@ Let's review what's happening in this example:
 
 - Attached the `SnowflakeResource` to the `small_petals` asset
 - Used the `get_connection` context manager method of the Snowflake resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection) object
-- Used the connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](using-snowflake-with-dagster#create-tables-in-snowflake-from-dagster-assets) of the [Snowflake resource tutorial](using-snowflake-with-dagster)
+- Used the connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](using-snowflake-with-dagster#step-2-create-tables-in-snowflake) of the [Snowflake resource tutorial](using-snowflake-with-dagster)
 
-For more information on the Snowflake resource, including additional configuration settings, see the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> API docs.
+For more information on the Snowflake resource, including additional configuration settings, see the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" /> API docs.
 
 
 ## Using the Snowflake I/O manager
@@ -207,7 +205,7 @@ The Snowflake I/O manager supports storing and loading partitioned data. In orde
 
 To store statically-partitioned assets in Snowflake, specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
-{/* TODO convert to <CodeExample> */}
+{/* TODO convert to CodeExample */}
 ```python file=/integrations/snowflake/static_partition.py
 import pandas as pd
 
@@ -251,7 +249,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
+{/* TODO fix link: When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets).*/} When materializing the above assets, a partition must be selected. In this example, the query used when materializing the `Iris-setosa` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -263,7 +261,7 @@ SELECT *
 
 Like statically-partitioned assets, you can specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
-{/* TODO convert to <CodeExample> */}
+{/* TODO convert to CodeExample */}
 ```python file=/integrations/snowflake/time_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
@@ -311,11 +309,9 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 </TabItem>
 <TabItem value="Multi-partitioned assets">
 
-#### Multi-partitioned assets
-
 The Snowflake I/O manager can also store data partitioned on multiple dimensions. To do this, you must specify the column for each partition as a dictionary of `partition_expr` metadata:
 
-{/* TODO convert to <CodeExample> */}
+{/* TODO convert to CodeExample */}
 ```python file=/integrations/snowflake/multi_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
@@ -362,7 +358,7 @@ def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
 
-{/* TODO fix link: When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). /*} When materializing the above assets, a partition must be selected. For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
+{/* TODO fix link: When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). */} When materializing the above assets, a partition must be selected. For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
 
 ```sql
 SELECT *
@@ -543,12 +539,12 @@ defs = Definitions(
 
 :::
 
-The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject module="dagster_spark" object="spark_resource"/>.
+The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and configured with the [Snowflake connector for Spark](https://docs.snowflake.com/en/user-guide/spark-connector.html). You can either create your own `SparkSession` or use the <PyObject section="libraries" module="dagster_spark" object="spark_resource"/>.
 
 <Tabs>
 <TabItem value="With the spark_resource">
 
-{/* TODO convert to <CodeExample> */}
+{/* TODO convert to CodeExample */}
 ```python file=/integrations/snowflake/pyspark_with_spark_resource.py
 from dagster_pyspark import pyspark_resource
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
@@ -602,7 +598,7 @@ defs = Definitions(
 </TabItem>
 <TabItem value="With your own SparkSession">
 
-{/* TODO convert to <CodeExample> */}
+{/* TODO convert to CodeExample */}
 ```python file=/integrations/snowflake/pyspark_with_spark_session.py
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles

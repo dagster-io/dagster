@@ -24,17 +24,13 @@ By the end of this tutorial, you will:
 - Create a second Dagster asset that only fetches the dataset
 - Load existing Dagster assets into a new Jupyter notebook
 
-
-
 ## Dagster concepts
 
 In this guide, we'll use the following Dagster concepts:
 
 - [Assets](/guides/build/assets/defining-assets) - An asset is a software object that models a data asset. The prototypical example is a table in a database or a file in cloud storage. An executed Jupyter notebook file can also be an asset! That's what we'll be creating in this guide.
-- [Definitions](/concepts/code-locations) - A Dagster `Definitions` object is a collection of Dagster objects, including assets.
+- [Definitions](/api/python-api/definitions) - A Dagster `Definitions` object is a collection of Dagster objects, including assets.
 - [I/O managers](/guides/build/io-managers/) - An I/O manager handles storing and loading assets. In this guide, we'll be using a special I/O manager to store executed Jupyter notebook files.
-
-
 
 ## Prerequisites
 
@@ -46,7 +42,7 @@ To complete this tutorial, you'll need:
   pip install dagster notebook
   ```
 
-  Refer to the [Dagster](/getting-started/install) installation docs for more info.
+  Refer to the [Dagster](/getting-started/installation) installation docs for more info.
 
 - **To download the [`tutorial_notebook_assets`](https://github.com/dagster-io/dagster/tree/master/examples/tutorial_notebook_assets) Dagster example and install its dependencies:**
 
@@ -92,7 +88,7 @@ iris = pd.read_csv(
 
 Next, we'll perform some descriptive analysis to explore the dataset. If you execute these cells, several plots of the Iris dataset will be created:
 
-![Iris dataset plots](/images/integrations/dagstermill/descriptive-plots.png)
+![Iris dataset plots](/images/integrations/jupyter/descriptive-plots.png)
 
 Next, we conduct our K-means analysis:
 
@@ -105,7 +101,7 @@ estimator.fit(
 
 Lastly, we plot the results of the K-means analysis. From the plots, we can see that one species of Iris is separable from the other two, but a more sophisticated model will be required to distinguish the other two species:
 
-![kmeans plots](/images/integrations/dagstermill/kmeans-plots.png)
+![kmeans plots](/images/integrations/jupyter/kmeans-plots.png)
 
 Like many notebooks, this example does some fairly sophisticated work, including producing diagnostic plots and a statistical model. For now, this work is locked away in the `.ipynb` format, only reproducible using a complex Jupyter setup, and only programmatically accessible within the notebook context. We'll address this in the remainder of the tutorial.
 
@@ -165,9 +161,9 @@ defs = Definitions(
 
 Let's take a look at what's happening here:
 
-- Using <PyObject section="assetes" module="dagster" object="load_assets_from_modules" />, we've imported all assets in the `assets` module. This approach allows any new assets we create to be automatically added to the `Definitions` object instead of needing to manually add them one by one.
+- Using <PyObject section="assets" module="dagster" object="load_assets_from_modules" />, we've imported all assets in the `assets` module. This approach allows any new assets we create to be automatically added to the `Definitions` object instead of needing to manually add them one by one.
 
-- We provided a dictionary of resources to the `resources` parameter. In this example, that's the <PyObject module="dagstermill" object="ConfigurableLocalOutputNotebookIOManager" /> resource.
+- We provided a dictionary of resources to the `resources` parameter. In this example, that's the <PyObject section="libraries" module="dagstermill" object="ConfigurableLocalOutputNotebookIOManager" /> resource.
 
   This I/O manager, bound to the `output_notebook_io_manager` key, is responsible for handling the storage of the notebook asset's resulting `.ipynb` file.
 
@@ -187,25 +183,25 @@ Now that you've created an asset, a resource, and a `Definitions` object, it's t
    Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
    ```
 
-2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the notebook asset in the **Asset Graph**.
+2. In your browser, navigate to [http://127.0.0.1:3000](http://127.0.0.1:3000). The page will display the notebook asset in the **Asset Graph**.
 
    If you click the notebook asset, a sidebar containing info about the asset will slide out from the right side of the page. In the **Description** section of the panel is a **View Source Notebook** button:
 
-   ![Notebook asset in UI](/images/integrations/dagstermill/ui-one.png)
+   ![Notebook asset in UI](/images/integrations/jupyter/ui-one.png)
 
    This button allows you to view the notebook directly in the UI. When clicked, Dagster will render the notebook - referenced in the `notebook_path` parameter - that'll be executed when the `iris_kmeans_jupyter` asset is materialized:
 
-   ![View Source Notebook display in the Dagster UI](/images/integrations/dagstermill/view-source-notebook.png)
+   ![View Source Notebook display in the Dagster UI](/images/integrations/jupyter/view-source-notebook.png)
 
 3. Click the **Materialize** button. To view the execution as it happens, click the **View** button in the alert that displays.
 
 After the run completes successfully, you can view the executed notebook in the UI. Click the asset again and locate the **View Notebook** button in the **Materialization in Last Run** section of the sidebar:
 
-![View notebook button in materialization in last run area](/images/integrations/dagstermill/ui-two.png)
+![View notebook button in materialization in last run area](/images/integrations/jupyter/ui-two.png)
 
 Click the button to display the executed notebook - specifically, the notebook that was executed and written to a persistent location:
 
-![Executed notebook display in the Dagster UI](/images/integrations/dagstermill/view-executed-notebook.png)
+![Executed notebook display in the Dagster UI](/images/integrations/jupyter/view-executed-notebook.png)
 
 ## Step 5: Add an upstream asset
 
@@ -292,11 +288,11 @@ To add the `parameters` tag, you may need to turn on the display of cell tags in
 
 1. In Jupyter, navigate to **View > Cell Toolbar > Tags**:
 
-    ![Jupyer turn on display of cell tags](/images/integrations/dagstermill/jupyter-view-menu.png)
+    ![Jupyer turn on display of cell tags](/images/integrations/jupyter/jupyter-view-menu.png)
 
 2. Click **Add Tag** to add a `parameters` tag:
 
-   ![Jupyer add tag button](/images/integrations/dagstermill/jupyter-tags.png)
+   ![Jupyer add tag button](/images/integrations/jupyter/jupyter-tags.png)
 
 ## Step 6: Materialize the assets
 
@@ -308,7 +304,7 @@ Next, we'll materialize our `iris_dataset` and notebook assets.
 
    At this point, the `iris_dataset` asset should display above the `iris_kmeans_jupyter` asset as an upstream dependency:
 
-    ![Upstream Iris dataset asset](/images/integrations/dagstermill/ui-three.png)
+    ![Upstream Iris dataset asset](/images/integrations/jupyter/ui-three.png)
 
 3. Click the **Materialize all** button near the top right corner of the page, which will launch a run to materialize the assets.
 
@@ -320,7 +316,7 @@ What if you want to do additional analysis of the Iris dataset and create a new 
 
 The answer is simple: use the `iris_dataset` Dagster asset!
 
-In the Jupyter notebook, import the Dagster `Definitions` object and use the <PyObject object="Definitions" method="load_asset_value" /> function to load the data for the `iris_dataset` asset we created in [Step 5.1: Create the Iris dataset asset](#step-51-create-the-iris-dataset-asset):
+In the Jupyter notebook, import the Dagster `Definitions` object and use the <PyObject section="definitions" module="dagster" object="Definitions.load_asset_value" /> function to load the data for the `iris_dataset` asset we created in [Step 5.1: Create the Iris dataset asset](#step-51-create-the-iris-dataset-asset):
 
 ```python
 from tutorial_template import template_tutorial

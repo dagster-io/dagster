@@ -40,7 +40,7 @@ pip install dagster dagster-powerbi
 
 ## Represent Power BI assets in the asset graph
 
-To load Power BI assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" module="dagster_powerbi" object="PowerBIWorkspace" /> resource, which allows Dagster to communicate with your Power BI workspace. You'll need to supply your workspace ID and credentials. You may configure a service principal or use an API access token, which can be passed directly or accessed from the environment using <PyObject object="EnvVar" />.
+To load Power BI assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" module="dagster_powerbi" object="PowerBIWorkspace" /> resource, which allows Dagster to communicate with your Power BI workspace. You'll need to supply your workspace ID and credentials. You may configure a service principal or use an API access token, which can be passed directly or accessed from the environment using <PyObject section="resources" module="dagster" object="EnvVar" />.
 
 Dagster can automatically load all semantic models, data sources, reports, and dashboards from your Power BI workspace as asset specs. Call the <PyObject section="libraries" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Power BI assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
@@ -219,7 +219,7 @@ You can then add these semantic models to jobs or as targets of Dagster sensors 
 
 ### Customizing how Power BI semantic models are materialized
 
-Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_powerbi" method="build_semantic_model_refresh_asset_definition" /> utility, you can build your own asset definitions that trigger the refresh of Power BI semantic models. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
+Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_powerbi" object="build_semantic_model_refresh_asset_definition" /> utility, you can build your own asset definitions that trigger the refresh of Power BI semantic models. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/integrations/power-bi/materialize-semantic-models-advanced.py

@@ -42,7 +42,7 @@ pip install dagster dagster-looker
 
 To load Looker assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" module="dagster_looker" object="LookerResource" />, which allows Dagster to communicate with your Looker instance. You'll need to supply your Looker instance URL and API credentials, which can be passed directly or accessed from the environment using <PyObject section="resources" module="dagster" object="EnvVar" />.
 
-Dagster can automatically load all views, explores, and dashboards from your Looker instance as asset specs. Call the <PyObject section="libraries" module="dagster_looker" method="load_looker_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> representing your Looker assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
+Dagster can automatically load all views, explores, and dashboards from your Looker instance as asset specs. Call the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> representing your Looker assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/integrations/looker/representing-looker-assets.py
@@ -62,7 +62,7 @@ defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resour
 
 ## Load Looker assets from filtered dashboards and explores
 
-It is possible to load a subset of your Looker assets by providing a <PyObject section="libraries" module="dagster_looker" method="LookerFilter" /> to the <PyObject section="libraries" module="dagster_looker" method="load_looker_asset_specs" /> function. All dashboards contained in the folders provided to your <PyObject section="libraries" module="dagster_looker" method="LookerFilter" /> will be fetched. Additionally, only the explores used in these dashboards will be fetched by passing `only_fetch_explores_used_in_dashboards=True` to your <PyObject section="libraries" module="dagster_looker" method="LookerFilter" />.
+It is possible to load a subset of your Looker assets by providing a <PyObject section="libraries" module="dagster_looker" object="LookerFilter" /> to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function. All dashboards contained in the folders provided to your <PyObject section="libraries" module="dagster_looker" object="LookerFilter" /> will be fetched. Additionally, only the explores used in these dashboards will be fetched by passing `only_fetch_explores_used_in_dashboards=True` to your <PyObject section="libraries" module="dagster_looker" object="LookerFilter" />.
 
 Note that the content and size of Looker instance may affect the performance of your Dagster deployments. Filtering the dashboards and explores selection from which your Looker assets will be loaded is particularly useful for improving loading times.
 
@@ -93,7 +93,7 @@ defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resour
 
 ### Customize asset definition metadata for Looker assets
 
-By default, Dagster will generate asset specs for each Looker asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject section="libraries" module="dagster_looker" method="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Looker asset type.
+By default, Dagster will generate asset specs for each Looker asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Looker asset type.
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/integrations/looker/customize-looker-assets.py
@@ -142,7 +142,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 ### Materialize Looker PDTs from Dagster
 
-You can use Dagster to orchestrate the materialization of Looker PDTs. To model PDTs as assets, build their asset definitions by passing a list of <PyObject section="libraries" module="dagster_looker" object="RequestStartPdtBuild" /> to <PyObject section="libraries" module="dagster_looker" method="build_looker_pdt_assets_definitions" /> function.
+You can use Dagster to orchestrate the materialization of Looker PDTs. To model PDTs as assets, build their asset definitions by passing a list of <PyObject section="libraries" module="dagster_looker" object="RequestStartPdtBuild" /> to <PyObject section="libraries" module="dagster_looker" object="build_looker_pdt_assets_definitions" /> function.
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/integrations/looker/materializing-looker-pdts.py

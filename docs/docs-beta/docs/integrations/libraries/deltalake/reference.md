@@ -4,7 +4,7 @@ description: Store your Dagster assets in Delta Lake
 sidebar_position: 200
 ---
 
-This reference page provides information for working with [`dagster-deltalake`](/api/python-api/libraries/dagster-deltalake) features that are not covered as part of the [Using Dagster with Delta Lake tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster).
+This reference page provides information for working with [`dagster-deltalake`](/api/python-api/libraries/dagster-deltalake) features that are not covered as part of the [Using Delta Lake with Dagster tutorial](using-deltalake-with-dagster).
 
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
@@ -19,7 +19,7 @@ Sometimes you may not want to fetch an entire table as the input to a downstream
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/downstream_columns.py" />
 
-In this example, we only use the columns containing sepal data from the `iris_dataset` table created in [Step 2](using-deltalake-with-dagster#store-a-dagster-asset-as-a-table-in-delta-lake) of the [Using Dagster with Delta Lake tutorial](using-deltalake-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
+In this example, we only use the columns containing sepal data from the `iris_dataset` table created in [Step 2](using-deltalake-with-dagster#step-2-create-delta-lake-tables) of the [Using Dagster with Delta Lake tutorial](using-deltalake-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Delta Lake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `iris/iris_dataset` table and pass them to `sepal_data` as a Pandas DataFrame.
 

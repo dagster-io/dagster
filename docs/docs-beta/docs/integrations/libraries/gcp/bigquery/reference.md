@@ -1,10 +1,10 @@
 ---
-title: "dagster-bigquery integration reference"
+title: "BigQuery integration reference"
 description: Store your Dagster assets in BigQuery
 sidebar_position: 200
 ---
 
-This reference page provides information for working with [`dagster-bigquery`](/api/python-api/libraries/dagster-bigquery) features that are not covered as part of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
+This reference page provides information for working with features that are not covered as part of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster).
 
 - [Providing credentials as configuration](#providing-credentials-as-configuration)
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
@@ -17,7 +17,7 @@ This reference page provides information for working with [`dagster-bigquery`](/
 
 ## Providing credentials as configuration
 
-In most cases, you will authenticate with Google Cloud Project (GCP) using one of the methods outlined in the [GCP documentation](https://cloud.google.com/docs/authentication/provide-credentials-adc). However, in some cases you may find that you need to provide authentication credentials directly to the BigQuery I/O manager. For example, if you are using [Dagster+ Serverless](/dagster-plus/deployment/serverless) you cannot upload a credential file, so must provide your credentials as an environment variable.
+In most cases, you will authenticate with Google Cloud Project (GCP) using one of the methods outlined in the [GCP documentation](https://cloud.google.com/docs/authentication/provide-credentials-adc). However, in some cases you may find that you need to provide authentication credentials directly to the BigQuery I/O manager. For example, if you are using [Dagster+ Serverless](/dagster-plus/deployment/deployment-types/serverless) you cannot upload a credential file, so must provide your credentials as an environment variable.
 
 You can provide credentials directly to the BigQuery I/O manager by using the `gcp_credentials` configuration value. The BigQuery I/O manager will create a temporary file to store the credential and will set `GOOGLE_APPLICATION_CREDENTIALS` to point to this file. When the Dagster run is completed, the temporary file is deleted and `GOOGLE_APPLICATION_CREDENTIALS` is unset.
 
@@ -27,7 +27,7 @@ To avoid issues with newline characters in the GCP credential key, you must base
 cat ~/.gcp/key.json | base64
 ```
 
-Then you can [set an environment variable](/guides/dagster/using-environment-variables-and-secrets) in your Dagster deployment (for example `GCP_CREDS`) to the encoded key and provide it to the BigQuery I/O manager:
+Then you can [set an environment variable](/guides/deploy/using-environment-variables-and-secrets) in your Dagster deployment (for example `GCP_CREDS`) to the encoded key and provide it to the BigQuery I/O manager:
 
 {/* TODO convert to <CodeExample> */}
 ```python file=/integrations/bigquery/reference/config_auth.py startafter=start_example endbefore=end_example
@@ -77,7 +77,7 @@ def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
     return iris_sepal
 ```
 
-In this example, we only use the columns containing sepal data from the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](using-bigquery-with-dagster#store-a-dagster-asset-as-a-table-in-bigquery) of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_data` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
+In this example, we only use the columns containing sepal data from the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](using-bigquery-with-dagster#step-2-create-tables-in-bigquery) of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_data` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_data` asset using the BigQuery I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `IRIS.IRIS_DATA` table and pass them to `sepal_data` as a Pandas DataFrame.
 
@@ -185,7 +185,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow BigQuery's SQL syntax. Refer to the [BigQuery documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/query-syntax) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/guides/build/partitions-and-backills/partitioning-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
+When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/guides/build/partitions-and-backfills/partitioning-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -379,7 +379,7 @@ In this example, the `iris_data` asset uses the I/O manager bound to the key `wa
 
 ## Storing and loading PySpark DataFrames in BigQuery
 
-The BigQuery I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />, first install the package:
+The BigQuery I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject section="libraries" module="dagster_gcp_pyspark" object="BigQueryPySparkIOManager" />, first install the package:
 
 ```shell
 pip install dagster-gcp-pyspark
@@ -601,6 +601,4 @@ defs = Definitions(
 )
 ```
 
-In this example, we attach the BigQuery resource to the `small_petals` asset. In the body of the asset function, we use the `get_client` context manager method of the resource to get a [`bigquery.client.Client`](https://cloud.google.com/python/docs/reference/bigquery/latest/google.cloud.bigquery.client.Client). We can use the client to execute a custom SQL query against the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](using-bigquery-with-dagster#store-a-dagster-asset-as-a-table-in-bigquery) of the [Using Dagster with BigQuery tutorial](/integrations/bigquery/using-bigquery-with-dagster).
-
-For more information on the BigQuery resource, see the [BigQuery resource API docs](/api/python-api/libraries/dagster-gcp#dagster_gcp.BigQueryResource).
+In this example, we attach the BigQuery resource to the `small_petals` asset. In the body of the asset function, we use the `get_client` context manager method of the resource to get a [`bigquery.client.Client`](https://cloud.google.com/python/docs/reference/bigquery/latest/google.cloud.bigquery.client.Client). We can use the client to execute a custom SQL query against the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](using-bigquery-with-dagster#step-2-create-tables-in-bigquery) of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster).

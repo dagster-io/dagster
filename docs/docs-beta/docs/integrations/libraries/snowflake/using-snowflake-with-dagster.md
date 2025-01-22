@@ -1,5 +1,5 @@
 ---
-title: "Integrating Snowflake with Dagster using resources"
+title: "Using Snowflake with Dagster resources"
 description: "Learn to integrate Snowflake with Dagster using a Snowflake resource."
 sidebar_position: 200
 ---

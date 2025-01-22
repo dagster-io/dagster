@@ -9,7 +9,7 @@ The `dagster-pandera` integration library provides an API for generating [Dagste
 
 Using Pandera with Dagster allows you to:
 
-- Visualize the shape of the data by displaying dataframe structure information in [the Dagster UI](/concepts/webserver/ui)
+- Visualize the shape of the data by displaying dataframe structure information in the Dagster UI
 - Implement runtime type-checking with rich error reporting
 
 ## Limitations
@@ -78,7 +78,7 @@ In the above example, we defined a toy job (`stocks_job`) with a single asset, `
 
 Let's look at this job in the UI:
 
-![Pandera job in the Dagster UI](/images/guides/dagster_pandera/schema.png)
+![Pandera job in the Dagster UI](/images/integrations/pandera/schema.png)
 
 Notice that information from the `StockPrices` Pandera schema is rendered in the asset detail area of the right sidebar. This is possible because `pandera_schema_to_dagster_type` extracts this information from the Pandera schema and attaches it to the returned Dagster type.
 
@@ -86,4 +86,4 @@ If we try to run `stocks_job`, our run will fail. This is expected, as our (dirt
 
 Notice the `STEP_OUTPUT` event in the following screenshot to see Pandera's full output:
 
-![Error report for a Pandera job in the Dagster UI](/images/guides/dagster_pandera/error-report.png)
+![Error report for a Pandera job in the Dagster UI](/images/integrations/pandera/error-report.png)

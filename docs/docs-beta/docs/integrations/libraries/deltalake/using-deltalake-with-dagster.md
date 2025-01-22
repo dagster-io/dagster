@@ -27,7 +27,7 @@ pip install dagster-deltalake dagster-deltalake-pandas
 
 The Delta Lake I/O manager requires some configuration to set up your Delta Lake. You must provide a root path where your Delta tables will be created. Additionally, you can specify a `schema` where the Delta Lake I/O manager will create tables.
 
-<CodeExample path="/integrations/deltalake/configuration.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/configuration.py" startAfter="start_example" endBefore="end_example" />
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Delta Lake I/O manager would store the data within a folder `iris/iris_dataset` under the provided root directory `path/to/deltalake`.
 
@@ -45,7 +45,7 @@ The Delta Lake I/O manager can create and update tables for your Dagster-defined
 
 To store data in Delta Lake using the Delta Lake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Delta Lake I/O manager, like in [Step 1](#step-1-configure-the-delta-lake-io-manager), and Dagster will handle storing and loading your assets in Delta Lake.
 
-<CodeExample path="/integrations/deltalake/basic_example.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/basic_example.py" />
 
 In this example, we first define an [asset](/guides/build/assets/defining-assets). Here, we fetch the Iris dataset as a Pandas DataFrame and rename the columns. The type signature of the function tells the I/O manager what data type it is working with, so it's important to include the return type `pd.DataFrame`.
 
@@ -59,7 +59,7 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 If you already have tables in your Delta Lake, you may want to make them available to other Dagster assets. You can accomplish this by defining [external assets](/guides/build/assets/external-assets) for these tables. By creating an external asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
-<CodeExample path="/integrations/deltalake/source_asset.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/source_asset.py" />
 
 In this example, we create a <PyObject section="assets" module="dagster" object="AssetSpec" /> for an existing table containing iris harvest data. To make the data available to other Dagster assets, we need to tell the Delta Lake I/O manager how to find the data.
 
@@ -72,9 +72,9 @@ Because we already supplied the database and schema in the I/O manager configura
 
 Once you've created an asset that represents a table in your Delta Lake, you will likely want to create additional assets that work with the data. Dagster and the Delta Lake I/O manager allow you to load the data stored in Delta tables into downstream assets.
 
-<CodeExample path="/integrations/deltalake/load_downstream.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/load_downstream.py" startAfter="start_example" endBefore="end_example" />
 
-In this example, we want to provide the `iris_dataset` asset to the `iris_cleaned` asset. Refer to the [Store a Dagster asset as a table in Delta Lake](#store-a-dagster-asset-as-a-table-in-delta-lake) example for a look at the `iris_dataset` asset.
+In this example, we want to provide the `iris_dataset` asset to the `iris_cleaned` asset. Refer to the Store a Dagster asset as a table in Delta Lake example in [step 2](#step-2-create-delta-lake-tables) for a look at the `iris_dataset` asset.
 
 In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`. If this feels too magical for you, refer to the docs for explicitly specifying dependencies.
 
@@ -84,12 +84,12 @@ When materializing these assets, Dagster will use the `DeltaLakePandasIOManager`
 
 When finished, your code should look like the following:
 
-<CodeExample path="/integrations/deltalake/full_example.py" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/full_example.py" />
 
 ## Related
 
-For more Delta Lake features, refer to the [Delta Lake reference](/integrations/deltalake/reference).
+For more Delta Lake features, refer to the [Delta Lake reference](reference).
 
-For more information on asset definitions, refer to the [Dagster tutorial](/tutorial) or the [Assets documentation](/guides/build/assets/defining-assets).
+For more information on asset definitions, see the [Assets documentation](/guides/build/assets/defining-assets).
 
 For more information on I/O managers, refer to the [I/O manager documentation](/guides/build/io-managers/).

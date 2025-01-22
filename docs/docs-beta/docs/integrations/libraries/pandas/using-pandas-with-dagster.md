@@ -10,7 +10,7 @@ description: "The dagster-pandas library provides the ability to perform data va
 This page describes the `dagster-pandas` library, which is used for performing data validation. To simply use pandas with Dagster, start with the [Dagster Quickstart](/getting-started/quickstart)
 
 Dagster makes it easy to use pandas code to manipulate data and then store
-that data in other systems such as [files on Amazon S3](/api/python-api/libraries/dagster-aws#dagster_aws.s3.s3_pickle_io_manager) or [tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster)
+that data in other systems such as [files on Amazon S3](/api/python-api/libraries/dagster-aws#dagster_aws.s3.s3_pickle_io_manager) or [tables in Snowflake](/integrations/libraries/snowflake/using-snowflake-with-dagster)
 
 :::
 
@@ -60,7 +60,7 @@ def load_trip_dataframe() -> DataFrame:
 
 By passing in these `PandasColumn` objects, we are expressing the schema and constraints we expect our dataframes to follow when Dagster performs type checks for our ops. Moreover, if we go to the op viewer, we can follow our schema documented in the UI:
 
-![tutorial2](/images/guides/dagster_pandas/tutorial2.png)
+![tutorial2](/images/integrations/pandas/tutorial2.png)
 
 ## Dagster DataFrame Level Validation
 
@@ -103,7 +103,7 @@ SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
 
 Now if we run this job in the UI launchpad, we can see that the `SummaryStatsTripDataFrame` type is displayed in the logs along with the emitted metadata.
 
-![tutorial1.png](/images/guides/dagster_pandas/tutorial1.png)
+![tutorial1.png](/images/integrations/pandas/tutorial1.png)
 
 # Dagster DataFrame Custom Validation
 

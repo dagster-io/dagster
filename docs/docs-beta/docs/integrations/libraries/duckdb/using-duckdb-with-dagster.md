@@ -65,7 +65,7 @@ defs = Definitions(
 )
 ```
 
-### Step 2: Create tables in DuckDB
+### Step 2: Create tables in DuckDB \{#option-1-step-2}
 
 <Tabs>
 
@@ -229,7 +229,7 @@ defs = Definitions(
 )
 ```
 
-### Step 2: Create tables in DuckDB
+### Step 2: Create tables in DuckDB \{#option-2-step-2}
 
 The DuckDB I/O manager can create and update tables for your Dagster-defined assets, but you can also make existing DuckDB tables available to Dagster.
 

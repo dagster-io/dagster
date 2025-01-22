@@ -1,5 +1,5 @@
 ---
-title: "Integrating Snowflake with Dagster using I/O managers"
+title: "Using Snowflake with with Dagster I/O managers"
 description: "Learn to integrate Snowflake with Dagster using a Snowflake I/O manager."
 sidebar_position: 100
 ---
@@ -15,8 +15,7 @@ By the end of the tutorial, you will:
 
 This guide focuses on storing and loading Pandas DataFrames in Snowflake, but Dagster also supports using PySpark DataFrames with Snowflake. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the Snowflake I/O manager with PySpark DataFrames in the [Snowflake reference](reference).
 
-**Prefer to use resources instead?** Unlike an I/O manager, resources allow you to run SQL queries directly against tables within an asset's compute function. Refer to the [Snowlake resource guide](using-snowflake-with-resources) for more info.
-
+**Prefer to use resources instead?** Unlike an I/O manager, resources allow you to run SQL queries directly against tables within an asset's compute function. For details, see "[Using Snowlake with Dagster resources](using-snowflake-with-dagster)".
 
 ## Prerequisites
 
@@ -32,11 +31,7 @@ To complete this tutorial, you'll need:
 
   - **Snowflake account name**: You can find this by logging into Snowflake and getting the account name from the URL:
 
-    <Image
-    src="/images/integrations/snowflake/snowflake-account.png"
-    width={1456}
-    height={72}
-    />
+    ![Snowflake account name from URL](/images/integrations/snowflake/snowflake-account.png)
 
   - **Snowflake credentials**: You can authenticate with Snowflake two ways: with a username and password, or with a username and private key.
 
@@ -47,7 +42,7 @@ To complete this tutorial, you'll need:
     export SNOWFLAKE_PASSWORD=<your password>
     ```
 
-    Refer to the [Using environment variables and secrets guide](/guides/dagster/using-environment-variables-and-secrets) for more info.
+    Refer to the [Using environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more info.
 
     For more information on authenticating with a private key, see [Authenticating with a private key](reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 
