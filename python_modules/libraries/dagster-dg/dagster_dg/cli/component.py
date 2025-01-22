@@ -272,6 +272,7 @@ def component_check_command(
     **global_options: object,
 ) -> None:
     """Check component files against their schemas, showing validation errors."""
+    resolved_paths = [Path(path).absolute() for path in paths]
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     cli_config = normalize_cli_config(global_options, context)
@@ -286,6 +287,11 @@ def component_check_command(
     for component_dir in (
         dg_context.root_path / dg_context.root_package_name / "components"
     ).iterdir():
+        if resolved_paths and not any(
+            path == component_dir or path in component_dir.parents for path in resolved_paths
+        ):
+            continue
+
         component_path = component_dir / "component.yaml"
 
         if component_path.exists():
