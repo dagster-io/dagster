@@ -88,6 +88,7 @@ const SCOUTOS_COPILOT_INNER_HTML = `
           align-items: center;
           font-weight: 400;
           font-family: "Geist", "Inter", "Arial", sans-serif;
+          border: 1px solid var(--theme-color-background-lighter);
         "
       >
         <div>
