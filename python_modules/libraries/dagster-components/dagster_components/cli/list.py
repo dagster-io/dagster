@@ -1,4 +1,5 @@
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -8,7 +9,9 @@ from dagster_components.core.component import (
     Component,
     ComponentTypeMetadata,
     ComponentTypeRegistry,
+    get_component_type_name,
 )
+from dagster_components.core.component_defs_builder import find_local_component_types
 from dagster_components.core.deployment import (
     CodeLocationProjectContext,
     find_enclosing_code_location_root_path,
@@ -56,3 +59,27 @@ def _add_component_type_to_output(
         package=package,
         **component_type.get_metadata(),
     )
+
+
+@list_cli.command(name="local-component-types")
+@click.pass_context
+@click.argument("component_directories", nargs=-1, type=click.Path(exists=True))
+def list_local_component_types_command(
+    ctx: click.Context, component_directories: Sequence[str]
+) -> None:
+    """List local Dagster components found in the specified directories."""
+    output: list = []
+    for component_directory in component_directories:
+        for component_type in find_local_component_types(Path(component_directory)):
+            output.append(
+                {
+                    "directory": component_directory,
+                    "key": f".{get_component_type_name(component_type)}",
+                    "metadata": ComponentTypeMetadata(
+                        name=get_component_type_name(component_type),
+                        package=component_directory,
+                        **component_type.get_metadata(),
+                    ),
+                }
+            )
+    click.echo(json.dumps(output))
