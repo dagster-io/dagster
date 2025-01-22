@@ -333,6 +333,8 @@ export const SelectionAutoCompleteInput = ({
     cmInstance.current?.setSize('100%', '20px');
   }, []);
 
+  useResizeObserver(inputRef, adjustHeight);
+
   return (
     <div onBlur={onBlur}>
       <Popover
