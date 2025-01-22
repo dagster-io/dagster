@@ -5,9 +5,7 @@ from dagster_components_tests.integration_tests.validation_tests.test_cases impo
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
 )
-from dagster_components_tests.integration_tests.validation_tests.utils import (
-    create_code_location_from_components,
-)
+from dagster_components_tests.utils import create_code_location_from_components
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dg_tests.utils import ProxyRunner
 
@@ -36,11 +34,9 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
             if test_case.should_error:
                 assert result.exit_code != 0, str(result.stdout)
 
-                assert test_case.validate_error_msg
-                test_case.validate_error_msg(str(result.stdout))
+                assert test_case.check_error_msg
+                test_case.check_error_msg(str(result.stdout))
 
-                if test_case.validate_error_msg_additional_cli:
-                    test_case.validate_error_msg_additional_cli(str(result.stdout))
             else:
                 assert result.exit_code == 0
 

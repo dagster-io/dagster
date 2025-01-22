@@ -249,6 +249,18 @@ def component_list_command(context: click.Context, **global_options: object) -> 
 # ########################
 from dagster._utils.yaml_utils import parse_yaml_with_source_positions
 
+COMPONENT_FILE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "type": {"type": "string"},
+        "params": {"type": "object"},
+    },
+}
+
+
+def _is_local_component(component_name: str) -> bool:
+    return component_name.startswith(".")
+
 
 @component_group.command(name="check", cls=DgClickCommand)
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
@@ -260,12 +272,14 @@ def component_check_command(
     **global_options: object,
 ) -> None:
     """Check component files against their schemas, showing validation errors."""
+    top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
+
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
 
     component_registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
-    validation_errors: list[tuple[str, ValidationError]] = []
+    validation_errors: list[tuple[Optional[str], ValidationError]] = []
 
     component_contents_by_dir = {}
     local_components = set()
@@ -279,17 +293,28 @@ def component_check_command(
             component_doc_tree = parse_yaml_with_source_positions(
                 text, filename=str(component_path)
             )
-            component_contents_by_dir[component_dir] = component_doc_tree
 
+            # First, validate the top-level structure of the component file
+            # (type and params keys) before we try to validate the params themselves.
+            top_level_errs = list(
+                top_level_component_validator.iter_errors(component_doc_tree.value)
+            )
+            for err in top_level_errs:
+                validation_errors.append((None, err))
+            if top_level_errs:
+                continue
+
+            component_contents_by_dir[component_dir] = component_doc_tree
             component_name = component_doc_tree.value.get("type")
-            if component_name.startswith("."):
+            if _is_local_component(component_name):
                 local_components.add(component_dir)
 
+    # Fetch the local component types, if we need any local components
     local_component_types = LocalComponentTypes.from_dg_context(dg_context, list(local_components))
 
     for component_dir, component_doc_tree in component_contents_by_dir.items():
         component_name = component_doc_tree.value.get("type")
-        if component_name.startswith("."):
+        if _is_local_component(component_name):
             json_schema = (
                 local_component_types.get(component_dir, component_name).component_params_schema
                 or {}
@@ -308,6 +333,7 @@ def component_check_command(
                     component_name,
                     error,
                     source_position_tree=component_doc_tree.source_position_tree,
+                    prefix=["params"] if component_name else [],
                 )
             )
         context.exit(1)

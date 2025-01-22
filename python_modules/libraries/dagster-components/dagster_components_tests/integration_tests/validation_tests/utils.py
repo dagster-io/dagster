@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 
@@ -10,7 +11,7 @@ from dagster_components_tests.utils import inject_component
 
 
 def load_test_component_defs_inject_component(
-    src_path: str, local_component_defn_to_inject: Path
+    src_path: str, local_component_defn_to_inject: Optional[Path]
 ) -> Definitions:
     """Loads a component from a test component project, making the provided local component defn
     available in that component's __init__.py.

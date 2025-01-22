@@ -77,8 +77,8 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
                 assert test_case.validate_error_msg
                 test_case.validate_error_msg(str(result.stdout))
 
-                if test_case.validate_error_msg_additional_cli:
-                    test_case.validate_error_msg_additional_cli(str(result.stdout))
+                if test_case.check_error_msg:
+                    test_case.check_error_msg(str(result.stdout))
             else:
                 assert result.exit_code == 0, str(result.stdout)
 
