@@ -246,7 +246,7 @@ def openai_file_validation(data: Iterable) -> dg.AssetCheckResult:
 )
 def training_file_format_check() -> dg.AssetCheckResult:
     data = utils.read_openai_file("goodreads-training.jsonl")
-    yield openai_file_validation(data)
+    return openai_file_validation(data)
 
 
 @dg.asset_check(
@@ -258,7 +258,7 @@ def training_file_format_check() -> dg.AssetCheckResult:
 )
 def validation_file_format_check() -> dg.AssetCheckResult:
     data = utils.read_openai_file("goodreads-validation.jsonl")
-    yield openai_file_validation(data)
+    return openai_file_validation(data)
 
 
 @dg.asset(
@@ -376,6 +376,7 @@ def model_question(
         },
     )
     content = completion.choices[0].message.content
+    assert content is not None
     return json.loads(content)["category"]
 
 
@@ -412,14 +413,14 @@ def fine_tuned_model_accuracy(
     }
 
     if model_accuracy[fine_tuned_model] < model_accuracy[base_model]:
-        yield dg.AssetCheckResult(
+        return dg.AssetCheckResult(
             passed=False,
             severity=dg.AssetCheckSeverity.WARN,
             description=f"{fine_tuned_model} has lower accuracy than {base_model}",
             metadata=model_accuracy,
         )
     else:
-        yield dg.AssetCheckResult(
+        return dg.AssetCheckResult(
             passed=True,
             metadata=model_accuracy,
         )
