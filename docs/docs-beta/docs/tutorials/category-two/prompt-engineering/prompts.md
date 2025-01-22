@@ -24,7 +24,7 @@ We can write a prompt that tells the models our desired outcome and provide an e
 
 <CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="10" lineEnd="33"/>
 
-Now we can use this prompt with Claude. Within our Dagster asset (`user_input_prompt`) we can use the `AnthropicResource` to easily interact with the Anthropic client. We will also want to include a run configuration for the asset so we can reuse this same pipeline with slightly different inputs. Finally, since we can ensure the reponse format from Claude with our prompt engineering, we can define a more specific output for asset. Using [Pydantic](https://docs.pydantic.dev/latest/) we can define the exact schema we expect.
+Now we can use this prompt with Claude. Within our Dagster asset (`user_input_prompt`) we can use the `AnthropicResource` to easily interact with the Anthropic client. We will also want to include a run configuration for the asset so we can reuse this same pipeline with slightly different inputs. Finally, since we can ensure the response format from Claude with our prompt engineering, we can define a more specific output for the asset. Using [Pydantic](https://docs.pydantic.dev/latest/) we can define the exact schema we expect.
 
 <CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="67" lineEnd="99"/>
 

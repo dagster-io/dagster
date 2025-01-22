@@ -10,7 +10,7 @@ For our final prompt engineering asset, we can reuse many of the concepts we hav
 
 <CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="34" lineEnd="66"/>
 
-Now that we have the prompt we can create our asset. The asset will ombine the current time with the alternative fuel stations data. It will then generate a prompt for each fuel station to ask the AI model and determine if the fuel station is currently available.
+Now that we have the prompt we can create our asset. The asset will combine the current time with the alternative fuel stations data. It will then generate a prompt for each fuel station to ask the AI model and determine if the fuel station is currently available.
 
 <CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="120" lineEnd="157"/>
 
