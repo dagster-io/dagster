@@ -17,6 +17,7 @@ enables:
 tags: [community-supported, metadata]
 sidebar_custom_props:
   logo: images/integrations/secoda.svg
+  community: true
 ---
 
 Connect Dagster to Secoda and see metadata related to your Dagster assets, asset groups and jobs right in Secoda. Simplify your team's access, and remove the need to switch between tools.

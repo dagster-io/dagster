@@ -50,22 +50,34 @@ function CardLayout({
   logo,
   title,
   description,
+  community,
 }: {
   href: string;
   title: string;
   logo?: string;
   description?: string;
+  community: boolean;
 }): ReactNode {
   return (
     <CardContainer href={href}>
       <div style={{display: 'flex', flexDirection: 'row', gap: '12px'}}>
         <div style={{flex: '0 0 64px', display: logo ? 'block' : 'none'}}>
-          <img src={useBaseUrl(logo)} style={{display: 'block', width: '64px', height: '64px'}} />
+          <img
+            src={useBaseUrl(logo)}
+            style={{
+              display: 'block',
+              width: '64px',
+              height: '64px',
+              background: 'var(--dagster-white)',
+              padding: '4px',
+            }}
+          />
         </div>
         <div>
           <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
             {title}
           </Heading>
+          {community && <p className={clsx(styles.cardSubtitle)}>Community / Partner supported</p>}
           {description && (
             <p className={clsx(styles.cardDescription)} title={description}>
               {description}
@@ -102,6 +114,7 @@ function CardLink({item}: {item: PropSidebarItemLink}): ReactNode {
   // https://github.com/facebook/docusaurus/discussions/10476
   //const icon = item?.customProps?.myEmoji ?? (isInternalUrl(item.href) ? '📄️' : '🔗');
   const logo: string | null = item?.customProps?.logo || null;
+  const community: boolean = item?.customProps?.community || false;
   const doc = useDocById(item.docId ?? undefined);
 
   return (
@@ -110,6 +123,7 @@ function CardLink({item}: {item: PropSidebarItemLink}): ReactNode {
       logo={logo}
       title={item.label}
       description={item.description ?? doc?.description}
+      community={community}
     />
   );
 }

@@ -16,7 +16,7 @@ enabledBy:
 enables:
 tags: [dagster-supported, other]
 sidebar_custom_props: 
-  logo:
+  logo: images/integrations/airflow.svg
 ---
 
 Airlift is a toolkit for integrating Dagster and Airflow. Using `dagster-airflift`, you can:
