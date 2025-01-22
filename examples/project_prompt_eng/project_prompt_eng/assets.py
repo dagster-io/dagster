@@ -9,11 +9,11 @@ from pydantic import BaseModel
 from project_prompt_eng.resources import NRELResource
 
 PROMPT_LOCATION = """
-Given a location and vechicle, return the latitude (as a decimal, range -90 to 90)
-and longitude (as a decimal, range -180 to 180) and fuel type of the vechicle
+Given a location and vehicle, return the latitude (as a decimal, range -90 to 90)
+and longitude (as a decimal, range -180 to 180) and fuel type of the vehicle
 (enum 'ELEC', 'BD' or 'all').
 
-If the location cannot be found return the status a zero. Electric vechicles map to 'ELEC',
+If the location cannot be found return the status a zero. Electric vehicle map to 'ELEC',
 biodiesel to 'BD', anything else should be marked as 'all'.
 
 Return everything as a JSON object.
@@ -41,7 +41,7 @@ Only return the answer as a JSON object containing the is_open (as a boolean). N
 <example>
 Input: {{
     'hours_of_operation': '7am-7pm M-Th and Sat, 7am-8pm F, 9am-5pm Sun', 
-    'datetime': '2025-01-21 18:00:00,
+    'datetime': '2025-01-21 18:00:00',
 }}
 
 Output:
@@ -78,7 +78,7 @@ class InputLocation(dg.Config):
 
 @dg.asset(
     kinds={"anthropic"},
-    description="Determine location and vechicle type from an input",
+    description="Determine location and vehicle type from an input",
 )
 def user_input_prompt(
     context: dg.AssetExecutionContext,
@@ -121,7 +121,7 @@ def nearest_fuel_stations(nrel: NRELResource, user_input_prompt: UserInputSchema
 
 @dg.asset(
     kinds={"anthropic"},
-    description="Determine if the nearest statiions are available",
+    description="Determine if the nearest stations are available",
 )
 def available_fuel_stations(
     context: dg.AssetExecutionContext,
@@ -150,7 +150,7 @@ def available_fuel_stations(
 
             if data["is_open"]:
                 context.log.info(
-                    f"{fuel_station["station_name"]} at {fuel_station["street_address"]} is {fuel_station["distance"]} miles away"
+                    f"{fuel_station['station_name']} at {fuel_station['street_address']} is {fuel_station['distance']} miles away"
                 )
                 fuel_stations_open += 1
 
