@@ -138,10 +138,11 @@ export const SelectionAutoCompleteInput = ({
         const newValue = instance.getValue().replace(/\s+/g, ' ');
         const cursor = instance.getCursor();
         if (instance.getValue() !== newValue) {
+          const difference = newValue.length - instance.getValue().length;
           // In this case they added a space, we removed it,
           // so we need to move the cursor back one character
           instance.setValue(newValue);
-          instance.setCursor({...cursor, ch: cursor.ch - 1});
+          instance.setCursor({...cursor, ch: cursor.ch - difference});
         }
         setInnerValue(newValue);
         setShowResults({current: true});
