@@ -90,65 +90,19 @@ spark-submit ... --files s3://your-bucket/venv.pex --conf spark.pyspark.python=.
 
 Call `open_dagster_pipes` in the EMR script to create a context that can be used to send messages to Dagster:
 
-```python file=/guides/dagster/dagster_pipes/emr/script.py
-import boto3
-from dagster_pipes import PipesS3MessageWriter, open_dagster_pipes
-from pyspark.sql import SparkSession
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/script.py" />
 
+:::tip
 
-def main():
-    with open_dagster_pipes(
-        message_writer=PipesS3MessageWriter(client=boto3.client("s3"))
-    ) as pipes:
-        pipes.log.info("Hello from AWS EMR!")
+The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
 
-        spark = SparkSession.builder.appName("HelloWorld").getOrCreate()
-
-        df = spark.createDataFrame(
-            [(1, "Alice", 34), (2, "Bob", 45), (3, "Charlie", 56)],
-            ["id", "name", "age"],
-        )
-
-        # calculate a really important statistic
-        avg_age = float(df.agg({"age": "avg"}).collect()[0][0])
-
-        # attach it to the asset materialization in Dagster
-        pipes.report_asset_materialization(
-            metadata={"average_age": {"raw_value": avg_age, "type": "float"}},
-            data_version="alpha",
-        )
-
-        spark.stop()
-
-        print("Hello from stdout!")
-
-
-if __name__ == "__main__":
-    main()
-```
+:::
 
 ## Step 3: Create an asset using the PipesEMRClient to launch the job
 
 In the Dagster asset/op code, use the `PipesEMRClient` resource to launch the job:
 
-```python file=/guides/dagster/dagster_pipes/emr/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
-import os
-
-import boto3
-from dagster_aws.pipes import PipesEMRClient, PipesS3MessageReader
-from mypy_boto3_emr.type_defs import InstanceFleetTypeDef
-
-from dagster import AssetExecutionContext, asset
-
-
-@asset
-def emr_pipes_asset(context: AssetExecutionContext, pipes_emr_client: PipesEMRClient):
-    return pipes_emr_client.run(
-        context=context,
-        # see full reference here: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr/client/run_job_flow.html#EMR.Client.run_job_flow
-        run_job_flow_params={},
-    ).get_materialize_result()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
 
 This will launch the AWS EMR job and wait for it completion. If the job fails, the Dagster process will raise an exception. If the Dagster process is interrupted while the job is still running, the job will be terminated.
 
@@ -158,20 +112,6 @@ EMR application steps `stdout` and `stderr` will be forwarded to the Dagster pro
 
 Next, add the `PipesEMRClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-```python file=/guides/dagster/dagster_pipes/emr/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
-from dagster import Definitions  # noqa
-
-
-defs = Definitions(
-    assets=[emr_pipes_asset],
-    resources={
-        "pipes_emr_client": PipesEMRClient(
-            message_reader=PipesS3MessageReader(
-                client=boto3.client("s3"), bucket=os.environ["DAGSTER_PIPES_BUCKET"]
-            )
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
 
 Dagster will now be able to launch the AWS EMR job from the `emr_asset` asset, and receive logs and events from the job.

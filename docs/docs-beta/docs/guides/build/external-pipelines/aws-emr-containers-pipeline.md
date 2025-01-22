@@ -35,20 +35,6 @@ Install `dagster-pipes`, `dagster-aws` and `boto3` Python packages in your image
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/Dockerfile" />
 
-```Dockerfile,file=/guides/dagster/dagster_pipes/emr-containers/Dockerfile
-# start from EMR image
-FROM public.ecr.aws/emr-containers/spark/emr-7.2.0:latest
-
-USER root
-
-RUN python -m pip install dagster-pipes
-
-# copy the job script
-COPY . .
-
-USER hadoop
-```
-
 :::note
 
 It's also recommended to upgrade the default Python version included in the base EMR image (as it has been done in the `Dockerfile` above)
