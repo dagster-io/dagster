@@ -2257,7 +2257,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     @traced
     def wipe_assets(self, asset_keys: Sequence[AssetKey]) -> None:
-        """Wipes asset event history from the event log for the given asset keys.
+        """Wipe asset event history from the event log for the given asset keys.
 
         Args:
             asset_keys (Sequence[AssetKey]): Asset keys to wipe.
@@ -2274,7 +2274,7 @@ class DagsterInstance(DynamicPartitionsStore):
         """Wipes asset event history from the event log for the given asset key and partition keys.
 
         Args:
-            asset_key (Sequence[AssetKey]): Asset key to wipe.
+            asset_key (AssetKey): Asset key to wipe.
             partition_keys (Sequence[str]): Partition keys to wipe.
         """
         self._event_storage.wipe_asset_partitions(asset_key, partition_keys)
@@ -2646,7 +2646,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def schedules_directory(self) -> str:
         return self._local_artifact_storage.schedules_dir
 
-    # Runs coordinator
+    # Run coordinator
 
     def submit_run(self, run_id: str, workspace: "BaseWorkspaceRequestContext") -> DagsterRun:
         """Submit a pipeline run to the coordinator.
@@ -3314,7 +3314,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def get_latest_materialization_code_versions(
         self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional[str]]:
-        """Returns the code version used for the latest materialization of each of the provided
+        """Return the code version used for the latest materialization of each of the provided
         assets.
 
         Args:
@@ -3339,8 +3339,8 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return result
 
-    @experimental
     @public
+    @experimental
     def report_runless_asset_event(
         self,
         asset_event: Union["AssetMaterialization", "AssetObservation", "AssetCheckEvaluation"],

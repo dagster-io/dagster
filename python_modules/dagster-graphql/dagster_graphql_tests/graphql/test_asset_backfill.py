@@ -1146,7 +1146,8 @@ def test_asset_backfill_error_raised_upon_invalid_params_provided():
                 == "PythonError"
             )
             assert (
-                "partitions_by_assets cannot be used together with asset_selection, selector, or partitionNames"
+                "partitionsByAssets cannot be used together with assetSelection, selector, or partitionNames"
+                " or if allPartitions is True"
                 in launch_backfill_result.data["launchPartitionBackfill"]["message"]
             )
 
