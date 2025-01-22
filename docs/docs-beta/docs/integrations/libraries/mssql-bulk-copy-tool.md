@@ -14,7 +14,7 @@ enabledBy:
 enables:
 tags: [community-supported, etl]
 sidebar_custom_props:
-  logo:
+  logo: images/integrations/mssql.png
 ---
 
 The community-supported `dagster-mssql-bcp` package is a custom Dagster I/O manager for loading data into SQL Server using the bcp utility.
