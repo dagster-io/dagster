@@ -6,19 +6,15 @@ last_update:
 sidebar_position: 20
 ---
 
-The machine learning model we will walk through takes the Hacker News stories and uses the titles to predict the number of comments that a story will generate. This will be a supervised model since we have the number of comments for all the previous stories.
-
-## Ingesting data
-
 First, we will create an asset that retrieves the most recent Hacker News records.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/ml_pipelines/ml_pipeline.py" language="python" lineStart="8" lineEnd="29"/>
 
 ## Transforming data
 
-Now that we have a dataframe with all valid stories, we want to transform that data into something our machine learning model will be able to use.
+Now that we have a DataFrame with all valid stories, we want to transform that data into something our machine learning model will be able to use.
 
-The first step is taking the dataframe and splitting it into a [training and test set](https://en.wikipedia.org/wiki/Training,\_validation,\_and_test_data_sets). In some of your models, you also might choose to have an additional split for a validation set. The reason we split the data is so that we can have a test and/or a validation dataset that is independent of the training set. We can then use that dataset to see how well our model did.
+The first step is taking the DataFrame and splitting it into a [training and test set](https://en.wikipedia.org/wiki/Training,\_validation,\_and_test_data_sets). In some of your models, you also might choose to have an additional split for a validation set. The reason we split the data is so that we can have a test and/or a validation dataset that is independent of the training set. We can then use that dataset to see how well our model did.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/ml_pipelines/ml_pipeline.py" language="python" lineStart="35" lineEnd="46"/>
 
@@ -26,7 +22,7 @@ Next, we will take both the training and test data subsets and [tokenize the tit
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/ml_pipelines/ml_pipeline.py" language="python" lineStart="52" lineEnd="78"/>
 
-We also transformed the dataframes into NumPy arrays and removed `nan` values to prepare the data for training.
+We also transformed the DataFrames into NumPy arrays and removed `nan` values to prepare the data for training.
 
 ## Training the model
 

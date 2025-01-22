@@ -8,12 +8,11 @@ sidebar_position: 10
 
 # Machine Learning Pipelines
 
-In this tutorial, you'll build a pipeline with Dagster that:
+In this tutorial, you'll build an ML pipeline with Dagster that:
 
-- Manages and maintains machine learning (ML) models in Dagster.
-- Performs feature engineering to enhance the data
-- Creates and validates the data files needed for an OpenAI fine-tuning job
-- Generate a custom model and validate it
+- Ingests data from Hackernews
+- Tranform data and train a model
+- Use Declarative Automation to manage the life cycle of a model.
 
 <details>
   <summary>Prerequisites</summary>
@@ -22,7 +21,7 @@ To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
-- Familiarity with Python machine learning libraries, such as [sklearn](https://scikit-learn.org/stable/).
+- Familiarity with Python machine learning libraries.
 </details>
 
 
@@ -30,13 +29,7 @@ To follow the steps in this guide, you'll need:
 
 First, set up a new Dagster project.
 
-1. Within the Dagster repo, navigate to the project:
-
-   ```bash
-   cd examples/dagster-llm-fine-tune
-   ```
-
-2. Create and activate a virtual environment:
+1. Create and activate a virtual environment:
 
    <Tabs>
    <TabItem value="macos" label="MacOS">
@@ -53,21 +46,11 @@ First, set up a new Dagster project.
    </TabItem>
    </Tabs>
 
-3. Install Dagster and the required dependencies:
+2. Install Dagster and the required dependencies:
 
    ```bash
-   uv pip install -e ".[dev]"
+   uv pip install dagster dagster-slack sklearn xgboost numpy
    ```
-
-## Step 2: Launch the Dagster webserver
-
-To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
-
-followed by a bash code snippet for 
-
-```bash
-dagster dev
-```
 
 ## Next steps
 
