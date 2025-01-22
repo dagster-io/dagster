@@ -3,7 +3,11 @@ title: "Using dlt with Dagster"
 description: Ingest data with ease using Dagster and dlt
 ---
 
-{/* <ExperimentalCallout /> */}
+:::
+
+This feature is considered **experimental**
+
+:::
 
 The [data load tool (dlt)](https://dlthub.com/) open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets. It offers many advanced features, such as:
 

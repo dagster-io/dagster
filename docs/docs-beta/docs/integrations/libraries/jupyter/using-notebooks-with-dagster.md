@@ -1,9 +1,7 @@
 ---
-title: Using Jupyter notebooks with Papermill and Dagster Tutorial
+title: "Using Jupyter notebooks with Papermill and Dagster"
 description: The Dagstermill package lets you run notebooks using the Dagster tools and integrate them into your data pipelines.
 ---
-
-# Using Jupyter notebooks with Papermill and Dagster
 
 {/* TODO add back when implemented <CodeReferenceLink filePath="examples/tutorial_notebook_assets/" /> */}
 
