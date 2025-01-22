@@ -331,6 +331,8 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     },
   });
 
+  console.log({tokens, StatusFilterValues});
+
   const statusFilter = useStaticSetFilter({
     name: 'Status',
     icon: 'status',
