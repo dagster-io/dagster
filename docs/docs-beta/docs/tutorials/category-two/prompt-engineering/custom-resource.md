@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 30
 ---
 
-With the output we can now easily parse, we can use the NREL API to lookup nearby alternative fuel stations. The NREL API is a standard REST API and we can create a resource with a single method to retrieve fuel stations. This method (`alt_fuel_stations`) will take in the three parameters from our prompt engineering asset (latitue, longitude and fuel type). Here you can see another benefit of prompt engineering. The NREL API can limit our search to certain vechicle types but uses specific codes to denote these types. Our prompt accounts for these types and ensures that the parameters are met.
+With an output we can easily parse, we can use the NREL API to lookup nearby alternative fuel stations. The NREL API is a standard REST API and we can create a resource with a single method to retrieve fuel stations. This method (`alt_fuel_stations`) will take in the three parameters from our prompt engineering asset (latitue, longitude and fuel type). Here you can see another benefit of prompt engineering. The NREL API can limit our search to certain vechicle types but uses specific codes to denote these types. Our prompt accounts for these types and ensures that the parameters are met.
 
 <CodeExample path="project_prompt_eng/project_prompt_eng/resources.py" language="python" lineStart="4" lineEnd="31"/>
 
@@ -14,4 +14,8 @@ Now we can use our custom resource in another asset (`nearest_fuel_station`) whe
 
 <CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="95" lineEnd="115"/>
 
-We now have information about fuel stations.
+Using the `access_days_time` we can tell the user if their nearby fuel stations are open. However if we look at the value for `access_days_time` it is not a particuarly helpful string: `7am-7pm M-Th and Sat, 7am-8pm F, 9am-5pm Sun`. We can write a function to parse this out, but that would get messy quickly. Instead we can pass it through our AI model again and use a different prompt.
+
+## Next steps
+
+- Continue this tutorial with [additional prompt](additional-prompt)

@@ -1,5 +1,5 @@
 ---
-title: Prompt Engineering
+title: Prompts
 description: Generating the first prompt
 last_update:
   author: Dennis Hume
@@ -8,11 +8,9 @@ sidebar_position: 20
 
 We will be working with the API for the National Renewable Energy Laboratory ([NREL](https://www.nrel.gov/)). This API allows us to find nearby alternative fuel stations. In order to use this API we need to provide our latitude and longitude and some information about our vehicle. Using AI models like Claude, we get coordinates based on an address or more free form responses. It can also help us parse our vehicle type if we include information about our car. For example if we told it: "I'm near the The Art Institute of Chicago and driving a Kia EV9, what are my coordinates and my vehicle type?", it will provide an aswer:
 
-```
-Your coordinates will depend on your exact location near The Art Institute of Chicago, but its approximate coordinates are 41.8796° N, 87.6237° W. If you're nearby, your latitude and longitude should be close to these.
-
-Your vehicle type is a Kia EV9, which is a fully electric SUV. Let me know if you need parking suggestions or other assistance nearby!
-```
+> Your coordinates will depend on your exact location near The Art Institute of Chicago, but its approximate coordinates are 41.8796° N, 87.6237° W. If you're nearby, your latitude and longitude should be close to these.
+> 
+> Your vehicle type is a Kia EV9, which is a fully electric SUV. Let me know if you need parking suggestions or other assistance nearby!
 
 This is helpful but has a couple of issues. First it requires the user to know and include the information we will need on the backend, "...what are my coordinates and my vehicle type?". We don't want to count on the user to include that information. Also the reponse we get back will be hard to parse and we cannot guarantee that it will always be in the same format.
 
@@ -36,4 +34,4 @@ Because we can ensure our model response will be a json object, we can use `json
 
 ## Next steps
 
-- Continue this tutorial with [custome resource](custom-resource)
+- Continue this tutorial with [custom resource](custom-resource)

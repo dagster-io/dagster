@@ -11,9 +11,8 @@ sidebar_position: 10
 In this tutorial, you'll build a pipeline with Dagster that:
 
 - Takes an input question
-- Generates a prompt to use with Anthropic
-- Uses that specific output to query an API
-- Generates a second prompt to get a final answer with Anthropic
+- Generates prompts to use with Anthropic
+- Ensure the outputs from our AI models and pass data across assets
 
 <details>
   <summary>Prerequisites</summary>

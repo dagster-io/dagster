@@ -34,7 +34,7 @@ PROMPT_FUEL_STATION_OPEN = """
 Given the hours of operation ("hours_of_operation": str) and and timestamp ("datetime": str).
 Determine if the datetime ("%Y-%m-%d %H:%M:%S") falls within the hours of operation.
 
-Return everything as a JSON object containing the status (as a boolean).
+Only return the answer as a JSON object containing the is_open (as a boolean). No other information.
 
 <example>
 Input: {{
@@ -44,7 +44,7 @@ Input: {{
 
 Output:
 {{
-    "status": True,
+    "is_open": True,
 }}
 </example>
 
@@ -56,11 +56,11 @@ Input: {{
 
 Output:
 {{
-    "status": False,
+    "is_open": False,
 }}
 </example>
 
-Input: {fuel_station}
+Input: {fuel_station_hours}
 """
 
 
@@ -131,11 +131,10 @@ def fuel_station_available(
         for fuel_station in nearest_fuel_stations:
             input = {
                 "access_days_time": fuel_station["access_days_time"],
-                "zip": fuel_station["zip"],
                 "datetime": current_time,
             }
 
-            prompt = PROMPT_FUEL_STATION_OPEN.format(fuel_station = input)
+            prompt = PROMPT_FUEL_STATION_OPEN.format(fuel_station_hours = input)
             resp = client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=1024,
@@ -144,10 +143,9 @@ def fuel_station_available(
 
             message = resp.content[0].text
             data = json.loads(message)
-            context.log.info(data)
 
-            if data["status"]:
-                context.log.info(f"{fuel_station["station_name"]} is {fuel_station["distance"]} miles away")
+            if data["is_open"]:
+                context.log.info(f"{fuel_station["station_name"]} at {fuel_station["street_address"]} is {fuel_station["distance"]} miles away")
                 fuel_stations_open += 1
 
     if fuel_stations_open == 0:
