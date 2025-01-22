@@ -14,7 +14,8 @@ enabledBy:
 enables:
 tags: [community-supported, compute]
 sidebar_custom_props:
-  logo:
+  logo: images/integrations/modal.svg
+  community: true
 ---
 
 The community-supported `dagster-modal` package provides an integration with Modal.

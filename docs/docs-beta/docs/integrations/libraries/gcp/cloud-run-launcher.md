@@ -14,7 +14,8 @@ enabledBy:
 enables:
 tags: [community-supported, compute]
 sidebar_custom_props:
-  logo:
+  logo: images/integrations/gcp.svg
+  community: true
 ---
 
 The community-supported `dagster-contrib-gcp` package provides integrations with Google Cloud Platform (GCP) services. It currently includes the following integrations:

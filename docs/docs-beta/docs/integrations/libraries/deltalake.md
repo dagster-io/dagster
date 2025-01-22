@@ -17,6 +17,7 @@ enables:
 tags: [community-supported, storage]
 sidebar_custom_props: 
   logo: images/integrations/deltalake.svg
+  community: true
 ---
 
 Delta Lake is a great storage format for Dagster workflows. With this integration, you can use the Delta Lake I/O Manager to read and write your Dagster assets.

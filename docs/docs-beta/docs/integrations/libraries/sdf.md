@@ -17,6 +17,7 @@ enables:
 tags: [community-supported, etl]
 sidebar_custom_props:
   logo: images/integrations/sdf.jpeg
+  community: true
 ---
 
 SDF can integrate seamlessly with your existing Dagster projects, providing the best-in-class transformation layer while enabling you to schedule, orchestrate, and monitor your dags in Dagster.
