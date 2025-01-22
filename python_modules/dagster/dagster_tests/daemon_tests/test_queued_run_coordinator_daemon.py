@@ -41,6 +41,10 @@ class QueuedRunCoordinatorDaemonTests(ABC):
     def run_coordinator_config(self):
         return {}
 
+    @pytest.fixture
+    def concurrency_config(self):
+        return {}
+
     @abstractmethod
     @pytest.fixture()
     def instance(self, run_coordinator_config):
@@ -1041,6 +1045,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1, run_id_2])
 
+    @pytest.mark.parametrize("concurrency_config", [{"default_op_concurrency_limit": 1}])
     @pytest.mark.parametrize(
         "run_coordinator_config",
         [
@@ -1136,6 +1141,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set()
 
+    @pytest.mark.parametrize("concurrency_config", [{"default_op_concurrency_limit": 1}])
     @pytest.mark.parametrize(
         "run_coordinator_config",
         [
@@ -1181,12 +1187,17 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
 
     @pytest.mark.parametrize(
+        "concurrency_config",
+        [
+            {"pools": {"granularity": "run", "default_limit": 1}},
+        ],
+    )
+    @pytest.mark.parametrize(
         "run_coordinator_config",
         [
             {
                 "block_op_concurrency_limited_runs": {
                     "enabled": True,
-                    "pool_granularity": "run",
                 },
             },
         ],
@@ -1237,11 +1248,9 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture
-    def instance(self, run_coordinator_config):
+    def instance(self, run_coordinator_config, concurrency_config):
         overrides = {
-            "concurrency": {
-                "default_op_concurrency_limit": 1,
-            },
+            "concurrency": concurrency_config,
             "run_coordinator": {
                 "module": "dagster._core.run_coordinator",
                 "class": "QueuedRunCoordinator",
