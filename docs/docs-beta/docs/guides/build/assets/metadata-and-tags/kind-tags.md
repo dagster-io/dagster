@@ -1,7 +1,7 @@
 ---
-title: "Kind tags for categorizing assets"
+title: "Kind tags"
 description: "Use kind tags to easily categorize assets within you Dagster project."
-sidebar_position: 300
+sidebar_position: 200
 ---
 
 Kind tags can help you quickly identify the underlying system or technology used for a given asset in the Dagster UI. These tags allow you to organize assets within a Dagster project and can be used to filter or search across all your assets.
@@ -36,7 +36,7 @@ def my_multi_asset():
     pass
 ```
 
-On the backend, these kind inputs are stored as tags on the asset. For more information, see [Tags](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata#tags).
+On the backend, these kind inputs are stored as tags on the asset. For more information, see [Tags](/guides/build/assets/metadata-and-tags/index.md#tags).
 
 When viewing the asset in the lineage view, the attached kinds will be visible at the bottom the asset.
 

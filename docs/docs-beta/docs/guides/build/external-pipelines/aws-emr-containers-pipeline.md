@@ -6,7 +6,7 @@ sidebar_position: 300
 
 This tutorial gives a short overview on how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR on EKS](https://aws.amazon.com/emr/features/eks/) (the corresponding AWS API is called `emr-containers`).
 
-The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="PipesEMRContainersClient" module="dagster_aws.pipes" /> resource, which can be used to launch EMR jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
+The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesEMRContainersClient" module="dagster_aws" /> resource, which can be used to launch EMR jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library pro
     pip install dagster dagster-webserver dagster-aws
     ```
 
-    Refer to the [Dagster installation guide](/getting-started/install) for more info.
+    Refer to the [Dagster installation guide](/getting-started/installation) for more info.
 
   - **Configure AWS authentication credentials:** If you don't have these set up already, refer to the [boto3 quickstart](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html).
 
@@ -33,7 +33,7 @@ There are [a few options](https://aws.github.io/aws-emr-containers-best-practice
 
 Install `dagster-pipes`, `dagster-aws` and `boto3` Python packages in your image:
 
-<CodeExample path="/guides/dagster/dagster_pipes/emr-containers/Dockerfile" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/Dockerfile" />
 
 ```Dockerfile,file=/guides/dagster/dagster_pipes/emr-containers/Dockerfile
 # start from EMR image
@@ -61,7 +61,7 @@ We copy the EMR job script (`script.py`) to the image in the last step.
 
 Call `open_dagster_pipes` in the EMR script to create a context that can be used to send messages to Dagster:
 
-<CodeExample path="docs_snippets/docs_snippets//guides/dagster/dagster_pipes/emr-containers/script.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/script.py" />
 
 :::note
 
@@ -73,7 +73,7 @@ It's best to use the `PipesS3MessageWriter` with EMR on EKS, because this messag
 
 In the Dagster asset/op code, use the `PipesEMRcontainersClient` resource to launch the job:
 
-<CodeExample path="docs_snippets/docs_snippets//guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
 
 :::note
 
@@ -87,6 +87,6 @@ Materializing this asset will launch the AWS on EKS job and wait for it to compl
 
 Next, add the `PipesEMRContainersClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_snippets/docs_snippets//guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-containers/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
 
 Dagster will now be able to launch the AWS EMR Containers job from the `emr_containers_asset` asset, and receive logs and events from the job. If `include_stdio_in_messages` is set to `True`, the logs will be forwarded to the Dagster process.

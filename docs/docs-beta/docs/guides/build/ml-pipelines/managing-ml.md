@@ -48,7 +48,7 @@ A [sensor](/guides/automate/sensors/) can be set up that triggers if an asset fa
 
 ## Enhancing the Dagster UI with metadata
 
-Understanding the performance of your ML model is critical to both the model development process and production. [Metadata](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata) can significantly enhance the usability of the Dagster UI to show what’s going on in a specific asset. Using metadata in Dagster is flexible, can be used for tracking evaluation metrics, and viewing the training accuracy progress over training iterations as a graph.
+Understanding the performance of your ML model is critical to both the model development process and production. [Metadata](/guides/build/assets/metadata-and-tags/) can significantly enhance the usability of the Dagster UI to show what’s going on in a specific asset. Using metadata in Dagster is flexible, can be used for tracking evaluation metrics, and viewing the training accuracy progress over training iterations as a graph.
 
 One of the easiest ways to utilize Dagster’s metadata is by using a dictionary to track different metrics that are relevant for an ML model.
 
