@@ -136,7 +136,9 @@ class ExecutionPlanSnapshotErrorData(
         )
 
 
-@whitelist_for_serdes(storage_field_names={"node_handle_id": "solid_handle_id"})
+@whitelist_for_serdes(
+    storage_field_names={"node_handle_id": "solid_handle_id"}, skip_when_none_fields={"pool"}
+)
 class ExecutionStepSnap(
     NamedTuple(
         "_ExecutionStepSnap",

@@ -2,49 +2,30 @@
 
 from dagster_aws.pipes import PipesEMRContainersClient
 
-from dagster import AssetExecutionContext, asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def emr_containers_asset(
-    context: AssetExecutionContext,
+    context: dg.AssetExecutionContext,
     pipes_emr_containers_client: PipesEMRContainersClient,
 ):
+    image = (
+        ...
+    )  # it's likely the image can be taken from context.run_tags["dagster/image"]
+
     return pipes_emr_containers_client.run(
         context=context,
         start_job_run_params={
             "releaseLabel": "emr-7.5.0-latest",
-            "virtualClusterId": "uqcja50dzo7v1meie1wa47wa3",
+            "virtualClusterId": ...,
             "clientToken": context.run_id,  # idempotency identifier for the job run
-            "executionRoleArn": "arn:aws:iam::467123434025:role/emr-dagster-pipes-20250109135314655100000001",
+            "executionRoleArn": ...,
             "jobDriver": {
                 "sparkSubmitJobDriver": {
                     "entryPoint": "local:///app/script.py",
-                    # --conf spark.kubernetes.container.image=
-                    "sparkSubmitParameters": "--conf spark.kubernetes.file.upload.path=/tmp/spark --conf spark.kubernetes.container.image=467123434025.dkr.ecr.eu-north-1.amazonaws.com/dagster/emr-containers:12",  # --conf spark.pyspark.python=/home/hadoop/.local/share/uv/python/cpython-3.9.16-linux-x86_64-gnu/bin/python --conf spark.pyspark.driver.python=/home/hadoop/.local/share/uv/python/cpython-3.9.16-linux-x86_64-gnu/bin/python",
+                    "sparkSubmitParameters": f"--conf spark.kubernetes.container.image={image}",
                 }
-            },
-            "configurationOverrides": {
-                "monitoringConfiguration": {
-                    "cloudWatchMonitoringConfiguration": {
-                        "logGroupName": "/aws/emr/containers/pipes",
-                        "logStreamNamePrefix": str(context.run_id),
-                    }
-                },
-                # "applicationConfiguration": [
-                #     {
-                #         "Classification": "spark-env",
-                #         "Configurations": [
-                #         {
-                #             "Classification": "export",
-                #             "Properties": {
-                #             "PYSPARK_PYTHON": "/home/hadoop/.local/share/uv/python/cpython-3.9.16-linux-x86_64-gnu/bin/python",
-                #             "PYSPARK_DRIVER_PYTHON": "/home/hadoop/.local/share/uv/python/cpython-3.9.16-linux-x86_64-gnu/bin/python",
-                #             }
-                #         }
-                #     ]
-                #       }
-                # ]
             },
         },
     ).get_materialize_result()
@@ -54,7 +35,7 @@ def emr_containers_asset(
 
 # start_definitions_marker
 import boto3
-from dagster_aws.pipes import PipesCloudWatchMessageReader, PipesS3ContextInjector
+from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
 
 from dagster import Definitions
 
@@ -62,8 +43,10 @@ defs = Definitions(
     assets=[emr_containers_asset],
     resources={
         "pipes_emr_containers_client": PipesEMRContainersClient(
-            message_reader=PipesCloudWatchMessageReader(
-                client=boto3.client("logs"),
+            message_reader=PipesS3MessageReader(
+                client=boto3.client("s3"),
+                bucket=...,
+                include_stdio_in_messages=True,
             ),
         )
     },

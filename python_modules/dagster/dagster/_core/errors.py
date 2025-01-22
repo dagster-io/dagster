@@ -280,8 +280,9 @@ def user_code_error_boundary(
     """
     check.callable_param(msg_fn, "msg_fn")
     check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
+    from dagster._utils.error import redact_user_stacktrace_if_enabled
 
-    with raise_execution_interrupts():
+    with redact_user_stacktrace_if_enabled(), raise_execution_interrupts():
         if log_manager:
             log_manager.begin_python_log_capture()
         try:

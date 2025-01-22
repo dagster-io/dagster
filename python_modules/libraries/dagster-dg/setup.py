@@ -37,6 +37,7 @@ setup(
         "click>=8",
         "typing_extensions>=4.4.0,<5",
         "markdown",
+        "PyYAML>=5.1",
     ],
     include_package_data=True,
     zip_safe=False,

@@ -2,6 +2,7 @@
 title: "Components"
 sidebar_position: 80
 unlisted: true
+displayed_sidebar: 'components'
 ---
 
 Welcome to Dagster Components.
@@ -220,7 +221,7 @@ jaffle_platform/
 6 directories, 7 files
 ```
 
-A single file, `component.yaml`, was created in the component folder. The `component.yaml` file is common to all Dagster components, and specifies the component type and any parameters used to scaffold definitions from the component at runtime. 
+A single file, `component.yaml`, was created in the component folder. The `component.yaml` file is common to all Dagster components, and specifies the component type and any parameters used to scaffold definitions from the component at runtime.
 
 ```yaml
 ### jaffle_platform/components/ingest_files/component.yaml
@@ -315,7 +316,7 @@ $ git clone --depth=1 https://github.com/dagster-io/jaffle_platform.git dbt && r
 We'll need to create a Dagster DBT project component to interface with the dbt project. We can access the DBT project component by installing `dagster-components[dbt]` and `dbt-duckdb`:
 
 ```bash
-$ uv add "dagster-components[dbt]" dbt-duckdb 
+$ uv add "dagster-components[dbt]" dbt-duckdb
 $ dg component-type list
 
 dagster_components.dbt_project
@@ -441,8 +442,8 @@ params:
     - target: "*"
 	    attributes:
         automation_condition: "{{ automation_condition.on_cron('@daily') }}"
-        metadata: 
-          automation_condition: "on_cron(@daily)" 
+        metadata:
+          automation_condition: "on_cron(@daily)"
 ```
 
 This will automatically pull in data with sling each day. Now we want to make
@@ -461,7 +462,7 @@ params:
     - target: "*"
       attributes:
         automation_condition: "{{ automation_condition.eager() }}"
-      metadata: 
+      metadata:
         automation_condition: "eager"
 ```
 

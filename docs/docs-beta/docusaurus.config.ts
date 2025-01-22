@@ -21,6 +21,7 @@ const config: Config = {
   plugins: [
     require.resolve('docusaurus-plugin-sass'),
     require.resolve('docusaurus-plugin-image-zoom'),
+    require.resolve('./src/plugins/scoutos'),
   ],
   themeConfig: {
     // Algolia environment variables are not required during development
