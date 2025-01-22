@@ -8,11 +8,11 @@ sidebar_position: 40
 
 Using the data we prepared in the [previous step](feature-engineering), we will create two files: a training file and a validation file. A training file provides the model with labeled data to learn patterns, while a validation file evaluates the model's performance on unseen data to prevent overfitting. These will be used in our OpenAI fine-tuning job to create our model. The columnar data from our DuckDB assets needs to be fit into messages that resemble the conversation a user would have with a chatbot. Here we can inject the values of those fields into conversations:
 
-<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="137" lineEnd="154"/>
+<CodeExample path="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="136" lineEnd="154"/>
 
 The fine-tuning process does not need all the data prepared from `enriched_graphic_novels`. We will simply take a sample of the DataFrame and write it to a `.jsonl` file. The assets to create the training and validation set are very similar (only the filename is different). They will take in the `enriched_graphic_novels` asset, generate the prompts, and write the outputs to a file stored locally:
 
-<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="157" lineEnd="172"/>
+<CodeExample path="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="156" lineEnd="172"/>
 
 :::note
 
@@ -30,11 +30,11 @@ Looking at this notebook. This would make a great asset check. Asset checks help
 
 Since we want an asset check for both the training and validation files, we will write a general function that contains the logic from the cookbook:
 
-<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="194" lineEnd="237"/>
+<CodeExample path="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="192" lineEnd="237"/>
 
 This looks like any other Python function, except it returns an `AssetCheckResult`, which is what Dagster uses to store the output of the asset check. Now we can use that function to create asset checks directly tied to our file assets. Again, they look similar to assets, except they use the `asset_check` decorator:
 
-<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="240" lineEnd="249"/>
+<CodeExample path="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="239" lineEnd="249"/>
 
 ## Next steps
 

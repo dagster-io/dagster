@@ -15,13 +15,6 @@ In this tutorial, you'll build a pipeline with Dagster that:
 - Creates and validates the data files needed for an OpenAI fine-tuning job
 - Generate a custom model and validate it
 
-## You will learn to:
-
-- Set up a Dagster project with the recommended project structure
-- Create and materialize assets
-- Create and materialize dependent assets
-- Ensure data quality with asset checks
-
 <details>
   <summary>Prerequisites</summary>
 
@@ -38,11 +31,10 @@ To follow the steps in this guide, you'll need:
 
 First, set up a new Dagster project.
 
-1. Open your terminal and create a new directory for your project:
+1. Within the Dagster repo, navigate to the project:
 
    ```bash
-   mkdir dagster-llm-fine-tune
-   cd dagster-llm-fine-tune
+   cd examples/dagster-llm-fine-tune
    ```
 
 2. Create and activate a virtual environment:
