@@ -249,5 +249,6 @@ def execute_backfill_jobs(
                         backfill.with_status(BulkActionStatus.FAILED)
                         .with_error(error_info)
                         .with_failure_count(backfill.failure_count + 1)
+                        .with_end_timestamp(get_current_timestamp())
                     )
                 yield error_info

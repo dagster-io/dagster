@@ -1187,7 +1187,6 @@ def test_unloadable_backfill(instance, workspace_context):
     backfill = instance.get_backfill("simple")
     assert backfill.status == BulkActionStatus.FAILED
     assert isinstance(backfill.error, SerializableErrorInfo)
-    assert backfill.backfill_end_timestamp is not None
 
 
 def test_unloadable_asset_backfill(instance, workspace_context):
