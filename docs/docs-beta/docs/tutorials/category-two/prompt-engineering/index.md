@@ -12,7 +12,7 @@ In this tutorial, you'll build a pipeline with Dagster that:
 
 - Takes an input question
 - Generates prompts to use with Anthropic
-- Ensure the outputs from our AI models and pass data across assets
+- Validate outputs of AI models and pass outputs across assets
 
 <details>
   <summary>Prerequisites</summary>

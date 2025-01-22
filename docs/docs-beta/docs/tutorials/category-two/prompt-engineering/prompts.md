@@ -6,30 +6,34 @@ last_update:
 sidebar_position: 20
 ---
 
-We will be working with the API for the National Renewable Energy Laboratory ([NREL](https://www.nrel.gov/)). This API allows us to find nearby alternative fuel stations. In order to use this API we need to provide our latitude and longitude and some information about our vehicle. Using AI models like Claude, we get coordinates based on an address or more free form responses. It can also help us parse our vehicle type if we include information about our car. For example if we told it: "I'm near the The Art Institute of Chicago and driving a Kia EV9, what are my coordinates and my vehicle type?", it will provide an answer:
+We will be working with the API for the National Renewable Energy Laboratory ([NREL](https://www.nrel.gov/)). This API allows us to find nearby alternative fuel stations. To use this API we need to provide our latitude and longitude and some information about our vehicle. Trying to make this user friendly, we might want to put an AI in front to translate free text into the information we need.
+
+Using AI models like Claude, we can get coordinates based on an address as well as parse information out on our vehicle. For example if we told it: "I'm near the The Art Institute of Chicago and driving a Kia EV9, what are my coordinates and my vehicle type?", it will provide an answer that may sound like this:
 
 > Your coordinates will depend on your exact location near The Art Institute of Chicago, but its approximate coordinates are 41.8796° N, 87.6237° W. If you're nearby, your latitude and longitude should be close to these.
 > 
 > Your vehicle type is a Kia EV9, which is a fully electric SUV. Let me know if you need parking suggestions or other assistance nearby!
 
-This is helpful but has a couple of issues. First it requires the user to know and include the information we will need on the backend, "...what are my coordinates and my vehicle type?". We don't want to count on the user to include that information. Also the response we get back will be hard to parse and we cannot guarantee that it will always be in the same format.
+This is helpful but has a couple of issues. First it requires the user to know what to include for our backend API. We don't want to count on the user to include that information. Also the response we get back will be hard to parse and we cannot guarantee that it will always be in the same format.
 
-To get around this we can employ prompt engineering. Prompt engineering is the process of crafting effective prompts to guide AI models toward generating accurate, relevant, or desired outputs. When including the output of AI models in data pipelines, one of the most important things is to ensure the output is in a format we expect and can work with. In this case we know the information we want back from the AI model and it would be helpful to have it in a format that is easier to parse, like JSON. We can write a prompt that both tells the models what we are interested in, the format we expect back, and give an example. In our case a prompt might look like this:
+## Prompts 
 
-<CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="8" lineEnd="31"/>
+To get around this we can employ prompt engineering. Prompt engineering is the process of crafting effective prompts to guide AI models toward generating accurate, relevant, or desired outputs. When including the output of AI models in data pipelines, one of the most important things is to ensure the output is in a format we expect. In this case we know the information we want back from the AI model. Instead of a free text response, it would be helpful to have something easier to parse, like JSON, only containing the fields we need to make the API call.
 
-Now we can use this prompt with Claude, all within a Dagster asset. Our asset will use the `AnthropicResource` so we can easily interact with the Anthropic client. Also because we want our pipeline to be flexible and answer different questions, we will include a run configuration so we can execute different questions at execution time.  
+We can write a prompt that tells the models our desired outcome and provide an example. In our case a prompt might look like this:
 
-<CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="65" lineEnd="93"/>
+<CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="10" lineEnd="33"/>
 
-Because we can ensure our model response will be a json object, we can use `json.loads` on the message which will be much easier to pass to our next asset. Now a user can ask a question without including the context and still get the answer in a format we expect. So it can be shortened to "I'm near the The Art Institute of Chicago and driving a Kia EV9" and the result will be:
+Now we can use this prompt with Claude. Within our Dagster asset (`user_input_prompt`) we can use the `AnthropicResource` to easily interact with the Anthropic client. We will also want to include a run configuration for the asset so we can reuse this same pipeline with slightly different inputs. Finally, since we can ensure the reponse format from Claude with our prompt engineering, we can define a more specific output for asset. Using [Pydantic](https://docs.pydantic.dev/latest/) we can define the exact schema we expect.
 
-```json
-{
-  "latitude": 41.8796,
-  "longitude": -87.6237,
-  "vehicle_type": "ELEC",
-}
+<CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="67" lineEnd="99"/>
+
+Looking at the final asset you can see the pieces working in unison. We combine the input from the run configuration into our prompt which returns a result we can assume is JSON. Then we can unpack that JSON into our `UserInputSchema` schema to get further validation that our result matches what we expected.
+
+Prompt engineering also gives us the benefit of providing the context so the user no longer has to. Now the prompt can be shortened to something like: "I'm near the The Art Institute of Chicago and driving a Kia EV9" which will result in:
+
+```python
+latitude=41.8796 longitude=-87.6237 fuel_type='ELEC'
 ```
 
 ## Next steps
