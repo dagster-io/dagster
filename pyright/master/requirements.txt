@@ -97,6 +97,12 @@
 -e python_modules/libraries/dagster-wandb[dev]
 -e python_modules/libraries/dagstermill/
 
+### COMMUNITY
+dagster-anthropic
+dagster-chroma
+dagster-gemini
+dagster-weaviate
+
 ### OTHER
 pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
