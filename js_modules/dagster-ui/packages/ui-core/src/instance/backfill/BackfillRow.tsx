@@ -38,7 +38,7 @@ export const BackfillRow = (props: BackfillRowProps) => {
     props.backfill.isAssetBackfill;
 
   if (statusUnsupported) {
-    return <BackfillRowContent {...props} hasCancelableRuns={false} statusQueryResult={null} />;
+    return <BackfillRowContent {...props} statusQueryResult={null} />;
   }
   return (
     <BackfillRowLoader backfillId={props.backfill.id}>
@@ -48,7 +48,6 @@ export const BackfillRow = (props: BackfillRowProps) => {
 };
 
 interface LoadResult {
-  hasCancelableRuns: boolean;
   statusQueryResult: QueryResult<any, any> | null;
 }
 
@@ -72,15 +71,7 @@ export const BackfillRowLoader = (props: {
 
   useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
 
-  const {data} = statusQueryResult;
-  const {hasCancelableRuns} = React.useMemo(() => {
-    if (data?.partitionBackfillOrError.__typename === 'PartitionBackfill') {
-      return {hasCancelableRuns: data.partitionBackfillOrError.cancelableRuns.length > 0};
-    }
-    return {hasCancelableRuns: false};
-  }, [data]);
-
-  return props.children({hasCancelableRuns, statusQueryResult});
+  return props.children({statusQueryResult});
 };
 
 export const BackfillRowContent = ({
@@ -89,7 +80,6 @@ export const BackfillRowContent = ({
   showBackfillTarget,
   onShowPartitionsRequested,
   refetch,
-  hasCancelableRuns,
   statusQueryResult,
 }: BackfillRowProps & LoadResult) => {
   const repoAddress = backfill.partitionSet
@@ -133,10 +123,7 @@ export const BackfillRowContent = ({
       </td>
       <td style={{width: 140}}>{renderBackfillStatus()}</td>
       <td>
-        <BackfillActionsMenu
-          backfill={backfill}
-          refetch={refetch}
-        />
+        <BackfillActionsMenu backfill={backfill} refetch={refetch} />
       </td>
     </tr>
   );

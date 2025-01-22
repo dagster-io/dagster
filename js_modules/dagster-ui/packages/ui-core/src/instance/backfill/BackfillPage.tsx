@@ -123,10 +123,7 @@ export const BackfillPage = () => {
           <Box flex={{gap: 12, alignItems: 'center'}}>
             {isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
             {backfill ? (
-              <BackfillActionsMenu
-                backfill={backfill}
-                refetch={queryResult.refetch}
-              />
+              <BackfillActionsMenu backfill={backfill} refetch={queryResult.refetch} />
             ) : null}
           </Box>
         }
