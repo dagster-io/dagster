@@ -208,12 +208,12 @@ export const ASSETS_FRESHNESS_INFO_QUERY = gql`
         path
       }
       freshnessInfo {
-        ...AssetFreshnessInfoFragment
+        ...AssetNodeLiveFreshnessInfoFragment
       }
     }
   }
 
-  fragment AssetFreshnessInfoFragment on AssetFreshnessInfo {
+  fragment AssetNodeLiveFreshnessInfoFragment on AssetFreshnessInfo {
     currentMinutesLate
   }
 `;

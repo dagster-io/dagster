@@ -174,11 +174,11 @@ export type AssetsFreshnessInfoQuery = {
   }>;
 };
 
-export type AssetFreshnessInfoFragment = {
+export type AssetNodeLiveFreshnessInfoFragment = {
   __typename: 'AssetFreshnessInfo';
   currentMinutesLate: number | null;
 };
 
 export const AssetGraphLiveQueryVersion = 'd65025ff4ff394938e261d28393a15fa2c5095afb19bdbf6171bdda29e762497';
 
-export const AssetsFreshnessInfoQueryVersion = '5ced7579607f729f8423937a9baba83b0e5080574d8d3a7611e1f7dc6c931d60';
+export const AssetsFreshnessInfoQueryVersion = '1049ac5edde1a0f5c16dd8342020c30db8603477f6d7760712c5784a71bdbc01';
