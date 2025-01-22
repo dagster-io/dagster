@@ -24,19 +24,20 @@ function init() {
       return useApolloClient();
     },
     async (keys, client: ApolloClient<any>) => {
+      const assetKeys = keys.map(tokenToAssetKey);
       const [graphResponse, freshnessResponse] = await Promise.all([
         client.query<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
           query: ASSETS_GRAPH_LIVE_QUERY,
           fetchPolicy: 'no-cache',
           variables: {
-            assetKeys: keys.map(tokenToAssetKey),
+            assetKeys,
           },
         }),
         client.query<AssetsFreshnessInfoQuery, AssetsFreshnessInfoQueryVariables>({
           query: ASSETS_FRESHNESS_INFO_QUERY,
           fetchPolicy: 'no-cache',
           variables: {
-            assetKeys: keys.map(tokenToAssetKey),
+            assetKeys,
           },
         }),
       ]);
