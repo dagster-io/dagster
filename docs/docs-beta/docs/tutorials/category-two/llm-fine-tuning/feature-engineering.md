@@ -14,13 +14,13 @@ The Goodreads data does not include categories exactly, but has something simila
 select popular_shelves from graphic_novels limit 5;
 ```
 
-| popular_shelves |
-| --- |
-│ `[{'count': 228, 'name': to-read}, {'count': 2, 'name': graphic-novels}, {'count': 1, 'name': ff-re-…`  │
-│ `[{'count': 2, 'name': bd}, {'count': 2, 'name': to-read}, {'count': 1, 'name': french-author}, {'co…`  │
-│ `[{'count': 493, 'name': to-read}, {'count': 113, 'name': graphic-novels}, {'count': 102, 'name': co…`  │
-│ `[{'count': 222, 'name': to-read}, {'count': 9, 'name': currently-reading}, {'count': 3, 'name': mil…`  │
-│ `[{'count': 20, 'name': to-read}, {'count': 8, 'name': comics}, {'count': 4, 'name': graphic-novel},…` |
+```
+[{'count': 228, 'name': to-read}, {'count': 2, 'name': graphic-novels}, {'count': 1, 'name': ff-re-…`
+[{'count': 2, 'name': bd}, {'count': 2, 'name': to-read}, {'count': 1, 'name': french-author}, {'co…`
+[{'count': 493, 'name': to-read}, {'count': 113, 'name': graphic-novels}, {'count': 102, 'name': co…`
+[{'count': 222, 'name': to-read}, {'count': 9, 'name': currently-reading}, {'count': 3, 'name': mil…`
+[{'count': 20, 'name': to-read}, {'count': 8, 'name': comics}, {'count': 4, 'name': graphic-novel},…`
+```
 
 Parsing the data out by unpacking and aggregating this field, we can see the most popular shelves:
 
@@ -68,89 +68,13 @@ CATEGORIES = [
 
 Using these categories, we can construct a table of the most common genres and select the single best genre for each book (assuming it was shelved that way at least three times). We can then wrap that query in an asset and materialize it as a table alongside our other DuckDB tables:
 
-```python
-@dg.asset(
-    kinds={"duckdb"},
-    description="Goodreads shelf feature engineering",
-    group_name="processing",
-)
-def book_category(
-    duckdb_resource: dg_duckdb.DuckDBResource,
-    graphic_novels,
-):
-    sql_categories = ", ".join([f"'{s}'" for s in constants.CATEGORIES])
-    query = f"""
-        create table if not exists book_category as (
-            select
-            book_id,
-            category
-            from (
-                select
-                book_id,
-                category,
-                category_count,
-                row_number() over (partition by book_id order by category_count desc) as category_rank
-                from (
-                    select
-                    book_id,
-                    shelf.name as category,
-                    cast(shelf.count as integer) as category_count
-                    from (
-                        select
-                            book_id,
-                            unnest(popular_shelves) as shelf
-                        from graphic_novels
-                    )
-                    where category in ({sql_categories})
-                    and category_count > 3
-                )
-            )
-            where category_rank = 1
-        );
-    """
-    with duckdb_resource.get_connection() as conn:
-        conn.execute(query)
-```
+<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="65" lineEnd="105"/>
 
 ## Enrichment table
 
 With our `book_category` asset created, we can combine that with the `author` and `graphic_novel` assets to create our final data set we will use for modeling. Here we will both create the table within DuckDB and select its contents into a DataFrame, which we can pass to our next series of assets:
 
-```python
-@dg.asset(
-    kinds={"duckdb"},
-    description="Combined book, author and shelf data",
-    group_name="processing",
-)
-def enriched_graphic_novels(
-    duckdb_resource: dg_duckdb.DuckDBResource,
-    graphic_novels,
-    authors,
-    book_category,
-) -> pd.DataFrame:
-    query = f"""
-        create table if not exists enriched_graphic_novels as (
-            select
-                book.title as title,
-                authors.name as author,
-                book.description as description,
-                book_category.category
-            from graphic_novels as book
-            left join authors
-                on book.authors[1].author_id = authors.author_id
-            left join book_category
-                on book.book_id = book_category.book_id
-            where nullif(book.description, '') is not null
-            and category is not null
-        );
-    """
-    with duckdb_resource.get_connection() as conn:
-        conn.execute(query)
-        select_query = """
-            select * from enriched_graphic_novels;
-        """
-        return conn.execute(select_query).fetch_df()
-```
+<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="108" lineEnd="134"/>
 
 ## Next steps
 

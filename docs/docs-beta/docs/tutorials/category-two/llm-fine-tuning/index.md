@@ -68,7 +68,7 @@ First, set up a new Dagster project.
    uv pip install -e ".[dev]"
    ```
 
-## Step 3: Launch the Dagster webserver
+## Step 2: Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 

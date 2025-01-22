@@ -12,27 +12,7 @@ Since the data is normalized across these two files, we will want to combine the
 
 We will start by creating two Dagster assets to load in the data. Each asset will load one of the files and create a DuckDB table (`graphic_novels` and `authors`). The asset will use the Dagster `DuckDBResource`, which gives us an easy way to interact with and run queries in DuckDB. Both files will create a table from their respective JSON files:
 
-```python
-@dg.asset(
-    kinds={"duckdb"},
-    description="Goodreads graphic novel data",
-    group_name="ingestion",
-    deps=[goodreads],
-)
-def graphic_novels(duckdb_resource: dg_duckdb.DuckDBResource):
-    url = "https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/goodreads/byGenre/goodreads_books_comics_graphic.json.gz"
-    query = f"""
-        create table if not exists graphic_novels as (
-            select *
-            from read_json(
-                '{url}',
-                ignore_errors = true
-            )
-        );
-    """
-    with duckdb_resource.get_connection() as conn:
-        conn.execute(query)
-```
+<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="23" lineEnd="41"/>
 
 Now that the base tables are loaded, we can move on to working with the data.
 

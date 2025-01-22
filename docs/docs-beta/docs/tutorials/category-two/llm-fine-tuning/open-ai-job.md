@@ -10,62 +10,13 @@ Now that we are confident in the files we have generated, we can kick off our Op
 
 We have an asset for each file to upload, but as in the file creation step, they will look similar:
 
-```python
-@dg.asset(
-    kinds={"openai"},
-    description="Upload training set",
-    group_name="fine_tuning",
-)
-def upload_training_file(
-    context: dg.AssetExecutionContext,
-    openai: OpenAIResource,
-    training_file,
-) -> str:
-    with openai.get_client(context) as client:
-        with open(training_file, "rb") as file_fd:
-            response = client.files.create(file=file_fd, purpose="fine-tune")
-    return response.id
-```
+<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="264" lineEnd="277"/>
 
 ## Fine-tuning job
 
 We can now fine-tune our model. Using the OpenAI resource again, we will use the fine-tuning endpoint and submit a job using our two files. Executing a fine-tuning job may take a while, so after we submit it, we will want to the asset to poll and wait for it to succeed:
 
-```python
-@dg.asset(
-    kinds={"openai"},
-    description="Exeute model fine-tuning job",
-    group_name="fine_tuning",
-)
-def fine_tuned_model(
-    context: dg.AssetExecutionContext,
-    openai: OpenAIResource,
-    upload_training_file,
-    upload_validation_file,
-) -> str:
-    with openai.get_client(context) as client:
-        create_job_resp = client.fine_tuning.jobs.create(
-            training_file=upload_training_file,
-            validation_file=upload_validation_file,
-            model=constants.MODEL_NAME,
-            suffix="goodreads",
-        )
-
-    create_job_id = create_job_resp.to_dict()["id"]
-    context.log.info(f"Fine tuning job: {create_job_id}")
-
-    while True:
-        status_job_resp = client.fine_tuning.jobs.retrieve(create_job_id)
-        status = status_job_resp.to_dict()["status"]
-        context.log.info(f"Job {create_job_id}: {status}")
-        if status in ["succeeded", "cancelled", "failed"]:
-            break
-        time.sleep(30)
-
-    fine_tuned_model_name = status_job_resp.to_dict()["fine_tuned_model"]
-    context.add_output_metadata({"model_name": fine_tuned_model_name})
-    return fine_tuned_model_name
-```
+<CodeExample filePath="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="296" lineEnd="328"/>
 
 After the fine-tuning job has succeeded, we are given the unique name of our new model (in this case `ft:gpt-4o-mini-2024-07-18:test:goodreads:AoAYW0x3`). Note that we used `context.add_output_metadata` to record this as metadata as it will be good to track all the fine-tuned models we create over time with this job.
 
