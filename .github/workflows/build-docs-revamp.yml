@@ -22,7 +22,6 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Deploy to Vercel Previews on pull request, push to master branch
     steps:

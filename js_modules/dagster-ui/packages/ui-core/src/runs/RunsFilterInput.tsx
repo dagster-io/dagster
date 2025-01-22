@@ -490,11 +490,11 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     matchType: 'any-of',
   });
 
-  const launchedByFilter = useStaticSetFilter({
+  const launchedByFilter = useSuggestionFilter({
     name: 'Launched by',
-    allowMultipleSelections: false,
     icon: 'add_circle',
-    allValues: createdByValues,
+    initialSuggestions: createdByValues,
+    allowMultipleSelections: false,
     renderLabel: ({value}) => {
       let icon;
       let labelValue = value.value;
@@ -522,16 +522,38 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       return x.value!;
     },
     state: useMemo(() => {
-      return new Set(
-        tokens
-          .filter(
-            ({token, value}) =>
-              token === 'tag' && CREATED_BY_TAGS.includes(value.split('=')[0] as DagsterTag),
-          )
-          .map(({value}) => tagValueToFilterObject(value)),
-      );
+      return tokens
+        .filter(
+          ({token, value}) =>
+            token === 'tag' && CREATED_BY_TAGS.includes(value.split('=')[0] as DagsterTag),
+        )
+        .map(({value}) => tagValueToFilterObject(value));
     }, [tokens]),
-    onStateChanged: (values) => {
+    freeformSearchResult(query, suggestionPath) {
+      if (suggestionPath.length === 0) {
+        return [
+          {
+            value: {
+              key: `${DagsterTag.ScheduleName}-freeform`,
+              type: DagsterTag.ScheduleName,
+              value: query,
+            },
+            final: true,
+          },
+          {
+            value: {
+              key: `${DagsterTag.SensorName}-freeform`,
+              type: DagsterTag.SensorName,
+              value: query,
+            },
+            final: true,
+          },
+        ];
+      }
+      return null;
+    },
+    freeformResultPosition: 'end',
+    setState: (values) => {
       onChange([
         ...tokens.filter((token) => {
           if (token.token !== 'tag') {
@@ -544,6 +566,12 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
           value: `${value.type}=${value.value}`,
         })),
       ]);
+    },
+    getKey: ({value}) => value,
+    isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
+    matchType: 'any-of',
+    onSuggestionClicked: async (value) => {
+      return [{value}];
     },
   });
 
