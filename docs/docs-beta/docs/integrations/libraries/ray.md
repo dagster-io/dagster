@@ -15,6 +15,7 @@ enables:
 tags: [community-supported, etl]
 sidebar_custom_props:
   logo: images/integrations/ray.svg
+  community: true
 ---
 
 The community-supported `dagster-ray` package allows orchestrating distributed Ray compute from Dagster pipelines.
