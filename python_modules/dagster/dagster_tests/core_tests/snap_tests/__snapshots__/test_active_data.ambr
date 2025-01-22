@@ -1112,7 +1112,6 @@
                 "name": "result"
               }
             ],
-            "pool": null,
             "required_resource_keys": [],
             "tags": {}
           }
@@ -2268,7 +2267,6 @@
                     "name": "result"
                   }
                 ],
-                "pool": null,
                 "required_resource_keys": [],
                 "tags": {}
               }

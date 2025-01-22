@@ -2744,9 +2744,6 @@
               "mapped_solid_name": "never_runs_op"
             }
           ],
-          "pools": {
-            "__set__": []
-          },
           "tags": {}
         }
       ],
@@ -2775,7 +2772,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -2816,7 +2812,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -2851,7 +2846,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -2886,7 +2880,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -2914,7 +2907,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -2949,7 +2941,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -2977,7 +2968,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3013,7 +3003,6 @@
               "name": "fourth_kinds_key"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {
             "dagster/compute_kind": "python"
@@ -3043,7 +3032,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3071,7 +3059,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3099,7 +3086,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3134,7 +3120,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3170,7 +3155,6 @@
               "name": "check_in_op_asset_my_check"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3332,7 +3316,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3367,7 +3350,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3408,7 +3390,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3443,7 +3424,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3478,7 +3458,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3513,7 +3492,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3541,7 +3519,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3576,7 +3553,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3604,7 +3580,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3639,7 +3614,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3667,7 +3641,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3708,7 +3681,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3749,7 +3721,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3784,7 +3755,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3819,7 +3789,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3854,7 +3823,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3882,7 +3850,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3910,7 +3877,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3938,7 +3904,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -3973,7 +3938,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -4010,7 +3974,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -4040,7 +4003,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -4070,7 +4032,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4105,7 +4066,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4140,7 +4100,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4176,7 +4135,6 @@
               "name": "second_kinds_key"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4204,7 +4162,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4232,7 +4189,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4267,7 +4223,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4295,7 +4250,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4323,7 +4277,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4358,7 +4311,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4393,7 +4345,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4421,7 +4372,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4449,7 +4399,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4477,7 +4426,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -4507,7 +4455,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4559,7 +4506,6 @@
               "name": "one_my_other_check"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4594,7 +4540,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4630,7 +4575,6 @@
               "name": "str_asset"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4658,7 +4602,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4686,7 +4629,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4714,7 +4656,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4742,7 +4683,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4777,7 +4717,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4812,7 +4751,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4840,7 +4778,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4875,7 +4812,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4903,7 +4839,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -4931,7 +4866,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -5816,7 +5750,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -5851,7 +5784,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -5862,7 +5794,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[101]
-  '769fc2d8acd27f4698b2c69c4be7c28c9f12ab70'
+  'ab8f4b864ee53d2d9304b85f7a368aad7f678f29'
 # ---
 # name: test_all_snapshot_ids[102]
   '''
@@ -6709,7 +6641,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -6720,7 +6651,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[103]
-  '915d58f6d85c07bf073eb4a459c84cbf4fff70bc'
+  '98a8e544c66ff337c2aef1334603df0a3b1c7434'
 # ---
 # name: test_all_snapshot_ids[104]
   '''
@@ -7745,7 +7676,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -7756,7 +7686,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[105]
-  '2606adb830535b7009f9506f3b5fe8b2c54eb971'
+  'f53f6915917e179ab89bae44c345e79603f8d42d'
 # ---
 # name: test_all_snapshot_ids[106]
   '''
@@ -8603,7 +8533,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -8614,7 +8543,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[107]
-  '6ed1ee20c02e2765f51bbcc68bf9add6af5305ac'
+  'd65a072229c6e8fc80db02c8d06067f3b0b48305'
 # ---
 # name: test_all_snapshot_ids[108]
   '''
@@ -9639,7 +9568,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -9650,7 +9578,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[109]
-  '85e2679dc3c40934668114ca0a4ef1c2dda41a57'
+  '77bb631e77718a35cfd31049d03241709f9454ea'
 # ---
 # name: test_all_snapshot_ids[10]
   '''
@@ -11384,7 +11312,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -11397,7 +11324,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[111]
-  '4dff0f381a4c32ce934bfdad3089ca7adb6ae4a7'
+  'c5cbcfa0e6f1c8658773ba21a9a70fd1b7c517eb'
 # ---
 # name: test_all_snapshot_ids[112]
   '''
@@ -12422,7 +12349,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -12433,7 +12359,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[113]
-  '7685e700b5df952f2da8b5430c3ba3bc142d2863'
+  '8b0a6d0b6366a3178821e74b13782124ffa5d0fd'
 # ---
 # name: test_all_snapshot_ids[114]
   '''
@@ -13280,7 +13206,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -13291,7 +13216,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[115]
-  'e762100146993ec779a5fa784bf47d4aed7151eb'
+  '88c326b7e07c8c537ecd8086fd6429436a46c66f'
 # ---
 # name: test_all_snapshot_ids[116]
   '''
@@ -14184,7 +14109,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -14195,7 +14119,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[117]
-  '72c1d87c885853264966ae277c3d6dcdd1239d1a'
+  'a73f4941b2735f3a261d9617abaaed09a88aaebc'
 # ---
 # name: test_all_snapshot_ids[118]
   '''
@@ -15088,7 +15012,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "R1"
           ],
@@ -15101,7 +15024,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[119]
-  'e2e8e72f3582e1a2eae7382944855471a6bc602a'
+  '11f4785f61153adc6cca6935748af3807b59eee9'
 # ---
 # name: test_all_snapshot_ids[11]
   'cd81ec29a7fde8a337dc04fb109dd707a2962d18'
@@ -15997,7 +15920,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "R1"
           ],
@@ -16010,7 +15932,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[121]
-  'c86d5fe8c2541af9f50ae935ff37aa065151dc63'
+  '2b43566d7b3de2138b12c91b6953d6f1ddde0140'
 # ---
 # name: test_all_snapshot_ids[122]
   '''
@@ -17035,7 +16957,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "disable_gc"
           ],
@@ -17072,7 +16993,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "disable_gc"
           ],
@@ -17102,7 +17022,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -17143,7 +17062,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -17154,7 +17072,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[123]
-  '28b691accda6c56db71e3383fbb09c528da3d866'
+  'b07b89c1664d4a248bc1a39974a91b31d8956c54'
 # ---
 # name: test_all_snapshot_ids[124]
   '''
@@ -18212,7 +18130,6 @@
               "name": "start_skip"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -18248,7 +18165,6 @@
               "name": "skip"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -18274,7 +18190,6 @@
           ],
           "name": "no_output",
           "output_def_snaps": [],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -18309,7 +18224,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -18320,7 +18234,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[125]
-  'c835b5ac4189eafef207b267f933fd97123cb365'
+  '9a9a09da6b3a1dbab13bfde5e155c0f097dd22a5'
 # ---
 # name: test_all_snapshot_ids[126]
   '''
@@ -19243,7 +19157,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "a"
           ],
@@ -19280,7 +19193,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "b"
           ],
@@ -19293,7 +19205,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[127]
-  '775a4c5ea46104e3a1ff9db07a8bd083468c2b20'
+  'b131f0bc1872f377636fbf002a3ad86049c1e8af'
 # ---
 # name: test_all_snapshot_ids[128]
   '''
@@ -20191,7 +20103,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -20219,7 +20130,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -20247,7 +20157,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -20275,7 +20184,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -20286,7 +20194,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[129]
-  '70918a742d3ab528c6bcc6cd7b78e20fd6bb8e3a'
+  'ca68b52613bfcadc230b3dc1ec7e1045f9bc5836'
 # ---
 # name: test_all_snapshot_ids[12]
   '''
@@ -21200,7 +21108,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -21228,7 +21135,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -21263,7 +21169,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -22118,7 +22023,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -22129,7 +22033,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[131]
-  '928c0e7fa6489a9994d16215ef968ccafa0d0679'
+  '4fbe2b21985de715173a8d630c5d1506a0c7f040'
 # ---
 # name: test_all_snapshot_ids[132]
   '''
@@ -22976,7 +22880,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -22987,7 +22890,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[133]
-  'fdde90a39d165ebd07fc39556c7a9b4af1e44f13'
+  'c58bbee5967b5e43b907f2ee09bfa26b5b017899'
 # ---
 # name: test_all_snapshot_ids[134]
   '''
@@ -23834,7 +23737,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -23845,7 +23747,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[135]
-  'a23753e6c511ccff1f07d05304a6f7f0a832a116'
+  '9109ebc6447db70cdcd17a7bf8b90ec61ffd02fe'
 # ---
 # name: test_all_snapshot_ids[136]
   '''
@@ -24692,7 +24594,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -24703,7 +24604,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[137]
-  'e2f9e2e1e6719a79f8bc336bac4521c8d0136655'
+  '673ec5c1c0fce5ffec0506edd32bcdbd018e79bb'
 # ---
 # name: test_all_snapshot_ids[138]
   '''
@@ -25850,7 +25751,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -25885,7 +25785,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -25920,7 +25819,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -25955,7 +25853,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -25966,10 +25863,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[139]
-  'f9ad400e36d87bf80246971be128612ea622ca2c'
+  'ea8e78a81a6c470713834d21c023ab1d45d00394'
 # ---
 # name: test_all_snapshot_ids[13]
-  'a86aacf9a2c9d233cab329983796e55ae6e6805c'
+  '1f3478e419b57370edfc5959b967300b91ad776c'
 # ---
 # name: test_all_snapshot_ids[140]
   '''
@@ -26816,7 +26713,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -26827,7 +26723,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[141]
-  '83c6ac6d0dfa042821973ee0e8c432e9cb462e11'
+  '927cbfcff5af3bd40ebed1cae3eed1baf4c3547f'
 # ---
 # name: test_all_snapshot_ids[142]
   '''
@@ -27677,7 +27573,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -27690,7 +27585,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[143]
-  'cd65ddea2cf05735d3afd0d5a754bb480701540d'
+  'c3320c44d5fa6c508dfda564e67bc67747b9891c'
 # ---
 # name: test_all_snapshot_ids[144]
   '''
@@ -28752,7 +28647,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -28780,7 +28674,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -28791,7 +28684,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[145]
-  '547f39e0de84614590c1247c5c8f646696153dcd'
+  '81ecba8b867d1179f0998c86b85a1176aa946456'
 # ---
 # name: test_all_snapshot_ids[146]
   '''
@@ -29846,7 +29739,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -29881,7 +29773,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -29892,7 +29783,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[147]
-  'c12ff78fede2ed02f9f73a531003b65b262f85b3'
+  'ce839b23a887f29520c71238335886cbe80337ef'
 # ---
 # name: test_all_snapshot_ids[148]
   '''
@@ -30798,7 +30689,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -30826,7 +30716,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -30867,7 +30756,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -30878,7 +30766,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[149]
-  '9c9eca490a1c758490dcd538469321bef142615f'
+  '4b4b18dca82ef0567492f476ff2bcbbf7392206d'
 # ---
 # name: test_all_snapshot_ids[14]
   '''
@@ -31950,7 +31838,6 @@
               "name": "one_my_other_check"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -33073,7 +32960,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -33109,7 +32995,6 @@
               "name": "str_asset"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -33144,7 +33029,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -33155,10 +33039,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[151]
-  '927ec3de2eafb5ea326d481adbfa6f108d896bca'
+  'dedb9fc5a6627950d8d31dce78af887c18c25160'
 # ---
 # name: test_all_snapshot_ids[15]
-  'b0c06b1d19ebc1719fb97e606c97c98808173120'
+  'c77559c3ffec162d2580606b6cc7aeaf8ab8d9e0'
 # ---
 # name: test_all_snapshot_ids[16]
   '''
@@ -34048,9 +33932,6 @@
           "name": "simple_graph",
           "output_def_snaps": [],
           "output_mapping_snaps": [],
-          "pools": {
-            "__set__": []
-          },
           "tags": {}
         }
       ],
@@ -34079,7 +33960,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -34090,7 +33970,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[17]
-  'cfb767a61be6a485474582ec75fc6834cd314c08'
+  'ac30d35b2d3b8c25490824aaa8dac2281ad4f860'
 # ---
 # name: test_all_snapshot_ids[18]
   '''
@@ -35226,9 +35106,6 @@
               "mapped_solid_name": "adder_2"
             }
           ],
-          "pools": {
-            "__set__": []
-          },
           "tags": {}
         },
         {
@@ -35311,9 +35188,6 @@
               "mapped_solid_name": "adder_2"
             }
           ],
-          "pools": {
-            "__set__": []
-          },
           "tags": {}
         },
         {
@@ -35396,9 +35270,6 @@
               "mapped_solid_name": "div_2"
             }
           ],
-          "pools": {
-            "__set__": []
-          },
           "tags": {}
         }
       ],
@@ -35434,7 +35305,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -35469,7 +35339,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -35480,10 +35349,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[19]
-  'b336066bf8dc411b162f9869dd08da0b18057896'
+  'd9f6d85793df3d9df94d4aedb21bb659c1202bda'
 # ---
 # name: test_all_snapshot_ids[1]
-  'c7f8f1782b2c5c851dd0113ecbf095973a837b0c'
+  '8484c9f8574994fa288e354ed57a67102974452b'
 # ---
 # name: test_all_snapshot_ids[20]
   '''
@@ -36512,7 +36381,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -36540,7 +36408,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -36551,7 +36418,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[21]
-  'a380036718142da0ac2761aa86d24ae2c0f96f53'
+  '9041a32e00b2c27d78e168f10272a992f819e88d'
 # ---
 # name: test_all_snapshot_ids[22]
   '''
@@ -37511,7 +37378,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -37546,7 +37412,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -37557,7 +37422,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[23]
-  '42f2f9908dcf606a04364fd6edab7bd9a1e39aa4'
+  '9d2930f7c072c5a01688d84b725c49d4ae718c65'
 # ---
 # name: test_all_snapshot_ids[24]
   '''
@@ -38517,7 +38382,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -38552,7 +38416,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -38563,7 +38426,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[25]
-  '55ca8157660c610a531746808060e545b83c6247'
+  'a28dd9e490e08f05fab6ab1309de27da5cd3eb0f'
 # ---
 # name: test_all_snapshot_ids[26]
   '''
@@ -39493,7 +39356,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -39504,7 +39366,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[27]
-  '3d4925a65348e3a0560aa6b818aa958098967525'
+  'a62baecf830886bfa322863f86bbd7344ef9c359'
 # ---
 # name: test_all_snapshot_ids[28]
   '''
@@ -40494,7 +40356,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -40529,7 +40390,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -40564,7 +40424,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -40575,7 +40434,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[29]
-  '65d1097db8175b8dccef024c87c948f207cdb11f'
+  '2bc0dc6a7c8ccb4ec4352fde1925f82521d71675'
 # ---
 # name: test_all_snapshot_ids[2]
   '''
@@ -41600,7 +41459,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -42455,7 +42313,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -42466,7 +42323,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[31]
-  '3ee8302845c25b0527561794e22024de90478a04'
+  '458a303a0e8d51f99eb8417d4be851f0b982b5a5'
 # ---
 # name: test_all_snapshot_ids[32]
   '''
@@ -43528,7 +43385,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -43556,7 +43412,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -43567,7 +43422,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[33]
-  '702d508e8721e8c8286c056f5a0a888c1febb1da'
+  '155cb67915656dd22c1d24cac01603648f423b0b'
 # ---
 # name: test_all_snapshot_ids[34]
   '''
@@ -44624,7 +44479,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -44652,7 +44506,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -44687,7 +44540,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -44734,7 +44586,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -44769,7 +44620,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -44780,7 +44630,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[35]
-  'e3cf4257cb43e1a09b7dbfb4878d44bd40e30798'
+  'db3c9e009bad031bbf9b5f278cc09b691a00eaec'
 # ---
 # name: test_all_snapshot_ids[36]
   '''
@@ -45842,7 +45692,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -45870,7 +45719,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -45881,7 +45729,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[37]
-  'a1d2b3ec611aced3a1efde71401cded7594ac075'
+  '226bfaa0b42ce356abd18ab86046686cc2c2b9b2'
 # ---
 # name: test_all_snapshot_ids[38]
   '''
@@ -46995,7 +46843,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -47030,7 +46877,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "retry_count"
           ],
@@ -47067,7 +46913,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -47095,7 +46940,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -47106,10 +46950,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[39]
-  'cdea9b63b71ce76a1db61539dd7040f69d52590c'
+  'effe11fd9b8a40682bc8041fcfdaf25f68be4612'
 # ---
 # name: test_all_snapshot_ids[3]
-  'b3476cfa8240e1713d78897fdfec25a59b64f0df'
+  'fc5c2d069b423eb651fd1b8e68f1537d8ecfdd82'
 # ---
 # name: test_all_snapshot_ids[40]
   '''
@@ -48148,7 +47992,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -48159,7 +48002,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[41]
-  '1044db6796f43e8732d5971f0024ca36faf9885c'
+  '5c546683c0858a71f27c63a4b294926e1de6a1e1'
 # ---
 # name: test_all_snapshot_ids[42]
   '''
@@ -49184,7 +49027,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -49195,7 +49037,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[43]
-  'ba40a7cc6906899c438abe67f5144f720ead2158'
+  '39c8061a712382691a1d8203efadcec978be2173'
 # ---
 # name: test_all_snapshot_ids[44]
   '''
@@ -50321,7 +50163,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -50362,7 +50203,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -50397,7 +50237,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -50432,7 +50271,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -50443,7 +50281,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[45]
-  '0419f0d2bcee4b7d82c749b41ffde27d3e841669'
+  'f07b5f3e9fe1aaec2d455ef01bac50f38db70300'
 # ---
 # name: test_all_snapshot_ids[46]
   '''
@@ -51574,7 +51412,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -51609,7 +51446,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -51637,7 +51473,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -51678,7 +51513,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -51706,7 +51540,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -51717,7 +51550,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[47]
-  'cbc9b73edbfb16e68bfaea0cf9b96849bceb8768'
+  '7ba20030eeecab26afcfd3cd5a68be1d2f48c427'
 # ---
 # name: test_all_snapshot_ids[48]
   '''
@@ -52864,7 +52697,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -52899,7 +52731,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -52934,7 +52765,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -52969,7 +52799,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -52980,7 +52809,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[49]
-  '3f6c8ba6993e3c2d8ef331327dfe6bcdec3d1e39'
+  'a670207753e19f723023819135333b4ac71a281b'
 # ---
 # name: test_all_snapshot_ids[4]
   '''
@@ -54005,7 +53834,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -55187,9 +55015,6 @@
               "mapped_solid_name": "never_runs_op"
             }
           ],
-          "pools": {
-            "__set__": []
-          },
           "tags": {}
         }
       ],
@@ -55225,7 +55050,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -55260,7 +55084,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -55290,7 +55113,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -55325,7 +55147,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -55336,7 +55157,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[51]
-  '200c1bc946100875b19e0c6b7f26fbb9edab070b'
+  '8d5778a9040bf5a8f2eb894cca019573f72cafb7'
 # ---
 # name: test_all_snapshot_ids[52]
   '''
@@ -56350,7 +56171,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -56385,7 +56205,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -56422,7 +56241,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -56433,7 +56251,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[53]
-  'c3aabf70377cb5b0e29bbb20fd4fcf3e19a31243'
+  '2a4c830fed93036921f36e4ff15172e452f21460'
 # ---
 # name: test_all_snapshot_ids[54]
   '''
@@ -57373,7 +57191,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -57386,7 +57203,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[55]
-  'feee923ea5fe7d6c6a32a7bcb5520580968b172b'
+  '3fcb711d337cb03bedf5ff7e5ec64b30eefc9ec8'
 # ---
 # name: test_all_snapshot_ids[56]
   '''
@@ -58339,7 +58156,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [
             "hanging_asset_resource"
           ],
@@ -58369,7 +58185,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -58380,7 +58195,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[57]
-  '02b4161e051e81f1c2a6d98a9e4fd317dfdebcb6'
+  'b467f29b8fb76fd793f23aa1cefb10918a105f91'
 # ---
 # name: test_all_snapshot_ids[58]
   '''
@@ -59303,7 +59118,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -59338,7 +59152,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -59349,10 +59162,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[59]
-  'c3ee2f13236f5c435fd35cda5130aee26f782ba6'
+  'c6b504611b1ee7582092807ac90bdd4ac64bac3b'
 # ---
 # name: test_all_snapshot_ids[5]
-  'caa77ddbcfcd5b19d2aa3a79f590ebdbf08d0e93'
+  'c23e75a6d1d7a9b89528399a9d27bcc9c90a178e'
 # ---
 # name: test_all_snapshot_ids[60]
   '''
@@ -60199,7 +60012,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -60212,7 +60024,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[61]
-  'aa4ef476a6365f3e0580260a76a6d6d68230f1ba'
+  'dc190868e8887ba5ac3669da13473252cd0ab098'
 # ---
 # name: test_all_snapshot_ids[62]
   '''
@@ -61105,7 +60917,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -61116,7 +60927,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[63]
-  'ef3bed708c084bf42ea5a6323e0956535baa4543'
+  '83469e8c700778e0c1e268f158672fca54d5896b'
 # ---
 # name: test_all_snapshot_ids[64]
   '''
@@ -61963,7 +61774,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -61974,7 +61784,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[65]
-  'd0384ede0cce61753aaeb41ca23c890fe92056ff'
+  'c4fee3a0c56b1ef6fcea9b64ceaacd06c4d5e216'
 # ---
 # name: test_all_snapshot_ids[66]
   '''
@@ -62999,7 +62809,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -63010,7 +62819,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[67]
-  'd80307a63854223bed7bb3ee68a98bcc8dd1e910'
+  '10e316cc85a348c2e9f5c5ec1a076bfe7e036ff2'
 # ---
 # name: test_all_snapshot_ids[68]
   '''
@@ -63903,7 +63712,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -63914,7 +63722,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[69]
-  'b7bb430ea92805bcde137dfd09f72b84d7d5e073'
+  '643e2b02ca69b0087d15b448a9108d39d5b35036'
 # ---
 # name: test_all_snapshot_ids[6]
   '''
@@ -64992,7 +64800,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -65033,7 +64840,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -65069,7 +64875,6 @@
               "name": "check_in_op_asset_my_check"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -65976,7 +65781,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -65987,7 +65791,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[71]
-  '000261a9954723ac0cefe107bc92adcf0e3a200b'
+  '158a79ab642707e63923c59c6abaf7960b36211e'
 # ---
 # name: test_all_snapshot_ids[72]
   '''
@@ -66859,7 +66663,6 @@
           "input_def_snaps": [],
           "name": "emit_failed_expectation",
           "output_def_snaps": [],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -66878,7 +66681,6 @@
           "input_def_snaps": [],
           "name": "emit_successful_expectation",
           "output_def_snaps": [],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -66897,7 +66699,6 @@
           "input_def_snaps": [],
           "name": "emit_successful_expectation_no_metadata",
           "output_def_snaps": [],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -66908,7 +66709,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[73]
-  '6d22707948b2ee20673d0b3108d83b1c4f3d7afd'
+  '25eed9832eef95ee97a63357e836659193775b3d'
 # ---
 # name: test_all_snapshot_ids[74]
   '''
@@ -67846,7 +67647,6 @@
               "name": "bar"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -67857,7 +67657,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[75]
-  'f265b9e6e67079d19d46aa0d652a879c6fbec8ef'
+  '6069db2378a5bcd370c5f8ce8e8ee51d997e3447'
 # ---
 # name: test_all_snapshot_ids[76]
   '''
@@ -68755,7 +68555,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -68783,7 +68582,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -68794,7 +68592,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[77]
-  '5dd48aa61f869698d9a41066631b480e451bf4a8'
+  'de3cee0b30bf45c5c28b57035caff8a592cb8a99'
 # ---
 # name: test_all_snapshot_ids[78]
   '''
@@ -69670,7 +69468,6 @@
           "input_def_snaps": [],
           "name": "op_with_list",
           "output_def_snaps": [],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -69681,10 +69478,10 @@
   '''
 # ---
 # name: test_all_snapshot_ids[79]
-  '40a335f6458b99a0e8ece9e2438437ff0851bf6c'
+  '68f90c6bc3483e01ab1317573d90e23d0efe14a9'
 # ---
 # name: test_all_snapshot_ids[7]
-  '4cbb3779564cdebc3594f0edd5c94950ec92f778'
+  '8023256507d183317343a2f6c4703a5ac3800eaf'
 # ---
 # name: test_all_snapshot_ids[80]
   '''
@@ -70577,7 +70374,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -70588,7 +70384,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[81]
-  '6bb72c4b253804f1387776ea54c767fd97923f0d'
+  '1c4b82d393f7eacd9a358e3d82925d2afb9afbc0'
 # ---
 # name: test_all_snapshot_ids[82]
   '''
@@ -71435,7 +71231,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -71446,7 +71241,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[83]
-  '12f5edfb1605d122c4e3628a8481844db5d772ce'
+  'ab213b2b0286d659e9d7044d7dcec9b13d5b8bc7'
 # ---
 # name: test_all_snapshot_ids[84]
   '''
@@ -72374,7 +72169,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -72402,7 +72196,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -72413,7 +72206,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[85]
-  '9717dc0073cae0d9772818a7097d4cf71c2892fe'
+  '06068d3cd0c89f54330c52e56f4e72a338f19a9f'
 # ---
 # name: test_all_snapshot_ids[86]
   '''
@@ -73404,7 +73197,6 @@
           "input_def_snaps": [],
           "name": "op_with_multilayered_config",
           "output_def_snaps": [],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -73415,7 +73207,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[87]
-  '947292f5870d5ca8a8dcf99a66f9d7759f2f5646'
+  '10cfd966244a4e4064ff00517d3e012ad6ce4c7d'
 # ---
 # name: test_all_snapshot_ids[88]
   '''
@@ -74292,7 +74084,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -74327,7 +74118,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -74338,7 +74128,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[89]
-  '4eb442f45da611e54320f4cc5084f41a2f1f1a86'
+  'b7499dc1851fe912eb84bbbcead7d7db511e64d8'
 # ---
 # name: test_all_snapshot_ids[8]
   '''
@@ -75185,7 +74975,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -76218,7 +76007,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -76229,7 +76017,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[91]
-  '65a943726ccddf0851318d8255849c6a27687b60'
+  '17bea22424bd5aa8995cc8ae08cd2e0c1be7c019'
 # ---
 # name: test_all_snapshot_ids[92]
   '''
@@ -77284,7 +77072,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -77319,7 +77106,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -77330,7 +77116,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[93]
-  '15eee9b4a572e4b6eddd9ed0ec8fcc34e3d96e59'
+  '7fc53a5a9f9ab514b23b938f7fa68cd5fd2f464d'
 # ---
 # name: test_all_snapshot_ids[94]
   '''
@@ -78423,7 +78209,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -78451,7 +78236,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -78479,7 +78263,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -78507,7 +78290,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -78535,7 +78317,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -78546,7 +78327,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[95]
-  '11b9c9be70b3ce0434a5ea9aca6a52547da2ed73'
+  'f08d1a06b69649912ba8b056d76b8c7809954c31'
 # ---
 # name: test_all_snapshot_ids[96]
   '''
@@ -79393,7 +79174,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -79404,7 +79184,7 @@
   '''
 # ---
 # name: test_all_snapshot_ids[97]
-  '2de4122175e786573bf2870c54af3189990ceb77'
+  '913c310b609478d52a81ee83bdd4b095d0f2932d'
 # ---
 # name: test_all_snapshot_ids[98]
   '''
@@ -80429,9 +80209,6 @@
               "mapped_solid_name": "plus_one"
             }
           ],
-          "pools": {
-            "__set__": []
-          },
           "tags": {}
         }
       ],
@@ -80473,7 +80250,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -80501,7 +80277,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -80529,7 +80304,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         },
@@ -80564,7 +80338,6 @@
               "name": "result"
             }
           ],
-          "pool": null,
           "required_resource_keys": [],
           "tags": {}
         }
@@ -80575,8 +80348,8 @@
   '''
 # ---
 # name: test_all_snapshot_ids[99]
-  '1959e3612cf7d53844928fff25df04128d1b15ff'
+  '8e137c24b2245e55025e1cc7b71a42b99425dbec'
 # ---
 # name: test_all_snapshot_ids[9]
-  'cf67ad5622d23845499daf2adba4a11f6b23f9eb'
+  '9699a524d810d89264bf60d01dab3c751fe47461'
 # ---

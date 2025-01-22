@@ -120,6 +120,7 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
         "job_datas": "external_pipeline_datas",
         "job_refs": "external_job_refs",
     },
+    skip_when_empty_fields={"pools"},
 )
 @record_custom
 class RepositorySnap(IHaveNew):
