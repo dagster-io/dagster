@@ -35,14 +35,14 @@ function useCategoryItemsPlural() {
 
 function CardContainer({href, children}: {href: string; children: ReactNode}): ReactNode {
   return (
-    <Link href={href} className={clsx('card padding--lg', styles.cardContainer)}>
+    <Link
+      href={href}
+      className={clsx('card padding--lg', styles.cardContainer)}
+      style={{height: '100%'}}
+    >
       {children}
     </Link>
   );
-}
-
-function truncate(text: string, max: number) {
-  return text.length > max ? text.slice(0, max).split(' ').slice(0, -1).join(' ') + ' ...' : text;
 }
 
 function CardLayout({
