@@ -8,7 +8,7 @@ from jsonschema import Draft202012Validator, ValidationError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.component import LocalComponentTypes, RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import (
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -266,6 +266,9 @@ def component_check_command(
     component_registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
     validation_errors: list[tuple[str, ValidationError]] = []
+
+    component_contents_by_dir = {}
+    local_components = set()
     for component_dir in (
         dg_context.root_path / dg_context.root_package_name / "components"
     ).iterdir():
@@ -276,13 +279,27 @@ def component_check_command(
             component_doc_tree = parse_yaml_with_source_positions(
                 text, filename=str(component_path)
             )
+            component_contents_by_dir[component_dir] = component_doc_tree
 
             component_name = component_doc_tree.value.get("type")
-            json_schema = component_registry.get(component_name).component_params_schema
+            if component_name.startswith("."):
+                local_components.add(component_dir)
 
-            v = Draft202012Validator(json_schema)  # type: ignore
-            for err in v.iter_errors(component_doc_tree.value["params"]):
-                validation_errors.append((component_name, err))
+    local_component_types = LocalComponentTypes.from_dg_context(dg_context, list(local_components))
+
+    for component_dir, component_doc_tree in component_contents_by_dir.items():
+        component_name = component_doc_tree.value.get("type")
+        if component_name.startswith("."):
+            json_schema = (
+                local_component_types.get(component_dir, component_name).component_params_schema
+                or {}
+            )
+        else:
+            json_schema = component_registry.get(component_name).component_params_schema or {}
+
+        v = Draft202012Validator(json_schema)  # type: ignore
+        for err in v.iter_errors(component_doc_tree.value["params"]):
+            validation_errors.append((component_name, err))
 
     if validation_errors:
         for component_name, error in validation_errors:

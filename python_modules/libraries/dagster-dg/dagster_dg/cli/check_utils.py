@@ -49,10 +49,6 @@ OFFSET_LINES_AFTER = 3
 def error_dict_to_formatted_error(
     component_name: str, error_details: ValidationError, source_position_tree: SourcePositionTree
 ) -> str:
-    # ctx = error_details.get("ctx", {})
-    # source_position: SourcePosition = ctx["source_position"]
-    # source_position_path: Sequence[SourcePosition] = ctx["source_position_path"]
-
     source_position, source_position_path = source_position_tree.lookup_closest_and_path(
         ["params", *error_details.absolute_path], trace=None
     )
