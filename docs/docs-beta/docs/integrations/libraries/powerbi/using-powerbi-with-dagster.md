@@ -3,9 +3,13 @@ title: "Using Power BI with Dagster"
 description: Represent your Power BI assets in Dagster
 ---
 
-<ExperimentalCallout />
+:::
 
-This guide provides instructions for using Dagster with Power BI using the `dagster-powerbi` library. Your Power BI assets, such as semantic models, data sources, reports, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Power BI assets and upstream data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Power BI semantic models, allowing you to trigger refreshes of these models on a cadence or based on upstream data changes.
+This feature is considered **experimental**
+
+:::
+
+This guide provides instructions for using Dagster with Power BI using the [`dagster-powerbi`](/api/python-api/libraries/dagster-powerbi) library. Your Power BI assets, such as semantic models, data sources, reports, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Power BI assets and upstream data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Power BI semantic models, allowing you to trigger refreshes of these models on a cadence or based on upstream data changes.
 
 ## What you'll learn
 
@@ -36,10 +40,11 @@ pip install dagster dagster-powerbi
 
 ## Represent Power BI assets in the asset graph
 
-To load Power BI assets into the Dagster asset graph, you must first construct a <PyObject module="dagster_powerbi" object="PowerBIWorkspace" /> resource, which allows Dagster to communicate with your Power BI workspace. You'll need to supply your workspace ID and credentials. You may configure a service principal or use an API access token, which can be passed directly or accessed from the environment using <PyObject object="EnvVar" />.
+To load Power BI assets into the Dagster asset graph, you must first construct a <PyObject section="libraries" module="dagster_powerbi" object="PowerBIWorkspace" /> resource, which allows Dagster to communicate with your Power BI workspace. You'll need to supply your workspace ID and credentials. You may configure a service principal or use an API access token, which can be passed directly or accessed from the environment using <PyObject object="EnvVar" />.
 
-Dagster can automatically load all semantic models, data sources, reports, and dashboards from your Power BI workspace as asset specs. Call the <PyObject module="dagster_powerbi" object="load_powerbi_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Power BI assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
+Dagster can automatically load all semantic models, data sources, reports, and dashboards from your Power BI workspace as asset specs. Call the <PyObject section="libraries" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Power BI assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/power-bi/representing-power-bi-assets.py
 from dagster_powerbi import (
     PowerBIServicePrincipal,
@@ -78,8 +83,9 @@ If you encounter issues with the scanner APIs, you may disable them using `load_
 
 ### Customize asset definition metadata for Power BI assets
 
-By default, Dagster will generate asset specs for each Power BI asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject module="dagster_powerbi" object="DagsterPowerBITranslator" /> subclass to the <PyObject module="dagster_powerbi" object="load_powerbi_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Power BI asset type.
+By default, Dagster will generate asset specs for each Power BI asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_powerbi" object="DagsterPowerBITranslator" /> subclass to the <PyObject section="libraries" module="dagster_powerbi" object="load_powerbi_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Power BI asset type.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/power-bi/customize-power-bi-asset-defs.py
 from dagster_powerbi import (
     DagsterPowerBITranslator,
@@ -131,8 +137,9 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 ### Load Power BI assets from multiple workspaces
 
-Definitions from multiple Power BI workspaces can be combined by instantiating multiple <PyObject module="dagster_powerbi" object="PowerBIWorkspace" /> resources and merging their specs. This lets you view all your Power BI assets in a single asset graph:
+Definitions from multiple Power BI workspaces can be combined by instantiating multiple <PyObject section="libraries" module="dagster_powerbi" object="PowerBIWorkspace" /> resources and merging their specs. This lets you view all your Power BI assets in a single asset graph:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/power-bi/multiple-power-bi-workspaces.py
 from dagster_powerbi import (
     PowerBIServicePrincipal,
@@ -171,12 +178,11 @@ defs = dg.Definitions(
 )
 ```
 
----
-
 ## Materialize Power BI semantic models from Dagster
 
-Dagster's default behavior is to pull in representations of Power BI semantic models as external assets, which appear in the asset graph but can't be materialized. However, you can build executable asset definitions that trigger the refresh of Power BI semantic models. The <PyObject module="dagster_powerbi" object="build_semantic_model_refresh_asset_definition" /> utility will construct an asset definition that triggers a refresh of a semantic model when materialized.
+Dagster's default behavior is to pull in representations of Power BI semantic models as external assets, which appear in the asset graph but can't be materialized. However, you can build executable asset definitions that trigger the refresh of Power BI semantic models. The <PyObject section="libraries" module="dagster_powerbi" object="build_semantic_model_refresh_asset_definition" /> utility will construct an asset definition that triggers a refresh of a semantic model when materialized.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/power-bi/materialize-semantic-models.py
 from dagster_powerbi import (
     PowerBIServicePrincipal,
@@ -213,8 +219,9 @@ You can then add these semantic models to jobs or as targets of Dagster sensors 
 
 ### Customizing how Power BI semantic models are materialized
 
-Instead of using the out-of-the-box <PyObject module="dagster_powerbi" method="build_semantic_model_refresh_asset_definition" /> utility, you can build your own asset definitions that trigger the refresh of Power BI semantic models. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
+Instead of using the out-of-the-box <PyObject section="libraries" module="dagster_powerbi" method="build_semantic_model_refresh_asset_definition" /> utility, you can build your own asset definitions that trigger the refresh of Power BI semantic models. This allows you to customize how the refresh is triggered or to run custom code before or after the refresh.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/power-bi/materialize-semantic-models-advanced.py
 from dagster_powerbi import (
     PowerBIServicePrincipal,

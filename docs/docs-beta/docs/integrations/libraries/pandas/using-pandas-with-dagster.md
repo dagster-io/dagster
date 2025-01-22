@@ -5,26 +5,12 @@ description: "The dagster-pandas library provides the ability to perform data va
 
 # Pandas & Dagster
 
-:::
+:::note
 
-  This page describes the <code>dagster-pandas</code> library, which is used for
-  performing data validation. To simply use pandas with Dagster, start with the{" "}
-  <a href="/getting-started/quickstart" target="new">
-    {" "}
-    Dagster Quickstart example.
-  </a>{" "}
-  Dagster makes it easy to use pandas code to manipulate data and then store
-  that data in other systems such as{" "}
-  <a
-    href="/_apidocs/libraries/dagster-aws#dagster_aws.s3.s3_pickle_io_manager"
-    target="new"
-  >
-    files on Amazon S3
-  </a>{" "}
-  or{" "}
-  <a href="/integrations/snowflake/using-snowflake-with-dagster" target="new">
-    tables in Snowflake.
-  </a>{" "}
+This page describes the `dagster-pandas` library, which is used for performing data validation. To simply use pandas with Dagster, start with the [Dagster Quickstart](/getting-started/quickstart)
+
+Dagster makes it easy to use pandas code to manipulate data and then store
+that data in other systems such as [files on Amazon S3](/api/python-api/libraries/dagster-aws#dagster_aws.s3.s3_pickle_io_manager) or [tables in Snowflake](/integrations/snowflake/using-snowflake-with-dagster)
 
 :::
 
@@ -38,6 +24,7 @@ The `dagster_pandas` library provides the ability to perform data validation, em
 
 To create a custom `dagster_pandas` type, use `create_dagster_pandas_dataframe_type` and provide a list of `PandasColumn` objects which specify column-level schema and constraints. For example, we can construct a custom dataframe type to represent a set of e-bike trips in the following way:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/legacy/dagster_pandas_guide/core_trip.py startafter=start_core_trip_marker_0 endbefore=end_core_trip_marker_0
 TripDataFrame = create_dagster_pandas_dataframe_type(
     name="TripDataFrame",
@@ -59,6 +46,7 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
 
 Once our custom data type is defined, we can use it as the type declaration for the inputs / outputs of our ops:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/legacy/dagster_pandas_guide/core_trip.py startafter=start_core_trip_marker_1 endbefore=end_core_trip_marker_1
 @op(out=Out(TripDataFrame))
 def load_trip_dataframe() -> DataFrame:
@@ -72,12 +60,7 @@ def load_trip_dataframe() -> DataFrame:
 
 By passing in these `PandasColumn` objects, we are expressing the schema and constraints we expect our dataframes to follow when Dagster performs type checks for our ops. Moreover, if we go to the op viewer, we can follow our schema documented in the UI:
 
-<Image
-alt="tutorial2.png"
-src="/images/guides/dagster_pandas/tutorial2.png"
-width={1222}
-height={1062}
-/>
+![tutorial2](/images/guides/dagster_pandas/tutorial2.png)
 
 ## Dagster DataFrame Level Validation
 
@@ -87,6 +70,7 @@ To do this, we provide a list of dataframe constraints to `create_dagster_pandas
 
 This looks like:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/legacy/dagster_pandas_guide/shape_constrained_trip.py startafter=start_create_type endbefore=end_create_type
 ShapeConstrainedTripDataFrame = create_dagster_pandas_dataframe_type(
     name="ShapeConstrainedTripDataFrame", dataframe_constraints=[RowCountConstraint(4)]
@@ -99,6 +83,7 @@ If we rerun the above example with this dataframe, nothing should change. Howeve
 
 Aside from constraint validation, `create_dagster_pandas_dataframe_type` also takes in a summary statistics function that emits metadata dictionaries which are surfaced during runs. Since data systems seldom control the quality of the data they receive, it becomes important to monitor data as it flows through your systems. In complex jobs, this can help debug and monitor data drift over time. Let's illustrate how this works in our example:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/legacy/dagster_pandas_guide/summary_stats.py startafter=start_summary endbefore=end_summary
 def compute_trip_dataframe_summary_statistics(dataframe):
     return {
@@ -118,12 +103,7 @@ SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
 
 Now if we run this job in the UI launchpad, we can see that the `SummaryStatsTripDataFrame` type is displayed in the logs along with the emitted metadata.
 
-<Image
-alt="tutorial1.png"
-src="/images/guides/dagster_pandas/tutorial1.png"
-width={3574}
-height={2020}
-/>
+![tutorial1.png](/images/guides/dagster_pandas/tutorial1.png)
 
 # Dagster DataFrame Custom Validation
 
@@ -131,6 +111,7 @@ height={2020}
 
 To tie this back to our example, let's say that we want to validate that the amount paid for a e-bike must be in 5 dollar increments because that is the price per mile rounded up. As a result, let's implement a `DivisibleByFiveConstraint`. To do this, all it needs is a `markdown_description` for the UI which accepts and renders markdown syntax, an `error_description` for error logs, and a validation method which throws a `ColumnConstraintViolationException` if a row fails validation. This would look like the following:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/legacy/dagster_pandas_guide/custom_column_constraint.py startafter=start_custom_col endbefore=end_custom_col
 class DivisibleByFiveConstraint(ColumnConstraint):
     def __init__(self):
