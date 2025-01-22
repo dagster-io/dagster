@@ -638,9 +638,9 @@ def _get_output_asset_events(
                     **all_unpartitioned_asset_metadata,
                     **(partition_scoped_metadata or {}),
                 }
-                # copy the tags dictionary before setting the partition key tags. Otherwize
+                # copy the tags dictionary before setting the partition key tags. Otherwise
                 # all asset materialization events will point to the same dictionary with the
-                # parititon key tags of the last partition processed.
+                # partition key tags of the last partition processed.
                 tags_for_event = {**all_tags}
                 tags_for_event.update(
                     get_tags_from_multi_partition_key(partition)
