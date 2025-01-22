@@ -65,10 +65,11 @@ Output:
 Input: {fuel_station_hours}
 """
 
+
 class UserInputSchema(BaseModel):
     latitude: float
     longitude: float
-    fuel_type: Literal['all', 'ELEC', 'BD']
+    fuel_type: Literal["all", "ELEC", "BD"]
 
 
 class InputLocation(dg.Config):
