@@ -30,11 +30,7 @@ export function backfillCanCancelSubmission(backfill: {
   status: BulkActionStatus;
   numCancelable: number;
 }) {
-  return (
-    backfill.hasCancelPermission &&
-    ((backfill.isAssetBackfill && backfill.status === BulkActionStatus.REQUESTED) ||
-      backfill.numCancelable > 0)
-  );
+  return backfill.hasCancelPermission && backfill.status === BulkActionStatus.REQUESTED;
 }
 
 export function backfillCanResume(backfill: {
