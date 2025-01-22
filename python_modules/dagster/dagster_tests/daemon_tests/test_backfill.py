@@ -1323,7 +1323,7 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             updated_backfill = instance.get_backfill(backfill_id)
             assert updated_backfill.status == BulkActionStatus.FAILED
             assert updated_backfill.failure_count == 3
-            assert backfill.backfill_end_timestamp is not None
+            assert updated_backfill.backfill_end_timestamp is not None
 
 
 def test_unloadable_backfill_retry(
