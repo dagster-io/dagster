@@ -27,14 +27,6 @@ const config: Config = {
       '@docusaurus/plugin-client-redirects',
       {
         redirects: [
-          {
-            from: '/deployment',
-            to: '/guides/deploy/',
-          },
-          {
-            from: '/deployment/overview',
-            to: '/guides/deploy/oss-deployment-architecture',
-          },
           // Translated from migration spreadsheet
           // {
           //   from: '/:version(\d+.\d+.\d+)/:slug*',
@@ -252,10 +244,6 @@ const config: Config = {
             from: '/deployment/guides/ecs',
             to: '/guides/deploy/deployment-options/aws',
           },
-          // {
-          //   from: '/concepts/partitions-schedules-sensors/sensors#job-failure-sensor',
-          //   to: '/guides/build/sensors/testing-sensors',
-          // },
           {
             from: '/integrations/dbt_cloud',
             to: '/integrations/libraries/dbt/dbt-cloud',
@@ -371,10 +359,6 @@ const config: Config = {
           {
             from: '/getting-started/what-why-dagster',
             to: '/',
-          },
-          {
-            from: '/getting-started/quickstart',
-            to: '/getting-started/quickstart',
           },
           {
             from: '/getting-started/install',
@@ -585,10 +569,6 @@ const config: Config = {
             to: '/guides/build/assets/asset-jobs',
           },
           {
-            from: '/concepts/assets/asset-jobs',
-            to: '/guides/build/assets/asset-jobs',
-          },
-          {
             from: '/concepts/ops-jobs-graphs/op-jobs',
             to: '/guides/build/assets/asset-jobs',
           },
@@ -657,10 +637,6 @@ const config: Config = {
             to: '/guides/build/external-pipelines/aws-lambda-pipeline',
           },
           {
-            from: '/concepts/dagster-pipes/databricks',
-            to: '/guides/build/external-pipelines/databricks-pipeline',
-          },
-          {
             from: '/concepts/dagster-pipes/kubernetes',
             to: '/guides/build/external-pipelines/kubernetes-pipeline',
           },
@@ -695,14 +671,6 @@ const config: Config = {
           {
             from: '/concepts/webserver/graphql-client',
             to: '/guides/operate/graphql/graphql-client',
-          },
-          {
-            from: '/dagster-plus',
-            to: '/dagster-plus/',
-          },
-          {
-            from: '/dagster-plus/getting-started',
-            to: '/dagster-plus/getting-started',
           },
           {
             from: '/dagster-plus/deployment',
@@ -779,10 +747,6 @@ const config: Config = {
           {
             from: '/dagster-plus/deployment/agents/running-multiple-agents',
             to: '/dagster-plus/deployment/deployment-types/hybrid/multiple',
-          },
-          {
-            from: '/dagster-plus/managing-deployments/setting-environment-variables-agents',
-            to: '/dagster-plus/deployment/management/environment-variables/agent-config',
           },
           {
             from: '/dagster-plus/account',
@@ -1013,10 +977,6 @@ const config: Config = {
             to: '/guides/deploy/deployment-options/',
           },
           {
-            from: '/guides/running-dagster-locally',
-            to: '/guides/deploy/deployment-options/running-dagster-locally',
-          },
-          {
             from: '/deployment/guides/service',
             to: '/guides/deploy/deployment-options/deploying-dagster-as-a-service',
           },
@@ -1090,7 +1050,7 @@ const config: Config = {
           },
           {
             from: '/guides/dagster/how-assets-relate-to-ops-and-graphs',
-            to: '/guides/build/assets',
+            to: '/guides/build/assets/',
           },
           {
             from: '/guides/dagster/enriching-with-software-defined-assets',
@@ -1154,11 +1114,11 @@ const config: Config = {
           },
           {
             from: '/guides/dagster/ml-pipeline',
-            to: '/guides/build/ml-pipelines/',
+            to: '/guides/build/ml-pipelines/managing-ml',
           },
           {
             from: '/guides/dagster/managing-ml',
-            to: '/guides/build/ml-pipelines/',
+            to: '/guides/build/ml-pipelines/managing-ml',
           },
           {
             from: '/guides/dagster/example_project',
@@ -1310,11 +1270,11 @@ const config: Config = {
           },
           {
             from: '/integrations/dagstermill/using-notebooks-with-dagster',
-            to: '/integrations',
+            to: '/integrations/libraries/',
           },
           {
             from: '/integrations/dagstermill/reference',
-            to: '/integrations',
+            to: '/integrations/libraries/',
           },
           {
             from: '/integrations/looker',
