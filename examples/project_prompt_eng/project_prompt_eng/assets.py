@@ -77,7 +77,7 @@ def user_input_prompt(
     config: InputLocation,
     anthropic: AnthropicResource,
 ) -> dict:
-    prompt = PROMPT_LOCATION.format(location = config.location)
+    prompt = PROMPT_LOCATION.format(location=config.location)
 
     with anthropic.get_client(context) as client:
         resp = client.messages.create(
@@ -97,14 +97,11 @@ def user_input_prompt(
     kinds={"python"},
     description="Find the nearest alt fuel stations",
 )
-def nearest_fuel_stations(
-    nrel: NRELResource,
-    user_input_prompt
-) -> list[dict]:
+def nearest_fuel_stations(nrel: NRELResource, user_input_prompt) -> list[dict]:
     fuel_stations = nrel.alt_fuel_stations(
         latitude=user_input_prompt["latitude"],
         longitude=user_input_prompt["longitude"],
-        fuel_type=user_input_prompt["fuel_type"]
+        fuel_type=user_input_prompt["fuel_type"],
     )
     nearest_stations_with_hours = []
     for fuel_station in fuel_stations:
@@ -134,7 +131,7 @@ def available_fuel_stations(
                 "datetime": current_time,
             }
 
-            prompt = PROMPT_FUEL_STATION_OPEN.format(fuel_station_hours = prompt_input)
+            prompt = PROMPT_FUEL_STATION_OPEN.format(fuel_station_hours=prompt_input)
             resp = client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=1024,
@@ -145,7 +142,9 @@ def available_fuel_stations(
             data = json.loads(message)
 
             if data["is_open"]:
-                context.log.info(f"{fuel_station["station_name"]} at {fuel_station["street_address"]} is {fuel_station["distance"]} miles away")
+                context.log.info(
+                    f"{fuel_station["station_name"]} at {fuel_station["street_address"]} is {fuel_station["distance"]} miles away"
+                )
                 fuel_stations_open += 1
 
     if fuel_stations_open == 0:

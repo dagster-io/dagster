@@ -6,11 +6,7 @@ BASE_URL = "https://developer.nrel.gov/api/alt-fuel-stations/v1.json"
 
 
 class NRELResource(dg.ConfigurableResource):
-    api_key: str = Field(
-        description=(
-            "NREL API key. See https://developer.nrel.gov/signup/"
-        )
-    )
+    api_key: str = Field(description=("NREL API key. See https://developer.nrel.gov/signup/"))
 
     def alt_fuel_stations(self, latitude: float, longitude: float, fuel_type: str = "all"):
         if fuel_type not in {"BD", "ELEC", "all"}:

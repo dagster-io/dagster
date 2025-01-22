@@ -8,9 +8,9 @@ all_assets = dg.load_assets_from_modules([assets])
 
 
 defs = dg.Definitions(
-    assets = all_assets,
-    resources = {
+    assets=all_assets,
+    resources={
         "nrel": NRELResource(api_key=dg.EnvVar("NREL_API_KEY")),
-        "anthropic": AnthropicResource(api_key=dg.EnvVar("ANTHROPIC_API_KEY"))
-    }
+        "anthropic": AnthropicResource(api_key=dg.EnvVar("ANTHROPIC_API_KEY")),
+    },
 )
