@@ -242,6 +242,31 @@ class DagsterLookerLkmlTranslator:
         Returns:
             AssetKey: The Dagster asset key that represents the LookML structure.
         """
+        return self._default_asset_key_fn(lookml_structure)
+
+    def _default_asset_key_fn(
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+    ) -> AssetKey:
+        """A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster asset key that represents the structure.
+
+        The LookML structure is parsed using ``lkml``. You can learn more about this here:
+        https://lkml.readthedocs.io/en/latest/simple.html.
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/param-lookml-dashboard.
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
+
+        Args:
+            lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
+                defining a LookML structure, the LookML structure type, and a dictionary
+                representing a LookML structure.
+
+        Returns:
+            AssetKey: The Dagster asset key that represents the LookML structure.
+        """
         lookml_structure_path, lookml_structure_type, lookml_structure_props = lookml_structure
 
         if lookml_structure_type == "dashboard":
@@ -277,7 +302,7 @@ class DagsterLookerLkmlTranslator:
         self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
     ) -> Sequence[AssetKey]:
         """A method that takes in a LookML structure (dashboards, explores, views) and
-        returns the Dagster dependencies of that the structure.
+        returns the Dagster dependencies of the structure.
 
         The LookML structure is parsed using ``lkml``. You can learn more about this here:
         https://lkml.readthedocs.io/en/latest/simple.html.
@@ -296,7 +321,32 @@ class DagsterLookerLkmlTranslator:
                 representing a LookML structure.
 
         Returns:
-            AssetKey: The Dagster dependencies for the LookML structure.
+            Sequence[AssetKey]: The Dagster dependencies for the LookML structure.
+        """
+        return self._default_deps_fn(lookml_structure)
+
+    def _default_deps_fn(
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+    ) -> Sequence[AssetKey]:
+        """A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster dependencies of the structure.
+
+        The LookML structure is parsed using ``lkml``. You can learn more about this here:
+        https://lkml.readthedocs.io/en/latest/simple.html.
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/param-lookml-dashboard.
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
+
+        Args:
+            lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
+                defining a LookML structure, the LookML structure type, and a dictionary
+                representing a LookML structure.
+
+        Returns:
+            Sequence[AssetKey]: The Dagster dependencies for the LookML structure.
         """
         lookml_structure_path, lookml_structure_type, _ = lookml_structure
 
@@ -348,6 +398,31 @@ class DagsterLookerLkmlTranslator:
         Returns:
             Optional[str]: The Dagster description for the LookML structure.
         """
+        return self._default_description_fn(lookml_structure)
+
+    def _default_description_fn(
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+    ) -> Optional[str]:
+        """A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster description of the structure.
+
+        The LookML structure is parsed using ``lkml``. You can learn more about this here:
+        https://lkml.readthedocs.io/en/latest/simple.html.
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/param-lookml-dashboard.
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
+
+        Args:
+            lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
+                defining a LookML structure, the LookML structure type, and a dictionary
+                representing a LookML structure.
+
+        Returns:
+            Optional[str]: The Dagster description for the LookML structure.
+        """
         _, _, lookml_structure_props = lookml_structure
 
         return lookml_structure_props.get("description")
@@ -369,6 +444,33 @@ class DagsterLookerLkmlTranslator:
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
         This method can be overridden to provide custom metadata for a LookML structure.
+
+        Args:
+            lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
+                defining a LookML structure, the LookML structure type, and a dictionary
+                representing a LookML structure.
+
+        Returns:
+            Optional[Mapping[str, Any]]: A dictionary representing the Dagster metadata for the
+                LookML structure.
+        """
+        return self._default_metadata_fn(lookml_structure)
+
+    @public
+    def _default_metadata_fn(
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+    ) -> Optional[Mapping[str, Any]]:
+        """A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster metadata of the structure.
+
+        The LookML structure is parsed using ``lkml``. You can learn more about this here:
+        https://lkml.readthedocs.io/en/latest/simple.html.
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/param-lookml-dashboard.
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
@@ -407,6 +509,31 @@ class DagsterLookerLkmlTranslator:
         Returns:
             Optional[str]: A Dagster group name for the LookML structure.
         """
+        return self._default_group_name_fn(lookml_structure)
+
+    def _default_group_name_fn(
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+    ) -> Optional[str]:
+        """A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster group name of the structure.
+
+        The LookML structure is parsed using ``lkml``. You can learn more about this here:
+        https://lkml.readthedocs.io/en/latest/simple.html.
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/param-lookml-dashboard.
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
+
+        Args:
+            lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
+                defining a LookML structure, the LookML structure type, and a dictionary
+                representing a LookML structure.
+
+        Returns:
+            Optional[str]: A Dagster group name for the LookML structure.
+        """
         return None
 
     @public
@@ -435,6 +562,31 @@ class DagsterLookerLkmlTranslator:
         Returns:
             Optional[Sequence[str]]: A sequence of Dagster owners for the LookML structure.
         """
+        return self._default_owners_fn(lookml_structure)
+
+    def _default_owners_fn(
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+    ) -> Optional[Sequence[str]]:
+        """A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster owners of the structure.
+
+        The LookML structure is parsed using ``lkml``. You can learn more about this here:
+        https://lkml.readthedocs.io/en/latest/simple.html.
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/param-lookml-dashboard.
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
+
+        Args:
+            lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
+                defining a LookML structure, the LookML structure type, and a dictionary
+                representing a LookML structure.
+
+        Returns:
+            Optional[Sequence[str]]: A sequence of Dagster owners for the LookML structure.
+        """
         return None
 
     @public
@@ -454,6 +606,32 @@ class DagsterLookerLkmlTranslator:
         dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
         This method can be overridden to provide custom tags for a LookML structure.
+
+        Args:
+            lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
+                defining a LookML structure, the LookML structure type, and a dictionary
+                representing a LookML structure.
+
+        Returns:
+            Optional[Mapping[str, str]]: A dictionary representing the Dagster tags for the
+                LookML structure.
+        """
+        return self._default_tags_fn(lookml_structure)
+
+    def _default_tags_fn(
+        self, lookml_structure: tuple[Path, LookMLStructureType, Mapping[str, Any]]
+    ) -> Optional[Mapping[str, str]]:
+        """A method that takes in a LookML structure (dashboards, explores, views) and
+        returns the Dagster tags of the structure.
+
+        The LookML structure is parsed using ``lkml``. You can learn more about this here:
+        https://lkml.readthedocs.io/en/latest/simple.html.
+
+        You can learn more about LookML dashboards and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/param-lookml-dashboard.
+
+        You can learn more about LookML explores and views and the properties available in this
+        dictionary here: https://cloud.google.com/looker/docs/reference/lookml-quick-reference.
 
         Args:
             lookml_structure (Tuple[Path, str, Mapping[str, Any]]): A tuple with the path to file
