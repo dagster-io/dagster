@@ -14,7 +14,7 @@ enabledBy:
 enables:
 tags: [community-supported, compute]
 sidebar_custom_props:
-  logo:
+  logo: images/integrations/perian.png
 ---
 
 The `dagster-perian` integration allows you to easily dockerize your codebase and execute it on the PERIAN platform, PERIAN's serverless GPU environment.
