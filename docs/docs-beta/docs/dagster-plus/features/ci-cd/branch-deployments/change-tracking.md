@@ -34,7 +34,7 @@ Change Tracking can detect the following changes to assets:
 
 If an asset is new in the branch deployment, the asset will have a **New in branch** label in the asset graph:
 
-![Change tracking new](/images/dagster-cloud/managing-deployments/change-tracking-new.png)
+![Change tracking new](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-new.png)
 
 ### Code versions
 
@@ -49,7 +49,7 @@ In this example, the `customers` asset has a **Changed in branch** label indicat
 
 Click the **Asset definition** tab to see the code change that created this label.
 
-![Change tracking code version](/images/dagster-cloud/managing-deployments/change-tracking-code-version.png)
+![Change tracking code version](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-code-version.png)
 
 </TabItem>
 <TabItem value="Asset definition">
@@ -84,7 +84,7 @@ In this example, the `returns` asset has a **Changed in branch** label indicatin
 
 Click the **Asset definition** tab to see the code change that created this label.
 
-![Change tracking dependencies](/images/dagster-cloud/managing-deployments/change-tracking-dependencies.png)
+![Change tracking dependencies](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-dependencies.png)
 
 ```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(deps=[orders, customers])
@@ -105,7 +105,7 @@ In this example, the `weekly_orders` asset has a **Changed in branch** label ind
 
 Click the **Asset definition** tab to see the code change that created this label.
 
-![Change tracking partitions](/images/dagster-cloud/managing-deployments/change-tracking-partitions.png)
+![Change tracking partitions](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-partitions.png)
 
 </TabItem>
 <TabItem value="Asset definition">
@@ -139,7 +139,7 @@ In this example, the `fruits_in_stock` asset has a **Changed in branch** label i
 
 Click the **Asset definition** tab to see the code change that created this label.
 
-![Change tracking tags](/images/dagster-cloud/managing-deployments/change-tracking-tags.png)
+![Change tracking tags](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-tags.png)
 
 </TabItem>
 <TabItem value="Asset definition">
@@ -172,8 +172,7 @@ Change Tracking can detect when an [asset's definition metadata](/guides/build/a
 In this example, the `produtcs` asset has a **Changed in branch** label indicating it has changed metadata.
 
 Click the **Asset definition** tab to see the code change that created this label.
-
-![Change tracking metadata](/images/dagster-cloud/managing-deployments/change-tracking-metadata.png)
+/images/dagster-plus/management/managing-deployments/change-tracking-metadata.png)
 
 </TabItem>
 <TabItem value="Asset definition">

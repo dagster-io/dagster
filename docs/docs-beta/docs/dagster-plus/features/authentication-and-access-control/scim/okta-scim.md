@@ -78,7 +78,7 @@ Keep the API token handy - you'll need it in the next step.
    3. In the **Credential Details** section, set the **Application username format** field to **Email**:
 
 
-    ![Configured Sign On tab of Dagster+ Okta application](/images/dagster-cloud/sso/okta/scim-sign-on-tab.png)
+    ![Configured Sign On tab of Dagster+ Okta application](/images/dagster-plus/features/authentication-and-access-control/okta/scim-sign-on-tab.png)
 
    4. Click **Save**.
 
@@ -90,7 +90,7 @@ Keep the API token handy - you'll need it in the next step.
 
    3. In the **API Token** field, paste the Dagster+ API token you generated in [Step 1](#step-1-enable-scim-provisioning-in-dagster):
 
-    ![Configured Provisioning tab of Dagster+ Okta application](/images/dagster-cloud/sso/okta/provisioning-tab.png)
+    ![Configured Provisioning tab of Dagster+ Okta application](/images/dagster-plus/features/authentication-and-access-control/okta/provisioning-tab.png)
 
    4. Click **Test API Credentials** to verify that your organization and API token work correctly.
 
@@ -108,7 +108,7 @@ After you confirm that your API credentials work in the Dagster+ Okta applicatio
 
 4. Next to **Create Users**, check the **Enable** checkbox:
 
-    ![Highlighted Create users setting and default username setting in Okta](/images/dagster-cloud/sso/okta/provisioning-to-app-create-users.png)
+    ![Highlighted Create users setting and default username setting in Okta](/images/dagster-plus/features/authentication-and-access-control/okta/provisioning-to-app-create-users.png)
 
    **Note**: The default username used to create accounts must be set to **Email** or user provisioning may not work correctly.
 
@@ -134,6 +134,6 @@ When **Push groups** is enabled in Okta, you can sync user groups from Okta to D
 
 That's it! Once Okta successfully syncs users to Dagster+, synced users will have a 'synced' icon next to them in the Dagster+ users page:
 
-    ![Synced/external user icon next to user in Dagster+ user list](/images/dagster-cloud/sso/dagster-cloud-external-user.png)
+    ![Synced/external user icon next to user in Dagster+ user list](/images/dagster-plus/features/authentication-and-access-control/dagster-cloud-external-user.png)
 
 Refer to the [Enabling SCIM provisioning guide](/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning) for more info about how user and team management works when SCIM provisioning is enabled.

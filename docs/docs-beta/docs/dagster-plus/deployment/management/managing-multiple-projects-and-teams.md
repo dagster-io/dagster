@@ -96,7 +96,7 @@ In order from least to most isolated, there are three levels of isolation:
 
 If you have no specific requirements for isolation beyond the ability to deploy and run multiple projects, you can use a single agent and deployment to manage all your projects as individual code locations.
 
-![Diagram of isolation at the code location level](/images/dagster-cloud/managing-deployments/isolation-level-code-locations.png)
+![Diagram of isolation at the code location level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-code-locations.png)
 
 <table
   className="table"
@@ -169,7 +169,7 @@ Motivations for utilizing this approach could include:
 - Different compute requirements, such as different cloud providers or architectures
 - Optimizing for locality or access, such as running the data processing closer or in environment with access to the storage locations
 
-![Diagram of isolation at the agent level](/images/dagster-cloud/managing-deployments/isolation-level-agents.png)
+![Diagram of isolation at the agent level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-agents.png)
 
 <table
   className="table"
@@ -223,7 +223,7 @@ Multiple deployments are only available in Dagster+ Pro.
 
 Of the approaches outlined in this guide, multiple deployments are the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments. It may be considered to satisfy other organization specific requirements.
 
-![Diagram of isolation at the Dagster+ deployment level](/images/dagster-cloud/managing-deployments/isolation-level-deployments.png)
+![Diagram of isolation at the Dagster+ deployment level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-deployments.png)
 
 <table
   className="table"

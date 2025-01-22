@@ -73,7 +73,7 @@ When prompted, you can specify a default deployment. If specified, a deployment 
 <details>
 <summary><strong>TOKEN AUTHENTICATION</strong></summary>
 
-Alternatively, you may authenticate using a user token. Refer to the [User tokens guide](/dagster-plus/deployment/management/tokens/user-tokens) for more info.
+Alternatively, you may authenticate using a user token. Refer to the [User tokens guide](/dagster-plus/deployment/management/tokens) for more info.
 
 ```shell
 $ dagster-cloud config setup

@@ -82,7 +82,7 @@ To do so, there are two methods that need to be overridden:
 
 In our case, our `load` method will check the loaded parameters against our schema and then instantiate our class from those parameters.
 
-Our `build_defs` method will create a single `@asset` that executes the provided shell script. By convention, we'll put the code to actually execute this asset inside of a function called `evaluate`. This makes it easier for future developers to create subclasses of this component.
+Our `build_defs` method will create a single `@asset` that executes the provided shell script. By convention, we'll put the code to actually execute this asset inside of a function called `execute`. This makes it easier for future developers to create subclasses of this component.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-build-defs.py" language="python" />
 
