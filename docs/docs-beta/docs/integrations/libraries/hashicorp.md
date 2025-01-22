@@ -18,6 +18,7 @@ enables:
 tags: [community-supported]
 sidebar_custom_props: 
   logo: images/integrations/hashicorp.svg
+  community: true
 ---
 
 Package for integrating HashiCorp Vault into Dagster so that you can securely manage tokens and passwords.

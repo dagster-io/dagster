@@ -15,6 +15,7 @@ enables:
 tags: [community-supported, compute]
 sidebar_custom_props:
   logo: images/integrations/nomad.svg
+  community: true
 ---
 
 The community-supported `dagster-nomad` package provides an integration with HashiCorp Nomad.
