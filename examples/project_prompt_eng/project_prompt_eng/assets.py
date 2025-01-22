@@ -65,7 +65,7 @@ Input: {fuel_station}
 
 
 class InputLocation(dg.Config):
-    location: str = "At The Art Institute of Chicago with a Kia EV9"
+    location: str
 
 
 @dg.asset(

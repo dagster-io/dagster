@@ -1,0 +1,73 @@
+---
+title: Prompt engineering
+description: Learn how to do prompt engineering
+last_update:
+   author: Dennis Hume
+sidebar_position: 10
+---
+
+# Prompt Engineering
+
+In this tutorial, you'll build a pipeline with Dagster that:
+
+- Takes an input question
+- Generates a prompt to use with Anthropic
+- Uses that specific output to query an API
+- Generates a second prompt to get a final answer with Anthropic
+
+<details>
+  <summary>Prerequisites</summary>
+
+To follow the steps in this guide, you'll need:
+
+- Basic Python knowledge
+- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
+</details>
+
+
+## Step 1: Set up your Dagster environment
+
+First, set up a new Dagster project.
+
+1. Within the Dagster repo, navigate to the project:
+
+   ```bash
+   cd examples/project_prompt_eng
+   ```
+
+2. Create and activate a virtual environment:
+
+   <Tabs>
+   <TabItem value="macos" label="MacOS">
+   ```bash
+   uv venv dagster_tutorial
+   source dagster_tutorial/bin/activate
+   ```
+   </TabItem>
+   <TabItem value="windows" label="Windows">
+   ```bash
+   uv venv dagster_tutorial
+   dagster_tutorial\Scripts\activate
+   ```
+   </TabItem>
+   </Tabs>
+
+3. Install Dagster and the required dependencies:
+
+   ```bash
+   uv pip install -e ".[dev]"
+   ```
+
+## Step 2: Launch the Dagster webserver
+
+To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
+
+followed by a bash code snippet for 
+
+```bash
+dagster dev
+```
+
+## Next steps
+
+- Continue this tutorial with [ingestion](ingestion)
