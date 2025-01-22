@@ -1,4 +1,5 @@
 import {Icons} from '@dagster-io/ui-components';
+import {Linter} from 'codemirror/addon/lint/lint';
 import {useMemo} from 'react';
 import {
   AssetSelectionLexer,
@@ -16,7 +17,7 @@ import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/addon/hint/show-hint';
 import 'codemirror/addon/hint/show-hint.css';
-import 'codemirror/addon/lint/lint';
+
 import 'codemirror/addon/lint/lint.css';
 import 'codemirror/addon/display/placeholder';
 
@@ -24,11 +25,20 @@ interface AssetSelectionInputProps {
   assets: AssetGraphQueryItem[];
   value: string;
   onChange: (value: string) => void;
+  linter?: Linter<any>;
 }
 
-const linter = createSelectionLinter({Lexer: AssetSelectionLexer, Parser: AssetSelectionParser});
+const defaultLinter = createSelectionLinter({
+  Lexer: AssetSelectionLexer,
+  Parser: AssetSelectionParser,
+});
 
-export const AssetSelectionInput = ({value, onChange, assets}: AssetSelectionInputProps) => {
+export const AssetSelectionInput = ({
+  value,
+  onChange,
+  assets,
+  linter = defaultLinter,
+}: AssetSelectionInputProps) => {
   const useAssetSelectionAutoComplete = useMemo(
     () => createUseAssetSelectionAutoComplete(assets),
     [assets],
