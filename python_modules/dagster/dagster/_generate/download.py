@@ -40,6 +40,7 @@ AVAILABLE_EXAMPLES = [
     "project_ask_ai_dagster",
     "project_atproto_dashboard",
     "project_dagster_modal_pipes",
+    "project_dagster_prompt_eng",
     "project_dagster_university_start",
     "project_du_dbt_starter",
     "project_fully_featured",

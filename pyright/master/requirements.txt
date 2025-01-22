@@ -146,3 +146,4 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/use_case_repository[dev]
 -e examples/project_atproto_dashboard
 -e examples/project_dagster_modal_pipes
+-e examples/project_prompt_eng
