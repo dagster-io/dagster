@@ -139,11 +139,11 @@ def create_prompt_record(data: dict, categories: list):
         "messages": [
             {
                 "role": "system",
-                "content": f"Given an author, title and book description, what category is it? Here are the possible categories {", ".join(categories)}",
+                "content": f"Given an author, title and book description, what category is it? Here are the possible categories {', '.join(categories)}",
             },
             {
                 "role": "user",
-                "content": f"What category is {data['title']} by {data["author"]}? Description: {data["description"]}",
+                "content": f"What category is {data['title']} by {data['author']}? Description: {data['description']}",
             },
             {
                 "role": "assistant",
@@ -244,7 +244,7 @@ def openai_file_validation(data: Iterable) -> dg.AssetCheckResult:
         "source": "https://cookbook.openai.com/examples/chat_finetuning_data_prep#format-validation"
     },
 )
-def training_file_format_check() -> Iterable[dg.AssetCheckResult]:
+def training_file_format_check() -> dg.AssetCheckResult:
     data = utils.read_openai_file("goodreads-training.jsonl")
     yield openai_file_validation(data)
 
@@ -256,7 +256,7 @@ def training_file_format_check() -> Iterable[dg.AssetCheckResult]:
         "source": "https://cookbook.openai.com/examples/chat_finetuning_data_prep#format-validation"
     },
 )
-def validation_file_format_check() -> Iterable[dg.AssetCheckResult]:
+def validation_file_format_check() -> dg.AssetCheckResult:
     data = utils.read_openai_file("goodreads-validation.jsonl")
     yield openai_file_validation(data)
 
@@ -312,7 +312,7 @@ def fine_tuned_model(
             suffix="goodreads",
         )
 
-    create_job_id = create_job_resp.to_dict()["id"]
+    create_job_id = str(create_job_resp.to_dict()["id"])
     context.log.info(f"Fine tuning job: {create_job_id}")
 
     while True:
@@ -325,7 +325,7 @@ def fine_tuned_model(
 
     fine_tuned_model_name = status_job_resp.to_dict()["fine_tuned_model"]
     context.add_output_metadata({"model_name": fine_tuned_model_name})
-    return fine_tuned_model_name
+    return str(fine_tuned_model_name)
 
 
 def model_question(
@@ -333,7 +333,7 @@ def model_question(
     model: str,
     data: dict,
     categories: list,
-) -> str:
+):
     completion = client.chat.completions.create(
         model=model,
         messages=[
@@ -385,11 +385,11 @@ def model_question(
     description="Compare fine-tuned model against base model accuracy",
 )
 def fine_tuned_model_accuracy(
-    context: dg.AssetCheckExecutionContext,
+    context: dg.AssetExecutionContext,
     openai: OpenAIResource,
     fine_tuned_model,
     data,
-) -> Iterable[dg.AssetCheckResult]:
+) -> dg.AssetCheckResult:
     validation = data.sample(n=constants.VALIDATION_SAMPLE_SIZE)
 
     models = Counter()

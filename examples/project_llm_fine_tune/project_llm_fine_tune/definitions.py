@@ -8,7 +8,7 @@ all_assets = dg.load_assets_from_modules([assets])
 external_assets = [assets.goodreads]
 
 defs = dg.Definitions(
-    assets=all_assets + external_assets,
+    assets=external_assets.extend(all_assets),
     asset_checks=[
         assets.training_file_format_check,
         assets.validation_file_format_check,
