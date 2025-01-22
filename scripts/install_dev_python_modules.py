@@ -77,7 +77,7 @@ def main(
         "python_modules/libraries/dagster-deltalake-polars",
         "python_modules/libraries/dagster-dlt",
         "python_modules/libraries/dagster-docker",
-        "python_modules/libraries/dagster-gcp[test]",
+        "python_modules/libraries/dagster-gcp[test, dataproc]",
         "python_modules/libraries/dagster-gcp-pandas",
         "python_modules/libraries/dagster-gcp-pyspark",
         "python_modules/libraries/dagster-ge",
