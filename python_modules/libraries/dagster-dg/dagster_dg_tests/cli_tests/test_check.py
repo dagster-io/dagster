@@ -1,7 +1,9 @@
+import os
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from dagster._core.test_utils import new_cwd
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_components_tests.integration_tests.validation_tests.test_cases import (
     BASIC_INVALID_VALUE,
@@ -15,6 +17,16 @@ from dagster_dg_tests.utils import ProxyRunner
 
 ensure_dagster_components_tests_import()
 ensure_dagster_dg_tests_import()
+
+
+@contextmanager
+def new_cwd(path: str) -> Iterator[None]:
+    old = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(old)
 
 
 @pytest.mark.parametrize(

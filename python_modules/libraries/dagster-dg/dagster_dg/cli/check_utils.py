@@ -3,8 +3,9 @@ from typing import Optional
 
 import click
 import typer
-from dagster._utils.source_position import SourcePositionTree
 from jsonschema import ValidationError
+
+from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
 
 @click.group(name="check")

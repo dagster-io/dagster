@@ -26,6 +26,7 @@ from dagster_dg.utils import (
     not_none,
     parse_json_option,
 )
+from dagster_dg.yaml_utils import parse_yaml_with_source_positions
 
 
 @click.group(name="component", cls=DgClickGroup)
@@ -248,7 +249,6 @@ def component_list_command(context: click.Context, **global_options: object) -> 
 # ########################
 # ##### CHECK
 # ########################
-from dagster._utils.yaml_utils import parse_yaml_with_source_positions
 
 COMPONENT_FILE_SCHEMA = {
     "type": "object",
