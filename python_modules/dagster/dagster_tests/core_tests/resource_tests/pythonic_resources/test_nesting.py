@@ -965,3 +965,68 @@ def test_nested_resource_yield_inner() -> None:
         "my_asset",
         "SetupTeardownInnerResource yield_for_execution done",
     ]
+
+
+def test_nested_resources_runtime_config_fully_populated() -> None:
+    """Ensures that nested resources which have default values for all
+    fields can be overridden at runtime.
+    """
+
+    class InnermostResource(ConfigurableResource):
+        username: str = "default_username"
+        password: str = "default_password"
+
+    class NestedResource(ConfigurableResource):
+        creds: InnermostResource
+        host: str = "default_host"
+        database: str = "default_database"
+
+    class TopLevelResource(ConfigurableResource):
+        config: NestedResource
+
+    completed = {}
+
+    @asset
+    def my_asset(db: TopLevelResource):
+        assert db.config.creds.username == "foo"
+        assert db.config.creds.password == "bar"
+        assert db.config.host == "localhost"
+        assert db.config.database == "my_db"
+        completed["yes"] = True
+
+    credentials = InnermostResource.configure_at_launch()
+    db_config = NestedResource.configure_at_launch(creds=credentials)
+    db = TopLevelResource(config=db_config)
+
+    defs = Definitions(
+        assets=[my_asset],
+        resources={
+            "credentials": credentials,
+            "db_config": db_config,
+            "db": db,
+        },
+    )
+
+    assert (
+        defs.get_implicit_global_asset_job_def()
+        .execute_in_process(
+            {
+                "resources": {
+                    "credentials": {
+                        "config": {
+                            "username": "foo",
+                            "password": "bar",
+                        }
+                    },
+                    "db_config": {
+                        "config": {
+                            "host": "localhost",
+                            "database": "my_db",
+                        }
+                    },
+                }
+            }
+        )
+        .success
+    )
+    assert completed["yes"]
