@@ -21,14 +21,14 @@ def test_global_test_flag():
     # standard
     result = runner.invoke(cli, ["list", "component-types"])
     assert result.exit_code == 0
-    default_result_keys = list(item["key"] for item in json.loads(result.output))
+    default_result_keys = list(json.loads(result.output).keys())
     assert len(default_result_keys) > 0
 
     result = runner.invoke(
         cli, ["--builtin-component-lib", "dagster_components.test", "list", "component-types"]
     )
     assert result.exit_code == 0
-    test_result_keys = list(item["key"] for item in json.loads(result.output))
+    test_result_keys = list(json.loads(result.output).keys())
     assert len(default_result_keys) > 0
 
     assert default_result_keys != test_result_keys
@@ -38,22 +38,19 @@ def test_list_component_types_command():
     runner = CliRunner()
 
     result = runner.invoke(
-        cli,
-        ["--builtin-component-lib", "dagster_components.test", "list", "component-types"],
-        catch_exceptions=False,
+        cli, ["--builtin-component-lib", "dagster_components.test", "list", "component-types"]
     )
     assert result.exit_code == 0
     result = json.loads(result.output)
-    result_as_dict = {item["key"]: item["value"] for item in result}
 
-    assert list(result_as_dict.keys()) == [
+    assert list(result.keys()) == [
         "dagster_components.test.all_metadata_empty_asset",
         "dagster_components.test.complex_schema_asset",
         "dagster_components.test.simple_asset",
         "dagster_components.test.simple_pipes_script_asset",
     ]
 
-    assert result_as_dict["dagster_components.test.simple_asset"] == {
+    assert result["dagster_components.test.simple_asset"] == {
         "name": "simple_asset",
         "package": "dagster_components.test",
         "summary": "A simple asset that returns a constant string value.",
@@ -68,7 +65,6 @@ def test_list_component_types_command():
             "title": "SimpleAssetParams",
             "type": "object",
         },
-        "component_directory": None,
     }
 
     pipes_script_params_schema = {
@@ -81,14 +77,13 @@ def test_list_component_types_command():
         "type": "object",
     }
 
-    assert result_as_dict["dagster_components.test.simple_pipes_script_asset"] == {
+    assert result["dagster_components.test.simple_pipes_script_asset"] == {
         "name": "simple_pipes_script_asset",
         "package": "dagster_components.test",
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         "scaffold_params_schema": pipes_script_params_schema,
         "component_params_schema": pipes_script_params_schema,
-        "component_directory": None,
     }
 
 
