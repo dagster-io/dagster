@@ -61,12 +61,10 @@ export function backfillCanCancelRuns(
 
 export const BackfillActionsMenu = ({
   backfill,
-  canCancelRuns,
   refetch,
   anchorLabel,
 }: {
   backfill: BackfillActionsBackfillFragment;
-  canCancelRuns: boolean;
   refetch: () => void;
   anchorLabel?: string;
 }) => {
@@ -145,10 +143,10 @@ export const BackfillActionsMenu = ({
             onClick={() => resume()}
           />
           <MenuItem
-            text={canCancelSubmission ? 'Cancel backfill submission' : 'Terminate unfinished runs'}
+            text="Cancel backfill"
             icon="cancel"
             intent="danger"
-            disabled={!(canCancelSubmission || canCancelRuns)}
+            disabled={!canCancelSubmission}
             onClick={() => setShowTerminateDialog(true)}
           />
         </Menu>

@@ -195,7 +195,6 @@ export const RunsFeedRow = ({
         {entry.__typename === 'PartitionBackfill' ? (
           <BackfillActionsMenu
             backfill={{...entry, status: entry.backfillStatus}}
-            canCancelRuns={backfillCanCancelRuns(entry, entry.numCancelable > 0)}
             refetch={refetch}
             anchorLabel="View"
           />

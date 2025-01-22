@@ -135,7 +135,6 @@ export const BackfillRowContent = ({
       <td>
         <BackfillActionsMenu
           backfill={backfill}
-          canCancelRuns={backfillCanCancelRuns(backfill, hasCancelableRuns)}
           refetch={refetch}
         />
       </td>

@@ -138,7 +138,6 @@ export const RunsFeedBackfillPage = () => {
               <BackfillActionsMenu
                 backfill={backfill}
                 refetch={queryResult.refetch}
-                canCancelRuns={backfill.status === BulkActionStatus.REQUESTED}
               />
             ) : null}
           </Box>

@@ -1,5 +1,5 @@
 import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 
 import {SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY} from './BackfillRow';
 import {BackfillTerminationDialogBackfillFragment} from './types/BackfillFragments.types';
@@ -11,7 +11,6 @@ import {
 import {gql, useMutation, useQuery} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {BulkActionStatus} from '../../graphql/types';
-import {TerminationDialog} from '../../runs/TerminationDialog';
 
 interface Props {
   backfill?: BackfillTerminationDialogBackfillFragment;
@@ -34,22 +33,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     },
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const unfinishedMap = useMemo(() => {
-    if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
-      return {};
-    }
-    return (
-      data.partitionBackfillOrError.cancelableRuns?.reduce(
-        (accum, run) => {
-          if (run && run.runId) {
-            accum[run.runId] = true;
-          }
-          return accum;
-        },
-        {} as Record<string, boolean>,
-      ) || {}
-    );
-  }, [backfill, data]);
   if (!backfill || !data) {
     return null;
   }
@@ -99,18 +82,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
           )}
         </DialogFooter>
       </Dialog>
-      {!backfill.isAssetBackfill && unfinishedMap && (
-        <TerminationDialog
-          isOpen={
-            !!backfill &&
-            (!numUnscheduled || backfill.status !== 'REQUESTED') &&
-            !!Object.keys(unfinishedMap).length
-          }
-          onClose={onClose}
-          onComplete={onComplete}
-          selectedRuns={unfinishedMap}
-        />
-      )}
     </>
   );
 };
