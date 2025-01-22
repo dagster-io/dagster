@@ -131,15 +131,7 @@ def build_looker_dashboard_specs(
             )
 
             looker_dashboard_specs.append(
-                AssetSpec(
-                    key=dagster_looker_translator.get_asset_key(lookml_dashboard),
-                    deps=dagster_looker_translator.get_deps(lookml_dashboard),
-                    description=dagster_looker_translator.get_description(lookml_dashboard),
-                    metadata=dagster_looker_translator.get_metadata(lookml_dashboard),
-                    group_name=dagster_looker_translator.get_group_name(lookml_dashboard),
-                    owners=dagster_looker_translator.get_owners(lookml_dashboard),
-                    tags=dagster_looker_translator.get_tags(lookml_dashboard),
-                )
+                dagster_looker_translator.get_asset_spec(lookml_dashboard)
             )
 
     return looker_dashboard_specs
@@ -162,17 +154,7 @@ def build_looker_explore_specs(
 
     explores_postprocessed = postprocess_loaded_structures(explores)
     for lookml_explore in explores_postprocessed:
-        looker_explore_specs.append(
-            AssetSpec(
-                key=dagster_looker_translator.get_asset_key(lookml_explore),
-                deps=dagster_looker_translator.get_deps(lookml_explore),
-                description=dagster_looker_translator.get_description(lookml_explore),
-                metadata=dagster_looker_translator.get_metadata(lookml_explore),
-                group_name=dagster_looker_translator.get_group_name(lookml_explore),
-                owners=dagster_looker_translator.get_owners(lookml_explore),
-                tags=dagster_looker_translator.get_tags(lookml_explore),
-            )
-        )
+        looker_explore_specs.append(dagster_looker_translator.get_asset_spec(lookml_explore))
 
     return looker_explore_specs
 
@@ -192,16 +174,6 @@ def build_looker_view_specs(
     views_postprocessed = postprocess_loaded_structures(views)
 
     for lookml_view in views_postprocessed:
-        looker_view_specs.append(
-            AssetSpec(
-                key=dagster_looker_translator.get_asset_key(lookml_view),
-                deps=dagster_looker_translator.get_deps(lookml_view),
-                description=dagster_looker_translator.get_description(lookml_view),
-                metadata=dagster_looker_translator.get_metadata(lookml_view),
-                group_name=dagster_looker_translator.get_group_name(lookml_view),
-                owners=dagster_looker_translator.get_owners(lookml_view),
-                tags=dagster_looker_translator.get_tags(lookml_view),
-            )
-        )
+        looker_view_specs.append(dagster_looker_translator.get_asset_spec(lookml_view))
 
     return looker_view_specs
