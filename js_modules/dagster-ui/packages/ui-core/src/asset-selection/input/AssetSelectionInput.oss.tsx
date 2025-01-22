@@ -5,7 +5,7 @@ import {
   AssetSelectionLexer,
   AssetSelectionParser,
 } from 'shared/asset-selection/AssetSelectionAntlr.oss';
-import {createUseAssetSelectionAutoComplete} from 'shared/asset-selection/input/useAssetSelectionAutoComplete.oss';
+import {createUseAssetSelectionAutoComplete as defaultCreateUseAssetSelectionAutoComplete} from 'shared/asset-selection/input/useAssetSelectionAutoComplete.oss';
 import styled from 'styled-components';
 
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
@@ -26,6 +26,7 @@ interface AssetSelectionInputProps {
   value: string;
   onChange: (value: string) => void;
   linter?: Linter<any>;
+  createUseAssetSelectionAutoComplete?: typeof defaultCreateUseAssetSelectionAutoComplete;
 }
 
 const defaultLinter = createSelectionLinter({
@@ -38,10 +39,11 @@ export const AssetSelectionInput = ({
   onChange,
   assets,
   linter = defaultLinter,
+  createUseAssetSelectionAutoComplete = defaultCreateUseAssetSelectionAutoComplete,
 }: AssetSelectionInputProps) => {
   const useAssetSelectionAutoComplete = useMemo(
     () => createUseAssetSelectionAutoComplete(assets),
-    [assets],
+    [assets, createUseAssetSelectionAutoComplete],
   );
 
   return (
