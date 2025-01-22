@@ -1,13 +1,12 @@
 ---
 title: "dagster-snowflake integration reference"
-description: Store your Dagster assets in Snowflake
+description: Store your Dagster assets in Snowflak
+sidebar_position: 300
 ---
 
-# dagster-snowflake integration reference
+This reference page provides information for working with [`dagster-snowflake`](/api/python-api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](using-snowflake-with-dagster), [I/O managers](using-snowflake-with-dagster-io-managers)).
 
-This reference page provides information for working with [`dagster-snowflake`](/api/python-api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/snowflake/using-snowflake-with-dagster-io-managers)).
 
----
 
 ## Authenticating using a private key
 
@@ -16,12 +15,11 @@ In addition to password-based authentication, you can authenticate with Snowflak
 Currently, the Dagster's Snowflake integration only supports encrypted private keys. You can provide the private key directly to the Snowflake resource or I/O manager, or via a file containing the private key.
 
 <Tabs>
-<TabItem value="Resources">
+<TabItem value="Resources" label="Resources">
 
-### Resources
+**Directly to the resource**
 
-#### Directly to the resource
-
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/private_key_auth_resource.py startafter=start_direct_key endbefore=end_direct_key
 from dagster_snowflake import SnowflakeResource
 
@@ -41,8 +39,9 @@ defs = Definitions(
 )
 ```
 
-#### Via a file
+**Via a file**
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/private_key_auth_resource.py startafter=start_key_file endbefore=end_key_file
 from dagster_snowflake import SnowflakeResource
 
@@ -63,12 +62,11 @@ defs = Definitions(
 ```
 
 </TabItem>
-<TabItem value="I/O managers">
+<TabItem value="I/O managers" label="I/O managers">
 
-### I/O managers
+**Directly to the I/O manager**
 
-#### Directly to the I/O manager
-
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/private_key_auth_io_manager.py startafter=start_direct_key endbefore=end_direct_key
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
@@ -88,8 +86,9 @@ defs = Definitions(
 )
 ```
 
-#### Via a file
+**Via a file**
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/private_key_auth_io_manager.py startafter=start_key_file endbefore=end_key_file
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
@@ -112,14 +111,13 @@ defs = Definitions(
 </TabItem>
 </Tabs>
 
----
-
 ## Using the Snowflake resource
 
 ### Executing custom SQL commands
 
-Using a [Snowflake resource](/guides/build/external-resources/), you can execute custom SQL queries on a Snowflake database:
+Using a [Snowflake resource](/api/python-api/libraries/dagster-snowflake#resource), you can execute custom SQL queries on a Snowflake database:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/resource.py startafter=start endbefore=end
 from dagster_snowflake import SnowflakeResource
 
@@ -161,11 +159,10 @@ Let's review what's happening in this example:
 
 - Attached the `SnowflakeResource` to the `small_petals` asset
 - Used the `get_connection` context manager method of the Snowflake resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection) object
-- Used the connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](/integrations/snowflake/using-snowflake-with-dagster#create-tables-in-snowflake-from-dagster-assets) of the [Snowflake resource tutorial](/integrations/snowflake/using-snowflake-with-dagster)
+- Used the connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](using-snowflake-with-dagster#create-tables-in-snowflake-from-dagster-assets) of the [Snowflake resource tutorial](using-snowflake-with-dagster)
 
 For more information on the Snowflake resource, including additional configuration settings, see the <PyObject object="SnowflakeResource" module="dagster_snowflake" /> API docs.
 
----
 
 ## Using the Snowflake I/O manager
 
@@ -173,6 +170,7 @@ For more information on the Snowflake resource, including additional configurati
 
 Sometimes you may not want to fetch an entire table as the input to a downstream asset. With the Snowflake I/O manager, you can select specific columns to load by supplying metadata on the downstream asset.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/downstream_columns.py
 import pandas as pd
 
@@ -196,7 +194,7 @@ def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
     return iris_sepal
 ```
 
-In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2](/integrations/snowflake/using-snowflake-with-dagster-io-managers#store-a-dagster-asset-as-a-table-in-snowflake) of the [Snowflake I/O manager tutorial](/integrations/snowflake/using-snowflake-with-dagster-io-managers). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
+In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2](using-snowflake-with-dagster-io-managers#store-a-dagster-asset-as-a-table-in-snowflake) of the [Snowflake I/O manager tutorial](using-snowflake-with-dagster-io-managers). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
 
@@ -205,12 +203,11 @@ When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using 
 The Snowflake I/O manager supports storing and loading partitioned data. In order to correctly store and load data from the Snowflake table, the Snowflake I/O manager needs to know which column contains the data defining the partition bounds. The Snowflake I/O manager uses this information to construct the correct queries to select or replace the data. In the following sections, we describe how the I/O manager constructs these queries for different types of partitions.
 
 <Tabs>
-<TabItem value="Statically-partitioned assets">
-
-#### Statically-partitioned assets
+<TabItem value="Statically-partitioned assets" label="Statically-partitioned assets">
 
 To store statically-partitioned assets in Snowflake, specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/static_partition.py
 import pandas as pd
 
@@ -264,10 +261,9 @@ SELECT *
 </TabItem>
 <TabItem value="Time-partitioned assets">
 
-#### Time-partitioned assets
-
 Like statically-partitioned assets, you can specify `partition_expr` metadata on the asset to tell the Snowflake I/O manager which column contains the partition data:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/time_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
@@ -302,7 +298,7 @@ SELECT *
 
 When the `partition_expr` value is injected into this statement, the resulting SQL query must follow Snowflake's SQL syntax. Refer to the [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/constructs) for more information.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
+{/* TODO fix link: When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). */} When materializing the above assets, a partition must be selected. The `[partition_start]` and `[partition_end]` bounds are of the form `YYYY-MM-DD HH:MM:SS`. In this example, the query when materializing the `2023-01-02` partition of the above assets would be:
 
 ```sql
 SELECT *
@@ -319,6 +315,7 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 
 The Snowflake I/O manager can also store data partitioned on multiple dimensions. To do this, you must specify the column for each partition as a dictionary of `partition_expr` metadata:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/multi_partition.py startafter=start_example endbefore=end_example
 import pandas as pd
 
@@ -365,7 +362,7 @@ def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
 
-When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
+{/* TODO fix link: When materializing the above assets, a partition must be selected, as described in [Materializing partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets#materializing-partitioned-assets). /*} When materializing the above assets, a partition must be selected. For example, when materializing the `2023-01-02|Iris-setosa` partition of the above assets, the following query will be used:
 
 ```sql
 SELECT *
@@ -381,10 +378,11 @@ SELECT *
 
 If you want to have different assets stored in different Snowflake schemas, the Snowflake I/O manager allows you to specify the schema in a few ways.
 
-You can specify the default schema where data will be stored as configuration to the I/O manager, like we did in [Step 1](/integrations/snowflake/using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](/integrations/snowflake/using-snowflake-with-dagster-io-managers).
+You can specify the default schema where data will be stored as configuration to the I/O manager, like we did in [Step 1](using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](using-snowflake-with-dagster-io-managers).
 
 To store assets in different schemas, specify the schema as metadata:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/schema.py startafter=start_metadata endbefore=end_metadata dedent=4
 daffodil_dataset = AssetSpec(
     key=["daffodil_dataset"], metadata={"schema": "daffodil"}
@@ -406,6 +404,7 @@ def iris_dataset() -> pd.DataFrame:
 
 You can also specify the schema as part of the asset's asset key:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/schema.py startafter=start_asset_key endbefore=end_asset_key dedent=4
 daffodil_dataset = AssetSpec(key=["daffodil", "daffodil_dataset"])
 
@@ -450,13 +449,7 @@ When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager 
 
 :::
 
-  Prior to <code>dagster-snowflake</code> version <code>0.19.0</code> the
-  Snowflake I/O manager converted all timestamp data to strings before loading
-  the data in Snowflake, and did the opposite conversion when fetching a
-  DataFrame from Snowflake. If you have used a version of{" "}
-  <code>dagster-snowflake</code> prior to version <code>0.19.0</code>
-  see the <a href="/migration#extension-libraries">Migration Guide</a> for information
-  about migrating database tables.
+Prior to <code>dagster-snowflake</code> version <code>0.19.0</code> the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. If you have used a version of `dagster-snowflake` prior to version `0.19.0`, see the <a href="/migration/version-migration#extension-libraries">Migration Guide</a> for information about migrating database tables.
 
 :::
 
@@ -464,6 +457,7 @@ When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager 
 
 You may have assets that you don't want to store in Snowflake. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the `asset` decorator:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/multiple_io_managers.py startafter=start_example endbefore=end_example
 import pandas as pd
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
@@ -512,14 +506,15 @@ In this example, the `iris_dataset` asset uses the I/O manager bound to the key 
 
 ### Storing and loading PySpark DataFrames in Snowflake
 
-The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
+The Snowflake I/O manager also supports storing and loading PySpark DataFrames. To use the <PyObject section="libraries" module="dagster_snowflake_pyspark" object="SnowflakePySparkIOManager" />, first install the package:
 
 ```shell
 pip install dagster-snowflake-pyspark
 ```
 
-Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1](/integrations/snowflake/using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](/integrations/snowflake/using-snowflake-with-dagster-io-managers).
+Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1](using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](using-snowflake-with-dagster-io-managers).
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 
@@ -553,6 +548,7 @@ The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and con
 <Tabs>
 <TabItem value="With the spark_resource">
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/pyspark_with_spark_resource.py
 from dagster_pyspark import pyspark_resource
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
@@ -606,6 +602,7 @@ defs = Definitions(
 </TabItem>
 <TabItem value="With your own SparkSession">
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/pyspark_with_spark_session.py
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
@@ -660,8 +657,9 @@ defs = Definitions(
 
 ### Using Pandas and PySpark DataFrames with Snowflake
 
-If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in Snowflake, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject module="dagster_snowflake" object="SnowflakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `SnowflakeIOManager`.
+If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in Snowflake, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `SnowflakeIOManager`.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/pandas_and_pyspark.py startafter=start_example endbefore=end_example
 from typing import Optional, Type
 

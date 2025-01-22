@@ -1,9 +1,8 @@
 ---
-title: "Integrating Snowflake with Dagster using I/O managers | Dagster Docs"
+title: "Integrating Snowflake with Dagster using I/O managers"
 description: "Learn to integrate Snowflake with Dagster using a Snowflake I/O manager."
+sidebar_position: 100
 ---
-
-# Integrating Snowflake with Dagster using I/O managers
 
 This tutorial focuses on how to store and load Dagster's [asset definitions](/guides/build/assets/defining-assets) in Snowflake by using a Snowflake I/O manager. An [**I/O manager**](/guides/build/io-managers/) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster.
 
@@ -14,11 +13,10 @@ By the end of the tutorial, you will:
 - Make a Snowflake table available in Dagster
 - Load Snowflake tables in downstream assets
 
-This guide focuses on storing and loading Pandas DataFrames in Snowflake, but Dagster also supports using PySpark DataFrames with Snowflake. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the Snowflake I/O manager with PySpark DataFrames in the [Snowflake reference](/integrations/snowflake/reference).
+This guide focuses on storing and loading Pandas DataFrames in Snowflake, but Dagster also supports using PySpark DataFrames with Snowflake. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the Snowflake I/O manager with PySpark DataFrames in the [Snowflake reference](reference).
 
-**Prefer to use resources instead?** Unlike an I/O manager, resources allow you to run SQL queries directly against tables within an asset's compute function. Refer to the [Snowlake resource guide](/integrations/snowflake/using-snowflake-with-dagster) for more info.
+**Prefer to use resources instead?** Unlike an I/O manager, resources allow you to run SQL queries directly against tables within an asset's compute function. Refer to the [Snowlake resource guide](using-snowflake-with-resources) for more info.
 
----
 
 ## Prerequisites
 
@@ -51,9 +49,9 @@ To complete this tutorial, you'll need:
 
     Refer to the [Using environment variables and secrets guide](/guides/dagster/using-environment-variables-and-secrets) for more info.
 
-    For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
+    For more information on authenticating with a private key, see [Authenticating with a private key](reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 
----
+
 
 ## Step 1: Configure the Snowflake I/O manager
 
@@ -61,6 +59,7 @@ The Snowflake I/O manager requires some configuration to connect to your Snowfla
 
 You can also provide some optional configuration to further customize the Snowflake I/O manager. You can specify a `warehouse` and `schema` where data should be stored, and a `role` for the I/O manager.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/io_manager_tutorial/configuration.py startafter=start_example endbefore=end_example
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
@@ -84,11 +83,11 @@ defs = Definitions(
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
-Finally, in the <PyObject section="definitions" module="dagster" object="Definitions" /> object, we assign the <PyObject module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
+Finally, in the <PyObject section="definitions" module="dagster" object="Definitions" /> object, we assign the <PyObject section="libraries" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
-For more info about each of the configuration values, refer to the <PyObject module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> API documentation.
+For more info about each of the configuration values, refer to the <PyObject section="libraries" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> API documentation.
 
----
+
 
 ## Step 2: Create tables in Snowflake
 
@@ -102,6 +101,7 @@ The Snowflake I/O manager can create and update tables for your Dagster defined 
 
 To store data in Snowflake using the Snowflake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Snowflake I/O manager, like in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), and Dagster will handle storing and loading your assets in Snowflake.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/io_manager_tutorial/create_table.py
 import pandas as pd
 
@@ -128,12 +128,11 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 </TabItem>
 
-<TabItem value="Make existing tables available in Dagster">
-
-### Make an existing table available in Dagster
+<TabItem value="Make an existing table available in Dagster">
 
 You may already have tables in Snowflake that you want to make available to other Dagster assets. You can define [external assets](/guides/build/assets/external-assets) for these tables. By defining an external asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/source_asset.py
 from dagster import AssetSpec
 
@@ -147,12 +146,11 @@ Since we supply the database and the schema in the I/O manager configuration in 
 </TabItem>
 </Tabs>
 
----
-
 ## Step 3: Load Snowflake tables in downstream assets
 
 Once you have created an asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets.
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/io_manager_tutorial/downstream.py startafter=start_example endbefore=end_example
 import pandas as pd
 
@@ -170,12 +168,11 @@ In this example, we want to provide the `iris_dataset` asset from the [Store a D
 
 When materializing these assets, Dagster will use the `SnowflakePandasIOManager` to fetch the `FLOWERS.IRIS.IRIS_DATASET` as a Pandas DataFrame and pass this DataFrame as the `iris_dataset` parameter to `iris_cleaned`. When `iris_cleaned` returns a Pandas DataFrame, Dagster will use the `SnowflakePandasIOManager` to store the DataFrame as the `FLOWERS.IRIS.IRIS_CLEANED` table in Snowflake.
 
----
-
 ## Completed code example
 
 When finished, your code should look like the following:
 
+{/* TODO convert to <CodeExample> */}
 ```python file=/integrations/snowflake/io_manager_tutorial/full_example.py
 import pandas as pd
 from dagster_snowflake_pandas import SnowflakePandasIOManager
@@ -219,26 +216,3 @@ defs = Definitions(
     },
 )
 ```
-
----
-
-## Related
-
-<ArticleList>
-  <ArticleListItem
-    title="Dagster & Snowflake using resources"
-    href="/integrations/snowflake/using-snowflake-with-dagster"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Snowflake reference"
-    href="/integrations/snowflake/reference"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Asset definitions"
-    href="/guides/build/assets/defining-assets"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="I/O managers"
-    href="/guides/build/io-managers/"
-  ></ArticleListItem>
-</ArticleList>
