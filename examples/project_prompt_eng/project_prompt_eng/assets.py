@@ -1,10 +1,10 @@
 import json
 from datetime import datetime
-import dagster as dg
 
-from project_prompt_eng.resources import NRELResource
+import dagster as dg
 from dagster_anthropic import AnthropicResource
 
+from project_prompt_eng.resources import NRELResource
 
 PROMPT_LOCATION = """
 Given a location and vechicle, return the latitude (as a decimal, range -90 to 90)
@@ -119,7 +119,7 @@ def nearest_fuel_stations(
     kinds={"anthropic"},
     description="Determine if the nearest statiions are available",
 )
-def fuel_station_available(
+def available_fuel_stations(
     context: dg.AssetExecutionContext,
     anthropic: AnthropicResource,
     nearest_fuel_stations,
@@ -129,12 +129,12 @@ def fuel_station_available(
     fuel_stations_open = 0
     with anthropic.get_client(context) as client:
         for fuel_station in nearest_fuel_stations:
-            input = {
+            prompt_input = {
                 "access_days_time": fuel_station["access_days_time"],
                 "datetime": current_time,
             }
 
-            prompt = PROMPT_FUEL_STATION_OPEN.format(fuel_station_hours = input)
+            prompt = PROMPT_FUEL_STATION_OPEN.format(fuel_station_hours = prompt_input)
             resp = client.messages.create(
                 model="claude-3-5-sonnet-20241022",
                 max_tokens=1024,

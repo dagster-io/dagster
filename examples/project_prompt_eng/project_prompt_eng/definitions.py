@@ -1,8 +1,8 @@
 import dagster as dg
-import project_prompt_eng.assets as assets
-from project_prompt_eng.resources import NRELResource
 from dagster_anthropic import AnthropicResource
 
+import project_prompt_eng.assets as assets
+from project_prompt_eng.resources import NRELResource
 
 all_assets = dg.load_assets_from_modules([assets])
 
