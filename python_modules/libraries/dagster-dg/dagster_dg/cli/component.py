@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 import click
 from click.core import ParameterSource
+from dagster._utils.source_position import ValueAndSourcePositionTree
 from jsonschema import Draft202012Validator, ValidationError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
@@ -280,7 +281,7 @@ def component_check_command(
 
     component_registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
-    validation_errors: list[tuple[Optional[str], ValidationError]] = []
+    validation_errors: list[tuple[Optional[str], ValidationError, ValueAndSourcePositionTree]] = []
 
     component_contents_by_dir = {}
     local_components = set()
@@ -306,7 +307,7 @@ def component_check_command(
                 top_level_component_validator.iter_errors(component_doc_tree.value)
             )
             for err in top_level_errs:
-                validation_errors.append((None, err))
+                validation_errors.append((None, err, component_doc_tree))
             if top_level_errs:
                 continue
 
@@ -330,10 +331,10 @@ def component_check_command(
 
         v = Draft202012Validator(json_schema)  # type: ignore
         for err in v.iter_errors(component_doc_tree.value["params"]):
-            validation_errors.append((component_name, err))
+            validation_errors.append((component_name, err, component_doc_tree))
 
     if validation_errors:
-        for component_name, error in validation_errors:
+        for component_name, error, component_doc_tree in validation_errors:
             click.echo(
                 error_dict_to_formatted_error(
                     component_name,
