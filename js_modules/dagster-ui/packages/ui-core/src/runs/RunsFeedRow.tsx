@@ -26,7 +26,7 @@ import {RunFilterToken} from './RunsFilterInput';
 import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
-import {BackfillActionsMenu, backfillCanCancelRuns} from '../instance/backfill/BackfillActionsMenu';
+import {BackfillActionsMenu} from '../instance/backfill/BackfillActionsMenu';
 import {BackfillTarget} from '../instance/backfill/BackfillRow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 import {appendCurrentQueryParams} from '../util/appendCurrentQueryParams';
@@ -195,7 +195,6 @@ export const RunsFeedRow = ({
         {entry.__typename === 'PartitionBackfill' ? (
           <BackfillActionsMenu
             backfill={{...entry, status: entry.backfillStatus}}
-            canCancelRuns={backfillCanCancelRuns(entry, entry.numCancelable > 0)}
             refetch={refetch}
             anchorLabel="View"
           />

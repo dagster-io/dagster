@@ -24,17 +24,11 @@ import {getBackfillPath} from '../../runs/RunsFeedUtils';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {AnchorButton} from '../../ui/AnchorButton';
 
-export function backfillCanCancelSubmission(backfill: {
+export function backfillCanCancel(backfill: {
   hasCancelPermission: boolean;
-  isAssetBackfill: boolean;
   status: BulkActionStatus;
-  numCancelable: number;
 }) {
-  return (
-    backfill.hasCancelPermission &&
-    ((backfill.isAssetBackfill && backfill.status === BulkActionStatus.REQUESTED) ||
-      backfill.numCancelable > 0)
-  );
+  return backfill.hasCancelPermission && backfill.status === BulkActionStatus.REQUESTED;
 }
 
 export function backfillCanResume(backfill: {
@@ -49,24 +43,12 @@ export function backfillCanResume(backfill: {
   );
 }
 
-export function backfillCanCancelRuns(
-  backfill: {hasCancelPermission: boolean},
-  hasCancelableRuns: boolean,
-) {
-  if (!backfill.hasCancelPermission || !hasCancelableRuns) {
-    return false;
-  }
-  return hasCancelableRuns;
-}
-
 export const BackfillActionsMenu = ({
   backfill,
-  canCancelRuns,
   refetch,
   anchorLabel,
 }: {
   backfill: BackfillActionsBackfillFragment;
-  canCancelRuns: boolean;
   refetch: () => void;
   anchorLabel?: string;
 }) => {
@@ -117,7 +99,7 @@ export const BackfillActionsMenu = ({
     }
   };
 
-  const canCancelSubmission = backfillCanCancelSubmission(backfill);
+  const canCancel = backfillCanCancel(backfill);
 
   const popover = (
     <Popover
@@ -145,10 +127,10 @@ export const BackfillActionsMenu = ({
             onClick={() => resume()}
           />
           <MenuItem
-            text={canCancelSubmission ? 'Cancel backfill submission' : 'Terminate unfinished runs'}
+            text="Cancel backfill"
             icon="cancel"
             intent="danger"
-            disabled={!(canCancelSubmission || canCancelRuns)}
+            disabled={!canCancel}
             onClick={() => setShowTerminateDialog(true)}
           />
         </Menu>
