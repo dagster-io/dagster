@@ -88,8 +88,6 @@ You can also provide `config_schema` to `define_dagstermill_op` in the same way 
 
 In our notebook, we'll stub the context as follows (in the `parameters` cell):
 
-<!-- do not hardcode code snippets https://github.com/dagster-io/dagster/issues/2706 -->
-
 ```python
 import dagstermill
 

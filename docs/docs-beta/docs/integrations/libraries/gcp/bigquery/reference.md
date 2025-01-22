@@ -322,8 +322,7 @@ The dataset will be the last prefix before the asset's name. In this example, th
       used
     </li>
     <li>
-      If none of the above are provided, the default dataset will be{" "}
-      <code>PUBLIC</code>
+      If none of the above are provided, the default dataset will be <code>PUBLIC</code>
     </li>
   </ol>
 

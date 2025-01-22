@@ -420,7 +420,7 @@ def iris_dataset() -> pd.DataFrame:
 
 In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, and the `daffodil_dataset` asset will be found in the `DAFFODIL` schema.
 
-:::
+:::note
 
   The schema is determined in this order:
   <ol>
@@ -432,8 +432,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
       Otherwise, if there is a <code>key_prefix</code>, that schema will be used
     </li>
     <li>
-      If none of the above are provided, the default schema will be{" "}
-      <code>PUBLIC</code>
+      If none of the above are provided, the default schema will be <code>PUBLIC</code>
     </li>
   </ol>
 
@@ -443,9 +442,9 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 
 When storing a Pandas DataFrame with the Snowflake I/O manager, the I/O manager will check if timestamp data has a timezone attached, and if not, **it will assign the UTC timezone**. In Snowflake, you will see the timestamp data stored as the `TIMESTAMP_NTZ(9)` type, as this is the type assigned by the Snowflake Pandas connector.
 
-:::
+:::note
 
-Prior to <code>dagster-snowflake</code> version <code>0.19.0</code> the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. If you have used a version of `dagster-snowflake` prior to version `0.19.0`, see the <a href="/migration/version-migration#extension-libraries">Migration Guide</a> for information about migrating database tables.
+Prior to `dagster-snowflake` version `0.19.0` the Snowflake I/O manager converted all timestamp data to strings before loading the data in Snowflake, and did the opposite conversion when fetching a DataFrame from Snowflake. If you have used a version of `dagster-snowflake` prior to version `0.19.0`, see the [Migration Guide](/guides/migrate/version-migration#extension-libraries) for information about migrating database tables.
 
 :::
 
@@ -532,10 +531,9 @@ defs = Definitions(
 )
 ```
 
-:::
+:::note
 
-  When using the <code>snowflake_pyspark_io_manager</code> the{" "}
-  <code>warehouse</code> configuration is required.
+When using the `snowflake_pyspark_io_manager` the `warehouse` configuration is required.
 
 :::
 

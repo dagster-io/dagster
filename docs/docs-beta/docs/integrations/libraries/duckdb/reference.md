@@ -321,8 +321,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
       Otherwise, if there is a <code>key_prefix</code>, that schema will be used
     </li>
     <li>
-      If none of the above are provided, the default schema will be{" "}
-      <code>PUBLIC</code>
+      If none of the above are provided, the default schema will be <code>PUBLIC</code>
     </li>
   </ol>
 
