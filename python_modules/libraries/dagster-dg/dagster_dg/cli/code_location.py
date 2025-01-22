@@ -1,19 +1,20 @@
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Annotated
 
 import click
+import typer
+from typer_di import Depends, TyperDI
 
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.global_options import typer_dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_code_location
-from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error
+from dagster_dg.utils import exit_with_error
 
-
-@click.group(name="code-location", cls=DgClickGroup)
-def code_location_group():
-    """Commands for operating code location directories."""
+code_location_group = TyperDI(
+    name="code-location", help="Commands for operating on code location directories."
+)
 
 
 # ########################
@@ -21,34 +22,27 @@ def code_location_group():
 # ########################
 
 
-@code_location_group.command(name="scaffold", cls=DgClickCommand)
-@click.argument("name", type=str)
-@click.option(
-    "--use-editable-dagster",
-    type=str,
-    flag_value="TRUE",
-    is_flag=False,
-    default=None,
-    help=(
-        "Install Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
-        " may be set as a flag (no value is passed). If set as a flag,"
-        " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
-    ),
-)
-@click.option(
-    "--skip-venv",
-    is_flag=True,
-    default=False,
-    help="Do not create a virtual environment for the code location.",
-)
-@dg_global_options
-@click.pass_context
+@code_location_group.command(name="scaffold")
 def code_location_scaffold_command(
     context: click.Context,
     name: str,
-    use_editable_dagster: Optional[str],
-    skip_venv: bool,
-    **global_options: object,
+    use_editable_dagster: Annotated[
+        bool,
+        typer.Option(
+            help=(
+                "Install Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
+                " may be set as a flag (no value is passed). If set as a flag,"
+                " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
+            ),
+        ),
+    ] = False,
+    skip_venv: Annotated[
+        bool,
+        typer.Option(
+            help="Do not create a virtual environment for the code location.",
+        ),
+    ] = False,
+    global_options: dict[str, object] = Depends(typer_dg_global_options),
 ) -> None:
     """Scaffold a Dagster code location file structure and a uv-managed virtual environment scoped
     to the code location.
@@ -83,14 +77,12 @@ def code_location_scaffold_command(
     else:
         code_location_path = Path.cwd() / name
 
-    if use_editable_dagster == "TRUE":
+    if use_editable_dagster:
         if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
             exit_with_error(
                 "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
             )
         editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
-    elif use_editable_dagster:  # a string value was passed
-        editable_dagster_root = use_editable_dagster
     else:
         editable_dagster_root = None
 
@@ -104,10 +96,11 @@ def code_location_scaffold_command(
 # ########################
 
 
-@code_location_group.command(name="list", cls=DgClickCommand)
-@dg_global_options
-@click.pass_context
-def code_location_list_command(context: click.Context, **global_options: object) -> None:
+@code_location_group.command(name="list")
+def code_location_list_command(
+    context: typer.Context,
+    global_options: dict[str, object] = Depends(typer_dg_global_options),
+) -> None:
     """List code locations in the current deployment."""
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)

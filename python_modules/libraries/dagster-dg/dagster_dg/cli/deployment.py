@@ -2,30 +2,30 @@ import os
 from pathlib import Path
 
 import click
+import typer
+from typer_di import Depends, TyperDI
 
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.global_options import typer_dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_deployment
-from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error
+from dagster_dg.utils import exit_with_error
 
-
-@click.group(name="deployment", cls=DgClickGroup)
-def deployment_group():
-    """Commands for operating on deployment directories."""
-
+deployment_group = TyperDI(
+    name="deployment", help="Commands for operating on deployment directories."
+)
 
 # ########################
 # ##### SCAFFOLD
 # ########################
 
 
-@deployment_group.command(name="scaffold", cls=DgClickCommand)
-@dg_global_options
+@deployment_group.command(name="scaffold")
 @click.argument("path", type=Path)
-@click.pass_context
 def deployment_scaffold_command(
-    context: click.Context, path: Path, **global_options: object
+    context: typer.Context,
+    path: Path,
+    global_options: dict[str, object] = Depends(typer_dg_global_options),
 ) -> None:
     """Scaffold a Dagster deployment file structure.
 

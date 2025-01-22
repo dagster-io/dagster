@@ -28,13 +28,18 @@ from dagster_dg_tests.utils import (
 # and returns the local version of the package.
 
 
-def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
+def test_code_location_scaffold_inside_deployment_success() -> None:
     # Remove when we are able to test without editable install
     dagster_git_repo_dir = discover_git_root(Path(__file__))
-    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
+    with (
+        pytest.MonkeyPatch.context() as mp,
+        ProxyRunner.test() as runner,
+        isolated_example_deployment_foo(runner),
+    ):
+        mp.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
         result = runner.invoke("code-location", "scaffold", "foo-bar", "--use-editable-dagster")
+        # result = runner.invoke("code-location", "scaffold", "foo-bar")
         assert_runner_result(result)
         assert Path("code_locations/foo-bar").exists()
         assert Path("code_locations/foo-bar/foo_bar").exists()
@@ -81,14 +86,10 @@ def test_code_location_scaffold_outside_deployment_success(monkeypatch) -> None:
         assert Path("foo-bar/uv.lock").exists()
 
 
-@pytest.mark.parametrize("mode", ["env_var", "arg"])
-def test_code_location_scaffold_editable_dagster_success(mode: str, monkeypatch) -> None:
+def test_code_location_scaffold_editable_dagster_success(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
-    if mode == "env_var":
-        monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
-        editable_args = ["--use-editable-dagster", "--"]
-    else:
-        editable_args = ["--use-editable-dagster", str(dagster_git_repo_dir)]
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+    editable_args = ["--use-editable-dagster", "--"]
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("code-location", "scaffold", *editable_args, "foo-bar")
         assert_runner_result(result)

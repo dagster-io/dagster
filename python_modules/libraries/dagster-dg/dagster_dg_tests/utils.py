@@ -16,6 +16,7 @@ from dagster_dg.cli import (
     cli as dg_cli,
 )
 from dagster_dg.utils import discover_git_root, pushd
+from pytest import MonkeyPatch
 from typing_extensions import Self
 
 
@@ -36,30 +37,30 @@ def isolated_example_code_location_foo_bar(
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    if in_deployment:
-        with isolated_example_deployment_foo(runner):
-            runner.invoke(
-                "code-location",
-                "scaffold",
-                "--use-editable-dagster",
-                dagster_git_repo_dir,
-                *(["--no-use-dg-managed-environment"] if skip_venv else []),
-                "foo-bar",
-            )
-            with clear_module_from_cache("foo_bar"), pushd("code_locations/foo-bar"):
-                yield
-    else:
-        with runner.isolated_filesystem():
-            runner.invoke(
-                "code-location",
-                "scaffold",
-                "--use-editable-dagster",
-                dagster_git_repo_dir,
-                *(["--no-use-dg-managed-environment"] if skip_venv else []),
-                "foo-bar",
-            )
-            with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-                yield
+    with MonkeyPatch.context() as mp:
+        mp.setenv("DAGSTER_GIT_REPO_DIR", dagster_git_repo_dir)
+        if in_deployment:
+            with isolated_example_deployment_foo(runner):
+                runner.invoke(
+                    "code-location",
+                    "scaffold",
+                    "--use-editable-dagster",
+                    *(["--no-use-dg-managed-environment"] if skip_venv else []),
+                    "foo-bar",
+                )
+                with clear_module_from_cache("foo_bar"), pushd("code_locations/foo-bar"):
+                    yield
+        else:
+            with runner.isolated_filesystem():
+                runner.invoke(
+                    "code-location",
+                    "scaffold",
+                    "--use-editable-dagster",
+                    *(["--no-use-dg-managed-environment"] if skip_venv else []),
+                    "foo-bar",
+                )
+                with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
+                    yield
 
 
 @contextmanager

@@ -39,7 +39,10 @@ def ensure_loadable_path(path: Path) -> Iterator[None]:
 
 
 def is_package_installed(package_name: str) -> bool:
-    return bool(importlib.util.find_spec(package_name))
+    try:
+        return bool(importlib.util.find_spec(package_name))
+    except ModuleNotFoundError:
+        return False
 
 
 def get_path_for_package(package_name: str) -> str:

@@ -1,35 +1,34 @@
 import json
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import click
+import typer
+from typer_di import Depends, TyperDI
 
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.global_options import typer_dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.docs import markdown_for_component_type, render_markdown_in_browser
 from dagster_dg.scaffold import scaffold_component_type
-from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error
+from dagster_dg.utils import exit_with_error
 
-
-@click.group(name="component-type", cls=DgClickGroup)
-def component_type_group():
-    """Commands for operating on components types."""
-
+component_type_group = TyperDI(
+    name="component-type", help="Commands for operating on components types."
+)
 
 # ########################
 # ##### SCAFFOLD
 # ########################
 
 
-@component_type_group.command(name="scaffold", cls=DgClickCommand)
-@click.argument("name", type=str)
-@dg_global_options
-@click.pass_context
+@component_type_group.command(name="scaffold")
 def component_type_scaffold_command(
-    context: click.Context, name: str, **global_options: object
+    context: typer.Context,
+    name: str,
+    global_options: dict[str, object] = Depends(typer_dg_global_options),
 ) -> None:
     """Scaffold of a custom Dagster component type.
 
@@ -53,14 +52,11 @@ def component_type_scaffold_command(
 # ########################
 
 
-@component_type_group.command(name="docs", cls=DgClickCommand)
-@click.argument("component_type", type=str)
-@dg_global_options
-@click.pass_context
+@component_type_group.command(name="docs")
 def component_type_docs_command(
-    context: click.Context,
+    context: typer.Context,
     component_type: str,
-    **global_options: object,
+    global_options: dict[str, object] = Depends(typer_dg_global_options),
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, context)
@@ -77,20 +73,14 @@ def component_type_docs_command(
 # ########################
 
 
-@component_type_group.command(name="info", cls=DgClickCommand)
-@click.argument("component_type", type=str)
-@click.option("--description", is_flag=True, default=False)
-@click.option("--scaffold-params-schema", is_flag=True, default=False)
-@click.option("--component-params-schema", is_flag=True, default=False)
-@dg_global_options
-@click.pass_context
+@component_type_group.command(name="info")
 def component_type_info_command(
-    context: click.Context,
+    context: typer.Context,
     component_type: str,
-    description: bool,
-    scaffold_params_schema: bool,
-    component_params_schema: bool,
-    **global_options: object,
+    description: Annotated[bool, typer.Option(is_flag=True)] = False,
+    scaffold_params_schema: Annotated[bool, typer.Option(is_flag=True)] = False,
+    component_params_schema: Annotated[bool, typer.Option(is_flag=True)] = False,
+    global_options: dict[str, object] = Depends(typer_dg_global_options),
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, context)
@@ -144,10 +134,10 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 # ########################
 
 
-@component_type_group.command(name="list", cls=DgClickCommand)
-@dg_global_options
-@click.pass_context
-def component_type_list(context: click.Context, **global_options: object) -> None:
+@component_type_group.command(name="list")
+def component_type_list(
+    context: typer.Context, global_options: dict[str, object] = Depends(typer_dg_global_options)
+) -> None:
     """List registered Dagster components in the current code location environment."""
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)

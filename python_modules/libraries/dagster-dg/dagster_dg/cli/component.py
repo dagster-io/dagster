@@ -233,7 +233,10 @@ def _create_component_scaffold_subcommand(
 @component_group.command(name="list", cls=DgClickCommand)
 @dg_global_options
 @click.pass_context
-def component_list_command(context: click.Context, **global_options: object) -> None:
+def component_list_command(
+    context: click.Context,
+    **global_options: object,
+) -> None:
     """List Dagster component instances defined in the current code location."""
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
@@ -254,9 +257,7 @@ def component_list_command(context: click.Context, **global_options: object) -> 
 @dg_global_options
 @click.pass_context
 def component_check_command(
-    context: click.Context,
-    paths: Sequence[str],
-    **global_options: object,
+    context: click.Context, paths: Sequence[str], **global_options: object
 ) -> None:
     """Check component files against their schemas, showing validation errors."""
     cli_config = normalize_cli_config(global_options, context)

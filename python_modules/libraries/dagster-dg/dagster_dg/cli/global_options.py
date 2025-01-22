@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Annotated, Any, Callable, Optional, TypeVar, Union
 
 import click
+import typer
 
 from dagster_dg.config import DgConfig
 
@@ -44,6 +45,47 @@ GLOBAL_OPTIONS = {
         ),
     ]
 }
+
+
+def typer_dg_global_options(
+    cache_dir: Annotated[
+        Path,
+        typer.Option(
+            help="Specify a directory to use for the cache.",
+        ),
+    ] = DgConfig.cache_dir,
+    disable_cache: Annotated[
+        bool,
+        typer.Option(
+            help="Disable the cache.",
+        ),
+    ] = DgConfig.disable_cache,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            help="Enable verbose output for debugging.",
+        ),
+    ] = DgConfig.verbose,
+    builtin_component_lib: Annotated[
+        str,
+        typer.Option(
+            help="Specify a builitin component library to use.",
+        ),
+    ] = DgConfig.builtin_component_lib,
+    use_dg_managed_environment: Annotated[
+        bool,
+        typer.Option(
+            help="Enable management of the virtual environment with uv.",
+        ),
+    ] = DgConfig.use_dg_managed_environment,
+) -> dict[str, object]:
+    return {
+        "cache_dir": cache_dir,
+        "disable_cache": disable_cache,
+        "verbose": verbose,
+        "builtin_component_lib": builtin_component_lib,
+        "use_dg_managed_environment": use_dg_managed_environment,
+    }
 
 
 def dg_global_options(

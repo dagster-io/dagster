@@ -34,6 +34,8 @@ setup(
     install_requires=[
         "Jinja2",
         "tomli",
+        "typer",
+        "typer_di",
         "click>=8",
         "typing_extensions>=4.4.0,<5",
         "markdown",
