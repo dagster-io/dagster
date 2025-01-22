@@ -36,19 +36,19 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('key_substring:|')).toEqual({
       list: [
         {
-          text: 'asset1',
+          text: 'asset1 ',
           displayText: 'asset1',
           type: 'attribute',
           attributeName: 'key_substring',
         },
         {
-          text: 'asset2',
+          text: 'asset2 ',
           displayText: 'asset2',
           type: 'attribute',
           attributeName: 'key_substring',
         },
         {
-          text: 'asset3',
+          text: 'asset3 ',
           displayText: 'asset3',
           type: 'attribute',
           attributeName: 'key_substring',
@@ -63,13 +63,13 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('owner:|')).toEqual({
       list: [
         {
-          text: '"marco@dagsterlabs.com"',
+          text: '"marco@dagsterlabs.com" ',
           displayText: 'marco@dagsterlabs.com',
           type: 'attribute',
           attributeName: 'owner',
         },
         {
-          text: '"team:frontend"',
+          text: '"team:frontend" ',
           displayText: 'team:frontend',
           type: 'attribute',
           attributeName: 'owner',
@@ -83,9 +83,9 @@ describe('createAssetSelectionHint', () => {
   it('should suggest tag names after typing tag:', () => {
     expect(testAutocomplete('tag:|')).toEqual({
       list: [
-        {text: 'tag1', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
-        {text: 'tag2', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
-        {text: 'tag3', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag1 ', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag2 ', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag3 ', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
       ],
       from: 4, // cursor location
       to: 4, // cursor location
@@ -93,9 +93,9 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('tag:"|"')).toEqual({
       list: [
-        {text: 'tag1', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
-        {text: 'tag2', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
-        {text: 'tag3', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag1 ', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag2 ', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag3 ', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
       ],
       from: 4, // cursor location
       to: 6, // cursor location
@@ -128,7 +128,7 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('owner:marco|')).toEqual({
       list: [
         {
-          text: '"marco@dagsterlabs.com"',
+          text: '"marco@dagsterlabs.com" ',
           displayText: 'marco@dagsterlabs.com',
           type: 'attribute',
           attributeName: 'owner',
@@ -200,44 +200,44 @@ describe('createAssetSelectionHint', () => {
       list: [
         {
           displayText: 'key_substring:o',
-          text: 'key_substring:o',
+          text: 'key_substring:o ',
           type: 'attribute',
           attributeName: 'key_substring',
         },
         {displayText: 'owner:', text: 'owner:', type: 'attribute', attributeName: 'owner'},
         {
           displayText: 'owner:marco@dagsterlabs.com',
-          text: 'owner:"marco@dagsterlabs.com"',
+          text: 'owner:"marco@dagsterlabs.com" ',
           type: 'attribute',
           attributeName: 'owner',
         },
         {
           displayText: 'owner:team:frontend',
-          text: 'owner:"team:frontend"',
+          text: 'owner:"team:frontend" ',
           type: 'attribute',
           attributeName: 'owner',
         },
         {
           displayText: 'group:group1',
-          text: 'group:group1',
+          text: 'group:group1 ',
           type: 'attribute',
           attributeName: 'group',
         },
         {
           displayText: 'group:group2',
-          text: 'group:group2',
+          text: 'group:group2 ',
           type: 'attribute',
           attributeName: 'group',
         },
         {
           displayText: 'code_location:repo1@location1',
-          text: 'code_location:"repo1@location1"',
+          text: 'code_location:"repo1@location1" ',
           type: 'attribute',
           attributeName: 'code_location',
         },
         {
           displayText: 'code_location:repo2@location2',
-          text: 'code_location:"repo2@location2"',
+          text: 'code_location:"repo2@location2" ',
           type: 'attribute',
           attributeName: 'code_location',
         },
@@ -345,13 +345,13 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('code_location:|')).toEqual({
       list: [
         {
-          text: '"repo1@location1"',
+          text: '"repo1@location1" ',
           displayText: 'repo1@location1',
           type: 'attribute',
           attributeName: 'code_location',
         },
         {
-          text: '"repo2@location2"',
+          text: '"repo2@location2" ',
           displayText: 'repo2@location2',
           type: 'attribute',
           attributeName: 'code_location',
@@ -487,19 +487,19 @@ describe('createAssetSelectionHint', () => {
       list: [
         {
           displayText: 'asset1',
-          text: 'asset1',
+          text: 'asset1 ',
           type: 'attribute',
           attributeName: 'key',
         },
         {
           displayText: 'asset2',
-          text: 'asset2',
+          text: 'asset2 ',
           type: 'attribute',
           attributeName: 'key',
         },
         {
           displayText: 'asset3',
-          text: 'asset3',
+          text: 'asset3 ',
           type: 'attribute',
           attributeName: 'key',
         },
@@ -584,19 +584,19 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       list: [
         {
-          text: 'asset1',
+          text: 'asset1 ',
           displayText: 'asset1',
           type: 'attribute',
           attributeName: 'key_substring',
         },
         {
-          text: 'asset2',
+          text: 'asset2 ',
           displayText: 'asset2',
           type: 'attribute',
           attributeName: 'key_substring',
         },
         {
-          text: 'asset3',
+          text: 'asset3 ',
           displayText: 'asset3',
           type: 'attribute',
           attributeName: 'key_substring',
@@ -774,7 +774,7 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('sinks(key_substring:"asset" or key_substring:"s|et2")')).toEqual({
       list: [
         {
-          text: 'asset2',
+          text: 'asset2 ',
           displayText: 'asset2',
           type: 'attribute',
           attributeName: 'key_substring',
@@ -1024,9 +1024,9 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('tag:"tag|"')).toEqual({
       from: 4,
       list: [
-        {text: 'tag1', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
-        {text: 'tag2', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
-        {text: 'tag3', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag1 ', displayText: 'tag1', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag2 ', displayText: 'tag2', type: 'attribute', attributeName: 'tag'},
+        {text: 'tag3 ', displayText: 'tag3', type: 'attribute', attributeName: 'tag'},
       ],
       to: 9,
     });
@@ -1061,9 +1061,9 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       from: 58,
       list: [
-        {text: 'asset1', displayText: 'asset1', type: 'attribute', attributeName: 'key'},
-        {text: 'asset2', displayText: 'asset2', type: 'attribute', attributeName: 'key'},
-        {text: 'asset3', displayText: 'asset3', type: 'attribute', attributeName: 'key'},
+        {text: 'asset1 ', displayText: 'asset1', type: 'attribute', attributeName: 'key'},
+        {text: 'asset2 ', displayText: 'asset2', type: 'attribute', attributeName: 'key'},
+        {text: 'asset3 ', displayText: 'asset3', type: 'attribute', attributeName: 'key'},
       ],
       to: 60,
     });
