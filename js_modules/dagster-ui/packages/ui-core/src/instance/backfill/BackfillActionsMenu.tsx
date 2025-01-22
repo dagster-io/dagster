@@ -24,11 +24,9 @@ import {getBackfillPath} from '../../runs/RunsFeedUtils';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {AnchorButton} from '../../ui/AnchorButton';
 
-export function backfillCanCancelSubmission(backfill: {
+export function backfillCanCancel(backfill: {
   hasCancelPermission: boolean;
-  isAssetBackfill: boolean;
   status: BulkActionStatus;
-  numCancelable: number;
 }) {
   return backfill.hasCancelPermission && backfill.status === BulkActionStatus.REQUESTED;
 }
@@ -43,16 +41,6 @@ export function backfillCanResume(backfill: {
     backfill.status === BulkActionStatus.FAILED &&
     backfill.partitionSet
   );
-}
-
-export function backfillCanCancelRuns(
-  backfill: {hasCancelPermission: boolean},
-  hasCancelableRuns: boolean,
-) {
-  if (!backfill.hasCancelPermission || !hasCancelableRuns) {
-    return false;
-  }
-  return hasCancelableRuns;
 }
 
 export const BackfillActionsMenu = ({
@@ -111,7 +99,7 @@ export const BackfillActionsMenu = ({
     }
   };
 
-  const canCancelSubmission = backfillCanCancelSubmission(backfill);
+  const canCancel = backfillCanCancel(backfill);
 
   const popover = (
     <Popover
@@ -142,7 +130,7 @@ export const BackfillActionsMenu = ({
             text="Cancel backfill"
             icon="cancel"
             intent="danger"
-            disabled={!canCancelSubmission}
+            disabled={!canCancel}
             onClick={() => setShowTerminateDialog(true)}
           />
         </Menu>

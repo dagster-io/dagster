@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {BackfillActionsMenu, backfillCanCancelRuns} from './BackfillActionsMenu';
+import {BackfillActionsMenu} from './BackfillActionsMenu';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {BackfillTableFragment} from './types/BackfillTable.types';
