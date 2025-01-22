@@ -362,7 +362,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     const value = _value.trim();
     if (value) {
       const substringMatchDisplayText = `${this.nameBase}_substring:${removeQuotesFromString(value)}`;
-      const substringMatchText = `${this.nameBase}_substring:"${removeQuotesFromString(value)}"`;
+      const substringMatchText = `${this.nameBase}_substring:${addQuotesIfNecessary(removeQuotesFromString(value))}`;
       this.list.push({
         text: textCallback(substringMatchText),
         displayText: substringMatchDisplayText,
@@ -377,7 +377,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.allAttributes.forEach((attribute) => {
         if (attribute.value.includes(value.toLowerCase())) {
           this.list.push({
-            text: textCallback(`${attribute.key}:"${attribute.value}"`),
+            text: textCallback(`${attribute.key}:${addQuotesIfNecessary(attribute.value)}`),
             displayText: `${attribute.key}:${attribute.value}`,
             type: 'attribute' as const,
             attributeName: attribute.key,
@@ -422,7 +422,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     possibleValues.forEach((attributeValue) => {
       if (attributeValue.includes(unquotedValue)) {
         this.list.push({
-          text: textCallback(`"${attributeValue}"`),
+          text: textCallback(addQuotesIfNecessary(attributeValue)),
           displayText: attributeValue,
           type: 'attribute' as const,
           attributeName: attributeKey,
@@ -450,4 +450,9 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
     }
   }
+}
+
+function addQuotesIfNecessary(value: string) {
+  const doesContainSpecialCharacters = /[^\w]/.test(value);
+  return doesContainSpecialCharacters ? `"${value}"` : value;
 }

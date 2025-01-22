@@ -253,6 +253,7 @@ export const SelectionAutoCompleteInput = ({
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
         onSelectionChange(innerValueRef.current);
+        setShowResults({current: false});
       }
       if (!showResults.current) {
         return;
