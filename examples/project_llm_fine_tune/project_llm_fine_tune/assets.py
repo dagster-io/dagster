@@ -1,8 +1,8 @@
 import json
 import time
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from textwrap import dedent
-from typing import Iterable
 
 import dagster as dg
 import dagster_duckdb as dg_duckdb
