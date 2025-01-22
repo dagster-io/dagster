@@ -1147,10 +1147,7 @@ class DefaultPartitionsSubset(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
-        from dagster._core.definitions.multi_dimensional_partitions import (
-            MultiPartitionKey,
-            MultiPartitionsDefinition,
-        )
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
         if isinstance(partitions_def, MultiPartitionsDefinition):
             # For multi-partitions, we construct the ranges by holding one dimension constant
@@ -1162,10 +1159,12 @@ class DefaultPartitionsSubset(
             secondary_keys_in_subset = set()
             for partition_key in self.subset:
                 primary_keys_in_subset.add(
-                    cast(MultiPartitionKey, partition_key).keys_by_dimension[primary_dimension.name]
+                    partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
+                        primary_dimension.name
+                    ]
                 )
                 secondary_keys_in_subset.add(
-                    cast(MultiPartitionKey, partition_key).keys_by_dimension[
+                    partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
                         secondary_dimension.name
                     ]
                 )
