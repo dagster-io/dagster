@@ -94,6 +94,7 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `databricks`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-databricks-color.svg" width={20} height={20} />        |
 | `datadog`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-datadog-color.svg" width={20} height={20} />           |
 | `datahub`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-datahub-color.svg" width={20} height={20} />           |
+| `db2`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-db2-color.svg" width={20} height={20} />               |
 | `dbt`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-dbt-color.svg" width={20} height={20} />               |
 | `deltalake`         | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-deltalake-color.svg" width={20} height={20} />         |
 | `denodo`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-denodo-color.svg" width={20} height={20} />            |
