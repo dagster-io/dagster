@@ -1,4 +1,4 @@
-import {Colors, Icon, Popover} from '@dagster-io/ui-components';
+import {Box, Button, Colors, Icon, Popover} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor} from 'codemirror';
 import {Linter} from 'codemirror/addon/lint/lint';
@@ -125,13 +125,25 @@ export const SelectionAutoCompleteInput = ({
 
       // Enforce single line by preventing newlines
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
-        if (change.text.length !== 1 || change.text[0]?.includes('\n')) {
+        if (
+          change.text.length !== 1 ||
+          change.text[0]?.includes('\n') ||
+          change.text[0]?.includes('  ')
+        ) {
           change.cancel();
         }
       });
 
       cmInstance.current.on('change', (instance: Editor) => {
         const newValue = instance.getValue().replace(/\s+/g, ' ');
+        const cursor = instance.getCursor();
+        if (instance.getValue() !== newValue) {
+          const difference = newValue.length - instance.getValue().length;
+          // In this case they added a space, we removed it,
+          // so we need to move the cursor back one character
+          instance.setValue(newValue);
+          instance.setCursor({...cursor, ch: cursor.ch - difference});
+        }
         setInnerValue(newValue);
         setShowResults({current: true});
         adjustHeight();
@@ -154,22 +166,6 @@ export const SelectionAutoCompleteInput = ({
         applyStaticSyntaxHighlighting(instance);
         setCursorPosition(instance.getCursor().ch);
         setShowResults({current: true});
-      });
-
-      cmInstance.current.on('blur', (instance: Editor, ev: FocusEvent) => {
-        focusRef.current = false;
-        instance.setOption('lineWrapping', false);
-        instance.setSize('100%', '20px');
-        const current = document.activeElement;
-        const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
-        if (
-          editorRef.current?.contains(current) ||
-          hintContainerRef.current?.contains(current) ||
-          hintsVisible
-        ) {
-          ev.preventDefault();
-          return;
-        }
       });
 
       requestAnimationFrame(() => {
@@ -253,6 +249,7 @@ export const SelectionAutoCompleteInput = ({
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
         onSelectionChange(innerValueRef.current);
+        setShowResults({current: false});
       }
       if (!showResults.current) {
         return;
@@ -312,12 +309,34 @@ export const SelectionAutoCompleteInput = ({
   }, [setShowResults]);
 
   const isCommitted = innerValue === value;
+  const isEmpty = innerValue === '';
   useLayoutEffect(() => {
-    adjustHeight();
-  }, [isCommitted, adjustHeight]);
+    requestAnimationFrame(() => {
+      adjustHeight();
+    });
+  }, [isCommitted, adjustHeight, isEmpty]);
+
+  const onBlur = useCallback((ev: React.FocusEvent<HTMLDivElement>) => {
+    const current = ev.relatedTarget;
+    const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
+    if (
+      inputRef.current?.contains(current) ||
+      editorRef.current?.contains(current) ||
+      hintContainerRef.current?.contains(current) ||
+      hintsVisible
+    ) {
+      ev.preventDefault();
+      return;
+    }
+    focusRef.current = false;
+    cmInstance.current?.setOption('lineWrapping', false);
+    cmInstance.current?.setSize('100%', '20px');
+  }, []);
+
+  useResizeObserver(inputRef, adjustHeight);
 
   return (
-    <>
+    <div onBlur={onBlur}>
       <Popover
         content={
           <div ref={hintContainerRef} onKeyDown={handleKeyDown}>
@@ -353,16 +372,44 @@ export const SelectionAutoCompleteInput = ({
             <Icon name="op_selector" style={{marginTop: 2}} />
           </div>
           <div ref={editorRef} />
-          {innerValue !== value ? (
-            <div style={{alignSelf: 'flex-end'}}>
-              <EnterHint>Enter</EnterHint>
-            </div>
-          ) : null}
+          <Box
+            flex={{direction: 'row', alignItems: 'center', gap: 4}}
+            style={{alignSelf: 'flex-end'}}
+          >
+            {innerValue !== value ? (
+              <InputButton
+                outlined
+                onClick={() => {
+                  onSelectionChange(innerValue);
+                  setShowResults({current: false});
+                }}
+              >
+                Enter
+              </InputButton>
+            ) : null}
+            {innerValue !== '' && (
+              <InputButton
+                outlined
+                onClick={() => {
+                  cmInstance.current?.setValue('');
+                  onSelectionChange('');
+                  setShowResults({current: false});
+                }}
+              >
+                <Icon name="close" />
+              </InputButton>
+            )}
+          </Box>
         </InputDiv>
       </Popover>
-    </>
+    </div>
   );
 };
+
+const InputButton = styled(Button)`
+  margin: -2px 0px;
+  padding: 2px 8px;
+`;
 
 export const iconStyle = (img: string) => css`
   &:before {
@@ -379,15 +426,4 @@ export const iconStyle = (img: string) => css`
 
 export const InputDiv = styled.div`
   ${SelectionAutoCompleteInputCSS}
-`;
-
-const EnterHint = styled.div`
-  border-radius: 5px;
-  border: 1px solid ${Colors.borderDefault()};
-  background: ${Colors.backgroundDefault()};
-  font-weight: 500;
-  font-size: 12px;
-  color: ${Colors.textLight()};
-  padding: 2px 6px;
-  margin: -2px 0px;
 `;

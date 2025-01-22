@@ -135,11 +135,7 @@ export const RunsFeedBackfillPage = () => {
           <Box flex={{gap: 12, alignItems: 'center'}}>
             {isInProgress ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
             {backfill ? (
-              <BackfillActionsMenu
-                backfill={backfill}
-                refetch={queryResult.refetch}
-                canCancelRuns={backfill.status === BulkActionStatus.REQUESTED}
-              />
+              <BackfillActionsMenu backfill={backfill} refetch={queryResult.refetch} />
             ) : null}
           </Box>
         }
