@@ -53,7 +53,7 @@ Output:
 <example>
 Input: {{
     'hours_of_operation': '7am-7pm M-Th and Sat, 7am-8pm F, 9am-5pm Sun', 
-    'datetime': '2025-01-21 6:00:00,
+    'datetime': '2025-01-21 6:00:00',
 }}
 
 Output:
