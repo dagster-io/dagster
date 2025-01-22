@@ -71,3 +71,95 @@ def events(context: AssetExecutionContext) -> None:
 
     overwrite_data_in_datetime_range(start_datetime, end_datetime, output_data)
 ```
+
+## Launching backfills using the Python API (experimental)
+
+You can also launch backfills using the Python API from a schedule or sensor. To do this, you need to construct a `RunRequest` object that optionally specifies the partitions you want to backfill.
+
+```python file=/concepts/partitions_schedules_sensors/backfills/backfill_asset_from_asset_partitions.py
+from dagster import (
+    AssetIn,
+    AssetKey,
+    RunRequest,
+    StaticPartitionMapping,
+    StaticPartitionsDefinition,
+    asset,
+    schedule,
+)
+
+partitions_a = StaticPartitionsDefinition(["foo_a"])
+
+partitions_b = StaticPartitionsDefinition(["foo_b"])
+
+
+@asset(partitions_def=partitions_a)
+def asset_a():
+    pass
+
+
+@asset(
+    partitions_def=partitions_b,
+    ins={"asset_a": AssetIn(partition_mapping=StaticPartitionMapping({"foo_a": "foo_b"}))},
+)
+def asset_b(asset_a):
+    pass
+
+
+asset_selection = [
+    AssetKey("asset_a"),
+    AssetKey("asset_b"),
+]
+
+partition_keys = partitions_a.get_partition_keys()
+
+
+@schedule(target=asset_selection, cron_schedule="* * * * *")
+def launch_backfill_with_multiple_assets_selected(context):
+    return RunRequest.from_asset_partitions(
+        # asset_selection=asset_selection,  # implied by the target argument
+        partition_names=partition_keys,
+        tags={"custom_tag_key": "custom_tag_value"},
+        all_partitions=False,
+    )
+```
+
+Alternatively, you can specify the set of partitions for each asset key to backfill:
+
+```python file=/concepts/partitions_schedules_sensors/backfills/backfill_asset_from_partitions_by_assets.py
+from dagster import (
+    AssetKey,
+    BackfillPolicy,
+    DailyPartitionsDefinition,
+    DefaultSensorStatus,
+    RunRequest,
+    asset,
+    sensor,
+)
+
+daily_partitions_def = DailyPartitionsDefinition("2023-01-01")
+
+
+@asset(
+    partitions_def=daily_partitions_def,
+    backfill_policy=BackfillPolicy.single_run(),
+)
+def asset_with_single_run_backfill_policy():
+    pass
+
+
+partitions = ["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04", "2023-01-05"]
+
+
+@sensor(
+    target=AssetKey("asset_with_single_run_backfill_policy"),
+    minimum_interval_seconds=5,
+    default_status=DefaultSensorStatus.RUNNING,
+)
+def launch_backfill_with_single_run_backfill_policy(context):
+    yield RunRequest.from_partitions_by_assets(
+        partitions_by_assets={asset_with_single_run_backfill_policy.key: set(partitions)},
+        tags={},  # optional
+        title=None,  # optional
+        description=None,  # optional
+    )
+```
