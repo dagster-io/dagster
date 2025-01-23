@@ -60,9 +60,15 @@ def generate_component_lib_pyproject_toml(name: str, is_code_location: bool = Fa
 
         [project.entry-points]
         "dagster.components" = {{ {pkg_name} = "{pkg_name}.lib"}}
+
+        [tool.dg]
+        is_component_lib = true
+
     """)
     if is_code_location:
         return base + textwrap.dedent("""
+        is_code_location = true
+
         [tool.dagster]
         module_name = "{ pkg_name }.definitions"
         project_name = "{ pkg_name }"
