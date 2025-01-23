@@ -1,4 +1,4 @@
-# Changelog 
+# Changelog
 
 ## 1.9.10 (core) / 0.25.10 (libraries)
 
