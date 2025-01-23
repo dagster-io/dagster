@@ -10,7 +10,7 @@ sidebar_position: 10
 In this tutorial, you'll build a pipeline with Dagster that:
 
 - Takes an input question
-- Generates prompts to use with Anthropic
+- Generates prompts to use with [Anthropic](https://www.anthropic.com/)
 - Validates outputs of AI models and passes outputs across assets
 
 <details>
@@ -27,7 +27,7 @@ To follow the steps in this guide, you'll need:
 
 First, set up a new Dagster project.
 
-1. Within the Dagster repo, navigate to the project:
+1. Clone the the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
    cd examples/project_prompt_eng
