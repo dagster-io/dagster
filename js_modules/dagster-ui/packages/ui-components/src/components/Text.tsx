@@ -102,6 +102,7 @@ export const Code = styled(Text)`
 
 export const Mono = styled(Text)`
   font-family: ${FontFamily.monospace};
+  font-variant-ligatures: none;
   font-size: 14px;
   line-height: 20px;
   font-weight: 400;
