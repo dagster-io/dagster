@@ -2,12 +2,16 @@ import json
 from pathlib import Path
 
 from click.testing import CliRunner
+from dagster._core.test_utils import new_cwd
 from dagster_components.cli import cli
 from dagster_components.utils import ensure_dagster_components_tests_import
 
 ensure_dagster_components_tests_import()
 
-from dagster_components_tests.utils import temp_code_location_bar
+from dagster_components_tests.utils import (
+    create_code_location_from_components,
+    temp_code_location_bar,
+)
 
 
 # Test that the global --use-test-component-lib flag changes the registered components
@@ -81,6 +85,72 @@ def test_list_component_types_command():
         "scaffold_params_schema": pipes_script_params_schema,
         "component_params_schema": pipes_script_params_schema,
     }
+
+
+def test_list_local_components_types() -> None:
+    """Tests that the list CLI picks up on local components."""
+    runner = CliRunner()
+
+    with create_code_location_from_components(
+        "definitions/local_component_sample",
+        "definitions/other_local_component_sample",
+        "definitions/default_file",
+    ) as tmpdir:
+        with new_cwd(str(tmpdir)):
+            result = runner.invoke(
+                cli,
+                [
+                    "--builtin-component-lib",
+                    "dagster_components.test",
+                    "list",
+                    "local-component-types",
+                    "my_location/components/local_component_sample",
+                ],
+            )
+
+            assert result.exit_code == 0, str(result.stdout)
+
+            result = json.loads(result.output)
+            assert len(result) == 1
+            assert result[0]["directory"] == "my_location/components/local_component_sample"
+            assert result[0]["key"] == ".my_component"
+
+            # Add a second directory and local component
+            result = runner.invoke(
+                cli,
+                [
+                    "--builtin-component-lib",
+                    "dagster_components.test",
+                    "list",
+                    "local-component-types",
+                    "my_location/components/local_component_sample",
+                    "my_location/components/other_local_component_sample",
+                ],
+            )
+
+            assert result.exit_code == 0, str(result.stdout)
+
+            result = json.loads(result.output)
+            assert len(result) == 2
+
+            # Add another, non-local component directory, which no-ops
+            result = runner.invoke(
+                cli,
+                [
+                    "--builtin-component-lib",
+                    "dagster_components.test",
+                    "list",
+                    "local-component-types",
+                    "my_location/components/local_component_sample",
+                    "my_location/components/other_local_component_sample",
+                    "my_location/components/default_file",
+                ],
+            )
+
+            assert result.exit_code == 0, str(result.stdout)
+
+            result = json.loads(result.output)
+            assert len(result) == 2
 
 
 def test_scaffold_component_command():
