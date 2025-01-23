@@ -15,7 +15,7 @@ enabledBy:
 enables:
 tags: [dagster-supported, etl]
 sidebar_custom_props: 
-  logo: images/integrations/dbt.svg
+  logo: images/integrations/dbt/dbt.svg
 ---
 
 Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
