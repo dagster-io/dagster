@@ -7,7 +7,7 @@ sidebar_label: Kubernetes
 excerpt: Launch Kubernetes pods and execute external code directly from Dagster.
 date: 2024-08-30
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-k8s
-docslink: https://docs.dagster.io/concepts/dagster-pipes/kubernetes
+docslink: https://docs.dagster.io/guides/build/external-pipelines/kubernetes-pipeline
 partnerlink: https://kubernetes.io/
 categories:
   - Compute
@@ -32,8 +32,8 @@ pip install dagster-k8s
 
 ### Deploying to Kubernetes?
 
-- Deploying to Dagster+: Use with a Dagster+ Hybrid deployment, the Kubernetes agent executes Dagster jobs on a Kubernetes cluster. Checkout the [Dagster+ Kubernetes Agent](https://docs.dagster.io/dagster-plus/deployment/agents/kubernetes) guide for more information.
-- Deploying to Open Source: Visit the [Deploying Dagster to Kubernetes](https://docs.dagster.io/deployment/guides/kubernetes) guide for more information.
+- Deploying to Dagster+: Use with a Dagster+ Hybrid deployment, the Kubernetes agent executes Dagster jobs on a Kubernetes cluster. Checkout the [Dagster+ Kubernetes Agent](/dagster-plus/deployment-types/hybrid/kubernetes) guide for more information.
+- Deploying to Open Source: Visit the [Deploying Dagster to Kubernetes](/guides/deploy/deployment-options/kubernetes/) guide for more information.
 
 ### About Kubernetes
 
