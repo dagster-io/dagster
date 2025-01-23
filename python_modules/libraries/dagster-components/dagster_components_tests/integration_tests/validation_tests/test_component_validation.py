@@ -1,11 +1,11 @@
 import pytest
-from dagster_components.utils import ensure_dagster_components_tests_import
-from pydantic import ValidationError
-
-from dagster_components_tests.integration_tests.validation_tests.test_cases import (
+from dagster_components.test.test_cases import (
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
 )
+from dagster_components.utils import ensure_dagster_components_tests_import
+from pydantic import ValidationError
+
 from dagster_components_tests.integration_tests.validation_tests.utils import (
     load_test_component_defs_inject_component,
 )

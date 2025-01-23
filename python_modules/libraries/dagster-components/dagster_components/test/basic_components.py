@@ -3,10 +3,11 @@ in integration_tests/components/validation.
 """
 
 from dagster._core.definitions.definitions_class import Definitions
+from typing_extensions import Self
+
 from dagster_components import Component, component_type
 from dagster_components.core.component import ComponentLoadContext
 from dagster_components.core.schema.base import ComponentSchemaBaseModel
-from typing_extensions import Self
 
 
 class MyComponentSchema(ComponentSchemaBaseModel):

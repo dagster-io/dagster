@@ -4,13 +4,13 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from dagster_components.utils import ensure_dagster_components_tests_import
-from dagster_components_tests.integration_tests.validation_tests.test_cases import (
+from dagster_components.test.test_cases import (
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
 )
+from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_components_tests.utils import create_code_location_from_components
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dg_tests.utils import ProxyRunner
