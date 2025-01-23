@@ -9,8 +9,8 @@ from tqdm import tqdm
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.execution.job_backfill import PartitionBackfill
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord
+from dagster._core.execution.job_backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.schema import (
     BackfillTagsTable,
@@ -35,6 +35,7 @@ RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
 BULK_ACTION_TYPES = "bulk_action_types"
 RUN_BACKFILL_ID = "run_backfill_id"
 BACKFILL_JOB_NAME_AND_TAGS = "backfill_job_name_and_tags"
+BACKFILL_END_TIMESTAMP = "backfill_end_timestamp"
 
 PrintFn: TypeAlias = Callable[[Any], None]
 MigrationFn: TypeAlias = Callable[[RunStorage, Optional[PrintFn]], None]
@@ -46,6 +47,7 @@ REQUIRED_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
     BULK_ACTION_TYPES: lambda: migrate_bulk_actions,
     RUN_BACKFILL_ID: lambda: migrate_run_backfill_id,
     BACKFILL_JOB_NAME_AND_TAGS: lambda: migrate_backfill_job_name_and_tags,
+    BACKFILL_END_TIMESTAMP: lambda: migrate_backfill_end_timestamp,
 }
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
@@ -412,3 +414,33 @@ def add_backfill_job_name(run_storage: RunStorage, backfill_id: str, job_name: s
             )
             .where(BulkActionsTable.c.key == backfill_id)
         )
+
+
+def migrate_backfill_end_timestamp(storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+    """Utility method to add a backfill's end timestamp to the serialized backfill stored in the bulk actions table."""
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    for backfill in chunked_backfill_iterator(storage, print_fn):
+        if backfill.status == BulkActionStatus.REQUESTED:
+            # we don't want to mutate a backfill that is still in progress. Additionally, it won't
+            # have an end timestamp until it moves to a terminal state
+            continue
+        if backfill.backfill_end_timestamp is not None:
+            end_time = get_end_timestamp_for_backfill(storage, backfill)
+            updated_backfill = backfill.with_end_timestamp(end_time)
+            storage.update_backfill(updated_backfill)
+
+
+def get_end_timestamp_for_backfill(run_storage: RunStorage, backfill: PartitionBackfill) -> float:
+    filters = RunsFilter.for_backfill(backfill.backfill_id)
+    run_records = run_storage.get_run_records(filters=filters)
+    if len(run_records) == 0:
+        # backfill was moved to a terminal state before any runs were launched. We cannot
+        # reconstruct the time the backfill actually moved to a terminal state, so use the start
+        # time as an estimation
+        return backfill.backfill_timestamp
+    max_end_time = 0
+    for rr in run_records:
+        max_end_time = max(rr.end_time or 0, max_end_time)
+    return max_end_time
