@@ -257,8 +257,25 @@ def asset(
         .. code-block:: python
 
             @asset
+            def my_upstream_asset() -> int:
+                return 5
+
+            @asset
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
+
+            should_materialize = True
+
+            @asset(output_required=False)
+            def conditional_asset():
+                if should_materialize:
+                    yield Output(5)  # you must `yield`, not `return`, the result
+
+            # Will also only materialize if `should_materialize` is `True`
+            @asset
+            def downstream_asset(conditional_asset):
+                return conditional_asset + 1
+
     """
     compute_kind = check.opt_str_param(kwargs.get("compute_kind"), "compute_kind")
     required_resource_keys = check.opt_set_param(required_resource_keys, "required_resource_keys")
