@@ -1184,12 +1184,6 @@ class AssetDaemon(DagsterDaemon):
                         "Sensor has been manually stopped while submitted runs. No more runs will be submitted."
                     )
                     tick_context.set_user_interrupted(True)
-                    self._reset_cursor(
-                        instance=instance,
-                        prev_cursor=stored_cursor,
-                        remote_sensor=remote_sensor,
-                        tick=tick_context.tick,
-                    )
                     break
 
         evaluations_to_update = [
@@ -1224,37 +1218,3 @@ class AssetDaemon(DagsterDaemon):
                 return False
 
         return True
-
-    def _reset_cursor(
-        self,
-        instance: DagsterInstance,
-        prev_cursor: AssetDaemonCursor,
-        remote_sensor: Optional[RemoteSensor],
-        tick: InstigatorTick,
-    ):
-        reset_cursor = AssetDaemonCursor(
-            evaluation_id=tick.automation_condition_evaluation_id,
-            last_observe_request_timestamp_by_asset_key=prev_cursor.last_observe_request_timestamp_by_asset_key,
-            previous_evaluation_state=prev_cursor.previous_evaluation_state,
-            previous_condition_cursors=prev_cursor.previous_condition_cursors,
-        )
-        use_auto_materialize_sensors = instance.auto_materialize_use_sensors
-        if use_auto_materialize_sensors:
-            remote_sensor = check.not_none(remote_sensor)
-            state = instance.get_instigator_state(
-                remote_sensor.get_remote_origin_id(), remote_sensor.selector_id
-            )
-            instance.update_instigator_state(
-                check.not_none(state).with_data(
-                    SensorInstigatorData(
-                        last_tick_timestamp=tick.timestamp,
-                        min_interval=remote_sensor.min_interval_seconds,
-                        cursor=asset_daemon_cursor_to_instigator_serialized_cursor(reset_cursor),
-                        sensor_type=remote_sensor.sensor_type,
-                    )
-                )
-            )
-        else:
-            instance.daemon_cursor_storage.set_cursor_values(
-                {_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(reset_cursor)}
-            )

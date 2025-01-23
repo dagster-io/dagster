@@ -70,7 +70,6 @@ from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs im
     hour_partition_key,
     one_asset,
     one_upstream_observable_asset,
-    three_distinct_partitions_graphs,
     time_partitions_start_str,
     two_assets_in_sequence,
     two_distinct_partitions_graphs,
@@ -141,48 +140,13 @@ mid_iteration_terminate_scenarios = [
         .with_current_time_advanced(minutes=10)
         .start_asset_daemon()  # starts the daemon again for non-sensor tests
         .evaluate_tick()
-        .assert_requested_runs(
-            run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time))
-        )
+        .assert_requested_runs()  # doesn't resubmit the stopped runs
         .with_current_time_advanced(hours=1)
         .evaluate_tick()
         .assert_requested_runs(
             run_request(
                 asset_keys=["A", "B"], partition_key=hour_partition_key(state.current_time, delta=1)
             )
-        ),
-    ),
-    AssetDaemonScenario(
-        id="cursor_reset_correctly",
-        initial_spec=two_distinct_partitions_graphs.with_current_time(time_partitions_start_str)
-        .with_current_time_advanced(days=1, hours=1)
-        .with_all_eager(),
-        execution_fn=lambda state: state.with_runs(
-            *[
-                run_request(["A"], partition_key=hour_partition_key(state.current_time, delta=-i))
-                for i in range(25)
-            ],
-            run_request(["C"], partition_key=day_partition_key(state.current_time)),
-        )
-        .evaluate_tick()  # run a tick all the way through to assert that the cursor of the next stopped tick is set correctly
-        .assert_requested_runs(
-            run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
-            run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
-        )
-        .with_current_time_advanced(days=1)
-        .evaluate_tick(stop_mid_iteration=True)
-        .assert_requested_runs_for_stopped_iteration(
-            1,
-            run_request(["A", "B"], partition_key=hour_partition_key(state.current_time, delta=24)),
-            run_request(
-                asset_keys=["C", "D"], partition_key=day_partition_key(state.current_time, delta=1)
-            ),
-        )
-        .start_asset_daemon()  # starts the daemon again for non-sensor tests
-        .with_current_time_advanced(seconds=30)
-        .evaluate_tick()
-        .assert_requested_runs(  # next tick should request the remaining runs from the stopped tick since the cursor was reset
-            run_request(["A", "B"], partition_key=hour_partition_key(state.current_time, delta=24)),
         ),
     ),
 ]
@@ -1013,51 +977,3 @@ def test_custom_run_tags() -> None:
         runs = instance.get_runs()
         for run in runs:
             assert run.tags["foo"] == "bar"
-
-
-tick_setting_change_scenario = AssetDaemonScenario(
-    id="sensor_stops_emitting_runs_if_setting_changes",
-    initial_spec=three_distinct_partitions_graphs.with_current_time(time_partitions_start_str)
-    .with_current_time_advanced(days=1, hours=1)
-    .with_all_eager(),
-    execution_fn=lambda state: state.with_runs(
-        *[
-            run_request(["A"], partition_key=hour_partition_key(state.current_time, delta=-i))
-            for i in range(25)
-        ],
-        run_request(["C"], partition_key=day_partition_key(state.current_time)),
-        run_request(["E"], partition_key="1"),
-    )
-    .evaluate_tick(stop_mid_iteration=True)
-    .assert_requested_runs_for_stopped_iteration(
-        2,
-        run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
-        run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
-        run_request(asset_keys=["F"], partition_key="1"),
-    ),
-)
-
-
-@pytest.mark.parametrize("use_sensors", [True, False])
-def test_tick_interruption_setting_changes(use_sensors):
-    fn_called = False
-
-    def _set_tick_iterruption_setting_after_first_call():
-        """Mocks the situation where a user stops a sensor before the setting to check for tick termination is enabled."""
-        nonlocal fn_called
-        if fn_called:
-            return 1
-        else:
-            fn_called = True
-            return None
-
-    with get_daemon_instance(
-        extra_overrides={"auto_materialize": {"use_sensors": use_sensors}},
-        get_tick_termination_check_interval_fn=_set_tick_iterruption_setting_after_first_call,
-    ) as instance:
-        with _get_threadpool_executor(instance) as threadpool_executor:
-            tick_setting_change_scenario.evaluate_daemon(
-                instance,
-                sensor_name="default_automation_condition_sensor" if use_sensors else None,
-                threadpool_executor=threadpool_executor,
-            )
