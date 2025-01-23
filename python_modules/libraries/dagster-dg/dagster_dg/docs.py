@@ -5,10 +5,10 @@ from typing import Any, Union
 
 import markdown
 import yaml
-from dagster._utils.source_position import SourcePositionTree
-from dagster._utils.yaml_utils import parse_yaml_with_source_positions
 
 from dagster_dg.component import RemoteComponentType
+from dagster_dg.yaml_utils import parse_yaml_with_source_positions
+from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
 REF_BASE = "#/$defs/"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
