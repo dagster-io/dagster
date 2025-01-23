@@ -32,14 +32,6 @@ const config: Config = {
           //   from: '/:version(\d+.\d+.\d+)/:slug*',
           //   to: '/',
           // },
-          // {
-          //   from: '/dagster-cloud/:slug*',
-          //   to: '/dagster-plus/',
-          // },
-          // {
-          //   from: '/guides/dagster-pipes/:slug*',
-          //   to: '/guides/build/external-pipelines/',
-          // },
           {
             from: '/deploying/celery',
             to: '/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery',
@@ -1330,13 +1322,21 @@ const config: Config = {
             return [existingPath.replace('/api/python-api', '/_apidocs')];
           }
 
+          // {
+          //   from: '/dagster-cloud/:slug*',
+          //   to: '/dagster-plus/',
+          // },
           if (existingPath.includes('/dagster-cloud/')) {
-            return [existingPath.replace('/dagster-plus/', '/dagster-cloud/')];
+            return [existingPath.replace('/dagster-cloud/', '/dagster-plus/')];
           }
 
+          // {
+          //   from: '/guides/dagster-pipes/:slug*',
+          //   to: '/guides/build/external-pipelines/',
+          // },
           if (existingPath.includes('/guides/dagster-pipes/')) {
             return [
-              existingPath.replace('/guides/build/external-pipelines/', '/guides/dagster-pipes/'),
+              existingPath.replace('/guides/dagster-pipes/', '/guides/build/external-pipelines/'),
             ];
           }
 
