@@ -97,16 +97,6 @@ two_disconnected_graphs = ScenarioSpec(
     ]
 )
 
-three_disconnected_graphs = ScenarioSpec(
-    asset_specs=[
-        AssetSpec("A"),
-        AssetSpec("B", deps=["A"]),
-        AssetSpec("C"),
-        AssetSpec("D", deps=["C"]),
-        AssetSpec("E"),
-        AssetSpec("F", deps=["E"]),
-    ]
-)
 
 ##################
 # PARTITION STATES
@@ -142,13 +132,6 @@ two_distinct_partitions_graphs = two_disconnected_graphs.with_asset_properties(
     keys=["A", "B"], partitions_def=hourly_partitions_def
 ).with_asset_properties(keys=["C", "D"], partitions_def=daily_partitions_def)
 
-three_distinct_partitions_graphs = (
-    three_disconnected_graphs.with_asset_properties(
-        keys=["A", "B"], partitions_def=hourly_partitions_def
-    )
-    .with_asset_properties(keys=["C", "D"], partitions_def=daily_partitions_def)
-    .with_asset_properties(keys=["E", "F"], partitions_def=one_partitions_def)
-)
 
 ###########
 # UTILITIES
