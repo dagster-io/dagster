@@ -1424,6 +1424,11 @@ const config: Config = {
         //  position: 'right',
         //},
         {
+          label: 'Versions',
+          type: 'docsVersionDropdown',
+          position: 'left'
+        },
+        {
           label: 'Feedback',
           href: 'https://github.com/dagster-io/dagster/discussions/24816',
           position: 'right',
