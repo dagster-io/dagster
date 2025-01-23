@@ -1,15 +1,15 @@
 ---
-title: Modal
+title: Podcast transcription with Modal
 description: Learn how to build with Modal
 last_update:
    author: Dennis Hume
 sidebar_position: 10
+sidebar_custom_props:
+  logo: images/integrations/modal.svg
 ---
 
 :::note
-
 To see [video of this tutorial](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s)
-
 :::
 
 In this tutorial, you'll build a pipeline with Dagster that:

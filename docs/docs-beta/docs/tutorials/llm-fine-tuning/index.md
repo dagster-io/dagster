@@ -1,9 +1,11 @@
 ---
-title: LLM fine-tuning
+title: LLM fine-tuning with OpenAI
 description: Learn how to fine-tune an LLM
 last_update:
    author: Dennis Hume
 sidebar_position: 10
+sidebar_custom_props:
+  logo: images/integrations/openai.svg
 ---
 
 # Fine-tune an LLM
