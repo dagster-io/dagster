@@ -1,0 +1,1624 @@
+{
+  "redirects": [
+    {
+      "source": "/dagster-cloud/:path*",
+      "destination": "/dagster-plus/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster-pipes/:path*",
+      "destination": "/guides/build/external-pipelines/",
+      "permanent": false
+    },
+    {
+      "source": "/_apidocs/:path*",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/deploying/celery",
+      "destination": "/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery",
+      "permanent": false
+    },
+    {
+      "source": "/deploying/dask",
+      "destination": "/guides/deploy/execution/dask",
+      "permanent": false
+    },
+    {
+      "source": "/deploying/airflow",
+      "destination": "/integrations/libraries/airlift/",
+      "permanent": false
+    },
+    {
+      "source": "/troubleshooting/schedules",
+      "destination": "/guides/automate/schedules/troubleshooting-schedules",
+      "permanent": false
+    },
+    {
+      "source": "/troubleshooting/run-queue",
+      "destination": "/guides/deploy/execution/customizing-run-queue-priority",
+      "permanent": false
+    },
+    {
+      "source": "/examples/airflow_ingest",
+      "destination": "/integrations/libraries/airlift/",
+      "permanent": false
+    },
+    {
+      "source": "/examples/materializations",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/examples/conditional_execution",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/examples/config_mapping",
+      "destination": "/guides/operate/configuration/run-configuration",
+      "permanent": false
+    },
+    {
+      "source": "/examples/dbt_example",
+      "destination": "/integrations/libraries/dbt/",
+      "permanent": false
+    },
+    {
+      "source": "/examples/dep_dsl",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/examples/deploy_docker",
+      "destination": "/guides/deploy/deployment-options/docker",
+      "permanent": false
+    },
+    {
+      "source": "/examples/emr_pyspark",
+      "destination": "/integrations/libraries/spark",
+      "permanent": false
+    },
+    {
+      "source": "/examples/fan_in_pipeline",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/examples/ge_example",
+      "destination": "https://dagster.io/blog/ensuring-data-quality-with-dagster-and-great-expectations",
+      "permanent": false
+    },
+    {
+      "source": "/examples/hooks",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/examples/multi_location",
+      "destination": "/guides/deploy/code-locations/workspace-yaml",
+      "permanent": false
+    },
+    {
+      "source": "/examples/nothing",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/examples/pipeline_tags",
+      "destination": "/guides/build/assets/metadata-and-tags/tags",
+      "permanent": false
+    },
+    {
+      "source": "/examples/basic_pyspark",
+      "destination": "/integrations/libraries/spark",
+      "permanent": false
+    },
+    {
+      "source": "/examples/dynamic_graph",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/examples/memoized_development",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/custom-infra/celery",
+      "destination": "/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/custom-infra/dask",
+      "destination": "/guides/deploy/execution/dask",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/custom-infra/airflow",
+      "destination": "/guides/deploy/deployment-options/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/executors",
+      "destination": "/guides/operate/run-executors",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/pyspark",
+      "destination": "/integrations/libraries/spark",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/airflow",
+      "destination": "/integrations/libraries/airlift/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/intro-tutorial/single-op-job",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/intro-tutorial/single-solid-pipeline",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/intro-tutorial/connecting-ops",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/intro-tutorial/connecting-solids",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/intro-tutorial/testable",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/intro-tutorial/configuring-solids",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/advanced-tutorial/configuring-solids",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/advanced-tutorial/configuring-ops",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/advanced-tutorial/pipelines",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/advanced-tutorial/types",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/advanced-tutorial/resources",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/advanced-tutorial/repositories",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/advanced-tutorial/scheduling",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/advanced-tutorial/materializations",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/solids-pipelines/solids",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/solids-pipelines/pipelines",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/jobs-graphs",
+      "destination": "/guides/build/graphs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/solids-pipelines/pipeline-execution",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/solids-pipelines/composite-solids",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/solids-pipelines/solid-events",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/solids-pipelines/solid-hooks",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/modes-resources",
+      "destination": "/guides/build/external-resources/",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/ecs",
+      "destination": "/guides/deploy/deployment-options/aws",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt_cloud",
+      "destination": "/integrations/libraries/dbt/dbt-cloud",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/assets",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/ops-jobs/connecting-ops",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/ops-jobs/single-op-job",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/ops-jobs/testable",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/scheduling-assets",
+      "destination": "/guides/automate/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster/part-one",
+      "destination": "/integrations/libraries/dbt/transform-dbt",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster/part-two",
+      "destination": "/integrations/libraries/dbt/transform-dbt",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster/part-three",
+      "destination": "/integrations/libraries/dbt/transform-dbt",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster/part-four",
+      "destination": "/integrations/libraries/dbt/transform-dbt",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/non-argument-deps",
+      "destination": "/guides/build/assets/defining-assets-with-asset-dependencies",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial/managing-your-own-io",
+      "destination": "/guides/build/io-managers/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/asset-materializations",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/getting-started/releases",
+      "destination": "/about/releases",
+      "permanent": false
+    },
+    {
+      "source": "/getting-started/telemetry",
+      "destination": "/about/telemetry",
+      "permanent": false
+    },
+    {
+      "source": "/getting-started/hello-dagster",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/metadata-tags",
+      "destination": "/guides/build/assets/metadata-and-tags/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-cloud",
+      "destination": "/dagster-plus/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
+      "destination": "/dagster-plus/features/alerts/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
+      "destination": "/dagster-plus/deployment/management/dagster-cloud-cli/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airflow/migrating-to-dagster",
+      "destination": "/integrations/libraries/airlift/airflow-to-dagster/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airflow/reference",
+      "destination": "/integrations/libraries/airlift/",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/open-source",
+      "destination": "/guides/deploy/",
+      "permanent": false
+    },
+    {
+      "source": "/_apidocs/libraries/dagster-airflow",
+      "destination": "/api/python-api/libraries/dagster-airlift",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/great-expectations",
+      "destination": "/integrations/libraries/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/airbyte-ingestion-as-code",
+      "destination": "/integrations/libraries/airbyte/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/databricks",
+      "destination": "/integrations/libraries/databricks",
+      "permanent": false
+    },
+    {
+      "source": "/getting-started",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/getting-started/what-why-dagster",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/getting-started/install",
+      "destination": "/getting-started/installation",
+      "permanent": false
+    },
+    {
+      "source": "/getting-started/create-new-project",
+      "destination": "/guides/build/projects/creating-a-new-project",
+      "permanent": false
+    },
+    {
+      "source": "/getting-started/getting-help",
+      "destination": "/about/community",
+      "permanent": false
+    },
+    {
+      "source": "/tutorial",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/software-defined-assets",
+      "destination": "/guides/build/assets/defining-assets",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/graph-backed-assets",
+      "destination": "/guides/build/assets/defining-assets#graph-asset",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/multi-assets",
+      "destination": "/guides/build/assets/defining-assets#multi-asset",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/asset-jobs",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/asset-observations",
+      "destination": "/guides/build/assets/metadata-and-tags/asset-observations",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/asset-selection-syntax",
+      "destination": "/guides/build/assets/asset-selection-syntax",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/asset-checks",
+      "destination": "/guides/test/asset-checks",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/asset-checks/define-execute-asset-checks",
+      "destination": "/guides/test/asset-checks",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/asset-checks/subsetting-asset-checks",
+      "destination": "/guides/test/running-a-subset-of-asset-checks",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/asset-checks/checking-for-data-freshness",
+      "destination": "/guides/test/data-freshness-testing",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/assets/external-assets",
+      "destination": "/guides/build/assets/external-assets",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation",
+      "destination": "/guides/automate/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/schedules",
+      "destination": "/guides/automate/schedules/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/schedules/automating-assets-schedules-jobs",
+      "destination": "/guides/automate/schedules/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/schedules/automating-ops-schedules-jobs",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/schedules/examples",
+      "destination": "/guides/automate/schedules/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/schedules/partitioned-schedules",
+      "destination": "/guides/automate/schedules/constructing-schedules-for-partitioned-assets-and-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/schedules/customizing-executing-timezones",
+      "destination": "/guides/automate/schedules/customizing-execution-timezone",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/schedules/testing",
+      "destination": "/guides/automate/schedules/testing-schedules",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/schedules/troubleshooting",
+      "destination": "/guides/automate/schedules/troubleshooting-schedules",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/partitions-schedules-sensors/sensors",
+      "destination": "/guides/automate/sensors/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/declarative-automation",
+      "destination": "/guides/automate/declarative-automation",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/automation/declarative-automation/customizing-automation-conditions",
+      "destination": "/guides/automate/declarative-automation/customizing-automation-conditions",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/partitions-schedules-sensors/asset-sensors",
+      "destination": "/guides/automate/asset-sensors",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/partitions-schedules-sensors/partitions",
+      "destination": "/guides/build/partitions-and-backfills/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/partitions-schedules-sensors/partitioning-assets",
+      "destination": "/guides/build/partitions-and-backfills/partitioning-assets",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/partitions-schedules-sensors/partitioning-ops",
+      "destination": "/guides/build/partitions-and-backfills/partitioning-assets",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/partitions-schedules-sensors/testing-partitions",
+      "destination": "/guides/test/testing-partitioned-config-and-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/partitions-schedules-sensors/backfills",
+      "destination": "/guides/build/partitions-and-backfills/backfilling-data",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/resources",
+      "destination": "/guides/build/external-resources/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/configuration/config-schema",
+      "destination": "/guides/operate/configuration/run-configuration",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/configuration/advanced-config-types",
+      "destination": "/guides/operate/configuration/advanced-config-types",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/code-locations",
+      "destination": "/guides/deploy/code-locations/managing-code-locations-with-definitions",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/code-locations/workspace-files",
+      "destination": "/guides/deploy/code-locations/workspace-yaml",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/webserver/ui-user-settings",
+      "destination": "/guides/operate/ui-user-settings",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/logging",
+      "destination": "/guides/monitor/logging/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/logging/loggers",
+      "destination": "/guides/monitor/logging/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/logging/python-logging",
+      "destination": "/guides/monitor/logging/python-logging",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/testing",
+      "destination": "/guides/test/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/ops",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/op-events",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/op-hooks",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/op-retries",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/graphs",
+      "destination": "/guides/build/graphs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/nesting-graphs",
+      "destination": "/guides/build/graphs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/dynamic-graphs",
+      "destination": "/guides/build/graphs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/jobs",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/op-jobs",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/ops-jobs-graphs/job-execution",
+      "destination": "/guides/build/assets/asset-jobs",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/metadata-tags/asset-metadata",
+      "destination": "/guides/build/assets/metadata-and-tags/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/metadata-tags/asset-metadata/column-level-lineage",
+      "destination": "/guides/build/assets/metadata-and-tags/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/metadata-tags/kind-tags",
+      "destination": "/guides/build/assets/metadata-and-tags/kind-tags",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/metadata-tags/op-job-metadata",
+      "destination": "/guides/build/assets/metadata-and-tags/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/metadata-tags/tags",
+      "destination": "/guides/build/assets/metadata-and-tags/tags",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/subprocess",
+      "destination": "/guides/build/external-pipelines/using-dagster-pipes/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/subprocess/create-subprocess-asset",
+      "destination": "/guides/build/external-pipelines/using-dagster-pipes/create-subprocess-asset",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/subprocess/modify-external-code",
+      "destination": "/guides/build/external-pipelines/using-dagster-pipes/modify-external-code",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/subprocess/reference",
+      "destination": "/guides/build/external-pipelines/using-dagster-pipes/reference",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/aws-ecs",
+      "destination": "/guides/build/external-pipelines/aws-ecs-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/aws-glue",
+      "destination": "/guides/build/external-pipelines/aws-glue-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/aws-emr",
+      "destination": "/guides/build/external-pipelines/aws-emr-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/aws-emr-containers",
+      "destination": "guides/build/external-pipelines/aws-emr-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/aws-emr-serverless",
+      "destination": "/guides/build/external-pipelines/aws-emr-serverless-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/aws-lambda",
+      "destination": "/guides/build/external-pipelines/aws-lambda-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/kubernetes",
+      "destination": "/guides/build/external-pipelines/kubernetes-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/dagster-pipes-details-and-customization",
+      "destination": "/guides/build/external-pipelines/dagster-pipes-details-and-customization",
+      "permanent": false
+    },
+    {
+      "source": "/guides/migrations/from-step-launchers-to-pipes",
+      "destination": "/guides/build/external-pipelines/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/io-management/io-managers",
+      "destination": "guides/build/io-managers/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/io-management/unconnected-inputs",
+      "destination": "/guides/build/io-managers/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/types",
+      "destination": "/api/python-api/types",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/logging/custom-loggers",
+      "destination": "/guides/monitor/logging/custom-logging",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/webserver/graphql",
+      "destination": "/guides/operate/graphql/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/webserver/graphql-client",
+      "destination": "/guides/operate/graphql/graphql-client",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment",
+      "destination": "/dagster-plus/deployment/deployment-types/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/serverless",
+      "destination": "/dagster-plus/deployment/deployment-types/serverless/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/hybrid",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/amazon-ecs",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/existing-vpc",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/manual-provision",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/amazon-ecs/configuration-reference",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/configuration-reference",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/amazon-ecs/upgrading-cloudformation-template",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/upgrading-cloudformation",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/docker",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/docker/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/docker/configuring-running-docker-agent",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/docker/setup",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/docker/configuration-reference",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/docker/configuration",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/kubernetes",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/kubernetes/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/kubernetes/setup",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/kubernetes/configuration-reference",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/local",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/local",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/customizing-configuration",
+      "destination": "/dagster-plus/deployment/management/settings/customizing-agent-settings",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/deployment/agents/running-multiple-agents",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/multiple",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account",
+      "destination": "/dagster-plus/deployment/management/tokens/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/managing-user-agent-tokens",
+      "destination": "/dagster-plus/deployment/management/tokens/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/authentication",
+      "destination": "/dagster-plus/features/authentication-and-access-control/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/managing-users",
+      "destination": "/dagster-plus/features/authentication-and-access-control/rbac/users",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/managing-users/managing-teams",
+      "destination": "/dagster-plus/features/authentication-and-access-control/rbac/teams",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/managing-users/managing-user-roles-permissions",
+      "destination": "/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/authentication/utilizing-scim-provisioning",
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/authentication/setting-up-azure-ad-saml-sso",
+      "destination": "/dagster-plus/features/authentication-and-access-control/sso/azure-ad-sso",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/authentication/setting-up-google-workspace-saml-sso",
+      "destination": "/dagster-plus/features/authentication-and-access-control/sso/google-workspace-sso",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/authentication/okta/saml-sso",
+      "destination": "/dagster-plus/features/authentication-and-access-control/sso/okta-sso",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/authentication/okta/scim-provisioning",
+      "destination": "/dagster-plus/features/authentication-and-access-control/scim/enabling-scim-provisioning",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/authentication/setting-up-onelogin-saml-sso",
+      "destination": "/dagster-plus/features/authentication-and-access-control/sso/onelogin-sso",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/account/authentication/setting-up-pingone-saml-sso",
+      "destination": "/dagster-plus/features/authentication-and-access-control/sso/pingone-sso",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments",
+      "destination": "/dagster-plus/deployment/management/deployments/managing-deployments",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/alerts",
+      "destination": "/dagster-plus/features/alerts/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui",
+      "destination": "/dagster-plus/features/alerts/creating-alerts",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/alerts/managing-alerts-cli",
+      "destination": "/dagster-plus/features/alerts/creating-alerts",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/alerts/email",
+      "destination": "/dagster-plus/features/alerts/configuring-an-alert-notification-service",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/alerts/microsoft-teams",
+      "destination": "/dagster-plus/features/alerts/configuring-an-alert-notification-service",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/alerts/slack",
+      "destination": "/dagster-plus/features/alerts/configuring-an-alert-notification-service",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/alerts/pagerduty",
+      "destination": "/dagster-plus/features/alerts/configuring-an-alert-notification-service",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/environment-variables-and-secrets",
+      "destination": "/dagster-plus/deployment/management/environment-variables/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/setting-environment-variables-agents",
+      "destination": "/dagster-plus/deployment/management/environment-variables/agent-config",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/reserved-environment-variables",
+      "destination": "/dagster-plus/deployment/management/environment-variables/built-in",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/deployment-settings-reference",
+      "destination": "/dagster-plus/deployment/management/deployments/deployment-settings-reference",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/code-locations",
+      "destination": "/dagster-plus/deployment/code-locations/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/branch-deployments",
+      "destination": "/dagster-plus/features/ci-cd/branch-deployments/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github",
+      "destination": "/dagster-plus/features/ci-cd/branch-deployments/setting-up-branch-deployments",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab",
+      "destination": "/dagster-plus/features/ci-cd/branch-deployments/setting-up-branch-deployments",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments",
+      "destination": "/dagster-plus/features/ci-cd/branch-deployments/using-branch-deployments-with-the-cli",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/branch-deployments/change-tracking",
+      "destination": "/dagster-plus/features/ci-cd/branch-deployments/change-tracking",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/controlling-logs",
+      "destination": "/dagster-plus/deployment/management/managing-compute-logs-and-error-messages",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/best-practices",
+      "destination": "/dagster-plus/deployment/management/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/best-practices/managing-multiple-projects-and-teams",
+      "destination": "/dagster-plus/deployment/management/managing-multiple-projects-and-teams",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/insights",
+      "destination": "/dagster-plus/features/insights/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/insights/asset-metadata",
+      "destination": "/dagster-plus/features/insights/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/insights/integrating-external-metrics",
+      "destination": "/dagster-plus/features/insights/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/insights/integrating-bigquery",
+      "destination": "/dagster-plus/features/insights/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/insights/integrating-bigquery-and-dbt",
+      "destination": "/dagster-plus/features/insights/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/insights/integrating-snowflake",
+      "destination": "/dagster-plus/features/insights/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/insights/integrating-snowflake-and-dbt",
+      "destination": "/dagster-plus/features/insights/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/insights/exporting-insights-metrics",
+      "destination": "/dagster-plus/features/insights/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/dagster-plus-cli",
+      "destination": "/dagster-plus/deployment/management/dagster-cloud-cli/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/references/ci-cd-file-reference",
+      "destination": "/dagster-plus/features/ci-cd/ci-cd-file-reference",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/managing-deployments/dagster-cloud-yaml",
+      "destination": "/dagster-plus/deployment/code-locations/dagster-cloud-yaml",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-plus/references/limits",
+      "destination": "/dagster-plus/deployment/management/rate-limits",
+      "permanent": false
+    },
+    {
+      "source": "/deployment",
+      "destination": "/guides/deploy/",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/overview",
+      "destination": "/guides/deploy/oss-deployment-architecture",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/concepts",
+      "destination": "/guides/deploy/",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/dagster-instance",
+      "destination": "/guides/deploy/dagster-instance-configuration",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/dagster-daemon",
+      "destination": "/guides/deploy/execution/dagster-daemon",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/run-launcher",
+      "destination": "/guides/deploy/execution/run-launchers",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/executors",
+      "destination": "/guides/operate/run-executors",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/run-coordinator",
+      "destination": "/guides/deploy/execution/run-coordinators",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/run-monitoring",
+      "destination": "/guides/deploy/execution/run-monitoring",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/run-retries",
+      "destination": "/guides/deploy/execution/run-retries",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides",
+      "destination": "/guides/deploy/deployment-options/",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/service",
+      "destination": "/guides/deploy/deployment-options/deploying-dagster-as-a-service",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/kubernetes",
+      "destination": "/guides/deploy/deployment-options/kubernetes/",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/kubernetes/deploying-with-helm",
+      "destination": "/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/kubernetes/deploying-with-helm-advanced",
+      "destination": "/guides/deploy/deployment-options/kubernetes/",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/kubernetes/customizing-your-deployment",
+      "destination": "/guides/deploy/deployment-options/kubernetes/customizing-your-deployment",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/kubernetes/how-to-migrate-your-instance",
+      "destination": "/guides/deploy/deployment-options/kubernetes/migrating-while-upgrading",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/docker",
+      "destination": "/guides/deploy/deployment-options/docker",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/aws",
+      "destination": "/guides/deploy/deployment-options/aws",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/gcp",
+      "destination": "/guides/deploy/deployment-options/gcp",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/celery",
+      "destination": "/guides/deploy/execution/celery",
+      "permanent": false
+    },
+    {
+      "source": "/deployment/guides/dask",
+      "destination": "/guides/deploy/execution/dask",
+      "permanent": false
+    },
+    {
+      "source": "/guides/understanding-dagster-project-files",
+      "destination": "/guides/build/projects/dagster-project-file-reference",
+      "permanent": false
+    },
+    {
+      "source": "/guides/running-dagster-locally",
+      "destination": "/guides/deploy/deployment-options/running-dagster-locally",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/using-environment-variables-and-secrets",
+      "destination": "/guides/deploy/using-environment-variables-and-secrets",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/transitioning-data-pipelines-from-development-to-production",
+      "destination": "/guides/deploy/dev-to-prod",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/branch_deployments",
+      "destination": "/dagster-plus/features/ci-cd/branch-deployments/testing",
+      "permanent": false
+    },
+    {
+      "source": "/guides/integration/approaches-to-writing-integrations",
+      "destination": "/integrations/guides/integration-approaches",
+      "permanent": false
+    },
+    {
+      "source": "/guides/integrations/writing-a-multi-asset-decorator-integration",
+      "destination": "/integrations/guides/multi-asset-integration",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/how-assets-relate-to-ops-and-graphs",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/enriching-with-software-defined-assets",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/software-defined-assets",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/testing-assets",
+      "destination": "/guides/test/unit-testing-assets-and-ops",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/migrating-to-pythonic-resources-and-config",
+      "destination": "/guides/operate/configuration/run-configuration",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/intro-to-ops-jobs",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/intro-to-ops-jobs/single-op-job",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/intro-to-ops-jobs/testable",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/intro-to-ops-jobs/connecting-ops",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/0.15.7/guides/dagster/graph_job/op",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/re-execution",
+      "destination": "/guides/build/ops",
+      "permanent": false
+    },
+    {
+      "source": "/migration",
+      "destination": "/guides/migrate/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/migrations",
+      "destination": "/guides/migrate/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airflow/from-airflow-to-dagster",
+      "destination": "/integrations/libraries/airlift/airflow-to-dagster/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/migrations/observe-your-airflow-pipelines-with-dagster",
+      "destination": "/integrations/libraries/airlift/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/recommended-project-structure",
+      "destination": "/guides/build/projects/structuring-your-dagster-project",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/ml-pipeline",
+      "destination": "/guides/build/ml-pipelines/managing-ml",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/managing-ml",
+      "destination": "/guides/build/ml-pipelines/managing-ml",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/example_project",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/experimental-features",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/limiting-concurrency-in-data-pipelines",
+      "destination": "/guides/operate/managing-concurrency",
+      "permanent": false
+    },
+    {
+      "source": "/guides/customizing-run-queue-priority",
+      "destination": "/guides/deploy/execution/customizing-run-queue-priority",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/dagster_type_factories",
+      "destination": "/guides/build/assets/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/asset-versioning-and-caching",
+      "destination": "/guides/build/assets/asset-versioning-and-caching",
+      "permanent": false
+    },
+    {
+      "source": "/guides/dagster/code-references",
+      "destination": "/guides/build/assets/metadata-and-tags/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airbyte",
+      "destination": "/integrations/libraries/airbyte/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airbyte-cloud",
+      "destination": "/integrations/libraries/airbyte/airbyte-cloud",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airflow",
+      "destination": "/integrations/libraries/airlift/",
+      "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes/databricks",
+      "destination": "/guides/build/external-pipelines/databricks-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt",
+      "destination": "/integrations/libraries/dbt/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/quickstart",
+      "destination": "/integrations/libraries/dbt/transform-dbt",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster",
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster/set-up-dbt-project",
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster/load-dbt-models",
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster/upstream-assets",
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster/downstream-assets",
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster/downstream-assets",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster-plus",
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster-plus/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster-plus/serverless",
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster-plus/serverless",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/using-dbt-with-dagster-plus/hybrid",
+      "destination": "/integrations/libraries/dbt/using-dbt-with-dagster-plus/hybrid",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt/reference",
+      "destination": "/integrations/libraries/dbt/reference",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dbt-cloud",
+      "destination": "/integrations/libraries/dbt/dbt-cloud",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/deltalake",
+      "destination": "/integrations/libraries/deltalake/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/deltalake/using-deltalake-with-dagster",
+      "destination": "/integrations/libraries/deltalake/using-deltalake-with-dagster",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/deltalake/reference",
+      "destination": "/integrations/libraries/deltalake/reference",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/duckdb",
+      "destination": "/integrations/libraries/duckdb/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/duckdb/using-duckdb-with-dagster",
+      "destination": "/integrations/libraries/duckdb/using-duckdb-with-dagster",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/duckdb/reference",
+      "destination": "/integrations/libraries/duckdb/reference",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/embedded-elt",
+      "destination": "/integrations/libraries/embedded-elt",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/embedded-elt/dlt",
+      "destination": "/integrations/libraries/dlt/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/embedded-elt/sling",
+      "destination": "/integrations/libraries/sling",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/fivetran",
+      "destination": "/integrations/libraries/fivetran",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/bigquery",
+      "destination": "/integrations/libraries/gcp/bigquery/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/bigquery/using-bigquery-with-dagster",
+      "destination": "/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/bigquery/reference",
+      "destination": "/integrations/libraries/gcp/bigquery/reference",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dagstermill",
+      "destination": "/integrations/libraries/jupyter/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dagstermill/using-notebooks-with-dagster",
+      "destination": "/integrations/libraries/jupyter/using-notebooks-with-dagster",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/dagstermill/reference",
+      "destination": "/integrations/libraries/jupyter/reference",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/looker",
+      "destination": "/integrations/libraries/looker/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/openai",
+      "destination": "/integrations/libraries/openai/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/pandas",
+      "destination": "/integrations/libraries/pandas/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/pandera",
+      "destination": "/integrations/libraries/pandera/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/powerbi",
+      "destination": "/integrations/libraries/powerbi/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/sigma",
+      "destination": "/integrations/libraries/sigma/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/spark",
+      "destination": "/integrations/libraries/spark",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/snowflake",
+      "destination": "/integrations/libraries/snowflake/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/snowflake/using-snowflake-with-dagster",
+      "destination": "/integrations/libraries/snowflake/using-snowflake-with-dagster",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/snowflake/using-snowflake-with-dagster-io-managers",
+      "destination": "/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/snowflake/reference",
+      "destination": "/integrations/libraries/snowflake/reference",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/tableau",
+      "destination": "/integrations/libraries/tableau",
+      "permanent": false
+    }
+  ]
+}
