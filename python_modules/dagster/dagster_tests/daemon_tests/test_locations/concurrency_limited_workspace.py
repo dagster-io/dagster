@@ -3,18 +3,18 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 
 
-@asset(pool="foo", key_prefix=["prefix"])
+@asset(op_tags={GLOBAL_CONCURRENCY_TAG: "foo"}, key_prefix=["prefix"])
 def foo_limited_asset():
     return 1
 
 
-@asset(pool="bar", key_prefix=["prefix"])
+@asset(op_tags={GLOBAL_CONCURRENCY_TAG: "bar"}, key_prefix=["prefix"])
 def bar_limited_asset():
     return 1
 
 
 @asset(
-    pool="baz",
+    op_tags={GLOBAL_CONCURRENCY_TAG: "baz"},
     key_prefix=["prefix"],
     ins={"foo_limited_asset": AssetIn(key_prefix="prefix")},
 )
@@ -22,17 +22,12 @@ def baz_limited_asset_depends_on_foo(foo_limited_asset):
     return 1
 
 
-@asset(pool="baz", key_prefix=["prefix"])
-def baz_limited_asset():
-    return 1
-
-
 concurrency_limited_asset_job = define_asset_job(
     "concurrency_limited_asset_job",
-    [foo_limited_asset, bar_limited_asset, baz_limited_asset, baz_limited_asset_depends_on_foo],
+    [foo_limited_asset, bar_limited_asset, baz_limited_asset_depends_on_foo],
 ).resolve(
     asset_graph=AssetGraph.from_assets(
-        [foo_limited_asset, bar_limited_asset, baz_limited_asset_depends_on_foo, baz_limited_asset]
+        [foo_limited_asset, bar_limited_asset, baz_limited_asset_depends_on_foo]
     )
 )
 

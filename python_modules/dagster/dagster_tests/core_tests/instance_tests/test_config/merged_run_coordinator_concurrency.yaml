@@ -1,7 +1,7 @@
 concurrency:
   pools:
-    granularity: run
-    op_granularity_run_buffer: 1
+    granularity: op
+    op_run_buffer: 1
   runs:
     max_concurrent_runs: 5
     tag_concurrency_limits:

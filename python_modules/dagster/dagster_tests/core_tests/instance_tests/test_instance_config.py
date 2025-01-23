@@ -2,7 +2,6 @@ import pytest
 from dagster import file_relative_path
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance.config import dagster_instance_config
-from dagster._core.run_coordinator.queued_run_coordinator import PoolGranularity
 from dagster._core.test_utils import environ, instance_for_test
 
 
@@ -38,7 +37,6 @@ def test_concurrency_config(config_filename, caplog):
             assert run_queue_config.max_user_code_failure_retries == 3
             assert run_queue_config.user_code_failure_retry_delay == 10
             assert run_queue_config.op_concurrency_slot_buffer == 1
-            assert run_queue_config.pool_granularity == PoolGranularity.RUN
 
 
 @pytest.mark.parametrize(
