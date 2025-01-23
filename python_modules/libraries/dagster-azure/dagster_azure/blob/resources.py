@@ -1,59 +1,61 @@
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Dict, Optional, Generator, Union, Literal
+from typing import Any, Literal, Union
+
+from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
+from dagster import Config, ConfigurableResource
 from pydantic import Field
 
-from dagster import ConfigurableResource
-from dagster import Config
-from dagster._utils.backoff import backoff
-from dagster._utils.cached_method import cached_method
-
-from azure.storage.blob import BlobServiceClient
-from azure.identity import DefaultAzureCredential
 
 class AzureBlobStorageSASTokenCredential(Config):
-    """Authentication using an azure SAS token"""
+    """Authentication using an azure SAS token."""
+
     credential_type: Literal["sas"] = "sas"
-    
+
     token: str
     "an azure SAS token"
 
+
 class AzureBlobStorageKeyCredential(Config):
-    """Authentication using an azure shared-key"""
+    """Authentication using an azure shared-key."""
 
     credential_type: Literal["key"] = "key"
     key: str
     "an azure shared-key"
 
+
 class AzureBlobStorageDefaultCredential(Config):
-    """Authenticate using azure.identity.DefaultAzureCredential"""
+    """Authenticate using azure.identity.DefaultAzureCredential."""
 
     credential_type: Literal["default_azure_credential"] = "default_azure_credential"
-    
+
     kwargs: dict[str, Any] = {}
     "additional arguments to be passed to azure.identity.DefaultAzureCredential."
-    " e.g. AzureBlobStorageDefaultCredential(kwargs={\"exclude_environment_credential\": True})"
+    ' e.g. AzureBlobStorageDefaultCredential(kwargs={"exclude_environment_credential": True})'
+
 
 class AzureBlobStorageAnonymousCredential(Config):
-    """For anonymous access to azure blob storage"""
+    """For anonymous access to azure blob storage."""
 
     credential_type: Literal["anonymous"] = "anonymous"
-    
+
 
 class AzureBlobStorageResource(ConfigurableResource):
     """Resource for interacting with Azure Blob Storage.
 
     Examples:
         .. code-block:: python
-            
+
             import os
             from dagster import Definitions, asset, EnvVar
             from dagster_azure.blob import (
-                AzureBlobStorageResource, 
-                AzureBlobStorageKeyCredential, 
+                AzureBlobStorageResource,
+                AzureBlobStorageKeyCredential,
                 AzureBlobStorageDefaultCredential
             )
 
-            @asset 
+            @asset
             def my_table(azure_blob_storage: AzureBlobStorageResource):
                 with azure_blob_storage.get_client() as blob_storage_client:
                     response = blob_storage_client.list_containers()
@@ -80,11 +82,11 @@ class AzureBlobStorageResource(ConfigurableResource):
     )
 
     credential: Union[
-            AzureBlobStorageKeyCredential, 
-            AzureBlobStorageSASTokenCredential, 
-            AzureBlobStorageDefaultCredential,
-            AzureBlobStorageAnonymousCredential
-        ] = Field(
+        AzureBlobStorageKeyCredential,
+        AzureBlobStorageSASTokenCredential,
+        AzureBlobStorageDefaultCredential,
+        AzureBlobStorageAnonymousCredential,
+    ] = Field(
         discriminator="credential_type",
         description=(
             "The credential used to authenticate to the storage account. One of:"
@@ -98,7 +100,7 @@ class AzureBlobStorageResource(ConfigurableResource):
     @classmethod
     def _is_dagster_maintained(cls):
         return True
-    
+
     def _raw_credential(self) -> Any:
         if self.credential.credential_type == "sas":
             return self.credential.token
@@ -108,17 +110,15 @@ class AzureBlobStorageResource(ConfigurableResource):
             return DefaultAzureCredential(**self.credential.kwargs)
         if self.credential.credential_type == "anonymous":
             return None
-        raise Exception("Invalid credential type - use one of AzureBlobStorageKeyCredential, "
-                        " AzureBlobStorageSASTokenCredential, AzureBlobStorageDefaultCredential,"
-                        " AzureBlobStorageAnonymousCredential")
-
+        raise Exception(
+            "Invalid credential type - use one of AzureBlobStorageKeyCredential, "
+            " AzureBlobStorageSASTokenCredential, AzureBlobStorageDefaultCredential,"
+            " AzureBlobStorageAnonymousCredential"
+        )
 
     @contextmanager
     def get_client(self) -> Generator[BlobServiceClient, None, None]:
-        service = BlobServiceClient(
-            account_url=self.account_url,
-            credential=self._raw_credential()
-        )
+        service = BlobServiceClient(account_url=self.account_url, credential=self._raw_credential())
 
         try:
             yield service
