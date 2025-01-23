@@ -16,7 +16,7 @@ Now that the data is in R2, as Modal expects, we can invoke the Modal applicatio
 
 Using pipes, Modal will emit events back to Dagster so Dagster can monitor and wait for the Modal application to finish running. Dagster will then continue the orchestration of our assets and move on to the next step after the transcribed text files are uploaded to R2.
 
-The next asset will take those new files and summarize them with OpenAI. After a summary has been created, we can use <PyObject section="assets" module="dagster" object="MaterializeResult /> to record the summary text and the associated R2 key within the Dagster Catalog:
+The next asset will take those new files and summarize them with OpenAI. After a summary has been created, we can use <PyObject section="assets" module="dagster" object="MaterializeResult" /> to record the summary text and the associated R2 key within the Dagster Catalog:
 
 <CodeExample path="project_dagster_modal_pipes/project_dagster_modal_pipes/pipeline_factory.py" language="python" lineStart="93" lineEnd="120"/>
 
