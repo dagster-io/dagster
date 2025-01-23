@@ -4,8 +4,8 @@
 
 ### New
 
-- Implemented the `AutomationCondition.replace()` function to improve ergonomics of updating sub-conditions.
-- Implemented the `allow()` and `ignore()` methods on boolean Declarative Automation conditions, which will propagate the asset selection down to any contained dep sub-conditions.
+- Added a new `.replace()` method to `AutomationCondition`, which allows sub-conditions to be modified in-place.
+- Added new `.allow()` and `.ignore()` methods to the boolean `AutomationCondition` operators, which allow asset selections to be propagated to sub-conditions such as `AutomationCondition.any_deps_match()` and `AutomationCondition.all_deps_match()`.
 - When using the `DAGSTER_REDACT_USER_CODE_ERRORS` environment variable to mask user code errors, the unmasked log lines are now written using a `dagster.masked` Python logger instead of being written to stderr, allowing the format of those log lines to be customized.
 - Added a `get_partition_key()` helper method that can be used on hourly/daily/weekly/monthly partitioned assets to get the partition key for any given partition definition. (Thanks [@Gw1p](https://github.com/Gw1p)!)
 - [dagster-aws] Added a `task_definition_prefix` argument to `EcsRunLauncher`, allowing the name of the task definition families for launched runs to be customized. Previously, the task definition families always started with `run`.
@@ -16,7 +16,7 @@
 
 ### Bugfixes
 
-- Fixed an issue wherein Declarative Automation created (invalid) backfills for observable source assets.
+- Fixed a bug where setting an `AutomationCondition` on an observable source asset could sometimes result in invalid backfills being launched.
 - Using `AndAutomationCondition.without()` no longer removes the condition's label.
 - [ui] Sensors targeting asset checks now list the asset checks when you click to view their targets.
 - [dagster-aws] Fixed the execution of EMR Serverless jobs using `PipesEMRServerlessClient` failing if a job is in the `QUEUED` state.
