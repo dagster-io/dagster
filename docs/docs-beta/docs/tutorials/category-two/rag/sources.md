@@ -6,13 +6,13 @@ last_update:
 sidebar_position: 20
 ---
 
-We are going to build an AI pipeline that can answer questions specific to Dagster. In order to do this we need to enhance an AI model. One way to do this is by adding context to an existing model using Retrieval-Augmented Generation (RAG). A RAG system combines a retrieval module, which fetches relevant external information, with a generation module to produce more informed and contextually accurate outputs. This approach improves the AI's ability to answer queries or generate content by grounding responses in retrieved data.
+We are going to build an AI pipeline that can answer questions specific to Dagster. In order to do this, we need to enhance an AI model. One way to do this is by adding context to an existing model using Retrieval-Augmented Generation (RAG). A RAG system combines a retrieval module, which fetches relevant external information, with a generation module to produce more informed and contextually accurate outputs. This approach improves the AI's ability to answer queries or generate content by grounding responses in retrieved data.
 
-To begin we need our specific context. Our RAG system we will combine two different data sources about Dagster, Github and the Dagster Documentation site.
+To begin we need our specific context. Our RAG system will combine two different data sources about Dagster, GitHub issues and discussions and the Dagster Documentation site.
 
-## Github
+## GitHub
 
-To retrieve data from Github, we are going to borrow code from the [dagster-open-platform](https://github.com/dagster-io/dagster-open-platform). The open platform repository shows how we use Dagster internally and Github is one of the data sources we use and we wrote a resource to manage pulling that data. The `GithubResource` allows us to query Github using GraphQL. We are most interested in issues and discussions so our resource will have two methods to retrieve that information over a given date range:
+To retrieve data from GitHub, we are going to borrow code from the [dagster-open-platform](https://github.com/dagster-io/dagster-open-platform). The open platform repository shows how we use Dagster internally, and GitHub is one of the data sources we use, and we wrote a resource to manage pulling that data. The [`GithubResource`](/api/python-api/libraries/dagster-github#resources) allows us to query GitHub using GraphQL. We are most interested in issues and discussions, so our resource will have two methods to retrieve that information over a given date range:
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/resources/github.py" language="python" lineStart="13" lineEnd="43"/>
 
@@ -24,19 +24,19 @@ We now have everything we need for the `GithubResource` so we can initialize it 
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/resources/github.py" language="python" lineStart="212" lineEnd="213"/>
 
-## Web Scraping
+## Web scraping
 
-To scrape the Dagster website we will create a separate resource. Since the Dagster site does not have an API, we will have to scrape the data from the pages themselves. The `SitemapScraper` resource will have two functions, to parse the site map to get the individual urls and the ability to scrape page content. The Python framework [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) can assist in scraping the contents of a page.
+To scrape the Dagster documentation website, we will create a separate resource. Since the Dagster site does not have an API, we will have to scrape the data from the pages themselves. The `SitemapScraper` resource will have two functions, to parse the site map to get the individual urls and the ability to scrape page content. The Python framework [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) can assist in scraping the contents of a page.
 
-The first step will be taking in the sitemap url and parse the XML into a list of all the individual pages:
+The first step will be taking in the sitemap URL and parsing the XML into a list of all the individual pages:
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/resources/scraper.py" language="python" lineStart="12" lineEnd="21"/>
 
-The next function uses `BeautifulSoup` to scrape the primary content of individual pages. And like the Github resource, we will use the data as a Langchain `Document`.
+The next function uses `BeautifulSoup` to scrape the primary content of individual pages. As with the GitHub resource, we will use the data as a Langchain `Document`.
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/resources/scraper.py" language="python" lineStart="22" lineEnd="51"/>
 
-Finally we can initialize the resource:
+Finally, we can initialize the resource:
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/resources/scraper.py" language="python" lineStart="53" lineEnd="54"/>
 

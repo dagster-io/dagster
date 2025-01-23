@@ -14,7 +14,7 @@ To see [video of this tutorial](https://www.youtube.com/watch?v=MHwwKfCXwDA)
 
 In this tutorial, you'll build a pipeline with Dagster that:
 
-- Loads data from Github and Documentation site
+- Loads data from GitHub and Documentation site
 - Translates the data into embeddings and tags metadata
 - Stores the data in a vector database
 - Retrieves relevant information to answer ad hoc questions
@@ -33,7 +33,7 @@ To follow the steps in this guide, you'll need:
 
 First, set up a new Dagster project.
 
-1. Clone the the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
+1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
    cd examples/project_ask_ai_dagster
@@ -66,7 +66,6 @@ First, set up a new Dagster project.
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-followed by a bash code snippet for 
 
 ```bash
 dagster dev
