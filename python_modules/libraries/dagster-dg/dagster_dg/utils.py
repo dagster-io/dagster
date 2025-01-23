@@ -214,10 +214,17 @@ def ensure_dagster_dg_tests_import() -> None:
     sys.path.append(dagster_dg_package_root.as_posix())
 
 
-def hash_directory_metadata(hasher: Hash, path: Union[str, Path]) -> None:
+def hash_directory_metadata(
+    hasher: Hash,
+    path: Union[str, Path],
+    includes: Optional[Sequence[str]],
+    excludes: Sequence[str],
+) -> None:
     for root, dirs, files in os.walk(path):
         for name in dirs + files:
-            if any(fnmatch(name, pattern) for pattern in _DEFAULT_EXCLUDES):
+            if any(fnmatch(name, pattern) for pattern in excludes):
+                continue
+            if includes and not any(fnmatch(name, pattern) for pattern in includes):
                 continue
             filepath = os.path.join(root, name)
             hash_file_metadata(hasher, filepath)

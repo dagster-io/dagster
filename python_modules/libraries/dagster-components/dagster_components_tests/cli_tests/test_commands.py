@@ -112,8 +112,10 @@ def test_list_local_components_types() -> None:
 
             result = json.loads(result.output)
             assert len(result) == 1
-            assert result[0]["directory"] == "my_location/components/local_component_sample"
-            assert result[0]["key"] == ".my_component"
+            assert set(result.keys()) == {"my_location/components/local_component_sample"}
+            assert set(result["my_location/components/local_component_sample"].keys()) == {
+                ".my_component"
+            }
 
             # Add a second directory and local component
             result = runner.invoke(

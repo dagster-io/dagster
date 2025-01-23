@@ -50,12 +50,14 @@ BASIC_MISSING_VALUE = ComponentValidationTestCase(
     ),
 )
 
+BASIC_VALID_VALUE = ComponentValidationTestCase(
+    component_path="validation/basic_component_success",
+    component_type_filepath=Path(__file__).parent / "basic_components.py",
+    should_error=False,
+)
+
 COMPONENT_VALIDATION_TEST_CASES = [
-    ComponentValidationTestCase(
-        component_path="validation/basic_component_success",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
-        should_error=False,
-    ),
+    BASIC_VALID_VALUE,
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
     ComponentValidationTestCase(

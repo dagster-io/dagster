@@ -1,5 +1,6 @@
 import contextlib
 import os
+import re
 import shutil
 import tempfile
 from collections.abc import Iterator
@@ -11,6 +12,7 @@ import pytest
 from dagster_components.test.test_cases import (
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
+    BASIC_VALID_VALUE,
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
 )
@@ -171,3 +173,61 @@ def test_validation_cli_multiple_components_filter() -> None:
             # We exclude the invalid value test case
             with pytest.raises(AssertionError):
                 BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
+
+
+def test_validation_cli_local_component_cache() -> None:
+    """Tests that the check CLI properly caches local components to avoid re-loading them."""
+    with (
+        ProxyRunner.test(verbose=True) as runner,
+        create_code_location_from_components(
+            runner,
+            BASIC_VALID_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+        ) as code_location_dir,
+    ):
+        with new_cwd(str(code_location_dir)):
+            result = runner.invoke("component", "check")
+            assert re.search(
+                r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
+            )
+            assert re.search(
+                r"CACHE \[write\].*basic_component_invalid_value.*local_component_registry",
+                result.stdout,
+            )
+
+            # Local components should all be cached
+            result = runner.invoke("component", "check")
+            assert not re.search(
+                r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
+            )
+            assert not re.search(
+                r"CACHE \[write\].*basic_component_invalid_value.*local_component_registry",
+                result.stdout,
+            )
+
+            # Update local component type, to invalidate cache
+            contents = (
+                code_location_dir
+                / "my_location"
+                / "components"
+                / "basic_component_success"
+                / "__init__.py"
+            ).read_text()
+            (
+                code_location_dir
+                / "my_location"
+                / "components"
+                / "basic_component_success"
+                / "__init__.py"
+            ).write_text(contents + "\n")
+
+            # basic_component_success local component is now be invalidated and needs to be re-cached, the other one should still be cached
+            result = runner.invoke("component", "check")
+            assert re.search(
+                r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
+            )
+            assert not re.search(
+                r"CACHE \[write\].*basic_component_invalid_value.*local_component_registry",
+                result.stdout,
+            )
