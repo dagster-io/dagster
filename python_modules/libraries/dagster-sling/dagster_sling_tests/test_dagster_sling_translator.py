@@ -166,7 +166,7 @@ def test_process_stdout():
     )
 
     sling_resource = SlingResource(connections=[])
-    processed_lines = [line.strip() for line in sling_resource._process_stdout(example_stdout)]
+    processed_lines = [line.strip() for line in sling_resource._process_stdout(example_stdout)] # noqa: SLF001
 
     assert processed_lines == [
         "Hello World",
