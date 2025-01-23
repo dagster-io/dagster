@@ -151,11 +151,16 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                 "is enabled",
             )
         self._pool_granularity: Optional[PoolGranularity] = (
-            PoolGranularity.OP
+            PoolGranularity(block_op_concurrency_limited_runs.get("pool_granularity", "op"))
             if block_op_concurrency_limited_runs
-            and bool(block_op_concurrency_limited_runs.get("enabled"))
             else None
         )
+        if self._pool_granularity:
+            check.invariant(
+                self._should_block_op_concurrency_limited_runs,
+                "pool_granularity can only be set if block_op_concurrency_limited_runs "
+                "is enabled",
+            )
         self._logger = logging.getLogger("dagster.run_coordinator.queued_run_coordinator")
         super().__init__()
 
@@ -288,6 +293,16 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
                             "Determines whether or not a run will be dequeued if it consists of ops that "
                             "will all be initially blocked waiting for global op concurrency slots to be "
                             "free."
+                        ),
+                    ),
+                    "pool_granularity": Field(
+                        str,
+                        is_required=False,
+                        description=(
+                            "Determines the granularity at which concurrency limits are applied. If set to "
+                            "'op', dequeues runs as long as any op in the run can make progress.  If set to "
+                            "'run', dequeues runs as long as all of the concurrency groups assigned to the run "
+                            "have free slots available."
                         ),
                     ),
                 }
