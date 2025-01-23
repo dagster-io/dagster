@@ -1393,12 +1393,12 @@ const config: Config = {
           docId: 'intro',
           position: 'left',
         },
-        //{
-        //  label: 'Tutorials',
-        //  type: 'doc',
-        //  docId: 'tutorials/index',
-        //  position: 'left',
-        //},
+        {
+          label: 'Tutorials',
+          type: 'doc',
+          docId: 'tutorials/index',
+          position: 'left',
+        },
         {
           label: 'Integrations',
           type: 'doc',
