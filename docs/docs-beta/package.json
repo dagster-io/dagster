@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start -p 3050",
+    "start": "yarn generate-code-imports && docusaurus start -p 3050",
     "build": "yarn generate-code-imports && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
