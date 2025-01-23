@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start -p 3050",
-    "build": "docusaurus build",
+    "start": "yarn generate-code-imports && docusaurus start -p 3050",
+    "build": "yarn generate-code-imports && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -16,7 +16,8 @@
     "vale": "vale ./docs --ext=.md,.mdx",
     "lint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx --fix",
     "lint-and-vale": "yarn run lint && yarn run vale",
-    "sync-api-docs": "/bin/sh scripts/vercel-sync-api-docs.sh"
+    "sync-api-docs": "/bin/sh scripts/vercel-sync-api-docs.sh",
+    "generate-code-imports": "node scripts/generate-code-imports.js"
   },
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
