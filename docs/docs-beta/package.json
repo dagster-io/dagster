@@ -17,7 +17,7 @@
     "lint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx --fix",
     "lint-and-vale": "yarn run lint && yarn run vale",
     "sync-api-docs": "/bin/sh scripts/vercel-sync-api-docs.sh",
-    "generate-code-imports": "node scripts/generate-code-example-imports.js"
+    "generate-code-imports": "node scripts/generate-code-imports.js"
   },
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
