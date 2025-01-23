@@ -11,8 +11,8 @@ sidebar_position: 10
 In this tutorial, you'll build an ML pipeline with Dagster that:
 
 - Ingests data from Hackernews
-- Tranform data and train a model
-- Use Declarative Automation to manage the life cycle of a model.
+- Transform data and train a model
+- Use Declarative Automation to manage the life cycle of a model
 
 <details>
   <summary>Prerequisites</summary>
