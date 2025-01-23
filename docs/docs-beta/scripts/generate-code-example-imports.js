@@ -50,12 +50,14 @@ const uniqueMatches = getUniqueRegexMatches(files, CODE_EXAMPLE_PATH_REGEX);
 
 const lines = [
   'export const CODE_EXAMPLE_PATH_MAPPINGS = {',
-  ...uniqueMatches.map((path) => `  '${path}': '!!raw-loader!/../../examples/${path}',`),
+  //...uniqueMatches.map((path) => `  '${path}': '!!raw-loader!/../../examples/${path}',`),
+  //...uniqueMatches.map((path) => `  '${path}': require('!!raw-loader!/../../examples/${path}'),`),
+  ...uniqueMatches.map((path) => `  '${path}': import('!!raw-loader!/../../examples/${path}'),`),
   '};',
 ].join('\n');
 
 
 fs.writeFile('src/code-examples-content.js', lines, (err) => {
   if (err) throw err;
-  console.log('The data was appended!');
+  console.log(`Succesfully generated mappings for ${uniqueMatches.length} references...`);
 });

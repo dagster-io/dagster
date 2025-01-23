@@ -80,18 +80,18 @@ function useLoadModule(
   startAfter: string,
   endBefore: string,
 ) {
-  const isServer = typeof window === 'undefined';
-  if (isServer) {
-    const module = require(CODE_EXAMPLE_PATH_MAPPINGS[path]);
-    processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
-  }
+  //const isServer = typeof window === 'undefined';
+  //if (isServer) {
+  //  const module = CODE_EXAMPLE_PATH_MAPPINGS[path];
+  //  processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
+  //}
 
   if (!contentCache[cacheKey]) {
     /**
      * We only reach this path on the client.
      * Throw a promise to suspend in order to avoid un-rendering the codeblock that we SSR'd
      */
-    throw import(CODE_EXAMPLE_PATH_MAPPINGS[path])
+    throw CODE_EXAMPLE_PATH_MAPPINGS[path]
       .then((module) => {
         processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
       })
