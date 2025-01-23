@@ -6,7 +6,7 @@ title: Dagster & SDF
 sidebar_label: SDF
 excerpt: Put your SDF transformations to work, directly from within Dagster.
 date: 2024-08-30
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-sdf
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-sdf
 docslink: https://docs.sdf.com/integrations/dagster/getting-started
 partnerlink: https://www.sdf.com/
 communityIntegration: true

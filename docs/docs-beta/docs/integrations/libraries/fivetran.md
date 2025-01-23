@@ -6,7 +6,7 @@ title: Using Dagster with Fivetran
 sidebar_label: Fivetran
 excerpt: Orchestrate Fivetran connectors syncs with upstream or downstream dependencies.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-fivetran
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-fivetran
 docslink: https://docs.dagster.io/integrations/fivetran
 partnerlink: https://www.fivetran.com/
 logo: /integrations/Fivetran.svg

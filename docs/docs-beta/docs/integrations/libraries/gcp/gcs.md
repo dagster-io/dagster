@@ -6,7 +6,7 @@ title: Dagster & GCP GCS
 sidebar_label: GCS
 excerpt: Integrate with GCP GCS.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-gcp
 docslink:
 partnerlink:
 categories:

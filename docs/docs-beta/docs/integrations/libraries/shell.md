@@ -6,7 +6,7 @@ title: Dagster & Bash / Shell
 sidebar_label: Bash / Shell
 excerpt: Execute a Bash/shell command, directly or as a read from a script file.
 date: 2024-08-20
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-shell
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-shell
 docslink:
 partnerlink:
 categories:
