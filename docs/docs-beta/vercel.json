@@ -1629,6 +1629,16 @@
       "source": "/integrations/tableau",
       "destination": "/integrations/libraries/tableau",
       "permanent": false
+    },
+    {
+      "source": "/concepts/dagster-pipes",
+      "destination": "/guides/build/external-pipelines",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-pipes/pyspark",
+      "destination": "/guides/build/external-pipelines/pyspark-pipeline",
+      "permanent": false
     }
   ]
 }
