@@ -370,7 +370,7 @@ class AssetDaemonScenarioState(ScenarioState):
             asset_partition.asset_key for asset_partition in expected_requested_asset_partitions
         }
 
-    def _assert_run_requets_lists_equal(
+    def _assert_run_requests_lists_equal(
         self, actual: Sequence[RunRequest], expected: Sequence[RunRequest]
     ):
         def sort_run_request_key_fn(run_request) -> tuple[AssetKey, Optional[str]]:
@@ -396,7 +396,7 @@ class AssetDaemonScenarioState(ScenarioState):
         """Asserts that the set of runs requested by the previously-evaluated tick is identical to
         the set of runs specified in the expected_run_requests argument.
         """
-        sorted_expected_run_requests = self._assert_run_requets_lists_equal(
+        sorted_expected_run_requests = self._assert_run_requests_lists_equal(
             self.run_requests, expected_run_requests
         )
 
@@ -447,7 +447,7 @@ class AssetDaemonScenarioState(ScenarioState):
             assert len(latest_tick.tick_data.reserved_run_ids) == len(expected_run_requests)
 
         if latest_tick.tick_data.run_requests:
-            self._assert_run_requets_lists_equal(
+            self._assert_run_requests_lists_equal(
                 latest_tick.tick_data.run_requests, expected_run_requests
             )
         else:
