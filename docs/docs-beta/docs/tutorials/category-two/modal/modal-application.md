@@ -30,7 +30,7 @@ The next function `transcribe_episode` will split an audio file into smaller seg
 
 <CodeExample path="project_dagster_modal_pipes/modal_project/transcribe.py" language="python" lineStart="215" lineEnd="234"/>
 
-With the Modal functions in place, we can define the entry point `main`. This what Dagster will use to interact with Modal:
+With the Modal functions in place, we can define the entry point `main`. This is what Dagster will use to interact with Modal:
 
 <CodeExample path="project_dagster_modal_pipes/modal_project/transcribe.py" language="python" lineStart="236" lineEnd="261"/>
 

@@ -20,7 +20,7 @@ The next asset will take those new files and summarize them with OpenAI. After a
 
 <CodeExample path="project_dagster_modal_pipes/project_dagster_modal_pipes/pipeline_factory.py" language="python" lineStart="93" lineEnd="120"/>
 
-The final step in our DAG pipelie takes that summary and email the user with [yagmail](https://github.com/kootenpv/yagmail).
+The final step in our DAG pipeline takes that summary and email the user with [yagmail](https://github.com/kootenpv/yagmail).
 
 ## Sensor
 
