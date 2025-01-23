@@ -1045,17 +1045,30 @@ def _handle_run_requests_and_automation_condition_evaluations(
         else:
             return make_new_run_id()
 
-    reserved_run_ids = [reserved_run_id(run_request) for run_request in raw_run_requests]
+    # A single sensor evaluation can emit multiple run requests with the same run key
+    # Pick the first emitted run request for a unique run key
+    reserved_run_ids: set[str] = set()
+    requested_run_keys: set[str] = set()
+    deduped_run_requests = []
+    for run_request in raw_run_requests:
+        run_id: str = reserved_run_id(run_request)
+        run_key = run_request.run_key
+        if run_key is not None and run_key in requested_run_keys:
+            continue
+
+        reserved_run_ids.add(run_id)
+        requested_run_keys.add(run_key)
+        deduped_run_requests.append(run_request)
 
     # update cursor while reserving the relevant work, as now if the tick fails we will still submit
     # the requested runs
     context.set_run_requests(
-        run_requests=raw_run_requests, reserved_run_ids=reserved_run_ids, cursor=cursor
+        run_requests=deduped_run_requests, reserved_run_ids=reserved_run_ids, cursor=cursor
     )
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_IDS_RESERVED")
 
-    run_ids_with_run_requests = list(zip(reserved_run_ids, raw_run_requests))
+    run_ids_with_run_requests = list(zip(reserved_run_ids, deduped_run_requests))
     yield from _submit_run_requests(
         run_ids_with_run_requests,
         evaluations,
