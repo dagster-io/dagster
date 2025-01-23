@@ -19,8 +19,7 @@ class MyComponent(Component):
         return MyComponentSchema
 
     @classmethod
-    def load(cls, context: ComponentLoadContext) -> Self:
-        context.load_params(MyComponentSchema)
+    def load(cls, params: MyComponentSchema, context: ComponentLoadContext) -> Self:
         return cls()
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
