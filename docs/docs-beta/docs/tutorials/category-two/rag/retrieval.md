@@ -10,7 +10,7 @@ The final asset will query our RAG system. Since the pipeline is designed to ans
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/assets/retrieval.py" language="python" lineStart="11" lineEnd="13"/>
 
-In order to do similarity searches, the input question will need to be embedded in the same way as the source embeddings sent to Pinecone. Again we will use OpenAI and the same model (`text-embedding-3-small`) to turn a question into vectors. Next we can use Pinecone to search for similar vectors within the index that most closely match the input question. As we are searching within our index, we will limit the namespace to "dagster-github" and "dagster-docs" (the two sources we ingested data from). Filtering data like this shows how vector databases still support main of the same functions as traditional databases:
+In order to do similarity searches, the input question will need to be embedded in the same way as the source embeddings sent to Pinecone. Again we will use OpenAI and the same model (`text-embedding-3-small`) to turn a question into vectors. Next we can use Pinecone to search for similar vectors within the index that most closely match the input question. As we are searching within our index, we will limit the namespace to "dagster-github" and "dagster-docs" (the two sources we ingested data from). Filtering data like this shows how vector databases still support many of the same functions as traditional databases:
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/assets/retrieval.py" language="python" lineStart="42" lineEnd="59"/>
 
