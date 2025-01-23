@@ -468,22 +468,28 @@ class BaseTableauWorkspace(ConfigurableResource):
                                 properties=augmented_sheet_data,
                             )
                         )
+                    """
+                    Lineage formation depends on the availability of published data sources.
+                    If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), it means you can form the lineage by using the luid of those published sources.
+                    If the published data sources are missing, you create assets for embedded data sources by using their id.
+                    """
                     for embedded_data_source_data in sheet_data.get(
                             "parentEmbeddedDatasources", []
                     ):
+                        is_publish_data_source_absent = True
                         published_data_source_list = embedded_data_source_data.get("parentPublishedDatasources", [])
-                        if len(published_data_source_list) > 0:
-                            for published_data_source_data in published_data_source_list:
-                                data_source_id = published_data_source_data["luid"]
-                                if data_source_id and data_source_id not in data_source_ids:
-                                    data_source_ids.add(data_source_id)
-                                    data_sources.append(
-                                        TableauContentData(
-                                            content_type=TableauContentType.DATA_SOURCE,
-                                            properties=published_data_source_data,
-                                        )
+                        for published_data_source_data in published_data_source_list:
+                            is_publish_data_source_absent = False
+                            data_source_id = published_data_source_data["luid"]
+                            if data_source_id and data_source_id not in data_source_ids:
+                                data_source_ids.add(data_source_id)
+                                data_sources.append(
+                                    TableauContentData(
+                                        content_type=TableauContentType.DATA_SOURCE,
+                                        properties=published_data_source_data,
                                     )
-                        else:
+                                )
+                        if is_publish_data_source_absent:
                             data_source_id = embedded_data_source_data["id"]
                             if data_source_id and data_source_id not in data_source_ids:
                                 data_source_ids.add(data_source_id)

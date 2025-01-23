@@ -147,17 +147,21 @@ class DagsterTableauTranslator:
     def get_sheet_asset_key(self, data: TableauTranslatorData) -> AssetKey:
         return self.get_sheet_spec(data).key
 
+    """ If published data sources are available (i.e., parentPublishedDatasources exists and is not empty), it means you can form the lineage by using the luid of those published sources.
+    If the published data sources are missing, you create assets for embedded data sources by using their id.
+    """
     def get_sheet_spec(self, data: TableauTranslatorData) -> AssetSpec:
         sheet_embedded_data_sources = data.properties.get("parentEmbeddedDatasources", [])
 
-        data_source_ids = []
+        data_source_ids = set()
         for embedded_data_source in sheet_embedded_data_sources:
-            embedded_data_source_list = embedded_data_source.get("parentPublishedDatasources", [])
-            if not embedded_data_source_list:
-                data_source_ids.append(embedded_data_source["id"])
-            else:
-                for published_data_source in embedded_data_source_list:
-                    data_source_ids.append(published_data_source["luid"])
+            published_data_source_list = embedded_data_source.get("parentPublishedDatasources", [])
+            is_publish_data_source_absent = True
+            for published_data_source in published_data_source_list:
+                is_publish_data_source_absent = False
+                data_source_ids.add(published_data_source["luid"])
+            if is_publish_data_source_absent:
+                data_source_ids.add(embedded_data_source["id"])
 
         data_source_keys = [
             self.get_asset_spec(
