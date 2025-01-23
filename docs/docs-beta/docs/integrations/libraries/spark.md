@@ -7,7 +7,7 @@ sidebar_label: Spark
 excerpt: Configure and run Spark jobs.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-spark
-docslink: https://docs.dagster.io/integrations/spark
+docslink: https://docs.dagster.io/integrations/libraries/spark
 partnerlink:
 categories:
   - Compute

@@ -7,7 +7,7 @@ sidebar_label: Jupyter Notebooks
 excerpt: Dagstermill eliminates the tedious "productionization" of Jupyter notebooks.
 date: 2022-11-07
 apireflink:
-docslink: https://docs.dagster.io/integrations/dagstermill
+docslink: https://docs.dagster.io/integrations/libraries/jupyter/
 partnerlink:
 enabledBy:
   - dagster-dagstermill

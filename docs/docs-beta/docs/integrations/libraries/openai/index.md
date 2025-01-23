@@ -7,7 +7,7 @@ sidebar_label: OpenAI
 excerpt: Integrate OpenAI calls into your Dagster pipelines, without breaking the bank.
 date: 2024-03-12
 apireflink: https://platform.openai.com/docs/introduction
-docslink: https://docs.dagster.io/integrations/openai
+docslink: https://docs.dagster.io/integrations/libraries/openai/
 partnerlink:
 categories:
   - Other

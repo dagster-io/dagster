@@ -7,7 +7,7 @@ sidebar_label: Pandas
 excerpt: Implement validation on pandas DataFrames.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-pandas
-docslink: https://docs.dagster.io/integrations/pandas
+docslink: https://docs.dagster.io/integrations/libraries/pandas/
 partnerlink: https://pandas.pydata.org/
 categories:
   - Metadata
