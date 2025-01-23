@@ -63,11 +63,11 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=None,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:5", "params.value", "Input should be a valid string"
+            "component.yaml:4", "params.definitions_path", "Input should be a valid string"
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:5",
-            "params.value",
+            "component.yaml:4",
+            "params.definitions_path",
             "{} is not of type 'string'",
         ),
     ),

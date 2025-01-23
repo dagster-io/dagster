@@ -20,6 +20,7 @@ def load_test_component_defs_inject_component(
         src_path=src_path, local_component_defn_to_inject=local_component_defn_to_inject
     ) as tmpdir:
         context = load_test_component_project_context()
+
         return build_defs_from_component_path(
             path=Path(tmpdir),
             registry=context.component_registry,

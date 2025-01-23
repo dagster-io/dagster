@@ -1,5 +1,4 @@
-type: dagster_components.test.simple_asset
+type: dagster_components.definitions
 
 params:
-  asset_key: "test"
-  value: {}
+  definitions_path: {}
