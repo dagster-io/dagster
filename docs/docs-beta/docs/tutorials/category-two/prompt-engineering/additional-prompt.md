@@ -24,7 +24,7 @@ ops:
         location: I'm near the The Art Institute of Chicago and driving a Kia EV9
 ```
 
-After the assets have all materialized ,you can view the results in the logs of the `available_fuel_stations` asset:
+After the assets have all materialized, you can view the results in the logs of the `available_fuel_stations` asset:
 
 ```
 INTERPARK ADAMWABASH 1 at 17 E Adams St is 0.16458 miles away
