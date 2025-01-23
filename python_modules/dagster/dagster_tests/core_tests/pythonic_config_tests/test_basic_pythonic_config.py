@@ -1057,7 +1057,7 @@ def test_run_config_equality() -> None:
     assert RunConfig(config_dict) == RunConfig(config_dict)
 
 
-def test_convert_to_config_dictionary() -> None:
+def test_to_config_dict() -> None:
     class Color(Enum):
         RED = 1
         GREEN = 2
@@ -1070,4 +1070,5 @@ def test_convert_to_config_dictionary() -> None:
         arr: list[int] = []
         opt_arr: Optional[list[int]] = None
 
-    assert MyConfig()._convert_to_config_dictionary() == {"num": 1, "enum": "RED", "arr": []}  # noqa: SLF001
+    config_dict = RunConfig({"my_asset_job": MyConfig()}).to_config_dict()
+    assert config_dict["ops"]["my_asset_job"]["config"] == {"num": 1, "enum": "RED", "arr": []}
