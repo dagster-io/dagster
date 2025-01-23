@@ -40,7 +40,7 @@ One of the easiest ways to utilize Dagster’s metadata is by using a dictionary
 
 Another way is to store relevant data for a single training iteration as a graph that you can view directly from the Dagster UI. In this example, a function is defined that uses data produced by a machine learning model to plot an evaluation metric as the model goes through the training process and render that in the Dagster UI.
 
-Dagster’s <PyObject object="MetadataValue" /> types enable types such as tables, URLs, notebooks, Markdown, etc. In the following example, the Markdown metadata type is used to generate plots. Each plot will show a specific evaluation metric’s performance throughout each training iteration also known as an epoch during the training cycle.
+Dagster’s <PyObject module="dagster" object="MetadataValue" /> types enable types such as tables, URLs, notebooks, Markdown, etc. In the following example, the Markdown metadata type is used to generate plots. Each plot will show a specific evaluation metric’s performance throughout each training iteration also known as an epoch during the training cycle.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/managing_ml/managing_ml_code.py" language="python" lineStart="101" lineEnd="116"/>
 
