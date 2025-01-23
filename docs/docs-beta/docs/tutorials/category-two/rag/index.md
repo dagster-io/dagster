@@ -6,8 +6,10 @@ last_update:
 sidebar_position: 10
 ---
 
-:::
-To see a live coding example of this tutorial [YouTube Video](https://www.youtube.com/watch?v=MHwwKfCXwDA)
+:::note
+
+To see [video of this tutorial](https://www.youtube.com/watch?v=MHwwKfCXwDA)
+
 :::
 
 # RAG
