@@ -78,7 +78,8 @@ def test_python_params(sling_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    component = SlingReplicationCollectionComponent.load(context)
+    params = decl_node.get_params(context, SlingReplicationCollectionComponent.get_schema())
+    component = SlingReplicationCollectionComponent.load(params, context)
 
     replications = component.sling_replications
     assert len(replications) == 1
@@ -108,7 +109,8 @@ def test_python_params_op_name(sling_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    component = SlingReplicationCollectionComponent.load(context=context)
+    params = decl_node.get_params(context, SlingReplicationCollectionComponent.get_schema())
+    component = SlingReplicationCollectionComponent.load(params, context=context)
 
     replications = component.sling_replications
     assert len(replications) == 1
@@ -137,7 +139,8 @@ def test_python_params_op_tags(sling_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    component = SlingReplicationCollectionComponent.load(context=context)
+    params = decl_node.get_params(context, SlingReplicationCollectionComponent.get_schema())
+    component = SlingReplicationCollectionComponent.load(params=params, context=context)
     replications = component.sling_replications
     assert len(replications) == 1
     op_spec = replications[0].op
@@ -175,7 +178,11 @@ def test_sling_subclass() -> None:
             params={"sling": {}, "replications": [{"path": "./replication.yaml"}]},
         ),
     )
+    params = decl_node.get_params(
+        script_load_context(decl_node), DebugSlingReplicationComponent.get_schema()
+    )
     component_inst = DebugSlingReplicationComponent.load(
+        params=params,
         context=script_load_context(decl_node),
     )
     assert get_asset_keys(component_inst) == {

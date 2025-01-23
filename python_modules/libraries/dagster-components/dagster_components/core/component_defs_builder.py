@@ -54,17 +54,20 @@ def resolve_decl_node_to_yaml_decls(decl: ComponentDeclNode) -> list[YamlCompone
 
 
 def load_components_from_context(context: ComponentLoadContext) -> Sequence[Component]:
-    if isinstance(context.decl_node, YamlComponentDecl):
-        component_type = component_type_from_yaml_decl(context.registry, context.decl_node)
+    node = context.decl_node
+    if isinstance(node, YamlComponentDecl):
+        component_type = component_type_from_yaml_decl(context.registry, node)
+        component_schema = component_type.get_schema()
         context = context.with_rendering_scope(component_type.get_additional_scope())
-        return [component_type.load(context)]
-    elif isinstance(context.decl_node, ComponentFolder):
+        loaded_params = node.get_params(context, component_schema) if component_schema else None
+        return [component_type.load(loaded_params, context)]
+    elif isinstance(node, ComponentFolder):
         components = []
-        for sub_decl in context.decl_node.sub_decls:
+        for sub_decl in node.sub_decls:
             components.extend(load_components_from_context(context.for_decl_node(sub_decl)))
         return components
 
-    raise NotImplementedError(f"Unknown component type {context.decl_node}")
+    raise NotImplementedError(f"Unknown component type {node}")
 
 
 def component_type_from_yaml_decl(

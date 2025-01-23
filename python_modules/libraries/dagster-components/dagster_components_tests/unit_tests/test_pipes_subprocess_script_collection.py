@@ -1,15 +1,17 @@
 from pathlib import Path
 
 from dagster import AssetKey
-from dagster_components.core.component_decl_builder import ComponentFileModel
+from dagster_components import AssetAttributesModel
+from dagster_components.core.component_decl_builder import ComponentFileModel, YamlComponentDecl
 from dagster_components.core.component_defs_builder import (
-    YamlComponentDecl,
     build_components_from_component_folder,
     build_defs_from_component_path,
     defs_from_components,
 )
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection,
+    PipesSubprocessScriptCollectionParams,
+    PipesSubprocessScriptParams,
 )
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
@@ -25,32 +27,37 @@ def test_python_native() -> None:
 
 
 def test_python_params() -> None:
-    component_decl = YamlComponentDecl(
-        path=LOCATION_PATH / "components" / "scripts",
-        component_file_model=ComponentFileModel(
-            type="pipes_subprocess_script_collection",
-            params={
-                "scripts": [
-                    {
-                        "path": "script_one.py",
-                        "assets": [
-                            {
-                                "key": "a",
-                                "automation_condition": "{{ automation_condition.eager() }}",
-                            },
-                            {
-                                "key": "b",
-                                "automation_condition": "{{ automation_condition.on_cron('@daily') }}",
-                                "deps": ["up1", "up2"],
-                            },
-                        ],
-                    },
-                    {"path": "subdir/script_three.py", "assets": [{"key": "key_override"}]},
-                ]
-            },
+    params = PipesSubprocessScriptCollectionParams(
+        scripts=[
+            PipesSubprocessScriptParams(
+                path="script_one.py",
+                assets=[
+                    AssetAttributesModel(
+                        key="a", automation_condition="{{ automation_condition.eager() }}"
+                    ),
+                    AssetAttributesModel(
+                        key="b",
+                        automation_condition="{{ automation_condition.on_cron('@daily') }}",
+                        deps=["up1", "up2"],
+                    ),
+                ],
+            ),
+            PipesSubprocessScriptParams(
+                path="subdir/script_three.py",
+                assets=[AssetAttributesModel(key="key_override")],
+            ),
+        ]
+    )
+    component = PipesSubprocessScriptCollection.load(
+        params=params,
+        # TODO: we should use a PythonComponentDecl here instead
+        context=script_load_context(
+            YamlComponentDecl(
+                path=Path(LOCATION_PATH / "components" / "scripts"),
+                component_file_model=ComponentFileModel(type="."),
+            )
         ),
     )
-    component = PipesSubprocessScriptCollection.load(context=script_load_context(component_decl))
     assert get_asset_keys(component) == {
         AssetKey("a"),
         AssetKey("b"),

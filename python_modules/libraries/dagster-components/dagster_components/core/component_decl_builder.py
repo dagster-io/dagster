@@ -1,19 +1,26 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, TypeVar, Union
 
 from dagster._record import record
-from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
+from dagster._utils import pushd
+from dagster._utils.pydantic_yaml import (
+    _parse_and_populate_model_with_annotated_errors,
+    enrich_validation_errors_with_source_position,
+)
 from dagster._utils.source_position import SourcePositionTree
 from dagster._utils.yaml_utils import parse_yaml_with_source_positions
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
-from dagster_components.core.component import ComponentDeclNode
+from dagster_components.core.component import ComponentDeclNode, ComponentLoadContext
 
 
 class ComponentFileModel(BaseModel):
     type: str
     params: Optional[Mapping[str, Any]] = None
+
+
+T = TypeVar("T", bound=BaseModel)
 
 
 @record
@@ -36,6 +43,22 @@ class YamlComponentDecl(ComponentDeclNode):
             component_file_model=obj,
             source_position_tree=parsed.source_position_tree,
         )
+
+    def get_params(self, context: ComponentLoadContext, params_schema: type[T]) -> T:
+        with pushd(str(self.path)):
+            raw_params = self.component_file_model.params
+            preprocessed_params = context.templated_value_resolver.resolve_params(
+                raw_params, params_schema
+            )
+
+            if self.source_position_tree:
+                source_position_tree_of_params = self.source_position_tree.children["params"]
+                with enrich_validation_errors_with_source_position(
+                    source_position_tree_of_params, ["params"]
+                ):
+                    return TypeAdapter(params_schema).validate_python(preprocessed_params)
+            else:
+                return TypeAdapter(params_schema).validate_python(preprocessed_params)
 
 
 @record
