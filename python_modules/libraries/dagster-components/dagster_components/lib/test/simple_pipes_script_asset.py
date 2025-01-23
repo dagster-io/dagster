@@ -63,11 +63,10 @@ class SimplePipesScriptAsset(Component):
         return SimplePipesScriptAssetParams
 
     @classmethod
-    def load(cls, context: "ComponentLoadContext") -> Self:
-        loaded_params = context.load_params(cls.get_schema())
+    def load(cls, params: SimplePipesScriptAssetParams, context: "ComponentLoadContext") -> Self:
         return cls(
-            asset_key=AssetKey.from_user_string(loaded_params.asset_key),
-            script_path=context.path / loaded_params.filename,
+            asset_key=AssetKey.from_user_string(params.asset_key),
+            script_path=context.path / params.filename,
         )
 
     def __init__(self, asset_key: AssetKey, script_path: Path):

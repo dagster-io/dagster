@@ -30,11 +30,10 @@ class SimpleAsset(Component):
         return DefaultComponentScaffolder()
 
     @classmethod
-    def load(cls, context: "ComponentLoadContext") -> Self:
-        loaded_params = context.load_params(cls.get_schema())
+    def load(cls, params: SimpleAssetParams, context: "ComponentLoadContext") -> Self:
         return cls(
-            asset_key=AssetKey.from_user_string(loaded_params.asset_key),
-            value=loaded_params.value,
+            asset_key=AssetKey.from_user_string(params.asset_key),
+            value=params.value,
         )
 
     def __init__(self, asset_key: AssetKey, value: str):

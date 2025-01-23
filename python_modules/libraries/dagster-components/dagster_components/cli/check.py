@@ -16,8 +16,6 @@ from dagster_components.core.component import (
     get_component_type_name,
 )
 from dagster_components.core.component_defs_builder import (
-    component_type_from_yaml_decl,
-    load_components_from_context,
     path_to_decl_node,
     resolve_decl_node_to_yaml_decls,
 )
@@ -186,11 +184,9 @@ def check_component_command(ctx: click.Context, paths: Sequence[str]) -> None:
                 templated_value_resolver=TemplatedValueResolver.default(),
             )
             try:
-                load_components_from_context(clc)
+                decl_node.load(clc)
             except ValidationError as e:
-                component_type = component_type_from_yaml_decl(
-                    context.component_registry, yaml_decl
-                )
+                component_type = yaml_decl.get_component_type(context.component_registry)
                 validation_errors.append((component_type, e))
 
     if validation_errors:

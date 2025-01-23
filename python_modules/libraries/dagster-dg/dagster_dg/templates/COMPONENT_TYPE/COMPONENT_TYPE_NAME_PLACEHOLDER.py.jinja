@@ -27,9 +27,11 @@ class {{ component_type_class_name }}(Component):
         return DefaultComponentScaffolder()
 
     @classmethod
-    def load(cls, context: ComponentLoadContext) -> "{{ component_type_class_name }}":
-        loaded_params = context.load_params(cls.get_component_schema_type())
-
+    def load(
+        cls,
+        params: {{ component_type_class_name }}Params,
+        context: ComponentLoadContext,
+    ) -> "{{ component_type_class_name }}":
         # Add logic for mapping schema parameters to constructor args here.
         return cls()
 

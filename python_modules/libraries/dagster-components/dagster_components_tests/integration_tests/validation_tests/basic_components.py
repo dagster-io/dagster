@@ -17,11 +17,13 @@ class MyComponentSchema(ComponentSchemaBaseModel):
 @component_type
 class MyComponent(Component):
     name = "my_component"
-    params_schema = MyComponentSchema
 
     @classmethod
-    def load(cls, context: ComponentLoadContext) -> Self:
-        context.load_params(cls.params_schema)
+    def get_schema(cls) -> type[MyComponentSchema]:
+        return MyComponentSchema
+
+    @classmethod
+    def load(cls, params: MyComponentSchema, context: ComponentLoadContext) -> Self:
         return cls()
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -40,11 +42,13 @@ class MyNestedComponentSchema(ComponentSchemaBaseModel):
 @component_type
 class MyNestedComponent(Component):
     name = "my_nested_component"
-    params_schema = MyNestedComponentSchema
 
     @classmethod
-    def load(cls, context: ComponentLoadContext) -> Self:
-        context.load_params(cls.params_schema)
+    def get_schema(cls) -> type[MyNestedComponentSchema]:
+        return MyNestedComponentSchema
+
+    @classmethod
+    def load(cls, params: MyComponentSchema, context: ComponentLoadContext) -> Self:
         return cls()
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:

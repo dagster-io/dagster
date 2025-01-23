@@ -28,7 +28,9 @@ from dagster_components.core.component_scaffolder import (
 from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 
-class ComponentDeclNode: ...
+class ComponentDeclNode(ABC):
+    @abstractmethod
+    def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
 
 class Component(ABC):

@@ -39,13 +39,12 @@ class ComplexSchemaAsset(Component):
         return DefaultComponentScaffolder()
 
     @classmethod
-    def load(cls, context: "ComponentLoadContext") -> Self:
-        loaded_params = context.load_params(cls.get_schema())
+    def load(cls, params: ComplexAssetParams, context: "ComponentLoadContext") -> Self:
         return cls(
-            value=loaded_params.value,
-            op_spec=loaded_params.op,
-            asset_attributes=loaded_params.asset_attributes,
-            asset_transforms=loaded_params.asset_transforms or [],
+            value=params.value,
+            op_spec=params.op,
+            asset_attributes=params.asset_attributes,
+            asset_transforms=params.asset_transforms or [],
         )
 
     def __init__(
