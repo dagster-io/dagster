@@ -256,9 +256,28 @@ def asset(
     Examples:
         .. code-block:: python
 
+            # Basic usage: define an asset that depends on an upstream asset
+            @asset
+            def my_upstream_asset() -> int:
+                return 5
+
             @asset
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
+
+            # Using `output_required`: define an asset that conditionally yields a result
+            should_materialize = True
+
+            @asset(output_required=False)
+            def conditional_asset():
+                if should_materialize:
+                    yield Output(5)  # you must `yield`, not `return`, the result
+
+            # Will also only materialize if `should_materialize` is `True`
+            @asset
+            def downstream_asset(conditional_asset):
+                return conditional_asset + 1
+
     """
     compute_kind = check.opt_str_param(kwargs.get("compute_kind"), "compute_kind")
     required_resource_keys = check.opt_set_param(required_resource_keys, "required_resource_keys")
