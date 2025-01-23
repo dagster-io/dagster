@@ -8,7 +8,7 @@ from jsonschema import Draft202012Validator, ValidationError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.component import LocalComponentTypes, RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import (
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -75,7 +75,7 @@ class ComponentScaffoldGroup(DgClickGroup):
             exit_with_error("This command must be run inside a Dagster code location directory.")
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        for key, component_type in registry.items():
+        for key, component_type in registry.global_items():
             command = _create_component_scaffold_subcommand(key, component_type)
             self.add_command(command)
 
@@ -184,7 +184,7 @@ def _create_component_scaffold_subcommand(
             exit_with_error("This command must be run inside a Dagster code location directory.")
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has(component_key):
+        if not registry.has_global(component_key):
             exit_with_error(f"No component type `{component_key}` could be resolved.")
         elif dg_context.has_component(component_name):
             exit_with_error(f"A component instance named `{component_name}` already exists.")
@@ -281,12 +281,10 @@ def component_check_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
 
-    component_registry = RemoteComponentRegistry.from_dg_context(dg_context)
-
     validation_errors: list[tuple[Optional[str], ValidationError, ValueAndSourcePositionTree]] = []
 
     component_contents_by_dir = {}
-    local_components = set()
+    local_component_dirs = set()
     for component_dir in (
         dg_context.root_path / dg_context.root_package_name / "components"
     ).iterdir():
@@ -316,20 +314,18 @@ def component_check_command(
             component_contents_by_dir[component_dir] = component_doc_tree
             component_name = component_doc_tree.value.get("type")
             if _is_local_component(component_name):
-                local_components.add(component_dir)
+                local_component_dirs.add(component_dir)
 
     # Fetch the local component types, if we need any local components
-    local_component_types = LocalComponentTypes.from_dg_context(dg_context, list(local_components))
+    component_registry = RemoteComponentRegistry.from_dg_context(
+        dg_context, local_component_type_dirs=list(local_component_dirs)
+    )
 
     for component_dir, component_doc_tree in component_contents_by_dir.items():
         component_name = component_doc_tree.value.get("type")
-        if _is_local_component(component_name):
-            json_schema = (
-                local_component_types.get(component_dir, component_name).component_params_schema
-                or {}
-            )
-        else:
-            json_schema = component_registry.get(component_name).component_params_schema or {}
+        json_schema = (
+            component_registry.get(component_dir, component_name).component_params_schema or {}
+        )
 
         v = Draft202012Validator(json_schema)  # type: ignore
         for err in v.iter_errors(component_doc_tree.value["params"]):

@@ -42,7 +42,7 @@ def component_type_scaffold_command(
         exit_with_error("This command must be run inside a Dagster code location directory.")
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     full_component_name = f"{dg_context.root_package_name}.{name}"
-    if registry.has(full_component_name):
+    if registry.has_global(full_component_name):
         exit_with_error(f"A component type named `{name}` already exists.")
 
     scaffold_component_type(dg_context, name)
@@ -66,7 +66,7 @@ def component_type_docs_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    if not registry.has(component_type):
+    if not registry.has_global(component_type):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
 
     render_markdown_in_browser(markdown_for_component_type(registry.get(component_type)))
@@ -96,14 +96,14 @@ def component_type_info_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    if not registry.has(component_type):
+    if not registry.has_global(component_type):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
     elif sum([description, scaffold_params_schema, component_params_schema]) > 1:
         exit_with_error(
             "Only one of --description, --scaffold-params-schema, and --component-params-schema can be specified."
         )
 
-    component_type_metadata = registry.get(component_type)
+    component_type_metadata = registry.get_global(component_type)
 
     if description:
         if component_type_metadata.description:
@@ -152,8 +152,8 @@ def component_type_list(context: click.Context, **global_options: object) -> Non
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    for key in sorted(registry.keys()):
+    for key in sorted(registry.global_keys()):
         click.echo(key)
-        component_type = registry.get(key)
+        component_type = registry.get_global(key)
         if component_type.summary:
             click.echo(f"    {component_type.summary}")
