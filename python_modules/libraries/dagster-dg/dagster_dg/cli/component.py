@@ -1,13 +1,15 @@
 from collections.abc import Mapping, Sequence
+from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 import click
 from click.core import ParameterSource
 from jsonschema import Draft202012Validator, ValidationError
+from typer.rich_utils import rich_format_help
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import (
     get_config_from_cli_context,
@@ -81,6 +83,25 @@ class ComponentScaffoldGroup(DgClickGroup):
 
 
 class ComponentScaffoldSubCommand(DgClickCommand):
+    # We have to override this because the implementation of `format_help` used elsewhere will only
+    # pull parameters directly off the target command. For these component scaffold subcommands  we need
+    # to expose the global options, which are defined on the preceding group rather than the command
+    # itself.
+    def format_help(self, context: click.Context, formatter: click.HelpFormatter):
+        """Customizes the help to include hierarchical usage."""
+        if not isinstance(self, click.Command):
+            raise ValueError("This mixin is only intended for use with click.Command instances.")
+
+        # This is a hack. We pass the help format func a modified version of the command where the global
+        # options are attached to the command itself. This will cause them to be included in the
+        # help output.
+        cmd_copy = copy(self)
+        cmd_copy.params = [
+            *cmd_copy.params,
+            *(GLOBAL_OPTIONS.values()),
+        ]
+        rich_format_help(obj=cmd_copy, ctx=context, markup_mode="rich")
+
     def format_usage(self, context: click.Context, formatter: click.HelpFormatter) -> None:
         if not isinstance(self, click.Command):
             raise ValueError("This mixin is only intended for use with click.Command instances.")
@@ -88,22 +109,6 @@ class ComponentScaffoldSubCommand(DgClickCommand):
         command_parts = context.command_path.split(" ")
         command_parts.insert(-1, "[GLOBAL OPTIONS]")
         return formatter.write_usage(" ".join(command_parts), " ".join(arg_pieces))
-
-    def format_options(self, context: click.Context, formatter: click.HelpFormatter) -> None:
-        # This will not produce any global options since there are none defined on component
-        # scaffold subcommands.
-        super().format_options(context, formatter)
-
-        # Get the global options off the parent group.
-        parent_context = not_none(context.parent)
-        parent_command = not_none(context.parent).command
-        if not isinstance(parent_command, DgClickGroup):
-            raise ValueError("Parent command must be a DgClickGroup.")
-        _, global_opts = parent_command.get_partitioned_opts(context)
-
-        with formatter.section("Global options"):
-            records = [not_none(p.get_help_record(parent_context)) for p in global_opts]
-            formatter.write_dl(records)
 
 
 # We have to override the usual Click processing of `--help` here. The issue is
