@@ -3,3 +3,11 @@ from dagster_azure.blob.compute_log_manager import (
 )
 from dagster_azure.blob.fake_blob_client import FakeBlobServiceClient as FakeBlobServiceClient
 from dagster_azure.blob.utils import create_blob_client as create_blob_client
+
+from dagster_azure.blob.resources import (
+    AzureBlobStorageResource as AzureBlobStorageResource, 
+    AzureBlobStorageKeyCredential as AzureBlobStorageKeyCredential, 
+    AzureBlobStorageDefaultCredential as AzureBlobStorageDefaultCredential, 
+    AzureBlobStorageSASTokenCredential as AzureBlobStorageSASTokenCredential,
+    AzureBlobStorageAnonymousCredential as AzureBlobStorageAnonymousCredential
+)
