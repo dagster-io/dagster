@@ -1,10 +1,9 @@
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import click
 from click.core import ParameterSource
-from dagster._utils.source_position import ValueAndSourcePositionTree
 from jsonschema import Draft202012Validator, ValidationError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
@@ -27,6 +26,9 @@ from dagster_dg.utils import (
     parse_json_option,
 )
 from dagster_dg.yaml_utils import parse_yaml_with_source_positions
+
+if TYPE_CHECKING:
+    from dagster_dg.yaml_utils.source_position import ValueAndSourcePositionTree
 
 
 @click.group(name="component", cls=DgClickGroup)

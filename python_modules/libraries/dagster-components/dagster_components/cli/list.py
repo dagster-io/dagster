@@ -62,11 +62,8 @@ def _add_component_type_to_output(
 
 
 @list_cli.command(name="local-component-types")
-@click.pass_context
 @click.argument("component_directories", nargs=-1, type=click.Path(exists=True))
-def list_local_component_types_command(
-    ctx: click.Context, component_directories: Sequence[str]
-) -> None:
+def list_local_component_types_command(component_directories: Sequence[str]) -> None:
     """List local Dagster components found in the specified directories."""
     output: list = []
     for component_directory in component_directories:
