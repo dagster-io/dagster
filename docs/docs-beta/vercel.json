@@ -1,0 +1,12 @@
+{
+  "redirects": [
+    {
+      "source": "/dagster-cloud/:path*",
+      "destination": "/dagster-plus/:path*"
+    },
+    {
+      "source": "/guides/dagster-pipes/:path*",
+      "destination": "/guides/build/external-pipelines/"
+    }
+  ]
+}

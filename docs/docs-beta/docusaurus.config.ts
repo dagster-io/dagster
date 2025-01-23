@@ -1322,24 +1322,6 @@ const config: Config = {
             return [existingPath.replace('/api/python-api', '/_apidocs')];
           }
 
-          // {
-          //   from: '/dagster-cloud/:slug*',
-          //   to: '/dagster-plus/',
-          // },
-          if (existingPath.includes('/dagster-plus/')) {
-            return [existingPath.replace('/dagster-cloud/', '/dagster-plus/')];
-          }
-
-          // {
-          //   from: '/guides/dagster-pipes/:slug*',
-          //   to: '/guides/build/external-pipelines/',
-          // },
-          if (existingPath.includes('/guides/build/external-pipelines/')) {
-            return [
-              existingPath.replace('/guides/dagster-pipes/', '/guides/build/external-pipelines/'),
-            ];
-          }
-
           return undefined; // Return a falsy value: no redirect created
         },
       },
