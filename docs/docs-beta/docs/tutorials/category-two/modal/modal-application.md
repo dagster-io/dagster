@@ -6,15 +6,22 @@ last_update:
 sidebar_position: 20
 ---
 
-For this tutorial we will create multiple pipelines that do the following: download audio files, transcribe the audio, summarizes the audio and sends an email summary. Many of these steps can be done in Dagster but the transcription step is better suited for a different environment.
+For this tutorial, we will create multiple pipelines that do the following:
 
-A great thing about Dagster is you are not limited to only executing code with Dagster. In this case we will use [Modal](https://modal.com/). Modal makes it easy to manage and scale the infrastructure needed to perform distributed computation while maintaining a Pythonic workflow. It works especially well with Dagster since Dagster can help manage and orchestrate the various components in our pipeline while Modal can be used to spin up auto-scaling infrastructure in a serverless way.
+- Download audio files
+- Transcribe the audio
+- Summarize the audio
+- Send an email summary
+
+Many of these steps can be done in Dagster, but the transcription step is better suited for a different environment.
+
+An advantage of Dagster is that you are not limited to only executing code with Dagster. In this case, we will use [Modal](https://modal.com/). Modal makes it easy to manage and scale the infrastructure needed to perform distributed computation while maintaining a Pythonic workflow. It works especially well with Dagster, since Dagster can help manage and orchestrate the various components in our pipeline, while Modal can be used to spin up auto-scaling infrastructure in a serverless way.
 
 We will start by explaining the Modal application of our pipeline and then show how we can use it within Dagster.
 
-## Modal App
+## Modal application
 
-Within Modal the first thing we need to do is define the image that will be used by the Modal infrastructure. As mentioned, Modal allows you to define an image and the desired dependencies in a Pythonic way so you can avoid defining a separate `Dockerfile`. The app image is then supplied to the `modal.App` which we will use later on to decorate our Modal functions:
+Within Modal, we need to define the image that will be used by the Modal infrastructure. As mentioned, Modal allows you to define an image and the desired dependencies in a Pythonic way so you can avoid defining a separate `Dockerfile`. The app image is then supplied to the `modal.App,  which we will use later on to decorate our Modal functions:
 
 <CodeExample path="project_dagster_modal_pipes/modal_project/transcribe.py" language="python" lineStart="56" lineEnd="79"/>
 
@@ -22,11 +29,11 @@ Another benefit of Modal is that it allows us to mount an R2 Bucket like a file 
 
 <CodeExample path="project_dagster_modal_pipes/modal_project/transcribe.py" language="python" lineStart="80" lineEnd="91"/>
 
-With the image and R2 mount ready, we can define our Modal functions. The first function will transcribe a segment of a podcast. Because Modal scales to fit the needs of the application and allows for parallel processing, we can optimize our application by splitting podcasts, that may be several hours, into smaller pieces. Modal will manage all of the infrastructure provisioning as needed. As you can see in the decorator, all we need to provide Modal with is our image, the R2 bucket and our required CPUs (we could use GPUs but the OpenAI Whisper model is relatively small and does not require GPU processing like some other models):
+With the image and R2 mount ready, we can define our Modal functions. The first function will transcribe a segment of a podcast. Because Modal scales to fit the needs of the application and allows for parallel processing, we can optimize our application by splitting podcasts that may be several hours into smaller pieces. Modal will manage all of the infrastructure provisioning as needed. As you can see in the decorator, all we need to provide Modal with is our image, the R2 bucket, and our required CPUs (we could use GPUs but the OpenAI Whisper model is relatively small and does not require GPU processing like some other models):
 
 <CodeExample path="project_dagster_modal_pipes/modal_project/transcribe.py" language="python" lineStart="147" lineEnd="193"/>
 
-The next function `transcribe_episode` will split an audio file into smaller segments and then apply the `transcribe_segment` function. After all the segments have been processed, it will write the transcribed text into JSON files within the R2 bucket:
+The next function, `transcribe_episode`, will split an audio file into smaller segments and then apply the `transcribe_segment` function. After all the segments have been processed, it will write the transcribed text into JSON files within the R2 bucket:
 
 <CodeExample path="project_dagster_modal_pipes/modal_project/transcribe.py" language="python" lineStart="215" lineEnd="234"/>
 

@@ -16,7 +16,7 @@ In this tutorial, you'll build a pipeline with Dagster that:
 
 - Automatically detects newly published podcasts
 - Transcribes them using the power of GPUs
-- Notify you with a summary
+- Notifies you with a summary
 
 <details>
   <summary>Prerequisites</summary>
