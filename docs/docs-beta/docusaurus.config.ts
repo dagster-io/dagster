@@ -1331,12 +1331,12 @@ const config: Config = {
           }
 
           if (existingPath.includes('/dagster-cloud/')) {
-            return [existingPath.replace('/dagster-cloud/', '/dagster-plus/')];
+            return [existingPath.replace('/dagster-plus/', '/dagster-cloud/')];
           }
 
           if (existingPath.includes('/guides/dagster-pipes/')) {
             return [
-              existingPath.replace('/guides/dagster-pipes/', '/guides/build/external-pipelines/'),
+              existingPath.replace('/guides/build/external-pipelines/', '/guides/dagster-pipes/'),
             ];
           }
 
