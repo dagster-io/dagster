@@ -1,6 +1,8 @@
 import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
+import {CODE_EXAMPLE_PATH_MAPPINGS} from '../code-examples-content';
+
 interface CodeExampleProps {
   path: string;
   language?: string;
@@ -80,7 +82,7 @@ function useLoadModule(
 ) {
   const isServer = typeof window === 'undefined';
   if (isServer) {
-    const module = require(`!!raw-loader!/../../examples/${path}`);
+    const module = require(CODE_EXAMPLE_PATH_MAPPINGS[path]);
     processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
   }
 
@@ -89,7 +91,7 @@ function useLoadModule(
      * We only reach this path on the client.
      * Throw a promise to suspend in order to avoid un-rendering the codeblock that we SSR'd
      */
-    throw import(`!!raw-loader!/../../examples/${path}`)
+    throw import(CODE_EXAMPLE_PATH_MAPPINGS[path])
       .then((module) => {
         processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
       })
