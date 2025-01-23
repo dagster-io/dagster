@@ -1,4 +1,126 @@
-# Changelog
+# Changelog 
+
+## 1.9.10 (core) / 0.25.10 (libraries)
+
+### New
+
+
+### Bugfixes
+
+
+### Documentation
+
+
+### Breaking Changes
+
+
+### Deprecations
+
+
+### Dagster Plus
+
+
+### Invalid
+
+*  [bug] fixed Dagster Pipes log capturing when running on Databricks [#27233](https://github.com/dagster-io/dagster/pull/27233)
+*  > Insert changelog entry or delete this section. [#27205](https://github.com/dagster-io/dagster/pull/27205)
+*  > Insert changelog entry or delete this section. [#[docs] Update GH action project I](https://github.com/dagster-io/dagster/pull/[docs] Update GH action project I)
+*  > Insert changelog entry or delete this section. --------- Signed-off-by: nikki everett <nikki@dagsterlabs.com> [#27232](https://github.com/dagster-io/dagster/pull/27232)
+*  [dagster-aws] fix PipesEMRServerlessClient failing with QUEUED job state [#27221](https://github.com/dagster-io/dagster/pull/27221)
+*  > Insert changelog entry or delete this section. [#27231](https://github.com/dagster-io/dagster/pull/27231)
+*  > Insert changelog entry or delete this section. --------- Signed-off-by: nikki everett <nikki@dagsterlabs.com> [#27226](https://github.com/dagster-io/dagster/pull/27226)
+*  > Insert changelog entry or delete this section. --------- Signed-off-by: nikki everett <nikki@dagsterlabs.com> [#27129](https://github.com/dagster-io/dagster/pull/27129)
+*  - Timestamp metadata is now supported by `dagster-pipes`. It can be set like so: ```python {"my_key": {"raw_value": 111, "type": "timestamp"}} ``` [#26997](https://github.com/dagster-io/dagster/pull/26997)
+*  Implement the `.allow()` and `.ignore()` methods on boolean conditions, which will propagate the asset selection down to any contained dep sub-conditions. [#27147](https://github.com/dagster-io/dagster/pull/27147)
+*  - Updates `openai` kinds tag to be "OpenAI" instead of "Open AI" [#27202](https://github.com/dagster-io/dagster/pull/27202)
+*  > Insert changelog entry or delete this section. [#27179](https://github.com/dagster-io/dagster/pull/27179)
+*  > Insert changelog entry or delete this section. [#27200](https://github.com/dagster-io/dagster/pull/27200)
+*  > Insert changelog entry or delete this section. [#27175](https://github.com/dagster-io/dagster/pull/27175)
+*  > Insert changelog entry or delete this section. [#27193](https://github.com/dagster-io/dagster/pull/27193)
+*  - Added `rust` engine support for `dagster_polars[deltalake]` when native partitioning [#27107](https://github.com/dagster-io/dagster/pull/27107)
+*  [docs] added a [tutorial](https://docs.dagster.io/concepts/dagster-pipes/pyspark) for using Dagster Pipes with PySpark [#26899](https://github.com/dagster-io/dagster/pull/26899)
+*  Fix issue wherein declarative automation created (invalid) backfills for observable source assets. [#27076](https://github.com/dagster-io/dagster/pull/27076)
+*  When using the `DAGSTER_REDACT_USER_CODE_ERRORS` environment variable to mask user code errors, the unmasked log lines are now written using a `dagster.masked` Python logger instead of being written to stderr, allowing the format of those log lines to be customized. [#27158](https://github.com/dagster-io/dagster/pull/27158)
+*  > Insert changelog entry or delete this section. [#27170](https://github.com/dagster-io/dagster/pull/27170)
+*  > Insert changelog entry or delete this section. --------- Signed-off-by: nikki everett <nikki@dagsterlabs.com> [#27165](https://github.com/dagster-io/dagster/pull/27165)
+*  > Add get_partition_key helper method that can be used on hourly/daily/weekly/montly partitioned assets to get partition key using date or datetime. [#26511](https://github.com/dagster-io/dagster/pull/26511)
+*  [ui] Sensors targeting asset checks now list the asset checks when you click to view their targets. --------- Co-authored-by: bengotow <bgotow@elementl.com> [#26971](https://github.com/dagster-io/dagster/pull/26971)
+*  [dagster-aws] Added `PipesEMRContainersClient` - a Dagster Pipes client for running and monitoring workloads on [AWS EMR on EKS](https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks.html) with Dagster. [#26967](https://github.com/dagster-io/dagster/pull/26967)
+*  [dagster-databricks] Databricks Pipes now support log forwarding when running on existing clusters. It can be enabled by setting `PipesDbfsMessageReader(include_stdio_in_messages=True)`. [#26210](https://github.com/dagster-io/dagster/pull/26210)
+*  Using `AndAutomationCondition.without()` no longer removes the condition's label. [#27111](https://github.com/dagster-io/dagster/pull/27111)
+*  Implemented `AutomationCondition.replace()` function to improve ergonomics of updating sub-conditions. [#27109](https://github.com/dagster-io/dagster/pull/27109)
+*  > Insert changelog entry or delete this section. [#27145](https://github.com/dagster-io/dagster/pull/27145)
+*  > Insert changelog entry or delete this section. [#27138](https://github.com/dagster-io/dagster/pull/27138)
+*  > Insert changelog entry or delete this section. [#27118](https://github.com/dagster-io/dagster/pull/27118)
+*  NO CHANGELOG [#27135](https://github.com/dagster-io/dagster/pull/27135)
+*  > Insert changelog entry or delete this section. [#26760](https://github.com/dagster-io/dagster/pull/26760)
+*  > Insert changelog entry or delete this section. --------- Signed-off-by: nikki everett <nikki@dagsterlabs.com> [#27087](https://github.com/dagster-io/dagster/pull/27087)
+
+# Undocumented Changes
+- [ ] Alex Langenfeld
+	- [ ] (repo:dagster) [#27194](https://github.com/dagster-io/dagster/pull/27194) [docs snippets] update vercel link to github (#27194)
+- [ ] Alex Noonan
+	- [ ] (repo:dagster) [#27197](https://github.com/dagster-io/dagster/pull/27197) [doc] add missing screenshots for dagster+ (#27197)
+	- [ ] (repo:dagster) [#27173](https://github.com/dagster-io/dagster/pull/27173) add code reference (#27173)
+	- [ ] (repo:dagster) [#27166](https://github.com/dagster-io/dagster/pull/27166) DOC-714-add code references for dependant assets (#27166)
+- [ ] Ben Pankow
+	- [ ] (repo:dagster) [#27183](https://github.com/dagster-io/dagster/pull/27183) More aggressively mask user code errors when masking enabled (#27183)
+	- [ ] (repo:dagster) [#27196](https://github.com/dagster-io/dagster/pull/27196) disable vercel deploys for PR branches (#27196)
+	- [ ] (repo:dagster) [#27187](https://github.com/dagster-io/dagster/pull/27187) [docs] rm code snippet ts (#27187)
+	- [ ] (repo:dagster) [#27186](https://github.com/dagster-io/dagster/pull/27186) [docs] sanitize docs snippet filepath (#27186)
+	- [ ] (repo:dagster) [#27149](https://github.com/dagster-io/dagster/pull/27149) fix test_not_type_input (#27149)
+- [ ] Christopher DeCarolis
+	- [ ] (repo:dagster) [#27086](https://github.com/dagster-io/dagster/pull/27086) Airlift migration guide -> New docs site (#27086)
+	- [ ] (repo:dagster) [#26998](https://github.com/dagster-io/dagster/pull/26998) [dagster-pipes] rich metadata docs (#26998)
+	- [ ] (repo:dagster) [#26988](https://github.com/dagster-io/dagster/pull/26988) Support table metadata in pipes (#26988)
+	- [ ] (repo:dagster) [#26777](https://github.com/dagster-io/dagster/pull/26777) [single-grpc-server][rfc] introduce a heartbeat to proxy server (#26777)
+- [ ] Daniel Gafni
+	- [ ] (repo:dagster) [#27150](https://github.com/dagster-io/dagster/pull/27150) [chore] use uv to install pyright deps (#27150)
+- [ ] Deepyaman Datta
+	- [ ] (repo:dagster) [#27211](https://github.com/dagster-io/dagster/pull/27211) Use `isinstance()` over `hasattr()` for type guard (#27211)
+	- [ ] (repo:dagster) [#27185](https://github.com/dagster-io/dagster/pull/27185) [chore] Add GitHub issue to comment on PyArrow pin (#27185)
+	- [ ] (repo:dagster) [#27155](https://github.com/dagster-io/dagster/pull/27155) Ensure uv venv is built for Pyright Buildkite step (#27155)
+	- [ ] (repo:dagster) [#27148](https://github.com/dagster-io/dagster/pull/27148) [dagster-polars] Pin `pyarrow<19.0.0` during tests (#27148)
+- [ ] Dennis Hume
+	- [ ] (repo:dagster) [#27152](https://github.com/dagster-io/dagster/pull/27152) [docs] Fix Weaviate icon (#27152)
+- [ ] Marco polo
+	- [ ] (repo:dagster) [#27273](https://github.com/dagster-io/dagster/pull/27273) [Asset graph] Fix query error notice (#27273)
+	- [ ] (repo:dagster) [#27228](https://github.com/dagster-io/dagster/pull/27228) [4/n]  Add TTL option to WeakMapMemoize (#27228)
+	- [ ] (repo:dagster) [#27184](https://github.com/dagster-io/dagster/pull/27184) [3/n][Selection syntax] Add stubs to allow Cloud to extend selection syntax functionality. (#27184)
+	- [ ] (repo:dagster) [#27161](https://github.com/dagster-io/dagster/pull/27161) [1/n][Selection syntax] Move off of hint addon (#27161)
+- [ ] Mathieu Larose
+	- [ ] (repo:dagster) [#27104](https://github.com/dagster-io/dagster/pull/27104) [dagster-azure] Testing shell cmd to download logs with azure cli in integration tests (#27104)
+	- [ ] (repo:dagster) [#27093](https://github.com/dagster-io/dagster/pull/27093) [dagster-azure] testing shell cmd (#27093)
+	- [ ] (repo:dagster) [#27092](https://github.com/dagster-io/dagster/pull/27092) [ui] CapturedLogPanel show shell download command if provided (#27092)
+	- [ ] (repo:dagster) [#27091](https://github.com/dagster-io/dagster/pull/27091) [dagster-graphql] Add shell cmd to the LogsCapturedData payload (#27091)
+	- [ ] (repo:dagster) [#27090](https://github.com/dagster-io/dagster/pull/27090) [dagster-azure]: Add Azure specific information to captured logs (#27090)
+- [ ] Maxime Armstrong
+	- [ ] (repo:dagster) [#27227](https://github.com/dagster-io/dagster/pull/27227) [utils] Add beta_param decorator (#27227)
+	- [ ] (repo:dagster) [#27238](https://github.com/dagster-io/dagster/pull/27238) [dagster-sling] Use _default fns in DagsterSlingTranslator.get_* fns (#27238)
+	- [ ] (repo:dagster) [#27168](https://github.com/dagster-io/dagster/pull/27168) [6/n][dagster-sling] Update docs with DagsterSlingTranslator.get_asset_spec (#27168)
+	- [ ] (repo:dagster) [#27167](https://github.com/dagster-io/dagster/pull/27167) [5/n][dagster-sling] Update callsites with DagsterSlingTranslator.get_asset_spec (#27167)
+	- [ ] (repo:dagster) [#27142](https://github.com/dagster-io/dagster/pull/27142) [4/n][dagster-sling] Mark DagsterSlingTranslator.get_* methods as superseded (#27142)
+	- [ ] (repo:dagster) [#27141](https://github.com/dagster-io/dagster/pull/27141) [3/n][dagster-sling] Leverage get_asset_spec in DagsterSlingTranslator.get_* (#27141)
+	- [ ] (repo:dagster) [#27140](https://github.com/dagster-io/dagster/pull/27140) [2/n][dagster-sling] Move logic to default fns in DagsterSlingTranslator (#27140)
+	- [ ] (repo:dagster) [#27139](https://github.com/dagster-io/dagster/pull/27139) [1/n][dagster-sling] Move asset spec creation to DagsterSlingTranslator.get_asset_spec (#27139)
+	- [ ] (repo:dagster) [#27130](https://github.com/dagster-io/dagster/pull/27130) [automation] Update comment in test_resource_telemetry (#27130)
+	- [ ] (repo:dagster) [#27125](https://github.com/dagster-io/dagster/pull/27125) [automation] Add dagster-dlt and dagster-sling in tox (#27125)
+- [ ] Pedram Navid
+	- [ ] (repo:dagster) [#27216](https://github.com/dagster-io/dagster/pull/27216) [docs-beta] Add meta description + SEO friendly titles for API docs (#27216)
+- [ ] Sean Mackesey
+	- [ ] (repo:dagster) [#27172](https://github.com/dagster-io/dagster/pull/27172) [components] Don't use uv-managed environment by default when outside code location (#27172)
+	- [ ] (repo:dagster) [#27082](https://github.com/dagster-io/dagster/pull/27082) [components] Complete the components README (#27082)
+	- [ ] (repo:dagster) [#27132](https://github.com/dagster-io/dagster/pull/27132) [components] Factor out click error message code (#27132)
+	- [ ] (repo:dagster) [#27126](https://github.com/dagster-io/dagster/pull/27126) [components] Fix component scaffolding when code location has hyphenated name (#27126)
+	- [ ] (repo:dagster) [#27124](https://github.com/dagster-io/dagster/pull/27124) [components] Rename generate -> scaffold (#27124)
+- [ ] colton
+	- [ ] (repo:dagster) [#27188](https://github.com/dagster-io/dagster/pull/27188) [dagster-snowflake] fix bug where private key was required to be base64 encoded (#27188)
+- [ ] elementl
+	- [ ] (repo:dagster) [#Automation: versioned docs for 1.9.](https://github.com/dagster-io/dagster/pull/Automation: versioned docs for 1.9.) Automation: versioned docs for 1.9.9
+- [ ] gibsondan
+	- [ ] (repo:dagster) [#27146](https://github.com/dagster-io/dagster/pull/27146) fix redacted errors outputting the message twice (#27146)
+- [ ] prha
+	- [ ] (repo:dagster) [#27201](https://github.com/dagster-io/dagster/pull/27201) 1.9.9 changelog (#27201) Changelog
 
 ## 1.9.9 (core) / 0.25.9 (libraries)
 
