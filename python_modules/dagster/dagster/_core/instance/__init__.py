@@ -3323,3 +3323,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def da_request_backfills(self) -> bool:
         return False
+
+    def limit_num_runs_launched_per_tick(self) -> bool:
+        # Only apply limits to # of runs launched per tick in cloud environments
+        return False

@@ -612,6 +612,10 @@ class SensorExecutionError(DagsterUserCodeExecutionError):
     """Errors raised in a user process during the execution of a sensor (or its job)."""
 
 
+class DagsterTickMaxRunsExceededError(DagsterError):
+    """Indicates that the maximum number of runs launched per tick has been exceeded."""
+
+
 class PartitionExecutionError(DagsterUserCodeExecutionError):
     """Errors raised during the execution of user-provided functions of a partition set schedule."""
 
