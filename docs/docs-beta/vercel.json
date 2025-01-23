@@ -156,6 +156,11 @@
       "permanent": false
     },
     {
+      "source": "/tutorial/introduction",
+      "destination": "/etl-pipeline-tutorial/",
+      "permanent": false
+    },
+    {
       "source": "/tutorial/intro-tutorial/single-op-job",
       "destination": "/etl-pipeline-tutorial/",
       "permanent": false
@@ -368,6 +373,11 @@
     {
       "source": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
       "destination": "/dagster-plus/deployment/management/dagster-cloud-cli/",
+      "permanent": false
+    },
+    {
+      "source": "/dagster-cloud/developing-testing/code-locations",
+      "destination": "/dagster-plus/deployment/code-locations/",
       "permanent": false
     },
     {
@@ -1398,6 +1408,11 @@
     {
       "source": "/guides/dagster/code-references",
       "destination": "/guides/build/assets/metadata-and-tags/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations",
+      "destination": "/integrations/libraries/",
       "permanent": false
     },
     {
