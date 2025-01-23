@@ -15,9 +15,9 @@ from dagster_components.test.test_cases import (
     ComponentValidationTestCase,
 )
 from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import
-from dagster_dg_tests.utils import ProxyRunner, clear_module_from_cache
 
 ensure_dagster_dg_tests_import()
+from dagster_dg_tests.utils import ProxyRunner, clear_module_from_cache
 
 COMPONENT_INTEGRATION_TEST_DIR = (
     Path(__file__).parent.parent.parent.parent
