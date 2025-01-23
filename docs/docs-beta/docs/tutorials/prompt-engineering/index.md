@@ -1,22 +1,19 @@
 ---
-title: Modal
-description: Learn how to build with Modal
+title: Prompt engineering and Anthropic
+description: Learn how to do prompt engineering
 last_update:
    author: Dennis Hume
 sidebar_position: 10
+sidebar_custom_props:
+  logo: images/integrations/anthropic.svg
 ---
 
-:::note
-
-To see [video of this tutorial](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s)
-
-:::
 
 In this tutorial, you'll build a pipeline with Dagster that:
 
-- Automatically detects newly published podcasts
-- Transcribes them using the power of GPUs
-- Notifies you with a summary
+- Takes an input question
+- Generates prompts to use with [Anthropic](https://www.anthropic.com/)
+- Validates outputs of AI models and passes outputs across assets
 
 <details>
   <summary>Prerequisites</summary>
@@ -32,10 +29,10 @@ To follow the steps in this guide, you'll need:
 
 First, set up a new Dagster project.
 
-1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
+1. Clone the the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
-   cd examples/project_dagster_modal_pipes
+   cd examples/project_prompt_eng
    ```
 
 2. Create and activate a virtual environment:
@@ -72,4 +69,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this tutorial with [modal application](modal-application)
+- Continue this tutorial with [prompts](prompts)

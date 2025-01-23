@@ -19,7 +19,3 @@ We will store the accuracy of both models as metadata in the check. Because this
 We can also execute this asset check separately from the fine-tuning job if we ever want to compare the accuracy. Running it a few more times, we can see that the accuracy is plotted:
 
 ![2048 resolution](/images/tutorial/llm-fine-tuning/model_accuracy_2.png)
-
-## Summary
-
-This should give you a good sense of how to fine-tune a model end to end, from ingesting the files, to creating features, and generating and validating the model.

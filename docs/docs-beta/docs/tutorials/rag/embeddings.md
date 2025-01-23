@@ -32,7 +32,7 @@ This I/O manager will be attached to the <PyObject section="definitions" module=
 
 ## Scraping embeddings
 
-The assets for the documentation scraping will behave similar to the GitHub assets. We do not need to worry about rate limiting in the same way as GitHub, so we can leave out the partition that we had defined for GitHub. Instead, we will just include half a second sleep between scraping pages. But like the GitHub assets, our ingestion asset will return a collection of `Documents` that will be handled by the I/O manager. This asset will also include the <PyObject section="assets" module="dagster" object="AutomationCondition" /> to update data on the same cadence as our GitHub source.
+The assets for the documentation scraping will behave similar to the GitHub assets. We will not partition by date like Github, so we can leave out that out of the asset. But like the GitHub assets, our ingestion asset will return a collection of `Documents` that will be handled by the I/O manager. This asset will also include the <PyObject section="assets" module="dagster" object="AutomationCondition" /> to update data on the same cadence as our GitHub source.
 
 The asset that generates the embeddings with the documentation site will need one additional change. Because the content of the documentation pages is so large, we need to split data into chunks. The `split_text` function ensures that we split the text into equal length chunks. We also want to keep similar chunks together and associated with the page they were on so we will hash the index of the URL to ensure data stays together. correctly Once the data is chunked, it can be batched and sent to Pinecone:
 

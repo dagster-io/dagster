@@ -1,17 +1,25 @@
 ---
-title: Prompt engineering
-description: Learn how to do prompt engineering
+title: Retrieval-Augmented Generation (RAG) with Pinecone
+description: Learn how to build a RAG system
 last_update:
    author: Dennis Hume
 sidebar_position: 10
+sidebar_custom_props:
+  logo: images/integrations/pinecone.svg
 ---
 
+:::note
+
+To see [video of this tutorial](https://www.youtube.com/watch?v=MHwwKfCXwDA)
+
+:::
 
 In this tutorial, you'll build a pipeline with Dagster that:
 
-- Takes an input question
-- Generates prompts to use with [Anthropic](https://www.anthropic.com/)
-- Validates outputs of AI models and passes outputs across assets
+- Loads data from GitHub and Documentation site
+- Translates the data into embeddings and tags metadata
+- Stores the data in a vector database
+- Retrieves relevant information to answer ad hoc questions
 
 <details>
   <summary>Prerequisites</summary>
@@ -19,7 +27,7 @@ In this tutorial, you'll build a pipeline with Dagster that:
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.9+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
+- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 </details>
 
 
@@ -27,10 +35,10 @@ To follow the steps in this guide, you'll need:
 
 First, set up a new Dagster project.
 
-1. Clone the the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
+1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
-   cd examples/project_prompt_eng
+   cd examples/project_ask_ai_dagster
    ```
 
 2. Create and activate a virtual environment:
@@ -67,4 +75,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this tutorial with [prompts](prompts)
+- Continue this tutorial with [sources](sources)
