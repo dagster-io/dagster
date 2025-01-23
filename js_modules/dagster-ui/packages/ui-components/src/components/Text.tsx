@@ -73,7 +73,7 @@ export const Body2 = styled(Text)`
   font-weight: 400;
 `;
 
-//Depricated – Use BodySmall moving forward
+//Deprecated – Use BodySmall moving forward
 export const Caption = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 12px;
