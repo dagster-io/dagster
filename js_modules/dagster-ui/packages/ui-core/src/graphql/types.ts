@@ -847,10 +847,12 @@ export type ConcurrencyKeyInfo = {
   assignedStepRunIds: Array<Scalars['String']['output']>;
   claimedSlots: Array<ClaimedConcurrencySlot>;
   concurrencyKey: Scalars['String']['output'];
+  limit: Maybe<Scalars['Int']['output']>;
   pendingStepCount: Scalars['Int']['output'];
   pendingStepRunIds: Array<Scalars['String']['output']>;
   pendingSteps: Array<PendingConcurrencyStep>;
   slotCount: Scalars['Int']['output'];
+  usingDefaultLimit: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type ConfigType = {
@@ -7357,6 +7359,7 @@ export const buildConcurrencyKeyInfo = (
       overrides && overrides.hasOwnProperty('claimedSlots') ? overrides.claimedSlots! : [],
     concurrencyKey:
       overrides && overrides.hasOwnProperty('concurrencyKey') ? overrides.concurrencyKey! : 'quasi',
+    limit: overrides && overrides.hasOwnProperty('limit') ? overrides.limit! : 703,
     pendingStepCount:
       overrides && overrides.hasOwnProperty('pendingStepCount') ? overrides.pendingStepCount! : 370,
     pendingStepRunIds:
@@ -7366,6 +7369,10 @@ export const buildConcurrencyKeyInfo = (
     pendingSteps:
       overrides && overrides.hasOwnProperty('pendingSteps') ? overrides.pendingSteps! : [],
     slotCount: overrides && overrides.hasOwnProperty('slotCount') ? overrides.slotCount! : 455,
+    usingDefaultLimit:
+      overrides && overrides.hasOwnProperty('usingDefaultLimit')
+        ? overrides.usingDefaultLimit!
+        : true,
   };
 };
 

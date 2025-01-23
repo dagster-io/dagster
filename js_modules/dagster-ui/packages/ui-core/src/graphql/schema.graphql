@@ -2504,6 +2504,8 @@ type ConcurrencyKeyInfo {
   pendingStepRunIds: [String!]!
   assignedStepCount: Int!
   assignedStepRunIds: [String!]!
+  limit: Int
+  usingDefaultLimit: Boolean
 }
 
 type ClaimedConcurrencySlot {
