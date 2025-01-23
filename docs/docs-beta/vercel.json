@@ -361,17 +361,12 @@
       "permanent": false
     },
     {
-      "source": "/dagster-cloud",
-      "destination": "/dagster-plus/",
-      "permanent": false
-    },
-    {
-      "source": "/dagster-cloud/managing-deployments/setting-up-alerts",
+      "source": "/dagster-plus/managing-deployments/setting-up-alerts",
       "destination": "/dagster-plus/features/alerts/",
       "permanent": false
     },
     {
-      "source": "/dagster-cloud/managing-deployments/dagster-cloud-cli",
+      "source": "/dagster-plus/managing-deployments/dagster-cloud-cli",
       "destination": "/dagster-plus/deployment/management/dagster-cloud-cli/",
       "permanent": false
     },
