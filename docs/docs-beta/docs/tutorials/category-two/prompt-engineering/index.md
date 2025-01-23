@@ -67,4 +67,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this tutorial with [ingestion](ingestion)
+- Continue this tutorial with [prompts](prompts)
