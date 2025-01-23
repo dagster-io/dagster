@@ -25,7 +25,7 @@ Within Modal, we need to define the image that will be used by the Modal infrast
 
 <CodeExample path="project_dagster_modal_pipes/modal_project/transcribe.py" language="python" lineStart="56" lineEnd="79"/>
 
-Another benefit of Modal is that it allows us to mount an R2 Bucket like a file system. R2 will serve as the staging ground between Dagster and Modal:
+Another benefit of Modal is that it allows us to mount a [Cloudflare R2 Bucket](https://developers.cloudflare.com/r2/buckets/) like a file system. R2 will serve as the staging ground between Dagster and Modal:
 
 <CodeExample path="project_dagster_modal_pipes/modal_project/transcribe.py" language="python" lineStart="80" lineEnd="91"/>
 
