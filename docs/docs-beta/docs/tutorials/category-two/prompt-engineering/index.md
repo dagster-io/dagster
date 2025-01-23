@@ -6,13 +6,12 @@ last_update:
 sidebar_position: 10
 ---
 
-# Prompt Engineering
 
 In this tutorial, you'll build a pipeline with Dagster that:
 
 - Takes an input question
 - Generates prompts to use with Anthropic
-- Validate outputs of AI models and pass outputs across assets
+- Validates outputs of AI models and passes outputs across assets
 
 <details>
   <summary>Prerequisites</summary>
@@ -20,7 +19,7 @@ In this tutorial, you'll build a pipeline with Dagster that:
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
+- Python 3.9+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
 </details>
 
 
@@ -61,7 +60,6 @@ First, set up a new Dagster project.
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-followed by a bash code snippet for 
 
 ```bash
 dagster dev

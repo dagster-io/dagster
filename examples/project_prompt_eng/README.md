@@ -2,7 +2,7 @@
 
 Use prompt engineering to find nearby alternative fuel stations.
 
-In this example project we show how you can write a pipeline leverages prompt
+In this example project, we show how you can write a pipeline that leverages prompt
 engineering to better craft answers that can be relied on for engineering
 across assets
 
@@ -31,7 +31,7 @@ Open http://localhost:3000 in your browser.
 Dagster
 
 - [Dagster Docs](https://docs.dagster.io/)
-- [Dagster Docs: Anthropic Integration](https://docs.dagster.io/integrations/anthropic)
+- [Dagster Anthropic integration](https://docs.dagster.io/integrations/anthropic)
 
 Anthropic
 
