@@ -426,7 +426,7 @@ def migrate_backfill_end_timestamp(storage: RunStorage, print_fn: Optional[Print
             # we don't want to mutate a backfill that is still in progress. Additionally, it won't
             # have an end timestamp until it moves to a terminal state
             continue
-        if backfill.backfill_end_timestamp is not None:
+        if backfill.backfill_end_timestamp is None:
             end_time = get_end_timestamp_for_backfill(storage, backfill)
             updated_backfill = backfill.with_end_timestamp(end_time)
             storage.update_backfill(updated_backfill)

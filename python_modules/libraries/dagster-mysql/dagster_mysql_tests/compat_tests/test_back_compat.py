@@ -825,6 +825,15 @@ def test_add_backfill_end_timestamp(conn_string):
                 backfill_timestamp=get_current_timestamp(),
             )
             instance.add_backfill(in_progress_backfill)
+            no_runs_backfill = PartitionBackfill(
+                "no_runs_backfill",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.CANCELED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(no_runs_backfill)
             # before migration, backfill end timestamps will be None
             completed_backfill = instance.get_backfill(completed_backfill.backfill_id)
             assert completed_backfill
@@ -832,6 +841,9 @@ def test_add_backfill_end_timestamp(conn_string):
             in_progress_backfill = instance.get_backfill(in_progress_backfill.backfill_id)
             assert in_progress_backfill
             assert in_progress_backfill.backfill_end_timestamp is None
+            no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
+            assert no_runs_backfill
+            assert no_runs_backfill.backfill_end_timestamp is None
 
             for _ in range(3):
                 instance.run_storage.add_run(
@@ -890,3 +902,7 @@ def test_add_backfill_end_timestamp(conn_string):
             in_progress_backfill = instance.get_backfill(in_progress_backfill.backfill_id)
             assert in_progress_backfill
             assert in_progress_backfill.backfill_end_timestamp is None
+
+            no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
+            assert no_runs_backfill
+            assert no_runs_backfill.backfill_end_timestamp == no_runs_backfill.backfill_timestamp
