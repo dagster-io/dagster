@@ -6,7 +6,6 @@ last_update:
 sidebar_position: 10
 ---
 
-
 :::note
 
 To see [video of this tutorial](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s)
@@ -73,4 +72,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this tutorial with [ingestion](ingestion)
+- Continue this tutorial with [modal application](modal-application)
