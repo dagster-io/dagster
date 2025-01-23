@@ -77,7 +77,8 @@ def dagster_instance_config(
         custom_instance_class = cast(
             type["DagsterInstance"],
             class_from_code_pointer(
-                custom_instance_class_data["module"], custom_instance_class_data["class"]
+                custom_instance_class_data["module"],
+                custom_instance_class_data["class"],
             ),
         )
 
@@ -182,7 +183,8 @@ def validate_concurrency_config(dagster_config_dict: Mapping[str, Any]):
 
     elif "default_op_concurrency_limit" in concurrency_config:
         default_concurrency_limit = check.opt_inst(
-            pluck_config_value(concurrency_config, ["default_op_concurrency_limit"]), int
+            pluck_config_value(concurrency_config, ["default_op_concurrency_limit"]),
+            int,
         )
         if default_concurrency_limit is not None:
             max_limit = get_max_concurrency_limit_value()
@@ -454,7 +456,8 @@ def get_concurrency_config() -> Field:
                             "to be freed."
                         ),
                     ),
-                }
+                },
+                is_required=False,
             ),
             "runs": Field(
                 {
@@ -496,7 +499,8 @@ def get_concurrency_config() -> Field:
                             " number of unique values for that key."
                         ),
                     ),
-                }
+                },
+                is_required=False,
             ),
             "default_op_concurrency_limit": Field(
                 int,

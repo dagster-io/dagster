@@ -1,19 +1,50 @@
+import inspect
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, TypeVar, Union
 
 from dagster._record import record
-from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
+from dagster._utils import pushd
+from dagster._utils.pydantic_yaml import (
+    _parse_and_populate_model_with_annotated_errors,
+    enrich_validation_errors_with_source_position,
+)
 from dagster._utils.source_position import SourcePositionTree
 from dagster._utils.yaml_utils import parse_yaml_with_source_positions
-from pydantic import BaseModel
+from pydantic import BaseModel, TypeAdapter
 
-from dagster_components.core.component import ComponentDeclNode
+from dagster_components.core.component import (
+    Component,
+    ComponentDeclNode,
+    ComponentLoadContext,
+    ComponentTypeRegistry,
+    get_component_type_name,
+    is_registered_component_type,
+)
+from dagster_components.utils import load_module_from_path
 
 
 class ComponentFileModel(BaseModel):
     type: str
     params: Optional[Mapping[str, Any]] = None
+
+
+T = TypeVar("T", bound=BaseModel)
+
+
+def find_local_component_types(component_path: Path) -> list[type[Component]]:
+    """Find all component types defined in a component directory."""
+    component_types = []
+    for py_file in component_path.glob("*.py"):
+        module_name = py_file.stem
+
+        module = load_module_from_path(module_name, component_path / f"{module_name}.py")
+
+        for _name, obj in inspect.getmembers(module, inspect.isclass):
+            assert isinstance(obj, type)
+            if is_registered_component_type(obj):
+                component_types.append(obj)
+    return component_types
 
 
 @record
@@ -23,7 +54,16 @@ class YamlComponentDecl(ComponentDeclNode):
     source_position_tree: Optional[SourcePositionTree] = None
 
     @staticmethod
-    def from_path(component_file_path: Path) -> "YamlComponentDecl":
+    def component_file_path(path: Path) -> Path:
+        return path / "component.yaml"
+
+    @staticmethod
+    def exists_at(path: Path) -> bool:
+        return YamlComponentDecl.component_file_path(path).exists()
+
+    @staticmethod
+    def from_path(path: Path) -> "YamlComponentDecl":
+        component_file_path = YamlComponentDecl.component_file_path(path)
         parsed = parse_yaml_with_source_positions(
             component_file_path.read_text(), str(component_file_path)
         )
@@ -32,16 +72,61 @@ class YamlComponentDecl(ComponentDeclNode):
         )
 
         return YamlComponentDecl(
-            path=component_file_path.parent,
+            path=path,
             component_file_model=obj,
             source_position_tree=parsed.source_position_tree,
         )
+
+    def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
+        parsed_defs = self.component_file_model
+        if parsed_defs.type.startswith("."):
+            component_registry_key = parsed_defs.type[1:]
+
+            for component_type in find_local_component_types(self.path):
+                if get_component_type_name(component_type) == component_registry_key:
+                    return component_type
+
+            raise Exception(
+                f"Could not find component type {component_registry_key} in {self.path}"
+            )
+
+        return registry.get(parsed_defs.type)
+
+    def get_params(self, context: ComponentLoadContext, params_schema: type[T]) -> T:
+        with pushd(str(self.path)):
+            raw_params = self.component_file_model.params
+            preprocessed_params = context.templated_value_resolver.resolve_params(
+                raw_params, params_schema
+            )
+
+            if self.source_position_tree:
+                source_position_tree_of_params = self.source_position_tree.children["params"]
+                with enrich_validation_errors_with_source_position(
+                    source_position_tree_of_params, ["params"]
+                ):
+                    return TypeAdapter(params_schema).validate_python(preprocessed_params)
+            else:
+                return TypeAdapter(params_schema).validate_python(preprocessed_params)
+
+    def load(self, context: ComponentLoadContext) -> Sequence[Component]:
+        component_type = self.get_component_type(context.registry)
+        component_schema = component_type.get_schema()
+        context = context.with_rendering_scope(component_type.get_additional_scope())
+        loaded_params = self.get_params(context, component_schema) if component_schema else None
+        return [component_type.load(loaded_params, context)]
 
 
 @record
 class ComponentFolder(ComponentDeclNode):
     path: Path
     sub_decls: Sequence[Union[YamlComponentDecl, "ComponentFolder"]]
+
+    def load(self, context: ComponentLoadContext) -> Sequence[Component]:
+        components = []
+        for sub_decl in self.sub_decls:
+            sub_context = context.for_decl_node(sub_decl)
+            components.extend(sub_decl.load(sub_context))
+        return components
 
 
 def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
@@ -52,10 +137,8 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
     if not path.is_dir():
         return None
 
-    component_path = path / "component.yaml"
-
-    if component_path.exists():
-        return YamlComponentDecl.from_path(component_path)
+    if YamlComponentDecl.exists_at(path):
+        return YamlComponentDecl.from_path(path)
 
     subs = []
     for subpath in path.iterdir():

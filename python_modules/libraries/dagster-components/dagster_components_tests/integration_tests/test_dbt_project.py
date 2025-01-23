@@ -54,7 +54,11 @@ def test_python_params(dbt_path: Path) -> None:
             },
         ),
     )
-    component = DbtProjectComponent.load(context=script_load_context(decl_node))
+    context = script_load_context(decl_node)
+    component = DbtProjectComponent.load(
+        params=decl_node.get_params(context, DbtProjectComponent.get_schema()),
+        context=context,
+    )
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
     defs = component.build_defs(script_load_context())
     assert defs.get_assets_def("stg_customers").op.name == "some_op"

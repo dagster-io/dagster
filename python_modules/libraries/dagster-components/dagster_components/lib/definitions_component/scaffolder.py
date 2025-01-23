@@ -15,7 +15,7 @@ class DefinitionsScaffoldParams(BaseModel):
 
 class DefinitionsComponentScaffolder(ComponentScaffolder):
     @classmethod
-    def get_params_schema_type(cls):
+    def get_schema(cls):
         return DefinitionsScaffoldParams
 
     def scaffold(

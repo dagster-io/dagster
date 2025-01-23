@@ -72,7 +72,7 @@ const SCOUTOS_INNER_HTML = `
 const SCOUTOS_COPILOT_INNER_HTML = `
   document.addEventListener('DOMContentLoaded', function() {
     var copilot = document.createElement('scout-copilot');
-    copilot.setAttribute('copilot_id', 'copilot_cm61kissp00010es61qxro4dq');
+    copilot.setAttribute('copilot_id', 'copilot_cm69wb08t000j0ds6rxdnung4');
     copilot.innerHTML = \`
       <div
         slot="fab"

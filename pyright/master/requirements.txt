@@ -97,6 +97,12 @@
 -e python_modules/libraries/dagster-wandb[dev]
 -e python_modules/libraries/dagstermill/
 
+### COMMUNITY
+dagster-anthropic
+dagster-chroma
+dagster-gemini
+dagster-weaviate
+
 ### OTHER
 pandas_gbq  # (quickstart_gcp)
 wordcloud  # (quickstart-*)
@@ -146,3 +152,4 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/use_case_repository[dev]
 -e examples/project_atproto_dashboard
 -e examples/project_dagster_modal_pipes
+-e examples/project_prompt_eng

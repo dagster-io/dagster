@@ -24,6 +24,7 @@ from dagster._core.storage.event_log.base import (
     EventRecordsFilter,
     EventRecordsResult,
     PlannedMaterializationInfo,
+    PoolLimit,
 )
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.schedules.base import ScheduleStorage
@@ -674,6 +675,9 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_concurrency_keys(self) -> set[str]:
         return self._storage.event_log_storage.get_concurrency_keys()
+
+    def get_pool_limits(self) -> Sequence[PoolLimit]:
+        return self._storage.event_log_storage.get_pool_limits()
 
     def get_concurrency_info(self, concurrency_key: str) -> ConcurrencyKeyInfo:
         return self._storage.event_log_storage.get_concurrency_info(concurrency_key)

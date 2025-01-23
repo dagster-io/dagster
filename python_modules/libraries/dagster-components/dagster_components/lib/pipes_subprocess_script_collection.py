@@ -42,15 +42,15 @@ class PipesSubprocessScriptCollection(Component):
         return PipesSubprocessScriptCollection(dirpath=path, path_specs=path_specs)
 
     @classmethod
-    def get_schema(cls):
+    def get_schema(cls) -> type[PipesSubprocessScriptCollectionParams]:
         return PipesSubprocessScriptCollectionParams
 
     @classmethod
-    def load(cls, context: ComponentLoadContext) -> "PipesSubprocessScriptCollection":
-        loaded_params = context.load_params(cls.get_schema())
-
+    def load(
+        cls, params: PipesSubprocessScriptCollectionParams, context: ComponentLoadContext
+    ) -> "PipesSubprocessScriptCollection":
         path_specs = {}
-        for script in loaded_params.scripts:
+        for script in params.scripts:
             script_path = context.path / script.path
             if not script_path.exists():
                 raise FileNotFoundError(f"Script {script_path} does not exist")

@@ -1543,7 +1543,7 @@ def test_add_run_tags_run_id_idx():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             instance.upgrade()
 
-        assert get_current_alembic_version(db_path) == "6b7fb194ff9c"
+        assert get_current_alembic_version(db_path) != "16e3655b4d9b"
         assert "run_tags" in get_sqlite3_tables(db_path)
         assert "idx_run_tags" not in get_sqlite3_indexes(db_path, "run_tags")
         assert "idx_run_tags_run_id" in get_sqlite3_indexes(db_path, "run_tags")

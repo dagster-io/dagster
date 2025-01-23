@@ -267,6 +267,35 @@ class InstanceManagers:
 
         return MarkedManager(_sqlite_asset_instance, [Marks.asset_aware_instance])
 
+    @staticmethod
+    def default_concurrency_sqlite_instance():
+        @contextmanager
+        def _sqlite_with_default_concurrency_instance():
+            with tempfile.TemporaryDirectory() as temp_dir:
+                with instance_for_test(
+                    temp_dir=temp_dir,
+                    overrides={
+                        "scheduler": {
+                            "module": "dagster.utils.test",
+                            "class": "FilesystemTestScheduler",
+                            "config": {"base_dir": temp_dir},
+                        },
+                        "run_coordinator": {
+                            "module": "dagster._core.run_coordinator.queued_run_coordinator",
+                            "class": "QueuedRunCoordinator",
+                        },
+                        "concurrency": {
+                            "default_op_concurrency_limit": 1,
+                        },
+                    },
+                ) as instance:
+                    yield instance
+
+        return MarkedManager(
+            _sqlite_with_default_concurrency_instance,
+            [Marks.sqlite_instance, Marks.queued_run_coordinator],
+        )
+
 
 class EnvironmentManagers:
     @staticmethod
@@ -557,6 +586,16 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def sqlite_with_default_concurrency_managed_grpc_env(
+        target=None, location_name="test_location"
+    ):
+        return GraphQLContextVariant(
+            InstanceManagers.default_concurrency_sqlite_instance(),
+            EnvironmentManagers.managed_grpc(target, location_name),
+            test_id="sqlite_with_default_concurrency_managed_grpc_env",
+        )
+
+    @staticmethod
     def postgres_with_default_run_launcher_managed_grpc_env(
         target=None, location_name="test_location"
     ):
@@ -662,6 +701,7 @@ class GraphQLContextVariant:
             GraphQLContextVariant.non_launchable_postgres_instance_managed_grpc_env(),
             GraphQLContextVariant.non_launchable_postgres_instance_lazy_repository(),
             GraphQLContextVariant.consolidated_sqlite_instance_managed_grpc_env(),
+            GraphQLContextVariant.sqlite_with_default_concurrency_managed_grpc_env(),
         ]
 
     @staticmethod

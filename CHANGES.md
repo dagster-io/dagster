@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.9.10 (core) / 0.25.10 (libraries)
+
+### New
+
+- Added a new `.replace()` method to `AutomationCondition`, which allows sub-conditions to be modified in-place.
+- Added new `.allow()` and `.ignore()` methods to the boolean `AutomationCondition` operators, which allow asset selections to be propagated to sub-conditions such as `AutomationCondition.any_deps_match()` and `AutomationCondition.all_deps_match()`.
+- When using the `DAGSTER_REDACT_USER_CODE_ERRORS` environment variable to mask user code errors, the unmasked log lines are now written using a `dagster.masked` Python logger instead of being written to stderr, allowing the format of those log lines to be customized.
+- Added a `get_partition_key()` helper method that can be used on hourly/daily/weekly/monthly partitioned assets to get the partition key for any given partition definition. (Thanks [@Gw1p](https://github.com/Gw1p)!)
+- [dagster-aws] Added a `task_definition_prefix` argument to `EcsRunLauncher`, allowing the name of the task definition families for launched runs to be customized. Previously, the task definition families always started with `run`.
+- [dagster-aws] Added the `PipesEMRContainersClient` Dagster Pipes client for running and monitoring workloads on [AWS EMR on EKS](https://docs.aws.amazon.com/emr/latest/EMR-on-EKS-DevelopmentGuide/emr-eks.html) with Dagster.
+- [dagster-pipes] Added support for setting timestamp metadata (e.g. `{"my_key": {"raw_value": 111, "type": "timestamp"}}`).
+- [dagster-databricks, dagster-pipes] Databricks Pipes now support log forwarding when running on existing clusters. It can be enabled by setting `PipesDbfsMessageReader(include_stdio_in_messages=True)`.
+- [dagster-polars] Added `rust` engine support when writing a Delta Lake table using native partitioning. (Thanks [@Milias](https://github.com/Milias)!)
+
+### Bugfixes
+
+- Fixed a bug where setting an `AutomationCondition` on an observable source asset could sometimes result in invalid backfills being launched.
+- Using `AndAutomationCondition.without()` no longer removes the condition's label.
+- [ui] Sensors targeting asset checks now list the asset checks when you click to view their targets.
+- [dagster-aws] Fixed the execution of EMR Serverless jobs using `PipesEMRServerlessClient` failing if a job is in the `QUEUED` state.
+- [dagster-pipes] Fixed Dagster Pipes log capturing when running on Databricks.
+- [dagster-snowflake] Fixed a bug where passing a non-base64-encoded private key to a `SnowflakeResource` resulted in an error.
+- [dagster-openai] Updated `openai` kinds tag to be "OpenAI" instead of "Open AI" in line with the OpenAI branding.
+
+### Documentation
+
+- [dagster-pipes] Added a [tutorial](https://docs.dagster.io/concepts/dagster-pipes/pyspark) for using Dagster Pipes with PySpark.
+
 ## 1.9.9 (core) / 0.25.9 (libraries)
 
 ### New

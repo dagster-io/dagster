@@ -15,7 +15,7 @@ class ComponentScaffoldRequest:
 
 class ComponentScaffolder:
     @classmethod
-    def get_params_schema_type(cls) -> Optional[type[BaseModel]]:
+    def get_schema(cls) -> Optional[type[BaseModel]]:
         return None
 
     @abstractmethod

@@ -9,14 +9,13 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-dbt
 docslink: https://docs.dagster.io/integrations/dbt
 partnerlink: https://www.getdbt.com/
-logo: /integrations/dbt.svg
 categories:
   - ETL
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
 sidebar_custom_props: 
-  logo: images/integrations/dbt.svg
+  logo: images/integrations/dbt/dbt.svg
 ---
 
 Dagster orchestrates dbt alongside other technologies, so you can schedule dbt with Spark, Python, etc. in a single data pipeline.
