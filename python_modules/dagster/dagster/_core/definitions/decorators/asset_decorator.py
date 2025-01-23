@@ -256,7 +256,6 @@ def asset(
     Examples:
         .. code-block:: python
 
-            # Basic usage: define an asset that depends on an upstream asset
             @asset
             def my_upstream_asset() -> int:
                 return 5
@@ -265,7 +264,6 @@ def asset(
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
 
-            # Using `output_required`: define an asset that conditionally yields a result
             should_materialize = True
 
             @asset(output_required=False)
