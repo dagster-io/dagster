@@ -12,8 +12,6 @@ To see [video of this tutorial](https://www.youtube.com/watch?v=MHwwKfCXwDA)
 
 :::
 
-# RAG
-
 In this tutorial, you'll build a pipeline with Dagster that:
 
 - Loads data from Github and Documentation site
@@ -35,7 +33,7 @@ To follow the steps in this guide, you'll need:
 
 First, set up a new Dagster project.
 
-1. Within the Dagster repo, navigate to the project:
+1. Clone the the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
    cd examples/project_ask_ai_dagster
@@ -76,4 +74,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this tutorial with [ingestion](ingestion)
+- Continue this tutorial with [sources](sources)
