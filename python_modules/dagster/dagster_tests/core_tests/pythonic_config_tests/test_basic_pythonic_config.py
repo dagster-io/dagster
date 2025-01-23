@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Optional
 
 import dagster
@@ -1054,3 +1055,19 @@ def test_run_config_equality() -> None:
         },
     }
     assert RunConfig(config_dict) == RunConfig(config_dict)
+
+
+def test_convert_to_config_dictionary() -> None:
+    class Color(Enum):
+        RED = 1
+        GREEN = 2
+        BLUE = 3
+
+    class MyConfig(Config):
+        num: int = 1
+        opt_str: Optional[str] = None
+        enum: Color = Color.RED
+        arr: list[int] = []
+        opt_arr: Optional[list[int]] = None
+
+    assert MyConfig()._convert_to_config_dictionary() == {"num": 1, "enum": "RED", "arr": []}  # noqa: SLF001

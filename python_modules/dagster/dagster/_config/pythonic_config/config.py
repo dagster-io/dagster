@@ -265,16 +265,19 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         Inner fields are recursively converted to dictionaries, meaning nested config objects
         or EnvVars will be converted to the appropriate dictionary representation.
         """
-        public_fields = self._get_non_default_public_field_values()
+        public_fields = self._get_non_default_public_field_values(keep_if_not_none=True)
         return {
             k: _config_value_to_dict_representation(model_fields(self).get(k), v)
             for k, v in public_fields.items()
         }
 
     @classmethod
-    def _get_non_default_public_field_values_cls(cls, items: dict[str, Any]) -> Mapping[str, Any]:
+    def _get_non_default_public_field_values_cls(
+        cls, items: dict[str, Any], keep_if_not_none: bool = False
+    ) -> Mapping[str, Any]:
         """Returns a dictionary representation of this config object,
-        ignoring any private fields, and any defaulted fields which are equal to the default value.
+        ignoring any private fields, and any defaulted fields which are equal to the default value
+        (unless `keep_if_not_none`, in which case any non-`None` defaulted fields are kept).
 
         Inner fields are returned as-is in the dictionary,
         meaning any nested config objects will be returned as config objects, not dictionaries.
@@ -286,8 +289,10 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             field = model_fields(cls).get(key)
 
             if field:
+                keep = keep_if_not_none and value is not None
                 if (
-                    not is_literal(field.annotation)
+                    not keep
+                    and not is_literal(field.annotation)
                     and not safe_is_subclass(field.annotation, Enum)
                     and value == field.default
                 ):
@@ -299,8 +304,10 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 output[key] = value
         return output
 
-    def _get_non_default_public_field_values(self) -> Mapping[str, Any]:
-        return self.__class__._get_non_default_public_field_values_cls(dict(self))  # noqa: SLF001
+    def _get_non_default_public_field_values(
+        self, keep_if_not_none: bool = False
+    ) -> Mapping[str, Any]:
+        return self.__class__._get_non_default_public_field_values_cls(dict(self), keep_if_not_none)  # noqa: SLF001
 
     @classmethod
     def to_config_schema(cls) -> DefinitionConfigSchema:
