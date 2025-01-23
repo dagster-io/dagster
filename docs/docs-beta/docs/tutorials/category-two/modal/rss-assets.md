@@ -10,7 +10,7 @@ The Modal application  is ready so we can return to Dagster and define the upstr
 
 <CodeExample path="project_dagster_modal_pipes/project_dagster_modal_pipes/pipeline_factory.py" language="python" lineStart="36" lineEnd="61"/>
 
-Now that the data is in R2, as Modal expects, we can invoke the Modal application via Dagster. We will do this using Dagster Pipes. Pipes provide a wrapper around a subprocess. This is ideal for executing code in other envrionments. This also allows us to pass Dagster any necessary context or environment variables to Modal. This is particularly helpful for things like the access keys for the R2 Bucket. Now using the Dagster `ModalClient` we can invoke the Modal application:
+Now that the data is in R2, as Modal expects, we can invoke the Modal application via Dagster. We will do this using Dagster Pipes. Pipes provide a wrapper around a subprocess. This is ideal for executing code in other environments. This also allows us to pass Dagster any necessary context or environment variables to Modal. This is particularly helpful for things like the access keys for the R2 Bucket. Now using the Dagster `ModalClient` we can invoke the Modal application:
 
 <CodeExample path="project_dagster_modal_pipes/project_dagster_modal_pipes/pipeline_factory.py" language="python" lineStart="62" lineEnd="92"/>
 
@@ -20,7 +20,7 @@ The next asset will take those new files and summarize them with OpenAI. After a
 
 <CodeExample path="project_dagster_modal_pipes/project_dagster_modal_pipes/pipeline_factory.py" language="python" lineStart="93" lineEnd="120"/>
 
-The final step in our DAG pipelies takes that summary and email the user with [yagmail](https://github.com/kootenpv/yagmail).
+The final step in our DAG pipelie takes that summary and email the user with [yagmail](https://github.com/kootenpv/yagmail).
 
 ## Sensor
 

@@ -1,6 +1,6 @@
 ---
 title: Modal
-description: Learn how to do prompt engineering
+description: Learn how to build with Modal
 last_update:
    author: Dennis Hume
 sidebar_position: 10

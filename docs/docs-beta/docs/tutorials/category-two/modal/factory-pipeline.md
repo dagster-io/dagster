@@ -20,6 +20,6 @@ Now we have a list of `Definitions` for the three podcasts. We will merge these 
 
 <CodeExample path="project_dagster_modal_pipes/project_dagster_modal_pipes/definitions.py" language="python" lineStart="43" lineEnd="53"/>
 
-We can now see all the assets in Dagster and know that we will ingest any new podcasts going foward.
+We can now see all the assets in Dagster and know that we will ingest any new podcasts going forward.
 
 ![2048 resolution](/images/tutorial/modal/screenshot_dagster_lineage.png)
