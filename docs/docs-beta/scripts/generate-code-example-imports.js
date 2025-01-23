@@ -44,20 +44,24 @@ function getUniqueRegexMatches(files, regex) {
   return Array.from(matches);
 }
 
+/**
+ * Helper function to create a `raw-loader` import from a `path`.
+ */
+function pathToImport(path) {
+  return `import('!!raw-loader!/../../examples/${path}')`;
+}
+
 const files = getAllDocuments('docs');
 
 const uniqueMatches = getUniqueRegexMatches(files, CODE_EXAMPLE_PATH_REGEX);
 
-const lines = [
-  'export const CODE_EXAMPLE_PATH_MAPPINGS = {',
-  //...uniqueMatches.map((path) => `  '${path}': '!!raw-loader!/../../examples/${path}',`),
-  //...uniqueMatches.map((path) => `  '${path}': require('!!raw-loader!/../../examples/${path}'),`),
-  ...uniqueMatches.map((path) => `  '${path}': import('!!raw-loader!/../../examples/${path}'),`),
-  '};',
-].join('\n');
+const _module = `
+export const CODE_EXAMPLE_PATH_MAPPINGS = \{
+  ${uniqueMatches.map((path) => `  '${path}': () => ${pathToImport(path)},`).join('\n')}
+\};
+`;
 
-
-fs.writeFile('src/code-examples-content.js', lines, (err) => {
+fs.writeFile('src/code-examples-content.js', _module, (err) => {
   if (err) throw err;
   console.log(`Succesfully generated mappings for ${uniqueMatches.length} references...`);
 });

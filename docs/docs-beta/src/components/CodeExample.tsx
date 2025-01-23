@@ -91,7 +91,7 @@ function useLoadModule(
      * We only reach this path on the client.
      * Throw a promise to suspend in order to avoid un-rendering the codeblock that we SSR'd
      */
-    throw CODE_EXAMPLE_PATH_MAPPINGS[path]
+    throw CODE_EXAMPLE_PATH_MAPPINGS[path]()
       .then((module) => {
         processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
       })
