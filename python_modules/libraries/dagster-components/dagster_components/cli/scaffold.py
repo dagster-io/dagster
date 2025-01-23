@@ -62,9 +62,7 @@ def scaffold_component_command(
             raise Exception(
                 f"Component type {component_type} does not have a scaffolder. Reason: {scaffolder.message}."
             )
-        scaffold_params = TypeAdapter(scaffolder.get_params_schema_type()).validate_json(
-            json_params
-        )
+        scaffold_params = TypeAdapter(scaffolder.get_schema()).validate_json(json_params)
     else:
         scaffold_params = {}
 
