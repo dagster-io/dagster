@@ -14,7 +14,7 @@ In order to do similarity searches, the input question will need to be embedded 
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/assets/retrieval.py" language="python" lineStart="42" lineEnd="59"/>
 
-With the relevant information retrieved from Pinecone, we can add some prompt engineering to combine that context extracted from Pinecone with the original question (in text). The full prompt is then sent to Open AI again (now using the `gpt-4-turbo-preview` model) to get the final answer which is recorded as a <PyObject section="asset" module="dagster" object="MaterializeResult" /> in the Dagster Catalog:
+With the relevant information retrieved from Pinecone, we can add some prompt engineering to combine that context extracted from Pinecone with the original question (in text). The full prompt is then sent to Open AI again (now using the `gpt-4-turbo-preview` model) to get the final answer which is recorded as a <PyObject section="assets" module="dagster" object="MaterializeResult" /> in the Dagster Catalog:
 
 <CodeExample path="project_ask_ai_dagster/project_ask_ai_dagster/assets/retrieval.py" language="python" lineStart="85" lineEnd="115"/>
 
