@@ -28,7 +28,7 @@ class RemoteComponentType:
 
 def _retrieve_local_component_types(
     dg_context: "DgContext", paths: Sequence[Path]
-) -> dict[str, dict[str, Mapping[str, Any]]]:
+) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
     paths_to_fetch = set(paths)
     data_for_path: dict[str, dict[str, Mapping[str, Any]]] = {}
     if dg_context.has_cache:
@@ -51,11 +51,12 @@ def _retrieve_local_component_types(
         for path in paths_to_fetch:
             data_for_path[str(path)] = local_component_data.get(str(path), {})
 
-        for path in paths_to_fetch:
-            cache_key = dg_context.get_cache_key_for_local_components(path)
-            data_for_path_json = json.dumps(local_component_data.get(str(path), {}))
-            if dg_context.has_cache and cache_key and is_valid_json(data_for_path_json):
-                dg_context.cache.set(cache_key, data_for_path_json)
+        if dg_context.has_cache:
+            for path in paths_to_fetch:
+                cache_key = dg_context.get_cache_key_for_local_components(path)
+                data_for_path_json = json.dumps(local_component_data.get(str(path), {}))
+                if cache_key and is_valid_json(data_for_path_json):
+                    dg_context.cache.set(cache_key, data_for_path_json)
 
     return data_for_path
 
@@ -85,7 +86,7 @@ class RemoteComponentRegistry:
 
         registry_data = json.loads(raw_registry_data)
 
-        local_component_data: dict[str, dict[str, Mapping[str, Any]]] = {}
+        local_component_data: Mapping[str, Mapping[str, Mapping[str, Any]]] = {}
         if local_component_type_dirs:
             local_component_data = _retrieve_local_component_types(
                 dg_context, local_component_type_dirs
@@ -97,8 +98,8 @@ class RemoteComponentRegistry:
     @classmethod
     def from_dict(
         cls,
-        global_component_types: dict[str, Mapping[str, Any]],
-        local_component_types: dict[str, dict[str, Mapping[str, Any]]],
+        global_component_types: Mapping[str, Mapping[str, Any]],
+        local_component_types: Mapping[str, Mapping[str, Mapping[str, Any]]],
     ) -> "RemoteComponentRegistry":
         components_by_path = defaultdict(dict)
         for directory in local_component_types:

@@ -103,7 +103,7 @@ def snakecase(string: str) -> str:
     return string
 
 
-_DEFAULT_EXCLUDES: list[str] = [
+DEFAULT_FILE_EXCLUDE_PATTERNS: list[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
@@ -127,7 +127,9 @@ def scaffold_subtree(
     **other_template_vars: Any,
 ):
     """Renders templates for Dagster project."""
-    excludes = _DEFAULT_EXCLUDES if not excludes else _DEFAULT_EXCLUDES + excludes
+    excludes = (
+        DEFAULT_FILE_EXCLUDE_PATTERNS if not excludes else DEFAULT_FILE_EXCLUDE_PATTERNS + excludes
+    )
 
     normalized_path = os.path.normpath(path)
     project_name = project_name or os.path.basename(normalized_path).replace("-", "_")
@@ -191,7 +193,7 @@ def scaffold_subtree(
     click.echo(f"Scaffolded files for Dagster project in {path}.")
 
 
-def _should_skip_file(path: str, excludes: list[str] = _DEFAULT_EXCLUDES):
+def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATTERNS):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 

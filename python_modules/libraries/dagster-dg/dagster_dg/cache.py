@@ -8,7 +8,11 @@ from typing import Final, Literal, Optional
 from typing_extensions import Self, TypeAlias
 
 from dagster_dg.config import DgConfig
-from dagster_dg.utils import _DEFAULT_EXCLUDES, hash_directory_metadata, hash_file_metadata
+from dagster_dg.utils import (
+    DEFAULT_FILE_EXCLUDE_PATTERNS,
+    hash_directory_metadata,
+    hash_file_metadata,
+)
 
 _CACHE_CONTAINER_DIR_NAME: Final = "dg-cache"
 
@@ -27,7 +31,7 @@ def get_default_cache_dir() -> Path:
 def hash_paths(
     paths: Sequence[Path],
     includes: Optional[Sequence[str]] = None,
-    excludes: Sequence[str] = _DEFAULT_EXCLUDES,
+    excludes: Sequence[str] = DEFAULT_FILE_EXCLUDE_PATTERNS,
 ) -> str:
     hasher = hashlib.md5()
     for path in paths:
