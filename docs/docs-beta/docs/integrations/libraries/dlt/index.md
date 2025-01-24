@@ -7,8 +7,8 @@ sidebar_label: dlt
 excerpt: Easily ingest and replicate data between systems with dlt through Dagster.
 date: 2024-08-30
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-dlt
-docslink: https://docs.dagster.io/integrations/dlt
-partnerlink: https://www.getdbt.com/
+docslink: https://docs.dagster.io/integrations/libraries/dlt/
+partnerlink: https://dlthub.com/
 logo: /integrations/dlthub.jpeg
 categories:
   - ETL

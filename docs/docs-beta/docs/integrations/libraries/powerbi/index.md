@@ -7,8 +7,8 @@ sidebar_label: Power BI
 excerpt: Represent your Power BI assets in Dagster.
 date: 
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-powerbi
-docslink: https://docs.dagster.io/integrations/powerbi
-partnerlink:
+docslink: https://docs.dagster.io/integrations/libraries/powerbi/
+partnerlink: https://learn.microsoft.com/en-us/power-bi/
 categories:
 enabledBy:
 enables:

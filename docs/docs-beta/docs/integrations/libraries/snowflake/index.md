@@ -7,7 +7,7 @@ sidebar_label: Snowflake
 excerpt: An integration with the Snowflake data warehouse. Read and write natively to Snowflake from Software Defined Assets.
 date: 2022-11-07
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-snowflake
-docslink: https://docs.dagster.io/integrations/snowflake
+docslink: https://docs.dagster.io/integrations/libraries/snowflake/
 partnerlink: https://www.snowflake.com/en/
 categories:
   - Storage
