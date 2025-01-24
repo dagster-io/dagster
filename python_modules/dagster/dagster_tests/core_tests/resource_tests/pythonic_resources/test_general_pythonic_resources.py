@@ -585,35 +585,44 @@ def test_nested_config_class() -> None:
 
 
 # https://github.com/dagster-io/dagster/issues/27223
-@pytest.mark.parametrize("all_resource_a_fields_have_default_values", [True, False])
-def test_nested_config_class_with_runtime_config(all_resource_a_fields_have_default_values) -> None:
-    if all_resource_a_fields_have_default_values:
+@pytest.mark.parametrize("child_resource_fields_all_have_default_values", [True, False])
+def test_nested_config_class_with_runtime_config(
+    child_resource_fields_all_have_default_values: bool,
+) -> None:
+    def create_child_resource_class():
+        if child_resource_fields_all_have_default_values:
 
-        class ResourceA(ConfigurableResource):
-            date: str = "2025-01-20"
-    else:
+            class ChildResource(ConfigurableResource):
+                date: str = "2025-01-20"
 
-        class ResourceA(ConfigurableResource):
-            date: str
+            return ChildResource
+        else:
 
-    class ResourceB(ConfigurableResource):
-        resource_a: ResourceA
+            class ChildResource(ConfigurableResource):
+                date: str
+
+            return ChildResource
+
+    ChildResource = create_child_resource_class()
+
+    class ParentResource(ConfigurableResource):
+        child: ChildResource
 
     @asset
-    def test_asset(resource_A: ResourceA, resource_B: ResourceB) -> None:
-        assert resource_A.date == "2025-01-21"
-        assert resource_B.resource_a.date == "2025-01-21"
+    def test_asset(child: ChildResource, parent: ParentResource) -> None:
+        assert child.date == "2025-01-21"
+        assert parent.child.date == "2025-01-21"
 
-    resource_A = ResourceA.configure_at_launch()
+    child = ChildResource.configure_at_launch()
     materialize(
         [test_asset],
         resources={
-            "resource_A": resource_A,
-            "resource_B": ResourceB.configure_at_launch(resource_a=resource_A),
+            "child": child,
+            "parent": ParentResource.configure_at_launch(child=child),
         },
         run_config={
             "loggers": {"console": {"config": {"log_level": "ERROR"}}},
-            "resources": {"resource_A": {"config": {"date": "2025-01-21"}}},
+            "resources": {"child": {"config": {"date": "2025-01-21"}}},
         },
     )
 
