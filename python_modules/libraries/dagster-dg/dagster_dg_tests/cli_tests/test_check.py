@@ -15,6 +15,7 @@ from dagster_components.test.test_cases import (
     BASIC_VALID_VALUE,
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
+    msg_includes_all_of,
 )
 from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import
 
@@ -28,6 +29,19 @@ COMPONENT_INTEGRATION_TEST_DIR = (
     / "integration_tests"
     / "components"
 )
+
+CLI_TEST_CASES = [
+    *COMPONENT_VALIDATION_TEST_CASES,
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_missing_type",
+        component_type_filepath=None,
+        should_error=True,
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:1",
+            "Unable to locate local component type '.my_component_does_not_exist'",
+        ),
+    ),
+]
 
 
 @contextmanager
@@ -80,8 +94,8 @@ def create_code_location_from_components(
 
 @pytest.mark.parametrize(
     "test_case",
-    COMPONENT_VALIDATION_TEST_CASES,
-    ids=[str(case.component_path) for case in COMPONENT_VALIDATION_TEST_CASES],
+    CLI_TEST_CASES,
+    ids=[str(case.component_path) for case in CLI_TEST_CASES],
 )
 def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
     """Tests that the check CLI prints rich error messages when attempting to

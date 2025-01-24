@@ -323,13 +323,28 @@ def component_check_command(
 
     for component_dir, component_doc_tree in component_contents_by_dir.items():
         component_name = component_doc_tree.value.get("type")
-        json_schema = (
-            component_registry.get(component_dir, component_name).component_params_schema or {}
-        )
 
-        v = Draft202012Validator(json_schema)
-        for err in v.iter_errors(component_doc_tree.value["params"]):
-            validation_errors.append((component_name, err, component_doc_tree))
+        try:
+            json_schema = (
+                component_registry.get(component_dir, component_name).component_params_schema or {}
+            )
+
+            v = Draft202012Validator(json_schema)
+            for err in v.iter_errors(component_doc_tree.value["params"]):
+                validation_errors.append((component_name, err, component_doc_tree))
+        except KeyError:
+            # No matching component type found
+            validation_errors.append(
+                (
+                    None,
+                    ValidationError(
+                        f"Unable to locate local component type '{component_name}' in {component_dir}."
+                        if _is_local_component(component_name)
+                        else f"No component type named '{component_name}' found."
+                    ),
+                    component_doc_tree,
+                )
+            )
 
     if validation_errors:
         for component_name, error, component_doc_tree in validation_errors:
