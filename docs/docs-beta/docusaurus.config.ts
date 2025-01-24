@@ -192,6 +192,10 @@ const config: Config = {
             return items;
           },
         },
+        gtag: {
+          trackingID: process.env.GOOGLE_ANALYTICS_TRACKING_ID,
+          anonymizeIP: true,
+        },
       } satisfies Preset.Options,
     ],
   ],

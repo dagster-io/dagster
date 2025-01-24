@@ -3762,7 +3762,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@docusaurus/plugin-google-gtag@npm:3.7.0":
+"@docusaurus/plugin-google-gtag@npm:3.7.0, @docusaurus/plugin-google-gtag@npm:^3.7.0":
   version: 3.7.0
   resolution: "@docusaurus/plugin-google-gtag@npm:3.7.0"
   dependencies:
@@ -8375,6 +8375,7 @@ __metadata:
     "@docusaurus/core": "npm:^3.7.0"
     "@docusaurus/eslint-plugin": "npm:^3.7.0"
     "@docusaurus/module-type-aliases": "npm:^3.7.0"
+    "@docusaurus/plugin-google-gtag": "npm:^3.7.0"
     "@docusaurus/plugin-ideal-image": "npm:^3.7.0"
     "@docusaurus/preset-classic": "npm:^3.7.0"
     "@docusaurus/theme-classic": "npm:^3.7.0"
