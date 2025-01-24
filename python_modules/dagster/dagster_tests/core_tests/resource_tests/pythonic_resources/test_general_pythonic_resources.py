@@ -592,16 +592,16 @@ def test_nested_config_class_with_runtime_config(
     def create_child_resource_class():
         if child_resource_fields_all_have_default_values:
 
-            class ChildResource(ConfigurableResource):
+            class FieldsAllHaveDefaultValues(ConfigurableResource):
                 date: str = "2025-01-20"
 
-            return ChildResource
+            return FieldsAllHaveDefaultValues
         else:
 
-            class ChildResource(ConfigurableResource):
+            class FieldsDoNotAllHaveDefaultValues(ConfigurableResource):
                 date: str
 
-            return ChildResource
+            return FieldsDoNotAllHaveDefaultValues
 
     ChildResource = create_child_resource_class()
 
