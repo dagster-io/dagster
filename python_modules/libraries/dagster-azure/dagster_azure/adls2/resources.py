@@ -73,7 +73,7 @@ class ADLS2Resource(ADLS2BaseResource):
 
     Example usage:
 
-    1. Attach this resource to your Defintions to be used by assets and jobs.
+    1. Attach this resource to your Definitions to be used by assets and jobs.
 
     .. code-block:: python
 
@@ -95,7 +95,8 @@ class ADLS2Resource(ADLS2BaseResource):
             my_op()
 
         defs = Definitions(
-            assets=[asset1, asset2],
+            assets=[asset1],
+            jobs=[my_job],
             resources={
                 "adls2": ADLS2Resource(
                     storage_account="my-storage-account",
