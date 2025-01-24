@@ -30,7 +30,7 @@ import {
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
 // set to true for debug output if desired
-const DEBUG = false;
+const DEBUG = true;
 
 export type Suggestion =
   | {
@@ -143,7 +143,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
 
   public visitAllExpression(ctx: AllExpressionContext) {
     if (this.nodeIncludesCursor(ctx.postExpressionWhitespace())) {
-      this.visit(ctx.postExpressionWhitespace());
+      this.addAfterExpressionResults(ctx, {excludePlus: true});
     } else {
       this.startReplacementIndex = this.cursorIndex;
       this.stopReplacementIndex = this.cursorIndex;
