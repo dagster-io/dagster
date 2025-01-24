@@ -1659,6 +1659,11 @@
       "source": "/integrations/airlift/airflow-1-migration",
       "destination": "/integrations/libraries/airlift",
       "permanent": false
+    },
+    {
+      "source": "/integrations/airlift",
+      "destination": "/integrations/libraries/airlift",
+      "permanent": false
     }
   ]
 }
