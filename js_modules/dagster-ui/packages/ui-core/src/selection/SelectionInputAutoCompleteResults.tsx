@@ -100,25 +100,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
                     <div ref={rowVirtualizer.measureElement} data-index={index}>
                       <MenuItem
                         key={key}
-                        text={
-                          <div
-                            ref={
-                              index === selectedIndex && scrollToSelection.current
-                                ? (el) => {
-                                    scrollToSelection.current = false;
-                                    if (el) {
-                                      el.scrollIntoView({
-                                        behavior: 'instant',
-                                        block: 'center',
-                                      });
-                                    }
-                                  }
-                                : null
-                            }
-                          >
-                            <SuggestionItem suggestion={result} />
-                          </div>
-                        }
+                        text={<SuggestionItem suggestion={result} />}
                         active={index === selectedIndex}
                         onClick={() => onSelect(result)}
                         onMouseEnter={() => setSelectedIndex({current: index})}
