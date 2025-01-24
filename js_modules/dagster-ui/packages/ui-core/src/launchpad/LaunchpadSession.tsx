@@ -50,6 +50,7 @@ import {
 } from './types/LaunchpadSession.types';
 import {mergeYaml, sanitizeConfigYamlString} from './yamlUtils';
 import {gql, useApolloClient, useQuery} from '../apollo-client';
+import {usePartitionSetDetailsForLaunchpad} from './usePartitionSetDetailsForLaunchpad';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {
   IExecutionSession,
@@ -546,6 +547,16 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
 
   const splitPanelRef = React.useRef<SplitPanelContainerHandle>(null);
 
+  const repositorySelector = React.useMemo(() => repoAddressToSelector(repoAddress), [repoAddress]);
+  const partitionSetDetails = usePartitionSetDetailsForLaunchpad({
+    pipelineName: pipeline.name,
+    partitionSetName:
+      currentSession.base && 'partitionsSetName' in currentSession.base
+        ? currentSession.base.partitionsSetName
+        : '',
+    assetSelection: currentSession.assetSelection,
+    repositorySelector,
+  });
   const {
     preview,
     previewLoading,
@@ -573,7 +584,10 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   }
 
   let launchButtonWarning: string | undefined;
-  if (partitionSets.results.length && isMissingPartition(currentSession.base)) {
+  if (
+    (partitionSets.results.length || partitionSetDetails.doesAnyAssetHavePartitions) &&
+    isMissingPartition(currentSession.base)
+  ) {
     launchButtonWarning =
       'This job is partitioned. Are you sure you want to launch' +
       ' a run without a partition specified?';
@@ -615,6 +629,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
             <LoadingOverlay isLoading={configLoading} message={LOADING_CONFIG_FOR_PARTITION} />
             <SessionSettingsBar>
               <ConfigEditorConfigPicker
+                partitionSetDetails={partitionSetDetails}
                 pipeline={pipeline}
                 partitionSets={partitionSets.results}
                 base={currentSession.base}
