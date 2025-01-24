@@ -132,7 +132,7 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import Definitions, asset
-        from dagster_azure.adls2 import ADLS2PickleIOManager, adls2_resource
+        from dagster_azure.adls2 import ADLS2PickleIOManager, ADLS2Resource, ADLS2SASToken
 
         @asset
         def asset1():
@@ -148,9 +148,12 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
             resources={
                 "io_manager": ADLS2PickleIOManager(
                     adls2_file_system="my-cool-fs",
-                    adls2_prefix="my-cool-prefix"
+                    adls2_prefix="my-cool-prefix",
+                    adls2=ADLS2Resource(
+                        storage_account="my-storage-account",
+                        credential=ADLS2SASToken(token="my-sas-token"),
+                    ),
                 ),
-                "adls2": adls2_resource,
             },
         )
 
@@ -160,15 +163,18 @@ class ADLS2PickleIOManager(ConfigurableIOManager):
     .. code-block:: python
 
         from dagster import job
-        from dagster_azure.adls2 import ADLS2PickleIOManager, adls2_resource
+        from dagster_azure.adls2 import ADLS2PickleIOManager, ADLS2Resource, ADLS2SASToken
 
         @job(
             resource_defs={
                 "io_manager": ADLS2PickleIOManager(
                     adls2_file_system="my-cool-fs",
-                    adls2_prefix="my-cool-prefix"
+                    adls2_prefix="my-cool-prefix",
+                    adls2=ADLS2Resource(
+                        storage_account="my-storage-account",
+                        credential=ADLS2SASToken(token="my-sas-token"),
+                    ),
                 ),
-                "adls2": adls2_resource,
             },
         )
         def my_job():
