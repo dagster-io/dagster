@@ -971,12 +971,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:
-        default_limit = self.get_settings("concurrency").get("pools", {}).get("default_limit")
-        if default_limit is not None:
-            return default_limit
-
-        # fallback to the old settings
-        return self.get_settings("concurrency").get("default_op_concurrency_limit")
+        return self.get_concurrency_config().pool_config.default_pool_limit
 
     # python logs
 

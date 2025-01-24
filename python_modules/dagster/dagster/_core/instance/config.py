@@ -611,10 +611,15 @@ class PoolGranularity(Enum):
 
 
 @record
-class ConcurrencyConfig:
+class PoolConfig:
     pool_granularity: Optional[PoolGranularity]
     default_pool_limit: Optional[int]
     op_granularity_run_buffer: Optional[int]
+
+
+@record
+class ConcurrencyConfig:
+    pool_config: PoolConfig
     run_queue_config: Optional["RunQueueConfig"]
 
     @staticmethod
@@ -648,11 +653,24 @@ class ConcurrencyConfig:
         else:
             run_queue_config = None
 
+        pool_granularity = PoolGranularity(pool_granularity_str) if pool_granularity_str else None
+        if (
+            not pool_granularity
+            and run_coordinator_run_queue_config
+            and run_coordinator_run_queue_config.should_block_op_concurrency_limited_runs
+        ):
+            # if this was explicitly configured in the run coordinator config, we should default to op granularity
+            pool_granularity = PoolGranularity.OP
+
+        default_limit = pool_settings.get("default_limit")
+        if default_limit is None:
+            default_limit = concurrency_settings.get("default_op_concurrency_limit")
+
         return ConcurrencyConfig(
-            pool_granularity=PoolGranularity(pool_granularity_str)
-            if pool_granularity_str
-            else PoolGranularity.OP,
-            default_pool_limit=pool_settings.get("default_limit"),
-            op_granularity_run_buffer=pool_settings.get("op_granularity_run_buffer"),
+            pool_config=PoolConfig(
+                pool_granularity=pool_granularity,
+                default_pool_limit=default_limit,
+                op_granularity_run_buffer=pool_settings.get("op_granularity_run_buffer"),
+            ),
             run_queue_config=run_queue_config,
         )

@@ -83,10 +83,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         run_coordinator = check.inst(
             workspace_process_context.instance.run_coordinator, QueuedRunCoordinator
         )
-        concurrency_config = (
-            workspace_process_context.instance.get_concurrency_config()
-            or run_coordinator.get_concurrency_config()
-        )
+        concurrency_config = workspace_process_context.instance.get_concurrency_config()
         if not concurrency_config.run_queue_config:
             check.failed("Got invalid run queue config")
 
@@ -278,7 +275,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         batch,
                         in_progress_run_records,
                         run_queue_config.op_concurrency_slot_buffer,
-                        concurrency_config.pool_granularity,
+                        concurrency_config.pool_config.pool_granularity,
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")
