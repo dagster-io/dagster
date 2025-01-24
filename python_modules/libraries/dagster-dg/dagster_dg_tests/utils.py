@@ -46,7 +46,7 @@ def isolated_example_code_location_foo_bar(
                 *(["--no-use-dg-managed-environment"] if skip_venv else []),
                 "foo-bar",
             )
-            with clear_module_from_cache("foo_bar"), pushd("code_locations/foo-bar"):
+            with clear_module_from_cache("foo_bar"), pushd("code-locations/foo-bar"):
                 yield
     else:
         with runner.isolated_filesystem():

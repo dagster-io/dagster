@@ -36,26 +36,26 @@ def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("code-location", "scaffold", "foo-bar", "--use-editable-dagster")
         assert_runner_result(result)
-        assert Path("code_locations/foo-bar").exists()
-        assert Path("code_locations/foo-bar/foo_bar").exists()
-        assert Path("code_locations/foo-bar/foo_bar/lib").exists()
-        assert Path("code_locations/foo-bar/foo_bar/components").exists()
-        assert Path("code_locations/foo-bar/foo_bar_tests").exists()
-        assert Path("code_locations/foo-bar/pyproject.toml").exists()
+        assert Path("code-locations/foo-bar").exists()
+        assert Path("code-locations/foo-bar/foo_bar").exists()
+        assert Path("code-locations/foo-bar/foo_bar/lib").exists()
+        assert Path("code-locations/foo-bar/foo_bar/components").exists()
+        assert Path("code-locations/foo-bar/foo_bar_tests").exists()
+        assert Path("code-locations/foo-bar/pyproject.toml").exists()
 
         # Check venv created
-        assert Path("code_locations/foo-bar/.venv").exists()
-        assert Path("code_locations/foo-bar/uv.lock").exists()
+        assert Path("code-locations/foo-bar/.venv").exists()
+        assert Path("code-locations/foo-bar/uv.lock").exists()
 
         # Restore when we are able to test without editable install
-        # with open("code_locations/bar/pyproject.toml") as f:
+        # with open("code-locations/bar/pyproject.toml") as f:
         #     toml = tomli.loads(f.read())
         #
         #     # No tool.uv.sources added without --use-editable-dagster
         #     assert "uv" not in toml["tool"]
 
         # Check cache was populated
-        with pushd("code_locations/foo-bar"):
+        with pushd("code-locations/foo-bar"):
             result = runner.invoke("component-type", "list", "--verbose")
             assert_runner_result(result)
             assert "CACHE [hit]" in result.output
@@ -92,9 +92,9 @@ def test_code_location_scaffold_editable_dagster_success(mode: str, monkeypatch)
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("code-location", "scaffold", *editable_args, "foo-bar")
         assert_runner_result(result)
-        assert Path("code_locations/foo-bar").exists()
-        assert Path("code_locations/foo-bar/pyproject.toml").exists()
-        with open("code_locations/foo-bar/pyproject.toml") as f:
+        assert Path("code-locations/foo-bar").exists()
+        assert Path("code-locations/foo-bar/pyproject.toml").exists()
+        with open("code-locations/foo-bar/pyproject.toml") as f:
             toml = tomli.loads(f.read())
             assert toml["tool"]["uv"]["sources"]["dagster"] == {
                 "path": f"{dagster_git_repo_dir}/python_modules/dagster",

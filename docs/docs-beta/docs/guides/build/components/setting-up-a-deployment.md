@@ -29,7 +29,7 @@ This will create a new directory `my-deployment`. Let's look at the structure:
 $ cd my-deployment && tree
 
 .
-├── code_locations
+├── code-locations
 └── pyproject.toml
 ```
 
@@ -48,18 +48,18 @@ To add a code location to the deployment, run:
 ```bash
 $ dg code-location scaffold code-location-1
 
-Creating a Dagster code location at .../my-deployment/code_locations/code-location-1.
-Scaffolded files for Dagster project in .../my-deployment/code_locations/code-location-1.
+Creating a Dagster code location at .../my-deployment/code-locations/code-location-1.
+Scaffolded files for Dagster project in .../my-deployment/code-locations/code-location-1.
 ...
 ```
 
-This will create a new directory `code-location-1` within the `code_locations`.
+This will create a new directory `code-location-1` within the `code-locations`.
 It will also setup a new uv-managed Python environment for the code location. Let's have a look:
 
 ```bash
 $ tree
 
-├── code_locations
+├── code-locations
 │   └── code-location-1
 │       ├── code_location_1
 │       │   ├── __init__.py
@@ -124,8 +124,8 @@ Let's create another code location to demonstrate this:
 ```bash
 $ cd ../.. && dg code-location scaffold code-location-2
 
-Creating a Dagster code location at .../my-deployment/code_locations/code-location-2.
-Scaffolded files for Dagster project in .../my-deployment/code_locations/code-location-2.
+Creating a Dagster code location at .../my-deployment/code-locations/code-location-2.
+Scaffolded files for Dagster project in .../my-deployment/code-locations/code-location-2.
 ```
 
 Now we have two code locations. We can list them with:
@@ -140,7 +140,7 @@ code-location-2
 And finally, let's check the available component types in `code-location-2`:
 
 ```bash
-$ cd code_locations/code-location-2 && dg component-type list
+$ cd code-locations/code-location-2 && dg component-type list
 
 dagster_components.definitions
 dagster_components.pipes_subprocess_script_collection

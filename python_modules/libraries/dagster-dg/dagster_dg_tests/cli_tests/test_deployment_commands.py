@@ -17,7 +17,7 @@ def test_scaffold_deployment_command_success() -> None:
         result = runner.invoke("deployment", "scaffold", "foo")
         assert_runner_result(result)
         assert Path("foo").exists()
-        assert Path("foo/code_locations").exists()
+        assert Path("foo/code-locations").exists()
 
 
 def test_scaffold_deployment_command_already_exists_fails() -> None:

@@ -20,7 +20,7 @@ from dagster_dg.utils import (
 )
 
 # Deployment
-_DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code_locations"
+_DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code-locations"
 
 # Code location
 _DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE: Final = "lib"
