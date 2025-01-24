@@ -15,6 +15,11 @@ on:
       - examples/docs_beta_snippets/**
       - .github/workflows/build-docs-revamp.yml
       - docs/sphinx/**
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 concurrency:
   group: ${{ github.workflow}}-${{github.ref}}
@@ -22,6 +27,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Deploy to Vercel Previews on pull request, push to master branch
     steps:
