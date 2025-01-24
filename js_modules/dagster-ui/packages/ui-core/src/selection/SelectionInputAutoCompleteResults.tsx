@@ -67,7 +67,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
     const rowVirtualizer = useVirtualizer({
       count: results?.list.length ?? 0,
       getScrollElement: () => menuRef.current,
-      estimateSize: () => 32,
+      estimateSize: () => 28,
       overscan: 5,
     });
 
