@@ -106,6 +106,11 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
+        {
+          label: 'Dagster University',
+          href: 'https://courses.dagster.io',
+          position: 'left',
+        },
         //{
         //  label: 'Changelog',
         //  type: 'doc',
@@ -153,7 +158,7 @@ const config: Config = {
           `,
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Dagster Labs`,
+      copyright: `Copyright ${new Date().getFullYear()} Dagster Labs`,
     },
   } satisfies Preset.ThemeConfig,
 
