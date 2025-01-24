@@ -1042,7 +1042,6 @@ class AssetDaemon(DagsterDaemon):
             debug_crash_flags=debug_crash_flags,
             submit_threadpool_executor=submit_threadpool_executor,
             remote_sensor=sensor,
-            stored_cursor=stored_cursor,
         )
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
@@ -1127,7 +1126,6 @@ class AssetDaemon(DagsterDaemon):
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         submit_threadpool_executor: Optional[ThreadPoolExecutor],
         remote_sensor: Optional[RemoteSensor],
-        stored_cursor: AssetDaemonCursor,
     ):
         updated_evaluation_keys = set()
         run_request_execution_data_cache = {}
