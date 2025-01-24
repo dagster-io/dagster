@@ -110,7 +110,7 @@ def create_shell_command_op(
     job execution and pass them between ops, you should use ``shell_op`` instead.
 
     The resulting op can take a single ``start`` argument that is a
-    `Nothing dependency <https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies>`__
+    `Nothing dependency <https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies>`__
     to allow you to run ops before the shell op.
 
     Examples:
@@ -189,7 +189,7 @@ def create_shell_script_op(
     in the cases where you'd like to configure the shell op with different config fields.
 
     If no ``ins`` are passed then the resulting op can take a single ``start`` argument that is a
-    `Nothing dependency <https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies>`__
+    `Nothing dependency <https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies>`__
     to allow you to run ops before the shell op.
 
 

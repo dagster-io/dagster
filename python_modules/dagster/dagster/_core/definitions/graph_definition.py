@@ -322,7 +322,7 @@ class GraphDefinition(NodeDefinition):
                         "input via another op/graph, or via a direct input value mapped from the "
                         "top-level graph. To "
                         "learn more, see the docs for unconnected inputs: "
-                        "https://docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
+                        "https://legacy-docs.dagster.io/concepts/io-management/unconnected-inputs#unconnected-inputs."
                     )
                 else:
                     mapped_input = node.container_mapped_input(input_def.name)

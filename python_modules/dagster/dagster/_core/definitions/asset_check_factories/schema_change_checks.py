@@ -29,7 +29,7 @@ def build_column_schema_change_checks(
 
     The underlying materializations are expected to have a metadata entry with key `dagster/column_schema` and type :py:class:`TableSchema`.
     To learn more about how to add column schema metadata and other forms of tabular metadata to assets, see
-    https://docs.dagster.io/concepts/metadata-tags/asset-metadata/table-metadata#attaching-column-schema.
+    https://docs.dagster.io/guides/build/assets/metadata-and-tags/table-metadata#attaching-column-schema.
 
     The resulting checks will fail if any changes are detected in the column schema between
     materializations, including:
