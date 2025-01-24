@@ -65,18 +65,17 @@ def _add_component_type_to_output(
 @click.argument("component_directories", nargs=-1, type=click.Path(exists=True))
 def list_local_component_types_command(component_directories: Sequence[str]) -> None:
     """List local Dagster components found in the specified directories."""
-    output: list = []
+    output: dict = {}
     for component_directory in component_directories:
+        output_for_directory = {}
         for component_type in find_local_component_types(Path(component_directory)):
-            output.append(
-                {
-                    "directory": component_directory,
-                    "key": f".{get_component_type_name(component_type)}",
-                    "metadata": ComponentTypeMetadata(
-                        name=get_component_type_name(component_type),
-                        package=component_directory,
-                        **component_type.get_metadata(),
-                    ),
-                }
+            output_for_directory[f".{get_component_type_name(component_type)}"] = (
+                ComponentTypeMetadata(
+                    name=get_component_type_name(component_type),
+                    package=component_directory,
+                    **component_type.get_metadata(),
+                )
             )
+        if len(output_for_directory) > 0:
+            output[component_directory] = output_for_directory
     click.echo(json.dumps(output))

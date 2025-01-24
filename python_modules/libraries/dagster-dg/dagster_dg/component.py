@@ -26,6 +26,41 @@ class RemoteComponentType:
         return self.name
 
 
+def _retrieve_local_component_types(
+    dg_context: "DgContext", paths: Sequence[Path]
+) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
+    paths_to_fetch = set(paths)
+    data_for_path: dict[str, dict[str, Mapping[str, Any]]] = {}
+    if dg_context.has_cache:
+        for path in paths:
+            cache_key = dg_context.get_cache_key_for_local_components(path)
+            raw_data = dg_context.cache.get(cache_key)
+            if raw_data:
+                data_for_path[str(path)] = json.loads(raw_data)
+                paths_to_fetch.remove(path)
+
+    if paths_to_fetch:
+        raw_local_component_data = dg_context.external_components_command(
+            [
+                "list",
+                "local-component-types",
+                *[str(path) for path in paths_to_fetch],
+            ]
+        )
+        local_component_data = json.loads(raw_local_component_data)
+        for path in paths_to_fetch:
+            data_for_path[str(path)] = local_component_data.get(str(path), {})
+
+        if dg_context.has_cache:
+            for path in paths_to_fetch:
+                cache_key = dg_context.get_cache_key_for_local_components(path)
+                data_for_path_json = json.dumps(local_component_data.get(str(path), {}))
+                if cache_key and is_valid_json(data_for_path_json):
+                    dg_context.cache.set(cache_key, data_for_path_json)
+
+    return data_for_path
+
+
 class RemoteComponentRegistry:
     @classmethod
     def from_dg_context(
@@ -51,19 +86,11 @@ class RemoteComponentRegistry:
 
         registry_data = json.loads(raw_registry_data)
 
-        local_component_data = []
+        local_component_data: Mapping[str, Mapping[str, Mapping[str, Any]]] = {}
         if local_component_type_dirs:
-            # TODO: cache
-
-            raw_local_component_data = dg_context.external_components_command(
-                [
-                    "list",
-                    "local-component-types",
-                    *[str(path) for path in local_component_type_dirs],
-                ]
+            local_component_data = _retrieve_local_component_types(
+                dg_context, local_component_type_dirs
             )
-            local_component_data = json.loads(raw_local_component_data)
-
         return cls.from_dict(
             global_component_types=registry_data, local_component_types=local_component_data
         )
@@ -71,14 +98,13 @@ class RemoteComponentRegistry:
     @classmethod
     def from_dict(
         cls,
-        global_component_types: dict[str, Mapping[str, Any]],
-        local_component_types: list[dict[str, Any]],
+        global_component_types: Mapping[str, Mapping[str, Any]],
+        local_component_types: Mapping[str, Mapping[str, Mapping[str, Any]]],
     ) -> "RemoteComponentRegistry":
         components_by_path = defaultdict(dict)
-        for entry in local_component_types:
-            components_by_path[entry["directory"]][entry["key"]] = RemoteComponentType(
-                **entry["metadata"]
-            )
+        for directory in local_component_types:
+            for key, metadata in local_component_types[directory].items():
+                components_by_path[directory][key] = RemoteComponentType(**metadata)
 
         return RemoteComponentRegistry(
             {key: RemoteComponentType(**value) for key, value in global_component_types.items()},
