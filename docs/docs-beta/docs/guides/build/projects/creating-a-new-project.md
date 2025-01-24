@@ -9,7 +9,7 @@ The easiest way to start building a Dagster project is by using the `dagster pro
 
 ## Step 1: Bootstrap a new project
 
-:::
+:::note
 
   If you don't already have Dagster installed, verify you meet the{" "}
   <a href="/getting-started/install">installation requirements</a> before
