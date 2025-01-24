@@ -1,5 +1,5 @@
-import {promises as fs} from 'fs';
 import path from 'path';
+import {getRealFileBuffer} from 'util/getRealFileBuffer';
 import {latestAllDynamicPaths} from 'util/navigation';
 import zlib from 'zlib';
 
@@ -90,27 +90,31 @@ export default function MdxPage(props: Props) {
   );
 }
 
-async function getContent(asPath: string) {
-  // render files from the local content folder
-  const basePath = path.resolve('../content');
-  const pathToFile = path.join(basePath, asPath);
-  const buffer = await fs.readFile(pathToFile);
-  const contentString = buffer.toString();
-  return contentString;
+async function getContent(inputPath: string) {
+  try {
+    const buffer = await getRealFileBuffer(inputPath);
+    return buffer.toString();
+  } catch (err) {
+    console.error(err);
+    throw new Error('File not found');
+  }
 }
 
-async function getGzJsonContent(asPath: string) {
-  const basePath = path.resolve('../content');
-  const pathToFile = path.join(basePath, asPath);
-  const buffer = await fs.readFile(pathToFile);
-  return new Promise<any>((resolve, reject) => {
-    zlib.gunzip(buffer, (err, result) => {
-      if (err) {
-        reject(err);
-      }
-      resolve(JSON.parse(result.toString()));
+async function getGzJsonContent(inputPath: string) {
+  try {
+    const buffer = await getRealFileBuffer(inputPath);
+    return new Promise<any>((resolve, reject) => {
+      zlib.gunzip(buffer, (err, result) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(JSON.parse(result.toString()));
+      });
     });
-  });
+  } catch (err) {
+    console.error(err);
+    throw new Error('File not found');
+  }
 }
 
 async function getSphinxData(sphinxPrefix: SphinxPrefix, path: string) {
