@@ -15,12 +15,10 @@ from dagster import (
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.config import ConcurrencyConfig
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.op_concurrency_limits_counter import GlobalOpConcurrencyLimitsCounter
-from dagster._core.run_coordinator.queued_run_coordinator import (
-    QueuedRunCoordinator,
-    RunQueueConfig,
-)
+from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -85,22 +83,22 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         run_coordinator = check.inst(
             workspace_process_context.instance.run_coordinator, QueuedRunCoordinator
         )
-        run_queue_config = (
-            workspace_process_context.instance.get_run_queue_config()
-            or run_coordinator.get_run_queue_config()
+        concurrency_config = (
+            workspace_process_context.instance.get_concurrency_config()
+            or run_coordinator.get_concurrency_config()
         )
-        if not run_queue_config:
+        if not concurrency_config.run_queue_config:
             check.failed("Got invalid run queue config")
 
         instance = workspace_process_context.instance
         runs_to_dequeue = self._get_runs_to_dequeue(
-            instance, run_queue_config, fixed_iteration_time=fixed_iteration_time
+            instance, concurrency_config, fixed_iteration_time=fixed_iteration_time
         )
         yield from self._dequeue_runs_iter(
             workspace_process_context,
             run_coordinator,
             runs_to_dequeue,
-            run_queue_config,
+            concurrency_config,
             fixed_iteration_time=fixed_iteration_time,
         )
 
@@ -109,7 +107,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         run_coordinator: QueuedRunCoordinator,
         runs_to_dequeue: list[DagsterRun],
-        run_queue_config: RunQueueConfig,
+        concurrency_config: ConcurrencyConfig,
         fixed_iteration_time: Optional[float],
     ) -> Iterator[None]:
         if run_coordinator.dequeue_use_threads:
@@ -117,14 +115,14 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 workspace_process_context,
                 runs_to_dequeue,
                 run_coordinator.dequeue_num_workers,
-                run_queue_config,
+                concurrency_config,
                 fixed_iteration_time=fixed_iteration_time,
             )
         else:
             yield from self._dequeue_runs_iter_loop(
                 workspace_process_context,
                 runs_to_dequeue,
-                run_queue_config,
+                concurrency_config,
                 fixed_iteration_time=fixed_iteration_time,
             )
 
@@ -132,14 +130,14 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         run: DagsterRun,
-        run_queue_config: RunQueueConfig,
+        concurrency_config: ConcurrencyConfig,
         fixed_iteration_time: Optional[float],
     ) -> bool:
         return self._dequeue_run(
             workspace_process_context.instance,
             workspace_process_context.create_request_context(),
             run,
-            run_queue_config,
+            concurrency_config,
             fixed_iteration_time,
         )
 
@@ -148,7 +146,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         workspace_process_context: IWorkspaceProcessContext,
         runs_to_dequeue: list[DagsterRun],
         max_workers: Optional[int],
-        run_queue_config: RunQueueConfig,
+        concurrency_config: ConcurrencyConfig,
         fixed_iteration_time: Optional[float],
     ) -> Iterator[None]:
         num_dequeued_runs = 0
@@ -158,7 +156,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 self._dequeue_run_thread,
                 workspace_process_context,
                 run,
-                run_queue_config,
+                concurrency_config,
                 fixed_iteration_time=fixed_iteration_time,
             )
             for run in runs_to_dequeue
@@ -175,7 +173,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         self,
         workspace_process_context: IWorkspaceProcessContext,
         runs_to_dequeue: list[DagsterRun],
-        run_queue_config: RunQueueConfig,
+        concurrency_config: ConcurrencyConfig,
         fixed_iteration_time: Optional[float],
     ) -> Iterator[None]:
         num_dequeued_runs = 0
@@ -184,7 +182,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                 workspace_process_context.instance,
                 workspace_process_context.create_request_context(),
                 run,
-                run_queue_config,
+                concurrency_config,
                 fixed_iteration_time=fixed_iteration_time,
             )
             yield None
@@ -197,12 +195,14 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
     def _get_runs_to_dequeue(
         self,
         instance: DagsterInstance,
-        run_queue_config: RunQueueConfig,
+        concurrency_config: ConcurrencyConfig,
         fixed_iteration_time: Optional[float],
     ) -> list[DagsterRun]:
         if not isinstance(instance.run_coordinator, QueuedRunCoordinator):
             check.failed(f"Expected QueuedRunCoordinator, got {instance.run_coordinator}")
 
+        run_queue_config = concurrency_config.run_queue_config
+        assert run_queue_config
         max_concurrent_runs = run_queue_config.max_concurrent_runs
         tag_concurrency_limits = run_queue_config.tag_concurrency_limits
 
@@ -278,7 +278,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         batch,
                         in_progress_run_records,
                         run_queue_config.op_concurrency_slot_buffer,
-                        run_queue_config.pool_granularity,
+                        concurrency_config.pool_granularity,
                     )
                 except:
                     self._logger.exception("Failed to initialize op concurrency counter")
@@ -355,9 +355,10 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         instance: DagsterInstance,
         workspace: BaseWorkspaceRequestContext,
         run: DagsterRun,
-        run_queue_config: RunQueueConfig,
+        concurrency_config: ConcurrencyConfig,
         fixed_iteration_time: Optional[float],
     ) -> bool:
+        assert concurrency_config.run_queue_config
         # double check that the run is still queued before dequeing
         run = check.not_none(instance.get_run_by_id(run.run_id))
         with self._global_concurrency_blocked_runs_lock:
@@ -412,14 +413,14 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     f" {run.status} - moving on. Error: {error.to_string()}"
                 )
                 return False
-            elif run_queue_config.max_user_code_failure_retries and isinstance(
+            elif concurrency_config.run_queue_config.max_user_code_failure_retries and isinstance(
                 e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
             ):
                 if location_name:
                     with self._location_timeouts_lock:
                         # Don't try to dequeue runs from this location for another N seconds
                         self._location_timeouts[location_name] = (
-                            now + run_queue_config.user_code_failure_retry_delay
+                            now + concurrency_config.run_queue_config.user_code_failure_retry_delay
                         )
 
                 enqueue_event_records = instance.get_records_for_run(
@@ -430,10 +431,13 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
                 num_retries_so_far = len(enqueue_event_records) - 1
 
-                if num_retries_so_far >= run_queue_config.max_user_code_failure_retries:
+                if (
+                    num_retries_so_far
+                    >= concurrency_config.run_queue_config.max_user_code_failure_retries
+                ):
                     message = (
                         "Run dequeue failed to reach the user code server after"
-                        f" {run_queue_config.max_user_code_failure_retries} attempts, failing run"
+                        f" {concurrency_config.run_queue_config.max_user_code_failure_retries} attempts, failing run"
                     )
                     instance.report_engine_event(
                         message,
@@ -444,7 +448,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                     return False
                 else:
                     retries_left = (
-                        run_queue_config.max_user_code_failure_retries - num_retries_so_far
+                        concurrency_config.run_queue_config.max_user_code_failure_retries
+                        - num_retries_so_far
                     )
                     retries_str = "retr" + ("y" if retries_left == 1 else "ies")
                     message = (

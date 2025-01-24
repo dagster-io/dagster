@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Mapping, Sequence
-from enum import Enum
 from typing import Any, NamedTuple, Optional
 
 from typing_extensions import Self
@@ -16,14 +15,10 @@ from dagster._builtins import Bool
 from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.instance import T_DagsterInstance
+from dagster._core.instance.config import PoolGranularity
 from dagster._core.run_coordinator.base import RunCoordinator, SubmitRunContext
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-
-
-class PoolGranularity(Enum):
-    OP = "op"
-    RUN = "run"
 
 
 class RunQueueConfig(
@@ -36,7 +31,6 @@ class RunQueueConfig(
             ("user_code_failure_retry_delay", int),
             ("should_block_op_concurrency_limited_runs", bool),
             ("op_concurrency_slot_buffer", int),
-            ("pool_granularity", Optional[PoolGranularity]),
         ],
     )
 ):
@@ -48,7 +42,6 @@ class RunQueueConfig(
         user_code_failure_retry_delay: int = 60,
         should_block_op_concurrency_limited_runs: bool = False,
         op_concurrency_slot_buffer: int = 0,
-        pool_granularity: Optional[PoolGranularity] = None,
     ):
         return super().__new__(
             cls,
@@ -60,7 +53,6 @@ class RunQueueConfig(
                 should_block_op_concurrency_limited_runs, "should_block_op_concurrency_limited_runs"
             ),
             check.int_param(op_concurrency_slot_buffer, "op_concurrency_slot_buffer"),
-            check.opt_inst_param(pool_granularity, "pool_granularity", PoolGranularity),
         )
 
     def with_concurrency_settings(
@@ -68,11 +60,6 @@ class RunQueueConfig(
     ) -> "RunQueueConfig":
         run_settings = concurrency_settings.get("runs", {})
         pool_settings = concurrency_settings.get("pools", {})
-        pool_granularity = (
-            PoolGranularity(pool_settings.get("granularity"))
-            if pool_settings.get("granularity")
-            else self.pool_granularity
-        )
         return RunQueueConfig(
             max_concurrent_runs=run_settings.get("max_concurrent_runs", self.max_concurrent_runs),
             tag_concurrency_limits=run_settings.get(
@@ -85,7 +72,6 @@ class RunQueueConfig(
             op_concurrency_slot_buffer=pool_settings.get(
                 "op_granularity_run_buffer", self.op_concurrency_slot_buffer
             ),
-            pool_granularity=pool_granularity,
         )
 
 

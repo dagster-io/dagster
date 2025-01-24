@@ -1,6 +1,7 @@
 import logging
 import os
 from collections.abc import Mapping, Sequence
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dagster import (
@@ -23,6 +24,7 @@ from dagster._config import (
 from dagster._config.source import BoolSource
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
+from dagster._record import record
 from dagster._serdes import class_from_code_pointer
 from dagster._utils.concurrency import get_max_concurrency_limit_value
 from dagster._utils.merger import merge_dicts
@@ -31,6 +33,7 @@ from dagster._utils.yaml_utils import load_yaml_from_globs
 if TYPE_CHECKING:
     from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.instance import DagsterInstance
+    from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
     from dagster._core.scheduler.instigation import TickStatus
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
@@ -600,3 +603,56 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         ),
         "concurrency": get_concurrency_config(),
     }
+
+
+class PoolGranularity(Enum):
+    OP = "op"
+    RUN = "run"
+
+
+@record
+class ConcurrencyConfig:
+    pool_granularity: Optional[PoolGranularity]
+    default_pool_limit: Optional[int]
+    op_granularity_run_buffer: Optional[int]
+    run_queue_config: Optional["RunQueueConfig"]
+
+    @staticmethod
+    def from_concurrency_settings(
+        concurrency_settings: Mapping[str, Any],
+        run_coordinator_run_queue_config: Optional["RunQueueConfig"],
+    ) -> "ConcurrencyConfig":
+        from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
+
+        run_settings = concurrency_settings.get("runs", {})
+        pool_settings = concurrency_settings.get("pools", {})
+        pool_granularity_str = pool_settings.get("granularity")
+        if run_coordinator_run_queue_config:
+            run_queue_config = RunQueueConfig(
+                max_concurrent_runs=run_settings.get(
+                    "max_concurrent_runs", run_coordinator_run_queue_config.max_concurrent_runs
+                ),
+                tag_concurrency_limits=run_settings.get(
+                    "tag_concurrency_limits",
+                    run_coordinator_run_queue_config.tag_concurrency_limits,
+                ),
+                max_user_code_failure_retries=run_coordinator_run_queue_config.max_user_code_failure_retries,
+                user_code_failure_retry_delay=run_coordinator_run_queue_config.user_code_failure_retry_delay,
+                should_block_op_concurrency_limited_runs=bool(pool_settings)
+                or run_coordinator_run_queue_config.should_block_op_concurrency_limited_runs,
+                op_concurrency_slot_buffer=pool_settings.get(
+                    "op_granularity_run_buffer",
+                    run_coordinator_run_queue_config.op_concurrency_slot_buffer,
+                ),
+            )
+        else:
+            run_queue_config = None
+
+        return ConcurrencyConfig(
+            pool_granularity=PoolGranularity(pool_granularity_str)
+            if pool_granularity_str
+            else PoolGranularity.OP,
+            default_pool_limit=pool_settings.get("default_limit"),
+            op_granularity_run_buffer=pool_settings.get("op_granularity_run_buffer"),
+            run_queue_config=run_queue_config,
+        )
