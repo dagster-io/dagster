@@ -1,6 +1,7 @@
 ---
 title: "Deploying Dagster"
 sidebar_class_name: hidden
+sidebar_position: 0
 ---
 
 This section is about self-hosting Dagster.
