@@ -5216,24 +5216,45 @@ class TestEventLogStorage:
 
         run_id = make_new_run_id()
 
-        storage.set_concurrency_slots("foo", 5)
+        conc_key = "foo"
+        storage.set_concurrency_slots(conc_key, 5)
+
+        status = {}
 
         def _occupy_slot(key: str):
+            try:
+                do_occupy_slot(key)
+            except Exception as e:
+                status[key] = f"failed: {e}"
+                raise
+
+        def do_occupy_slot(key: str):
+            status[key] = "started"
             start = time.time()
-            claim_status = storage.claim_concurrency_slot("foo", run_id, key)
+            claim_status = storage.claim_concurrency_slot(conc_key, run_id, key)
             while time.time() < start + TOTAL_TIMEOUT_TIME:
                 if claim_status.slot_status == ConcurrencySlotStatus.CLAIMED:
                     break
                 else:
-                    claim_status = storage.claim_concurrency_slot("foo", run_id, key)
+                    status[key] = f"waiting for claim: {claim_status}"
+                    claim_status = storage.claim_concurrency_slot(conc_key, run_id, key)
                     time.sleep(0.05)
+            status[key] = "claimed"
             storage.free_concurrency_slot_for_step(run_id, key)
+            status[key] = f"done (took: {time.time() - start} seconds)"
 
-        with ThreadPoolExecutor() as executor:
-            list(
-                executor.map(_occupy_slot, [str(i) for i in range(100)], timeout=TOTAL_TIMEOUT_TIME)
-            )
-            foo_info = storage.get_concurrency_info("foo")
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            try:
+                list(
+                    executor.map(
+                        _occupy_slot, [str(i) for i in range(100)], timeout=TOTAL_TIMEOUT_TIME
+                    )
+                )
+            except TimeoutError:
+                raise Exception(
+                    f"failed to claim concurrency slots within timeout. Status of threeads: {status}"
+                )
+            foo_info = storage.get_concurrency_info(conc_key)
             assert foo_info.slot_count == 5
             assert foo_info.active_slot_count == 0
             assert foo_info.pending_step_count == 0
