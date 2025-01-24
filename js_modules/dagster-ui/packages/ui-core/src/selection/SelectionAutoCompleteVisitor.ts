@@ -137,10 +137,6 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this._stopReplacementIndex = this.cursorIndex;
   }
 
-  // ----------------------------------------------------------------------------
-  // The rest is the same node-specific logic from the original class
-  // ----------------------------------------------------------------------------
-
   public visitAllExpression(ctx: AllExpressionContext) {
     if (this.nodeIncludesCursor(ctx.postExpressionWhitespace())) {
       this.addAfterExpressionResults(ctx, {excludePlus: true});
