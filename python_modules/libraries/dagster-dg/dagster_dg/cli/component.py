@@ -327,7 +327,7 @@ def component_check_command(
             component_registry.get(component_dir, component_name).component_params_schema or {}
         )
 
-        v = Draft202012Validator(json_schema)  # type: ignore
+        v = Draft202012Validator(json_schema)
         for err in v.iter_errors(component_doc_tree.value["params"]):
             validation_errors.append((component_name, err, component_doc_tree))
 
