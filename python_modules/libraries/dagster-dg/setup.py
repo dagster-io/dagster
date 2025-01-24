@@ -39,6 +39,7 @@ setup(
         "markdown",
         "jsonschema",
         "PyYAML>=5.1",
+        "typer",
     ],
     include_package_data=True,
     zip_safe=False,
