@@ -112,12 +112,12 @@ const config: Config = {
         //  docId: 'changelog',
         //  position: 'right',
         //},
-        // {
-        //   label: 'Feedback',
-        //   href: 'https://github.com/dagster-io/dagster/discussions/24816',
-        //   position: 'right',
-        //   className: 'feedback-nav-link',
-        // },
+        {
+           label: 'Feedback',
+           href: 'https://github.com/dagster-io/dagster/discussions/27332',
+           position: 'right',
+           className: 'feedback-nav-link',
+         },
       ],
     },
     image: 'images/og.png',
