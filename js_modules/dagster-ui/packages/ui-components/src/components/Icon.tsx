@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Colors} from './Color';
+import abc from '../icon-svgs/abc.svg';
 import account_circle from '../icon-svgs/account_circle.svg';
 import account_tree from '../icon-svgs/account_tree.svg';
 import add from '../icon-svgs/add.svg';
@@ -95,6 +96,7 @@ import cpu from '../icon-svgs/cpu.svg';
 import create from '../icon-svgs/create.svg';
 import credit_card from '../icon-svgs/credit_card.svg';
 import credits from '../icon-svgs/credits.svg';
+import curly_braces from '../icon-svgs/curly_braces.svg';
 import daemon from '../icon-svgs/daemon.svg';
 import dagster_primary from '../icon-svgs/dagster_primary.svg';
 import dagster_reversed from '../icon-svgs/dagster_reversed.svg';
@@ -221,6 +223,8 @@ import logout from '../icon-svgs/logout.svg';
 import logs_stderr from '../icon-svgs/logs_stderr.svg';
 import logs_stdout from '../icon-svgs/logs_stdout.svg';
 import logs_structured from '../icon-svgs/logs_structured.svg';
+import magnify_glass from '../icon-svgs/magnify_glass.svg';
+import magnify_glass_checked from '../icon-svgs/magnify_glass_checked.svg';
 import materialization from '../icon-svgs/materialization.svg';
 import materialization_event from '../icon-svgs/materialization_event.svg';
 import materialization_planned from '../icon-svgs/materialization_planned.svg';
@@ -403,6 +407,7 @@ export const Icons = {
   op_dynamic,
   new: new_svg,
   //Core Icons
+  abc,
   account_circle,
   account_tree,
   add,
@@ -496,6 +501,7 @@ export const Icons = {
   create,
   credit_card,
   credits,
+  curly_braces,
   daemon,
   dagster_primary,
   dagster_reversed,
@@ -622,6 +628,8 @@ export const Icons = {
   logs_stderr,
   logs_stdout,
   logs_structured,
+  magnify_glass,
+  magnify_glass_checked,
   materialization,
   materialization_event,
   materialization_planned,

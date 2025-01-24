@@ -24,7 +24,7 @@ export const OpGraphSelectionInput = ({
       <SelectionAutoCompleteInput
         id="op-graph"
         useAutoComplete={useAutoComplete}
-        placeholder="Type an op subset"
+        placeholder="Search and filter ops"
         linter={getLinter()}
         value={value}
         onChange={onChange}
