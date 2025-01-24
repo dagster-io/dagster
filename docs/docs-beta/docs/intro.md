@@ -39,7 +39,7 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
 
 ## Join the Dagster community
 
-<CardGroup cols={3}>
+<CardGroup cols={4}>
   <Card title="Slack" href="https://dagster.io/slack" imagePath="./img/getting-started/icon-slack.svg">
     Join our Slack community to talk with other Dagster users, use our AI-powered chatbot, and get help with Dagster.
   </Card>
@@ -48,5 +48,8 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
   </Card>
   <Card title="Youtube" href="https://www.youtube.com/@dagsterio" imagePath="./img/getting-started/icon-youtube.svg">
     Watch our latest videos on YouTube.
+  </Card>
+  <Card title="Dagster University" href="https://courses.dagster.io" imagePath="./img/getting-started/icon-education.svg">
+    Learn Dagster through interactive courses and hands-on tutorials.
   </Card>
 </CardGroup>

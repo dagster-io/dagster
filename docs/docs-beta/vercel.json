@@ -1639,6 +1639,21 @@
       "source": "/dagster-pipes/pyspark",
       "destination": "/guides/build/external-pipelines/pyspark-pipeline",
       "permanent": false
+    },
+    {
+      "source": "/community/contributing",
+      "destination": "/about/contributing",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airlift/tutorial/overview",
+      "destination": "/integrations/libraries/airlift",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airlift/airflow-1-migration",
+      "destination": "/integrations/libraries/airlift",
+      "permanent": false
     }
   ]
 }
