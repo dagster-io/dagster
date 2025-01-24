@@ -603,7 +603,7 @@ def test_nested_config_class_with_runtime_config(
 
             return FieldsDoNotAllHaveDefaultValues
 
-    ChildResource = create_child_resource_class()
+    ChildResource: ConfigurableResource = create_child_resource_class()
 
     class ParentResource(ConfigurableResource):
         child: ChildResource
