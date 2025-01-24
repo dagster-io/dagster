@@ -3,7 +3,7 @@ title: Create a sensor asset
 description: Use sensors to create event driven pipelines
 last_update:
   author: Alex Noonan
-sidebar_position: 70
+sidebar_position: 60
 ---
 
 [Sensors](/guides/automate/sensors) allow you to automate workflows based on external events or conditions, making them useful for event-driven automation, especially in situations where jobs occur at irregular cadences or in rapid succession.

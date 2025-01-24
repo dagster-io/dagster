@@ -4,7 +4,7 @@ description: Partitioning Assets by datetime and categories
 last_update:
   date: 2024-11-25
   author: Alex Noonan
-sidebar_position: 50
+sidebar_position: 40
 ---
 
 [Partitions](/guides/build/partitions-and-backfills/partitioning-assets) are a core abstraction in Dagster, that allow you to manage large datasets, process incremental updates, and improve pipeline performance. You can partition assets the following ways:
