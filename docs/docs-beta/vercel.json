@@ -1641,6 +1641,11 @@
       "permanent": false
     },
     {
+      "source": "/community/contributing/",
+      "destination": "/about/contributing",
+      "permanent": false
+    },
+    {
       "source": "/community/contributing",
       "destination": "/about/contributing",
       "permanent": false
