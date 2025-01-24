@@ -50,13 +50,11 @@ import {
   sortAssetKeys,
   tokenForAssetKey,
 } from '../asset-graph/Utils';
-import {PipelineSelector} from '../graphql/types';
+import {PipelineSelector, RepositorySelector, buildRepositorySelector} from '../graphql/types';
 import {AssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
 import {testId} from '../testing/testId';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
 
 export type LaunchAssetsChoosePartitionsTarget =
   | {type: 'job'; jobName: string; assetKeys: AssetKey[]}
@@ -71,14 +69,14 @@ type LaunchAssetsState =
       type: 'launchpad';
       jobName: string;
       sessionPresets: Partial<IExecutionSession>;
-      repoAddress: RepoAddress;
+      repositorySelector: RepositorySelector;
     }
   | {
       type: 'partitions';
       target: LaunchAssetsChoosePartitionsTarget;
       assets: LaunchAssetExecutionAssetNodeFragment[];
       upstreamAssetKeys: AssetKey[];
-      repoAddress: RepoAddress;
+      repositorySelector: RepositorySelector;
     }
   | {
       type: 'single-run';
@@ -426,7 +424,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
       return (
         <AssetLaunchpad
           assetJobName={state.jobName}
-          repoAddress={state.repoAddress}
+          repositorySelector={state.repositorySelector}
           sessionPresets={state.sessionPresets}
           open={true}
           setOpen={() => setState({type: 'none'})}
@@ -439,7 +437,7 @@ export const useMaterializationAction = (preferredJobName?: string) => {
         <LaunchAssetChoosePartitionsDialog
           assets={state.assets}
           upstreamAssetKeys={state.upstreamAssetKeys}
-          repoAddress={state.repoAddress}
+          repositorySelector={state.repositorySelector}
           target={state.target}
           open={true}
           setOpen={() => setState({type: 'none'})}
@@ -485,16 +483,17 @@ async function stateForLaunchingAssets(
     };
   }
 
-  const repoAddress = buildRepoAddress(
-    assets[0]?.repository.name || '',
-    assets[0]?.repository.location.name || '',
-  );
+  const repositorySelector = buildRepositorySelector({
+    repositoryLocationName: assets[0]?.repository.location.name || '',
+    repositoryName: assets[0]?.repository.name || '',
+  });
   const jobName = getCommonJob(assets, preferredJobName);
   const partitionDefinition = assets.find((a) => !!a.partitionDefinition)?.partitionDefinition;
 
   const inSameRepo = assets.every(
     (a) =>
-      a.repository.name === repoAddress.name && a.repository.location.name === repoAddress.location,
+      a.repository.name === repositorySelector.repositoryName &&
+      a.repository.location.name === repositorySelector.repositoryLocationName,
   );
   const inSameOrNoPartitionSpace = assets.every(
     (a) =>
@@ -514,7 +513,7 @@ async function stateForLaunchingAssets(
         assets,
         target: {type: 'pureAll'},
         upstreamAssetKeys: [],
-        repoAddress,
+        repositorySelector,
       };
     }
     return {
@@ -522,7 +521,7 @@ async function stateForLaunchingAssets(
       assets,
       target: {type: 'pureWithAnchorAsset', anchorAssetKey: anchorAsset.assetKey},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
-      repoAddress,
+      repositorySelector,
     };
   }
 
@@ -545,7 +544,7 @@ async function stateForLaunchingAssets(
       const {error, requiredConfigPresent} = await checkIfResourcesRequireConfig({
         client,
         jobName,
-        repoAddress,
+        repositorySelector,
         requiredResourceKeys,
       });
       if (error) {
@@ -562,7 +561,7 @@ async function stateForLaunchingAssets(
     return {
       type: 'launchpad',
       jobName,
-      repoAddress,
+      repositorySelector,
       sessionPresets: {
         flattenGraphs: true,
         assetSelection: assets.map((a) => ({assetKey: a.assetKey, opNames: a.opNames})),
@@ -588,12 +587,12 @@ async function stateForLaunchingAssets(
       assets,
       target: {type: 'job', jobName, assetKeys: assets.map(asAssetKeyInput)},
       upstreamAssetKeys: getUpstreamAssetKeys(assets),
-      repoAddress,
+      repositorySelector,
     };
   }
   return {
     type: 'single-run',
-    executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, []),
+    executionParams: executionParamsForAssetJob(repositorySelector, jobName, assets, []),
   };
 }
 
@@ -671,7 +670,7 @@ async function upstreamAssetsWithNoMaterializations(
 }
 
 export function executionParamsForAssetJob(
-  repoAddress: RepoAddress,
+  repositorySelector: RepositorySelector,
   jobName: string,
   assets: Pick<
     LaunchAssetExecutionAssetNodeFragment,
@@ -686,8 +685,7 @@ export function executionParamsForAssetJob(
     },
     runConfigData: '{}',
     selector: {
-      repositoryLocationName: repoAddress.location,
-      repositoryName: repoAddress.name,
+      ...repositorySelector,
       pipelineName: jobName,
       assetSelection: assets.map(asAssetKeyInput),
       assetCheckSelection: getAssetCheckHandleInputs(assets, jobName),
@@ -925,12 +923,12 @@ export const LAUNCH_ASSET_CHECK_UPSTREAM_QUERY = gql`
 async function checkIfResourcesRequireConfig({
   client,
   jobName,
-  repoAddress,
+  repositorySelector,
   requiredResourceKeys,
 }: {
   client: ApolloClient<any>;
   jobName: string;
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   requiredResourceKeys: string[];
 }) {
   const resourceResult = await client.query<
@@ -938,11 +936,7 @@ async function checkIfResourcesRequireConfig({
     LaunchAssetLoaderResourceQueryVariables
   >({
     query: LAUNCH_ASSET_LOADER_RESOURCE_QUERY,
-    variables: {
-      pipelineName: jobName,
-      repositoryName: repoAddress.name,
-      repositoryLocationName: repoAddress.location,
-    },
+    variables: {...repositorySelector, pipelineName: jobName},
   });
   const resourceConnection = resourceResult.data.resourcesOrError;
   if (resourceConnection.__typename !== 'ResourceConnection') {

@@ -1,9 +1,11 @@
+import {useMemo} from 'react';
 import {Redirect, Switch} from 'react-router-dom';
 import {JobFallthroughRoot} from 'shared/pipelines/JobFallthroughRoot.oss';
 
 import {PipelineOrJobDisambiguationRoot} from './PipelineOrJobDisambiguationRoot';
 import {PipelineRunsRoot} from './PipelineRunsRoot';
 import {Route} from '../app/Route';
+import {buildRepositorySelector} from '../graphql/types';
 import {JobOrAssetLaunchpad} from '../launchpad/LaunchpadRoot';
 import {LaunchpadSetupFromRunRoot} from '../launchpad/LaunchpadSetupFromRunRoot';
 import {LaunchpadSetupRoot} from '../launchpad/LaunchpadSetupRoot';
@@ -17,6 +19,15 @@ interface Props {
 
 export const PipelineRoot = (props: Props) => {
   const {repoAddress} = props;
+
+  const repositorySelector = useMemo(
+    () =>
+      buildRepositorySelector({
+        repositoryLocationName: repoAddress.location,
+        repositoryName: repoAddress.name,
+      }),
+    [repoAddress],
+  );
 
   return (
     <div
@@ -55,7 +66,7 @@ export const PipelineRoot = (props: Props) => {
             '/locations/:repoPath/jobs/:pipelinePath/playground',
           ]}
         >
-          <JobOrAssetLaunchpad repoAddress={repoAddress} />
+          <JobOrAssetLaunchpad repositorySelector={repositorySelector} />
         </Route>
         <Route
           path={[

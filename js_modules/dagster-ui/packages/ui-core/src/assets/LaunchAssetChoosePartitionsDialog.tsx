@@ -53,7 +53,7 @@ import {
   itemWithAssetKey,
 } from '../asset-graph/Utils';
 import {AssetKey} from '../assets/types';
-import {LaunchBackfillParams, PartitionDefinitionType} from '../graphql/types';
+import {LaunchBackfillParams, PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {LAUNCH_PARTITION_BACKFILL_MUTATION} from '../instance/backfill/BackfillUtils';
 import {
   LaunchPartitionBackfillMutation,
@@ -76,14 +76,13 @@ import {DagsterTag} from '../runs/RunTag';
 import {testId} from '../testing/testId';
 import {ToggleableSection} from '../ui/ToggleableSection';
 import {useFeatureFlagForCodeLocation} from '../workspace/WorkspaceContext/util';
-import {RepoAddress} from '../workspace/types';
 
 const MISSING_FAILED_STATUSES = [AssetPartitionStatus.MISSING, AssetPartitionStatus.FAILED];
 
 export interface LaunchAssetChoosePartitionsDialogProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   target: LaunchAssetsChoosePartitionsTarget;
   assets: Pick<
     LaunchAssetExecutionAssetNodeFragment,
@@ -127,7 +126,7 @@ export const LaunchAssetChoosePartitionsDialog = (
 const LaunchAssetChoosePartitionsDialogBody = ({
   setOpen,
   assets,
-  repoAddress,
+  repositorySelector,
   target,
   upstreamAssetKeys,
   refetch: _refetch,
@@ -137,14 +136,14 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   const {
     permissions: {canLaunchPipelineExecution, canLaunchPartitionBackfill},
     disabledReasons,
-  } = usePermissionsForLocation(repoAddress.location);
+  } = usePermissionsForLocation(repositorySelector.repositoryLocationName);
   const [launching, setLaunching] = useState(false);
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [tags, setTags] = useState<PipelineRunTag[]>([]);
 
   const showSingleRunBackfillToggle = useFeatureFlagForCodeLocation(
-    repoAddress.location,
+    repositorySelector.repositoryLocationName,
     'SHOW_SINGLE_RUN_BACKFILL_TOGGLE',
   );
 
@@ -271,9 +270,8 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     }
 
     const config = await fetchTagsAndConfigForAssetJob(client, {
+      ...repositorySelector,
       partitionName: keysFiltered[0]!,
-      repositoryLocationName: repoAddress.location,
-      repositoryName: repoAddress.name,
       assetKeys: target.assetKeys,
       jobName: target.jobName,
     });
@@ -299,7 +297,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     const result = await launchWithTelemetry(
       {
         executionParams: {
-          ...executionParamsForAssetJob(repoAddress, target.jobName, assets, allTags),
+          ...executionParamsForAssetJob(repositorySelector, target.jobName, assets, allTags),
           runConfigData,
         },
       },
@@ -322,10 +320,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
             selector: {
               // Todo: Fix after PR #23720 merges
               partitionSetName: `${target.jobName}_partition_set`,
-              repositorySelector: {
-                repositoryLocationName: repoAddress.location,
-                repositoryName: repoAddress.name,
-              },
+              repositorySelector,
             },
           }
         : target.type === 'pureAll'
@@ -473,7 +468,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
               </Box>
             )}
             <DimensionRangeWizards
-              repoAddress={repoAddress}
+              repositorySelector={repositorySelector}
               refetch={refetch}
               selections={selections}
               setSelections={setSelections}

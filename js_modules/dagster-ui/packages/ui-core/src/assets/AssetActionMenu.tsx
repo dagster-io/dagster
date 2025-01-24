@@ -10,20 +10,20 @@ import {useReportEventsDialog} from './useReportEventsDialog';
 import {useWipeDialog} from './useWipeDialog';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {AssetKeyInput} from '../graphql/types';
+import {AssetKeyInput, RepositorySelector} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
-import {RepoAddress} from '../workspace/types';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
-  repoAddress: RepoAddress | null;
+  repositorySelector: RepositorySelector | null;
   onRefresh?: () => void;
 }
 
 export const AssetActionMenu = (props: Props) => {
-  const {repoAddress, path, definition, onRefresh} = props;
+  const {repositorySelector, path, definition, onRefresh} = props;
   const {
     featureContext: {canSeeMaterializeAction},
   } = useContext(CloudOSSContext);
@@ -41,21 +41,21 @@ export const AssetActionMenu = (props: Props) => {
   const {executeItem, launchpadElement} = useExecuteAssetMenuItem(asset);
 
   const deletePartitions = useDeleteDynamicPartitionsDialog(
-    repoAddress && definition ? {repoAddress, assetKey: {path}, definition} : null,
+    repositorySelector && definition ? {repositorySelector, assetKey: {path}, definition} : null,
     onRefresh,
   );
 
   const wipe = useWipeDialog(
-    repoAddress && definition ? {repository: definition.repository, assetKey: {path}} : null,
+    repositorySelector && definition ? {repository: definition.repository, assetKey: {path}} : null,
     onRefresh,
   );
 
   const reportEvents = useReportEventsDialog(
-    repoAddress
+    repositorySelector
       ? {
           assetKey: {path},
           isPartitioned: !!definition?.partitionDefinition,
-          repoAddress,
+          repositorySelector,
           hasReportRunlessAssetEventPermission: !!definition?.hasReportRunlessAssetEventPermission,
         }
       : null,
@@ -75,8 +75,14 @@ export const AssetActionMenu = (props: Props) => {
             <MenuLink
               text="Show in group"
               to={
-                repoAddress && definition?.groupName
-                  ? workspacePathFromAddress(repoAddress, `/asset-groups/${definition.groupName}`)
+                repositorySelector && definition?.groupName
+                  ? workspacePathFromAddress(
+                      buildRepoAddress(
+                        repositorySelector.repositoryName,
+                        repositorySelector.repositoryLocationName,
+                      ),
+                      `/asset-groups/${definition.groupName}`,
+                    )
                   : ''
               }
               disabled={!definition}

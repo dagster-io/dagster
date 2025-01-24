@@ -14,18 +14,19 @@ import {LaunchpadRootQuery, LaunchpadRootQueryVariables} from './types/Launchpad
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {RepositorySelector} from '../graphql/types';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {lazy} from '../util/lazy';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
-import {RepoAddress} from '../workspace/types';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 const LaunchpadStoredSessionsContainer = lazy(() => import('./LaunchpadStoredSessionsContainer'));
 
 interface Props {
   launchpadType: LaunchpadType;
   pipelinePath: string;
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   sessionPresets?: Partial<IExecutionSession>;
 }
 
@@ -49,22 +50,28 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
 export const LaunchpadAllowedRoot = (props: Props) => {
   useTrackPageView();
 
-  const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;
+  const {pipelinePath, repositorySelector, launchpadType, sessionPresets} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
   const {pipelineName} = explorerPath;
 
+  const repoAddress = useMemo(
+    () =>
+      buildRepoAddress(
+        repositorySelector.repositoryName,
+        repositorySelector.repositoryLocationName,
+      ),
+    [repositorySelector],
+  );
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
 
   useJobTitle(explorerPath, isJob);
   useStripSnapshotFromPath(props);
 
-  const {name: repositoryName, location: repositoryLocationName} = repoAddress;
-
   const result = useQuery<LaunchpadRootQuery, LaunchpadRootQueryVariables>(
     PIPELINE_EXECUTION_ROOT_QUERY,
     {
-      variables: {repositoryName, repositoryLocationName, pipelineName},
+      variables: {...repositorySelector, pipelineName},
     },
   );
 

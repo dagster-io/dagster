@@ -26,9 +26,9 @@ function Test({mocks}: {mocks?: MockedResponse[]}) {
       <CreatePartitionDialog
         isOpen={true}
         close={onCloseMock}
-        repoAddress={{
-          name: 'testing',
-          location: 'testing',
+        repositorySelector={{
+          repositoryName: 'testing',
+          repositoryLocationName: 'testing',
         }}
         dynamicPartitionsDefinitionName="testPartitionDef"
         onCreated={onCreatedMock}

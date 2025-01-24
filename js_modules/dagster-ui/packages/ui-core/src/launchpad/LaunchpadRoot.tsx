@@ -6,21 +6,21 @@ import {LaunchpadAllowedRoot} from './LaunchpadAllowedRoot';
 import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {__ASSET_JOB_PREFIX} from '../asset-graph/Utils';
+import {RepositorySelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {RepoAddress} from '../workspace/types';
 
 // ########################
 // ##### LAUNCHPAD ROOTS
 // ########################
 
 export const AssetLaunchpad = ({
-  repoAddress,
+  repositorySelector,
   sessionPresets,
   assetJobName,
   open,
   setOpen,
 }: {
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   sessionPresets?: Partial<IExecutionSession>;
   assetJobName: string;
   open: boolean;
@@ -41,20 +41,20 @@ export const AssetLaunchpad = ({
       <LaunchpadAllowedRoot
         launchpadType="asset"
         pipelinePath={assetJobName}
-        repoAddress={repoAddress}
+        repositorySelector={repositorySelector}
         sessionPresets={sessionPresets}
       />
     </Dialog>
   );
 };
 
-export const JobOrAssetLaunchpad = (props: {repoAddress: RepoAddress}) => {
-  const {repoAddress} = props;
+export const JobOrAssetLaunchpad = (props: {repositorySelector: RepositorySelector}) => {
+  const {repositorySelector} = props;
   const {pipelinePath, repoPath} = useParams<{repoPath: string; pipelinePath: string}>();
   const {
     permissions: {canLaunchPipelineExecution},
     loading,
-  } = usePermissionsForLocation(repoAddress.location);
+  } = usePermissionsForLocation(repositorySelector.repositoryLocationName);
   useBlockTraceUntilTrue('Permissions', loading);
 
   if (loading) {
@@ -69,7 +69,7 @@ export const JobOrAssetLaunchpad = (props: {repoAddress: RepoAddress}) => {
     <LaunchpadAllowedRoot
       launchpadType={pipelinePath.includes(__ASSET_JOB_PREFIX) ? 'asset' : 'job'}
       pipelinePath={pipelinePath}
-      repoAddress={repoAddress}
+      repositorySelector={repositorySelector}
     />
   );
 };

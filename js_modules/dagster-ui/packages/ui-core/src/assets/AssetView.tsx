@@ -46,9 +46,9 @@ import {
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
+import {buildRepositorySelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 interface Props {
   assetKey: AssetKey;
@@ -264,10 +264,13 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     }
   };
 
-  const repoAddress = useMemo(
+  const repositorySelector = useMemo(
     () =>
       definition
-        ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
+        ? buildRepositorySelector({
+            repositoryName: definition.repository.name,
+            repositoryLocationName: definition.repository.location.name,
+          })
         : null,
     [definition],
   );
@@ -289,7 +292,9 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   );
 
   const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
-    definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,
+    definition && repositorySelector
+      ? {assetKey: definition.assetKey, definition, repositorySelector}
+      : null,
     () => {
       definitionQueryResult.refetch();
       refresh();
@@ -297,12 +302,12 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   );
 
   const reportEvents = useReportEventsDialog(
-    definition && !definition.isObservable && repoAddress
+    definition && !definition.isObservable && repositorySelector
       ? {
           assetKey: definition.assetKey,
           isPartitioned: definition.isPartitioned,
           hasReportRunlessAssetEventPermission: definition.hasReportRunlessAssetEventPermission,
-          repoAddress,
+          repositorySelector,
         }
       : null,
     refresh,

@@ -10,6 +10,7 @@ import {
 import {asAssetKeyInput} from './asInput';
 import {AssetKey} from './types';
 import {useApolloClient} from '../apollo-client';
+import {buildRepositorySelector} from '../graphql/types';
 import {
   LaunchAssetExecutionAssetNodeFragment,
   LaunchAssetLoaderQuery,
@@ -17,8 +18,7 @@ import {
 } from './types/LaunchAssetExecutionButton.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {repositorySelectorAsHumanString} from '../workspace/repoAddressAsString';
 
 export type ObserveAssetsState =
   | {type: 'none'}
@@ -85,17 +85,17 @@ async function stateForObservingAssets(
       error: 'One or more of the selected assets is not an observable asset.',
     };
   }
-  const repoAddress = buildRepoAddress(
-    assets[0]?.repository.name || '',
-    assets[0]?.repository.location.name || '',
-  );
-  const repoName = repoAddressAsHumanString(repoAddress);
+  const repositorySelector = buildRepositorySelector({
+    repositoryLocationName: assets[0]?.repository.location.name || '',
+    repositoryName: assets[0]?.repository.name || '',
+  });
+  const repoName = repositorySelectorAsHumanString(repositorySelector);
 
   if (
     !assets.every(
       (a) =>
-        a.repository.name === repoAddress.name &&
-        a.repository.location.name === repoAddress.location,
+        a.repository.name === repositorySelector.repositoryName &&
+        a.repository.location.name === repositorySelector.repositoryLocationName,
     )
   ) {
     return {
@@ -114,6 +114,6 @@ async function stateForObservingAssets(
 
   return {
     type: 'single-run',
-    executionParams: executionParamsForAssetJob(repoAddress, jobName, assets, []),
+    executionParams: executionParamsForAssetJob(repositorySelector, jobName, assets, []),
   };
 }

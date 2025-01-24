@@ -4,9 +4,9 @@ import {LaunchAssetChoosePartitionsDialogProps} from '../LaunchAssetChoosePartit
 export const ReleasesJobProps: Omit<LaunchAssetChoosePartitionsDialogProps, 'open' | 'setOpen'> = {
   assets: assetNodes,
   upstreamAssetKeys: [],
-  repoAddress: {
-    name: '__repository__',
-    location: 'assets_dynamic_partitions',
+  repositorySelector: {
+    repositoryName: '__repository__',
+    repositoryLocationName: 'assets_dynamic_partitions',
   },
   target: {
     type: 'job' as const,
