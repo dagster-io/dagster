@@ -6,7 +6,7 @@ title: Dagster & DuckDB
 sidebar_label: DuckDB
 excerpt: Read and write natively to DuckDB from Software Defined Assets.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-duckdb
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-duckdb
 docslink: https://dagster.io/blog/duckdb-data-lake
 partnerlink: https://duckdb.org/
 categories:

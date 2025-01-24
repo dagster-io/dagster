@@ -6,7 +6,7 @@ title: Dagster & Airlift
 sidebar_label: Airlift
 excerpt: Easily integrate Dagster and Airflow.
 date:
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-airlift
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-airlift
 docslink: https://docs.dagster.io/integrations/airlift
 partnerlink:
 logo:

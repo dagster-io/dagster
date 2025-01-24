@@ -6,7 +6,7 @@ title: Dagster & Sigma
 sidebar_label: Sigma
 excerpt: Represent your Sigma assets in Dagster.
 date: 
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-sigma
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-sigma
 docslink: https://docs.dagster.io/integrations/sigma
 partnerlink:
 categories:

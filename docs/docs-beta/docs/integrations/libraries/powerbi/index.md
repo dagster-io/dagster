@@ -6,7 +6,7 @@ title: Dagster & Power BI
 sidebar_label: Power BI
 excerpt: Represent your Power BI assets in Dagster.
 date: 
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-powerbi
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-powerbi
 docslink: https://docs.dagster.io/integrations/powerbi
 partnerlink:
 categories:
