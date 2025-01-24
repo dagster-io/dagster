@@ -4485,6 +4485,7 @@ export type ResumeBackfillSuccess = {
 export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename: 'Run';
+    allPools: Maybe<Array<Scalars['String']['output']>>;
     assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
     assetChecks: Maybe<Array<AssetCheckhandle>>;
     assetMaterializations: Array<MaterializationEvent>;
@@ -13147,6 +13148,7 @@ export const buildRun = (
   relationshipsToOmit.add('Run');
   return {
     __typename: 'Run',
+    allPools: overrides && overrides.hasOwnProperty('allPools') ? overrides.allPools! : [],
     assetCheckSelection:
       overrides && overrides.hasOwnProperty('assetCheckSelection')
         ? overrides.assetCheckSelection!
