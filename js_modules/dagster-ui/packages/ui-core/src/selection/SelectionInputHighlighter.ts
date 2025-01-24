@@ -1,4 +1,4 @@
-import {Colors, TextInputStyles} from '@dagster-io/ui-components';
+import {Colors, FontFamily, TextInputStyles} from '@dagster-io/ui-components';
 import {ParserRuleContext} from 'antlr4ts';
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import CodeMirror from 'codemirror';
@@ -10,14 +10,17 @@ import {
   AttributeExpressionContext,
   AttributeNameContext,
   AttributeValueContext,
+  DownTraversalContext,
   FunctionNameContext,
   IncompleteAttributeExpressionMissingKeyContext,
   IncompleteAttributeExpressionMissingValueContext,
+  IncompletePlusTraversalExpressionContext,
   ParenthesizedExpressionContext,
   PostAttributeValueWhitespaceContext,
   QuotedStringValueContext,
   StartContext,
   UnquotedStringValueContext,
+  UpTraversalContext,
 } from './generated/SelectionAutoCompleteParser';
 import {SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
 
@@ -138,8 +141,14 @@ export class SyntaxHighlightingVisitor
     this.addClass(ctx, 'expression');
     this.visitChildren(ctx);
   }
-  visitDownTraversalExpression(ctx: ParserRuleContext) {
-    this.addClass(ctx, 'expression');
+  visitUpTraversal(ctx: UpTraversalContext) {
+    this.addClass(ctx, 'traversal');
+  }
+  visitDownTraversal(ctx: DownTraversalContext) {
+    this.addClass(ctx, 'traversal');
+  }
+  visitIncompletePlusTraversalExpression(ctx: IncompletePlusTraversalExpressionContext) {
+    this.addClass(ctx, 'traversal');
     this.visitChildren(ctx);
   }
   visitNotExpression(ctx: ParserRuleContext) {
@@ -207,12 +216,6 @@ export function applyStaticSyntaxHighlighting(cm: CodeMirror.Editor): void {
   });
 }
 
-const lastElementInTokenStyle = css`
-  padding-right: 4px;
-  border-top-right-radius: 4px;
-  border-bottom-right-radius: 4px;
-`;
-
 export const SelectionAutoCompleteInputCSS = css`
   .CodeMirror:not(.CodeMirror-focused) {
     .CodeMirror-sizer,
@@ -249,9 +252,9 @@ export const SelectionAutoCompleteInputCSS = css`
   .CodeMirror {
     background: transparent;
     color: ${Colors.textDefault()};
+    font-family: ${FontFamily.monospace};
   }
 
-  .CodeMirror-line .selection:not(.expression):not(.value),
   .CodeMirror-lint-mark-error {
     background: unset;
     text-decoration-line: underline;
@@ -260,40 +263,27 @@ export const SelectionAutoCompleteInputCSS = css`
   }
 
   .expression {
-    color: ${Colors.textRed()};
-    font-weight: bold;
+    color: ${Colors.textGreen()};
   }
 
   .attribute-expression {
     color: ${Colors.textDefault()};
   }
 
-  .attribute-expression:not(.attribute-expression + .attribute-expression) {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-  }
-
   .attribute-name {
-    color: ${Colors.textCyan()};
-    font-weight: bold;
-    padding-left: 4px;
-  }
-
-  .attribute-expression:not(.attribute-value-ws) {
-    background: ${Colors.backgroundYellow()};
-  }
-
-  .attribute-expression:has(+ .attribute-value-ws),
-  .attribute-expression:not(:has(+ .attribute-expression)) {
-    ${lastElementInTokenStyle}
+    color: ${Colors.textLighter()};
   }
 
   .value {
-    color: ${Colors.textGreen()};
+    color: ${Colors.textBlue()};
   }
 
   .function-name {
-    color: ${Colors.textYellow()};
+    color: ${Colors.textCyan()};
     font-style: italic;
+  }
+
+  .traversal {
+    color: ${Colors.textRed()};
   }
 `;
