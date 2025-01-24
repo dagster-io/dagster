@@ -3,7 +3,7 @@ title: Refactor your project
 description: Refactor your completed project into a structure that is more organized and scalable. 
 last_update:
   author: Alex Noonan
-sidebar_position: 80
+sidebar_position: 70
 ---
 
 Many engineers generally leave something alone once it's working as expected. But the first time you do something is rarely the best implementation of a use case and all projects benefit from incremental improvements.

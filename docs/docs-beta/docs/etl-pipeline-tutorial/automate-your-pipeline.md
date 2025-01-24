@@ -3,7 +3,7 @@ title: Automate your pipeline
 description: Set schedules and utilize asset based automation
 last_update:
   author: Alex Noonan
-sidebar_position: 60
+sidebar_position: 50
 ---
 
 There are several ways to automate pipelines and assets [in Dagster](/guides/automate). 
