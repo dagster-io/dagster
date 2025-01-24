@@ -584,6 +584,40 @@ def test_nested_config_class() -> None:
     assert executed["yes"]
 
 
+# https://github.com/dagster-io/dagster/issues/27223
+@pytest.mark.parametrize("all_resource_a_fields_have_default_values", [True, False])
+def test_nested_config_class_with_runtime_config(all_resource_a_fields_have_default_values) -> None:
+    if all_resource_a_fields_have_default_values:
+
+        class ResourceA(ConfigurableResource):
+            date: str = "2025-01-20"
+    else:
+
+        class ResourceA(ConfigurableResource):
+            date: str
+
+    class ResourceB(ConfigurableResource):
+        resource_a: ResourceA
+
+    @asset
+    def test_asset(resource_A: ResourceA, resource_B: ResourceB) -> None:
+        assert resource_A.date == "2025-01-21"
+        assert resource_B.resource_a.date == "2025-01-21"
+
+    resource_A = ResourceA.configure_at_launch()
+    materialize(
+        [test_asset],
+        resources={
+            "resource_A": resource_A,
+            "resource_B": ResourceB.configure_at_launch(resource_a=resource_A),
+        },
+        run_config={
+            "loggers": {"console": {"config": {"log_level": "ERROR"}}},
+            "resources": {"resource_A": {"config": {"date": "2025-01-21"}}},
+        },
+    )
+
+
 def test_using_enum_simple() -> None:
     executed = {}
 
