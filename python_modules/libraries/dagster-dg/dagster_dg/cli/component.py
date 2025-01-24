@@ -1,12 +1,12 @@
-import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from subprocess import CalledProcessError
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import click
 from click.core import ParameterSource
+from jsonschema import Draft202012Validator, ValidationError
 
+from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import (
@@ -25,6 +25,10 @@ from dagster_dg.utils import (
     not_none,
     parse_json_option,
 )
+from dagster_dg.yaml_utils import parse_yaml_with_source_positions
+
+if TYPE_CHECKING:
+    from dagster_dg.yaml_utils.source_position import ValueAndSourcePositionTree
 
 
 @click.group(name="component", cls=DgClickGroup)
@@ -71,7 +75,7 @@ class ComponentScaffoldGroup(DgClickGroup):
             exit_with_error("This command must be run inside a Dagster code location directory.")
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        for key, component_type in registry.items():
+        for key, component_type in registry.global_items():
             command = _create_component_scaffold_subcommand(key, component_type)
             self.add_command(command)
 
@@ -180,7 +184,7 @@ def _create_component_scaffold_subcommand(
             exit_with_error("This command must be run inside a Dagster code location directory.")
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has(component_key):
+        if not registry.has_global(component_key):
             exit_with_error(f"No component type `{component_key}` could be resolved.")
         elif dg_context.has_component(component_name):
             exit_with_error(f"A component instance named `{component_name}` already exists.")
@@ -248,6 +252,18 @@ def component_list_command(context: click.Context, **global_options: object) -> 
 # ##### CHECK
 # ########################
 
+COMPONENT_FILE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "type": {"type": "string"},
+        "params": {"type": "object"},
+    },
+}
+
+
+def _is_local_component(component_name: str) -> bool:
+    return component_name.startswith(".")
+
 
 @component_group.command(name="check", cls=DgClickCommand)
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
@@ -259,10 +275,72 @@ def component_check_command(
     **global_options: object,
 ) -> None:
     """Check component files against their schemas, showing validation errors."""
+    resolved_paths = [Path(path).absolute() for path in paths]
+    top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
+
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
 
-    try:
-        dg_context.external_components_command(["check", "component", *paths])
-    except CalledProcessError:
-        sys.exit(1)
+    validation_errors: list[tuple[Optional[str], ValidationError, ValueAndSourcePositionTree]] = []
+
+    component_contents_by_dir = {}
+    local_component_dirs = set()
+    for component_dir in (
+        dg_context.root_path / dg_context.root_package_name / "components"
+    ).iterdir():
+        if resolved_paths and not any(
+            path == component_dir or path in component_dir.parents for path in resolved_paths
+        ):
+            continue
+
+        component_path = component_dir / "component.yaml"
+
+        if component_path.exists():
+            text = component_path.read_text()
+            component_doc_tree = parse_yaml_with_source_positions(
+                text, filename=str(component_path)
+            )
+
+            # First, validate the top-level structure of the component file
+            # (type and params keys) before we try to validate the params themselves.
+            top_level_errs = list(
+                top_level_component_validator.iter_errors(component_doc_tree.value)
+            )
+            for err in top_level_errs:
+                validation_errors.append((None, err, component_doc_tree))
+            if top_level_errs:
+                continue
+
+            component_contents_by_dir[component_dir] = component_doc_tree
+            component_name = component_doc_tree.value.get("type")
+            if _is_local_component(component_name):
+                local_component_dirs.add(component_dir)
+
+    # Fetch the local component types, if we need any local components
+    component_registry = RemoteComponentRegistry.from_dg_context(
+        dg_context, local_component_type_dirs=list(local_component_dirs)
+    )
+
+    for component_dir, component_doc_tree in component_contents_by_dir.items():
+        component_name = component_doc_tree.value.get("type")
+        json_schema = (
+            component_registry.get(component_dir, component_name).component_params_schema or {}
+        )
+
+        v = Draft202012Validator(json_schema)
+        for err in v.iter_errors(component_doc_tree.value["params"]):
+            validation_errors.append((component_name, err, component_doc_tree))
+
+    if validation_errors:
+        for component_name, error, component_doc_tree in validation_errors:
+            click.echo(
+                error_dict_to_formatted_error(
+                    component_name,
+                    error,
+                    source_position_tree=component_doc_tree.source_position_tree,
+                    prefix=["params"] if component_name else [],
+                )
+            )
+        context.exit(1)
+    else:
+        click.echo("All components validated successfully.")
