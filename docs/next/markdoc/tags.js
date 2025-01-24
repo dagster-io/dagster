@@ -1,5 +1,13 @@
 import {ArticleList, ArticleListItem} from '../components/markdoc/ArticleList';
-import {Badge, Experimental, Preview, Beta, Deprecated, Superseded, Legacy} from '../components/markdoc/Badges';
+import {
+  Badge,
+  Experimental,
+  Preview,
+  Beta,
+  Deprecated,
+  Superseded,
+  Legacy,
+} from '../components/markdoc/Badges';
 import {Button, ButtonContainer} from '../components/markdoc/Button';
 import {Note, Warning} from '../components/markdoc/Callouts';
 import {Check, Cross} from '../components/markdoc/CheckCross';
