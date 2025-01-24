@@ -2013,6 +2013,8 @@ export type InstigationTick = {
   runs: Array<Run>;
   skipReason: Maybe<Scalars['String']['output']>;
   status: InstigationTickStatus;
+  submittedAssetMaterializationCount: Scalars['Int']['output'];
+  submittedMaterializationsForAssets: Array<RequestedMaterializationsForAsset>;
   tickId: Scalars['ID']['output'];
   timestamp: Scalars['Float']['output'];
 };
@@ -9203,6 +9205,14 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('status')
         ? overrides.status!
         : InstigationTickStatus.FAILURE,
+    submittedAssetMaterializationCount:
+      overrides && overrides.hasOwnProperty('submittedAssetMaterializationCount')
+        ? overrides.submittedAssetMaterializationCount!
+        : 5903,
+    submittedMaterializationsForAssets:
+      overrides && overrides.hasOwnProperty('submittedMaterializationsForAssets')
+        ? overrides.submittedMaterializationsForAssets!
+        : [],
     tickId:
       overrides && overrides.hasOwnProperty('tickId')
         ? overrides.tickId!

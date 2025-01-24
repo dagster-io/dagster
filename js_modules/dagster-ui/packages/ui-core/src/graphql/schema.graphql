@@ -2629,7 +2629,9 @@ type InstigationTick {
   endTimestamp: Float
   requestedAssetKeys: [AssetKey!]!
   requestedAssetMaterializationCount: Int!
+  submittedAssetMaterializationCount: Int!
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
+  submittedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
   autoMaterializeAssetEvaluationId: ID
   instigationType: InstigationType!
 }

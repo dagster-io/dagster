@@ -250,7 +250,9 @@ class GrapheneInstigationTick(graphene.ObjectType):
     endTimestamp = graphene.Field(graphene.Float)
     requestedAssetKeys = non_null_list(GrapheneAssetKey)
     requestedAssetMaterializationCount = graphene.NonNull(graphene.Int)
+    submittedAssetMaterializationCount = graphene.NonNull(graphene.Int)
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
+    submittedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
     autoMaterializeAssetEvaluationId = graphene.Field(graphene.ID)
     instigationType = graphene.NonNull(GrapheneInstigationType)
 
@@ -322,8 +324,27 @@ class GrapheneInstigationTick(graphene.ObjectType):
             for asset_key, partition_keys in self._tick.requested_assets_and_partitions.items()
         ]
 
+    def resolve_submittedMaterializationsForAssets(self, _):
+        """The asset materializations that were successfully submitted for materialization
+        in this tick. May not be the same as requestedMaterializationsForAssets if the tick was terminated
+        mid-iteration.
+        """
+        return [
+            GrapheneRequestedMaterializationsForAsset(
+                assetKey=GrapheneAssetKey(path=asset_key.path), partitionKeys=list(partition_keys)
+            )
+            for asset_key, partition_keys in self._tick.submitted_assets_and_partitions.items()
+        ]
+
     def resolve_requestedAssetMaterializationCount(self, _):
         return self._tick.requested_asset_materialization_count
+
+    def resolve_submittedAssetMaterializationCount(self, _):
+        """The number of asset materializations that were successfully submitted for materialization
+        in this tick. May not be the same as requestedAssetMaterializationCount if the tick was terminated
+        mid-iteration.
+        """
+        return self._tick.submitted_asset_materialization_count
 
 
 class GrapheneDryRunInstigationTick(graphene.ObjectType):
