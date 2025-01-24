@@ -139,7 +139,7 @@ Join our community here:
 ## Contributing
 
 For details on contributing or running the project for development, check out our [contributing
-guide](https://docs.dagster.io/community/contributing/).
+guide](https://docs.dagster.io/about/contributing).
 
 ## License
 
