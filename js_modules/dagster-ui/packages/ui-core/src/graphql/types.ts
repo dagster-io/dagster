@@ -1900,6 +1900,7 @@ export type Instance = {
   info: Maybe<Scalars['String']['output']>;
   maxConcurrencyLimitValue: Scalars['Int']['output'];
   minConcurrencyLimitValue: Scalars['Int']['output'];
+  poolConfig: Maybe<PoolConfig>;
   runLauncher: Maybe<RunLauncher>;
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean']['output'];
@@ -3722,6 +3723,13 @@ export type PipelineTagAndValues = {
   __typename: 'PipelineTagAndValues';
   key: Scalars['String']['output'];
   values: Array<Scalars['String']['output']>;
+};
+
+export type PoolConfig = {
+  __typename: 'PoolConfig';
+  opGranularityRunBuffer: Maybe<Scalars['Int']['output']>;
+  poolDefaultLimit: Maybe<Scalars['Int']['output']>;
+  poolGranularity: Maybe<Scalars['String']['output']>;
 };
 
 export type PresetNotFoundError = Error & {
@@ -8973,6 +8981,12 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('minConcurrencyLimitValue')
         ? overrides.minConcurrencyLimitValue!
         : 4538,
+    poolConfig:
+      overrides && overrides.hasOwnProperty('poolConfig')
+        ? overrides.poolConfig!
+        : relationshipsToOmit.has('PoolConfig')
+          ? ({} as PoolConfig)
+          : buildPoolConfig({}, relationshipsToOmit),
     runLauncher:
       overrides && overrides.hasOwnProperty('runLauncher')
         ? overrides.runLauncher!
@@ -12082,6 +12096,29 @@ export const buildPipelineTagAndValues = (
     __typename: 'PipelineTagAndValues',
     key: overrides && overrides.hasOwnProperty('key') ? overrides.key! : 'repudiandae',
     values: overrides && overrides.hasOwnProperty('values') ? overrides.values! : [],
+  };
+};
+
+export const buildPoolConfig = (
+  overrides?: Partial<PoolConfig>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PoolConfig'} & PoolConfig => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PoolConfig');
+  return {
+    __typename: 'PoolConfig',
+    opGranularityRunBuffer:
+      overrides && overrides.hasOwnProperty('opGranularityRunBuffer')
+        ? overrides.opGranularityRunBuffer!
+        : 3091,
+    poolDefaultLimit:
+      overrides && overrides.hasOwnProperty('poolDefaultLimit')
+        ? overrides.poolDefaultLimit!
+        : 8013,
+    poolGranularity:
+      overrides && overrides.hasOwnProperty('poolGranularity')
+        ? overrides.poolGranularity!
+        : 'enim',
   };
 };
 

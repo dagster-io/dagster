@@ -14,6 +14,11 @@ query InstanceDetailSummaryQuery {
         runQueuingSupported
         hasInfo
         useAutoMaterializeSensors
+        poolConfig {
+            poolGranularity
+            poolDefaultLimit
+            opGranularityRunBuffer
+        }
     }
 }
 """
@@ -138,6 +143,11 @@ class TestInstanceSettings(BaseTestSuite):
                 "runQueuingSupported": True,
                 "hasInfo": graphql_context.show_instance_config,
                 "useAutoMaterializeSensors": graphql_context.instance.auto_materialize_use_sensors,
+                "poolConfig": {
+                    "poolGranularity": "op",
+                    "poolDefaultLimit": None,
+                    "opGranularityRunBuffer": None,
+                },
             }
         }
 
@@ -314,3 +324,18 @@ class TestConcurrencyInstanceSettings(ConcurrencyTestSuite):
         assert limit["slotCount"] == 0
         assert limit["limit"] == 0
         assert not limit["usingDefaultLimit"]
+
+        # instance settings
+        results = execute_dagster_graphql(graphql_context, INSTANCE_QUERY)
+        assert results.data == {
+            "instance": {
+                "runQueuingSupported": True,
+                "hasInfo": graphql_context.show_instance_config,
+                "useAutoMaterializeSensors": graphql_context.instance.auto_materialize_use_sensors,
+                "poolConfig": {
+                    "poolGranularity": "op",
+                    "poolDefaultLimit": 1,
+                    "opGranularityRunBuffer": None,
+                },
+            }
+        }

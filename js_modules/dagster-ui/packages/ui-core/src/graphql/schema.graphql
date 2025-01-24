@@ -2486,6 +2486,7 @@ type Instance {
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
   useAutoMaterializeSensors: Boolean!
+  poolConfig: PoolConfig
 }
 
 type RunQueueConfig {
@@ -2520,6 +2521,12 @@ type PendingConcurrencyStep {
   enqueuedTimestamp: Float!
   assignedTimestamp: Float
   priority: Int
+}
+
+type PoolConfig {
+  poolGranularity: String
+  poolDefaultLimit: Int
+  opGranularityRunBuffer: Int
 }
 
 type RunLauncher {
