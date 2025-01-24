@@ -3,7 +3,7 @@ import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetS
 import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
-import {AssetSelectionInput} from './AssetSelectionInput.oss';
+import {AssetSelectionInput} from './AssetSelectionInput';
 import {featureEnabled} from '../../app/Flags';
 import {useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
 

@@ -53,7 +53,7 @@ import {
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {featureEnabled} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
-import {AssetSelectionInput} from '../asset-selection/input/AssetSelectionInput.oss';
+import {AssetSelectionInput} from '../asset-selection/input/AssetSelectionInput';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';

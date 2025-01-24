@@ -89,15 +89,12 @@ export const SelectionAutoCompleteInput = ({
 
   const [selectedIndexRef, setSelectedIndex] = useState({current: 0});
 
-  const scrollToSelectionRef = useRef(false);
-
   useDangerousRenderEffect(() => {
     // Rather then using a useEffect + setState (extra render), we just set the current value directly
     selectedIndexRef.current = 0;
     if (!autoCompleteResults?.list.length && !loading) {
       showResults.current = false;
     }
-    scrollToSelectionRef.current = true;
   }, [autoCompleteResults, loading]);
 
   useLayoutEffect(() => {
@@ -255,9 +252,6 @@ export const SelectionAutoCompleteInput = ({
       if (!showResults.current) {
         return;
       }
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        scrollToSelectionRef.current = true;
-      }
       if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
         setSelectedIndex((prev) => ({
@@ -344,7 +338,6 @@ export const SelectionAutoCompleteInput = ({
               results={autoCompleteResults}
               width={width}
               selectedIndex={selectedIndexRef.current}
-              scrollToSelection={scrollToSelectionRef}
               onSelect={onSelect}
               setSelectedIndex={setSelectedIndex}
               loading={loading}

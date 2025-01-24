@@ -12,7 +12,7 @@ import {
   Row,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {MutableRefObject, useEffect} from 'react';
+import React, {useEffect} from 'react';
 import styled from 'styled-components';
 
 import {Suggestion} from './SelectionAutoCompleteVisitor';
@@ -28,7 +28,6 @@ type SelectionInputAutoCompleteResultsProps = {
   onSelect: (suggestion: Suggestion) => void;
   selectedIndex: number;
   setSelectedIndex: React.Dispatch<React.SetStateAction<{current: number}>>;
-  scrollToSelection: MutableRefObject<boolean>;
   loading?: boolean;
 };
 
@@ -62,7 +61,6 @@ export const SelectionInputAutoCompleteResults = React.memo(
     onSelect,
     selectedIndex,
     setSelectedIndex,
-    scrollToSelection,
     loading,
   }: SelectionInputAutoCompleteResultsProps) => {
     const menuRef = React.useRef<HTMLDivElement | null>(null);
