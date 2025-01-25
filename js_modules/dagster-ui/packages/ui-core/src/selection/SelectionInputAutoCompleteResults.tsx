@@ -4,28 +4,27 @@ import {
   Colors,
   Container,
   Icon,
-  IconName,
   Inner,
   Menu,
   MenuItem,
-  MonoSmall,
   Row,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect} from 'react';
 import styled from 'styled-components';
 
-import {Suggestion} from './SelectionAutoCompleteVisitor';
+import {BaseSuggestion} from './SelectionAutoCompleteProvider';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 
-type SelectionInputAutoCompleteResultsProps = {
+type SelectionInputAutoCompleteResultsProps<T extends {text: string}> = {
   results: {
-    list: Suggestion[];
+    list: Array<T | BaseSuggestion>;
     from: number;
     to: number;
   } | null;
   width?: number;
-  onSelect: (suggestion: Suggestion) => void;
+  onSelect: (suggestion: T | BaseSuggestion) => void;
+  renderResult: (suggestion: T | BaseSuggestion) => React.ReactNode;
   selectedIndex: number;
   setSelectedIndex: React.Dispatch<React.SetStateAction<{current: number}>>;
   loading?: boolean;
@@ -42,27 +41,16 @@ type Attribute =
   | 'tag:'
   | 'status:';
 
-const attributeToIcon: {[key in Attribute]: IconName} = {
-  'column:': 'view_column',
-  'table_name:': 'database',
-  'column_tag:': 'label',
-  'kind:': 'compute_kind',
-  'code_location:': 'code_location',
-  'group:': 'asset_group',
-  'owner:': 'owner',
-  'tag:': 'tag',
-  'status:': 'status',
-};
-
 export const SelectionInputAutoCompleteResults = React.memo(
-  ({
+  <T extends {text: string}>({
     results,
     width,
     onSelect,
     selectedIndex,
     setSelectedIndex,
     loading,
-  }: SelectionInputAutoCompleteResultsProps) => {
+    renderResult,
+  }: SelectionInputAutoCompleteResultsProps<T>) => {
     const menuRef = React.useRef<HTMLDivElement | null>(null);
     const rowVirtualizer = useVirtualizer({
       count: results?.list.length ?? 0,
@@ -98,7 +86,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
                     <div ref={rowVirtualizer.measureElement} data-index={index}>
                       <MenuItem
                         key={key}
-                        text={<SuggestionItem suggestion={result} />}
+                        text={renderResult(result)}
                         active={index === selectedIndex}
                         onClick={() => onSelect(result)}
                         onMouseMove={() => setSelectedIndex({current: index})}
@@ -155,79 +143,6 @@ export const SelectionInputAutoCompleteResults = React.memo(
     );
   },
 );
-
-const SuggestionItem = ({suggestion}: {suggestion: Suggestion}) => {
-  let label;
-  let icon: IconName | null = null;
-  let value: string | null = suggestion.displayText;
-  if (suggestion.nameBase) {
-    if (suggestion.text.endsWith('_substring:')) {
-      icon = 'magnify_glass_checked';
-      label = 'Contains match';
-    } else {
-      icon = 'magnify_glass';
-      label = 'Exact match';
-    }
-  } else if (suggestion.type === 'down-traversal' || suggestion.type === 'up-traversal') {
-    icon = 'curly_braces';
-    label =
-      suggestion.type === 'down-traversal'
-        ? 'Include downstream dependencies'
-        : 'Include upstream dependencies';
-  } else if (suggestion.type === 'logical_operator') {
-    icon = 'curly_braces';
-    label = suggestion.displayText.toUpperCase();
-  } else if (suggestion.type === 'parenthesis') {
-    icon = 'curly_braces';
-    label = 'Parenthesis';
-    value = suggestion.text;
-  } else if (suggestion.type === 'function') {
-    if (suggestion.displayText === 'roots()') {
-      label = 'Roots';
-      icon = 'arrow_upward';
-    } else if (suggestion.displayText === 'sinks()') {
-      label = 'Sinks';
-      icon = 'arrow_indent';
-    }
-  } else if (suggestion.type === 'attribute') {
-    label = suggestion.displayText.replace(':', '').replace('_', ' ');
-    label = label.charAt(0).toUpperCase() + label.slice(1);
-
-    icon = attributeToIcon[suggestion.displayText as Attribute];
-  } else if (suggestion.type === 'attribute-with-value') {
-    // hacky approach to extract the substring filter for now..., upcoming refactor will have more robust logic.
-    const substringMatch = /^([a-zA-Z]+)_substring:(.+)$/.exec(suggestion.text);
-    if (substringMatch) {
-      const nameBase = substringMatch[1]!;
-      label = `${nameBase[0]!.toUpperCase() + nameBase.slice(1)} contains ${substringMatch[2]}`;
-      icon = 'magnify_glass_checked';
-      value = suggestion.displayText;
-    } else {
-      const firstColon = suggestion.displayText.indexOf(':');
-      const attributeKey = suggestion.displayText.slice(0, firstColon);
-      const attributeValue = suggestion.displayText.slice(firstColon + 1);
-      label = (
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
-          <MonoSmall color={Colors.textLight()}>{attributeKey}:</MonoSmall>
-          <MonoSmall>{attributeValue}</MonoSmall>
-        </Box>
-      );
-      value = null;
-    }
-  } else if (suggestion.type === 'attribute-value') {
-    label = suggestion.displayText;
-    value = null;
-  }
-  return (
-    <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 24}}>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
-        {icon ? <Icon name={icon} size={12} style={{margin: 0}} /> : null}
-        <BodySmall>{label}</BodySmall>
-      </Box>
-      <MonoSmall>{value}</MonoSmall>
-    </Box>
-  );
-};
 
 const KeyHintWrapper = styled.div`
   border-radius: 8px;

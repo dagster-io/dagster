@@ -1,22 +1,75 @@
-import {generateAutocompleteResults} from '../SelectionAutoComplete';
+import {createSelectionAutoComplete} from '../SelectionAutoComplete';
+import {createSelectionAutoCompleteProviderFromAttributeMap} from '../SelectionAutoCompleteProviderFromAttributeMap';
 
 describe('createAssetSelectionHint', () => {
-  const selectionHint = generateAutocompleteResults({
+  const attributesMap = {
+    key: ['asset1', 'asset2', 'asset3'],
+    tag: ['tag1', 'tag2', 'tag3'],
+    owner: ['marco@dagsterlabs.com', 'team:frontend'],
+    group: ['group1', 'group2'],
+    kind: ['kind1', 'kind2'],
+    code_location: ['repo1@location1', 'repo2@location2'],
+  };
+  const provider = createSelectionAutoCompleteProviderFromAttributeMap<
+    typeof attributesMap,
+    'key',
+    any
+  >({
     nameBase: 'key',
-    attributesMap: {
-      key: ['asset1', 'asset2', 'asset3'],
-      tag: ['tag1', 'tag2', 'tag3'],
-      owner: ['marco@dagsterlabs.com', 'team:frontend'],
-      group: ['group1', 'group2'],
-      kind: ['kind1', 'kind2'],
-      code_location: ['repo1@location1', 'repo2@location2'],
-    },
+    attributesMapRef: {current: attributesMap},
     functions: ['sinks', 'roots'],
+    doesValueIncludeQuery: (_attribute, value, query) => value.includes(query),
+    createAttributeSuggestion: (attribute, textCallback) => {
+      const text = `${attribute}:`;
+      return {
+        text: textCallback ? textCallback(text) : text,
+        displayText: text,
+        type: 'attribute',
+        attributeName: attribute,
+        nameBase: attribute === 'key',
+      };
+    },
+    createAttributeValueSuggestion: (attribute, value, textCallback) => {
+      const text = `"${value}"`;
+      return {
+        text: textCallback ? textCallback(text) : text,
+        displayText: value,
+        type: 'attribute-value',
+        attributeName: attribute,
+      };
+    },
+    createFunctionSuggestion: (func, textCallback, options) => {
+      const text = options?.includeParenthesis ? `${func}()` : func;
+      return {
+        text: textCallback ? textCallback(text) : text,
+        displayText: `${func}()`,
+        type: 'function',
+      };
+    },
+    createSubstringSuggestion: (query, textCallback) => {
+      const text = `key_substring:"${query}"`;
+      return {
+        attributeName: 'key_substring',
+        text: textCallback ? textCallback(text) : text,
+        displayText: `key_substring:${query}`,
+        type: 'attribute-with-value',
+      };
+    },
+    createAttributeValueIncludeAttributeSuggestion: (attribute, value, textCallback) => {
+      const text = `${attribute}:"${value}"`;
+      return {
+        text: textCallback ? textCallback(text) : text,
+        displayText: `${attribute}:${value}`,
+        type: 'attribute-with-value',
+        attributeName: attribute,
+      };
+    },
   });
+  const selectionHint = createSelectionAutoComplete(provider);
 
   function testAutocomplete(testString: string) {
     const cursorIndex = testString.indexOf('|');
-    const string = testString.split('|').join('');
+    const string = testString.replace('|', '');
 
     const hints = selectionHint(string, cursorIndex);
 
@@ -26,10 +79,6 @@ describe('createAssetSelectionHint', () => {
       to: hints?.to,
     };
   }
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
 
   it('should suggest asset names after typing key_substring:', () => {
     // cursorIndex 14

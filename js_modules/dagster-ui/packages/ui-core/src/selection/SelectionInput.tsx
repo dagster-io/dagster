@@ -6,7 +6,7 @@ import debounce from 'lodash/debounce';
 import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
-import {Suggestion} from './SelectionAutoCompleteVisitor';
+import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteResults';
 import {
   SelectionAutoCompleteInputCSS,
@@ -28,17 +28,7 @@ type SelectionAutoCompleteInputProps = {
   linter: Linter<any>;
   value: string;
   onChange: (value: string) => void;
-  useAutoComplete: (
-    selection: string,
-    cursor: number,
-  ) => {
-    autoCompleteResults: {
-      list: Suggestion[];
-      from: number;
-      to: number;
-    };
-    loading: boolean;
-  };
+  SelectionAutoCompleteProvider: SelectionAutoCompleteProvider<any>;
 };
 
 export const SelectionAutoCompleteInput = ({
@@ -47,8 +37,10 @@ export const SelectionAutoCompleteInput = ({
   placeholder,
   onChange,
   linter,
-  useAutoComplete,
+  SelectionAutoCompleteProvider,
 }: SelectionAutoCompleteInputProps) => {
+  const {useAutoComplete, renderResult} = SelectionAutoCompleteProvider;
+
   const trackEvent = useTrackEvent();
 
   const trackSelection = useMemo(() => {
@@ -92,7 +84,7 @@ export const SelectionAutoCompleteInput = ({
   useDangerousRenderEffect(() => {
     // Rather then using a useEffect + setState (extra render), we just set the current value directly
     selectedIndexRef.current = 0;
-    if (!autoCompleteResults?.list.length && !loading) {
+    if (!autoCompleteResults.list.length && !loading) {
       showResults.current = false;
     }
   }, [autoCompleteResults, loading]);
@@ -218,7 +210,7 @@ export const SelectionAutoCompleteInput = ({
   const selectedItem = autoCompleteResults?.list[selectedIndexRef.current];
 
   const onSelect = useCallback(
-    (suggestion: Suggestion) => {
+    (suggestion: {text: string}) => {
       if (autoCompleteResults && suggestion && cmInstance.current) {
         const editor = cmInstance.current;
         editor.replaceRange(
@@ -341,6 +333,7 @@ export const SelectionAutoCompleteInput = ({
               onSelect={onSelect}
               setSelectedIndex={setSelectedIndex}
               loading={loading}
+              renderResult={renderResult}
             />
           </div>
         }

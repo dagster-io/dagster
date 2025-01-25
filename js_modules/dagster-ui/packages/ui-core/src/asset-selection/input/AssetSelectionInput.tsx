@@ -1,12 +1,12 @@
 import type {Linter} from 'codemirror/addon/lint/lint';
-import {useMemo} from 'react';
 import {
   AssetSelectionLexer,
   AssetSelectionParser,
 } from 'shared/asset-selection/AssetSelectionAntlr.oss';
-import {createUseAssetSelectionAutoComplete as defaultCreateUseAssetSelectionAutoComplete} from 'shared/asset-selection/input/useAssetSelectionAutoComplete.oss';
+import {useAssetSelectionAutoCompleteProvider as defaultUseAssetSelectionAutoCompleteProvider} from 'shared/asset-selection/input/useAssetSelectionAutoCompleteProvider.oss';
 
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
+import {SelectionAutoCompleteProvider} from '../../selection/SelectionAutoCompleteProvider';
 import {SelectionAutoCompleteInput} from '../../selection/SelectionInput';
 import {createSelectionLinter} from '../../selection/createSelectionLinter';
 
@@ -15,7 +15,9 @@ interface AssetSelectionInputProps {
   value: string;
   onChange: (value: string) => void;
   linter?: Linter<any>;
-  createUseAssetSelectionAutoComplete?: typeof defaultCreateUseAssetSelectionAutoComplete;
+  useAssetSelectionAutoCompleteProvider?: (
+    assets: AssetGraphQueryItem[],
+  ) => SelectionAutoCompleteProvider<any>;
 }
 
 const defaultLinter = createSelectionLinter({
@@ -28,17 +30,14 @@ export const AssetSelectionInput = ({
   onChange,
   assets,
   linter = defaultLinter,
-  createUseAssetSelectionAutoComplete = defaultCreateUseAssetSelectionAutoComplete,
+  useAssetSelectionAutoCompleteProvider = defaultUseAssetSelectionAutoCompleteProvider,
 }: AssetSelectionInputProps) => {
-  const useAssetSelectionAutoComplete = useMemo(
-    () => createUseAssetSelectionAutoComplete(assets),
-    [assets, createUseAssetSelectionAutoComplete],
-  );
+  const SelectionAutoCompleteProvider = useAssetSelectionAutoCompleteProvider(assets);
 
   return (
     <SelectionAutoCompleteInput
       id="asset-selection-input"
-      useAutoComplete={useAssetSelectionAutoComplete}
+      SelectionAutoCompleteProvider={SelectionAutoCompleteProvider}
       placeholder="Search and filter assets"
       linter={linter}
       value={value}
