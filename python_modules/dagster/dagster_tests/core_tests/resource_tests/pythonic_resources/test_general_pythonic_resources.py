@@ -35,6 +35,7 @@ from dagster._utils.cached_method import cached_method
 from pydantic import (
     Field as PyField,
     ValidationError,
+    create_model,
 )
 
 
@@ -589,21 +590,11 @@ def test_nested_config_class() -> None:
 def test_nested_config_class_with_runtime_config(
     child_resource_fields_all_have_default_values: bool,
 ) -> None:
-    def create_child_resource_class():
-        if child_resource_fields_all_have_default_values:
-
-            class FieldsAllHaveDefaultValues(ConfigurableResource):
-                date: str = "2025-01-20"
-
-            return FieldsAllHaveDefaultValues
-        else:
-
-            class FieldsDoNotAllHaveDefaultValues(ConfigurableResource):
-                date: str
-
-            return FieldsDoNotAllHaveDefaultValues
-
-    ChildResource: ConfigurableResource = create_child_resource_class()
+    ChildResource = create_model(
+        "ChildResource",
+        date=(str, "2025-01-20" if child_resource_fields_all_have_default_values else ...),
+        __base__=ConfigurableResource,
+    )
 
     class ParentResource(ConfigurableResource):
         child: ChildResource
