@@ -118,13 +118,13 @@ const Form = ({dismiss, submit}: FormProps) => {
             </ExternalAnchorButton>
             <ExternalAnchorButton
               icon={<Icon name="graduation_cap" />}
-              href="https://www.dagster.io/slack?utm_source=local-nux"
+              href="https://courses.dagster.io?utm_source=local-nux"
             >
               Join Dagster University
             </ExternalAnchorButton>
             <ExternalAnchorButton
               icon={<Icon name="concept_book" />}
-              href="https://docs.dagster.io"
+              href="https://docs.dagster.io?utm_source=local-nux"
             >
               Read the docs
             </ExternalAnchorButton>
