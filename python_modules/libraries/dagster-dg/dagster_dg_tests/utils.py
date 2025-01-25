@@ -1,3 +1,4 @@
+import os
 import shutil
 import sys
 import traceback
@@ -81,17 +82,35 @@ def clear_module_from_cache(module_name: str) -> Iterator[None]:
         del sys.modules[module_name]
 
 
+@contextmanager
+def set_env_var(name: str, value: str) -> Iterator[None]:
+    original_value = os.environ.get(name)
+    os.environ[name] = value
+    yield
+    if original_value is not None:
+        os.environ[name] = original_value
+    else:
+        del os.environ[name]
+
+
 @dataclass
 class ProxyRunner:
     original: CliRunner
     append_args: Optional[Sequence[str]] = None
+    console_width: int = DG_CLI_MAX_OUTPUT_WIDTH
 
     @classmethod
     @contextmanager
     def test(
-        cls, use_test_component_lib: bool = True, verbose: bool = False, disable_cache: bool = False
+        cls,
+        use_test_component_lib: bool = True,
+        verbose: bool = False,
+        disable_cache: bool = False,
+        console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
     ) -> Iterator[Self]:
-        with TemporaryDirectory() as cache_dir:
+        # We set the `COLUMNS` environment variable because this determines the width of output from
+        # `rich`, which we use for generating tables etc.
+        with TemporaryDirectory() as cache_dir, set_env_var("COLUMNS", str(console_width)):
             append_opts = [
                 *(
                     ["--builtin-component-lib", "dagster_components.test"]
@@ -103,7 +122,7 @@ class ProxyRunner:
                 *(["--verbose"] if verbose else []),
                 *(["--disable-cache"] if disable_cache else []),
             ]
-            yield cls(CliRunner(), append_args=append_opts)
+            yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str):
         # We need to find the right spot to inject global options. For the `dg component scaffold`
@@ -121,7 +140,7 @@ class ProxyRunner:
 
         # For some reason the context setting `max_content_width` is not respected when using the
         # CliRunner, so we have to set it manually.
-        return self.original.invoke(dg_cli, all_args, terminal_width=DG_CLI_MAX_OUTPUT_WIDTH)
+        return self.original.invoke(dg_cli, all_args, terminal_width=self.console_width)
 
     @contextmanager
     def isolated_filesystem(self) -> Iterator[None]:

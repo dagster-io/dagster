@@ -301,13 +301,15 @@ def test_component_type_info_multiple_flags_fails() -> None:
 # ########################
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
-    dagster_components.test.all_metadata_empty_asset
-    dagster_components.test.complex_schema_asset
-        An asset that has a complex params schema.
-    dagster_components.test.simple_asset
-        A simple asset that returns a constant string value.
-    dagster_components.test.simple_pipes_script_asset
-        A simple asset that runs a Python script with the Pipes subprocess client.
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Component Type                                    ┃ Summary                                                          ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │ dagster_components.test.all_metadata_empty_asset  │                                                                  │
+    │ dagster_components.test.complex_schema_asset      │ An asset that has a complex params schema.                       │
+    │ dagster_components.test.simple_asset              │ A simple asset that returns a constant string value.             │
+    │ dagster_components.test.simple_pipes_script_asset │ A simple asset that runs a Python script with the Pipes          │
+    │                                                   │ subprocess client.                                               │
+    └───────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────┘
 """).strip()
 
 
