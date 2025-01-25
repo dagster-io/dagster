@@ -1,3 +1,4 @@
+import shutil
 import sys
 import traceback
 from collections.abc import Iterator, Sequence
@@ -32,34 +33,43 @@ def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> 
 # of hyphenation.
 @contextmanager
 def isolated_example_code_location_foo_bar(
-    runner: Union[CliRunner, "ProxyRunner"], in_deployment: bool = True, skip_venv: bool = False
+    runner: Union[CliRunner, "ProxyRunner"],
+    in_deployment: bool = True,
+    skip_venv: bool = False,
+    component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
+    """Scaffold a code location named foo_bar in an isolated filesystem.
+
+    Args:
+        runner: The runner to use for invoking commands.
+        in_deployment: Whether the code location should be scaffolded inside a deployment directory.
+        skip_venv: Whether to skip creating a virtual environment when scaffolding the code location.
+        component_dirs: A list of component directories that will be copied into the code location component root.
+    """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     if in_deployment:
-        with isolated_example_deployment_foo(runner):
-            runner.invoke(
-                "code-location",
-                "scaffold",
-                "--use-editable-dagster",
-                dagster_git_repo_dir,
-                *(["--no-use-dg-managed-environment"] if skip_venv else []),
-                "foo-bar",
-            )
-            with clear_module_from_cache("foo_bar"), pushd("code_locations/foo-bar"):
-                yield
+        fs_context = isolated_example_deployment_foo(runner)
+        code_loc_path = "code_locations/foo-bar"
     else:
-        with runner.isolated_filesystem():
-            runner.invoke(
-                "code-location",
-                "scaffold",
-                "--use-editable-dagster",
-                dagster_git_repo_dir,
-                *(["--no-use-dg-managed-environment"] if skip_venv else []),
-                "foo-bar",
-            )
-            with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-                yield
+        fs_context = runner.isolated_filesystem()
+        code_loc_path = "foo-bar"
+    with fs_context:
+        runner.invoke(
+            "code-location",
+            "scaffold",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            *(["--no-use-dg-managed-environment"] if skip_venv else []),
+            "foo-bar",
+        )
+        with clear_module_from_cache("foo_bar"), pushd(code_loc_path):
+            for src_dir in component_dirs:
+                component_name = src_dir.name
+                components_dir = Path.cwd() / "foo_bar" / "components" / component_name
+                components_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
+            yield
 
 
 @contextmanager
