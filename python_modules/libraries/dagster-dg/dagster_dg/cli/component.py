@@ -184,9 +184,7 @@ def _create_component_scaffold_subcommand(
         It is an error to pass both --json-params and key-value pairs as options.
         """
         cli_config = get_config_from_cli_context(cli_context)
-        dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-        if not dg_context.is_code_location:
-            exit_with_error("This command must be run inside a Dagster code location directory.")
+        dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         if not registry.has_global(component_key):
@@ -245,9 +243,7 @@ def _create_component_scaffold_subcommand(
 def component_list_command(context: click.Context, **global_options: object) -> None:
     """List Dagster component instances defined in the current code location."""
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-    if not dg_context.is_code_location:
-        exit_with_error("This command must be run inside a Dagster code location directory.")
+    dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
     for component_name in dg_context.get_component_names():
         click.echo(component_name)
@@ -284,9 +280,7 @@ def component_check_command(
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-    if not dg_context.is_code_location:
-        exit_with_error("This command must be run inside a Dagster code location directory.")
+    dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
     validation_errors: list[tuple[Optional[str], ValidationError, ValueAndSourcePositionTree]] = []
 
