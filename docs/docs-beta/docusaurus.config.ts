@@ -120,7 +120,7 @@ const config: Config = {
         // },
       ],
     },
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'images/og.png',
     docs: {
       sidebar: {
         autoCollapseCategories: false,
