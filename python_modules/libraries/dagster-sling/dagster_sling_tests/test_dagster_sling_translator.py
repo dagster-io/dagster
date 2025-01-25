@@ -156,6 +156,7 @@ def test_auto_materialize_policy_from_get_asset_spec(stream, expected):
     translator = DagsterSlingTranslator()
     assert translator.get_asset_spec(stream).auto_materialize_policy == expected
 
+
 def test_process_stdout():
     # Example stdout containing a variety of emojis and text
     example_stdout = io.BytesIO(
@@ -166,7 +167,7 @@ def test_process_stdout():
     )
 
     sling_resource = SlingResource(connections=[])
-    processed_lines = [line.strip() for line in sling_resource._process_stdout(example_stdout)] # noqa: SLF001
+    processed_lines = [line.strip() for line in sling_resource._process_stdout(example_stdout)]  # noqa: SLF001
 
     assert processed_lines == [
         "Hello World",
