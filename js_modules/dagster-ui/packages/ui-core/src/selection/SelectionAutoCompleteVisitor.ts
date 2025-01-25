@@ -30,7 +30,7 @@ import {
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
 // set to true for debug output if desired
-const DEBUG = true;
+const DEBUG = false;
 
 export type Suggestion =
   | {
@@ -99,7 +99,6 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.functions = functions;
     this.nameBase = nameBase;
     this.attributesWithNameBase = [
-      `${this.nameBase}_substring`,
       this.nameBase,
       ...Object.keys(attributesMap).filter((name) => name !== this.nameBase),
     ];

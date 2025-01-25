@@ -101,7 +101,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
                         text={<SuggestionItem suggestion={result} />}
                         active={index === selectedIndex}
                         onClick={() => onSelect(result)}
-                        onMouseEnter={() => setSelectedIndex({current: index})}
+                        onMouseMove={() => setSelectedIndex({current: index})}
                       />
                     </div>
                   </Row>
@@ -180,6 +180,7 @@ const SuggestionItem = ({suggestion}: {suggestion: Suggestion}) => {
   } else if (suggestion.type === 'parenthesis') {
     icon = 'curly_braces';
     label = 'Parenthesis';
+    value = suggestion.text;
   } else if (suggestion.type === 'function') {
     if (suggestion.displayText === 'roots()') {
       label = 'Roots';
@@ -194,16 +195,25 @@ const SuggestionItem = ({suggestion}: {suggestion: Suggestion}) => {
 
     icon = attributeToIcon[suggestion.displayText as Attribute];
   } else if (suggestion.type === 'attribute-with-value') {
-    const firstColon = suggestion.displayText.indexOf(':');
-    const attributeKey = suggestion.displayText.slice(0, firstColon);
-    const attributeValue = suggestion.displayText.slice(firstColon + 1);
-    label = (
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
-        <MonoSmall color={Colors.textLight()}>{attributeKey}:</MonoSmall>
-        <MonoSmall>{attributeValue}</MonoSmall>
-      </Box>
-    );
-    value = null;
+    // hacky approach to extract the substring filter for now..., upcoming refactor will have more robust logic.
+    const substringMatch = /^([a-zA-Z]+)_substring:(.+)$/.exec(suggestion.text);
+    if (substringMatch) {
+      const nameBase = substringMatch[1]!;
+      label = `${nameBase[0]!.toUpperCase() + nameBase.slice(1)} contains ${substringMatch[2]}`;
+      icon = 'magnify_glass_checked';
+      value = suggestion.displayText;
+    } else {
+      const firstColon = suggestion.displayText.indexOf(':');
+      const attributeKey = suggestion.displayText.slice(0, firstColon);
+      const attributeValue = suggestion.displayText.slice(firstColon + 1);
+      label = (
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
+          <MonoSmall color={Colors.textLight()}>{attributeKey}:</MonoSmall>
+          <MonoSmall>{attributeValue}</MonoSmall>
+        </Box>
+      );
+      value = null;
+    }
   } else if (suggestion.type === 'attribute-value') {
     label = suggestion.displayText;
     value = null;

@@ -330,7 +330,7 @@ export const SelectionAutoCompleteInput = ({
   useResizeObserver(inputRef, adjustHeight);
 
   return (
-    <div onBlur={onBlur}>
+    <div onBlur={onBlur} style={{width: '100%'}}>
       <Popover
         content={
           <div ref={hintContainerRef} onKeyDown={handleKeyDown}>

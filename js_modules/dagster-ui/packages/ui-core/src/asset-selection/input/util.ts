@@ -1,5 +1,6 @@
 import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
+import {isKindTag} from '../../graph/KindTags';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
 export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
@@ -13,6 +14,9 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   assets.forEach((asset) => {
     assetNamesSet.add(asset.name);
     asset.node.tags.forEach((tag) => {
+      if (isKindTag(tag)) {
+        return;
+      }
       if (tag.key && tag.value) {
         // We add quotes around the equal sign here because the auto-complete suggestion already wraps the entire value in quotes.
         // So wer end up with tag:"key"="value" as the final suggestion
