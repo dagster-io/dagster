@@ -1,0 +1,32 @@
+$ dg component-type info dagster_components.dbt_project
+
+dagster_components.dbt_project
+
+Scaffold params schema:
+
+{
+    "properties": {
+        "init": {
+            "default": false,
+            "title": "Init",
+            "type": "boolean"
+        },
+        "project_path": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Project Path"
+        }
+    },
+    "title": "DbtScaffoldParams",
+    "type": "object"
+}
+
+Component params schema:
+...

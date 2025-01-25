@@ -1,0 +1,3 @@
+$ uv run sling conns test DUCKDB
+
+9:00AM INF success!

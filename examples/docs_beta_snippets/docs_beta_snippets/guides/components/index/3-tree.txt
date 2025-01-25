@@ -1,0 +1,22 @@
+$ cd jaffle-platform && tree
+
+.
+├── jaffle_platform
+│   ├── __init__.py
+│   ├── components
+│   ├── definitions.py
+│   └── lib
+│       └── __init__.py
+├── jaffle_platform.egg-info
+│   ├── PKG-INFO
+│   ├── SOURCES.txt
+│   ├── dependency_links.txt
+│   ├── entry_points.txt
+│   ├── requires.txt
+│   └── top_level.txt
+├── jaffle_platform_tests
+│   └── __init__.py
+├── pyproject.toml
+└── uv.lock
+
+6 directories, 12 files

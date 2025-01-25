@@ -1,0 +1,5 @@
+$ dg component-type list
+
+dagster_components.definitions
+dagster_components.pipes_subprocess_script_collection
+    Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient.
