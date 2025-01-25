@@ -10,12 +10,7 @@ describe('createAssetSelectionHint', () => {
     kind: ['kind1', 'kind2'],
     code_location: ['repo1@location1', 'repo2@location2'],
   };
-  const provider = createSelectionAutoCompleteProviderFromAttributeMap<
-    typeof attributesMap,
-    'key',
-    any
-  >({
-    nameBase: 'key',
+  const provider = createSelectionAutoCompleteProviderFromAttributeMap<typeof attributesMap, any>({
     attributesMapRef: {current: attributesMap},
     functions: ['sinks', 'roots'],
     doesValueIncludeQuery: (_attribute, value, query) => value.includes(query),
