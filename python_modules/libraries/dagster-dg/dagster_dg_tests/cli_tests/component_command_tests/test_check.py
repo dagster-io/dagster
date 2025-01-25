@@ -1,10 +1,7 @@
 import contextlib
-import os
 import re
 import shutil
-import tempfile
 from collections.abc import Iterator
-from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -17,13 +14,19 @@ from dagster_components.test.test_cases import (
     ComponentValidationTestCase,
     msg_includes_all_of,
 )
-from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import
+from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
 
 ensure_dagster_dg_tests_import()
-from dagster_dg_tests.utils import ProxyRunner, clear_module_from_cache
+from dagster_dg_tests.utils import (
+    ProxyRunner,
+    assert_runner_result,
+    isolated_example_code_location_foo_bar,
+    isolated_example_deployment_foo,
+    modify_pyproject_toml,
+)
 
 COMPONENT_INTEGRATION_TEST_DIR = (
-    Path(__file__).parent.parent.parent.parent
+    Path(__file__).parent.parent.parent.parent.parent
     / "dagster-components"
     / "dagster_components_tests"
     / "integration_tests"
@@ -44,16 +47,6 @@ CLI_TEST_CASES = [
 ]
 
 
-@contextmanager
-def new_cwd(path: str) -> Iterator[None]:
-    old = os.getcwd()
-    try:
-        os.chdir(path)
-        yield
-    finally:
-        os.chdir(old)
-
-
 @contextlib.contextmanager
 def create_code_location_from_components(
     runner: ProxyRunner, *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
@@ -61,35 +54,45 @@ def create_code_location_from_components(
     """Scaffolds a code location with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with tempfile.TemporaryDirectory() as tmpdir, new_cwd(tmpdir):
-        runner.invoke(
-            "code-location",
-            "scaffold",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
-            "my_location",
-        )
-
-        code_location_dir = Path(tmpdir) / "my_location"
-        assert code_location_dir.exists()
-
-        (code_location_dir / "lib").mkdir(parents=True, exist_ok=True)
-        (code_location_dir / "lib" / "__init__.py").touch()
+    origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
+    with isolated_example_code_location_foo_bar(runner, component_dirs=origin_paths):
         for src_path in src_paths:
-            component_name = src_path.split("/")[-1]
-
-            components_dir = code_location_dir / "my_location" / "components" / component_name
-            components_dir.mkdir(parents=True, exist_ok=True)
-
-            origin_path = COMPONENT_INTEGRATION_TEST_DIR / src_path
-
-            shutil.copytree(origin_path, components_dir, dirs_exist_ok=True)
+            components_dir = Path.cwd() / "foo_bar" / "components" / src_path.split("/")[-1]
             if local_component_defn_to_inject:
                 shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
 
-        with clear_module_from_cache("my_location"):
-            yield code_location_dir
+        yield Path.cwd()
+
+
+def test_component_check_outside_code_location_fails() -> None:
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
+        result = runner.invoke("component", "check")
+        assert_runner_result(result, exit_0=False)
+        assert "must be run inside a Dagster code location directory" in result.output
+
+
+def test_component_check_succeeds_non_default_component_package() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_code_location_from_components(
+            runner,
+        ),
+    ):
+        with modify_pyproject_toml() as pyproject_toml:
+            pyproject_toml["tool"]["dg"]["component_package"] = "foo_bar._components"
+
+        # We need to do all of this copying here rather than relying on the code location setup
+        # fixture because that fixture assumes a default component package.
+        component_src_path = COMPONENT_INTEGRATION_TEST_DIR / BASIC_VALID_VALUE.component_path
+        component_name = component_src_path.name
+        components_dir = Path.cwd() / "foo_bar" / "_components" / component_name
+        components_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(component_src_path, components_dir, dirs_exist_ok=True)
+        assert BASIC_VALID_VALUE.component_type_filepath
+        shutil.copy(BASIC_VALID_VALUE.component_type_filepath, components_dir / "__init__.py")
+
+        result = runner.invoke("component", "check")
+        assert_runner_result(result, exit_0=True)
 
 
 @pytest.mark.parametrize(
@@ -109,7 +112,7 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
             local_component_defn_to_inject=test_case.component_type_filepath,
         ) as tmpdir,
     ):
-        with new_cwd(str(tmpdir)):
+        with pushd(tmpdir):
             result = runner.invoke("component", "check")
             if test_case.should_error:
                 assert result.exit_code != 0, str(result.stdout)
@@ -142,14 +145,14 @@ def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
             local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
         ) as tmpdir,
     ):
-        with new_cwd(str(tmpdir)):
+        with pushd(str(tmpdir)):
             result = runner.invoke(
                 "component",
                 "check",
                 *(
                     [
-                        str(Path("my_location") / "components" / "basic_component_missing_value"),
-                        str(Path("my_location") / "components" / "basic_component_invalid_value"),
+                        str(Path("foo_bar") / "components" / "basic_component_missing_value"),
+                        str(Path("foo_bar") / "components" / "basic_component_invalid_value"),
                     ]
                     if scope_check_run
                     else []
@@ -173,11 +176,11 @@ def test_validation_cli_multiple_components_filter() -> None:
             local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
         ) as tmpdir,
     ):
-        with new_cwd(str(tmpdir)):
+        with pushd(tmpdir):
             result = runner.invoke(
                 "component",
                 "check",
-                str(Path("my_location") / "components" / "basic_component_missing_value"),
+                str(Path("foo_bar") / "components" / "basic_component_missing_value"),
             )
             assert result.exit_code != 0, str(result.stdout)
 
@@ -200,7 +203,7 @@ def test_validation_cli_local_component_cache() -> None:
             local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
         ) as code_location_dir,
     ):
-        with new_cwd(str(code_location_dir)):
+        with pushd(code_location_dir):
             result = runner.invoke("component", "check")
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
@@ -223,14 +226,14 @@ def test_validation_cli_local_component_cache() -> None:
             # Update local component type, to invalidate cache
             contents = (
                 code_location_dir
-                / "my_location"
+                / "foo_bar"
                 / "components"
                 / "basic_component_success"
                 / "__init__.py"
             ).read_text()
             (
                 code_location_dir
-                / "my_location"
+                / "foo_bar"
                 / "components"
                 / "basic_component_success"
                 / "__init__.py"

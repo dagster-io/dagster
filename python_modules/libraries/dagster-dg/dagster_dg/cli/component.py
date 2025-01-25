@@ -285,14 +285,14 @@ def component_check_command(
 
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    if not dg_context.is_code_location:
+        exit_with_error("This command must be run inside a Dagster code location directory.")
 
     validation_errors: list[tuple[Optional[str], ValidationError, ValueAndSourcePositionTree]] = []
 
     component_contents_by_dir = {}
     local_component_dirs = set()
-    for component_dir in (
-        dg_context.root_path / dg_context.root_package_name / "components"
-    ).iterdir():
+    for component_dir in dg_context.components_path.iterdir():
         if resolved_paths and not any(
             path == component_dir or path in component_dir.parents for path in resolved_paths
         ):
