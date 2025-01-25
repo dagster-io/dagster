@@ -144,13 +144,6 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('|')).toEqual({
       list: [
         {
-          displayText: 'key_substring:',
-          text: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
-        {
           displayText: 'key:',
           text: 'key:',
           type: 'attribute',
@@ -264,13 +257,6 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('+|')).toEqual({
       list: [
         {
-          displayText: 'key_substring:',
-          text: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
-        {
           displayText: 'key:',
           text: 'key:',
           type: 'attribute',
@@ -333,13 +319,6 @@ describe('createAssetSelectionHint', () => {
       from: 2,
       list: [
         {
-          displayText: 'key_substring:',
-          text: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
-        {
           displayText: 'key:',
           text: 'key:',
           type: 'attribute',
@@ -392,13 +371,6 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('+|')).toEqual({
       from: 1,
       list: [
-        {
-          displayText: 'key_substring:',
-          text: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           displayText: 'key:',
           text: 'key:',
@@ -474,13 +446,6 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('not|')).toEqual({
       list: [
         {
-          text: ' key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
-        {
           text: ' key:',
           displayText: 'key:',
           type: 'attribute',
@@ -533,13 +498,6 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('not |')).toEqual({
       list: [
-        {
-          text: 'key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           text: 'key:',
           displayText: 'key:',
@@ -596,13 +554,6 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('key:"asset1" and |')).toEqual({
       list: [
         {
-          text: 'key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
-        {
           text: 'key:',
           displayText: 'key:',
           type: 'attribute',
@@ -658,13 +609,6 @@ describe('createAssetSelectionHint', () => {
   it('should handle incomplete or expressions', () => {
     expect(testAutocomplete('key:"asset1" or |')).toEqual({
       list: [
-        {
-          text: 'key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           text: 'key:',
           displayText: 'key:',
@@ -751,13 +695,6 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       list: [
         {
-          text: 'key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
-        {
           text: 'key:',
           displayText: 'key:',
           type: 'attribute',
@@ -816,13 +753,6 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       list: [
         // Inserts a space before the string
-        {
-          text: ' key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           text: ' key:',
           displayText: 'key:',
@@ -945,14 +875,6 @@ describe('createAssetSelectionHint', () => {
       testAutocomplete('key:"test" or key_substring:"FIVETRAN/google_ads/ad_group_history"+ or |'),
     ).toEqual({
       list: [
-        // Inserts a space before the string
-        {
-          text: 'key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           text: 'key:',
           displayText: 'key:',
@@ -1009,14 +931,6 @@ describe('createAssetSelectionHint', () => {
   it('suggestions inside parenthesized expression', () => {
     expect(testAutocomplete('(|)')).toEqual({
       list: [
-        // Inserts a space before the string
-        {
-          text: 'key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           text: 'key:',
           displayText: 'key:',
@@ -1073,13 +987,6 @@ describe('createAssetSelectionHint', () => {
   it('suggestions outside parenthesized expression before', () => {
     expect(testAutocomplete('|()')).toEqual({
       list: [
-        {
-          text: 'key_substring:',
-          displayText: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           text: 'key:',
           displayText: 'key:',
@@ -1226,13 +1133,6 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('(key:tag and |)')).toEqual({
       list: [
         {
-          displayText: 'key_substring:',
-          text: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
-        {
           displayText: 'key:',
           text: 'key:',
           type: 'attribute',
@@ -1287,13 +1187,6 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('(key:tag and|)')).toEqual({
       list: [
         {
-          displayText: 'key_substring:',
-          text: ' key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
-        {
           displayText: 'key:',
           text: ' key:',
           type: 'attribute',
@@ -1347,13 +1240,6 @@ describe('createAssetSelectionHint', () => {
 
     expect(testAutocomplete('(key:tag and| )')).toEqual({
       list: [
-        {
-          displayText: 'key_substring:',
-          text: ' key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           displayText: 'key:',
           text: ' key:',
@@ -1428,13 +1314,6 @@ describe('createAssetSelectionHint', () => {
     ).toEqual({
       from: 35,
       list: [
-        {
-          displayText: 'key_substring:',
-          text: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           displayText: 'key:',
           text: 'key:',
@@ -1564,13 +1443,6 @@ describe('createAssetSelectionHint', () => {
       from: 54,
       list: [
         {
-          attributeName: 'key_substring',
-          displayText: 'key_substring:',
-          text: 'key_substring:',
-          type: 'attribute',
-          nameBase: true,
-        },
-        {
           displayText: 'key:',
           text: 'key:',
           type: 'attribute',
@@ -1598,13 +1470,6 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('key:"value"+ or tag:"value"+ and owner:"owner" and |')).toEqual({
       from: 51,
       list: [
-        {
-          displayText: 'key_substring:',
-          text: 'key_substring:',
-          type: 'attribute',
-          attributeName: 'key_substring',
-          nameBase: true,
-        },
         {
           displayText: 'key:',
           text: 'key:',
