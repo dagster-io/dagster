@@ -17,7 +17,7 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
   TSuggestion extends {text: string},
 >({
   nameBase,
-  attributesMapRef,
+  attributesMap,
   functions,
   createAttributeSuggestion,
   createAttributeValueSuggestion,
@@ -28,8 +28,7 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
 }: {
   nameBase: TNameBase;
 
-  // This is a ref, to avoid re-creating the provider if the values in the attributes map changes.
-  attributesMapRef: React.MutableRefObject<TAttributeMap>;
+  attributesMap: TAttributeMap;
 
   functions: string[];
   createAttributeSuggestion: <K extends keyof TAttributeMap>(
@@ -64,7 +63,7 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
 }): Omit<SelectionAutoCompleteProvider<TSuggestion>, 'renderResult' | 'useAutoComplete'> {
   return {
     getAttributeResultsMatchingQuery: (query: string, textCallback?: (value: string) => string) => {
-      return Object.keys(attributesMapRef.current)
+      return Object.keys(attributesMap)
         .filter((attr) => attr.startsWith(query))
         .map((attr) => createAttributeSuggestion(attr, textCallback));
     },
@@ -73,9 +72,9 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
       query: string,
       textCallback?: (value: string) => string,
     ) => {
-      let values = attributesMapRef.current[attribute];
+      let values = attributesMap[attribute];
       if (attribute === `${nameBase as string}_substring`) {
-        values = attributesMapRef.current[nameBase];
+        values = attributesMap[nameBase];
       }
       return (
         values
@@ -99,9 +98,9 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
       query: string,
       textCallback?: (value: string) => string,
     ) => {
-      return Object.keys(attributesMapRef.current).flatMap((attribute) => {
+      return Object.keys(attributesMap).flatMap((attribute) => {
         return (
-          attributesMapRef.current[attribute]
+          attributesMap[attribute]
             ?.filter((value) => doesValueIncludeQuery(attribute, value, query))
             .map((value) =>
               createAttributeValueIncludeAttributeSuggestion(attribute, value, textCallback),

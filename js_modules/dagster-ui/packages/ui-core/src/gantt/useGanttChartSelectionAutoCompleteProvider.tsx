@@ -2,7 +2,6 @@ import {BodySmall, Box, Colors, Icon, IconName, MonoSmall} from '@dagster-io/ui-
 import {useMemo} from 'react';
 
 import {RunGraphQueryItem} from './toGraphQueryItems';
-import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {NO_STATE} from '../run-selection/AntlrRunSelectionVisitor';
 import {createSelectionAutoComplete} from '../selection/SelectionAutoComplete';
 import {
@@ -51,65 +50,62 @@ export function useGanttChartSelectionAutoCompleteProvider(
     });
     return {name: Array.from(names), status: Array.from(statuses)};
   }, [items]);
-  const attributesMapRef = useUpdatingRef(attributesMap);
 
   const baseProvider = useMemo(
     () =>
-      createSelectionAutoCompleteProviderFromAttributeMap<
-        typeof attributesMapRef.current,
-        'name',
-        Suggestion
-      >({
-        nameBase: 'name',
-        attributesMapRef,
-        functions: FUNCTIONS,
-        doesValueIncludeQuery: (_attribute, value, query) => value.includes(query),
-        createAttributeSuggestion: (attribute, textCallback) => {
-          const text = `${attribute}:`;
-          return {
-            text: textCallback ? textCallback(text) : text,
-            displayText: text,
-            type: 'attribute',
-            attributeName: attribute,
-            nameBase: attribute === 'name',
-          };
+      createSelectionAutoCompleteProviderFromAttributeMap<typeof attributesMap, 'name', Suggestion>(
+        {
+          nameBase: 'name',
+          attributesMap,
+          functions: FUNCTIONS,
+          doesValueIncludeQuery: (_attribute, value, query) => value.includes(query),
+          createAttributeSuggestion: (attribute, textCallback) => {
+            const text = `${attribute}:`;
+            return {
+              text: textCallback ? textCallback(text) : text,
+              displayText: text,
+              type: 'attribute',
+              attributeName: attribute,
+              nameBase: attribute === 'name',
+            };
+          },
+          createAttributeValueSuggestion: (attribute, value, textCallback) => {
+            const text = `"${value}"`;
+            return {
+              text: textCallback ? textCallback(text) : text,
+              displayText: value,
+              type: 'attribute-value',
+              attributeName: attribute,
+            };
+          },
+          createFunctionSuggestion: (func, textCallback, options) => {
+            const text = options?.includeParenthesis ? `${func}()` : func;
+            return {
+              text: textCallback ? textCallback(text) : text,
+              displayText: `${func}()`,
+              type: 'function',
+            };
+          },
+          createSubstringSuggestion: (query, textCallback) => {
+            const text = `key_substring:"${query}"`;
+            return {
+              text: textCallback ? textCallback(text) : text,
+              value: query,
+              type: 'substring',
+            };
+          },
+          createAttributeValueIncludeAttributeSuggestion: (attribute, value, textCallback) => {
+            const text = `${attribute}:"${value}"`;
+            return {
+              text: textCallback ? textCallback(text) : text,
+              displayText: `${attribute}:${value}`,
+              type: 'attribute-with-value',
+              attributeName: attribute,
+            };
+          },
         },
-        createAttributeValueSuggestion: (attribute, value, textCallback) => {
-          const text = `"${value}"`;
-          return {
-            text: textCallback ? textCallback(text) : text,
-            displayText: value,
-            type: 'attribute-value',
-            attributeName: attribute,
-          };
-        },
-        createFunctionSuggestion: (func, textCallback, options) => {
-          const text = options?.includeParenthesis ? `${func}()` : func;
-          return {
-            text: textCallback ? textCallback(text) : text,
-            displayText: `${func}()`,
-            type: 'function',
-          };
-        },
-        createSubstringSuggestion: (query, textCallback) => {
-          const text = `key_substring:"${query}"`;
-          return {
-            text: textCallback ? textCallback(text) : text,
-            value: query,
-            type: 'substring',
-          };
-        },
-        createAttributeValueIncludeAttributeSuggestion: (attribute, value, textCallback) => {
-          const text = `${attribute}:"${value}"`;
-          return {
-            text: textCallback ? textCallback(text) : text,
-            displayText: `${attribute}:${value}`,
-            type: 'attribute-with-value',
-            attributeName: attribute,
-          };
-        },
-      }),
-    [attributesMapRef],
+      ),
+    [attributesMap],
   );
   const selectionHint = useMemo(() => createSelectionAutoComplete(baseProvider), [baseProvider]);
 

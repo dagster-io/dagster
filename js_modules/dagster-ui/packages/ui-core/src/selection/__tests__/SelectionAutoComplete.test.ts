@@ -15,7 +15,7 @@ describe('createAssetSelectionHint', () => {
     'key',
     any
   >({
-    attributesMapRef: {current: attributesMap},
+    attributesMap,
     nameBase: 'key',
     functions: ['sinks', 'roots'],
     doesValueIncludeQuery: (_attribute, value, query) => value.includes(query),
