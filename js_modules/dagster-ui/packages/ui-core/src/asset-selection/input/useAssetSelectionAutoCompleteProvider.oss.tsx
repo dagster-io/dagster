@@ -1,8 +1,9 @@
 import {BodySmall, Box, Colors, Icon, IconName, MonoSmall} from '@dagster-io/ui-components';
-import {useMemo, useRef} from 'react';
+import {useMemo} from 'react';
 
 import {getAttributesMap} from './util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
+import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {createSelectionAutoComplete} from '../../selection/SelectionAutoComplete';
 import {
   BaseSuggestion,
@@ -36,17 +37,7 @@ type Suggestion =
 export function useAssetSelectionAutoCompleteProvider(
   assets: AssetGraphQueryItem[],
 ): SelectionAutoCompleteProvider<Suggestion> {
-  const attributesMapRef = useRef<ReturnType<typeof getAttributesMap>>({
-    key: [],
-    tag: [],
-    owner: [],
-    group: [],
-    kind: [],
-    code_location: [],
-  });
-  useMemo(() => {
-    Object.assign(attributesMapRef.current, getAttributesMap(assets));
-  }, [assets]);
+  const attributesMapRef = useUpdatingRef(getAttributesMap(assets));
 
   const baseProvider = useMemo(
     () =>

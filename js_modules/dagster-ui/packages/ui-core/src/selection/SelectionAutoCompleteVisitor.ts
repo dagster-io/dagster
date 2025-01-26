@@ -1,7 +1,7 @@
 import {ParserRuleContext} from 'antlr4ts';
 
 import {BaseSelectionVisitor} from './BaseSelectionVisitor';
-import {BaseSuggestion} from './SelectionAutoCompleteProvider';
+import {BaseSuggestion, SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {
   getValueNodeValue,
   isInsideExpressionlessParenthesizedExpression,
@@ -27,14 +27,13 @@ import {
   UnmatchedValueContext,
   UpTraversalContext,
 } from './generated/SelectionAutoCompleteParser';
-import {SelectionAutoCompleteProvider} from './types';
 
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
 // set to true for debug output if desired
 const DEBUG = false;
 
-export class SelectionAutoCompleteVisitor<T> extends BaseSelectionVisitor {
+export class SelectionAutoCompleteVisitor<T extends {text: string}> extends BaseSelectionVisitor {
   private getAttributeResultsMatchingQuery: SelectionAutoCompleteProvider<T>['getAttributeResultsMatchingQuery'];
   private getAttributeValueResultsMatchingQuery: SelectionAutoCompleteProvider<T>['getAttributeValueResultsMatchingQuery'];
   private getAttributeValueIncludeAttributeResultsMatchingQuery: SelectionAutoCompleteProvider<T>['getAttributeValueIncludeAttributeResultsMatchingQuery'];
