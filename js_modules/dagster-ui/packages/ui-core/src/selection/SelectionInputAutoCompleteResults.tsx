@@ -30,17 +30,6 @@ type SelectionInputAutoCompleteResultsProps<T extends {text: string}> = {
   loading?: boolean;
 };
 
-type Attribute =
-  | 'column:'
-  | 'table_name:'
-  | 'column_tag:'
-  | 'kind:'
-  | 'code_location:'
-  | 'group:'
-  | 'owner:'
-  | 'tag:'
-  | 'status:';
-
 export const SelectionInputAutoCompleteResults = React.memo(
   <T extends {text: string}>({
     results,
