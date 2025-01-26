@@ -13,3 +13,5 @@ __all__ = [
     "PostgresRunStorage",
     "PostgresScheduleStorage",
 ]
+
+from dagster_postgres.resources import PostgresResource as PostgresResource
