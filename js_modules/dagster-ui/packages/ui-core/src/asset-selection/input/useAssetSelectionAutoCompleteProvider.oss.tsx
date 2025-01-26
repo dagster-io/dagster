@@ -43,8 +43,10 @@ export function useAssetSelectionAutoCompleteProvider(
     () =>
       createSelectionAutoCompleteProviderFromAttributeMap<
         typeof attributesMapRef.current,
+        'key',
         Suggestion
       >({
+        nameBase: 'key',
         attributesMapRef,
         functions: FUNCTIONS,
         doesValueIncludeQuery: (_attribute, value, query) => value.includes(query),

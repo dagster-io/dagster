@@ -48,8 +48,10 @@ export const useOpGraphSelectionAutoCompleteProvider = (
     () =>
       createSelectionAutoCompleteProviderFromAttributeMap<
         typeof attributesMapRef.current,
+        'name',
         Suggestion
       >({
+        nameBase: 'name',
         attributesMapRef,
         functions: FUNCTIONS,
         doesValueIncludeQuery: (_attribute, value, query) => value.includes(query),

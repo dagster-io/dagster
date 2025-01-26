@@ -12,9 +12,11 @@ import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
  */
 export function createSelectionAutoCompleteProviderFromAttributeMap<
   TAttributeMap extends {[key: string]: any[]},
+  TNameBase extends keyof TAttributeMap,
   // text is required -- it's the text that will be inserted into the input if the suggestion is selected.
   TSuggestion extends {text: string},
 >({
+  nameBase,
   attributesMapRef,
   functions,
   createAttributeSuggestion,
@@ -24,6 +26,8 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
   createAttributeValueIncludeAttributeSuggestion,
   doesValueIncludeQuery,
 }: {
+  nameBase: TNameBase;
+
   // This is a ref, to avoid re-creating the provider if the values in the attributes map changes.
   attributesMapRef: React.MutableRefObject<TAttributeMap>;
 
@@ -33,7 +37,8 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
     textCallback?: (value: string) => string,
   ) => TSuggestion;
   createAttributeValueSuggestion: <K extends keyof TAttributeMap>(
-    attribute: K,
+    // @ts-expect-error - TNameBase is a string
+    attribute: K | `${TNameBase}_substring`,
     value: TAttributeMap[K][number],
     textCallback?: (value: string) => string,
   ) => TSuggestion;
@@ -68,9 +73,13 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
       query: string,
       textCallback?: (value: string) => string,
     ) => {
+      let values = attributesMapRef.current[attribute];
+      if (attribute === `${nameBase as string}_substring`) {
+        values = attributesMapRef.current[nameBase];
+      }
       return (
-        attributesMapRef.current[attribute]
-          ?.filter((value) => doesValueIncludeQuery(attribute, value, query))
+        values
+          ?.filter((value) => doesValueIncludeQuery(nameBase, value, query))
           .map((value) => createAttributeValueSuggestion(attribute, value, textCallback)) ?? []
       );
     },
