@@ -10,7 +10,7 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
-    isolated_example_code_location_foo_bar,
+    isolated_components_venv,
     isolated_example_component_library_foo_bar,
     isolated_example_deployment_foo,
     modify_pyproject_toml,
@@ -24,7 +24,7 @@ from dagster_dg_tests.utils import (
 def test_component_type_scaffold_success() -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner),
+        isolated_example_component_library_foo_bar(runner),
     ):
         result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result)
@@ -54,7 +54,7 @@ def test_component_type_scaffold_with_no_dagster_components_fails() -> None:
 def test_component_type_scaffold_already_exists_fails() -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner),
+        isolated_example_component_library_foo_bar(runner),
     ):
         result = runner.invoke("component-type", "scaffold", "baz")
         assert_runner_result(result)
@@ -64,14 +64,10 @@ def test_component_type_scaffold_already_exists_fails() -> None:
 
 
 def test_component_type_scaffold_succeeds_non_default_component_lib_package() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        alt_lib_path = Path("foo_bar/_lib")
-        alt_lib_path.mkdir(parents=True)
-        with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["component_lib_package"] = "foo_bar._lib"
-            pyproject_toml["project"]["entry-points"]["dagster.components"]["foo_bar"] = (
-                "foo_bar._lib"
-            )
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_component_library_foo_bar(runner, lib_package_name="foo_bar._lib"),
+    ):
         result = runner.invoke(
             "component-type",
             "scaffold",
@@ -85,10 +81,12 @@ def test_component_type_scaffold_succeeds_non_default_component_lib_package() ->
 
 
 def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_component_library_foo_bar(runner),
+    ):
         with modify_pyproject_toml() as pyproject_toml:
             pyproject_toml["tool"]["dg"]["component_lib_package"] = "foo_bar._lib"
-            pyproject_toml["project"]["entry-points"]["dagster.components"]["bar"] = "foo_bar._lib"
         result = runner.invoke(
             "component-type",
             "scaffold",
@@ -104,7 +102,7 @@ def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -
 
 
 def test_component_type_docs_success():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
             "component-type",
             "docs",
@@ -116,7 +114,7 @@ def test_component_type_docs_success():
 def test_component_type_docs_with_no_dagster_components_fails() -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner),
+        isolated_components_venv(runner),
     ):
         result = runner.invoke(
             "component-type",
@@ -186,7 +184,7 @@ _EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
 
 
 def test_component_type_info_all_metadata_success():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
             "component-type",
             "info",
@@ -197,7 +195,7 @@ def test_component_type_info_all_metadata_success():
 
 
 def test_component_type_info_all_metadata_empty_success():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
             "component-type",
             "info",
@@ -213,7 +211,7 @@ def test_component_type_info_all_metadata_empty_success():
 
 
 def test_component_type_info_flag_fields_success():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
             "component-type",
             "info",
@@ -293,19 +291,8 @@ def test_component_type_info_flag_fields_success():
         )
 
 
-def test_component_type_info_success_outside_code_location() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke(
-            "component-type",
-            "info",
-            "dagster_components.test.simple_pipes_script_asset",
-        )
-        assert_runner_result(result)
-        assert result.output.strip() == _EXPECTED_COMPONENT_TYPE_INFO_FULL
-
-
 def test_component_type_info_multiple_flags_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
             "component-type",
             "info",
@@ -323,7 +310,7 @@ def test_component_type_info_multiple_flags_fails() -> None:
 def test_component_type_info_with_no_dagster_components_fails() -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner),
+        isolated_components_venv(runner),
     ):
         result = runner.invoke(
             "component-type",
@@ -353,33 +340,16 @@ _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
 
 
 def test_list_component_types_success():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke("component-type", "list")
         assert_runner_result(result)
         assert result.output.strip() == _EXPECTED_COMPONENT_TYPES
-
-
-def test_list_component_types_success_with_unmanaged_environment():
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner, skip_venv=True),
-    ):
-        result = runner.invoke("component-type", "list", "--no-use-dg-managed-environment")
-        assert_runner_result(result)
-        assert not Path("uv.lock").exists()
-        assert result.output.strip() == _EXPECTED_COMPONENT_TYPES
-
-
-def test_component_type_list_success_outside_code_location():
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("component-type", "list")
-        assert_runner_result(result)
 
 
 def test_component_type_list_with_no_dagster_components_fails() -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner),
+        isolated_components_venv(runner),
     ):
         result = runner.invoke("component-type", "list", env={"PATH": "/dev/null"})
         assert_runner_result(result, exit_0=False)
