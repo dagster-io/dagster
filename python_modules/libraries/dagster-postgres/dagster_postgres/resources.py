@@ -1,16 +1,14 @@
-from collections.abc import Generator
-from contextlib import contextmanager
-from typing import Any, Literal, Union, Optional, Dict
+from typing import Any, Optional
 
-from dagster import Config, ConfigurableResource, InitResourceContext
-from pydantic import Field, PrivateAttr
 import psycopg2
+from dagster import ConfigurableResource, InitResourceContext
+from pydantic import Field, PrivateAttr
 
 
 class PostgresResource(ConfigurableResource):
     """Resource for interacting with a postgres database. Wraps an underlying psycopg2 connection.
 
-    Note that the underlying pyscopg2.extensions.connection context-manager does 
+    Note that the underlying pyscopg2.extensions.connection context-manager does
         not close the connection on __exit__ - but rather only commits the current SQL transaction.
     The dagster resource will automatically call connection.close() (but not connection.commit()),
         after execution.
@@ -37,16 +35,18 @@ class PostgresResource(ConfigurableResource):
                     )
                 }
             )
-        
-    
+
+
     """
 
     dsn: Optional[str] = Field(
-        description=("A libpq conenction string."
-                     " Can be provided together with keyword-arguments in a mix-and-match manner."
-                     " Defaults to None if not provided - in which case only the keyword arguments"
-                     " will be used to establish the connection."),
-        default=None
+        description=(
+            "A libpq conenction string."
+            " Can be provided together with keyword-arguments in a mix-and-match manner."
+            " Defaults to None if not provided - in which case only the keyword arguments"
+            " will be used to establish the connection."
+        ),
+        default=None,
     )
 
     host: Optional[str] = Field(
@@ -60,16 +60,20 @@ class PostgresResource(ConfigurableResource):
     )
 
     user: Optional[str] = Field(
-        description=("User name used to authenticate."
-                     " Defaults to None if not provided - in which case the 'user' field in"
-                     " the dsn will be used"),
-        default=None
+        description=(
+            "User name used to authenticate."
+            " Defaults to None if not provided - in which case the 'user' field in"
+            " the dsn will be used"
+        ),
+        default=None,
     )
 
     password: Optional[str] = Field(
-        description=("Password used to authenticate."
-                     " Defaults to None if not provided - in which case the 'password' field in"
-                     " the dsn will be used"),
+        description=(
+            "Password used to authenticate."
+            " Defaults to None if not provided - in which case the 'password' field in"
+            " the dsn will be used"
+        ),
         default=None,
     )
 
@@ -78,14 +82,16 @@ class PostgresResource(ConfigurableResource):
         default=None,
     )
 
-    additional_parameters: Dict[str, Any] = Field(
-        description=("Additional parameters to pass to psycopg2.connect."
-                     " For a full list of options, see"
-                     " https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS"),
+    additional_parameters: dict[str, Any] = Field(
+        description=(
+            "Additional parameters to pass to psycopg2.connect."
+            " For a full list of options, see"
+            " https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS"
+        ),
         default={},
     )
-    
-    _connection: psycopg2.extensions.connection = PrivateAttr()    
+
+    _connection: psycopg2.extensions.connection = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._connection = psycopg2.connect(
@@ -95,7 +101,7 @@ class PostgresResource(ConfigurableResource):
             user=self.user,
             password=self.password,
             database=self.database,
-            **self.additional_parameters
+            **self.additional_parameters,
         )
 
     @classmethod
