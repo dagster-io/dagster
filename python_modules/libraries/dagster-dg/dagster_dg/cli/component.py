@@ -213,8 +213,7 @@ def _create_component_scaffold_subcommand(
             scaffold_params = None
 
         scaffold_component_instance(
-            Path(dg_context.components_path),
-            component_name,
+            Path(dg_context.components_path) / component_name,
             component_key,
             scaffold_params,
             dg_context,

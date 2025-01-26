@@ -201,7 +201,7 @@ def test_scaffold_component_command():
                 "scaffold",
                 "component",
                 "dagster_components.test.simple_pipes_script_asset",
-                "qux",
+                "bar/components/qux",
                 "--json-params",
                 '{"asset_key": "my_asset", "filename": "my_asset.py"}',
             ],
