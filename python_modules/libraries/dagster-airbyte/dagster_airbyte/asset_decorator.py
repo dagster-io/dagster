@@ -1,13 +1,13 @@
 from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
-from dagster._annotations import experimental
+from dagster._annotations import beta
 
 from dagster_airbyte.resources import AirbyteCloudWorkspace
 from dagster_airbyte.translator import AirbyteMetadataSet, DagsterAirbyteTranslator
 
 
-@experimental
+@beta
 def airbyte_assets(
     *,
     connection_id: str,
