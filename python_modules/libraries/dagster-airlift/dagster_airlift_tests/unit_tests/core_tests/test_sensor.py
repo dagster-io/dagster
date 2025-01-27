@@ -280,13 +280,13 @@ def test_request_asset_checks(init_load_context: None, instance: DagsterInstance
 _CALLCOUNT = [0]
 
 
-def _mock_get_current_datetime() -> datetime:
-    if _CALLCOUNT[0] < 2:
+def _create_datetime_mocker(iter_times: list[datetime]):
+    def _mock_get_current_datetime() -> datetime:
+        the_time = iter_times[_CALLCOUNT[0]]
         _CALLCOUNT[0] += 1
-        return datetime(2021, 2, 1, tzinfo=timezone.utc)
-    next_time = datetime(2021, 2, 1, tzinfo=timezone.utc) + timedelta(seconds=46 * _CALLCOUNT[0])
-    _CALLCOUNT[0] += 1
-    return next_time
+        return the_time
+
+    return _mock_get_current_datetime
 
 
 def test_cursor(init_load_context: None, instance: DagsterInstance) -> None:
@@ -297,8 +297,10 @@ def test_cursor(init_load_context: None, instance: DagsterInstance) -> None:
     }
 
     with freeze_time(datetime(2021, 1, 1, tzinfo=timezone.utc)):
-        # First, run through a full successful iteration of the sensor. Expect time to move forward, and polled dag id to be None, since we completed iteration of all dags.
-        # Then, run through a partial iteration of the sensor. We mock get_current_datetime to return a time after timeout passes iteration start after the first call, meaning we should pause iteration.
+        # First, run through a full successful iteration of the sensor.
+        # Expect time to move forward, and polled dag id to be None, since we completed iteration of all dags.
+        # Then, run through a partial iteration of the sensor. We mock get_current_datetime to return a time
+        # after timeout passes iteration start after the first call, meaning we should pause iteration.
         repo_def = fully_loaded_repo_from_airflow_asset_graph(asset_and_dag_structure)
         sensor = next(iter(repo_def.sensor_defs))
         context = build_sensor_context(repository_def=repo_def, instance=instance)
@@ -310,8 +312,16 @@ def test_cursor(init_load_context: None, instance: DagsterInstance) -> None:
         assert new_cursor.end_date_lte is None
         assert new_cursor.dag_query_offset == 0
 
+    # Now, we expect that we will not have completed iteration before we need to pause evaluation.
+    datetimes = [
+        datetime(2021, 2, 1, tzinfo=timezone.utc),  # set initial time
+        datetime(2021, 2, 1, 0, 0, 30, tzinfo=timezone.utc),  # initial iteration time
+        datetime(
+            2022, 2, 2, tzinfo=timezone.utc
+        ),  # second iteration time, at which iteration should be paused
+    ]
     with mock.patch(
-        "dagster._time._mockable_get_current_datetime", wraps=_mock_get_current_datetime
+        "dagster._time._mockable_get_current_datetime", wraps=_create_datetime_mocker(datetimes)
     ):
         result = sensor(context)
         assert isinstance(result, SensorResult)
