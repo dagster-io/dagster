@@ -74,11 +74,11 @@ Automation conditions describe the conditions under which work should be execute
       </td>
       <td>
         This condition will materialize an asset on a provided cron schedule,
-        after all of its parents have been updated
+        after all of its dependencies have been updated
       </td>
       <td>
         Regularly updating an asset without worrying about the specifics of how
-        its parents update
+        its dependencies update
       </td>
     </tr>
     <tr>
@@ -102,7 +102,7 @@ Automation conditions describe the conditions under which work should be execute
         <ul>
           <li>If the asset has never been materialized before, or</li>
           <li>
-            When the asset's parents update, as long as none of the parents are
+            When the asset's dependencies update, as long as none of the dependencies are
             currently missing or have an update in progress
           </li>
         </ul>
