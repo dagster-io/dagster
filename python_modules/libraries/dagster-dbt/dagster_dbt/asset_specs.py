@@ -2,7 +2,6 @@ from collections.abc import Sequence
 from typing import Optional
 
 from dagster import AssetSpec
-from dagster._annotations import experimental
 
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
@@ -10,7 +9,6 @@ from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
 
 
-@experimental
 def build_dbt_asset_specs(
     *,
     manifest: DbtManifestParam,
