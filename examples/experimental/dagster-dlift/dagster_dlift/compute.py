@@ -1,3 +1,5 @@
+from dagster._annotations import preview
+
 from dagster_dlift.client import UnscopedDbtCloudClient
 from dagster_dlift.translator import (
     DbtCloudContentData,
@@ -7,6 +9,7 @@ from dagster_dlift.translator import (
 from dagster_dlift.utils import get_job_name
 
 
+@preview
 def compute_environment_data(
     environment_id: int, project_id: int, client: UnscopedDbtCloudClient
 ) -> DbtCloudProjectEnvironmentData:
@@ -39,6 +42,7 @@ def compute_environment_data(
     )
 
 
+@preview
 def get_or_create_job(environment_id: int, project_id: int, client: UnscopedDbtCloudClient) -> int:
     """Get or create a dbt Cloud job for a project environment."""
     expected_job_name = get_job_name(project_id, environment_id)
