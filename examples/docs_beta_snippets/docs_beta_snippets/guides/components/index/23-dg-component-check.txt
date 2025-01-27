@@ -1,0 +1,3 @@
+$ dg component check 
+
+All components validated successfully.

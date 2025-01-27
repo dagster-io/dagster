@@ -280,7 +280,16 @@ params:
     project_dir: ../../../dbt/jdbt
   asset_attributes:
     key: "target/main/{{ node.name }}"
-    """,
+""",
+            )
+            run_command_and_snippet_output(
+                cmd="dg component check --no-use-dg-managed-environment",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-dg-component-check.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    ("--no-use-dg-managed-environment", ""),
+                ],
             )
 
             # Run dbt, check works
