@@ -16,7 +16,7 @@ query InstanceDetailSummaryQuery {
         useAutoMaterializeSensors
         poolConfig {
             poolGranularity
-            poolDefaultLimit
+            defaultPoolLimit
             opGranularityRunBuffer
         }
     }
@@ -144,8 +144,8 @@ class TestInstanceSettings(BaseTestSuite):
                 "hasInfo": graphql_context.show_instance_config,
                 "useAutoMaterializeSensors": graphql_context.instance.auto_materialize_use_sensors,
                 "poolConfig": {
-                    "poolGranularity": "op",
-                    "poolDefaultLimit": None,
+                    "poolGranularity": None,
+                    "defaultPoolLimit": None,
                     "opGranularityRunBuffer": None,
                 },
             }
@@ -333,8 +333,8 @@ class TestConcurrencyInstanceSettings(ConcurrencyTestSuite):
                 "hasInfo": graphql_context.show_instance_config,
                 "useAutoMaterializeSensors": graphql_context.instance.auto_materialize_use_sensors,
                 "poolConfig": {
-                    "poolGranularity": "op",
-                    "poolDefaultLimit": 1,
+                    "poolGranularity": None,
+                    "defaultPoolLimit": 1,
                     "opGranularityRunBuffer": None,
                 },
             }

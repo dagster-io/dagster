@@ -3727,8 +3727,8 @@ export type PipelineTagAndValues = {
 
 export type PoolConfig = {
   __typename: 'PoolConfig';
+  defaultPoolLimit: Maybe<Scalars['Int']['output']>;
   opGranularityRunBuffer: Maybe<Scalars['Int']['output']>;
-  poolDefaultLimit: Maybe<Scalars['Int']['output']>;
   poolGranularity: Maybe<Scalars['String']['output']>;
 };
 
@@ -12107,14 +12107,14 @@ export const buildPoolConfig = (
   relationshipsToOmit.add('PoolConfig');
   return {
     __typename: 'PoolConfig',
+    defaultPoolLimit:
+      overrides && overrides.hasOwnProperty('defaultPoolLimit')
+        ? overrides.defaultPoolLimit!
+        : 2648,
     opGranularityRunBuffer:
       overrides && overrides.hasOwnProperty('opGranularityRunBuffer')
         ? overrides.opGranularityRunBuffer!
         : 3091,
-    poolDefaultLimit:
-      overrides && overrides.hasOwnProperty('poolDefaultLimit')
-        ? overrides.poolDefaultLimit!
-        : 8013,
     poolGranularity:
       overrides && overrides.hasOwnProperty('poolGranularity')
         ? overrides.poolGranularity!

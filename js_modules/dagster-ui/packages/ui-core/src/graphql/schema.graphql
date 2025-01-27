@@ -2525,7 +2525,7 @@ type PendingConcurrencyStep {
 
 type PoolConfig {
   poolGranularity: String
-  poolDefaultLimit: Int
+  defaultPoolLimit: Int
   opGranularityRunBuffer: Int
 }
 
