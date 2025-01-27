@@ -186,7 +186,7 @@ By using the `<A>.newly_true()` operator, you can turn the status of _"being mis
 
 ## Run Grouping
 
-AutomationConditions generally depend on the status of their dependent assets. For example, `AutomationCondition.eager()` executes after a dependency updates, and `AutomationCondition.on_cron()` only executes after all dependencies have updated since a given cron schedule tick.
+AutomationConditions generally depend on the status of their dependencies. For example, `AutomationCondition.eager()` executes after a dependency updates, and `AutomationCondition.on_cron()` only executes after all dependencies have updated since a given cron schedule tick.
 
 However, when you have multiple assets in a sequence, all with conditions which depend on the state of their dependencies, it would be inconvenient for each asset in that sequence to be executed in its own independent run. Ideally, if you have multiple eager assets in a chain, an update to the first would create a single run that targets all downstream assets, even though the dependencies of those assets haven't technically updated yet. The intuition here is that if we know we plan to update an asset on this evaluation, then downstream assets can treat that the same as if the asset already did update.
 
