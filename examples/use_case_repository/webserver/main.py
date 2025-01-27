@@ -16,7 +16,7 @@ def index():
     use_cases = []
     for filename in os.listdir(USE_CASES_DIR):
         if filename.endswith(".md") and not filename.startswith("_"):
-            with open(os.path.join(USE_CASES_DIR, filename), "r") as f:
+            with open(os.path.join(USE_CASES_DIR, filename)) as f:
                 post = frontmatter.load(f)
                 use_cases.append(
                     {
@@ -99,7 +99,7 @@ def index():
 @app.route("/use-case/<slug>")
 def use_case(slug):
     try:
-        with open(os.path.join(USE_CASES_DIR, f"{slug}.md"), "r") as f:
+        with open(os.path.join(USE_CASES_DIR, f"{slug}.md")) as f:
             post = frontmatter.load(f)
             md = markdown.Markdown(
                 extensions=["pymdownx.superfences", "pymdownx.inlinehilite", "pymdownx.highlight"]

@@ -1,3 +1,5 @@
+# ruff: noqa: UP006
+
 import re
 import string
 import typing

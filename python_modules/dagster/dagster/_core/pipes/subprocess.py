@@ -1,7 +1,8 @@
 import os
 import signal
+from collections.abc import Mapping, Sequence
 from subprocess import PIPE, Popen
-from typing import Mapping, Optional, Sequence, Union
+from typing import Optional, Union
 
 from dagster_pipes import PipesExtras
 

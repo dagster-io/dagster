@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Sequence
+from typing import TYPE_CHECKING
 
 import pytest
 from dagster import (
@@ -38,6 +38,9 @@ from dagster._core.definitions.executor_definition import multi_or_in_process_ex
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._loggers import default_loggers
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def create_single_node_job(name, called):

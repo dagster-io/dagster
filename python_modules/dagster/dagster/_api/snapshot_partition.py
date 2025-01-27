@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 from dagster._core.errors import DagsterUserCodeProcessError

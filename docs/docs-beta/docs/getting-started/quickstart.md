@@ -1,11 +1,9 @@
 ---
-title: "Dagster quickstart"
+title: Build your first Dagster project
 description: Learn how to quickly get up and running with Dagster
 sidebar_position: 30
 sidebar_label: "Quickstart"
 ---
-
-# Build your first Dagster project
 
 Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline that:
 
@@ -103,7 +101,7 @@ dagster-quickstart/
 
 Now, create the assets for the ETL pipeline. Open `quickstart/assets.py` and add the following code:
 
-<CodeExample filePath="getting-started/quickstart.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/getting-started/quickstart.py" language="python" />
 
 This may seem unusual if you're used to task-based orchestration. In that case, you'd have three separate steps for extracting, transforming, and loading.
 
@@ -127,7 +125,7 @@ However, in Dagster, you'll model your pipelines using assets as the fundamental
 
 5. In the popup that displays, click **View**. This will open the **Run details** page, allowing you to view the run as it executes.
 
-   ![Screenshot of Dagster Asset Lineage](/img/placeholder.svg)
+   ![2048 resolution](/images/getting-started/quickstart/run-details.png)
 
    Use the **view buttons** in near the top left corner of the page to change how the run is displayed. You can also click the asset to view logs and metadata.
 
@@ -153,5 +151,5 @@ id,name,age,city,age_group
 
 Congratulations! You've just built and run your first pipeline with Dagster. Next, you can:
 
-- Continue with the [ETL pipeline tutorial](/tutorial/tutorial-etl) to learn how to build a more complex ETL pipeline
-- Learn how to [Think in assets](/guides/build/assets-concepts/index.md)
+- Continue with the [ETL pipeline tutorial](/etl-pipeline-tutorial/) to learn how to build a more complex ETL pipeline
+- Learn how to [Think in assets](/guides/build/assets/)

@@ -157,36 +157,37 @@ export const AssetPartitions = ({
     const allKeys = dimension.partitionKeys;
     const sortType = getSort(sortTypes, idx, selections[idx]!.dimension.type);
 
-    // Apply the search filter
-    const searchLower = searchValues?.[idx]?.toLocaleLowerCase().trim() || '';
-    const filteredKeys = allKeys.filter((key) => key.toLowerCase().includes(searchLower));
+    const filterResultsBySearch = (keys: string[]) => {
+      const searchLower = searchValues?.[idx]?.toLocaleLowerCase().trim() || '';
+      return keys.filter((key) => key.toLowerCase().includes(searchLower));
+    };
 
     const getSelectionKeys = () =>
-      uniq(selectedRanges.flatMap(({start, end}) => filteredKeys.slice(start.idx, end.idx + 1)));
+      uniq(selectedRanges.flatMap(({start, end}) => allKeys.slice(start.idx, end.idx + 1)));
 
+    // Early exit #1: If you have no status filters applied, just apply the
+    // text search filter, sort and return.
     if (isEqual(DISPLAYED_STATUSES, statusFilters)) {
-      const result = getSelectionKeys();
-      return sortResults(result, sortType);
+      return sortResults(filterResultsBySearch(getSelectionKeys()), sortType);
     }
 
+    // Get the health ranges, and then explode them into a `matching` set of keys
+    // that have the requested statuses.
     const healthRangesInSelection = rangesClippedToSelection(
       rangesForEachDimension[idx]!,
       selectedRanges,
     );
-    const getKeysWithStates = (states: AssetPartitionStatus[]) => {
-      return healthRangesInSelection.flatMap((r) =>
-        states.some((s) => r.value.includes(s))
-          ? filteredKeys.slice(r.start.idx, r.end.idx + 1)
-          : [],
+    const getKeysWithStates = (states: AssetPartitionStatus[]) =>
+      healthRangesInSelection.flatMap((r) =>
+        states.some((s) => r.value.includes(s)) ? allKeys.slice(r.start.idx, r.end.idx + 1) : [],
       );
-    };
-
     const matching = uniq(
       getKeysWithStates(statusFilters.filter((f) => f !== AssetPartitionStatus.MISSING)),
     );
 
     let result;
-    // We have to add in "missing" separately because it's the absence of a range
+
+    // We have to add in "missing" separately because it's the absence of a range.
     if (statusFilters.includes(AssetPartitionStatus.MISSING)) {
       const selectionKeys = getSelectionKeys();
       const isMissingForIndex = (idx: number) =>
@@ -196,14 +197,17 @@ export const AssetPartitions = ({
             r.end.idx >= idx &&
             !r.value.includes(AssetPartitionStatus.MISSING),
         );
-      result = filteredKeys.filter(
-        (a, pidx) => selectionKeys.includes(a) && (matching.includes(a) || isMissingForIndex(pidx)),
+
+      const matchingSet = new Set(matching);
+      const selectionKeysSet = new Set(selectionKeys);
+      result = allKeys.filter(
+        (a, pidx) => selectionKeysSet.has(a) && (matchingSet.has(a) || isMissingForIndex(pidx)),
       );
     } else {
       result = matching;
     }
 
-    return sortResults(result, sortType);
+    return sortResults(filterResultsBySearch(result), sortType);
   };
 
   const countsByStateInSelection = keyCountByStateInSelection(assetHealth, selections);

@@ -1,6 +1,6 @@
-const {findRelativeImportPath} = require('../util/findRelativeImportPath');
-
 const {ESLintUtils, AST_NODE_TYPES} = require('@typescript-eslint/utils');
+
+const {findRelativeImportPath} = require('../util/findRelativeImportPath');
 
 const createRule = ESLintUtils.RuleCreator((name) => name);
 
@@ -22,7 +22,6 @@ module.exports = createRule({
               const routeSpecifier = node.specifiers.find(
                 (specifier) => specifier.imported.name === 'Route',
               );
-              const importRange = [node.range[0], node.range[1]];
               const routeRange = [routeSpecifier.range[0], routeSpecifier.range[1]];
 
               const currentFilePath = context.getFilename();

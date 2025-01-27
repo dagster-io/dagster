@@ -1,4 +1,5 @@
-from typing import List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import dagster._check as check
 import graphene
@@ -44,13 +45,13 @@ from dagster_graphql.implementation.utils import (
     pipeline_selector_from_graphql,
     require_permission_check,
 )
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.backfill import (
     GrapheneAssetPartitionRange,
     GrapheneCancelBackfillResult,
     GrapheneLaunchBackfillResult,
     GrapheneResumeBackfillResult,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -332,7 +333,7 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
 
     @capture_error
     def mutate(
-        self, graphene_info: ResolveInfo, executionParamsList: List[GrapheneExecutionParams]
+        self, graphene_info: ResolveInfo, executionParamsList: list[GrapheneExecutionParams]
     ) -> Union[
         GrapheneLaunchMultipleRunsResult,
         GrapheneError,

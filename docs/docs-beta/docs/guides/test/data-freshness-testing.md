@@ -1,7 +1,6 @@
 ---
-title: "Checking for data freshness"
-sidebar_position: 200
-sidebar_label: "Data freshness"
+title: "Data freshness checks"
+sidebar_position: 300
 ---
 
 Freshness checks provide a way to identify data assets that are overdue for an update. For example, you can use freshness checks to identify stale assets caused by:
@@ -18,8 +17,8 @@ Freshness checks can also communicate SLAs for their data freshness. For example
 
 To follow the steps in this guide, you'll need familiarity with:
 
-- [Assets](/guides/build/create-a-pipeline/data-assets)
-- [External assets](/guides/build/create-a-pipeline/external-assets)
+- [Assets](/guides/build/assets/defining-assets)
+- [External assets](/guides/build/assets/external-assets)
 - [Asset checks](/guides/test/asset-checks)
 
 </details>
@@ -41,17 +40,17 @@ Materializable assets are assets materialized by Dagster. To calculate whether a
 
 The example below defines a freshness check on an asset that fails if the asset's latest materialization occurred more than one hour before the current time.
 
-<CodeExample filePath="guides/data-assets/quality-testing/freshness-checks/materializable-asset-freshness-check.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/quality-testing/freshness-checks/materializable-asset-freshness-check.py" language="python" />
 
 ## External asset freshness \{#external-assets}
 
-[External assets](/guides/build/create-a-pipeline/external-assets) are assets orchestrated by systems other than Dagster.
+[External assets](/guides/build/assets/external-assets) are assets orchestrated by systems other than Dagster.
 
 To run freshness checks on external assets, the checks need to know when the external assets were last updated. Emitting these update timestamps as values for the `dagster/last_updated_timestamp` observation metadata key allows Dagster to calculate whether the asset is overdue.
 
 The example below defines a freshness check and adds a schedule to run the check periodically.
 
-<CodeExample filePath="guides/data-assets/quality-testing/freshness-checks/external-asset-freshness-check.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/quality-testing/freshness-checks/external-asset-freshness-check.py" language="python" />
 
 ### Testing freshness with anomaly detection \{#anomaly-detection}
 
@@ -61,7 +60,7 @@ Anomaly detection is a Dagster+ Pro feature.
 
 Instead of applying policies on an asset-by-asset basis, Dagster+ Pro users can use `build_anomaly_detection_freshness_checks` to take advantage of a time series anomaly detection model to determine if data arrives later than expected.
 
-<CodeExample filePath="guides/data-assets/quality-testing/freshness-checks/anomaly-detection.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/quality-testing/freshness-checks/anomaly-detection.py" language="python" />
 
 :::note
 If the asset hasn't been updated enough times, the check will pass with a message indicating that more data is needed to detect anomalies.

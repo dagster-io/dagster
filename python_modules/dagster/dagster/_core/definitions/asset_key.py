@@ -1,6 +1,7 @@
 import re
+from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, List, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union
 
 from dagster_pipes import to_assey_key_path
 
@@ -101,7 +102,7 @@ class AssetKey(IHaveNew):
         if suffix is not None:
             path.append(suffix)
 
-        return "__".join(path).replace("-", "_")
+        return "__".join(path).replace("-", "_").replace(".", "_")
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
@@ -277,7 +278,7 @@ def asset_keys_from_defs_and_coercibles(
 ) -> Sequence[AssetKey]:
     from dagster._core.definitions.assets import AssetsDefinition
 
-    result: List[AssetKey] = []
+    result: list[AssetKey] = []
     for el in assets:
         if isinstance(el, AssetsDefinition):
             result.extend(el.keys)

@@ -194,6 +194,7 @@ const ensureSubtreeAfterParentInArray = (
 
 const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLayoutParams) => {
   const seen: string[] = [];
+  const seenSet: Set<string> = new Set();
   const added: GanttChartBox[] = [];
 
   for (const out of box.node.outputs) {
@@ -203,7 +204,7 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
         continue;
       }
 
-      if (seen.includes(depNode.name)) {
+      if (seenSet.has(depNode.name)) {
         continue;
       }
 
@@ -218,6 +219,7 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
       }
 
       seen.push(depNode.name);
+      seenSet.add(depNode.name);
 
       const depBoxIdx = boxes.findIndex((r) => r.node === depNode);
       let depBox: GanttChartBox;

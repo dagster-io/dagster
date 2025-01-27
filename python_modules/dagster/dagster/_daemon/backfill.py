@@ -2,9 +2,10 @@ import logging
 import os
 import sys
 import threading
+from collections.abc import Iterable, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, Iterable, Mapping, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
@@ -62,7 +63,7 @@ def execute_backfill_iteration_loop(
     from dagster._daemon.controller import DEFAULT_DAEMON_INTERVAL_SECONDS
     from dagster._daemon.daemon import SpanMarker
 
-    backfill_futures: Dict[str, Future] = {}
+    backfill_futures: dict[str, Future] = {}
     while True:
         start_time = get_current_timestamp()
         if until and start_time >= until:
@@ -79,7 +80,7 @@ def execute_backfill_iteration_loop(
                 backfill_futures=backfill_futures,
             )
         except Exception:
-            error_info = DaemonErrorCapture.on_exception(
+            error_info = DaemonErrorCapture.process_exception(
                 exc_info=sys.exc_info(),
                 logger=logger,
                 log_message="BackfillDaemon caught an error",
@@ -100,7 +101,7 @@ def execute_backfill_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    backfill_futures: Optional[Dict[str, Future]] = None,
+    backfill_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
@@ -144,7 +145,7 @@ def execute_backfill_jobs(
     logger: logging.Logger,
     backfill_jobs: Sequence[PartitionBackfill],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
-    backfill_futures: Optional[Dict[str, Future]] = None,
+    backfill_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[Mapping[str, int]] = None,
 ) -> Iterable[Optional[SerializableErrorInfo]]:
     instance = workspace_process_context.instance
@@ -217,18 +218,18 @@ def execute_backfill_jobs(
                         e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
                     ):
                         try:
-                            raise Exception(
+                            raise DagsterUserCodeUnreachableError(
                                 "Unable to reach the code server. Backfill will resume once the code server is available."
                             ) from e
                         except:
-                            error_info = DaemonErrorCapture.on_exception(
+                            error_info = DaemonErrorCapture.process_exception(
                                 sys.exc_info(),
                                 logger=backfill_logger,
                                 log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
                             )
                             instance.update_backfill(backfill.with_error(error_info))
                     else:
-                        error_info = DaemonErrorCapture.on_exception(
+                        error_info = DaemonErrorCapture.process_exception(
                             sys.exc_info(),
                             logger=backfill_logger,
                             log_message=f"Backfill failed for {backfill.backfill_id} and will retry.",
@@ -239,7 +240,7 @@ def execute_backfill_jobs(
                             )
                         )
                 else:
-                    error_info = DaemonErrorCapture.on_exception(
+                    error_info = DaemonErrorCapture.process_exception(
                         sys.exc_info(),
                         logger=backfill_logger,
                         log_message=f"Backfill failed for {backfill.backfill_id}",
@@ -248,5 +249,6 @@ def execute_backfill_jobs(
                         backfill.with_status(BulkActionStatus.FAILED)
                         .with_error(error_info)
                         .with_failure_count(backfill.failure_count + 1)
+                        .with_end_timestamp(get_current_timestamp())
                     )
                 yield error_info

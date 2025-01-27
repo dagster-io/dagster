@@ -2,7 +2,7 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from airflow import DAG
 from airflow.models.operator import BaseOperator
@@ -20,7 +20,7 @@ class LoadCSVToDuckDB(BaseOperator):
         table_name: str,
         csv_path: Path,
         duckdb_path: Path,
-        column_names: List[str],
+        column_names: list[str],
         duckdb_schema: str,
         duckdb_database_name: str,
         *args,

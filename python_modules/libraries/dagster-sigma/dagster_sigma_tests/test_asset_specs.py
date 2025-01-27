@@ -1,6 +1,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
 import responses
 from click.testing import CliRunner
 from dagster._core.code_pointer import CodePointer
@@ -112,6 +113,29 @@ def test_load_assets_organization_data_translator(
                 str(Path(__file__).parent / "pending_repo_with_translator.py"), "defs", None
             ),
         )
+
+        assert len(repository_def.assets_defs_by_key) == 2
+        assert all(
+            key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
+        ), repository_def.assets_defs_by_key
+
+
+@responses.activate
+def test_load_assets_organization_data_translator_legacy(
+    sigma_auth_token: str, sigma_sample_data: None
+) -> None:
+    with instance_for_test() as _instance:
+        with pytest.warns(
+            DeprecationWarning,
+            match=r"Support of `dagster_sigma_translator` as a Type\[DagsterSigmaTranslator\]",
+        ):
+            repository_def = initialize_repository_def_from_pointer(
+                CodePointer.from_python_file(
+                    str(Path(__file__).parent / "pending_repo_with_translator_legacy.py"),
+                    "defs",
+                    None,
+                ),
+            )
 
         assert len(repository_def.assets_defs_by_key) == 2
         assert all(

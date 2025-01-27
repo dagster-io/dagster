@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from collections.abc import Sequence
 
 import graphene
 from dagster._core.remote_representation.external_data import EnvVarConsumer
@@ -43,7 +43,7 @@ class GrapheneEnvVarWithConsumers(graphene.ObjectType):
         self.envVarName = name
         self.consumers = consumers
 
-    def resolve_envVarConsumers(self, _graphene_info) -> List[GrapheneEnvVarConsumer]:
+    def resolve_envVarConsumers(self, _graphene_info) -> list[GrapheneEnvVarConsumer]:
         return [GrapheneEnvVarConsumer(consumer) for consumer in self.consumers]
 
 

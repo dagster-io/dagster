@@ -1,4 +1,4 @@
-// Generated from /Users/briantu/repos/dagster/js_modules/dagster-ui/packages/ui-core/src/op-selection/OpSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/op-selection/OpSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeListener} from 'antlr4ts/tree/ParseTreeListener';
 
@@ -7,8 +7,11 @@ import {
   AndExpressionContext,
   AttributeExprContext,
   AttributeExpressionContext,
+  DownTraversalContext,
   DownTraversalExpressionContext,
   ExprContext,
+  FunctionCallExpressionContext,
+  FunctionNameContext,
   NameExprContext,
   NameSubstringExprContext,
   NotExpressionContext,
@@ -17,8 +20,8 @@ import {
   StartContext,
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
-  TraversalContext,
   UpAndDownTraversalExpressionContext,
+  UpTraversalContext,
   UpTraversalExpressionContext,
   ValueContext,
 } from './OpSelectionParser';
@@ -172,6 +175,19 @@ export interface OpSelectionListener extends ParseTreeListener {
   exitAttributeExpression?: (ctx: AttributeExpressionContext) => void;
 
   /**
+   * Enter a parse tree produced by the `FunctionCallExpression`
+   * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  enterFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `FunctionCallExpression`
+   * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   */
+  exitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => void;
+
+  /**
    * Enter a parse tree produced by the `ParenthesizedExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
    * @param ctx the parse tree
@@ -218,15 +234,37 @@ export interface OpSelectionListener extends ParseTreeListener {
   exitTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => void;
 
   /**
-   * Enter a parse tree produced by `OpSelectionParser.traversal`.
+   * Enter a parse tree produced by `OpSelectionParser.upTraversal`.
    * @param ctx the parse tree
    */
-  enterTraversal?: (ctx: TraversalContext) => void;
+  enterUpTraversal?: (ctx: UpTraversalContext) => void;
   /**
-   * Exit a parse tree produced by `OpSelectionParser.traversal`.
+   * Exit a parse tree produced by `OpSelectionParser.upTraversal`.
    * @param ctx the parse tree
    */
-  exitTraversal?: (ctx: TraversalContext) => void;
+  exitUpTraversal?: (ctx: UpTraversalContext) => void;
+
+  /**
+   * Enter a parse tree produced by `OpSelectionParser.downTraversal`.
+   * @param ctx the parse tree
+   */
+  enterDownTraversal?: (ctx: DownTraversalContext) => void;
+  /**
+   * Exit a parse tree produced by `OpSelectionParser.downTraversal`.
+   * @param ctx the parse tree
+   */
+  exitDownTraversal?: (ctx: DownTraversalContext) => void;
+
+  /**
+   * Enter a parse tree produced by `OpSelectionParser.functionName`.
+   * @param ctx the parse tree
+   */
+  enterFunctionName?: (ctx: FunctionNameContext) => void;
+  /**
+   * Exit a parse tree produced by `OpSelectionParser.functionName`.
+   * @param ctx the parse tree
+   */
+  exitFunctionName?: (ctx: FunctionNameContext) => void;
 
   /**
    * Enter a parse tree produced by `OpSelectionParser.attributeExpr`.

@@ -15,11 +15,13 @@ type Args<TValue> = {
   freeformSearchResult?: (
     query: string,
     suggestionPath: TValue[],
-  ) => SuggestionFilterSuggestion<TValue> | null;
+  ) => SuggestionFilterSuggestion<TValue> | SuggestionFilterSuggestion<TValue>[] | null;
+  freeformResultPosition?: 'start' | 'end';
 
   state: TValue[]; // Active suggestions
   setState: (state: TValue[]) => void;
 
+  allowMultipleSelections?: boolean;
   initialSuggestions: SuggestionFilterSuggestion<TValue>[];
   getNoSuggestionsPlaceholder?: (query: string) => string;
   onSuggestionClicked: (value: TValue) => Promise<SuggestionFilterSuggestion<TValue>[]> | void;
@@ -45,6 +47,8 @@ export function useSuggestionFilter<TValue>({
   state,
   setState,
   initialSuggestions,
+  allowMultipleSelections = true,
+  freeformResultPosition = 'start',
   onSuggestionClicked,
   getNoSuggestionsPlaceholder,
   getStringValue,
@@ -122,17 +126,27 @@ export function useSuggestionFilter<TValue>({
         if (!hasExactMatch && freeformSearchResult && query.length) {
           const suggestion = freeformSearchResult(query, suggestionPath);
           if (suggestion) {
-            results.unshift({
-              label: (
-                <SuggestionFilterLabel
-                  value={suggestion.value}
-                  renderLabel={renderLabel}
-                  filter={filterObjRef.current}
-                />
-              ),
-              key: getKey?.(suggestion.value) || 'freeform',
-              value: suggestion,
-            });
+            const suggestions = Array.isArray(suggestion) ? suggestion : [suggestion];
+            const freeformResults =
+              suggestions
+                .filter((s): s is SuggestionFilterSuggestion<TValue> => s !== null)
+                .map((suggestion) => ({
+                  label: (
+                    <SuggestionFilterLabel
+                      value={suggestion.value}
+                      renderLabel={renderLabel}
+                      filter={filterObjRef.current}
+                    />
+                  ),
+                  key: getKey?.(suggestion.value) || 'freeform',
+                  value: suggestion,
+                })) || [];
+
+            if (freeformResultPosition === 'start') {
+              results.unshift(...freeformResults);
+            } else {
+              results.push(...freeformResults);
+            }
           }
         }
         return results;
@@ -140,10 +154,14 @@ export function useSuggestionFilter<TValue>({
 
       onSelect: async ({value, clearSearch}) => {
         if (value.final) {
-          if (state.includes(value.value)) {
-            setState(state.filter((v) => v !== value.value));
+          if (!allowMultipleSelections) {
+            const result = state.includes(value.value) ? [] : [value.value];
+            setState(result);
           } else {
-            setState([...state, value.value]);
+            const result = state.includes(value.value)
+              ? state.filter((v) => v !== value.value)
+              : [...state, value.value];
+            setState(result);
           }
         } else {
           clearSearch();

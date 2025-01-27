@@ -1,4 +1,4 @@
-import {Table} from '@dagster-io/ui-components';
+import {Colors, Table} from '@dagster-io/ui-components';
 
 import {AssetKey} from '../types';
 import {EvaluationListRow} from './EvaluationListRow';
@@ -7,13 +7,22 @@ import {AssetConditionEvaluationRecordFragment} from './types/GetEvaluationsQuer
 interface Props {
   assetKey: AssetKey;
   isPartitioned: boolean;
+  assetCheckName?: string;
   evaluations: AssetConditionEvaluationRecordFragment[];
 }
 
-export const EvaluationList = ({assetKey, isPartitioned, evaluations}: Props) => {
+export const EvaluationList = ({assetKey, isPartitioned, assetCheckName, evaluations}: Props) => {
   return (
     <Table>
-      <thead>
+      <thead
+        style={{
+          position: 'sticky',
+          top: 0,
+          backgroundColor: Colors.backgroundDefault(),
+          zIndex: 1,
+          boxShadow: `inset 0 -1px 0 ${Colors.keylineDefault()}`,
+        }}
+      >
         <tr>
           <th>Timestamp</th>
           <th style={{width: '240px'}}>Evaluation result</th>
@@ -27,6 +36,7 @@ export const EvaluationList = ({assetKey, isPartitioned, evaluations}: Props) =>
               key={evaluation.id}
               evaluation={evaluation}
               assetKey={assetKey}
+              assetCheckName={assetCheckName}
               isPartitioned={isPartitioned}
             />
           );

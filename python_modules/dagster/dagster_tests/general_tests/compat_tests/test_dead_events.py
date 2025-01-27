@@ -7,7 +7,7 @@ from dagster._serdes import deserialize_value
 
 def test_dead_events():
     snapshot = path.join(path.dirname(path.realpath(__file__)), "dead_events.txt")
-    with open(snapshot, "r", encoding="utf8") as fd:
+    with open(snapshot, encoding="utf8") as fd:
         objs = []
         for line in fd.readlines():
             obj = deserialize_value(line)

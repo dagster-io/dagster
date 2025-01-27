@@ -1,4 +1,5 @@
-from typing import Any, Iterable, List, Optional
+from collections.abc import Iterable
+from typing import Any, Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -40,7 +41,7 @@ class AirbyteSyncConfig(Config):
             "be yielded when the op executes."
         ),
     )
-    asset_key_prefix: List[str] = Field(
+    asset_key_prefix: list[str] = Field(
         ["airbyte"],
         description=(
             "If provided and yield_materializations is True, these components will be used to "

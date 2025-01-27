@@ -1,8 +1,8 @@
 import shutil
 import tempfile
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
 import pytest
 from dagster import AssetKey
@@ -12,12 +12,12 @@ from dagster_components.core.component_defs_builder import (
     build_components_from_component_folder,
     defs_from_components,
 )
-from dagster_components.lib.dbt_project import DbtProjectComponent
+from dagster_components.lib.dbt_project.component import DbtProjectComponent
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
-STUB_LOCATION_PATH = Path(__file__).parent.parent / "stub_code_locations" / "dbt_project_location"
+STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
 
 JAFFLE_SHOP_KEYS = {
@@ -34,7 +34,7 @@ JAFFLE_SHOP_KEYS = {
 
 @contextmanager
 @pytest.fixture(scope="module")
-def dbt_path() -> Generator[Path, None, None]:
+def dbt_path() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
         # make sure a manifest.json file is created
@@ -54,7 +54,11 @@ def test_python_params(dbt_path: Path) -> None:
             },
         ),
     )
-    component = DbtProjectComponent.load(context=script_load_context(decl_node))
+    context = script_load_context(decl_node)
+    component = DbtProjectComponent.load(
+        params=decl_node.get_params(context, DbtProjectComponent.get_schema()),
+        context=context,
+    )
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
     defs = component.build_defs(script_load_context())
     assert defs.get_assets_def("stg_customers").op.name == "some_op"

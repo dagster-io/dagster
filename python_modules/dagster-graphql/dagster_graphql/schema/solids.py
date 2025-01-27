@@ -1,10 +1,10 @@
+from collections.abc import Mapping, Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 import graphene
 from dagster._core.definitions import NodeHandle
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.remote_representation.historical import HistoricalJob
@@ -333,7 +333,7 @@ def _build_solid_handles(
 ) -> Sequence["GrapheneSolidHandle"]:
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)
     check.opt_inst_param(parent, "parent", GrapheneSolidHandle)
-    all_handle: List[GrapheneSolidHandle] = []
+    all_handle: list[GrapheneSolidHandle] = []
     for solid_invocation in current_dep_index.node_invocations:
         solid_name, solid_def_name = solid_invocation.node_name, solid_invocation.node_def_name
         handle = GrapheneSolidHandle(
@@ -374,6 +374,7 @@ class GrapheneISolidDefinition(graphene.Interface):
     input_definitions = non_null_list(GrapheneInputDefinition)
     output_definitions = non_null_list(GrapheneOutputDefinition)
     assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    pools = non_null_list(graphene.String)
 
     class Meta:
         name = "ISolidDefinition"
@@ -446,28 +447,26 @@ class ISolidDefinitionMixin:
                     )
                 )
             ]
-            differ = None
-            base_deployment_context = graphene_info.context.get_base_deployment_context()
-            if base_deployment_context:
-                differ = AssetGraphDiffer.from_remote_repositories(
-                    code_location_name=self._represented_pipeline.handle.location_name,
-                    repository_name=self._represented_pipeline.handle.repository_name,
-                    branch_workspace=graphene_info.context,
-                    base_workspace=base_deployment_context,
-                )
 
             return [
                 GrapheneAssetNode(
                     remote_node=remote_node,
-                    asset_graph_differ=differ,
                 )
                 for remote_node in remote_nodes
             ]
+
+    def resolve_pools(self, _graphene_info) -> Sequence[str]:
+        if isinstance(self._solid_def_snap, OpDefSnap):
+            return [self._solid_def_snap.pool] if self._solid_def_snap.pool else []
+        if isinstance(self._solid_def_snap, GraphDefSnap):
+            return list(self._solid_def_snap.pools)
+        return []
 
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
     config_field = graphene.Field(GrapheneConfigTypeField)
     required_resources = non_null_list(GrapheneResourceRequirement)
+    pool = graphene.String()
 
     class Meta:
         interfaces = (GrapheneISolidDefinition,)
@@ -500,6 +499,9 @@ class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
         return [
             GrapheneResourceRequirement(key) for key in self._solid_def_snap.required_resource_keys
         ]
+
+    def resolve_pool(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._solid_def_snap.pool
 
 
 class GrapheneSolidStepStatsUnavailableError(graphene.ObjectType):

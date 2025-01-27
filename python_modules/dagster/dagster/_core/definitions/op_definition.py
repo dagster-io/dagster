@@ -1,17 +1,6 @@
 import inspect
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Callable,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from collections.abc import Iterator, Mapping, Sequence, Set
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
 from typing_extensions import TypeAlias, get_args, get_origin
 
@@ -44,9 +33,10 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
-from dagster._utils.warnings import normalize_renamed_param
+from dagster._utils.warnings import normalize_renamed_param, preview_warning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
@@ -91,6 +81,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         code_version (Optional[str]): (Experimental) Version of the code encapsulated by the op. If set,
             this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
+        pool (Optional[str]): A string that identifies the pool that governs this op's execution.
 
 
     Examples:
@@ -112,6 +103,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     _required_resource_keys: AbstractSet[str]
     _version: Optional[str]
     _retry_policy: Optional[RetryPolicy]
+    _pool: Optional[str]
 
     def __init__(
         self,
@@ -126,6 +118,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str] = None,
         retry_policy: Optional[RetryPolicy] = None,
         code_version: Optional[str] = None,
+        pool: Optional[str] = None,
     ):
         from dagster._core.definitions.decorators.op_decorator import (
             DecoratedOpFunction,
@@ -170,6 +163,8 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self._retry_policy = check.opt_inst_param(retry_policy, "retry_policy", RetryPolicy)
+        self._pool = pool
+        pool = _validate_pool(pool, tags)
 
         positional_inputs = (
             self._compute_fn.positional_inputs()
@@ -177,7 +172,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             else None
         )
 
-        super(OpDefinition, self).__init__(
+        super().__init__(
             name=name,
             input_defs=check.sequence_param(resolved_input_defs, "input_defs", InputDefinition),
             output_defs=check.sequence_param(output_defs, "output_defs", OutputDefinition),
@@ -199,6 +194,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         version: Optional[str],
         retry_policy: Optional[RetryPolicy],
         code_version: Optional[str],
+        pool: Optional[str],
     ) -> "OpDefinition":
         return OpDefinition(
             compute_fn=compute_fn,
@@ -212,6 +208,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             version=version,
             retry_policy=retry_policy,
             code_version=code_version,
+            pool=pool,
         )
 
     @property
@@ -226,7 +223,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def name(self) -> str:
         """str: The name of this op."""
-        return super(OpDefinition, self).name
+        return super().name
 
     @public
     @property
@@ -275,27 +272,38 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def tags(self) -> Mapping[str, str]:
         """Mapping[str, str]: The tags for this op."""
-        return super(OpDefinition, self).tags
+        return super().tags
 
     @public
     def alias(self, name: str) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given name."""
-        return super(OpDefinition, self).alias(name)
+        return super().alias(name)
 
     @public
     def tag(self, tags: Optional[Mapping[str, str]]) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given tags."""
-        return super(OpDefinition, self).tag(tags)
+        return super().tag(tags)
 
     @public
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given hook definitions."""
-        return super(OpDefinition, self).with_hooks(hook_defs)
+        return super().with_hooks(hook_defs)
 
     @public
     def with_retry_policy(self, retry_policy: RetryPolicy) -> "PendingNodeInvocation":
         """Creates a copy of this op with the given retry policy."""
-        return super(OpDefinition, self).with_retry_policy(retry_policy)
+        return super().with_retry_policy(retry_policy)
+
+    @property
+    def pool(self) -> Optional[str]:
+        """Optional[str]: The concurrency pool for this op."""
+        # fallback to fetching from tags for backwards compatibility
+        return self._pool if self._pool else self.tags.get(GLOBAL_CONCURRENCY_TAG)
+
+    @property
+    def pools(self) -> Set[str]:
+        """Optional[str]: The concurrency pools for this op node."""
+        return {self._pool} if self._pool else set()
 
     def is_from_decorator(self) -> bool:
         from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
@@ -321,7 +329,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def resolve_output_to_origin(
         self, output_name: str, handle: Optional[NodeHandle]
-    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
+    ) -> tuple[OutputDefinition, Optional[NodeHandle]]:
         return self.output_def_named(output_name), handle
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
@@ -383,6 +391,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             code_version=self._version,
             retry_policy=self.retry_policy,
             version=None,  # code_version replaces version
+            pool=self.pool,
         )
 
     def copy_for_configured(
@@ -451,7 +460,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         from dagster._core.definitions.composition import is_in_composition
 
         if is_in_composition():
-            return super(OpDefinition, self).__call__(*args, **kwargs)
+            return super().__call__(*args, **kwargs)
 
         return direct_invocation_result(self, *args, **kwargs)
 
@@ -589,3 +598,24 @@ def _validate_context_type_hint(fn):
 def _is_result_object_type(ttype):
     # Is this type special result object type
     return ttype in (MaterializeResult, ObserveResult, AssetCheckResult)
+
+
+def _validate_pool(pool, tags):
+    from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
+
+    check.opt_str_param(pool, "pool")
+    tags = check.opt_mapping_param(tags, "tags")
+    tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
+    if pool and tag_concurrency_key and pool != tag_concurrency_key:
+        raise DagsterInvalidDefinitionError(
+            f'Pool "{pool}" conflicts with the concurrency key tag "{tag_concurrency_key}".'
+        )
+
+    if pool:
+        preview_warning("Pools")
+        return pool
+
+    if tag_concurrency_key:
+        return tag_concurrency_key
+
+    return None

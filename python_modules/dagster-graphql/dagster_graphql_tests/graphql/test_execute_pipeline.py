@@ -19,7 +19,6 @@ from dagster_graphql.test.utils import (
     execute_dagster_graphql_subscription,
     infer_job_selector,
 )
-from typing_extensions import Dict
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -727,7 +726,7 @@ def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):
                 return message_data
 
 
-def first_event_of_type(logs, message_type) -> Optional[Dict[str, Any]]:
+def first_event_of_type(logs, message_type) -> Optional[dict[str, Any]]:
     for log in logs:
         if log["__typename"] == message_type:
             return log

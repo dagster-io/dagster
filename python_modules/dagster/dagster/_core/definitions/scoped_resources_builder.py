@@ -6,7 +6,8 @@
 # See: https://github.com/python/mypy/issues/7281
 
 from collections import namedtuple
-from typing import AbstractSet, Any, Mapping, NamedTuple, Optional
+from collections.abc import Mapping
+from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.errors import DagsterUnknownResourceError
@@ -50,7 +51,7 @@ class ScopedResourcesBuilder(
         resource_instance_dict: Optional[Mapping[str, object]] = None,
         contains_generator: bool = False,
     ):
-        return super(ScopedResourcesBuilder, cls).__new__(
+        return super().__new__(
             cls,
             resource_instance_dict=check.opt_mapping_param(
                 resource_instance_dict, "resource_instance_dict", key_type=str

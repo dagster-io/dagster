@@ -1,10 +1,13 @@
 import os
 import threading
-from typing import Callable, List, MutableMapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Callable, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log.base import EventLogCursor, EventLogStorage
+
+if TYPE_CHECKING:
+    from collections.abc import MutableMapping
 
 INIT_POLL_PERIOD = 0.250  # 250ms
 MAX_POLL_PERIOD = 16.0  # 16s
@@ -107,13 +110,13 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
     """
 
     def __init__(self, event_log_storage: EventLogStorage, run_id: str):
-        super(SqlPollingRunIdEventWatcherThread, self).__init__()
+        super().__init__()
         self._event_log_storage = check.inst_param(
             event_log_storage, "event_log_storage", EventLogStorage
         )
         self._run_id = check.str_param(run_id, "run_id")
         self._callback_fn_list_lock: threading.Lock = threading.Lock()
-        self._callback_fn_list: List[CallbackAfterCursor] = []
+        self._callback_fn_list: list[CallbackAfterCursor] = []
         self._should_thread_exit = threading.Event()
         self.name = f"sql-event-watch-run-id-{self._run_id}"
 

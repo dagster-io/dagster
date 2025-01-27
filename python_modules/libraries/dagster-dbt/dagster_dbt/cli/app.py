@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Iterator
+from typing import TYPE_CHECKING, Annotated, Any
 
 import typer
 import yaml
@@ -13,12 +13,14 @@ from dagster._core.definitions.module_loaders.load_assets_from_modules import (
 from jinja2 import Environment, FileSystemLoader
 from rich.console import Console
 from rich.syntax import Syntax
-from typing_extensions import Annotated
 
 from dagster_dbt.dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.include import STARTER_PROJECT_PATH
 from dagster_dbt.version import __version__ as dagster_dbt_version
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -112,11 +114,11 @@ def copy_scaffold(
     use_experimental_dbt_state: bool,
 ) -> None:
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
-    dbt_project_yaml: Dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
+    dbt_project_yaml: dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
     dbt_project_name: str = dbt_project_yaml["name"]
 
     dbt_profiles_path = find_dbt_profiles_path(dbt_project_dir=dbt_project_dir)
-    dbt_profiles_yaml: Dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
+    dbt_profiles_yaml: dict[str, Any] = yaml.safe_load(dbt_profiles_path.read_bytes())
 
     # Remove config from profiles.yml
     dbt_profiles_yaml.pop("config", None)

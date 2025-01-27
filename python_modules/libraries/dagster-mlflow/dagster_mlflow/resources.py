@@ -54,7 +54,7 @@ class MlflowMeta(type):
     """
 
     def __new__(cls, name, bases, attrs):
-        class_cls = super(MlflowMeta, cls).__new__(cls, name, bases, attrs)
+        class_cls = super().__new__(cls, name, bases, attrs)
         for attr in (attr for attr in dir(mlflow) if attr not in dir(class_cls)):
             mlflow_attribute = getattr(mlflow, attr)
             if callable(mlflow_attribute):

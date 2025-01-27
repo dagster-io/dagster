@@ -1,8 +1,12 @@
+import contextlib
+import shutil
+import tempfile
 import textwrap
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import AbstractSet, Iterator, Optional
+from typing import AbstractSet, Optional  # noqa: UP035
 
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import pushd
@@ -56,9 +60,15 @@ def generate_component_lib_pyproject_toml(name: str, is_code_location: bool = Fa
 
         [project.entry-points]
         "dagster.components" = {{ {pkg_name} = "{pkg_name}.lib"}}
+
+        [tool.dg]
+        is_component_lib = true
+
     """)
     if is_code_location:
         return base + textwrap.dedent("""
+        is_code_location = true
+
         [tool.dagster]
         module_name = "{ pkg_name }.definitions"
         project_name = "{ pkg_name }"
@@ -80,3 +90,50 @@ def temp_code_location_bar() -> Iterator[None]:
 
         with pushd("bar"):
             yield
+
+
+def _setup_component_in_folder(
+    src_path: str, dst_path: str, local_component_defn_to_inject: Optional[Path]
+) -> None:
+    origin_path = Path(__file__).parent / "integration_tests" / "components" / src_path
+
+    shutil.copytree(origin_path, dst_path, dirs_exist_ok=True)
+    if local_component_defn_to_inject:
+        shutil.copy(local_component_defn_to_inject, Path(dst_path) / "__init__.py")
+
+
+@contextlib.contextmanager
+def inject_component(
+    src_path: str, local_component_defn_to_inject: Optional[Path]
+) -> Iterator[str]:
+    with tempfile.TemporaryDirectory() as tmpdir:
+        _setup_component_in_folder(src_path, tmpdir, local_component_defn_to_inject)
+        yield tmpdir
+
+
+@contextlib.contextmanager
+def create_code_location_from_components(
+    *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
+) -> Iterator[Path]:
+    """Scaffolds a code location with the given components in a temporary directory,
+    injecting the provided local component defn into each component's __init__.py.
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        code_location_dir = Path(tmpdir) / "my_location"
+        code_location_dir.mkdir()
+        with open(code_location_dir / "pyproject.toml", "w") as f:
+            f.write(generate_component_lib_pyproject_toml("my_location", is_code_location=True))
+
+        for src_path in src_paths:
+            component_name = src_path.split("/")[-1]
+
+            components_dir = code_location_dir / "my_location" / "components" / component_name
+            components_dir.mkdir(parents=True, exist_ok=True)
+
+            _setup_component_in_folder(
+                src_path=src_path,
+                dst_path=str(components_dir),
+                local_component_defn_to_inject=local_component_defn_to_inject,
+            )
+
+        yield code_location_dir

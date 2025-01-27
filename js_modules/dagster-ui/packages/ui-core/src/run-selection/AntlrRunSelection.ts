@@ -2,7 +2,7 @@ import {CharStreams, CommonTokenStream} from 'antlr4ts';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrRunSelectionVisitor} from './AntlrRunSelectionVisitor';
-import {AntlrInputErrorListener} from '../asset-selection/AntlrAssetSelection';
+import {AntlrInputErrorListener} from '../asset-selection/filterAssetSelectionByQuery';
 import {RunGraphQueryItem} from '../gantt/toGraphQueryItems';
 import {RunSelectionLexer} from './generated/RunSelectionLexer';
 import {RunSelectionParser} from './generated/RunSelectionParser';
@@ -47,7 +47,7 @@ export const parseRunSelectionQuery = (
 
 export const filterRunSelectionByQuery = weakMapMemoize(
   (all_runs: RunGraphQueryItem[], query: string): RunSelectionQueryResult => {
-    if (featureEnabled(FeatureFlag.flagRunSelectionSyntax)) {
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
       const result = parseRunSelectionQuery(all_runs, query);
       if (result instanceof Error) {
         // fall back to old behavior

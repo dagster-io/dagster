@@ -15,9 +15,9 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, compute]
+sidebar_custom_props: 
+  logo: images/integrations/docker.svg
 ---
-
-
 
 The `dagster-docker` integration library provides the `PipesDockerClient` resource, enabling you to launch Docker containers and execute external code directly from Dagster assets and ops. This integration allows you to pass parameters to Docker containers while Dagster receives real-time events, such as logs, asset checks, and asset materializations, from the initiated jobs. With minimal code changes required on the job side, this integration is both efficient and easy to implement.
 
@@ -29,7 +29,7 @@ pip install dagster-docker
 
 ### Example
 
-<CodeExample filePath="integrations/docker.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/docker.py" language="python" />
 
 ### Deploying to Docker?
 

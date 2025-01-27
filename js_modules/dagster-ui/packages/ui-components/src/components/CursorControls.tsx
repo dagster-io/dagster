@@ -4,6 +4,7 @@ import {Button} from './Button';
 import {Icon} from './Icon';
 
 export interface CursorPaginationProps {
+  cursor?: string;
   hasPrevCursor: boolean;
   hasNextCursor: boolean;
   popCursor: () => void;

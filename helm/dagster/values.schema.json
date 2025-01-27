@@ -61,6 +61,21 @@
                     "default": null,
                     "title": "Defaultazurecredential"
                 },
+                "accessKeyOrSasToken": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Accesskeyorsastoken"
+                },
                 "localDir": {
                     "anyOf": [
                         {
@@ -102,6 +117,18 @@
                     ],
                     "default": null,
                     "title": "Uploadinterval"
+                },
+                "showUrlOnly": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Showurlonly"
                 }
             },
             "required": [
@@ -449,6 +476,24 @@
                     "if": {
                         "properties": {
                             "type": {
+                                "const": "LocalComputeLogManager"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "localComputeLogManager"
+                                ]
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
                                 "const": "CustomComputeLogManager"
                             }
                         }
@@ -515,6 +560,17 @@
                     ],
                     "default": null
                 },
+                "localComputeLogManager": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/LocalComputeLogManager"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
+                },
                 "customComputeLogManager": {
                     "anyOf": [
                         {
@@ -536,6 +592,7 @@
                 "AzureBlobComputeLogManager",
                 "GCSComputeLogManager",
                 "S3ComputeLogManager",
+                "LocalComputeLogManager",
                 "CustomComputeLogManager"
             ],
             "title": "ComputeLogManagerType",
@@ -748,6 +805,36 @@
                         }
                     ],
                     "default": null
+                },
+                "extraContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extracontainers"
+                },
+                "extraPrependedInitContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/InitContainer"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extraprependedinitcontainers"
                 }
             },
             "required": [
@@ -806,6 +893,13 @@
                 }
             },
             "title": "DaemonSchedulerConfig",
+            "type": "object"
+        },
+        "DeploymentStrategy": {
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.apps.v1.DeploymentStrategy",
+            "additionalProperties": true,
+            "properties": {},
+            "title": "DeploymentStrategy",
             "type": "object"
         },
         "EnvVar": {
@@ -1219,6 +1313,13 @@
             "title": "IngressTLSConfiguration",
             "type": "object"
         },
+        "InitContainer": {
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container",
+            "additionalProperties": true,
+            "properties": {},
+            "title": "InitContainer",
+            "type": "object"
+        },
         "K8sRunLauncherConfig": {
             "additionalProperties": false,
             "properties": {
@@ -1398,15 +1499,77 @@
             "title": "LivenessProbe",
             "type": "object"
         },
+        "LocalComputeLogManager": {
+            "properties": {
+                "baseDir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "$ref": "#/$defs/Source"
+                        }
+                    ],
+                    "title": "Basedir"
+                },
+                "pollingTimeout": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Pollingtimeout"
+                }
+            },
+            "required": [
+                "baseDir"
+            ],
+            "title": "LocalComputeLogManager",
+            "type": "object"
+        },
         "Migrate": {
             "properties": {
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
+                },
+                "extraContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Extracontainers"
+                },
+                "initContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "title": "Initcontainers"
                 }
             },
             "required": [
-                "enabled"
+                "enabled",
+                "extraContainers",
+                "initContainers"
             ],
             "title": "Migrate",
             "type": "object"
@@ -2992,6 +3155,17 @@
                     ],
                     "default": null,
                     "title": "Sidecarcontainers"
+                },
+                "deploymentStrategy": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/DeploymentStrategy"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null
                 }
             },
             "required": [
@@ -3292,6 +3466,36 @@
                         }
                     ],
                     "default": null
+                },
+                "extraContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/Container"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extracontainers"
+                },
+                "extraPrependedInitContainers": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/InitContainer"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Extraprependedinitcontainers"
                 }
             },
             "required": [

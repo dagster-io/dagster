@@ -367,7 +367,8 @@ Alternatively, to override the asset key generation for all dbt nodes in your db
 from pathlib import Path
 from dagster import AssetKey, AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from typing import Any, Mapping
+from typing import Any
+from collections.abc import Mapping
 
 my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -415,7 +416,8 @@ Alternatively, to override the Dagster group name generation for all dbt nodes i
 from pathlib import Path
 from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from typing import Any, Mapping, Optional
+from typing import Any, Optional
+from collections.abc import Mapping
 
 my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -467,7 +469,8 @@ Alternatively, to override the Dagster generation of owners for all dbt nodes in
 from pathlib import Path
 from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Optional
+from collections.abc import Mapping, Sequence
 
 my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -496,7 +499,8 @@ import textwrap
 from pathlib import Path
 from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from typing import Any, Mapping
+from typing import Any
+from collections.abc import Mapping
 
 my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -522,7 +526,8 @@ To override the Dagster definition metadata for all dbt nodes in your dbt projec
 from pathlib import Path
 from dagster import MetadataValue, AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from typing import Any, Mapping
+from typing import Any
+from collections.abc import Mapping
 
 my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -601,7 +606,8 @@ To override the Dagster tags for all dbt nodes in your dbt project, you can crea
 from pathlib import Path
 from dagster import AssetExecutionContext
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from typing import Any, Mapping
+from typing import Any
+from collections.abc import Mapping
 
 my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -632,7 +638,8 @@ To override the <PyObject object="AutomationCondition" /> generated for each dbt
 from pathlib import Path
 from dagster import AssetExecutionContext, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-from typing import Any, Mapping, Optional
+from typing import Any, Optional
+from collections.abc import Mapping
 
 my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 

@@ -1,7 +1,8 @@
 import os
 import pickle
 import re
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 import pytest
 from dagster import (

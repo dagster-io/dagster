@@ -1,4 +1,5 @@
-from typing import AbstractSet, Any, Dict, Literal, Mapping, Optional
+from collections.abc import Mapping
+from typing import AbstractSet, Any, Literal, Optional  # noqa: UP035
 
 from dagster import AssetExecutionContext
 from databricks.sdk.service.jobs import SubmitTask
@@ -16,7 +17,7 @@ class DatabricksTaskBlueprint(BlueprintAssetsDefinition):
     """
 
     type: Literal["dagster_databricks/task"] = "dagster_databricks/task"
-    task: Dict[str, Any] = Field(
+    task: dict[str, Any] = Field(
         ...,
         description=(
             "Specification of the databricks task to run. Environment variables used by "

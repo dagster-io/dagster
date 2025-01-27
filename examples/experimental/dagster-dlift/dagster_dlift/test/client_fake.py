@@ -1,4 +1,5 @@
-from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional
+from collections.abc import Mapping
+from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
 from dagster_dlift.client import UnscopedDbtCloudClient
 from dagster_dlift.translator import DbtCloudContentType
@@ -56,7 +57,7 @@ def build_definition_response(inner: Mapping[str, Any]) -> Mapping[str, Any]:
 
 
 def build_edge(unique_id: str, parents: Optional[AbstractSet[str]] = None) -> Mapping[str, Any]:
-    node_dict: Dict[str, Any] = {"uniqueId": unique_id}
+    node_dict: dict[str, Any] = {"uniqueId": unique_id}
     if parents is not None:
         node_dict["parents"] = [{"uniqueId": parent, "resourceType": "model"} for parent in parents]
     return {"node": node_dict}

@@ -1,6 +1,7 @@
 import asyncio
+from collections.abc import Hashable, Mapping
 from functools import wraps
-from typing import Any, Callable, Dict, Hashable, Mapping, Tuple, TypeVar, cast
+from typing import Any, Callable, TypeVar, cast
 
 from typing_extensions import Concatenate, ParamSpec
 
@@ -64,7 +65,7 @@ def cached_method(method: Callable[Concatenate[S, P], T]) -> Callable[Concatenat
     # Cache these once self is first observed to avoid expensive work on each access
     arg_names = None
 
-    def get_canonical_kwargs(*args: P.args, **kwargs: P.kwargs) -> Dict[str, Any]:
+    def get_canonical_kwargs(*args: P.args, **kwargs: P.kwargs) -> dict[str, Any]:
         canonical_kwargs = None
         if args:
             # Entering this block introduces about 15% overhead per call
@@ -148,7 +149,7 @@ class _HashedSeq(list):
 
     __slots__ = "hashvalue"
 
-    def __init__(self, tup: Tuple[object, ...]):
+    def __init__(self, tup: tuple[object, ...]):
         self[:] = tup
         self.hashvalue = hash(tup)
 

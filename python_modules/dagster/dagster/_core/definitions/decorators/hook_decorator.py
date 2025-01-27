@@ -1,11 +1,11 @@
+from collections.abc import Sequence
 from functools import update_wrapper
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
     Optional,
-    Sequence,
     Union,
     cast,
     overload,

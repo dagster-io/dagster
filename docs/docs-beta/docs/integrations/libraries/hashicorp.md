@@ -16,9 +16,10 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported]
+sidebar_custom_props: 
+  logo: images/integrations/hashicorp.svg
+  community: true
 ---
-
-
 
 Package for integrating HashiCorp Vault into Dagster so that you can securely manage tokens and passwords.
 
@@ -30,7 +31,7 @@ pip install dagster-hashicorp
 
 ### Example
 
-<CodeExample filePath="integrations/hashicorp.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/hashicorp.py" language="python" />
 
 ### About HashiCorp Vault
 

@@ -1,8 +1,9 @@
 import datetime
 import json
 import os
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from typing import Any, Optional
 
 import dagster._seven as seven
 from dagster import (

@@ -1,6 +1,7 @@
 import itertools
 import re
-from typing import TYPE_CHECKING, Callable, Sequence, Type, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Callable, Type, Union  # noqa: F401, UP035
 
 import dagster._check as check
 import pandas as pd
@@ -62,7 +63,7 @@ if TYPE_CHECKING:
     import pandera.polars  # noqa: TC004
 
 DagsterPanderaSchema: TypeAlias = Union[pa.DataFrameSchema, "pandera.polars.DataFrameSchema"]
-DagsterPanderaSchemaModel: TypeAlias = Type[
+DagsterPanderaSchemaModel: TypeAlias = type[
     Union[pa.DataFrameModel, "pandera.polars.DataFrameModel"]
 ]
 DagsterPanderaColumn: TypeAlias = Union[pa.Column, "pandera.polars.Column"]

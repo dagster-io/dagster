@@ -1,9 +1,10 @@
 import json
 import os
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from time import sleep
-from typing import AbstractSet, Any, Mapping, Optional, Union
+from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
 
 from typing_extensions import TypedDict
 
@@ -151,7 +152,7 @@ class _Database:
         return f"{self.storage_path}/{key}.json"
 
     def get(self, key: str) -> _DatabaseRecord:
-        with open(self.asset_path(key), "r") as fd:
+        with open(self.asset_path(key)) as fd:
             return _DatabaseRecord(**json.load(fd))
 
     def has(self, key: str) -> bool:

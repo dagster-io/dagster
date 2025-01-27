@@ -1,7 +1,8 @@
 import copy
 import os
 import subprocess
-from typing import Mapping, Optional
+from collections.abc import Mapping
+from typing import Optional
 
 import click
 import dagster._check as check

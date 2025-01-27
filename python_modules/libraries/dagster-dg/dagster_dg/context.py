@@ -1,98 +1,71 @@
-import hashlib
-import json
-import os
 import subprocess
-from dataclasses import dataclass
+from collections.abc import Iterable
+from dataclasses import replace
+from functools import cached_property
 from pathlib import Path
-from typing import Final, Iterable, Mapping, Optional, Tuple
+from typing import Final, Optional
 
-import tomli
 from typing_extensions import Self
 
-from dagster_dg.cache import CachableDataType, DgCache
-from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
-from dagster_dg.config import DgConfig
+from dagster_dg.cache import CachableDataType, DgCache, hash_paths
+from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.config import DgConfig, DgPartialConfig, load_dg_config_file
 from dagster_dg.error import DgError
 from dagster_dg.utils import (
-    execute_code_location_command,
+    ensure_loadable_path,
+    get_path_for_package,
     get_uv_command_env,
-    hash_directory_metadata,
-    hash_file_metadata,
+    is_package_installed,
     pushd,
 )
-
-
-def is_inside_deployment_directory(path: Path) -> bool:
-    try:
-        _resolve_deployment_root_directory(path)
-        return True
-    except DgError:
-        return False
-
-
-def _resolve_deployment_root_directory(path: Path) -> Path:
-    current_path = path.absolute()
-    while not _is_deployment_root_directory(current_path):
-        current_path = current_path.parent
-        if str(current_path) == "/":
-            raise DgError("Cannot find deployment root")
-    return current_path
-
-
-def _is_deployment_root_directory(path: Path) -> bool:
-    return (path / "code_locations").exists()
-
-
-def is_inside_code_location_directory(path: Path) -> bool:
-    try:
-        resolve_code_location_root_directory(path)
-        return True
-    except DgError:
-        return False
-
-
-def resolve_code_location_root_directory(path: Path) -> Path:
-    current_path = path.absolute()
-    while not _is_code_location_root_directory(current_path):
-        current_path = current_path.parent
-        if str(current_path) == "/":
-            raise DgError("Cannot find code location root")
-    return current_path
-
-
-def _is_code_location_root_directory(path: Path) -> bool:
-    if (path / "pyproject.toml").exists():
-        with open(path / "pyproject.toml") as f:
-            toml = tomli.loads(f.read())
-            return bool(toml.get("tool", {}).get("dagster"))
-    return False
-
 
 # Deployment
 _DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code_locations"
 
 # Code location
-_CODE_LOCATION_COMPONENTS_LIB_DIR: Final = "lib"
-_CODE_LOCATION_COMPONENT_INSTANCES_DIR: Final = "components"
+_DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE: Final = "lib"
+_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE: Final = "components"
 
 
-@dataclass
 class DgContext:
+    root_path: Path
     config: DgConfig
     _cache: Optional[DgCache] = None
 
-    @classmethod
-    def from_cli_global_options(cls, global_options: Mapping[str, object]) -> Self:
-        return cls.from_config(config=DgConfig.from_cli_global_options(global_options))
+    def __init__(self, config: DgConfig, root_path: Path):
+        self.config = config
+        self.root_path = root_path
+        if config.disable_cache or not self.use_dg_managed_environment:
+            self._cache = None
+        else:
+            self._cache = DgCache.from_config(config)
+        self.component_registry = RemoteComponentRegistry.empty()
 
     @classmethod
-    def from_config(cls, config: DgConfig) -> Self:
-        cache = None if config.disable_cache else DgCache.from_config(config)
-        return cls(config=config, _cache=cache)
+    def from_config_file_discovery_and_cli_config(
+        cls, path: Path, cli_config: DgPartialConfig
+    ) -> Self:
+        config_path = DgConfig.discover_config_file(path)
+        root_path = config_path.parent if config_path else path
+        base_config = DgConfig.from_config_file(config_path) if config_path else DgConfig.default()
+        config = replace(base_config, **cli_config)
+        return cls(config=config, root_path=root_path)
 
     @classmethod
     def default(cls) -> Self:
-        return cls.from_config(DgConfig.default())
+        return cls(DgConfig.default(), Path.cwd())
+
+    # Use to derive a new context for a code location while preserving existing settings
+    def with_root_path(self, root_path: Path) -> Self:
+        config_path = root_path / "pyproject.toml"
+        if not root_path / "pyproject.toml":
+            raise DgError(f"Cannot find `pyproject.toml` at {root_path}")
+        new_config = replace(self.config, **load_dg_config_file(config_path))
+        return self.__class__(config=new_config, root_path=root_path)
+
+    # ########################
+    # ##### CACHE METHODS
+    # ########################
 
     @property
     def cache(self) -> DgCache:
@@ -104,148 +77,159 @@ class DgContext:
     def has_cache(self) -> bool:
         return self._cache is not None
 
+    def get_cache_key(self, data_type: CachableDataType) -> tuple[str, str, str]:
+        path_parts = [str(part) for part in self.root_path.parts if part != "/"]
+        paths_to_hash = [
+            self.root_path / "uv.lock",
+            *([self.components_lib_path] if self.is_component_library else []),
+        ]
+        env_hash = hash_paths(paths_to_hash)
+        return ("_".join(path_parts), env_hash, data_type)
 
-@dataclass
-class DeploymentDirectoryContext:
-    root_path: Path
-    dg_context: DgContext
+    def get_cache_key_for_local_components(self, path: Path) -> tuple[str, str, str]:
+        env_hash = hash_paths([path], includes=["*.py"])
+        path_parts = [str(part) for part in path.parts if part != "/"]
+        return ("_".join(path_parts), env_hash, "local_component_registry")
 
-    @classmethod
-    def from_path(cls, path: Path, dg_context: DgContext) -> Self:
-        return cls(root_path=_resolve_deployment_root_directory(path), dg_context=dg_context)
+    # ########################
+    # ##### DEPLOYMENT METHODS
+    # ########################
+
+    @property
+    def is_deployment(self) -> bool:
+        return self.config.is_deployment
+
+    @cached_property
+    def deployment_root_path(self) -> Path:
+        if not self.is_deployment:
+            raise DgError("`deployment_root_path` is only available in a deployment context")
+        deployment_config_path = DgConfig.discover_config_file(
+            self.root_path, lambda x: x.get("is_deployment", False)
+        )
+        if not deployment_config_path:
+            raise DgError("Cannot find deployment configuration file")
+        return deployment_config_path.parent
+
+    def has_code_location(self, name: str) -> bool:
+        if not self.is_deployment:
+            raise DgError(
+                "`deployment_has_code_location` is only available in a deployment context"
+            )
+        return (self.deployment_root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR / name).is_dir()
 
     @property
     def code_location_root_path(self) -> Path:
-        return self.root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR
-
-    def has_code_location(self, name: str) -> bool:
-        return (self.root_path / "code_locations" / name).is_dir()
+        if not self.is_deployment:
+            raise DgError(
+                "`deployment_code_location_root_path` is only available in a deployment context"
+            )
+        return self.deployment_root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR
 
     def get_code_location_names(self) -> Iterable[str]:
-        return [loc.name for loc in sorted((self.root_path / "code_locations").iterdir())]
+        return [loc.name for loc in sorted(self.code_location_root_path.iterdir())]
 
+    # ########################
+    # ##### GENERAL PYTHON PACKAGE METHODS
+    # ########################
 
-def get_code_location_env_hash(code_location_root_path: Path) -> str:
-    uv_lock_path = code_location_root_path / "uv.lock"
-    if not uv_lock_path.exists():
-        raise DgError(f"uv.lock file not found in {code_location_root_path}")
-    local_components_path = (
-        code_location_root_path / code_location_root_path.name / _CODE_LOCATION_COMPONENTS_LIB_DIR
-    )
-    if not local_components_path.exists():
-        raise DgError(f"Local components directory not found in {code_location_root_path}")
-    hasher = hashlib.md5()
-    hash_file_metadata(hasher, uv_lock_path)
-    hash_directory_metadata(hasher, local_components_path)
-    return hasher.hexdigest()
+    @property
+    def root_package_name(self) -> str:
+        return self.config.root_package or self.root_path.name.replace("-", "_")
 
+    # ########################
+    # ##### CODE LOCATION METHODS
+    # ########################
 
-def make_cache_key(code_location_path: Path, data_type: CachableDataType) -> Tuple[str, str, str]:
-    path_parts = [str(part) for part in code_location_path.parts if part != "/"]
-    env_hash = get_code_location_env_hash(code_location_path)
-    return ("_".join(path_parts), env_hash, data_type)
+    @property
+    def is_code_location(self) -> bool:
+        return self.config.is_code_location
 
-
-def ensure_uv_lock(root_path: Path) -> None:
-    with pushd(root_path):
-        if not (root_path / "uv.lock").exists():
-            subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
-
-
-def fetch_component_registry(path: Path, dg_context: DgContext) -> RemoteComponentRegistry:
-    root_path = resolve_code_location_root_directory(path)
-
-    if dg_context.has_cache:
-        cache_key = make_cache_key(root_path, "component_registry_data")
-
-    raw_registry_data = dg_context.cache.get(cache_key) if dg_context.has_cache else None
-    if not raw_registry_data:
-        raw_registry_data = execute_code_location_command(
-            root_path, ["list", "component-types"], dg_context
-        )
-        if dg_context.has_cache:
-            dg_context.cache.set(cache_key, raw_registry_data)
-
-    registry_data = json.loads(raw_registry_data)
-    return RemoteComponentRegistry.from_dict(registry_data)
-
-
-@dataclass
-class CodeLocationDirectoryContext:
-    """Class encapsulating contextual information about a components code location directory.
-
-    Args:
-        root_path (Path): The absolute path to the root of the code location directory.
-        name (str): The name of the code location python package.
-        component_registry (ComponentRegistry): The component registry for the code location.
-        deployment_context (Optional[DeploymentDirectoryContext]): The deployment context containing
-            the code location directory. Defaults to None.
-        dg_context (DgContext): The global application context.
-    """
-
-    root_path: Path
-    name: str
-    component_registry: "RemoteComponentRegistry"
-    deployment_context: Optional[DeploymentDirectoryContext]
-    dg_context: DgContext
-
-    @classmethod
-    def from_path(cls, path: Path, dg_context: DgContext) -> Self:
-        root_path = resolve_code_location_root_directory(path)
-        ensure_uv_lock(root_path)
-        component_registry = fetch_component_registry(path, dg_context)
-        return cls(
-            root_path=root_path,
-            name=path.name,
-            component_registry=component_registry,
-            deployment_context=DeploymentDirectoryContext.from_path(path, dg_context)
-            if is_inside_deployment_directory(path)
-            else None,
-            dg_context=dg_context,
+    @cached_property
+    def components_package_name(self) -> str:
+        if not self.is_code_location:
+            raise DgError("`components_package_name` is only available in a code location context")
+        return (
+            self.config.component_package
+            or f"{self.root_package_name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE}"
         )
 
-    @property
-    def config(self) -> DgConfig:
-        return self.dg_context.config
+    @cached_property
+    def components_path(self) -> Path:
+        if not self.is_code_location:
+            raise DgError("`components_path` is only available in a code location context")
+        with ensure_loadable_path(self.root_path):
+            if not is_package_installed(self.components_package_name):
+                raise DgError(
+                    f"Components package `{self.components_package_name}` is not installed in the current environment."
+                )
+            return Path(get_path_for_package(self.components_package_name))
+
+    def get_component_names(self) -> Iterable[str]:
+        return [str(instance_path.name) for instance_path in self.components_path.iterdir()]
+
+    def has_component(self, name: str) -> bool:
+        return (self.components_path / name).is_dir()
+
+    # ########################
+    # ##### COMPONENT LIBRARY METHODS
+    # ########################
 
     @property
-    def local_component_types_root_path(self) -> str:
-        return os.path.join(self.root_path, self.name, _CODE_LOCATION_COMPONENTS_LIB_DIR)
+    def is_component_library(self) -> bool:
+        return self.config.is_component_lib
 
-    @property
-    def local_component_types_root_module_name(self) -> str:
-        return f"{self.name}.{_CODE_LOCATION_COMPONENTS_LIB_DIR}"
+    @cached_property
+    def components_lib_package_name(self) -> str:
+        if not self.is_component_library:
+            raise DgError(
+                "`components_lib_package_name` is only available in a component library context"
+            )
+        return (
+            self.config.component_lib_package
+            or f"{self.root_package_name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE}"
+        )
 
-    def iter_component_types(self) -> Iterable[Tuple[str, RemoteComponentType]]:
-        for key in sorted(self.component_registry.keys()):
-            yield key, self.component_registry.get(key)
+    @cached_property
+    def components_lib_path(self) -> Path:
+        if not self.is_component_library:
+            raise DgError("`components_lib_path` is only available in a component library context")
+        with ensure_loadable_path(self.root_path):
+            if not is_package_installed(self.components_lib_package_name):
+                raise DgError(
+                    f"Components lib package `{self.components_lib_package_name}` is not installed in the current environment."
+                )
+            return Path(get_path_for_package(self.components_lib_package_name))
 
-    def has_component_type(self, name: str) -> bool:
-        return self.component_registry.has(name)
+    # ########################
+    # ##### HELPERS
+    # ########################
 
-    def get_component_type(self, name: str) -> RemoteComponentType:
-        if not self.has_component_type(name):
-            raise DgError(f"No component type named {name}")
-        return self.component_registry.get(name)
-
-    @property
-    def component_instances_root_path(self) -> Path:
-        return self.root_path / self.name / _CODE_LOCATION_COMPONENT_INSTANCES_DIR
-
-    @property
-    def component_instances_root_module_name(self) -> str:
-        return f"{self.name}.{_CODE_LOCATION_COMPONENT_INSTANCES_DIR}"
-
-    def get_component_instance_names(self) -> Iterable[str]:
-        return [
-            str(instance_path.name)
-            for instance_path in self.component_instances_root_path.iterdir()
+    def external_components_command(self, command: list[str]) -> str:
+        if self.use_dg_managed_environment:
+            code_location_command_prefix = ["uv", "run", "dagster-components"]
+            env = get_uv_command_env()
+        else:
+            code_location_command_prefix = ["dagster-components"]
+            env = None
+        full_command = [
+            *code_location_command_prefix,
+            *(
+                ["--builtin-component-lib", self.config.builtin_component_lib]
+                if self.config.builtin_component_lib
+                else []
+            ),
+            *command,
         ]
+        with pushd(self.root_path):
+            result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=True)
+            return result.stdout.decode("utf-8")
 
-    def get_component_instance_path(self, name: str) -> Path:
-        if not self.has_component_instance(name):
-            raise DgError(f"No component instance named {name}")
-        return self.component_instances_root_path / name
+    def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
+        path = path or self.root_path
+        with pushd(path):
+            if not (path / "uv.lock").exists():
+                subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
 
-    def has_component_instance(self, name: str) -> bool:
-        return (self.component_instances_root_path / name).is_dir()
+    @property
+    def use_dg_managed_environment(self) -> bool:
+        return self.config.use_dg_managed_environment and self.is_code_location

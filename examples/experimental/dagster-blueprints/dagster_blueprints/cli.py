@@ -4,9 +4,10 @@ import shutil
 import subprocess
 import sys
 import zipfile
+from collections.abc import Mapping, Sequence
 from importlib import import_module
 from pathlib import Path
-from typing import List, Mapping, Optional, Sequence
+from typing import Optional
 
 import click
 from dagster import _check as check
@@ -31,7 +32,7 @@ def infer_vscode_path(base_path: Path) -> Optional[str]:
     return None
 
 
-def get_python_modules_from_pyproject(pyproject_path: str) -> List[str]:
+def get_python_modules_from_pyproject(pyproject_path: str) -> list[str]:
     """Utility to get the Python modules from a `pyproject.toml` file."""
     origins = PyProjectFileTarget(pyproject_path).create_origins()
 
@@ -179,7 +180,7 @@ def has_vscode_cli_command() -> bool:
     return bool(shutil.which("code"))
 
 
-def run_vscode_cli_command(args: List[str]) -> bytes:
+def run_vscode_cli_command(args: list[str]) -> bytes:
     return subprocess.check_output(["code"] + args)
 
 

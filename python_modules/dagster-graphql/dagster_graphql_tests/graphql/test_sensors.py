@@ -16,6 +16,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.test_utils import SingleThreadPoolExecutor, freeze_time, wait_for_futures
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
@@ -478,6 +479,9 @@ query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickSt
           tickId
           status
           timestamp
+          runs {
+            id
+          }
         }
       }
     }
@@ -1409,6 +1413,12 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     with freeze_time(now):
         _create_tick(graphql_context)  # create a success tick
 
+    success_tick_id = graphql_context.instance.get_ticks(
+        origin_id=sensor.get_remote_origin().get_id(),
+        selector_id=sensor.get_remote_origin().get_selector().get_id(),
+        limit=1,
+    )[0].tick_id
+
     # create a started tick
     started_tick_id, _ = graphql_context.instance.create_tick(
         TickData(
@@ -1518,6 +1528,34 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
     )
     assert selected_sensor
     assert len(selected_sensor["sensorState"]["ticks"]) == 2
+
+    backfill_id = make_new_backfill_id()
+    graphql_context.instance.create_tick(
+        TickData(
+            instigator_origin_id=sensor.get_remote_origin().get_id(),
+            instigator_name=sensor_name,
+            instigator_type=InstigatorType.SENSOR,
+            status=TickStatus.SUCCESS,
+            timestamp=now.timestamp(),
+            selector_id=sensor.selector_id,
+            origin_run_ids=[backfill_id],
+            run_ids=[backfill_id],
+        )
+    )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICKS_QUERY,
+        variables={
+            "sensorSelector": sensor_selector,
+            "statuses": ["SUCCESS"],
+            "tickId": str(success_tick_id),
+        },
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 2
+    assert any(
+        len(tick["runs"]) > 0 for tick in result.data["sensorOrError"]["sensorState"]["ticks"]
+    )
 
 
 def _get_unloadable_sensor_origin(name):
@@ -1653,9 +1691,9 @@ def test_asset_selection(graphql_context):
     assert result.data
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
 
-    assert (
-        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
-        == 'key:"fresh_diamond_bottom" or key:"asset_with_automation_condition" or key:"asset_with_custom_automation_condition"'
+    assert result.data["sensorOrError"]["assetSelection"]["assetSelectionString"] == (
+        '(key:"fresh_diamond_bottom" or key:"asset_with_automation_condition"'
+        ' or key:"asset_with_custom_automation_condition") and code_location:"test_location"'
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [
         {"path": ["asset_with_automation_condition"]},
@@ -1700,7 +1738,8 @@ def test_jobless_asset_selection(graphql_context):
     assert result.data
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
     assert (
-        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"] == 'key:"asset_one"'
+        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
+        == 'key:"asset_one" and code_location:"test_location"'
     )
     assert result.data["sensorOrError"]["assetSelection"]["assetKeys"] == [{"path": ["asset_one"]}]
     assert result.data["sensorOrError"]["assetSelection"]["assets"] == [
@@ -1730,7 +1769,7 @@ def test_invalid_sensor_asset_selection(graphql_context):
     assert result.data["sensorOrError"]["__typename"] == "Sensor"
     assert (
         result.data["sensorOrError"]["assetSelection"]["assetSelectionString"]
-        == 'key:"does_not_exist"'
+        == 'key:"does_not_exist" and code_location:"test_location"'
     )
     assert (
         result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["__typename"]

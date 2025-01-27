@@ -1,6 +1,7 @@
 import os
 import sys
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 import pytest
 from dagster._core.instance import DagsterInstance

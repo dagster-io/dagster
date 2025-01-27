@@ -1,8 +1,9 @@
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Generator, Optional, Union
+from typing import Optional, Union
 from weakref import WeakKeyDictionary
 
 from dagster import (

@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import {AssetAlertsSection} from 'shared/assets/AssetAlertsSection.oss';
 
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
@@ -261,6 +262,7 @@ export const AssetNodeOverview = ({
               <ComputeDetailsSection repoAddress={repoAddress} assetNode={assetNode} />
             </LargeCollapsibleSection>
           ) : null}
+          <AssetAlertsSection repoAddress={repoAddress} assetNode={cachedOrLiveAssetNode} />
         </>
       }
     />

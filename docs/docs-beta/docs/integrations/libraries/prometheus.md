@@ -9,15 +9,14 @@ date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-prometheus
 docslink: https://prometheus.io/
 partnerlink:
-logo: /integrations/Prometheus.svg
 categories:
   - Monitoring
 enabledBy:
 enables:
 tags: [dagster-supported, monitoring]
+sidebar_custom_props:
+  logo: images/integrations/prometheus.svg
 ---
-
-
 
 This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
 
@@ -29,7 +28,7 @@ pip install dagster-prometheus
 
 ### Example
 
-<CodeExample filePath="integrations/prometheus.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/prometheus.py" language="python" />
 
 ### About Prometheus
 

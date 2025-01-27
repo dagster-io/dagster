@@ -16,13 +16,13 @@ def my_job():
     pass
 
 
-from typing import List
+from typing import List  # noqa: UP035
 
 from dagster import Config
 
 
 class ReadMaterializationConfig(Config):
-    asset_key: List[str]
+    asset_key: list[str]
 
 
 # start_asset_sensor_marker

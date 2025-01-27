@@ -273,7 +273,7 @@ def test_start_execution_save_output():
             assert result.exit_code == 0
 
             assert os.path.isfile(file_name)
-            with open(file_name, "r", encoding="utf8") as f:
+            with open(file_name, encoding="utf8") as f:
                 lines = f.readlines()
                 result_data = json.loads(lines[-1])
                 assert (

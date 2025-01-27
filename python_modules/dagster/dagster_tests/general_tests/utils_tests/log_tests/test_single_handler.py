@@ -9,7 +9,7 @@ from dagster._utils.log import construct_single_handler_logger
 class LogTestHandler(logging.Handler):
     def __init__(self, records):
         self.records = records
-        super(LogTestHandler, self).__init__()
+        super().__init__()
 
     def emit(self, record):
         self.records.append(record)

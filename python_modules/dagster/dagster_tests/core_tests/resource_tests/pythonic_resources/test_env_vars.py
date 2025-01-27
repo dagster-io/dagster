@@ -1,6 +1,6 @@
 import enum
 import os
-from typing import List, Mapping
+from collections.abc import Mapping
 
 import pytest
 from dagster import Config, ConfigurableResource, Definitions, EnvVar, asset
@@ -47,7 +47,7 @@ def test_env_var_data_structure() -> None:
     ):
 
         class ResourceWithString(ConfigurableResource):
-            my_list: List[str]
+            my_list: list[str]
             my_dict: Mapping[str, str]
 
         executed = {}

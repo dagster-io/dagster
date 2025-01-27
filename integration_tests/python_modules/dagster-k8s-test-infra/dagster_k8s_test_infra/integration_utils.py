@@ -3,7 +3,8 @@ import json
 import os
 import random
 import subprocess
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import requests
 from dagster._utils.merger import merge_dicts

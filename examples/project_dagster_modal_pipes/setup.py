@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "dagster",
         "dagster-aws",
-        "dagster-contrib-modal>=0.0.2",
+        "dagster-modal>=0.0.2",
         "dagster-openai",
         "feedparser",
         "ffmpeg-python",

@@ -1,4 +1,5 @@
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
 from dagster_components import Component, ComponentLoadContext, component_type
@@ -19,10 +20,8 @@ class CustomScopeParams(BaseModel):
 
 @component_type(name="custom_scope_component")
 class HasCustomScope(Component):
-    params_schema = CustomScopeParams
-
     @classmethod
-    def get_rendering_scope(cls) -> Mapping[str, Any]:
+    def get_additional_scope(cls) -> Mapping[str, Any]:
         return {
             "custom_str": "xyz",
             "custom_dict": {"a": "b"},
@@ -34,9 +33,12 @@ class HasCustomScope(Component):
         self.attributes = attributes
 
     @classmethod
-    def load(cls, context: ComponentLoadContext):
-        loaded_params = context.load_params(cls.params_schema)
-        return cls(attributes=loaded_params.attributes)
+    def get_schema(cls):
+        return CustomScopeParams
+
+    @classmethod
+    def load(cls, params: CustomScopeParams, context: ComponentLoadContext):
+        return cls(attributes=params.attributes)
 
     def build_defs(self, context: ComponentLoadContext):
         return Definitions(assets=[AssetSpec(key="key", **self.attributes)])

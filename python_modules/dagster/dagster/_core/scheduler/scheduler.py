@@ -1,6 +1,7 @@
 import abc
 import os
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, NamedTuple, Optional
 
 from typing_extensions import Self
 
@@ -47,7 +48,7 @@ class SchedulerDebugInfo(
         scheduler_info: str,
         schedule_storage: Sequence[str],
     ):
-        return super(SchedulerDebugInfo, cls).__new__(
+        return super().__new__(
             cls,
             errors=check.sequence_param(errors, "errors", of_type=str),
             scheduler_config_info=check.str_param(scheduler_config_info, "scheduler_config_info"),

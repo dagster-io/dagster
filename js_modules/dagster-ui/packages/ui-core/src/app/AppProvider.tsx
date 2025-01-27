@@ -3,7 +3,6 @@ import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition, isMutationOperation} from '@apollo/client/utilities';
 import {CustomTooltipProvider} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useContext} from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
@@ -12,7 +11,6 @@ import {v4 as uuidv4} from 'uuid';
 import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
-import {DagsterPlusLaunchPromotion} from './DagsterPlusLaunchPromotion';
 import {GlobalStyleProvider} from './GlobalStyleProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {createOperationQueryStringApolloLink} from './OperationQueryStringApolloLink';
@@ -131,7 +129,7 @@ export const AppProvider = (props: AppProviderProps) => {
         return wait;
       },
     });
-  }, []);
+  }, [idempotentMutations]);
 
   const apolloClient = React.useMemo(() => {
     // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
@@ -195,10 +193,7 @@ export const AppProvider = (props: AppProviderProps) => {
                           <CustomConfirmationProvider>
                             <AnalyticsContext.Provider value={analytics}>
                               <InstancePageContext.Provider value={instancePageValue}>
-                                <LayoutProvider>
-                                  <DagsterPlusLaunchPromotion />
-                                  {props.children}
-                                </LayoutProvider>
+                                <LayoutProvider>{props.children}</LayoutProvider>
                               </InstancePageContext.Provider>
                             </AnalyticsContext.Provider>
                           </CustomConfirmationProvider>
@@ -217,9 +212,4 @@ export const AppProvider = (props: AppProviderProps) => {
       </WebSocketProvider>
     </AppContext.Provider>
   );
-};
-
-export const usePrefixedCacheKey = (key: string) => {
-  const {localCacheIdPrefix} = useContext(AppContext);
-  return `${localCacheIdPrefix}/${key}`;
 };

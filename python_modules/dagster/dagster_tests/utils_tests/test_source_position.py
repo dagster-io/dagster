@@ -40,13 +40,13 @@ foo:
     visit([], value_and_tree.source_position_tree)
     assert flattened == {
         "": "foo.yaml:2",
-        "foo": "foo.yaml:3",
+        "foo": "foo.yaml:2",
         "foo.bar": "foo.yaml:3",
         "foo.q": "foo.yaml:4",
         "foo.q.0": "foo.yaml:4",
         "foo.q.1": "foo.yaml:4",
         "foo.q.2": "foo.yaml:4",
-        "foo.baz": "foo.yaml:6",
+        "foo.baz": "foo.yaml:5",
         "foo.baz.0": "foo.yaml:6",
         "foo.baz.1": "foo.yaml:7",
         "foo.baz.1.b": "foo.yaml:7",
@@ -95,7 +95,7 @@ child:
     populate_source_position_and_key_paths(value, parsed.source_position_tree)
     assert value.child.dicts[3][4]._source_position_and_key_path is not None  # noqa: SLF001
     assert (
-        str(value.child.dicts[3][4]._source_position_and_key_path.source_position) == "<string>:10"  # noqa: SLF001
+        str(value.child.dicts[3][4]._source_position_and_key_path.source_position) == "<string>:9"  # noqa: SLF001
     )
     assert value.child.dicts[3][4]._source_position_and_key_path.key_path == [  # noqa: SLF001
         "child",

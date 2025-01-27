@@ -416,12 +416,15 @@ function addKeyIndexesToMaterializedRanges(
   }
   if (partitions.__typename === 'DefaultPartitionStatuses') {
     const dim = dimensions[0]!;
+    const materializedPartitionKeys = new Set(partitions.materializedPartitions);
+    const materializingPartitionKeys = new Set(partitions.materializingPartitions);
+    const failedPartitionKeys = new Set(partitions.failedPartitions);
     const spans = assembleIntoSpans(dim.partitionKeys, (key) =>
-      partitions.materializedPartitions.includes(key)
+      materializedPartitionKeys.has(key)
         ? AssetPartitionStatus.MATERIALIZED
-        : partitions.materializingPartitions.includes(key)
+        : materializingPartitionKeys.has(key)
           ? AssetPartitionStatus.MATERIALIZING
-          : partitions.failedPartitions.includes(key)
+          : failedPartitionKeys.has(key)
             ? AssetPartitionStatus.FAILED
             : AssetPartitionStatus.MISSING,
     );

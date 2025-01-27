@@ -1,5 +1,6 @@
 import os
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.events import DagsterEvent, EngineEventData

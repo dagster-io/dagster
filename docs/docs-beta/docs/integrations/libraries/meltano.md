@@ -9,16 +9,16 @@ date: 2023-03-25
 apireflink:
 docslink: https://github.com/quantile-development/dagster-meltano#readme
 partnerlink: https://meltano.com/
-logo: /integrations/Meltano.svg
 categories:
   - ETL
 communityIntegration: true
 enabledBy:
 enables:
 tags: [community-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/meltano.svg
+  community: true
 ---
-
-
 
 The `dagster-meltano` library allows you to run Meltano using Dagster. Design and configure ingestion jobs using the popular [Singer.io](https://singer.io) specification.
 
@@ -32,7 +32,7 @@ pip install dagster-meltano
 
 ### Example
 
-<CodeExample filePath="integrations/meltano.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/meltano.py" language="python" />
 
 ### About Meltano
 

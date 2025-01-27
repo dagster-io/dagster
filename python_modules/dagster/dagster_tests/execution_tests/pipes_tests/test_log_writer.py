@@ -1,5 +1,5 @@
 import shutil
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 from dagster import AssetExecutionContext, DagsterInstance, asset, materialize

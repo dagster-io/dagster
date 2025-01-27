@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, cast
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
 from dagster import (
     Array,
@@ -273,7 +274,7 @@ class EcsContainerContext(
         repository_credentials: Optional[str] = None,
         server_health_check: Optional[Mapping[str, Any]] = None,
     ):
-        return super(EcsContainerContext, cls).__new__(
+        return super().__new__(
             cls,
             secrets=check.opt_sequence_param(secrets, "secrets"),
             secrets_tags=check.opt_sequence_param(secrets_tags, "secrets_tags"),

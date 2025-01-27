@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 from dagster import AssetExecutionContext, AssetSpec, Definitions, multi_asset
 from dagster_k8s import PipesK8sClient

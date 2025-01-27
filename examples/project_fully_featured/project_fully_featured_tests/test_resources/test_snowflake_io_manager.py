@@ -1,7 +1,7 @@
 import os
 import uuid
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 import pytest
 from dagster import AssetKey, asset, build_input_context, build_output_context

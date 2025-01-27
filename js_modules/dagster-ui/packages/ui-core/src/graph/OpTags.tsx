@@ -95,7 +95,7 @@ import meta from './kindtag-images/tool-meta-color.svg';
 import metabase from './kindtag-images/tool-metabase-color.svg';
 import microsoft from './kindtag-images/tool-microsoft-color.svg';
 import minio from './kindtag-images/tool-minio-color.svg';
-import minstral from './kindtag-images/tool-minstral-color.svg';
+import mistral from './kindtag-images/tool-mistral-color.svg';
 import mlflow from './kindtag-images/tool-mlflow-color.svg';
 import modal from './kindtag-images/tool-modal-color.svg';
 import mongodb from './kindtag-images/tool-mongodb-color.svg';
@@ -169,6 +169,7 @@ import tableau from './kindtag-images/tool-tableau-color.svg';
 import teams from './kindtag-images/tool-teams-color.svg';
 import tecton from './kindtag-images/tool-tecton-color.svg';
 import tensorflow from './kindtag-images/tool-tensorflow-color.svg';
+import teradata from './kindtag-images/tool-teradata-color.svg';
 import thoughtspot from './kindtag-images/tool-thoughtspot-color.svg';
 import trino from './kindtag-images/tool-trino-color.svg';
 import twilio from './kindtag-images/tool-twilio-color.svg';
@@ -218,6 +219,7 @@ export type KnownTagType =
   | 'spark'
   | 'duckdb'
   | 'tensorflow'
+  | 'teradata'
   | 'pandas'
   | 'semanticmodel'
   | 'googlesheets'
@@ -321,7 +323,7 @@ export type KnownTagType =
   | 'llama'
   | 'meta'
   | 'microsoft'
-  | 'minstral'
+  | 'mistral'
   | 'montecarlo'
   | 'openmetadata'
   | 'oracle'
@@ -467,6 +469,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   tensorflow: {
     icon: tensorflow,
     content: 'TensorFlow',
+  },
+  teradata: {
+    icon: teradata,
+    content: 'Teradata',
   },
   pandas: {
     icon: pandas,
@@ -616,7 +622,7 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   },
   openai: {
     icon: openai,
-    content: 'Open AI',
+    content: 'OpenAI',
   },
   vercel: {
     icon: vercel,
@@ -877,9 +883,9 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: microsoft,
     content: 'Microsoft',
   },
-  minstral: {
-    icon: minstral,
-    content: 'Minstral',
+  mistral: {
+    icon: mistral,
+    content: 'Mistral',
   },
   montecarlo: {
     icon: montecarlo,

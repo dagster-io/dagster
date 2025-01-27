@@ -44,7 +44,7 @@ export const EvaluationStatusTag = ({
             hoverCloseDelay={50}
             content={
               <PartitionSubsetList
-                description="Requested assets"
+                description="Requested partitions"
                 assetKeyPath={assetKeyPath}
                 evaluationId={selectedEvaluation.evaluationId}
                 nodeUniqueId={rootUniqueId}

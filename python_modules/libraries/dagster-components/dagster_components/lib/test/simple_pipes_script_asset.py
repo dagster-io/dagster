@@ -1,23 +1,20 @@
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-import click
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, component_type
-from dagster_components.core.component import ComponentGenerateRequest
-from dagster_components.core.component_decl_builder import YamlComponentDecl
-from dagster_components.generate import generate_component_yaml
-
-if TYPE_CHECKING:
-    from dagster_components.core.component import ComponentDeclNode
+from dagster_components.core.component_scaffolder import (
+    ComponentScaffolder,
+    ComponentScaffoldRequest,
+)
+from dagster_components.scaffold import scaffold_component_yaml
 
 
 # Same schema used for file generation and defs generation
@@ -25,12 +22,19 @@ class SimplePipesScriptAssetParams(BaseModel):
     asset_key: str
     filename: str
 
-    @staticmethod
-    @click.command
-    @click.option("--asset-key", type=str)
-    @click.option("--filename", type=str)
-    def cli(asset_key: str, filename: str) -> "SimplePipesScriptAssetParams":
-        return SimplePipesScriptAssetParams(asset_key=asset_key, filename=filename)
+
+class SimplePipesScriptAssetScaffolder(ComponentScaffolder):
+    @classmethod
+    def get_schema(cls):
+        return SimplePipesScriptAssetParams
+
+    def scaffold(
+        self, request: ComponentScaffoldRequest, params: SimplePipesScriptAssetParams
+    ) -> None:
+        scaffold_component_yaml(request, params.model_dump())
+        Path(request.component_instance_root_path, params.filename).write_text(
+            _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
+        )
 
 
 _SCRIPT_TEMPLATE = """
@@ -50,29 +54,19 @@ class SimplePipesScriptAsset(Component):
     Because it is a pipes asset, no value is returned.
     """
 
-    generate_params_schema = SimplePipesScriptAssetParams
-    params_schema = SimplePipesScriptAssetParams
+    @classmethod
+    def get_scaffolder(cls) -> ComponentScaffolder:
+        return SimplePipesScriptAssetScaffolder()
 
     @classmethod
-    def generate_files(
-        cls, request: ComponentGenerateRequest, params: SimplePipesScriptAssetParams
-    ) -> None:
-        generate_component_yaml(request, params.model_dump())
-        Path(request.component_instance_root_path, params.filename).write_text(
-            _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
-        )
+    def get_schema(cls):
+        return SimplePipesScriptAssetParams
 
     @classmethod
-    def from_decl_node(
-        cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
-    ) -> Self:
-        assert isinstance(decl_node, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.params_schema).validate_python(
-            decl_node.component_file_model.params
-        )
+    def load(cls, params: SimplePipesScriptAssetParams, context: "ComponentLoadContext") -> Self:
         return cls(
-            asset_key=AssetKey.from_user_string(loaded_params.asset_key),
-            script_path=decl_node.path / loaded_params.filename,
+            asset_key=AssetKey.from_user_string(params.asset_key),
+            script_path=context.path / params.filename,
         )
 
     def __init__(self, asset_key: AssetKey, script_path: Path):

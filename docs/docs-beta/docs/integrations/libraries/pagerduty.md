@@ -9,15 +9,14 @@ date: 2024-08-30
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pagerduty
 docslink:
 partnerlink: https://www.pagerduty.com/
-logo: /integrations/PagerDuty.svg
 categories:
   - Alerting
 enabledBy:
 enables:
 tags: [dagster-supported, alerting]
+sidebar_custom_props:
+  logo: images/integrations/pagerduty.svg
 ---
-
-
 
 This library provides an integration between Dagster and PagerDuty to support creating alerts from your Dagster code.
 
@@ -29,7 +28,7 @@ pip install dagster_pagerduty
 
 ### Example
 
-<CodeExample filePath="integrations/pagerduty.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/pagerduty.py" language="python" />
 
 ### About PagerDuty
 

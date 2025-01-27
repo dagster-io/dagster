@@ -2,7 +2,7 @@
 title: Dagster+ Insights
 sidebar_label: 'Insights'
 description: 'Visiblity into historical usage, cost, and metadata.'
-sidebar_position: 50
+sidebar_position: 10
 ---
 
 Using Dagster+ Insights, you can gain visibility into historical usage and cost metrics such as Dagster+ run duration, credit usage, and failures. You can also define your own custom metrics, such as the number of rows processed by an asset.
@@ -27,7 +27,7 @@ To use Insights, you'll need a Dagster+ account.
 
 To access Insights, click **Insights** in the top navigation bar in the UI:
 
-![Viewing the Insights tab in the Dagster+ UI](/img/placeholder.svg)
+![Viewing the Insights tab in the Dagster+ UI](/images/dagster-plus/features/insights/insights-tab.png)
 
 The left navigation panel on this page contains a list of available metrics. For each metric, the daily, weekly, or monthly aggregated values are displayed in the graph.
 
@@ -51,11 +51,11 @@ How long historical Insights data is retained depends on your Dagster+ plan:
 | Dagster credits      | The Dagster credit cost associated with computing this object. Dagster credits are charged for every step that's run, and for every asset that's materialized. For more information, [refer to the pricing FAQ](https://dagster.io/pricing#faq). |
 | Compute duration     | The time spent computing steps. For jobs that run steps in parallel, the compute duration may be longer than the wall clock time it takes for the run to complete.                                                                               |
 | Materializations     | The number of asset materializations associated with computing this object.                                                                                                                                                                      |
-| Observations         | The number of [asset observations](/todo) associated with computing this object.                                                                                                                                                                 |
+| Observations         | The number of [asset observations](/guides/build/assets/metadata-and-tags/asset-observations) associated with computing this object.                                                                                                                                                                 |
 | Step failures        | The number of times steps failed when computing this object. **Note**: Steps that retry and succeed aren't included in this metric.                                                                                                              |
 | Step retries         | The number of times steps were retried when computing this object.                                                                                                                                                                               |
-| Asset check warnings | The number of [asset checks](/todo) that produced warnings.                                                                                                                                                                                      |
-| Asset check errors   | The number of [asset checks](/todo) that produced errors.                                                                                                                                                                                        |
+| Asset check warnings | The number of [asset checks](/guides/test/asset-checks) that produced warnings.                                                                                                                                                                                      |
+| Asset check errors   | The number of [asset checks](/guides/test/asset-checks) that produced errors.                                                                                                                                                                                        |
 | Retry compute        | The time spent computing steps, including time spent retrying failed steps. For jobs that run steps in parallel, the compute duration may be longer than the wall clock time it takes for the run to complete.                                   |
 
 ### Integrate other metrics \{#integrate-metrics}

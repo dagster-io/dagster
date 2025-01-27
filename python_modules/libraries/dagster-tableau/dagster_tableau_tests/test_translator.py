@@ -1,7 +1,7 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_tableau import DagsterTableauTranslator
-from dagster_tableau.translator import TableauContentData, TableauWorkspaceData
+from dagster_tableau.translator import TableauTranslatorData, TableauWorkspaceData
 
 
 def test_translator_sheet_spec(
@@ -9,8 +9,10 @@ def test_translator_sheet_spec(
 ) -> None:
     sheet = next(iter(workspace_data.sheets_by_id.values()))
 
-    translator = DagsterTableauTranslator(workspace_data)
-    asset_spec = translator.get_asset_spec(sheet)
+    translator = DagsterTableauTranslator()
+    asset_spec = translator.get_asset_spec(
+        TableauTranslatorData(content_data=sheet, workspace_data=workspace_data)
+    )
 
     assert asset_spec.key.path == ["test_workbook", "sheet", "sales"]
     assert asset_spec.metadata == {
@@ -31,8 +33,10 @@ def test_translator_dashboard_spec(
 ) -> None:
     dashboard = next(iter(workspace_data.dashboards_by_id.values()))
 
-    translator = DagsterTableauTranslator(workspace_data)
-    asset_spec = translator.get_asset_spec(dashboard)
+    translator = DagsterTableauTranslator()
+    asset_spec = translator.get_asset_spec(
+        TableauTranslatorData(content_data=dashboard, workspace_data=workspace_data)
+    )
 
     assert asset_spec.key.path == ["test_workbook", "dashboard", "dashboard_sales"]
     assert asset_spec.metadata == {
@@ -53,8 +57,10 @@ def test_translator_data_source_spec(
 ) -> None:
     data_source = next(iter(workspace_data.data_sources_by_id.values()))
 
-    translator = DagsterTableauTranslator(workspace_data)
-    asset_spec = translator.get_asset_spec(data_source)
+    translator = DagsterTableauTranslator()
+    asset_spec = translator.get_asset_spec(
+        TableauTranslatorData(content_data=data_source, workspace_data=workspace_data)
+    )
 
     assert asset_spec.key.path == ["superstore_datasource"]
     assert asset_spec.metadata == {"dagster-tableau/id": data_source_id}
@@ -67,7 +73,7 @@ def test_translator_data_source_spec(
 
 
 class MyCustomTranslator(DagsterTableauTranslator):
-    def get_asset_spec(self, data: TableauContentData) -> AssetSpec:
+    def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
         default_spec = super().get_asset_spec(data)
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("prefix"),
@@ -78,8 +84,10 @@ class MyCustomTranslator(DagsterTableauTranslator):
 def test_translator_custom_metadata(workspace_data: TableauWorkspaceData) -> None:
     sheet = next(iter(workspace_data.sheets_by_id.values()))
 
-    translator = MyCustomTranslator(workspace_data)
-    asset_spec = translator.get_asset_spec(sheet)
+    translator = MyCustomTranslator()
+    asset_spec = translator.get_asset_spec(
+        TableauTranslatorData(content_data=sheet, workspace_data=workspace_data)
+    )
 
     assert "custom" in asset_spec.metadata
     assert asset_spec.metadata["custom"] == "metadata"

@@ -1,4 +1,5 @@
-from typing import Any, Dict, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import Any, Optional, cast
 
 from dagster import Field, Permissive
 from dagster._config.validate import process_config
@@ -33,4 +34,4 @@ def process_shared_container_context_config(
             container_context_config,
         )
 
-    return cast(Dict[str, Any], shared_container_context.value)
+    return cast(dict[str, Any], shared_container_context.value)

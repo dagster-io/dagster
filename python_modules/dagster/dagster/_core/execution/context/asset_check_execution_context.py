@@ -1,4 +1,5 @@
-from typing import AbstractSet, Any, Optional, Sequence
+from collections.abc import Sequence
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public

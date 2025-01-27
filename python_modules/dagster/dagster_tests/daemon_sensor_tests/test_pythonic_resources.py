@@ -1,7 +1,8 @@
 import os
 import sys
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Optional
 
 import pytest
 from dagster import (

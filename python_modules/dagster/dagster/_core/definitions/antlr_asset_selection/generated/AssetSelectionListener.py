@@ -115,12 +115,20 @@ class AssetSelectionListener(ParseTreeListener):
     def exitParenthesizedExpression(self, ctx: AssetSelectionParser.ParenthesizedExpressionContext):
         pass
 
-    # Enter a parse tree produced by AssetSelectionParser#traversal.
-    def enterTraversal(self, ctx: AssetSelectionParser.TraversalContext):
+    # Enter a parse tree produced by AssetSelectionParser#upTraversal.
+    def enterUpTraversal(self, ctx: AssetSelectionParser.UpTraversalContext):
         pass
 
-    # Exit a parse tree produced by AssetSelectionParser#traversal.
-    def exitTraversal(self, ctx: AssetSelectionParser.TraversalContext):
+    # Exit a parse tree produced by AssetSelectionParser#upTraversal.
+    def exitUpTraversal(self, ctx: AssetSelectionParser.UpTraversalContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#downTraversal.
+    def enterDownTraversal(self, ctx: AssetSelectionParser.DownTraversalContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#downTraversal.
+    def exitDownTraversal(self, ctx: AssetSelectionParser.DownTraversalContext):
         pass
 
     # Enter a parse tree produced by AssetSelectionParser#functionName.

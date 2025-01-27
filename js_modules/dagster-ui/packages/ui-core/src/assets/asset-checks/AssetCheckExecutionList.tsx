@@ -7,9 +7,9 @@ import {
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
-import {MetadataCell} from './AssetCheckDetailModal';
+import {MetadataCell} from './AssetCheckDetailDialog';
 import {AssetCheckStatusTag} from './AssetCheckStatusTag';
-import {AssetCheckDetailsQuery} from './types/AssetCheckDetailModal.types';
+import {AssetCheckDetailsQuery} from './types/AssetCheckDetailDialog.types';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 

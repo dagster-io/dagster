@@ -1,6 +1,7 @@
 import datetime
 import logging
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
 
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext

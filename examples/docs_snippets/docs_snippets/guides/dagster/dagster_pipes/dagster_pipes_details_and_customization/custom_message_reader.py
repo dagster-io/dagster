@@ -2,8 +2,9 @@
 
 import os
 import string
+from collections.abc import Iterator
 from random import random
-from typing import Iterator, Optional
+from typing import Optional
 
 import cloud_service  # type: ignore
 from dagster_pipes import PipesParams

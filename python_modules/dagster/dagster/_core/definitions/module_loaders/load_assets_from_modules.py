@@ -1,7 +1,8 @@
 import inspect
+from collections.abc import Iterable, Iterator, Sequence
 from importlib import import_module
 from types import ModuleType
-from typing import Iterable, Iterator, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Optional, Union, cast, get_args
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks import has_only_asset_checks
@@ -26,7 +27,7 @@ from dagster._core.definitions.utils import resolve_automation_condition
 
 def find_objects_in_module_of_types(
     module: ModuleType,
-    types: Union[Type, Tuple[Type, ...]],
+    types: Union[type, tuple[type, ...]],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
@@ -39,13 +40,16 @@ def find_objects_in_module_of_types(
 
 def find_subclasses_in_module(
     module: ModuleType,
-    types: Union[Type, Tuple[Type, ...]],
+    types: Union[type, tuple[type, ...]],
 ) -> Iterator:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
         value = getattr(module, attr)
         if isinstance(value, type) and issubclass(value, types):
             yield value
+
+
+AssetLoaderTypes = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]
 
 
 def load_assets_from_modules(
@@ -59,7 +63,7 @@ def load_assets_from_modules(
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
     include_specs: bool = False,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]]:
+) -> Sequence[AssetLoaderTypes]:
     """Constructs a list of assets and source assets from the given modules.
 
     Args:
@@ -87,15 +91,16 @@ def load_assets_from_modules(
         if isinstance(dagster_object, AssetsDefinition):
             # We don't load asset checks with asset module loaders.
             return not has_only_asset_checks(dagster_object)
-        if isinstance(dagster_object, AssetSpec):
-            return include_specs
-        return isinstance(
-            dagster_object, (AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec)
-        )
+        return True
 
+    types_to_load: tuple[type] = (
+        get_args(AssetLoaderTypes)
+        if include_specs
+        else tuple(t for t in get_args(AssetLoaderTypes) if t != AssetSpec)
+    )
     return cast(
-        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]],
-        ModuleScopedDagsterDefs.from_modules(modules)
+        Sequence[AssetLoaderTypes],
+        ModuleScopedDagsterDefs.from_modules(modules, types_to_load=types_to_load)
         .get_object_list()
         .with_attributes(
             key_prefix=check_opt_coercible_to_asset_key_prefix_param(key_prefix, "key_prefix"),

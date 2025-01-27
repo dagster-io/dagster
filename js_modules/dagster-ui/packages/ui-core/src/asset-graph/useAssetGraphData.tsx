@@ -3,6 +3,7 @@ import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
 import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
@@ -17,9 +18,9 @@ import {
   AssetGraphQueryVersion,
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
-import {usePrefixedCacheKey} from '../app/AppProvider';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {indexedDBAsyncMemoize} from '../app/Util';
+import {usePrefixedCacheKey} from '../app/usePrefixedCacheKey';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
@@ -79,7 +80,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     const requestId = ++currentRequestRef.current;
     buildGraphData({
       nodes: queryItems,
-      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+      flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -93,7 +94,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
       });
   }, [options.loading, queryItems]);
 
-  return fullAssetGraphData;
+  return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
 }
 
 export type GraphDataState = {
@@ -160,8 +161,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const lastProcessedRequestRef = useRef(0);
   const currentRequestRef = useRef(0);
 
+  const {loading: supplementaryDataLoading, data: supplementaryData} =
+    useAssetGraphSupplementaryData(opsQuery);
+
   useEffect(() => {
-    if (options.loading) {
+    if (options.loading || supplementaryDataLoading) {
       return;
     }
     const requestId = ++currentRequestRef.current;
@@ -172,7 +176,8 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       opsQuery,
       kinds,
       hideEdgesToNodesOutsideQuery,
-      flagAssetSelectionSyntax: featureEnabled(FeatureFlag.flagAssetSelectionSyntax),
+      flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
+      supplementaryData,
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -197,6 +202,8 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     kinds,
     hideEdgesToNodesOutsideQuery,
     options.loading,
+    supplementaryData,
+    supplementaryDataLoading,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading;

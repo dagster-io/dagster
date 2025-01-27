@@ -1,0 +1,15 @@
+type: .my_nested_component
+
+params:
+  nested:
+    foo:
+      a_string: "test"
+      an_int: 15
+      a_bool: true
+    bar:
+      a_string: "test"
+      an_int: 5
+    baz:
+      a_string: "test"
+      an_int: 10
+      another_bool: false

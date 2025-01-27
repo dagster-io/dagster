@@ -1,6 +1,6 @@
 import json
 import subprocess
-from typing import List, Union
+from typing import Any, Optional, Union
 
 import pytest
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
@@ -60,7 +60,7 @@ def user_deployment_configmap_template() -> HelmTemplate:
 
 
 def assert_user_deployment_template(
-    t: HelmTemplate, templates: List[models.V1Deployment], values: DagsterHelmValues
+    t: HelmTemplate, templates: list[models.V1Deployment], values: DagsterHelmValues
 ):
     assert len(templates) == len(values.dagsterUserDeployments.deployments)
 
@@ -1392,3 +1392,41 @@ def test_old_env(template: HelmTemplate, user_deployment_configmap_template):
 
     [cm] = user_deployment_configmap_template.render(helm_values)
     assert cm.data["test_env"] == "test_value"
+
+
+@pytest.mark.parametrize(
+    "strategy,expected",
+    [
+        (None, None),
+        ({}, None),
+        (
+            {
+                "type": "RollingUpdate",
+                "rollingUpdate": {"maxSurge": 10, "maxUnavailable": 1},
+            },
+            {
+                "type": "RollingUpdate",
+                "rolling_update": {"max_surge": 10, "max_unavailable": 1},
+            },
+        ),
+        (
+            {"type": "Recreate"},
+            {"type": "Recreate", "rolling_update": None},
+        ),
+    ],
+)
+def test_deployment_strategy(
+    template: HelmTemplate,
+    strategy: Optional[dict[str, Any]],
+    expected: Optional[dict[str, Any]],
+):
+    deployment = create_simple_user_deployment("foo")
+    if strategy:
+        deployment.deploymentStrategy = kubernetes.DeploymentStrategy.model_construct(**strategy)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.model_construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    assert dagster_user_deployment[0].to_dict()["spec"]["strategy"] == expected

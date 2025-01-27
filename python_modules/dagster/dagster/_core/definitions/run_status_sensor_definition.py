@@ -1,22 +1,10 @@
 import functools
 import logging
 import os
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterator,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -111,7 +99,7 @@ class RunStatusSensorCursor(
     )
 ):
     def __new__(cls, record_id, update_timestamp=None, record_timestamp=None):
-        return super(RunStatusSensorCursor, cls).__new__(
+        return super().__new__(
             cls,
             record_id=check.int_param(record_id, "record_id"),
             update_timestamp=check.opt_str_param(update_timestamp, "update_timestamp"),
@@ -645,7 +633,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         request_jobs: Optional[Sequence[ExecutableDefinition]] = None,
         tags: Optional[Mapping[str, str]] = None,
         metadata: Optional[Mapping[str, object]] = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
     ):
         from dagster._core.definitions.selector import (
             CodeLocationSelector,
@@ -675,7 +663,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             monitor_all_code_locations, "monitor_all_code_locations", default=False
         )
 
-        resource_arg_names: Set[str] = {arg.name for arg in get_resource_args(run_status_sensor_fn)}
+        resource_arg_names: set[str] = {arg.name for arg in get_resource_args(run_status_sensor_fn)}
 
         combined_required_resource_keys = (
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
@@ -1003,7 +991,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     error=serializable_error,
                 )
 
-        super(RunStatusSensorDefinition, self).__init__(
+        super().__init__(
             name=name,
             evaluation_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,

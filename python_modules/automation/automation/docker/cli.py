@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 import click
 import dagster._check as check
@@ -106,7 +106,7 @@ def push_all(name: str):
         image.push(python_version)
 
 
-def push_to_registry(name: str, tags: List[str]) -> None:
+def push_to_registry(name: str, tags: list[str]) -> None:
     check.str_param(name, "name")
     check.list_param(tags, "tags", of_type=str)
 

@@ -17,10 +17,6 @@ export const useVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
   {
-    key: 'Debug console logging',
-    flagType: FeatureFlag.flagDebugConsoleLogging,
-  },
-  {
     key: 'Revert to legacy Runs page',
     flagType: FeatureFlag.flagLegacyRunsPage,
     label: (
@@ -36,5 +32,26 @@ export const useVisibleFeatureFlagRows = () => [
         )
       </>
     ),
+  },
+  {
+    key: 'Enable new selection syntax for Asset/Op/Run graphs',
+    flagType: FeatureFlag.flagSelectionSyntax,
+    label: (
+      <>
+        Enable new selection syntax for Asset/Op/Run graphs (
+        <a
+          href="https://github.com/dagster-io/dagster/discussions/26849"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Learn more
+        </a>
+        )
+      </>
+    ),
+  },
+  {
+    key: 'Enable pool concurrency UI',
+    flagType: FeatureFlag.flagPoolUI,
   },
 ];

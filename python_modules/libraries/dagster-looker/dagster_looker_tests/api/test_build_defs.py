@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 import pytest
 import responses
@@ -8,7 +8,7 @@ from dagster_looker import LookerFilter
 from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
-    LookerStructureData,
+    LookerApiTranslatorStructureData,
     RequestStartPdtBuild,
 )
 from dagster_looker.api.resource import LookerResource, load_looker_asset_specs
@@ -196,7 +196,7 @@ def test_custom_asset_specs(
     looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
 ) -> None:
     class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
-        def get_asset_spec(self, looker_structure: LookerStructureData) -> AssetSpec:
+        def get_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
             default_spec = super().get_asset_spec(looker_structure)
             return default_spec.replace_attributes(
                 key=default_spec.key.with_prefix("my_prefix"),
@@ -205,12 +205,49 @@ def test_custom_asset_specs(
     all_assets = (
         asset
         for asset in Definitions(
-            assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)],
+            assets=[*load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator())],
         )
         .get_asset_graph()
         .assets_defs
         if not asset.is_auto_created_stub
     )
+
+    for asset in all_assets:
+        for metadata in asset.metadata_by_key.values():
+            assert "custom" in metadata
+            assert metadata["custom"] == "metadata"
+        assert all(key.path[0] == "my_prefix" for key in asset.keys)
+        for deps in asset.asset_deps.values():
+            assert all(key.path[0] == "my_prefix" for key in deps), str(deps)
+
+
+@responses.activate
+def test_custom_asset_specs_legacy(
+    looker_resource: LookerResource, looker_instance_data_mocks: responses.RequestsMock
+) -> None:
+    class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
+        def get_asset_spec(self, looker_structure: LookerApiTranslatorStructureData) -> AssetSpec:
+            default_spec = super().get_asset_spec(looker_structure)
+            return default_spec.replace_attributes(
+                key=default_spec.key.with_prefix("my_prefix"),
+            ).merge_attributes(metadata={"custom": "metadata"})
+
+    # Pass the translator type
+    with pytest.warns(
+        DeprecationWarning,
+        match=r"Support of `dagster_looker_translator` as a Type\[DagsterLookerApiTranslator\]",
+    ):
+        all_assets = (
+            asset
+            for asset in Definitions(
+                assets=[
+                    *load_looker_asset_specs(looker_resource, CustomDagsterLookerApiTranslator)
+                ],
+            )
+            .get_asset_graph()
+            .assets_defs
+            if not asset.is_auto_created_stub
+        )
 
     for asset in all_assets:
         for metadata in asset.metadata_by_key.values():

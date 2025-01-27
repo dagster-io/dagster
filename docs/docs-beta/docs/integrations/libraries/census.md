@@ -15,9 +15,10 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported, etl]
+sidebar_custom_props: 
+  logo: images/integrations/census.svg
+  community: true
 ---
-
-
 
 With the `dagster-census` integration you can execute a Census sync and poll until that sync completes, raising an error if it's unsuccessful.
 
@@ -29,7 +30,7 @@ pip install dagster-census
 
 ### Example
 
-<CodeExample filePath="integrations/census.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/census.py" language="python" />
 
 ### About Census
 

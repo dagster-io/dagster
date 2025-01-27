@@ -1,9 +1,8 @@
 import re
-from typing import Any, Iterable, Mapping, Sequence, Union
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Union
 
-from airflow.utils.context import Context
-
-from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
+from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 UNESCAPED_SLASH_RE = re.compile(r"(?<!\\)/")
 ESCAPED_SLASH = "\\/"

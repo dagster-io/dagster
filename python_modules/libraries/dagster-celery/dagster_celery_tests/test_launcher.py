@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Any, Iterator, Mapping
+from collections.abc import Iterator, Mapping
+from typing import Any
 
 import pytest
 from dagster import DagsterInstance, DagsterRunStatus, _seven, file_relative_path, instance_for_test

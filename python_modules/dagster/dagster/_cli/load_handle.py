@@ -1,5 +1,6 @@
 import os
-from typing import Mapping, cast
+from collections.abc import Mapping
+from typing import cast
 
 from click import UsageError
 

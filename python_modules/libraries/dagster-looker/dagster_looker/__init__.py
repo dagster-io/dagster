@@ -5,6 +5,7 @@ from dagster_looker.api.assets import (
 )
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator as DagsterLookerApiTranslator,
+    LookerApiTranslatorStructureData as LookerApiTranslatorStructureData,
     LookerStructureData as LookerStructureData,
     LookerStructureType as LookerStructureType,
     RequestStartPdtBuild as RequestStartPdtBuild,

@@ -1,5 +1,6 @@
 import datetime
-from typing import Any, Literal, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Literal, Optional
 
 import great_expectations as ge
 from dagster import (

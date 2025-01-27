@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Iterator, Sequence
 from contextlib import ExitStack
-from typing import Iterator, Optional, Sequence, cast
+from typing import Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
@@ -97,8 +98,7 @@ def inner_plan_execution_iterator(
                     yield event
 
                 # pass a list of step events to hooks
-                for hook_event in _trigger_hook(step_context, step_event_list):
-                    yield hook_event
+                yield from _trigger_hook(step_context, step_event_list)
 
             try:
                 capture_stack.close()
@@ -242,8 +242,7 @@ def dagster_event_sequence_for_step(
         else:
             step_events = core_dagster_event_sequence_for_step(step_context)
 
-        for step_event in check.generator(step_events):
-            yield step_event
+        yield from check.generator(step_events)
 
     # case (1) in top comment
     except RetryRequested as retry_request:

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 
 class DagsterGraphQLClientError(Exception):
@@ -62,7 +62,7 @@ class JobInfo(NamedTuple):
     job_name: str
 
     @staticmethod
-    def from_node(node: Dict[str, Any]) -> List["JobInfo"]:
+    def from_node(node: dict[str, Any]) -> list["JobInfo"]:
         repo_name = node["name"]
         repo_location_name = node["location"]["name"]
         return [

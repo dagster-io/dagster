@@ -1,5 +1,6 @@
 import time
-from typing import Mapping, Optional
+from collections.abc import Mapping
+from typing import Optional
 
 from dagster import DagsterInstance, DagsterRun, DagsterRunStatus, RunsFilter
 

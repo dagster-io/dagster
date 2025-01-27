@@ -1,5 +1,5 @@
 import asyncio
-from typing import Sequence
+from collections.abc import Sequence
 
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (

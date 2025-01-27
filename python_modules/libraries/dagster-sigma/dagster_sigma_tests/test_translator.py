@@ -7,9 +7,11 @@ from dagster._core.definitions.tags import build_kind_tag_key
 from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
+    SigmaDatasetTranslatorData,
     SigmaOrganizationData,
     SigmaTable,
     SigmaWorkbook,
+    SigmaWorkbookTranslatorData,
 )
 
 from dagster_sigma_tests.conftest import (
@@ -33,15 +35,18 @@ def test_workbook_translation() -> None:
 
     sample_dataset = SigmaDataset(properties=SAMPLE_DATASET_DATA, columns=set(), inputs=set())
 
-    translator = DagsterSigmaTranslator(
-        SigmaOrganizationData(
-            workbooks=[sample_workbook],
-            datasets=[sample_dataset],
-            tables=[SigmaTable(properties=SAMPLE_TABLE_DATA)],
+    translator = DagsterSigmaTranslator()
+
+    asset_spec = translator.get_asset_spec(
+        SigmaWorkbookTranslatorData(
+            workbook=sample_workbook,
+            organization_data=SigmaOrganizationData(
+                workbooks=[sample_workbook],
+                datasets=[sample_dataset],
+                tables=[SigmaTable(properties=SAMPLE_TABLE_DATA)],
+            ),
         )
     )
-
-    asset_spec = translator.get_asset_spec(sample_workbook)
 
     assert asset_spec.key.path == ["Sample_Workbook"]
     assert asset_spec.metadata["dagster_sigma/web_url"].value == SAMPLE_WORKBOOK_DATA["url"]
@@ -63,11 +68,16 @@ def test_dataset_translation() -> None:
         inputs={"TESTDB.JAFFLE_SHOP.STG_ORDERS"},
     )
 
-    translator = DagsterSigmaTranslator(
-        SigmaOrganizationData(workbooks=[], datasets=[sample_dataset], tables=[])
-    )
+    translator = DagsterSigmaTranslator()
 
-    asset_spec = translator.get_asset_spec(sample_dataset)
+    asset_spec = translator.get_asset_spec(
+        SigmaDatasetTranslatorData(
+            dataset=sample_dataset,
+            organization_data=SigmaOrganizationData(
+                workbooks=[], datasets=[sample_dataset], tables=[]
+            ),
+        )
+    )
 
     assert asset_spec.key.path == ["Orders_Dataset"]
     assert asset_spec.metadata["dagster_sigma/web_url"].value == SAMPLE_DATASET_DATA["url"]
@@ -91,9 +101,11 @@ def test_dataset_translation() -> None:
 
 def test_dataset_translation_custom_translator() -> None:
     class MyCustomTranslator(DagsterSigmaTranslator):
-        def get_asset_spec(self, data: Union[SigmaDataset, SigmaWorkbook]) -> AssetSpec:
+        def get_asset_spec(
+            self, data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData]
+        ) -> AssetSpec:
             spec = super().get_asset_spec(data)
-            if isinstance(data, SigmaDataset):
+            if isinstance(data, SigmaDatasetTranslatorData):
                 spec = spec.replace_attributes(
                     key=spec.key.with_prefix("sigma"), description="Custom description"
                 )
@@ -105,11 +117,16 @@ def test_dataset_translation_custom_translator() -> None:
         inputs={"TESTDB.JAFFLE_SHOP.STG_ORDERS"},
     )
 
-    translator = MyCustomTranslator(
-        SigmaOrganizationData(workbooks=[], datasets=[sample_dataset], tables=[])
-    )
+    translator = MyCustomTranslator()
 
-    asset_spec = translator.get_asset_spec(sample_dataset)
+    asset_spec = translator.get_asset_spec(
+        SigmaDatasetTranslatorData(
+            dataset=sample_dataset,
+            organization_data=SigmaOrganizationData(
+                workbooks=[], datasets=[sample_dataset], tables=[]
+            ),
+        )
+    )
 
     assert asset_spec.key.path == ["sigma", "Orders_Dataset"]
     assert asset_spec.description == "Custom description"

@@ -1,6 +1,6 @@
 import math
 import time
-from typing import Any, Dict, List, cast
+from typing import Any, cast
 
 from dagster import (
     AssetExecutionContext,
@@ -311,7 +311,7 @@ def test_partition_mapping_workflow() -> Any:
 
 
 # Asset factory which produces a partitioned asset w/ each partition having a different seeded value
-def get_base_values(seed_values: List[int]) -> AssetsDefinition:
+def get_base_values(seed_values: list[int]) -> AssetsDefinition:
     assert len(seed_values) == 3
     seed_value_dict = {
         "A": seed_values[0],
@@ -337,7 +337,7 @@ def get_base_values(seed_values: List[int]) -> AssetsDefinition:
         )
     },
 )
-def average_upstream(upstream_values: Dict[str, int]) -> int:
+def average_upstream(upstream_values: dict[str, int]) -> int:
     return sum(upstream_values.values()) // len(upstream_values)
 
 

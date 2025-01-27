@@ -3,10 +3,16 @@ import signal
 import subprocess
 import tempfile
 import time
+from collections import deque
 
+import pytest
 import requests
 import yaml
-from dagster import DagsterEventType, DagsterInstance
+from dagster import (
+    DagsterEventType,
+    DagsterInstance,
+    _seven as seven,
+)
 from dagster._core.test_utils import environ, new_cwd
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import wait_for_grpc_server
@@ -234,3 +240,69 @@ def test_dagster_dev_command_grpc_port():
             if dev_process:
                 dev_process.send_signal(signal.SIGINT)
                 dev_process.communicate()
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="This test relies on unix signals")
+def test_dagster_dev_command_legacy_code_server_behavior():
+    with tempfile.TemporaryDirectory() as tempdir:
+        with environ({"DAGSTER_HOME": ""}):
+            with new_cwd(tempdir):
+                dagit_port = find_free_port()
+                dev_process = subprocess.Popen(
+                    [
+                        "dagster",
+                        "dev",
+                        "-m",
+                        "dagster_test.toys.repo",
+                        "--dagit-port",
+                        str(dagit_port),
+                        "--log-level",
+                        "debug",
+                        "--use-legacy-code-server-behavior",
+                    ],
+                    cwd=tempdir,
+                )
+                try:
+                    _wait_for_dagit_running(dagit_port)
+
+                    client = DagsterGraphQLClient(hostname="localhost", port_number=dagit_port)
+                    locations_and_names = client._get_repo_locations_and_names_with_pipeline(  # noqa
+                        "hammer"
+                    )
+                    assert (
+                        len(locations_and_names) > 0
+                    ), "toys repo failed to load or was missing a job called 'hammer'"
+                    child_processes = find_child_processes(dev_process.pid)
+                    assert (
+                        len(child_processes) == 4
+                    )  # dagster-daemon, dagster-webserver, and a code server for each.
+                finally:
+                    dev_process.send_signal(signal.SIGINT)
+                    dev_process.communicate()
+
+
+def find_child_processes(pid: int):
+    children = set()
+    # Get full process tree
+    cmd = ["ps", "-eo", "pid,ppid"]
+    output = subprocess.check_output(cmd, text=True)
+
+    # Create pid -> parent_pid mapping
+    processes = {}
+    for line in output.splitlines()[1:]:  # Skip header
+        parts = line.strip().split()
+        if len(parts) == 2:
+            child_pid, parent_pid = map(int, parts)
+            processes[child_pid] = parent_pid
+
+    # Use BFS to find all descendants
+    queue = deque([pid])
+    while queue:
+        current_pid = queue.popleft()
+        # Find all processes whose parent is current_pid
+        for child_pid, parent_pid in processes.items():
+            if parent_pid == current_pid:
+                children.add(child_pid)
+                queue.append(child_pid)
+
+    return children

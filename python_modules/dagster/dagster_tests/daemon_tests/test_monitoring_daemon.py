@@ -2,8 +2,9 @@ import datetime
 import logging
 import os
 import time
+from collections.abc import Mapping
 from logging import Logger
-from typing import Any, Mapping, Optional, cast
+from typing import Any, Optional, cast
 
 import dagster._check as check
 import pytest

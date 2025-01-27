@@ -2,31 +2,36 @@ import {
   Box,
   Button,
   ButtonLink,
-  Caption,
   Colors,
   Dialog,
   DialogFooter,
-  DisclosureTriangleButton,
-  MiddleTruncate,
+  Mono,
   Subtitle2,
+  Tab,
+  Tabs,
   Tag,
 } from '@dagster-io/ui-components';
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {
-  AssetSelectionNodeFragment,
-  AutomationAssetSelectionFragment,
-} from './types/AutomationAssetSelectionFragment.types';
+  labelForAssetCheck,
+  renderItemAssetCheck,
+  renderItemAssetKey,
+  sortItemAssetCheck,
+  sortItemAssetKey,
+} from '../assets/AssetListUtils';
+import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
+import {AutomationAssetSelectionFragment} from './types/AutomationAssetSelectionFragment.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {COMMON_COLLATOR} from '../app/Util';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {
+  assetDetailsPathForAssetCheck,
+  assetDetailsPathForKey,
+} from '../assets/assetDetailsPathForKey';
 import {SensorType} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
-import {numberFormatter} from '../ui/formatters';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
 import {RepoAddress} from '../workspace/types';
 
@@ -89,90 +94,142 @@ const AssetSelectionTag = ({
   assetSelection: AutomationAssetSelectionFragment;
   automationType: AutomationType;
 }) => {
-  const [showAssetSelection, setShowAssetSelection] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
 
   const error =
     assetSelection.assetsOrError.__typename === 'PythonError' ? assetSelection.assetsOrError : null;
 
-  const sortedAssets = useMemo(() => {
+  const {checks, assets, assetsWithAMP, assetsWithoutAMP} = useMemo(() => {
     if (assetSelection.assetsOrError.__typename === 'PythonError') {
-      return [];
+      return {checks: [], assets: [], assetsWithAMP: [], assetsWithoutAMP: []};
     }
-    return assetSelection.assetsOrError.nodes
-      .slice()
-      .sort((a, b) =>
-        COMMON_COLLATOR.compare(displayNameForAssetKey(a.key), displayNameForAssetKey(b.key)),
-      );
-  }, [assetSelection.assetsOrError]);
+    const assets = assetSelection.assetsOrError.nodes;
 
-  const assetsWithAMP = useMemo(
-    () => sortedAssets.filter((asset) => !!asset.definition?.automationCondition),
-    [sortedAssets],
-  );
-  const assetsWithoutAMP = useMemo(
-    () => sortedAssets.filter((asset) => !asset.definition?.automationCondition),
-    [sortedAssets],
-  );
+    return {
+      checks: assetSelection.assetChecks.slice().sort(sortItemAssetCheck),
+      assets: assets.map((a) => a.key).sort(sortItemAssetKey),
+      assetsWithAMP: assets
+        .filter((asset) => !!asset.definition?.automationCondition)
+        .map((a) => a.key)
+        .sort(sortItemAssetKey),
+      assetsWithoutAMP: assets
+        .filter((asset) => !asset.definition?.automationCondition)
+        .map((a) => a.key)
+        .sort(sortItemAssetKey),
+    };
+  }, [assetSelection]);
+
+  const [selectedTab, setSelectedTab] = useState('none');
+  const initialTab = checks.length && !assets.length ? 'checks' : 'assets';
+  useEffect(() => setSelectedTab(initialTab), [initialTab]);
 
   const assetSelectionString = assetSelection.assetSelectionString || '';
   const isAllAssets = assetSelectionString === ALL_ASSETS_STRING;
-  const firstAsset = sortedAssets[0];
 
-  if (firstAsset && sortedAssets.length === 1) {
+  if (assets.length === 1 && assets[0]) {
     return (
       <Tag icon="asset">
-        <Link to={assetDetailsPathForKey(firstAsset.key)}>{assetSelectionString}</Link>
+        <Link to={assetDetailsPathForKey(assets[0])}>{displayNameForAssetKey(assets[0])}</Link>
       </Tag>
     );
   }
 
+  if (checks.length === 1 && checks[0]) {
+    return (
+      <Tag icon="asset_check">
+        <Link to={assetDetailsPathForAssetCheck(checks[0])}>{labelForAssetCheck(checks[0])}</Link>
+      </Tag>
+    );
+  }
+
+  const splitConditioned =
+    automationType === SensorType.AUTO_MATERIALIZE || automationType === SensorType.AUTOMATION;
+
   return (
     <>
       <Dialog
-        isOpen={showAssetSelection}
+        isOpen={showDialog}
         title="Targeted assets"
-        onClose={() => setShowAssetSelection(false)}
+        onClose={() => setShowDialog(false)}
         style={{width: '750px', maxWidth: '80vw', minWidth: '500px'}}
         canOutsideClickClose
         canEscapeKeyClose
       >
         <Box
-          flex={{direction: 'column'}}
-          style={{height: '50vh', maxHeight: '1000px', minHeight: '400px'}}
+          flex={{direction: 'column', gap: 16}}
+          padding={{horizontal: 20, vertical: 16}}
+          border="bottom"
         >
-          {automationType === SensorType.AUTO_MATERIALIZE ||
-          automationType === SensorType.AUTOMATION ? (
-            <>
-              <Section
-                title="Assets with a materialization policy"
-                titleBorder="bottom"
-                assets={assetsWithAMP}
+          <Box flex={{direction: 'column', gap: 4}}>
+            <Subtitle2>Asset selection</Subtitle2>
+            <Mono>{assetSelectionString}</Mono>
+          </Box>
+        </Box>
+
+        <Box padding={{horizontal: 20, top: 8}} border="bottom">
+          <Tabs size="small" selectedTabId={selectedTab}>
+            {splitConditioned ? (
+              <Tab
+                id="assets"
+                title={`Assets with Automation Conditions (${assetsWithAMP.length})`}
+                onClick={() => setSelectedTab('assets')}
               />
-              <Section
-                title="Assets without a materialization policy"
-                titleBorder="top-and-bottom"
-                assets={assetsWithoutAMP}
+            ) : (
+              <Tab
+                id="assets"
+                title={`Assets (${assets.length})`}
+                onClick={() => setSelectedTab('assets')}
               />
-            </>
+            )}
+            {splitConditioned && (
+              <Tab
+                id="assets-without-conditions"
+                disabled={assetsWithoutAMP.length === 0}
+                title={`Other Assets (${assetsWithoutAMP.length})`}
+                onClick={() => setSelectedTab('assets-without-conditions')}
+              />
+            )}
+            <Tab
+              id="checks"
+              disabled={checks.length === 0}
+              title={`Checks ${checks.length}`}
+              onClick={() => setSelectedTab('checks')}
+            />
+          </Tabs>
+        </Box>
+        <Box flex={{direction: 'column'}} style={{maxHeight: '60vh', minHeight: '300px'}}>
+          {selectedTab === 'checks' ? (
+            <VirtualizedItemListForDialog
+              items={checks}
+              renderItem={renderItemAssetCheck}
+              itemBorders
+            />
           ) : (
-            <Section assets={sortedAssets} />
+            <VirtualizedItemListForDialog
+              items={
+                selectedTab === 'assets-without-conditions'
+                  ? assetsWithoutAMP
+                  : splitConditioned
+                    ? assetsWithAMP
+                    : assets
+              }
+              renderItem={renderItemAssetKey}
+              itemBorders
+            />
           )}
         </Box>
         <DialogFooter topBorder>
           <Button
             intent="primary"
             onClick={() => {
-              setShowAssetSelection(false);
+              setShowDialog(false);
             }}
           >
             Close
           </Button>
         </DialogFooter>
       </Dialog>
-      <Tag
-        icon={sortedAssets.length === 1 ? 'asset' : 'asset_group'}
-        intent={error ? 'danger' : 'none'}
-      >
+      <Tag icon={assets.length === 1 ? 'asset' : 'asset_group'} intent={error ? 'danger' : 'none'}>
         <ButtonLink
           onClick={() => {
             if (error) {
@@ -181,7 +238,7 @@ const AssetSelectionTag = ({
                 body: <PythonErrorInfo error={error} />,
               });
             } else {
-              setShowAssetSelection(true);
+              setShowDialog(true);
             }
           }}
           color={error ? Colors.textRed() : Colors.linkDefault()}
@@ -194,69 +251,5 @@ const AssetSelectionTag = ({
         </ButtonLink>
       </Tag>
     </>
-  );
-};
-
-const Section = ({
-  assets,
-  title,
-  titleBorder = 'top-and-bottom',
-}: {
-  assets: AssetSelectionNodeFragment[];
-  title?: string;
-  titleBorder?: React.ComponentProps<typeof Box>['border'];
-}) => {
-  const [isOpen, setIsOpen] = useState(true);
-  return (
-    <>
-      {title ? (
-        <Box border={titleBorder} padding={{right: 24, vertical: 12}}>
-          <Box
-            flex={{direction: 'row', gap: 4}}
-            style={{cursor: 'pointer'}}
-            onClick={() => {
-              setIsOpen(!isOpen);
-            }}
-          >
-            <DisclosureTriangleButton onToggle={() => {}} isOpen={isOpen} />
-            <Subtitle2>
-              {title} ({numberFormatter.format(assets.length)})
-            </Subtitle2>
-          </Box>
-        </Box>
-      ) : null}
-      {isOpen ? (
-        assets.length ? (
-          <div style={{height: '100%', overflowY: 'hidden'}}>
-            <VirtualizedItemListForDialog
-              padding={0}
-              items={assets}
-              renderItem={(asset) => <VirtualizedSelectedAssetRow asset={asset} key={asset.id} />}
-              itemBorders
-            />
-          </div>
-        ) : (
-          <Box padding={{horizontal: 24, vertical: 12}}>
-            <Caption color={Colors.textLight()}>0 assets</Caption>
-          </Box>
-        )
-      ) : null}
-    </>
-  );
-};
-
-const VirtualizedSelectedAssetRow = ({asset}: {asset: AssetSelectionNodeFragment}) => {
-  return (
-    <Box
-      flex={{alignItems: 'center', gap: 4}}
-      style={{cursor: 'pointer'}}
-      padding={{horizontal: 24}}
-    >
-      <Link to={assetDetailsPathForKey(asset.key)} target="_blank">
-        <Box style={{overflow: 'hidden'}}>
-          <MiddleTruncate text={displayNameForAssetKey(asset.key)} />
-        </Box>
-      </Link>
-    </Box>
   );
 };

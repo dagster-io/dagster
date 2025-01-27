@@ -1,9 +1,15 @@
 import re
-from typing import List, Union
+from typing import Union
 
 import dagster._check as check
 import docutils.nodes as nodes
-from dagster._annotations import DeprecatedInfo, ExperimentalInfo, SupersededInfo
+from dagster._annotations import (
+    BetaInfo,
+    DeprecatedInfo,
+    ExperimentalInfo,
+    PreviewInfo,
+    SupersededInfo,
+)
 
 from sphinx.util.docutils import SphinxDirective
 
@@ -15,7 +21,9 @@ from sphinx.util.docutils import SphinxDirective
 
 
 def inject_object_flag(
-    obj: object, info: Union[SupersededInfo, DeprecatedInfo, ExperimentalInfo], docstring: List[str]
+    obj: object,
+    info: Union[SupersededInfo, DeprecatedInfo, ExperimentalInfo, PreviewInfo, BetaInfo],
+    docstring: list[str],
 ) -> None:
     if isinstance(info, DeprecatedInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
@@ -31,6 +39,20 @@ def inject_object_flag(
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
         flag_type = "superseded"
         message = f"This API has been superseded and its usage is discouraged.\n{additional_text}"
+    elif isinstance(info, PreviewInfo):
+        additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
+        flag_type = "preview"
+        message = (
+            f"This API is currently in preview, and may have breaking changes in patch version releases. "
+            f"This API is not considered ready for production use.\n{additional_text}"
+        )
+    elif isinstance(info, BetaInfo):
+        additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
+        flag_type = "beta"
+        message = (
+            f"This API is currently in beta, and may have breaking changes in minor version releases, "
+            f"with behavior changes in patch releases.\n{additional_text}"
+        )
     else:
         check.failed(f"Unexpected info type {type(info)}")
     for line in reversed([f".. flag:: {flag_type}", "", f"   {message}", ""]):
@@ -38,7 +60,7 @@ def inject_object_flag(
 
 
 def inject_param_flag(
-    lines: List[str],
+    lines: list[str],
     param: str,
     info: Union[DeprecatedInfo, ExperimentalInfo],
 ):

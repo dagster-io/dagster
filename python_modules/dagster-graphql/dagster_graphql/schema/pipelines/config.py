@@ -1,5 +1,6 @@
 from collections import namedtuple
-from typing import Callable, Sequence
+from collections.abc import Sequence
+from typing import Callable
 
 import dagster._check as check
 import graphene

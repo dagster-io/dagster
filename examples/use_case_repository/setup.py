@@ -6,7 +6,7 @@ setup(
     install_requires=[
         "dagster",
         "dagster-aws",
-        "dagster-embedded-elt",
+        "dagster-sling",
         "dagster-pipes",
         "dagster-snowflake",
         "flask",

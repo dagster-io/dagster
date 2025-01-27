@@ -517,7 +517,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                         "timestamp": evaluation_timestamp,
                         "severity": "ERROR",
                         "targetMaterialization": {
-                            "storageId": 42,
+                            "storageId": "42",
                             "runId": run_id_two,
                             "timestamp": 3.3,
                         },

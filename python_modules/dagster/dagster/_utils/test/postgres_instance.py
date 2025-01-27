@@ -231,7 +231,7 @@ def is_postgres_running(service_name):
 
 class PostgresDockerError(Exception):
     def __init__(self, message, subprocess_error):
-        super(PostgresDockerError, self).__init__(check.opt_str_param(message, "message"))
+        super().__init__(check.opt_str_param(message, "message"))
         self.subprocess_error = check.inst_param(
             subprocess_error, "subprocess_error", subprocess.CalledProcessError
         )

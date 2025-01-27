@@ -1,5 +1,6 @@
 import sys
-from typing import TYPE_CHECKING, Mapping, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.code_pointer import ModuleCodePointer

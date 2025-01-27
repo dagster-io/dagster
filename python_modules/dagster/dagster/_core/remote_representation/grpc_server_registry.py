@@ -2,7 +2,7 @@ import sys
 import threading
 import uuid
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
 from typing_extensions import TypeGuard
 
@@ -14,7 +14,7 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
+from dagster._grpc.server import GrpcServerCommand, GrpcServerProcess
 from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -34,7 +34,7 @@ class GrpcServerEndpoint(
     )
 ):
     def __new__(cls, server_id: str, host: str, port: Optional[int], socket: Optional[str]):
-        return super(GrpcServerEndpoint, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(server_id, "server_id"),
             check.str_param(host, "host"),
@@ -67,6 +67,7 @@ class GrpcServerRegistry(AbstractContextManager):
     def __init__(
         self,
         instance_ref: Optional[InstanceRef],
+        server_command: GrpcServerCommand,
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that any processes returned by this registry have at least one
         # GrpcServerCodeLocation hitting the server with a heartbeat while you want the
@@ -78,13 +79,14 @@ class GrpcServerRegistry(AbstractContextManager):
         log_level: str = "INFO",
         inject_env_vars_from_instance: bool = True,
         container_image: Optional[str] = None,
-        container_context: Optional[Dict[str, Any]] = None,
+        container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
     ):
         self.instance_ref = instance_ref
+        self.server_command = server_command
 
         # map of servers being currently returned, keyed by origin ID
-        self._active_entries: Dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
+        self._active_entries: dict[str, Union[ServerRegistryEntry, ErrorRegistryEntry]] = {}
 
         self._waited_for_processes = False
 
@@ -96,7 +98,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
         self._lock = threading.Lock()
 
-        self._all_processes: List[GrpcServerProcess] = []
+        self._all_processes: list[GrpcServerProcess] = []
 
         self._cleanup_thread_shutdown_event: Optional[threading.Event] = None
         self._cleanup_thread: Optional[threading.Thread] = None
@@ -187,6 +189,7 @@ class GrpcServerRegistry(AbstractContextManager):
                 new_server_id = str(uuid.uuid4())
                 server_process = GrpcServerProcess(
                     instance_ref=self.instance_ref,
+                    server_command=self.server_command,
                     location_name=code_location_origin.location_name,
                     loadable_target_origin=loadable_target_origin,
                     heartbeat=True,
@@ -239,7 +242,7 @@ class GrpcServerRegistry(AbstractContextManager):
 
             with self._lock:
                 # Remove any dead processes from the all_processes map
-                dead_process_indexes: List[int] = []
+                dead_process_indexes: list[int] = []
                 for index in range(len(self._all_processes)):
                     process = self._all_processes[index]
                     if process.server_process.poll() is not None:

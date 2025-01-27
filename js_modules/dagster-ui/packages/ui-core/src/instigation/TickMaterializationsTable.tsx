@@ -204,7 +204,7 @@ const AssetDetailRow = ({
               </ButtonLink>
               <EvaluationDetailDialog
                 isOpen={isOpen}
-                setIsOpen={setIsOpen}
+                onClose={() => setIsOpen(false)}
                 evaluationID={evaluationId}
                 assetKeyPath={assetKey.path}
               />

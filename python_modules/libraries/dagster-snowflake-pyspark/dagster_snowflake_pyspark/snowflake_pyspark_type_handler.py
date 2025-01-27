@@ -1,4 +1,5 @@
-from typing import Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import dagster._check as check
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
@@ -305,5 +306,5 @@ class SnowflakePySparkIOManager(SnowflakeIOManager):
         return [SnowflakePySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return DataFrame

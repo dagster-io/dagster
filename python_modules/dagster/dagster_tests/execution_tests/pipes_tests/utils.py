@@ -1,8 +1,9 @@
 import inspect
 import textwrap
+from collections.abc import Iterator
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator
+from typing import Any, Callable
 
 
 @contextmanager

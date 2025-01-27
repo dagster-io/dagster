@@ -1,7 +1,8 @@
 import datetime
 import os
 import time
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 import boto3
 from dagster import DagsterEventType
@@ -67,7 +68,7 @@ def test_execute_on_celery_k8s_default(
     )
 
     result = wait_for_job_and_get_raw_logs(
-        job_name="dagster-run-%s" % run_id,
+        job_name=f"dagster-run-{run_id}",
         namespace=helm_namespace,
     )
 

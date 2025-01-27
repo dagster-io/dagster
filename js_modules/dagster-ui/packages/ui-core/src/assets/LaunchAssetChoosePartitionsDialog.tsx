@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Radio} from '@blueprintjs/core';
 import {
   Alert,
   Box,
@@ -11,6 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   Icon,
+  Radio,
   RadioContainer,
   Subheading,
   Tooltip,
@@ -22,7 +21,7 @@ import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.os
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
-import {BackfillPreviewModal} from './BackfillPreviewModal';
+import {BackfillPreviewDialog} from './BackfillPreviewDialog';
 import {
   LaunchAssetsChoosePartitionsTarget,
   executionParamsForAssetJob,
@@ -575,7 +574,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         )}
       </div>
 
-      <BackfillPreviewModal
+      <BackfillPreviewDialog
         assets={assets}
         keysFiltered={keysFiltered}
         isOpen={previewOpen}

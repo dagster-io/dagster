@@ -1,11 +1,16 @@
+import shutil
+import sys
 import traceback
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Iterator, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Optional, Union
 
+import tomli
+import tomli_w
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
@@ -18,42 +23,62 @@ from typing_extensions import Self
 @contextmanager
 def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    with runner.isolated_filesystem():
-        runner.invoke("deployment", "generate", "foo")
+    with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
+        runner.invoke("deployment", "scaffold", "foo")
         with pushd("foo"):
             yield
 
 
+# Preferred example code location is foo-bar instead of a single word so that we can test the effect
+# of hyphenation.
 @contextmanager
-def isolated_example_code_location_bar(
-    runner: Union[CliRunner, "ProxyRunner"], in_deployment: bool = True, skip_venv: bool = False
+def isolated_example_code_location_foo_bar(
+    runner: Union[CliRunner, "ProxyRunner"],
+    in_deployment: bool = True,
+    skip_venv: bool = False,
+    component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
+    """Scaffold a code location named foo_bar in an isolated filesystem.
+
+    Args:
+        runner: The runner to use for invoking commands.
+        in_deployment: Whether the code location should be scaffolded inside a deployment directory.
+        skip_venv: Whether to skip creating a virtual environment when scaffolding the code location.
+        component_dirs: A list of component directories that will be copied into the code location component root.
+    """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     if in_deployment:
-        with isolated_example_deployment_foo(runner):
-            runner.invoke(
-                "code-location",
-                "generate",
-                "--use-editable-dagster",
-                dagster_git_repo_dir,
-                *(["--skip-venv"] if skip_venv else []),
-                "bar",
-            )
-            with pushd("code_locations/bar"):
-                yield
+        fs_context = isolated_example_deployment_foo(runner)
+        code_loc_path = "code_locations/foo-bar"
     else:
-        with runner.isolated_filesystem():
-            runner.invoke(
-                "code-location",
-                "generate",
-                "--use-editable-dagster",
-                dagster_git_repo_dir,
-                *(["--skip-venv"] if skip_venv else []),
-                "bar",
-            )
-            with pushd("bar"):
-                yield
+        fs_context = runner.isolated_filesystem()
+        code_loc_path = "foo-bar"
+    with fs_context:
+        runner.invoke(
+            "code-location",
+            "scaffold",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            *(["--no-use-dg-managed-environment"] if skip_venv else []),
+            "foo-bar",
+        )
+        with clear_module_from_cache("foo_bar"), pushd(code_loc_path):
+            for src_dir in component_dirs:
+                component_name = src_dir.name
+                components_dir = Path.cwd() / "foo_bar" / "components" / component_name
+                components_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
+            yield
+
+
+@contextmanager
+def clear_module_from_cache(module_name: str) -> Iterator[None]:
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+    yield
+    if module_name in sys.modules:
+        del sys.modules[module_name]
 
 
 @dataclass
@@ -81,10 +106,10 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts)
 
     def invoke(self, *args: str):
-        # We need to find the right spot to inject global options. For the `dg component generate`
+        # We need to find the right spot to inject global options. For the `dg component scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[:2] == ("component", "generate"):
+        if args[:2] == ("component", "scaffold"):
             index = 2
         elif "--help" in args:
             index = args.index("--help")
@@ -116,7 +141,7 @@ def assert_runner_result(result: Result, exit_0: bool = True) -> None:
 
 
 def print_exception_info(
-    exc_info: Tuple[Type[BaseException], BaseException, TracebackType],
+    exc_info: tuple[type[BaseException], BaseException, TracebackType],
 ) -> None:
     """Prints a nicely formatted traceback for the current exception."""
     exc_type, exc_value, exc_traceback = exc_info
@@ -124,3 +149,12 @@ def print_exception_info(
     formatted_traceback = "".join(traceback.format_tb(exc_traceback))
     print(formatted_traceback)  # noqa: T201
     print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
+
+
+@contextmanager
+def modify_pyproject_toml() -> Iterator[dict[str, Any]]:
+    with open("pyproject.toml") as f:
+        toml = tomli.loads(f.read())
+    yield toml
+    with open("pyproject.toml", "w") as f:
+        f.write(tomli_w.dumps(toml))

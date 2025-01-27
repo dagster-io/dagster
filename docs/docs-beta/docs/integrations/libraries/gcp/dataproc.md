@@ -9,15 +9,14 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-gcp
 docslink:
 partnerlink:
-logo: /integrations/gcp-dataproc.svg
 categories:
   - Compute
 enabledBy:
 enables:
 tags: [dagster-supported, compute]
+sidebar_custom_props:
+  logo: images/integrations/gcp-dataproc.svg
 ---
-
-
 
 Using this integration, you can manage and interact with Google Cloud Platform's Dataproc service directly from Dagster. This integration allows you to create, manage, and delete Dataproc clusters, and submit and monitor jobs on these clusters.
 
@@ -29,7 +28,7 @@ pip install dagster-gcp
 
 ### Examples
 
-<CodeExample filePath="integrations/gcp-dataproc.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/gcp-dataproc.py" language="python" />
 
 ### About Google Cloud Platform Dataproc
 

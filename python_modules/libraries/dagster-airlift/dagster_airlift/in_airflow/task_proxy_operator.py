@@ -1,14 +1,14 @@
 import inspect
 import json
 import os
-from typing import Any, Callable, Dict, Iterable, Mapping, Sequence, Set, Tuple, Type
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Callable
 
 import requests
-from airflow.models.operator import BaseOperator
-from airflow.utils.context import Context
+from airflow.models import BaseOperator
 
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator
+from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 
 class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
@@ -61,14 +61,14 @@ class DefaultProxyTaskToDagsterOperator(BaseProxyTaskToDagsterOperator):
 
 def build_dagster_task(
     original_task: BaseOperator,
-    dagster_operator_klass: Type[BaseProxyTaskToDagsterOperator],
+    dagster_operator_klass: type[BaseProxyTaskToDagsterOperator],
 ) -> BaseProxyTaskToDagsterOperator:
     return instantiate_dagster_operator(original_task, dagster_operator_klass)
 
 
 def instantiate_dagster_operator(
     original_task: BaseOperator,
-    dagster_operator_klass: Type[BaseProxyTaskToDagsterOperator],
+    dagster_operator_klass: type[BaseProxyTaskToDagsterOperator],
 ) -> BaseProxyTaskToDagsterOperator:
     """Instantiates a DagsterOperator as a copy of the provided airflow task.
 
@@ -115,7 +115,7 @@ def instantiate_dagster_operator(
     return dagster_operator_klass(**init_kwargs)
 
 
-def get_params(func: Callable[..., Any]) -> Tuple[Set[str], Dict[str, Any]]:
+def get_params(func: Callable[..., Any]) -> tuple[set[str], dict[str, Any]]:
     """Retrieves the args and kwargs from the signature of a given function or method.
     For kwargs, default values are retrieved as well.
 
@@ -152,7 +152,8 @@ def matched_dag_id_task_id(asset_node: Mapping[str, Any], dag_id: str, task_id: 
         if entry["__typename"] == "JsonMetadataEntry"
     }
 
-    if mapping_entry := json_metadata_entries.get(TASK_MAPPING_METADATA_KEY):
+    mapping_entry = json_metadata_entries.get(TASK_MAPPING_METADATA_KEY)
+    if mapping_entry:
         task_handle_dict_list = json.loads(mapping_entry)
         for task_handle_dict in task_handle_dict_list:
             if task_handle_dict["dag_id"] == dag_id and task_handle_dict["task_id"] == task_id:

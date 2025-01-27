@@ -3,7 +3,7 @@ import io
 import mimetypes
 import uuid
 from os import path, walk
-from typing import Generic, List, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
@@ -78,7 +78,7 @@ class DagsterWebserver(
     def make_request_context(self, conn: HTTPConnection) -> BaseWorkspaceRequestContext:
         return self._process_context.create_request_context(conn)
 
-    def build_middleware(self) -> List[Middleware]:
+    def build_middleware(self) -> list[Middleware]:
         return [Middleware(DagsterTracedCounterMiddleware)]
 
     def make_security_headers(self) -> dict:

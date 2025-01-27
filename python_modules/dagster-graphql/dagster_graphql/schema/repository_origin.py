@@ -1,4 +1,4 @@
-from typing import Sequence
+from collections.abc import Sequence
 
 import dagster._check as check
 import graphene

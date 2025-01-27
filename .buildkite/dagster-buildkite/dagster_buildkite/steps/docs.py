@@ -27,7 +27,12 @@ def build_docs_steps() -> List[BuildkiteStep]:
         # To fix this, run 'make mdx-format' in the /docs directory to update the snapshots.
         # Be sure to check the diff to make sure the literalincludes are as you expect them."
         CommandStepBuilder("docs code snippets")
-        .run("cd docs", "make next-dev-install", "make mdx-format", "git diff --exit-code")
+        .run(
+            "cd docs",
+            "make next-dev-install",
+            "make mdx-format",
+            "git diff --exit-code",
+        )
         .with_skip(skip_if_no_docs_changes())
         .on_test_image(AvailablePythonVersion.get_default())
         .build(),
@@ -55,7 +60,9 @@ def build_docs_steps() -> List[BuildkiteStep]:
         .on_test_image(AvailablePythonVersion.get_default())
         .build(),
         # Verify screenshot integrity.
-        build_tox_step("docs", "audit-screenshots", skip_reason=skip_if_no_docs_changes()),
+        build_tox_step(
+            "docs", "audit-screenshots", skip_reason=skip_if_no_docs_changes()
+        ),
     ]
 
     steps += [

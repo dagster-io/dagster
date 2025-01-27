@@ -1,11 +1,18 @@
+import hashlib
 import shutil
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Final, Literal, Optional, Tuple
+from typing import Final, Literal, Optional
 
 from typing_extensions import Self, TypeAlias
 
 from dagster_dg.config import DgConfig
+from dagster_dg.utils import (
+    DEFAULT_FILE_EXCLUDE_PATTERNS,
+    hash_directory_metadata,
+    hash_file_metadata,
+)
 
 _CACHE_CONTAINER_DIR_NAME: Final = "dg-cache"
 
@@ -19,6 +26,20 @@ def get_default_cache_dir() -> Path:
         return Path.home() / "Library" / "Caches" / "dg"
     else:
         return Path.home() / ".cache" / "dg"
+
+
+def hash_paths(
+    paths: Sequence[Path],
+    includes: Optional[Sequence[str]] = None,
+    excludes: Sequence[str] = DEFAULT_FILE_EXCLUDE_PATTERNS,
+) -> str:
+    hasher = hashlib.md5()
+    for path in paths:
+        if path.is_dir():
+            hash_directory_metadata(hasher, path, includes=includes, excludes=excludes)
+        else:
+            hash_file_metadata(hasher, path)
+    return hasher.hexdigest()
 
 
 class DgCache:
@@ -47,7 +68,7 @@ class DgCache:
         self._root_path.mkdir(parents=True, exist_ok=True)
         self._logging_enabled = logging_enabled
 
-    def clear_key(self, key: Tuple[str, ...]) -> None:
+    def clear_key(self, key: tuple[str, ...]) -> None:
         path = self._get_path(key)
         if path.exists():
             path.unlink()
@@ -57,7 +78,7 @@ class DgCache:
         shutil.rmtree(self._root_path)
         self.log(f"CACHE [clear-all]: {self._root_path}")
 
-    def get(self, key: Tuple[str, ...]) -> Optional[str]:
+    def get(self, key: tuple[str, ...]) -> Optional[str]:
         path = self._get_path(key)
         if path.exists():
             self.log(f"CACHE [hit]: {path}")
@@ -66,13 +87,13 @@ class DgCache:
             self.log(f"CACHE [miss]: {path}")
             return None
 
-    def set(self, key: Tuple[str, ...], value: str) -> None:
+    def set(self, key: tuple[str, ...], value: str) -> None:
         path = self._get_path(key)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(value)
         self.log(f"CACHE [write]: {path}")
 
-    def _get_path(self, key: Tuple[str, ...]) -> Path:
+    def _get_path(self, key: tuple[str, ...]) -> Path:
         return Path(self._root_path, *key)
 
     def log(self, message: str) -> None:

@@ -228,6 +228,7 @@ export const GlobalAutomaterializationContent = () => {
               <RunsFeedTableWithFilters
                 filter={RUNS_FILTER}
                 actionBarComponents={tableViewSwitch}
+                includeRunsFromBackfills={true}
               />
             </Box>
           )}

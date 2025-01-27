@@ -1,4 +1,4 @@
-// Generated from /Users/briantu/repos/dagster/js_modules/dagster-ui/packages/ui-core/src/op-selection/OpSelection.g4 by ANTLR 4.9.0-SNAPSHOT
+// Generated from /Users/marcosalazar/code/dagster/js_modules/dagster-ui/packages/ui-core/src/op-selection/OpSelection.g4 by ANTLR 4.9.0-SNAPSHOT
 
 import {ParseTreeVisitor} from 'antlr4ts/tree/ParseTreeVisitor';
 
@@ -7,8 +7,11 @@ import {
   AndExpressionContext,
   AttributeExprContext,
   AttributeExpressionContext,
+  DownTraversalContext,
   DownTraversalExpressionContext,
   ExprContext,
+  FunctionCallExpressionContext,
+  FunctionNameContext,
   NameExprContext,
   NameSubstringExprContext,
   NotExpressionContext,
@@ -17,8 +20,8 @@ import {
   StartContext,
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
-  TraversalContext,
   UpAndDownTraversalExpressionContext,
+  UpTraversalContext,
   UpTraversalExpressionContext,
   ValueContext,
 } from './OpSelectionParser';
@@ -120,6 +123,14 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
   visitAttributeExpression?: (ctx: AttributeExpressionContext) => Result;
 
   /**
+   * Visit a parse tree produced by the `FunctionCallExpression`
+   * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitFunctionCallExpression?: (ctx: FunctionCallExpressionContext) => Result;
+
+  /**
    * Visit a parse tree produced by the `ParenthesizedExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
    * @param ctx the parse tree
@@ -149,11 +160,25 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
   visitTraversalAllowedExpr?: (ctx: TraversalAllowedExprContext) => Result;
 
   /**
-   * Visit a parse tree produced by `OpSelectionParser.traversal`.
+   * Visit a parse tree produced by `OpSelectionParser.upTraversal`.
    * @param ctx the parse tree
    * @return the visitor result
    */
-  visitTraversal?: (ctx: TraversalContext) => Result;
+  visitUpTraversal?: (ctx: UpTraversalContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `OpSelectionParser.downTraversal`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitDownTraversal?: (ctx: DownTraversalContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `OpSelectionParser.functionName`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitFunctionName?: (ctx: FunctionNameContext) => Result;
 
   /**
    * Visit a parse tree produced by `OpSelectionParser.attributeExpr`.

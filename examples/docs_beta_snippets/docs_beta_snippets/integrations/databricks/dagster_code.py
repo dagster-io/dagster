@@ -1,11 +1,10 @@
-import os
 import sys
 
 from dagster_databricks import PipesDatabricksClient
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service import jobs
 
 import dagster as dg
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service import jobs
 
 
 @dg.asset

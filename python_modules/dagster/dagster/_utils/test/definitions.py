@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Generic, Iterator, Mapping, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions

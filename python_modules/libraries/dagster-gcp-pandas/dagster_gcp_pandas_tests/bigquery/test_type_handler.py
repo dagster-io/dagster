@@ -1,7 +1,8 @@
 import os
 import uuid
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, Optional, cast
+from typing import Optional, cast
 
 import pandas as pd
 import pandas_gbq

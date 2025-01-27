@@ -103,7 +103,7 @@ def repo():
 # start_repo_main
 if __name__ == "__main__":
     prod_op_hooks_run_config_yaml = file_relative_path(__file__, "prod_op_hooks.yaml")
-    with open(prod_op_hooks_run_config_yaml, "r", encoding="utf8") as fd:
+    with open(prod_op_hooks_run_config_yaml, encoding="utf8") as fd:
         run_config = yaml.safe_load(fd.read())
 
     notif_all_prod.execute_in_process(run_config=run_config, raise_on_error=False)

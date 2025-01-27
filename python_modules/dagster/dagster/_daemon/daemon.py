@@ -7,10 +7,11 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections import deque
+from collections.abc import Generator, Mapping
 from contextlib import AbstractContextManager, ExitStack
 from enum import Enum
 from threading import Event
-from typing import Any, Generator, Generic, Mapping, Optional, TypeVar, Union
+from typing import Any, Generic, Optional, TypeVar, Union
 
 from typing_extensions import TypeAlias
 
@@ -126,7 +127,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                         )
                         break
                     except Exception:
-                        error_info = DaemonErrorCapture.on_exception(
+                        error_info = DaemonErrorCapture.process_exception(
                             exc_info=sys.exc_info(),
                             logger=self._logger,
                             log_message="Caught error, daemon loop will restart",

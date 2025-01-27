@@ -1,5 +1,7 @@
+# ruff: noqa: UP006
+
 import warnings
-from typing import Tuple
+from typing import Tuple  # noqa: UP035
 
 import pytest
 from dagster import (

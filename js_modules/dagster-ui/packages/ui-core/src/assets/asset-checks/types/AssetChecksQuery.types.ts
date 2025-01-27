@@ -2,6 +2,12 @@
 
 import * as Types from '../../../graphql/types';
 
+export type AssetCheckKeyFragment = {
+  __typename: 'AssetCheck';
+  name: string;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>};
+};
+
 export type AssetChecksQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
 }>;
@@ -25,6 +31,12 @@ export type AssetChecksQuery = {
                 canExecuteIndividually: Types.AssetCheckCanExecuteIndividually;
                 jobNames: Array<string>;
                 description: string | null;
+                assetKey: {__typename: 'AssetKey'; path: Array<string>};
+                automationCondition: {
+                  __typename: 'AutomationCondition';
+                  label: string | null;
+                  expandedLabel: Array<string>;
+                } | null;
                 executionForLatestMaterialization: {
                   __typename: 'AssetCheckExecution';
                   id: string;
@@ -238,4 +250,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = '2487c52958999bb33e5daa6c0caa0eea46ab200cb7d5d2294a8290e8e1ad3025';
+export const AssetChecksQueryVersion = '67252db2bc1bfc878d1568008f7e0698a4515d15b4b68c8e88bd1edef4c1f60f';

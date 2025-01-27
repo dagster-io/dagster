@@ -1,8 +1,9 @@
 import logging
 import re
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union, cast
+from typing import Callable, Optional, TypeVar, Union, cast
 from urllib.parse import (
     quote_plus as urlquote,
     urlparse,
@@ -61,7 +62,7 @@ def get_conn_string(
     return f"mysql+mysqlconnector://{username}:{urlquote(password)}@{hostname}:{port}/{db_name}"
 
 
-def parse_mysql_version(version: str) -> Tuple[int, ...]:
+def parse_mysql_version(version: str) -> tuple[int, ...]:
     """Parse MySQL version into a tuple of ints.
 
     Args:

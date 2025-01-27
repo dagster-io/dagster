@@ -41,7 +41,7 @@ def test_old_resource_authenticate_via_config():
     passed = False
 
     try:
-        with open(old_gcp_creds_file, "r") as f:
+        with open(old_gcp_creds_file) as f:
             gcp_creds = f.read()
 
         resource_defs = {
@@ -86,7 +86,7 @@ def test_pythonic_resource_authenticate_via_config():
     passed = False
 
     try:
-        with open(old_gcp_creds_file, "r") as f:
+        with open(old_gcp_creds_file) as f:
             gcp_creds = f.read()
 
         resource_defs = {

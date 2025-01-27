@@ -79,7 +79,14 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                     "TEST_AZURE_CLIENT_SECRET",
                     "TEST_AZURE_STORAGE_ACCOUNT_ID",
                     "TEST_AZURE_CONTAINER_ID",
+                    "TEST_AZURE_ACCESS_KEY",
                 ],
+                always_run_if=lambda: True,
+            ),
+            PackageSpec(
+                "integration_tests/test_suites/dagster-gcp-live-tests",
+                name="gcp-live-tests",
+                env_vars=["GCP_LIVE_TEST_CREDENTIALS"],
                 always_run_if=lambda: True,
             ),
         ]

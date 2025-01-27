@@ -10,15 +10,15 @@ communityIntegration: true
 apireflink: https://pydocs.lakefs.io/
 docslink:
 partnerlink: https://lakefs.io/
-logo: /integrations/lakefs.svg
 categories:
   - Storage
 enabledBy:
 enables:
 tags: [community-supported, storage]
+sidebar_custom_props: 
+  logo: images/integrations/lakefs.svg
+  community: true
 ---
-
-
 
 By integrating with lakeFS, a big data scale version control system, you can leverage the versioning capabilities of lakeFS to track changes to your data. This integration allows you to have a complete lineage of your data, from the initial raw data to the transformed and processed data, making it easier to understand and reproduce data transformations.
 
@@ -34,7 +34,7 @@ pip install lakefs-client
 
 ### Example
 
-<CodeExample filePath="integrations/lakefs.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/lakefs.py" language="python" />
 
 ### About lakeFS
 

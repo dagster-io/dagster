@@ -63,6 +63,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   }
 
   const paginationProps: CursorPaginationProps = {
+    cursor,
     hasPrevCursor: !!cursor,
     hasNextCursor,
     popCursor: () => {

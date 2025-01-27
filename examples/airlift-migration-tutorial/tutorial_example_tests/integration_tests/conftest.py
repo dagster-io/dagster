@@ -3,8 +3,9 @@ import os
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Generator, Iterator
 from pathlib import Path
-from typing import AbstractSet, Callable, Generator, Iterator
+from typing import AbstractSet, Callable  # noqa: UP035
 
 import pytest
 import yaml
@@ -66,7 +67,7 @@ def mark_tasks_migrated_fixture(
     @contextlib.contextmanager
     def mark_tasks_migrated(migrated_tasks: AbstractSet[str]) -> Iterator[None]:
         """Updates the contents of the proxied state file to mark the specified tasks as proxied."""
-        with open(proxied_state_file, "r") as f:
+        with open(proxied_state_file) as f:
             contents = f.read()
 
         try:

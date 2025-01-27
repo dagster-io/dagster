@@ -1,8 +1,8 @@
 ### EXTERNAL PROCESS
 
 import json
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator
 
 import cloud_service  # type: ignore
 from dagster_pipes import PipesContextData, PipesContextLoader, PipesParams

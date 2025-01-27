@@ -6,22 +6,11 @@ import time
 import urllib.parse
 import warnings
 from collections import defaultdict
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from typing import AbstractSet, Any, Optional, Union  # noqa: UP035
 
 import aiohttp
 import dagster._check as check
@@ -38,6 +27,7 @@ from dagster._record import IHaveNew, record_custom
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
+from dagster._utils.warnings import deprecation_warning
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 
@@ -45,10 +35,12 @@ from dagster_sigma.cli import SIGMA_RECON_DATA_PREFIX, SNAPSHOT_ENV_VAR_NAME
 from dagster_sigma.translator import (
     DagsterSigmaTranslator,
     SigmaDataset,
+    SigmaDatasetTranslatorData,
     SigmaOrganizationData,
     SigmaTable,
     SigmaWorkbook,
     SigmaWorkbookMetadataSet,
+    SigmaWorkbookTranslatorData,
     _inode_from_url,
 )
 
@@ -63,6 +55,28 @@ class SigmaMaterializationStatus(str, enum.Enum):
     READY = "ready"
 
 
+def build_folder_path_err(folder: Any, idx: int, param_name: str):
+    return (
+        f"{param_name} at index {idx} is not a sequence: `{folder!r}`.\n"
+        "Paths should be specified as a list of folder names, starting from the root folder."
+    )
+
+
+def validate_folder_path_input(folder_input: Optional[Sequence[Sequence[str]]], param_name: str):
+    check.opt_sequence_param(folder_input, param_name, of_type=Sequence)
+    if folder_input:
+        for idx, folder in enumerate(folder_input):
+            check.invariant(
+                not isinstance(folder, str),
+                build_folder_path_err(folder, idx, param_name),
+            )
+            check.is_iterable(
+                folder,
+                of_type=str,
+                additional_message=build_folder_path_err(folder, idx, param_name),
+            )
+
+
 @record_custom
 class SigmaFilter(IHaveNew):
     """Filters the set of Sigma objects to fetch.
@@ -71,21 +85,30 @@ class SigmaFilter(IHaveNew):
         workbook_folders (Optional[Sequence[Sequence[str]]]): A list of folder paths to fetch workbooks from.
             Each folder path is a list of folder names, starting from the root folder. All workbooks
             contained in the specified folders will be fetched. If not provided, all workbooks will be fetched.
+        workbooks (Optional[Sequence[Sequence[str]]]): A list of fully qualified workbook paths to fetch.
+            Each workbook path is a list of folder names, starting from the root folder, and ending
+            with the workbook name. If not provided, all workbooks will be fetched.
         include_unused_datasets (bool): Whether to include datasets that are not used in any workbooks.
             Defaults to True.
     """
 
     workbook_folders: Optional[Sequence[Sequence[str]]] = None
+    workbooks: Optional[Sequence[Sequence[str]]] = None
     include_unused_datasets: bool = True
 
     def __new__(
         cls,
         workbook_folders: Optional[Sequence[Sequence[str]]] = None,
+        workbooks: Optional[Sequence[Sequence[str]]] = None,
         include_unused_datasets: bool = True,
     ):
+        validate_folder_path_input(workbook_folders, "workbook_folders")
+        validate_folder_path_input(workbooks, "workbooks")
+
         return super().__new__(
             cls,
             workbook_folders=tuple([tuple(folder) for folder in workbook_folders or []]),
+            workbooks=tuple([tuple(workbook) for workbook in workbooks or []]),
             include_unused_datasets=include_unused_datasets,
         )
 
@@ -153,8 +176,8 @@ class SigmaOrganization(ConfigurableResource):
         self,
         endpoint: str,
         method: str = "GET",
-        query_params: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        query_params: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         url = f"{self.base_url}/v2/{endpoint}"
         if query_params:
             url = f"{url}?{urllib.parse.urlencode(query_params)}"
@@ -176,9 +199,9 @@ class SigmaOrganization(ConfigurableResource):
         self,
         endpoint: str,
         method: str = "GET",
-        query_params: Optional[Dict[str, Any]] = None,
-        json: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        query_params: Optional[dict[str, Any]] = None,
+        json: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         url = f"{self.base_url}/v2/{endpoint}"
         if query_params:
             url = f"{url}?{urllib.parse.urlencode(query_params)}"
@@ -197,8 +220,8 @@ class SigmaOrganization(ConfigurableResource):
         return response.json()
 
     async def _fetch_json_async_paginated_entries(
-        self, endpoint: str, query_params: Optional[Dict[str, Any]] = None, limit: int = 1000
-    ) -> List[Dict[str, Any]]:
+        self, endpoint: str, query_params: Optional[dict[str, Any]] = None, limit: int = 1000
+    ) -> list[dict[str, Any]]:
         entries = []
 
         query_params_with_limit = {
@@ -236,33 +259,33 @@ class SigmaOrganization(ConfigurableResource):
         return entries
 
     @cached_method
-    async def _fetch_workbooks(self) -> List[Dict[str, Any]]:
+    async def _fetch_workbooks(self) -> list[dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries("workbooks")
 
     @cached_method
-    async def _fetch_datasets(self) -> List[Dict[str, Any]]:
+    async def _fetch_datasets(self) -> list[dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries("datasets")
 
     @cached_method
-    async def _fetch_tables(self) -> List[Dict[str, Any]]:
+    async def _fetch_tables(self) -> list[dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries(
             "files", query_params={"typeFilters": "table"}
         )
 
     @cached_method
-    async def _fetch_pages_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
+    async def _fetch_pages_for_workbook(self, workbook_id: str) -> list[dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries(f"workbooks/{workbook_id}/pages")
 
     @cached_method
     async def _fetch_elements_for_page(
         self, workbook_id: str, page_id: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries(
             f"workbooks/{workbook_id}/pages/{page_id}/elements"
         )
 
     @cached_method
-    async def _fetch_lineage_for_element(self, workbook_id: str, element_id: str) -> Dict[str, Any]:
+    async def _fetch_lineage_for_element(self, workbook_id: str, element_id: str) -> dict[str, Any]:
         return await self._fetch_json_async(
             f"workbooks/{workbook_id}/lineage/elements/{element_id}"
         )
@@ -270,13 +293,13 @@ class SigmaOrganization(ConfigurableResource):
     @cached_method
     async def _fetch_columns_for_element(
         self, workbook_id: str, element_id: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return (
             await self._fetch_json_async(f"workbooks/{workbook_id}/elements/{element_id}/columns")
         )["entries"]
 
     @cached_method
-    async def _fetch_queries_for_workbook(self, workbook_id: str) -> List[Dict[str, Any]]:
+    async def _fetch_queries_for_workbook(self, workbook_id: str) -> list[dict[str, Any]]:
         return (await self._fetch_json_async(f"workbooks/{workbook_id}/queries"))["entries"]
 
     @contextlib.contextmanager
@@ -299,7 +322,7 @@ class SigmaOrganization(ConfigurableResource):
 
     def _fetch_materialization_status(
         self, workbook_id: str, materialization_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self._fetch_json(f"workbooks/{workbook_id}/materializations/{materialization_id}")
 
     def _run_materializations_for_workbook(
@@ -383,7 +406,7 @@ class SigmaOrganization(ConfigurableResource):
 
         workbooks_to_fetch = await self._fetch_workbooks_and_filter(sigma_filter)
 
-        async def process_workbook(workbook: Dict[str, Any]) -> None:
+        async def process_workbook(workbook: dict[str, Any]) -> None:
             logger.info("Inferring dataset dependencies for workbook %s", workbook["workbookId"])
             queries = await self._fetch_queries_for_workbook(workbook["workbookId"])
             queries_by_element_id = defaultdict(list)
@@ -398,7 +421,7 @@ class SigmaOrganization(ConfigurableResource):
                 ]
             )
 
-            async def build_deps_from_element(element: Dict[str, Any]) -> None:
+            async def build_deps_from_element(element: dict[str, Any]) -> None:
                 # We extract the list of dataset dependencies from the lineage of each element
                 # If there is a single dataset dependency, we can then know the queries for that element
                 # are associated with that dataset
@@ -457,7 +480,7 @@ class SigmaOrganization(ConfigurableResource):
 
         workbooks_to_fetch = await self._fetch_workbooks_and_filter(sigma_filter)
 
-        async def process_workbook(workbook: Dict[str, Any]) -> None:
+        async def process_workbook(workbook: dict[str, Any]) -> None:
             logger.info("Fetching column data from workbook %s", workbook["workbookId"])
             pages = await self._fetch_pages_for_workbook(workbook["workbookId"])
             elements = [
@@ -503,12 +526,14 @@ class SigmaOrganization(ConfigurableResource):
     @cached_method
     async def _fetch_materialization_schedules_for_workbook(
         self, workbook_id: str
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         return await self._fetch_json_async_paginated_entries(
             f"workbooks/{workbook_id}/materialization-schedules"
         )
 
-    async def load_workbook_data(self, raw_workbook_data: Dict[str, Any]) -> SigmaWorkbook:
+    async def load_workbook_data(
+        self, raw_workbook_data: dict[str, Any], fetch_lineage_data: bool
+    ) -> SigmaWorkbook:
         dataset_deps = set()
         direct_table_deps = set()
 
@@ -528,7 +553,7 @@ class SigmaOrganization(ConfigurableResource):
 
         async def safe_fetch_lineage_for_element(
             workbook_id: str, element_id: str
-        ) -> Dict[str, Any]:
+        ) -> dict[str, Any]:
             with self.try_except_http_warn(
                 self.warn_on_lineage_fetch_error,
                 f"Failed to fetch lineage for element {element_id} in workbook {workbook_id}",
@@ -537,13 +562,17 @@ class SigmaOrganization(ConfigurableResource):
 
             return {"dependencies": {}}
 
-        lineages = await asyncio.gather(
-            *[
-                safe_fetch_lineage_for_element(
-                    raw_workbook_data["workbookId"], element["elementId"]
-                )
-                for element in elements
-            ]
+        lineages = (
+            await asyncio.gather(
+                *[
+                    safe_fetch_lineage_for_element(
+                        raw_workbook_data["workbookId"], element["elementId"]
+                    )
+                    for element in elements
+                ]
+            )
+            if fetch_lineage_data
+            else []
         )
         for lineage in lineages:
             for item in lineage["dependencies"].values():
@@ -566,17 +595,24 @@ class SigmaOrganization(ConfigurableResource):
         )
 
     @cached_method
-    async def _fetch_workbooks_and_filter(self, sigma_filter: SigmaFilter) -> List[Dict[str, Any]]:
+    async def _fetch_workbooks_and_filter(self, sigma_filter: SigmaFilter) -> list[dict[str, Any]]:
         raw_workbooks = await self._fetch_workbooks()
         workbooks_to_fetch = []
-        if sigma_filter.workbook_folders:
+        if sigma_filter.workbook_folders or sigma_filter.workbooks:
             workbook_filter_strings = [
-                "/".join(folder).lower() for folder in sigma_filter.workbook_folders
+                "/".join(folder).lower() for folder in sigma_filter.workbook_folders or []
             ]
+            workbook_strings = ["/".join(folder).lower() for folder in sigma_filter.workbooks or []]
             for workbook in raw_workbooks:
-                workbook_path = str(workbook["path"]).lower()
-                if any(
-                    workbook_path.startswith(folder_str) for folder_str in workbook_filter_strings
+                workbook_path_and_name = (
+                    f"{str(workbook['path']).lower()}/{workbook['name'].lower()}"
+                )
+                if (
+                    any(
+                        workbook_path_and_name.startswith(folder_str)
+                        for folder_str in workbook_filter_strings
+                    )
+                    or workbook_path_and_name in workbook_strings
                 ):
                     workbooks_to_fetch.append(workbook)
         else:
@@ -585,7 +621,7 @@ class SigmaOrganization(ConfigurableResource):
 
     @cached_method
     async def build_organization_data(
-        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool
+        self, sigma_filter: Optional[SigmaFilter], fetch_column_data: bool, fetch_lineage_data: bool
     ) -> SigmaOrganizationData:
         """Retrieves all workbooks and datasets in the Sigma organization and builds a
         SigmaOrganizationData object representing the organization's assets.
@@ -595,12 +631,19 @@ class SigmaOrganization(ConfigurableResource):
         logger.info("Beginning Sigma organization data fetch")
         workbooks_to_fetch = await self._fetch_workbooks_and_filter(_sigma_filter)
 
-        workbooks: List[SigmaWorkbook] = await asyncio.gather(
-            *[self.load_workbook_data(workbook) for workbook in workbooks_to_fetch]
+        workbooks: list[SigmaWorkbook] = await asyncio.gather(
+            *[
+                self.load_workbook_data(workbook, fetch_lineage_data)
+                for workbook in workbooks_to_fetch
+            ]
         )
 
-        datasets: List[SigmaDataset] = []
-        deps_by_dataset_inode = await self._fetch_dataset_upstreams_by_inode(_sigma_filter)
+        datasets: list[SigmaDataset] = []
+        deps_by_dataset_inode = (
+            await self._fetch_dataset_upstreams_by_inode(_sigma_filter)
+            if fetch_lineage_data
+            else {}
+        )
 
         columns_by_dataset_inode = (
             await self._fetch_dataset_columns_by_inode(_sigma_filter) if fetch_column_data else {}
@@ -621,11 +664,11 @@ class SigmaOrganization(ConfigurableResource):
                     SigmaDataset(
                         properties=dataset,
                         columns=columns_by_dataset_inode.get(inode, set()),
-                        inputs=deps_by_dataset_inode[inode],
+                        inputs=deps_by_dataset_inode.get(inode, set()),
                     )
                 )
 
-        tables: List[SigmaTable] = []
+        tables: list[SigmaTable] = []
         logger.info("Fetching table data")
         for table in await self._fetch_tables():
             inode = _inode_from_url(table["urlId"])
@@ -645,7 +688,7 @@ class SigmaOrganization(ConfigurableResource):
     )
     def build_defs(
         self,
-        dagster_sigma_translator: Type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
+        dagster_sigma_translator: type[DagsterSigmaTranslator] = DagsterSigmaTranslator,
         sigma_filter: Optional[SigmaFilter] = None,
         fetch_column_data: bool = True,
     ) -> Definitions:
@@ -668,27 +711,40 @@ class SigmaOrganization(ConfigurableResource):
 @experimental
 def load_sigma_asset_specs(
     organization: SigmaOrganization,
-    dagster_sigma_translator: Callable[
-        [SigmaOrganizationData], DagsterSigmaTranslator
-    ] = DagsterSigmaTranslator,
+    dagster_sigma_translator: Optional[
+        Union[DagsterSigmaTranslator, type[DagsterSigmaTranslator]]
+    ] = None,
     sigma_filter: Optional[SigmaFilter] = None,
     fetch_column_data: bool = True,
+    fetch_lineage_data: bool = True,
     snapshot_path: Optional[Union[str, Path]] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Sigma content in the organization.
 
     Args:
         organization (SigmaOrganization): The Sigma organization to fetch assets from.
-        dagster_sigma_translator (Callable[[SigmaOrganizationData], DagsterSigmaTranslator]): The translator to use
-            to convert Sigma content into AssetSpecs. Defaults to DagsterSigmaTranslator.
+        dagster_sigma_translator (Optional[Union[DagsterSigmaTranslator, Type[DagsterSigmaTranslatorr]]]):
+            The translator to use to convert Sigma content into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterSigmaTranslator`.
         sigma_filter (Optional[SigmaFilter]): Filters the set of Sigma objects to fetch.
         fetch_column_data (bool): Whether to fetch column data for datasets, which can be slow.
+        fetch_lineage_data (bool): Whether to fetch any lineage data for workbooks and datasets.
         snapshot_path (Optional[Union[str, Path]]): Path to a snapshot file to load Sigma data from,
             rather than fetching it from the Sigma API.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Sigma content in the organization.
     """
+    if isinstance(dagster_sigma_translator, type):
+        deprecation_warning(
+            subject="Support of `dagster_sigma_translator` as a Type[DagsterSigmaTranslator]",
+            breaking_version="1.10",
+            additional_warn_text=(
+                "Pass an instance of DagsterSigmaTranslator or subclass to `dagster_sigma_translator` instead."
+            ),
+        )
+        dagster_sigma_translator = dagster_sigma_translator()
+
     snapshot = None
     if snapshot_path and not os.getenv(SNAPSHOT_ENV_VAR_NAME):
         snapshot = deserialize_value(Path(snapshot_path).read_text(), RepositoryLoadData)
@@ -697,9 +753,10 @@ def load_sigma_asset_specs(
         return check.is_list(
             SigmaOrganizationDefsLoader(
                 organization=initialized_organization,
-                translator_cls=dagster_sigma_translator,
+                translator=dagster_sigma_translator or DagsterSigmaTranslator(),
                 sigma_filter=sigma_filter,
                 fetch_column_data=fetch_column_data,
+                fetch_lineage_data=fetch_lineage_data,
                 snapshot=snapshot,
             )
             .build_defs()
@@ -709,7 +766,8 @@ def load_sigma_asset_specs(
 
 
 def _get_translator_spec_assert_keys_match(
-    translator: DagsterSigmaTranslator, data: Union[SigmaDataset, SigmaWorkbook]
+    translator: DagsterSigmaTranslator,
+    data: Union[SigmaDatasetTranslatorData, SigmaWorkbookTranslatorData],
 ) -> AssetSpec:
     key = translator.get_asset_key(data)
     spec = translator.get_asset_spec(data)
@@ -724,10 +782,11 @@ def _get_translator_spec_assert_keys_match(
 @dataclass
 class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganizationData]):
     organization: SigmaOrganization
-    translator_cls: Callable[[SigmaOrganizationData], DagsterSigmaTranslator]
+    translator: DagsterSigmaTranslator
     snapshot: Optional[RepositoryLoadData]
     sigma_filter: Optional[SigmaFilter] = None
     fetch_column_data: bool = True
+    fetch_lineage_data: bool = True
 
     @property
     def defs_key(self) -> str:
@@ -739,14 +798,23 @@ class SigmaOrganizationDefsLoader(StateBackedDefinitionsLoader[SigmaOrganization
 
         return asyncio.run(
             self.organization.build_organization_data(
-                sigma_filter=self.sigma_filter, fetch_column_data=self.fetch_column_data
+                sigma_filter=self.sigma_filter,
+                fetch_column_data=self.fetch_column_data,
+                fetch_lineage_data=self.fetch_lineage_data,
             )
         )
 
     def defs_from_state(self, state: SigmaOrganizationData) -> Definitions:
-        translator = self.translator_cls(state)
+        translator_data_workbooks = [
+            SigmaWorkbookTranslatorData(workbook=workbook, organization_data=state)
+            for workbook in state.workbooks
+        ]
+        translator_data_datasets = [
+            SigmaDatasetTranslatorData(dataset=dataset, organization_data=state)
+            for dataset in state.datasets
+        ]
         asset_specs = [
-            _get_translator_spec_assert_keys_match(translator, obj)
-            for obj in [*state.workbooks, *state.datasets]
+            _get_translator_spec_assert_keys_match(self.translator, obj)
+            for obj in [*translator_data_workbooks, *translator_data_datasets]
         ]
         return Definitions(assets=asset_specs)

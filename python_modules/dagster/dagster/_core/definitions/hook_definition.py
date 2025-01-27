@@ -1,4 +1,5 @@
-from typing import AbstractSet, Any, Callable, Iterator, NamedTuple, Optional
+from collections.abc import Iterator
+from typing import AbstractSet, Any, Callable, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -40,7 +41,7 @@ class HookDefinition(
         required_resource_keys: Optional[AbstractSet[str]] = None,
         decorated_fn: Optional[Callable[..., Any]] = None,
     ):
-        return super(HookDefinition, cls).__new__(
+        return super().__new__(
             cls,
             name=check_valid_name(name),
             hook_fn=check.callable_param(hook_fn, "hook_fn"),

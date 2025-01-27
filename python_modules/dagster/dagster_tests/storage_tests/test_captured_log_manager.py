@@ -1,8 +1,9 @@
 import os
 import sys
 import tempfile
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import Any, Generator, Mapping, Sequence
+from typing import Any
 
 import pytest
 from dagster import job, op

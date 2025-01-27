@@ -1,7 +1,7 @@
 import os
 import pickle
 import sys
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
@@ -20,7 +20,7 @@ def main(step_run_ref_path: str) -> None:
     file_handle = LocalFileHandle(step_run_ref_path)
     step_run_ref = pickle.loads(file_manager.read_data(file_handle))
 
-    all_events: List[EventLogEntry] = []
+    all_events: list[EventLogEntry] = []
 
     try:
         instance = external_instance_from_step_run_ref(

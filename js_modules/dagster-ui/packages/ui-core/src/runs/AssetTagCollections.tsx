@@ -15,6 +15,13 @@ import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../asset-graph/Utils';
 import {
+  labelForAssetCheck,
+  renderItemAssetCheck,
+  renderItemAssetKey,
+  sortItemAssetCheck,
+  sortItemAssetKey,
+} from '../assets/AssetListUtils';
+import {
   assetDetailsPathForAssetCheck,
   assetDetailsPathForKey,
 } from '../assets/assetDetailsPathForKey';
@@ -23,30 +30,6 @@ import {AssetKey} from '../assets/types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
 import {numberFormatter} from '../ui/formatters';
-
-const sortItemAssetKey = (a: AssetKey, b: AssetKey) => {
-  return displayNameForAssetKey(a).localeCompare(displayNameForAssetKey(b));
-};
-
-const sortItemAssetCheck = (a: Check, b: Check) => {
-  return labelForAssetCheck(a).localeCompare(labelForAssetCheck(b));
-};
-
-const renderItemAssetKey = (assetKey: AssetKey) => (
-  <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
-    <MiddleTruncate text={displayNameForAssetKey(assetKey)} />
-  </Link>
-);
-
-const renderItemAssetCheck = (assetCheck: Check) => (
-  <Link to={assetDetailsPathForAssetCheck(assetCheck)} style={{display: 'block', width: '100%'}}>
-    <MiddleTruncate text={labelForAssetCheck(assetCheck)} />
-  </Link>
-);
-
-const labelForAssetCheck = (check: Check) => {
-  return `${check.name} on ${displayNameForAssetKey(check.assetKey)}`;
-};
 
 function useShowMoreDialog<T>(
   dialogTitle: string,
@@ -81,6 +64,7 @@ interface AssetKeyTagCollectionProps {
   assetKeys: AssetKey[] | null;
   dialogTitle?: string;
   useTags?: boolean;
+  extraTags?: React.ReactNode[];
   maxRows?: number;
 }
 
@@ -148,7 +132,7 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
     }
   });
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     window.requestAnimationFrame(evaluate);
   }, [evaluate]);
 
@@ -156,7 +140,7 @@ export function useAdjustChildVisibilityToFill(moreLabelFn: (count: number) => s
 }
 
 export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionProps) => {
-  const {assetKeys, useTags, maxRows, dialogTitle = 'Assets in run'} = props;
+  const {assetKeys, useTags, extraTags, maxRows, dialogTitle = 'Assets in run'} = props;
 
   const count = assetKeys?.length ?? 0;
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
@@ -198,6 +182,7 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
         overflow: 'hidden',
       }}
     >
+      {extraTags}
       {slicedSortedAssetKeys.map((assetKey) => (
         // Outer span ensures the popover target is in the right place if the
         // parent is a flexbox.

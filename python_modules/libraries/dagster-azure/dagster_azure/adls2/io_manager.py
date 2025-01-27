@@ -1,6 +1,7 @@
 import pickle
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator, Union
+from typing import Any, Union
 
 from dagster import (
     InputContext,

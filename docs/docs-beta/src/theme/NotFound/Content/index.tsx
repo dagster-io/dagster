@@ -22,11 +22,6 @@ export default function NotFoundContent({className}: Props): JSX.Element {
               .
             </p>
           </div>
-          <div className="not-found-links card">
-            <Link href="/">Welcome to Dagster</Link>
-            <Link href="/getting-started/quickstart">Build your first Dagster project</Link>
-            <Link href="/tutorial/tutorial-etl">Build your first ETL pipeline</Link>
-          </div>
         </div>
       </div>
     </main>

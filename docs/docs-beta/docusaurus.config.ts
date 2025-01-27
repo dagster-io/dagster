@@ -1,10 +1,9 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
-import { groupCollapsed } from 'console';
 
 const config: Config = {
-  title: 'Dagster Docs - Beta',
+  title: 'Dagster Docs',
   tagline: 'Dagster is a Python framework for building production-grade data platforms.',
   url: 'https://docs.dagster.io',
   favicon: 'img/favicon.ico',
@@ -22,26 +21,22 @@ const config: Config = {
   plugins: [
     require.resolve('docusaurus-plugin-sass'),
     require.resolve('docusaurus-plugin-image-zoom'),
+    require.resolve('./src/plugins/scoutos'),
   ],
   themeConfig: {
-    // Algolia environment variables are not required during development
-    algolia:
-      process.env.NODE_ENV === 'development'
-        ? {
-            appId: 'ABC123',
-            apiKey: 'ABC123',
-            indexName: 'ABC123',
-            contextualSearch: false,
-          }
-        : {
-            appId: process.env.ALGOLIA_APP_ID,
-            apiKey: process.env.ALGOLIA_API_KEY,
-            indexName: process.env.ALGOLIA_INDEX_NAME,
-            contextualSearch: false,
-          },
+    ...(process.env.ALGOLIA_APP_ID &&
+      process.env.ALGOLIA_API_KEY &&
+      process.env.ALGOLIA_INDEX_NAME && {
+        algolia: {
+          appId: process.env.ALGOLIA_APP_ID,
+          apiKey: process.env.ALGOLIA_API_KEY,
+          indexName: process.env.ALGOLIA_INDEX_NAME,
+          contextualSearch: false,
+        },
+      }),
     announcementBar: {
       id: 'announcementBar',
-      content: `<div><h3>This is the preview of the new documentation site.</h3> If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/discussions/24816">GitHub</a>. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</div>`,
+      content: `<div><h3>Welcome to Dagster's new and improved documentation site!</h3> You can find the legacy documentation with content for versions 1.9.9 and earlier at <a target="_blank" href="https://legacy-docs.dagster.io/">legacy-docs.dagster.io</a>.</div>`,
     },
     colorMode: {
       defaultMode: 'light',
@@ -83,6 +78,12 @@ const config: Config = {
           position: 'left',
         },
         {
+          label: 'Tutorials',
+          type: 'doc',
+          docId: 'tutorials/index',
+          position: 'left',
+        },
+        {
           label: 'Integrations',
           type: 'doc',
           docId: 'integrations/libraries/index',
@@ -100,21 +101,26 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
+        {
+          label: 'Dagster University',
+          href: 'https://courses.dagster.io',
+          position: 'left',
+        },
         //{
         //  label: 'Changelog',
         //  type: 'doc',
         //  docId: 'changelog',
         //  position: 'right',
         //},
-        {
-          label: 'Feedback',
-          href: 'https://github.com/dagster-io/dagster/discussions/24816',
-          position: 'right',
-          className: 'feedback-nav-link',
-        },
+        // {
+        //   label: 'Feedback',
+        //   href: 'https://github.com/dagster-io/dagster/discussions/24816',
+        //   position: 'right',
+        //   className: 'feedback-nav-link',
+        // },
       ],
     },
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'images/og.png',
     docs: {
       sidebar: {
         autoCollapseCategories: false,
@@ -147,7 +153,7 @@ const config: Config = {
           `,
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Dagster Labs`,
+      copyright: `Copyright ${new Date().getFullYear()} Dagster Labs`,
     },
   } satisfies Preset.ThemeConfig,
 
@@ -181,6 +187,12 @@ const config: Config = {
             return items;
           },
         },
+        ...(process.env.GOOGLE_ANALYTICS_TRACKING_ID && {
+          gtag: {
+            trackingID: process.env.GOOGLE_ANALYTICS_TRACKING_ID,
+            anonymizeIP: true,
+          },
+        }),
       } satisfies Preset.Options,
     ],
   ],

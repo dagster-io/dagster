@@ -3,21 +3,10 @@ import itertools
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
+from collections.abc import Collection, Mapping, Sequence
 from datetime import datetime
 from functools import cached_property, lru_cache
-from typing import (
-    Collection,
-    Dict,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -408,12 +397,12 @@ class BaseMultiPartitionMapping(ABC):
 
         # Maps the dimension name and key of a partition in a_partitions_def to the list of
         # partition keys in b_partitions_def that are dependencies of that partition
-        dep_b_keys_by_a_dim_and_key: Dict[Optional[str], Dict[Optional[str], List[str]]] = (
+        dep_b_keys_by_a_dim_and_key: dict[Optional[str], dict[Optional[str], list[str]]] = (
             defaultdict(lambda: defaultdict(list))
         )
         required_but_nonexistent_upstream_partitions = set()
 
-        b_dimension_partitions_def_by_name: Dict[Optional[str], PartitionsDefinition] = (
+        b_dimension_partitions_def_by_name: dict[Optional[str], PartitionsDefinition] = (
             {
                 dimension.name: dimension.partitions_def
                 for dimension in b_partitions_def.partitions_defs
@@ -641,7 +630,7 @@ class MultiToSingleDimensionPartitionMapping(
     """
 
     def __new__(cls, partition_dimension_name: Optional[str] = None):
-        return super(MultiToSingleDimensionPartitionMapping, cls).__new__(
+        return super().__new__(
             cls,
             partition_dimension_name=check.opt_str_param(
                 partition_dimension_name, "partition_dimension_name"
@@ -696,7 +685,7 @@ class DimensionPartitionMapping(
         dimension_name: str,
         partition_mapping: PartitionMapping,
     ):
-        return super(DimensionPartitionMapping, cls).__new__(
+        return super().__new__(
             cls,
             dimension_name=check.str_param(dimension_name, "dimension_name"),
             partition_mapping=check.inst_param(
@@ -795,7 +784,7 @@ class MultiPartitionMapping(
     def __new__(
         cls, downstream_mappings_by_upstream_dimension: Mapping[str, DimensionPartitionMapping]
     ):
-        return super(MultiPartitionMapping, cls).__new__(
+        return super().__new__(
             cls,
             downstream_mappings_by_upstream_dimension=check.mapping_param(
                 downstream_mappings_by_upstream_dimension,
@@ -1029,7 +1018,7 @@ class InferSingleToMultiDimensionDepsResult(
         if not can_infer and inference_failure_reason is None:
             check.failed("inference_failure_reason must be provided if can_infer is False")
 
-        return super(InferSingleToMultiDimensionDepsResult, cls).__new__(
+        return super().__new__(
             cls,
             can_infer,
             inference_failure_reason,
@@ -1172,7 +1161,7 @@ def infer_partition_mapping(
 
 
 @lru_cache(maxsize=1)
-def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
+def get_builtin_partition_mapping_types() -> tuple[type[PartitionMapping], ...]:
     from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
     return (

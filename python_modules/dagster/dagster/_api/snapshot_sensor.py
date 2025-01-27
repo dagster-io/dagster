@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.definitions.sensor_definition import SensorExecutionData

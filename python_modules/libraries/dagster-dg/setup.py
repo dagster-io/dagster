@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_dg/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -37,6 +36,10 @@ setup(
         "tomli",
         "click>=8",
         "typing_extensions>=4.4.0,<5",
+        "markdown",
+        "jsonschema",
+        "PyYAML>=5.1",
+        "typer",
     ],
     include_package_data=True,
     zip_safe=False,
@@ -46,6 +49,6 @@ setup(
         ]
     },
     extras_require={
-        "test": ["click", "pydantic", "pytest"],
+        "test": ["click", "dagster-components", "pydantic", "pytest", "tomli-w"],
     },
 )

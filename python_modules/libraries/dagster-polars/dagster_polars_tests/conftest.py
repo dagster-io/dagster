@@ -2,7 +2,6 @@ import logging
 import warnings
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Tuple, Type
 
 import dagster
 import polars as pl
@@ -113,10 +112,10 @@ def lazy_df_for_delta() -> pl.LazyFrame:
     [(PolarsParquetIOManager, _df_for_parquet), (PolarsDeltaIOManager, _df_for_delta)],
 )
 def io_manager_and_df(  # to use without hypothesis
-    io_manager: Type[BasePolarsUPathIOManager],
+    io_manager: type[BasePolarsUPathIOManager],
     frame: pl.DataFrame,
     dagster_instance: DagsterInstance,
-) -> Tuple[BasePolarsUPathIOManager, pl.DataFrame]:
+) -> tuple[BasePolarsUPathIOManager, pl.DataFrame]:
     return io_manager(base_dir=dagster_instance.storage_directory()), frame
 
 
@@ -126,8 +125,8 @@ def io_manager_and_df(  # to use without hypothesis
     [(PolarsParquetIOManager, _lazy_df_for_parquet), (PolarsDeltaIOManager, _lazy_df_for_delta)],
 )
 def io_manager_and_lazy_df(  # to use without hypothesis
-    io_manager: Type[BasePolarsUPathIOManager],
+    io_manager: type[BasePolarsUPathIOManager],
     frame: pl.LazyFrame,
     dagster_instance: DagsterInstance,
-) -> Tuple[BasePolarsUPathIOManager, pl.LazyFrame]:
+) -> tuple[BasePolarsUPathIOManager, pl.LazyFrame]:
     return io_manager(base_dir=dagster_instance.storage_directory()), frame

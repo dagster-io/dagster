@@ -65,7 +65,7 @@ pip install antlr4-python3-runtime
 Whenever you make changes to `AssetSelection.g4`, the ANTLR files need to be regenerated to reflect those changes. To generate the files, under run
 
 ```bash
-$ make generated
+$ make generate
 ```
 
 This will generate the following files from the `AssetSelection.g4` grammar file in a `generated` folder:

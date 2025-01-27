@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from dagster._utils.error import (
     ExceptionInfo,
@@ -10,15 +9,14 @@ from dagster._utils.error import (
 
 class DaemonErrorCapture:
     @staticmethod
-    def default_on_exception(
+    def default_process_exception(
         exc_info: ExceptionInfo,
-        logger: Optional[logging.Logger] = None,
-        log_message: Optional[str] = None,
+        logger: logging.Logger,
+        log_message: str,
     ) -> SerializableErrorInfo:
         error_info = serializable_error_info_from_exc_info(exc_info)
-        if logger and log_message:
-            logger.exception(log_message)
+        logger.exception(log_message)
         return error_info
 
     # global behavior for how to handle unexpected exceptions
-    on_exception = default_on_exception
+    process_exception = default_process_exception

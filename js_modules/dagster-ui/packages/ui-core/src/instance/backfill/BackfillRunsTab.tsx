@@ -167,6 +167,7 @@ export const BackfillRunsTab = ({
       belowActionBarComponents={belowActionBarComponents}
       hideTags={BACKFILL_TAGS}
       scroll={true}
+      includeRunsFromBackfills={true}
       emptyState={() => (
         <Box
           padding={{vertical: 24}}

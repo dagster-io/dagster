@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from atproto import Client
 
@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from atproto_client import models
 
 
-def get_all_feed_items(client: Client, actor: str) -> List["models.AppBskyFeedDefs.FeedViewPost"]:
+def get_all_feed_items(client: Client, actor: str) -> list["models.AppBskyFeedDefs.FeedViewPost"]:
     """Retrieves all author feed items for a given `actor`.
 
     Args:

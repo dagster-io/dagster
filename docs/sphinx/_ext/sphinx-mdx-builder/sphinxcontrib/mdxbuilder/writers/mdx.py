@@ -1,8 +1,10 @@
 import logging
 import re
 import textwrap
+from collections.abc import Sequence
+from datetime import datetime
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any
 
 from docutils import nodes, writers
 from docutils.nodes import Element
@@ -41,7 +43,7 @@ class TextWrapper(textwrap.TextWrapper):
         """
         lines: list[str] = []
         if self.width <= 0:
-            raise ValueError("invalid width %r (must be > 0)" % self.width)
+            raise ValueError(f"invalid width {self.width!r} (must be > 0)")
 
         chunks.reverse()
 
@@ -127,7 +129,7 @@ class MdxWriter(writers.Writer):
     settings_defaults = {}
     output: str
 
-    def __init__(self, builder: "MdxBuilder"):
+    def __init__(self, builder: "MdxBuilder") -> None:
         super().__init__()
         self.builder = builder
 
@@ -237,11 +239,11 @@ class MdxTranslator(SphinxTranslator):
                 # not all have a "href" attribute).
                 if empty or isinstance(node, (nodes.Sequential, nodes.docinfo, nodes.table)):
                     # Insert target right in front of element.
-                    prefix.append('<Link id="%s"></Link>' % id)
+                    prefix.append(f'<Link id="{id}"></Link>')
                 else:
                     # Non-empty tag.  Place the auxiliary <span> tag
                     # *inside* the element, as the first child.
-                    suffix += '<Link id="%s"></Link>' % id
+                    suffix += f'<Link id="{id}"></Link>'
         attlist = sorted(atts.items())
         parts = [tagname]
         for name, value in attlist:
@@ -250,14 +252,14 @@ class MdxTranslator(SphinxTranslator):
             assert value is not None
             if isinstance(value, list):
                 values = [str(v) for v in value]
-                parts.append('%s="%s"' % (name.lower(), self.attval(" ".join(values))))
+                parts.append('{}="{}"'.format(name.lower(), self.attval(" ".join(values))))
             else:
-                parts.append('%s="%s"' % (name.lower(), self.attval(str(value))))
+                parts.append(f'{name.lower()}="{self.attval(str(value))}"')
         if empty:
             infix = " /"
         else:
             infix = ""
-        return "".join(prefix) + "<%s%s>" % (" ".join(parts), infix) + suffix
+        return "".join(prefix) + "<{}{}>".format(" ".join(parts), infix) + suffix
 
     def end_state(
         self,
@@ -340,8 +342,39 @@ class MdxTranslator(SphinxTranslator):
         self.new_state(0)
 
     def depart_document(self, node: Element) -> None:
+        title = next(iter(node.nameids.keys()), "Dagster Python API Reference")
+        title_suffix = self.builder.config.mdx_title_suffix
+        title_meta = self.builder.config.mdx_title_meta
+        meta_description = self.builder.config.mdx_description_meta
+
+        # Escape single quotes in strings
+        title = title.replace("'", "\\'")
+        if title_suffix:
+            title_suffix = title_suffix.replace("'", "\\'")
+        if title_meta:
+            title_meta = title_meta.replace("'", "\\'")
+        if meta_description:
+            meta_description = meta_description.replace("'", "\\'")
+
+        frontmatter = "---\n"
+        frontmatter += f"title: '{title}"
+        if title_suffix:
+            frontmatter += f" {title_suffix}"
+        frontmatter += "'\n"
+
+        if title_meta:
+            frontmatter += f"title_meta: '{title}{title_meta}'\n"
+
+        if meta_description:
+            frontmatter += f"description: '{title}{meta_description}'\n"
+
+        last_update = datetime.now().strftime("%Y-%m-%d")
+        frontmatter += "last_update:\n"
+        frontmatter += f"  date: '{last_update}'\n"
+        frontmatter += "---\n\n"
         self.end_state()
-        self.body = self.nl.join(
+        self.body = frontmatter
+        self.body += self.nl.join(
             line and (" " * indent + line) for indent, lines in self.states[0] for line in lines
         )
         if self.messages:
@@ -351,6 +384,9 @@ class MdxTranslator(SphinxTranslator):
             logger.info("---End MDX Translator messages---")
 
     def visit_section(self, node: Element) -> None:
+        self.end_state(wrap=False, end="\n")
+        self.new_state(0)
+
         self.sectionlevel += 1
         self.add_text(self.starttag(node, "div", CLASS="section"))
 
@@ -576,15 +612,35 @@ class MdxTranslator(SphinxTranslator):
             self.end_state(wrap=False)
 
     def visit_reference(self, node: Element) -> None:
-        ref_text = node.astext()
-        if "refuri" in node:
-            self.reference_uri = node["refuri"]
-        elif "refid" in node:
-            self.reference_uri = f"#{node['refid']}"
-        else:
-            self.messages.append('References must have "refuri" or "refid" attribute.')
+        if len(node.children) == 1 and isinstance(
+            node.children[0], (nodes.literal, addnodes.literal_emphasis)
+        ):
+            # For references containing only a literal or literal_emphasis, use the literal text
+            ref_text = node.children[0].astext()
+            if "refuri" in node:
+                self.reference_uri = node["refuri"]
+            elif "refid" in node:
+                self.reference_uri = f"#{node['refid']}"
+            else:
+                self.messages.append('References must have "refuri" or "refid" attribute.')
+                raise nodes.SkipNode
+            # Use _emphasis for literal_emphasis nodes
+            if isinstance(node.children[0], addnodes.literal_emphasis):
+                self.add_text(f"[*{ref_text}*]({self.reference_uri})")
+            else:
+                self.add_text(f"[`{ref_text}`]({self.reference_uri})")
             raise nodes.SkipNode
-        self.add_text(f"[{ref_text}]({self.reference_uri})")
+        else:
+            # Handle regular references
+            ref_text = node.astext()
+            if "refuri" in node:
+                self.reference_uri = node["refuri"]
+            elif "refid" in node:
+                self.reference_uri = f"#{node['refid']}"
+            else:
+                self.messages.append('References must have "refuri" or "refid" attribute.')
+                raise nodes.SkipNode
+            self.add_text(f"[{ref_text}]({self.reference_uri})")
 
     def depart_reference(self, node: Element) -> None:
         self.reference_uri = ""
@@ -803,7 +859,6 @@ class MdxTranslator(SphinxTranslator):
 
     def visit_transition(self, node: Element) -> None:
         self.new_state(0)
-        self.add_text("-----")
 
     def depart_transition(self, node: Element) -> None:
         self.end_state(wrap=False)
@@ -951,6 +1006,12 @@ class MdxTranslator(SphinxTranslator):
         """Maps flag type to style that will be using in CSS and admonitions."""
         level = "info"
         if flag_type == "experimental":
+            level = "warning"
+        if flag_type == "preview":
+            level = "warning"
+        if flag_type == "beta":
+            level = "warning"
+        if flag_type == "superseded":
             level = "warning"
         if flag_type == "deprecated":
             level = "danger"

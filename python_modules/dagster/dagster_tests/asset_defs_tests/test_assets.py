@@ -1,7 +1,7 @@
 import ast
 import datetime
 import tempfile
-from typing import Sequence
+from collections.abc import Sequence
 
 import pytest
 from dagster import (

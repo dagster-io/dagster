@@ -38,10 +38,12 @@ export const SectionEmptyState = ({
   title,
   description,
   learnMoreLink,
+  interaction,
 }: {
   title: string;
   description: string;
   learnMoreLink: string;
+  interaction?: React.ReactNode;
 }) => (
   <Box
     padding={24}
@@ -55,5 +57,6 @@ export const SectionEmptyState = ({
         Learn more
       </a>
     ) : undefined}
+    {interaction}
   </Box>
 );

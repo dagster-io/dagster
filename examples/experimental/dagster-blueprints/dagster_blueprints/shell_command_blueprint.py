@@ -1,5 +1,6 @@
 import shlex
-from typing import AbstractSet, Literal, Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Literal, Optional, Union  # noqa: UP035
 
 from dagster import AssetExecutionContext
 from pydantic import Field

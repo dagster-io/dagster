@@ -1,7 +1,8 @@
 import os
 import re
 import tempfile
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -174,7 +175,8 @@ def test_run_queue_key():
 
     with instance_for_test(overrides={"run_queue": config}) as instance:
         assert isinstance(instance.run_coordinator, QueuedRunCoordinator)
-        run_queue_config = instance.run_coordinator.get_run_queue_config()
+        run_queue_config = instance.get_run_queue_config()
+        assert run_queue_config
         assert run_queue_config.max_concurrent_runs == 50
         assert run_queue_config.tag_concurrency_limits == tag_rules
 
@@ -188,7 +190,8 @@ def test_run_queue_key():
         }
     ) as instance:
         assert isinstance(instance.run_coordinator, QueuedRunCoordinator)
-        run_queue_config = instance.run_coordinator.get_run_queue_config()
+        run_queue_config = instance.get_run_queue_config()
+        assert run_queue_config
         assert run_queue_config.max_concurrent_runs == 50
         assert run_queue_config.tag_concurrency_limits == tag_rules
 
@@ -226,7 +229,8 @@ def test_run_coordinator_key():
         overrides={"run_queue": {"max_concurrent_runs": 50, "tag_concurrency_limits": tag_rules}}
     ) as instance:
         assert isinstance(instance.run_coordinator, QueuedRunCoordinator)
-        run_queue_config = instance.run_coordinator.get_run_queue_config()
+        run_queue_config = instance.get_run_queue_config()
+        assert run_queue_config
         assert run_queue_config.max_concurrent_runs == 50
         assert run_queue_config.tag_concurrency_limits == tag_rules
 

@@ -120,7 +120,7 @@ class TraversalContext(ContextData):
         stack: EvaluationStack,
         traversal_type: TraversalType,
     ):
-        super(TraversalContext, self).__init__(
+        super().__init__(
             config_schema_snapshot=config_schema_snapshot,
             config_type_snap=config_type_snap,
             stack=stack,

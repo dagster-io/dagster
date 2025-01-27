@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, AbstractSet, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 import graphene
@@ -36,14 +37,13 @@ from dagster_graphql.implementation.utils import (
     apply_cursor_limit_reverse,
     capture_error,
 )
-from dagster_graphql.schema.asset_checks import GrapheneAssetCheckHandle
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.dagster_types import (
     GrapheneDagsterType,
     GrapheneDagsterTypeOrError,
     GrapheneDagsterTypeUnion,
     to_dagster_type,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetCheckHandle, GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneDagsterTypeNotFoundError,
     GraphenePythonError,
@@ -389,6 +389,7 @@ class GrapheneRun(graphene.ObjectType):
     hasDeletePermission = graphene.NonNull(graphene.Boolean)
     hasConcurrencyKeySlots = graphene.NonNull(graphene.Boolean)
     rootConcurrencyKeys = graphene.List(graphene.NonNull(graphene.String))
+    allPools = graphene.List(graphene.NonNull(graphene.String))
     hasUnconstrainedRootNodes = graphene.NonNull(graphene.Boolean)
     hasRunMetricsEnabled = graphene.NonNull(graphene.Boolean)
 
@@ -622,6 +623,16 @@ class GrapheneRun(graphene.ObjectType):
 
         return False
 
+    def resolve_allPools(self, graphene_info: ResolveInfo):
+        if not self.dagster_run.run_op_concurrency:
+            return None
+
+        return (
+            list(self.dagster_run.run_op_concurrency.all_pools)
+            if self.dagster_run.run_op_concurrency.all_pools
+            else []
+        )
+
     def resolve_rootConcurrencyKeys(self, graphene_info: ResolveInfo):
         if not self.dagster_run.run_op_concurrency:
             return None
@@ -784,7 +795,7 @@ class GrapheneIPipelineSnapshotMixin:
             for key, value in (represented_pipeline.job_snapshot.run_tags or {}).items()
         ]
 
-    def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> List[GrapheneMetadataEntry]:
+    def resolve_metadata_entries(self, _graphene_info: ResolveInfo) -> list[GrapheneMetadataEntry]:
         represented_pipeline = self.get_represented_job()
         return list(iterate_metadata_entries(represented_pipeline.job_snapshot.metadata))
 
@@ -976,7 +987,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
         reverse: Optional[bool] = None,
-        selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
+        selected_asset_keys: Optional[list[GrapheneAssetKeyInput]] = None,
     ) -> GraphenePartitionKeys:
         result = graphene_info.context.get_partition_names(
             repository_handle=self._remote_job.repository_handle,
@@ -1000,7 +1011,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         self,
         graphene_info: ResolveInfo,
         partition_name: str,
-        selected_asset_keys: Optional[List[GrapheneAssetKeyInput]] = None,
+        selected_asset_keys: Optional[list[GrapheneAssetKeyInput]] = None,
     ) -> "GrapheneJobSelectionPartition":
         from dagster_graphql.schema.partition_sets import GrapheneJobSelectionPartition
 
@@ -1089,7 +1100,7 @@ class GrapheneRunOrError(graphene.Union):
 
 
 def _asset_key_input_list_to_asset_key_set(
-    asset_keys: Optional[List[GrapheneAssetKeyInput]],
+    asset_keys: Optional[list[GrapheneAssetKeyInput]],
 ) -> Optional[AbstractSet[AssetKey]]:
     return (
         {key_input.to_asset_key() for key_input in asset_keys} if asset_keys is not None else None

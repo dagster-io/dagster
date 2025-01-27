@@ -181,7 +181,6 @@ export const Warning = ({children}) => {
   return <Admonition style="warning">{children}</Admonition>;
 };
 
-
 //////////////////////
 //       CHECK      //
 //////////////////////
@@ -425,6 +424,30 @@ const Experimental = () => {
   return (
     <div className="experimental-tag">
       <span className="hidden">(</span>Experimental<span className="hidden">)</span>
+    </div>
+  );
+};
+
+////////////////////////
+//  Preview BADGE  //
+////////////////////////
+
+const Preview = () => {
+  return (
+    <div className="preview-tag">
+      <span className="hidden">(</span>Preview<span className="hidden">)</span>
+    </div>
+  );
+};
+
+////////////////////////
+//  Beta BADGE  //
+////////////////////////
+
+const Beta = () => {
+  return (
+    <div className="beta-tag">
+      <span className="hidden">(</span>Beta<span className="hidden">)</span>
     </div>
   );
 };
@@ -866,6 +889,8 @@ export default {
   Experimental,
   Deprecated,
   Superseded,
+  Preview,
+  Beta,
   Legacy,
   Icons,
   ReferenceTable,

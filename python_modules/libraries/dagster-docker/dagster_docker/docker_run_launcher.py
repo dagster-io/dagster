@@ -1,5 +1,6 @@
 import json
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import dagster._check as check
 import docker

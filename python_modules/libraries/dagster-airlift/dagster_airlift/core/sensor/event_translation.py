@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import AbstractSet, Any, Callable, Iterable, Mapping, Sequence, Union, cast
+from collections.abc import Iterable, Mapping, Sequence
+from typing import AbstractSet, Any, Callable, Union, cast  # noqa: UP035
 
 from dagster import (
     AssetMaterialization,

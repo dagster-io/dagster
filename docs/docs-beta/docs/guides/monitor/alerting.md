@@ -1,6 +1,6 @@
 ---
-title: "Setting up alerts"
-sidebar_position: 10
+title: Alerts
+sidebar_position: 20
 unlisted: true
 ---
 

@@ -106,6 +106,10 @@ query RunQuery($runId: ID!) {
 		... on Run {
 			id
 			status
+      tags {
+        key
+        value
+      }
 			__typename
 		}
 	}
@@ -123,5 +127,22 @@ fragment PythonErrorFragment on PythonError {
 		stack
 		__typename
 	}
+}
+"""
+
+RUNS_BY_TAG_QUERY = """
+query RunsByTagQuery($filter: RunsFilter!) {
+  runsOrError(filter: $filter) {
+    ... on Runs {
+      results {
+        id
+        status
+        tags {
+          key
+          value
+        }
+      }
+    }
+  }
 }
 """

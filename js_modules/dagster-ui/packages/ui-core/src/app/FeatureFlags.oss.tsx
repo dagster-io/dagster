@@ -4,10 +4,9 @@ export enum FeatureFlag {
   flagSidebarResources = 'flagSidebarResources',
   flagDisableAutoLoadDefaults = 'flagDisableAutoLoadDefaults',
   flagLegacyRunsPage = 'flagLegacyRunsPage',
-  flagAssetSelectionSyntax = 'flagAssetSelectionSyntax',
-  flagRunSelectionSyntax = 'flagRunSelectionSyntax',
+  flagSelectionSyntax = 'flagSelectionSyntax',
   flagAssetSelectionWorker = 'flagAssetSelectionWorker',
-  flagOpSelectionSyntax = 'flagOpSelectionSyntax',
+  flagPoolUI = 'flagPoolUI',
 
   // Flags for tests
   __TestFlagDefaultNone = '__TestFlagDefaultNone',

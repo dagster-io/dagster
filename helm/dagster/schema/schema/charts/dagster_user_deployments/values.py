@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import BaseModel, Field
 
 from schema.charts.dagster.subschema import Global, ServiceAccount
@@ -13,7 +11,7 @@ class DagsterUserDeploymentsHelmValues(BaseModel):
     dagsterHome: str
     postgresqlSecretName: str
     celeryConfigSecretName: str
-    deployments: List[UserDeployment]
-    imagePullSecrets: List[kubernetes.SecretRef]
+    deployments: list[UserDeployment]
+    imagePullSecrets: list[kubernetes.SecretRef]
     serviceAccount: ServiceAccount
     global_: Global = Field(..., alias="global")

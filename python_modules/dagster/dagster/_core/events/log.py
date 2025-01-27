@@ -1,4 +1,5 @@
-from typing import Callable, Mapping, NamedTuple, Optional, Union
+from collections.abc import Mapping
+from typing import Callable, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
@@ -74,7 +75,7 @@ class EventLogEntry(
         job_name=None,
         dagster_event=None,
     ):
-        return super(EventLogEntry, cls).__new__(
+        return super().__new__(
             cls,
             check.opt_inst_param(error_info, "error_info", SerializableErrorInfo),
             coerce_valid_log_level(level),

@@ -1,5 +1,5 @@
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Optional, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import boto3
 import botocore
@@ -17,8 +17,8 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
 )
 from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
-from typing_extensions import NotRequired
 
+from dagster_aws.pipes.clients.utils import WaiterConfig
 from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesCloudWatchMessageReader
 
 if TYPE_CHECKING:
@@ -28,20 +28,6 @@ if TYPE_CHECKING:
         RunTaskRequestRequestTypeDef,
         RunTaskResponseTypeDef,
     )
-
-
-class WaiterConfig(TypedDict):
-    """A WaiterConfig representing the configuration of the waiter.
-
-    Args:
-        Delay (NotRequired[int]): The amount of time in seconds to wait between attempts. Defaults to 6.
-        MaxAttempts (NotRequired[int]): The maximum number of attempts to be made. Defaults to 1000000
-            By default the waiter is configured to wait up to 70 days (waiter_delay*waiter_max_attempts).
-            See `Boto3 API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ecs/waiter/TasksStopped.html>`_
-    """
-
-    Delay: NotRequired[int]
-    MaxAttempts: NotRequired[int]
 
 
 @experimental
@@ -64,7 +50,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         message_reader: Optional[PipesMessageReader] = None,
         forward_termination: bool = True,
     ):
-        self._client: "ECSClient" = client or boto3.client("ecs")
+        self._client: ECSClient = client or boto3.client("ecs")
         self._context_injector = context_injector or PipesEnvContextInjector()
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
@@ -79,7 +65,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
         run_task_params: "RunTaskRequestRequestTypeDef",
-        extras: Optional[Dict[str, Any]] = None,
+        extras: Optional[dict[str, Any]] = None,
         pipes_container_name: Optional[str] = None,
         waiter_config: Optional[WaiterConfig] = None,
     ) -> PipesClientCompletedInvocation:
@@ -192,7 +178,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
             task_id = task_arn.split("/")[-1]
             containers = task["containers"]  # pyright: ignore (reportTypedDictNotRequiredAccess)
 
-            def get_cloudwatch_params(container_name: str) -> Optional[Dict[str, str]]:
+            def get_cloudwatch_params(container_name: str) -> Optional[dict[str, str]]:
                 """This will either return the log group and stream for the container, or None in case of a bad log configuration."""
                 if log_config := log_configurations.get(container_name):
                     if log_config["logDriver"] == "awslogs":
@@ -297,7 +283,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
     ) -> "DescribeTasksResponseTypeDef":
         waiter = self._client.get_waiter("tasks_stopped")
 
-        params: Dict[str, Any] = {"tasks": [start_response["tasks"][0]["taskArn"]]}  # pyright: ignore (reportGeneralTypeIssues)
+        params: dict[str, Any] = {"tasks": [start_response["tasks"][0]["taskArn"]]}  # pyright: ignore (reportGeneralTypeIssues)
 
         if cluster:
             params["cluster"] = cluster

@@ -42,7 +42,7 @@ Dagster+ Pro users can create teams of users and assign default permission sets.
 
 With the exception of the **Organization Admin** role, user and team roles are set on a per-deployment basis.
 
-Organization Admins have access to the entire organization, including all [deployments](/todo), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md).
+Organization Admins have access to the entire organization, including all [deployments](/dagster-plus/deployment/management/deployments/), [code locations](/dagster-plus/deployment/code-locations), and [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md).
 
 | Level              | Plan      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -110,12 +110,12 @@ TODO: add picture previously at "/images/dagster-cloud/user-token-management/cod
 
 |                                                                          | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ------------------------------------------------------------------------ | ------ | -------- | ------ | ----- | ------------------------ |
-| View runs of [jobs](/guides/build/ops-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| View runs of [jobs](/guides/build/assets/asset-jobs)                                  | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | Launch, re-execute, terminate, and delete runs of jobs                   | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/schedules)                          | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Start and stop [schedules](/guides/automate/sensors)                            | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Wipe assets                                                              | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Launch and cancel [schedules](/guides/build/backfill) | ❌     | ✅       | ✅     | ✅    | ✅                       |
+| Launch and cancel [schedules](/guides/automate/schedules) | ❌     | ✅       | ✅     | ✅    | ✅                       |
 | Add dynamic partitions                                                   | ❌     | ❌       | ✅     | ✅    | ✅                       |
 
 ### Deployments
@@ -124,12 +124,12 @@ Deployment settings are accessed in the UI by navigating to **user menu (your ic
 
 |                                                                                              | Viewer | Launcher  | Editor | Admin | Organization <br/> admin     |
 |----------------------------------------------------------------------------------------------|-------|-----------|--------|-------|-------------------------------|
-| View [deployments](/todo)                                           | ✅     | ✅         | ✅      | ✅     | ✅                             |
-| Modify [deployment](/todo) settings                                 | ❌     | ❌         | ✅      | ✅     | ✅                             |
+| View [deployments](/dagster-plus/deployment/management/deployments/)                                          | ✅     | ✅         | ✅      | ✅     | ✅                             |
+| Modify [deployments](/dagster-plus/deployment/management/deployments/) settings                                 | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Create, edit, delete [environment variables](/dagster-plus/deployment/management/environment-variables) | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | View [environment variable](/dagster-plus/deployment/management/environment-variables)  values          | ❌     | ❌         | ✅      | ✅     | ✅                             |
 | Export [environment variables](/dagster-plus/deployment/management/environment-variables)               | ❌     | ❌         | ✅      | ✅     | ✅                             |
-| Create and delete [deployments](/todo)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
+| Create and delete [deployments](/dagster-plus/deployment/management/deployments/)                              | ❌     | ❌         | ❌      | ❌     | ✅                             |
 | Create [Branch Deployments](dagster-plus/features/ci-cd/branch-deployments/index.md)                     | ❌     | ❌         | ✅      | ✅     | ✅                             |
 
 ### Code locations
@@ -159,7 +159,7 @@ User tokens are accessed in the UI by navigating to **user menu (your icon) > Or
 
 |                                          | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
 | ---------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
-| View and create own [user tokens](/todo) | ✅     | ✅       | ✅     | ✅    | ✅                       |
+| View and create own [user tokens](/dagster-plus/deployment/management/tokens/user-tokens) | ✅     | ✅       | ✅     | ✅    | ✅                       |
 | List all user tokens                     | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Revoke all user tokens                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
 
@@ -196,8 +196,8 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 | Manage [alerts](/dagster-plus/features/alerts)       | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Edit workspace                                         | ❌     | ❌       | ✅     | ✅    | ✅                       |
 {/* | [Administer SAML](/dagster-plus/features/authentication-and-access-control/sso/authentication) | ❌     | ❌       | ❌     | ❌    | ✅                       | */}
-| [Administer SAML](/todo) | ❌     | ❌       | ❌     | ❌    | ✅                       |
-| [Manage SCIM](/todo)                                   | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Administer SAML | ❌     | ❌       | ❌     | ❌    | ✅                       |
+| Manage SCIM                                  | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | View usage                                             | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Manage billing                                         | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | View audit logs                                        | ❌     | ❌       | ❌     | ❌    | ✅                       |
@@ -207,5 +207,3 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 - Learn more about how to manage users in Dagster+ in [Understanding User Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/users)
 - Learn more about how to manage teams in Dagster+ in [Understanding Team Management in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)
 - Learn more about SCIM provisioning in [Understanding SCIM Provisioning](/dagster-plus/features/authentication-and-access-control/scim/index.md)
-{/* - Learn more about authentication in [Understanding Authentication](/dagster-plus/features/authentication-and-access-control/sso/authentication) */}
-- Learn more about authentication in [Understanding Authentication](/todo)

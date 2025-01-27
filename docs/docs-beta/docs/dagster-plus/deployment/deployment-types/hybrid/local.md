@@ -1,10 +1,10 @@
 ---
 title: Running a local agent
-sidebar_position: 50
+sidebar_position: 60
 sidebar_label: Local agent
 ---
 
-Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [Amazon ECS](/todo).
+Local agents are a good way to experiment with Dagster+ before deploying a more scalable Hybrid agent like [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) or [Amazon ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/).
 
 :::note
 Local agents aren't well suited for most production use cases. If you're running the local agent in production, make sure that:
@@ -41,13 +41,13 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
 
 1. Create a directory to act as your Dagster home. This guide uses `~/dagster_home`, but the directory can be located wherever you want.
 2. In the new directory, create a `dagster.yaml` file with the following:
-    <CodeExample filePath="dagster-plus/deployment/hybrid/agents/local_dagster.yaml" language="yaml" title="dagster.yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/hybrid/agents/local_dagster.yaml" language="yaml" title="dagster.yaml" />
 3. In the file, fill in the following:
     - `agent_token.env` - The name of the environment variable storing the agent token you created in Step 1.
     - `deployment` - The name of the deployment associated with this instance of the agent. In the preceding example, `prod` was used as the deployment.
 4. Save the file.
 
-For more information about `dagster.yaml` configuration options, check out the [`dagster.yaml` reference](/todo).
+For more information about `dagster.yaml` configuration options, check out the [`dagster.yaml` reference](/guides/deploy/dagster-yaml).
 
 ### Alternative methods for setting the agent token
 
@@ -67,8 +67,8 @@ dagster-cloud agent run ~/dagster_home/
 
 To view the agent in Dagster+, click the Dagster icon in the top left to navigate to the **Deployment > Agents** page. You should see the agent running in the **Agent statuses** section:
 
-![Screenshot of Dagster Asset Lineage](/img/placeholder.svg)
+![Screenshot of Dagster Asset Lineage](/images/dagster-plus/deployment/agents/dagster-cloud-instance-status.png)
 
 ## Next steps
 
-- Add a [code location](/todo) to your Dagster+ deployment
+- Add a [code location](/dagster-plus/deployment/code-locations/) to your Dagster+ deployment.

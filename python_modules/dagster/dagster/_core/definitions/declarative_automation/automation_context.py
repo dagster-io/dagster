@@ -1,8 +1,9 @@
 import datetime
 import inspect
 import logging
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generic, Mapping, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
@@ -246,7 +247,7 @@ class AutomationContext(Generic[T_EntityKey]):
         return self.asset_graph_view.get_empty_subset(key=self.key)
 
     def get_structured_cursor(
-        self, as_type: Type[T_StructuredCursor]
+        self, as_type: type[T_StructuredCursor]
     ) -> Optional[T_StructuredCursor]:
         return (
             self._node_cursor.get_structured_cursor(as_type=as_type) if self._node_cursor else None

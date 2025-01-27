@@ -1,13 +1,15 @@
 import uuid
-from typing import Type, Union
+from typing import Union
 from unittest.mock import MagicMock
 
 import pytest
 import responses
 from dagster._check.functions import CheckError
 from dagster._config.field_utils import EnvVar
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
 from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_tableau_asset_specs
+from dagster_tableau.translator import DagsterTableauTranslator, TableauTranslatorData
 
 
 @responses.activate
@@ -19,7 +21,7 @@ from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_
     ],
 )
 def test_fetch_tableau_workspace_data(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -60,7 +62,7 @@ def test_fetch_tableau_workspace_data(
     ],
 )
 def test_invalid_workbook(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -114,7 +116,7 @@ def test_invalid_workbook(
 @pytest.mark.usefixtures("get_workbooks")
 @pytest.mark.usefixtures("get_workbook")
 def test_translator_spec(
-    clazz: Union[Type[TableauCloudWorkspace], Type[TableauServerWorkspace]],
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
     host_key: str,
     host_value: str,
     site_name: str,
@@ -162,3 +164,116 @@ def test_translator_spec(
 
         data_source_asset_key = next(key for key in all_assets_keys if "datasource" in key.path[0])
         assert data_source_asset_key.path == ["superstore_datasource"]
+
+
+class MyCustomTranslator(DagsterTableauTranslator):
+    def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
+        return default_spec.replace_attributes(
+            key=default_spec.key.with_prefix("prefix"),
+        ).merge_attributes(metadata={"custom": "metadata"})
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+@pytest.mark.usefixtures("site_name")
+@pytest.mark.usefixtures("sign_in")
+@pytest.mark.usefixtures("get_workbooks")
+@pytest.mark.usefixtures("get_workbook")
+def test_translator_custom_metadata(
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    with environ({"TABLEAU_CLIENT_ID": connected_app_client_id}):
+        resource_args = {
+            "connected_app_client_id": EnvVar("TABLEAU_CLIENT_ID"),
+            "connected_app_secret_id": connected_app_secret_id,
+            "connected_app_secret_value": connected_app_secret_value,
+            "username": username,
+            "site_name": site_name,
+            host_key: host_value,
+        }
+
+        resource = clazz(**resource_args)
+        resource.build_client()
+
+        all_asset_specs = load_tableau_asset_specs(
+            workspace=resource, dagster_tableau_translator=MyCustomTranslator()
+        )
+        asset_spec = next(spec for spec in all_asset_specs)
+
+        assert "custom" in asset_spec.metadata
+        assert asset_spec.metadata["custom"] == "metadata"
+        assert asset_spec.key.path == ["prefix", "superstore_datasource"]
+        assert asset_spec.tags["dagster/storage_kind"] == "tableau"
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "clazz,host_key,host_value",
+    [
+        (TableauServerWorkspace, "server_name", "fake_server_name"),
+        (TableauCloudWorkspace, "pod_name", "fake_pod_name"),
+    ],
+)
+@pytest.mark.usefixtures("site_name")
+@pytest.mark.usefixtures("sign_in")
+@pytest.mark.usefixtures("get_workbooks")
+@pytest.mark.usefixtures("get_workbook")
+def test_translator_custom_metadata_legacy(
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    sign_in: MagicMock,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
+) -> None:
+    connected_app_client_id = uuid.uuid4().hex
+    connected_app_secret_id = uuid.uuid4().hex
+    connected_app_secret_value = uuid.uuid4().hex
+    username = "fake_username"
+
+    with environ({"TABLEAU_CLIENT_ID": connected_app_client_id}):
+        resource_args = {
+            "connected_app_client_id": EnvVar("TABLEAU_CLIENT_ID"),
+            "connected_app_secret_id": connected_app_secret_id,
+            "connected_app_secret_value": connected_app_secret_value,
+            "username": username,
+            "site_name": site_name,
+            host_key: host_value,
+        }
+
+        resource = clazz(**resource_args)
+        resource.build_client()
+
+        # Pass the translator type
+        with pytest.warns(
+            DeprecationWarning,
+            match=r"Support of `dagster_tableau_translator` as a Type\[DagsterTableauTranslator\]",
+        ):
+            all_asset_specs = load_tableau_asset_specs(
+                workspace=resource, dagster_tableau_translator=MyCustomTranslator
+            )
+        asset_spec = next(spec for spec in all_asset_specs)
+
+        assert "custom" in asset_spec.metadata
+        assert asset_spec.metadata["custom"] == "metadata"
+        assert asset_spec.key.path == ["prefix", "superstore_datasource"]
+        assert asset_spec.tags["dagster/storage_kind"] == "tableau"

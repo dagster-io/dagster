@@ -48,7 +48,7 @@ def check_captured_logs(manager, result, execution_date_fmt):
         log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
     )
     assert os.path.exists(compute_io_path)
-    stdout_file = open(compute_io_path, "r", encoding="utf8")
+    stdout_file = open(compute_io_path, encoding="utf8")
     file_contents = normalize_file_content(stdout_file.read())
     stdout_file.close()
 
@@ -140,7 +140,7 @@ def test_job_auto_tag():
             log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
         )
         assert os.path.exists(compute_io_path)
-        stdout_file = open(compute_io_path, "r", encoding="utf8")
+        stdout_file = open(compute_io_path, encoding="utf8")
         file_contents = normalize_file_content(stdout_file.read())
 
         stdout_file.close()

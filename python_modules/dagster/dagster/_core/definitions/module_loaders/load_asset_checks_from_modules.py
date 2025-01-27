@@ -1,7 +1,8 @@
 import inspect
+from collections.abc import Iterable, Sequence
 from importlib import import_module
 from types import ModuleType
-from typing import Iterable, Optional, Sequence
+from typing import Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -9,6 +10,7 @@ from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.module_loaders.object_list import ModuleScopedDagsterDefs
 from dagster._core.definitions.module_loaders.utils import find_modules_in_package
 
@@ -34,7 +36,7 @@ def load_asset_checks_from_modules(
         asset_key_prefix, "asset_key_prefix"
     )
     return (
-        ModuleScopedDagsterDefs.from_modules(modules)
+        ModuleScopedDagsterDefs.from_modules(modules, types_to_load=(AssetsDefinition,))
         .get_object_list()
         .with_attributes(
             key_prefix=asset_key_prefix,

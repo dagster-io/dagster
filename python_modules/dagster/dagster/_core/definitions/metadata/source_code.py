@@ -1,9 +1,10 @@
 import inspect
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import experimental, public
@@ -56,7 +57,7 @@ class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMet
             references to source control.
     """
 
-    code_references: List[Union[LocalFileCodeReference, UrlCodeReference]]
+    code_references: list[Union[LocalFileCodeReference, UrlCodeReference]]
 
     @property
     def value(self) -> "CodeReferencesMetadataValue":
@@ -131,7 +132,7 @@ def _with_code_source_single_definition(
                 if existing_source_code_metadata.code_references
                 else []
             )
-            sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
+            sources_for_asset: list[Union[LocalFileCodeReference, UrlCodeReference]] = [
                 *existing_code_references,
                 *sources,
             ]
@@ -260,7 +261,7 @@ def _convert_local_path_to_git_path_single_definition(
         if not existing_source_code_metadata.code_references:
             continue
 
-        sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
+        sources_for_asset: list[Union[LocalFileCodeReference, UrlCodeReference]] = [
             convert_local_path_to_git_path(
                 base_git_url,
                 file_path_mapping,

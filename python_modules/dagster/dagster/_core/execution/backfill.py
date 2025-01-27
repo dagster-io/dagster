@@ -1,6 +1,7 @@
+from collections.abc import Iterator, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
@@ -116,6 +117,7 @@ class PartitionBackfill(
             ("failure_count", int),
             ("submitting_run_requests", Sequence[RunRequest]),
             ("reserved_run_ids", Sequence[str]),
+            ("backfill_end_timestamp", Optional[float]),
         ],
     ),
 ):
@@ -139,6 +141,7 @@ class PartitionBackfill(
         failure_count: Optional[int] = None,
         submitting_run_requests: Optional[Sequence[RunRequest]] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
+        backfill_end_timestamp: Optional[float] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
@@ -151,7 +154,7 @@ class PartitionBackfill(
             check.invariant(last_submitted_partition_name is None)
             check.invariant(reexecution_steps is None)
 
-        return super(PartitionBackfill, cls).__new__(
+        return super().__new__(
             cls,
             backfill_id=check.str_param(backfill_id, "backfill_id"),
             status=check.inst_param(status, "status", BulkActionStatus),
@@ -188,6 +191,9 @@ class PartitionBackfill(
             ),
             reserved_run_ids=check.opt_sequence_param(
                 reserved_run_ids, "reserved_run_ids", of_type=str
+            ),
+            backfill_end_timestamp=check.opt_float_param(
+                backfill_end_timestamp, "backfill_end_timestamp"
             ),
         )
 
@@ -397,6 +403,10 @@ class PartitionBackfill(
     def with_error(self, error):
         check.opt_inst_param(error, "error", SerializableErrorInfo)
         return self._replace(error=error)
+
+    def with_end_timestamp(self, end_timestamp: float) -> "PartitionBackfill":
+        check.float_param(end_timestamp, "end_timestamp")
+        return self._replace(backfill_end_timestamp=end_timestamp)
 
     def with_asset_backfill_data(
         self,

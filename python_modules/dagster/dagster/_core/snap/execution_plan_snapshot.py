@@ -1,4 +1,5 @@
-from typing import AbstractSet, Mapping, NamedTuple, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import NodeHandle
@@ -74,7 +75,7 @@ class ExecutionPlanSnapshot(
         executor_name: Optional[str] = None,
         repository_load_data: Optional[RepositoryLoadData] = None,
     ):
-        return super(ExecutionPlanSnapshot, cls).__new__(
+        return super().__new__(
             cls,
             steps=check.sequence_param(steps, "steps", of_type=ExecutionStepSnap),
             artifacts_persisted=check.bool_param(artifacts_persisted, "artifacts_persisted"),
@@ -129,13 +130,15 @@ class ExecutionPlanSnapshotErrorData(
     NamedTuple("_ExecutionPlanSnapshotErrorData", [("error", Optional[SerializableErrorInfo])])
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
-        return super(ExecutionPlanSnapshotErrorData, cls).__new__(
+        return super().__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
-@whitelist_for_serdes(storage_field_names={"node_handle_id": "solid_handle_id"})
+@whitelist_for_serdes(
+    storage_field_names={"node_handle_id": "solid_handle_id"}, skip_when_none_fields={"pool"}
+)
 class ExecutionStepSnap(
     NamedTuple(
         "_ExecutionStepSnap",
@@ -148,6 +151,7 @@ class ExecutionStepSnap(
             ("metadata_items", Sequence["ExecutionPlanMetadataItemSnap"]),
             ("tags", Optional[Mapping[str, str]]),
             ("step_handle", Optional[StepHandleUnion]),
+            ("pool", Optional[str]),
         ],
     )
 ):
@@ -161,8 +165,9 @@ class ExecutionStepSnap(
         metadata_items: Sequence["ExecutionPlanMetadataItemSnap"],
         tags: Optional[Mapping[str, str]] = None,
         step_handle: Optional[StepHandleUnion] = None,
+        pool: Optional[str] = None,
     ):
-        return super(ExecutionStepSnap, cls).__new__(
+        return super().__new__(
             cls,
             key=check.str_param(key, "key"),
             inputs=check.sequence_param(inputs, "inputs", ExecutionStepInputSnap),
@@ -174,6 +179,10 @@ class ExecutionStepSnap(
             ),
             tags=check.opt_nullable_mapping_param(tags, "tags", key_type=str, value_type=str),
             step_handle=check.opt_inst_param(step_handle, "step_handle", StepHandleTypes),
+            # stores the pool arg as separate from the concurrency_key property since the
+            # snapshot may have been generated before concurrency_key was added as a separate
+            # argument
+            pool=check.opt_str_param(pool, "pool"),
         )
 
 
@@ -196,7 +205,7 @@ class ExecutionStepInputSnap(
         upstream_output_handles: Sequence[StepOutputHandle],
         source: Optional[StepInputSourceUnion] = None,
     ):
-        return super(ExecutionStepInputSnap, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
@@ -230,7 +239,7 @@ class ExecutionStepOutputSnap(
         node_handle: Optional[NodeHandle] = None,
         properties: Optional[StepOutputProperties] = None,
     ):
-        return super(ExecutionStepOutputSnap, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(name, "name"),
             check.str_param(dagster_type_key, "dagster_type_key"),
@@ -244,7 +253,7 @@ class ExecutionPlanMetadataItemSnap(
     NamedTuple("_ExecutionPlanMetadataItemSnap", [("key", str), ("value", str)])
 ):
     def __new__(cls, key: str, value: str):
-        return super(ExecutionPlanMetadataItemSnap, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(key, "key"),
             check.str_param(value, "value"),
@@ -308,6 +317,7 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
         ),
         tags=execution_step.tags,
         step_handle=execution_step.handle,
+        pool=execution_step.pool,
     )
 
 

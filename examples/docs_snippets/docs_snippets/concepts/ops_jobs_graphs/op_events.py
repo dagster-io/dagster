@@ -62,7 +62,7 @@ def my_metadata_output(context: OpExecutionContext) -> Output:
 
 # start_op_output_4
 from dagster import Output, op
-from typing import Tuple
+from typing import Tuple  # noqa: UP035
 
 
 # Using Output as type annotation without inner type
@@ -79,7 +79,7 @@ def my_output_generic_op() -> Output[int]:
 
 # Multiple outputs using parameterized type annotation
 @op(out={"int_out": Out(), "str_out": Out()})
-def my_multiple_generic_output_op() -> Tuple[Output[int], Output[str]]:
+def my_multiple_generic_output_op() -> tuple[Output[int], Output[str]]:
     return (
         Output(5, metadata={"some_metadata": "a_value"}),
         Output("foo", metadata={"some_metadata": "another_value"}),

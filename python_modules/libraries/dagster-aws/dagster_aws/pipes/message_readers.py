@@ -4,23 +4,11 @@ import os
 import random
 import string
 import sys
+from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from threading import Event, Thread
-from typing import (
-    IO,
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Generator,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    cast,
-)
+from typing import IO, TYPE_CHECKING, Any, Callable, Optional, cast
 
 import boto3
 import dagster._check as check
@@ -80,7 +68,7 @@ class PipesS3LogReader(PipesChunkedLogReader):
     ):
         self.bucket = bucket
         self.key = key
-        self.client: "S3Client" = client or boto3.client("s3")
+        self.client: S3Client = client or boto3.client("s3")
         self.decode_fn = decode_fn or default_log_decode_fn
 
         self.log_position = 0
@@ -252,9 +240,9 @@ def tail_cloudwatch_events(
     log_stream: str,
     start_time: Optional[int] = None,
     max_retries: Optional[int] = DEFAULT_CLOUDWATCH_LOGS_MAX_RETRIES,
-) -> Generator[List["OutputLogEventTypeDef"], None, None]:
+) -> Generator[list["OutputLogEventTypeDef"], None, None]:
     """Yields events from a CloudWatch log stream."""
-    params: Dict[str, Any] = {
+    params: dict[str, Any] = {
         "logGroupName": log_group,
         "logStreamName": log_stream,
     }
@@ -370,7 +358,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         """Args:
         client (boto3.client): boto3 CloudWatch client.
         """
-        self.client: "CloudWatchLogsClient" = client or boto3.client("logs")
+        self.client: CloudWatchLogsClient = client or boto3.client("logs")
         self.log_group = log_group
         self.log_stream = log_stream
         self.max_retries = max_retries
@@ -412,7 +400,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
 
     def download_messages(
         self, cursor: Optional[str], params: PipesParams
-    ) -> Optional[Tuple[str, str]]:
+    ) -> Optional[tuple[str, str]]:
         params = {
             "logGroupName": self.log_group,
             "logStreamName": self.log_stream,
