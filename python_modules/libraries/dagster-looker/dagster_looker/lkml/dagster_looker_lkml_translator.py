@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable, Literal, Optional, cast
 
 from dagster import AssetKey, AssetSpec
-from dagster._annotations import experimental, public, superseded
+from dagster._annotations import beta, public, superseded
 from dagster._utils.warnings import supersession_warning
 from sqlglot import ParseError, exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
@@ -172,7 +172,7 @@ def build_deps_for_looker_view(
     )
 
 
-@experimental
+@beta
 class DagsterLookerLkmlTranslator:
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a LookML structure (dashboards, explores, views).
