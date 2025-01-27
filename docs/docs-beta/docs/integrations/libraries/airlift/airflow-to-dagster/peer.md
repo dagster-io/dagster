@@ -32,7 +32,11 @@ export TUTORIAL_DBT_PROJECT_DIR="$TUTORIAL_EXAMPLE_DIR/tutorial_example/shared/d
 export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
 dagster dev -f tutorial_example/dagster_defs/definitions.py
 ```
-![Peered asset in Dagster UI](/images/integrations/airlift/peer.svg)
+
+<img
+  src="/images/integrations/airlift/peer.svg"
+  alt="Peered asset in Dagster UI"
+/>
 
 Let's kick off a run of the `reubild_customers_list` DAG in Airflow.
 
@@ -42,7 +46,10 @@ airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%
 
 When this run has completed in Airflow, we should be able to navigate to the Dagster UI, and see that the Dagster has registered a materialization corresponding to that successful run.
 
-![Materialized peer asset in Dagster UI](/images/integrations/airlift/peer_materialize.svg)
+<img
+  src="/images/integrations/airlift/peer_materialize.svg"
+  alt="Materialized peer asset in Dagster UI"
+/>
 
 Run the following command to clean the Airflow and Dagster run history (we just do this so we can run the same example backfill in the future). Under the hood, this just deletes runs from Airflow and asset materializations from Dagster.
 
