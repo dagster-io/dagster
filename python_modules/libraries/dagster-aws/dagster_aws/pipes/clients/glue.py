@@ -5,7 +5,7 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import MetadataValue, PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from mypy_boto3_glue.type_defs import GetJobRunResponseTypeDef, StartJobRunRequestRequestTypeDef
 
 
-@experimental
 class PipesGlueClient(PipesClient, TreatAsResourceParam):
     """A pipes client for invoking AWS Glue jobs.
 
