@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from typing import Optional, cast
 
 from dagster import IOManagerDefinition, OutputContext, io_manager
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
 from dagster._core.storage.db_io_manager import (
     DbClient,
@@ -24,7 +24,7 @@ from dagster_gcp.bigquery.utils import setup_gcp_creds
 BIGQUERY_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-@experimental
+@beta
 def build_bigquery_io_manager(
     type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
 ) -> IOManagerDefinition:
