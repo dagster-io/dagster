@@ -10,7 +10,7 @@ if _has_dagster_dbt:
 
 if _has_dagster_sling:
     from dagster_components.lib.sling_replication_collection.component import (
-        SlingReplicationCollectionComponent as SlingReplicationCollectionComponent,
+        SlingReplicationCollection as SlingReplicationCollection,
     )
 
 from dagster_components.lib.definitions_component.component import (

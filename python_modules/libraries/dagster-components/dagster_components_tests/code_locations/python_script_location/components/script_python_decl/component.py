@@ -1,5 +1,6 @@
-from dagster_components import AssetAttributesModel, ComponentLoadContext
+from dagster_components import ComponentLoadContext
 from dagster_components.core.component import component_loader
+from dagster_components.core.schema.objects import AssetSpecModel
 from dagster_components.lib import PipesSubprocessScriptCollection
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollectionParams,
@@ -14,7 +15,7 @@ def load(context: ComponentLoadContext) -> PipesSubprocessScriptCollection:
             PipesSubprocessScriptParams(
                 path="cool_script.py",
                 assets=[
-                    AssetAttributesModel(
+                    AssetSpecModel(
                         key="cool_script",
                         automation_condition="{{ automation_condition.eager() }}",
                     ),
