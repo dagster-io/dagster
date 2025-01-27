@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 import requests
 from dagster import _check as check
-from dagster._annotations import public
+from dagster._annotations import beta, public
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterError
 from dagster._record import record
@@ -26,6 +26,7 @@ DEFAULT_BATCH_DAG_RUNS_LIMIT = 100
 SLEEP_SECONDS = 1
 
 
+@beta
 class AirflowAuthBackend(ABC):
     """An abstract class that represents an authentication backend for an Airflow instance.
 
@@ -45,6 +46,7 @@ class AirflowAuthBackend(ABC):
         raise NotImplementedError("This method must be implemented by subclasses.")
 
 
+@beta
 class AirflowInstance:
     """A class that represents a running Airflow Instance and provides methods for interacting with its REST API.
 
