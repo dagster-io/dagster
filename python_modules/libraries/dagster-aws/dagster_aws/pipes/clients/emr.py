@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 import boto3
 import dagster._check as check
 from dagster import MetadataValue, PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -39,7 +39,6 @@ if TYPE_CHECKING:
 
 
 @public
-@experimental
 class PipesEMRClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running jobs on AWS EMR.
 
