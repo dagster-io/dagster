@@ -57,7 +57,8 @@ class AirflowPersistentDatabase(AirflowDatabase):
 
 @superseded(
     additional_warn_text=(
-        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+        "`make_persistent_airflow_db_resource` has been superseded "
+        "by the functionality in the `dagster-airlift` library."
     )
 )
 def make_persistent_airflow_db_resource(

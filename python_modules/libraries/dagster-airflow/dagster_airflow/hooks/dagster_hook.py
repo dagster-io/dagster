@@ -18,7 +18,7 @@ from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 @superseded(
     additional_warn_text=(
-        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+        "`DagsterHook` has been superseded by the functionality in the `dagster-airlift` library."
     )
 )
 class DagsterHook(BaseHook):

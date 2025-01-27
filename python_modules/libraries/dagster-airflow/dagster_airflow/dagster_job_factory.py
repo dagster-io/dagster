@@ -22,7 +22,7 @@ from dagster_airflow.utils import normalized_name
 
 @superseded(
     additional_warn_text=(
-        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+        "`make_dagster_job_from_airflow_dag` has been superseded by the functionality in the `dagster-airlift` library."
     )
 )
 def make_dagster_job_from_airflow_dag(

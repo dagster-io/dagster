@@ -6,7 +6,7 @@ LINK_FMT = "https://dagster.cloud/{organization_id}/{deployment_name}/runs/{run_
 
 @superseded(
     additional_warn_text=(
-        "The `dagster-airlift` library is no longer best practice. Use the `dagster-airlift` library instead."
+        "`DagsterLink` has been superseded by the functionality in the `dagster-airlift` library."
     )
 )
 class DagsterLink(BaseOperatorLink):
