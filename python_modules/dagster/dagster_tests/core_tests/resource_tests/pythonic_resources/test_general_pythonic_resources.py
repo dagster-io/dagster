@@ -590,6 +590,8 @@ def test_nested_config_class() -> None:
 def test_nested_config_class_with_runtime_config(
     child_resource_fields_all_have_default_values: bool,
 ) -> None:
+    # Type hinting a dynamically-generated Pydantic model is impossible:
+    # https://stackoverflow.com/q/78838473
     ChildResource = create_model(
         "ChildResource",
         date=(str, "2025-01-20" if child_resource_fields_all_have_default_values else ...),
@@ -597,10 +599,13 @@ def test_nested_config_class_with_runtime_config(
     )
 
     class ParentResource(ConfigurableResource):
-        child: ChildResource
+        child: ChildResource  # pyright: ignore[reportInvalidTypeForm]
 
     @asset
-    def test_asset(child: ChildResource, parent: ParentResource) -> None:
+    def test_asset(
+        child: ChildResource,  # pyright: ignore[reportInvalidTypeForm]
+        parent: ParentResource,
+    ) -> None:
         assert child.date == "2025-01-21"
         assert parent.child.date == "2025-01-21"
 
