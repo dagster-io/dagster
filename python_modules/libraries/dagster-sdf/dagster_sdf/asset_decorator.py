@@ -9,16 +9,12 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     multi_asset,
 )
-from dagster._annotations import experimental
-from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_sdf.dagster_sdf_translator import DagsterSdfTranslator, validate_translator
 from dagster_sdf.sdf_information_schema import SdfInformationSchema
 from dagster_sdf.sdf_workspace import SdfWorkspace
 
 
-@suppress_dagster_warnings
-@experimental
 def sdf_assets(
     *,
     workspace: SdfWorkspace,
