@@ -1,29 +1,35 @@
 $ dg --help
 
-Usage: dg [OPTIONS] COMMAND [ARGS]...
-
-  CLI for working with Dagster components.
-
-Commands:
-  code-location   Commands for operating code location directories.
-  component       Commands for operating on components.
-  component-type  Commands for operating on components types.
-  deployment      Commands for operating on deployment directories.
-
-Options:
-  --clear-cache                 Clear the cache.
-  --rebuild-component-registry  Recompute and cache the set of available
-                                component types for the current environment.
-                                Note that this also happens automatically
-                                whenever the cache is detected to be stale.
-  -v, --version                 Show the version and exit.
-  -h, --help                    Show this message and exit.
-
-Global options:
-  --use-dg-managed-environment / --no-use-dg-managed-environment
-                                  Enable management of the virtual environment
-                                  with uv.
-  --builtin-component-lib TEXT    Specify a builitin component library to use.
-  --verbose                       Enable verbose output for debugging.
-  --disable-cache                 Disable the cache..
-  --cache-dir PATH                Specify a directory to use for the cache.
+Usage: dg [OPTIONS] COMMAND [ARGS]...                                          
+                                                                                
+ CLI for working with Dagster components.                                       
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --clear-cache                           Clear the cache.                     │
+│ --rebuild-component-registry            Recompute and cache the set of       │
+│                                         available component types for the    │
+│                                         current environment. Note that this  │
+│                                         also happens automatically whenever  │
+│                                         the cache is detected to be stale.   │
+│ --version                     -v        Show the version and exit.           │
+│ --help                        -h        Show this message and exit.          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Global options ─────────────────────────────────────────────────────────────╮
+│ --use-dg-managed-env…    --no-use-dg-managed…          Enable management of  │
+│                                                        the virtual           │
+│                                                        environment with uv.  │
+│ --builtin-component-…                            TEXT  Specify a builitin    │
+│                                                        component library to  │
+│                                                        use.                  │
+│ --verbose                                              Enable verbose output │
+│                                                        for debugging.        │
+│ --disable-cache                                        Disable the cache..   │
+│ --cache-dir                                      PATH  Specify a directory   │
+│                                                        to use for the cache. │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ code-location    Commands for operating code location directories.           │
+│ component        Commands for operating on components.                       │
+│ component-type   Commands for operating on components types.                 │
+│ deployment       Commands for operating on deployment directories.           │
+╰──────────────────────────────────────────────────────────────────────────────╯

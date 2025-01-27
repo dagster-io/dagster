@@ -17,6 +17,7 @@ from docs_beta_snippets_tests.snippet_checks.utils import (
 MASK_TIME = (r"\d+:\d+(:?AM|PM)", "9:00AM")
 MASK_SLING_WARNING = (r"warning.*\n", "")
 MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
+MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
 MASK_JAFFLE_PLATFORM = (r" \/.*?\/jaffle-platform", " /.../jaffle-platform")
 
 DAGSTER_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent.parent
@@ -39,7 +40,16 @@ def test_components_docs_index(update_snippets: bool) -> None:
         snip_no += 1
         return snip_no
 
-    with TemporaryDirectory() as tempdir, environ({"COLUMNS": "80", "NO_COLOR": "1"}):
+    with (
+        TemporaryDirectory() as tempdir,
+        environ(
+            {
+                "COLUMNS": "80",
+                "NO_COLOR": "1",
+                "HOME": "/tmp",
+            }
+        ),
+    ):
         os.chdir(tempdir)
         subprocess.check_call(["uv", "pip", "install", "dg"])
 
@@ -63,9 +73,12 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # Validate scaffolded files
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="cd jaffle-platform && tree",
+            cmd="cd jaffle-platform && tree --sort size",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
+            # Remove --sort size from tree output, sadly OSX and Linux tree
+            # sort differently when using alpha sort
+            snippet_replace_regex=[(" --sort size", "")],
         )
         check_file(
             "pyproject.toml",
@@ -102,7 +115,9 @@ def test_components_docs_index(update_snippets: bool) -> None:
         components_dir = str(
             DAGSTER_ROOT / "python_modules" / "libraries" / "dagster-components"
         )
-        _run_command(f"uv add --editable '{components_dir}[sling]'")
+        _run_command(
+            f"uv add sling_mac_arm64 && uv add --editable '{components_dir}[sling]'"
+        )
         run_command_and_snippet_output(
             cmd="dg component-type list",
             snippet_path=COMPONENTS_SNIPPETS_DIR
@@ -121,10 +136,13 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # Cleanup __pycache__ directories
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="tree jaffle_platform",
+            cmd="tree jaffle_platform --sort size",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-tree-jaffle-platform.txt",
             update_snippets=update_snippets,
+            # Remove --sort size from tree output, sadly OSX and Linux tree
+            # sort differently when using alpha sort
+            snippet_replace_regex=[(" --sort size", "")],
         )
         check_file(
             Path("jaffle_platform") / "components" / "ingest_files" / "component.yaml",
@@ -141,8 +159,9 @@ def test_components_docs_index(update_snippets: bool) -> None:
             snippet_replace_regex=[
                 MASK_SLING_WARNING,
                 MASK_SLING_PROMO,
+                MASK_SLING_DOWNLOAD_DUCKDB,
                 MASK_TIME,
-                (r"/Users/.*?/.sling", "/.../.sling"),
+                (r"set in .*?.sling", "set in /.../.sling"),
             ],
         )
         run_command_and_snippet_output(

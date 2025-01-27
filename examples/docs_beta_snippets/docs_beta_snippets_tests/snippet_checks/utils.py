@@ -78,13 +78,14 @@ def _assert_matches_or_update_snippet(
     snippet_output_file.parent.mkdir(parents=True, exist_ok=True)
 
     if update_snippets:
-        snippet_output_file.write_text(contents)
+        snippet_output_file.write_text(f"{contents.rstrip()}\n")
         print(f"Updated snippet at {snippet_path}")  # noqa: T201
     else:
         if not snippet_output_file.exists():
             raise Exception(f"Snippet at {snippet_path} does not exist")
 
-        snippet_contents = snippet_output_file.read_text()
+        contents = contents.rstrip()
+        snippet_contents = snippet_output_file.read_text().rstrip()
         if not snippet_contents == contents:
             print(f"Snapshot mismatch {snippet_path}")  # noqa: T201
             print("\nActual file:")  # noqa: T201
@@ -94,7 +95,9 @@ def _assert_matches_or_update_snippet(
         else:
             print(f"Snippet {snippet_path} passed")  # noqa: T201
 
-        assert snippet_contents == contents
+        assert (
+            snippet_contents == contents
+        ), "CLI snippets do not match.\nYou may need to run make regenerate_cli_snippets in the `dagster/docs` directory."
 
 
 def create_file(
