@@ -5,7 +5,7 @@ import boto3
 import botocore
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, MetadataValue, PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     )
 
 
-@experimental
 class PipesECSClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running AWS ECS tasks.
 
