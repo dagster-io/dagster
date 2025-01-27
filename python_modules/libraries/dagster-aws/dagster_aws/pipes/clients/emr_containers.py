@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 import boto3
 import dagster._check as check
 from dagster import PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import preview, public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -33,7 +33,7 @@ AWS_SERVICE_NAME = "EMR Containers"
 
 
 @public
-@experimental
+@preview
 class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running workloads on AWS EMR Containers.
 
