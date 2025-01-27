@@ -1,10 +1,10 @@
 from typing import cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
-from dagster._annotations import experimental
+from dagster._annotations import beta
 
 
-@experimental
+@beta
 def build_materialize_workbook_assets_definition(
     resource_key: str,
     spec: AssetSpec,
