@@ -41,7 +41,7 @@ class PostgresResource(ConfigurableResource):
 
     dsn: Optional[str] = Field(
         description=(
-            "A libpq conenction string."
+            "A libpq connection string."
             " Can be provided together with keyword-arguments in a mix-and-match manner."
             " Defaults to None if not provided - in which case only the keyword arguments"
             " will be used to establish the connection."
@@ -55,7 +55,7 @@ class PostgresResource(ConfigurableResource):
     )
 
     port: Optional[int] = Field(
-        description=("Connection port number. defualts to 5432 if not provided."),
+        description=("Connection port number. defaults to 5432 if not provided."),
         default=None,
     )
 
