@@ -1691,10 +1691,6 @@
             "path": "/_apidocs/libraries/dagster-pyspark"
           },
           {
-            "title": "Shell (dagster-shell)",
-            "path": "/_apidocs/libraries/dagster-shell"
-          },
-          {
             "title": "Sigma (dagster-sigma)",
             "path": "/_apidocs/libraries/dagster-sigma"
           },

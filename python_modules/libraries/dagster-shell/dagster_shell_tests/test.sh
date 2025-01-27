@@ -1,1 +1,0 @@
-echo "this is a test message: $MY_ENV_VAR"

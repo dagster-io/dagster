@@ -83,7 +83,6 @@
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
 -e python_modules/libraries/dagster-sdf/
--e python_modules/libraries/dagster-shell/
 -e python_modules/libraries/dagster-sigma[test]
 -e python_modules/libraries/dagster-slack/
 -e python_modules/libraries/dagster-sling/
