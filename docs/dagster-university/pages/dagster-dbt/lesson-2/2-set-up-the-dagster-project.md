@@ -28,7 +28,6 @@ setup(
         "dagster-dbt",
         "dbt-duckdb",
         "geopandas",
-        "kaleido==0.1.*",
         "pandas[parquet]",
         "plotly",
         "shapely",
