@@ -2,12 +2,12 @@ from collections.abc import Sequence
 from typing import Optional, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
-from dagster._annotations import experimental
+from dagster._annotations import beta
 
 from dagster_tableau.resources import BaseTableauWorkspace
 
 
-@experimental
+@beta
 def build_tableau_materializable_assets_definition(
     resource_key: str,
     specs: Sequence[AssetSpec],
