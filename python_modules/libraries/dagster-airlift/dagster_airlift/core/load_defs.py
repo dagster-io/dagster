@@ -51,6 +51,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
             airflow_instance=self.airflow_instance,
             mapped_assets=self.mapped_assets,
             dag_selector_fn=self.dag_selector_fn,
+            automapping_enabled=False,
         )
 
     def defs_from_state(
@@ -252,6 +253,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDef
             airflow_instance=self.airflow_instance,
             mapped_assets=self.mapped_assets,
             dag_selector_fn=None,
+            automapping_enabled=True,
         )
 
     def defs_from_state(
