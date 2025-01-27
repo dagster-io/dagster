@@ -3,7 +3,6 @@ from typing import Optional
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
-from dagster._annotations import experimental
 from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 
 from dagster_polars.io_managers.utils import get_polars_metadata
@@ -15,7 +14,6 @@ except ImportError as e:
     raise ImportError("Install 'dagster-polars[gcp]' to use BigQuery functionality") from e
 
 
-@experimental
 class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
     """Plugin for the BigQuery I/O Manager that can store and load Polars DataFrames as BigQuery tables.
 
