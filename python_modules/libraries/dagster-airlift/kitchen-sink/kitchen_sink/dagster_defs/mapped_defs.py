@@ -79,6 +79,7 @@ def build_mapped_defs() -> Definitions:
     return build_defs_from_airflow_instance(
         airflow_instance=local_airflow_instance(),
         dag_selector_fn=lambda dag: not dag.dag_id.startswith("unmapped"),
+        sensor_minimum_interval_seconds=1,
         defs=Definitions.merge(
             dag_defs(
                 "print_dag",
