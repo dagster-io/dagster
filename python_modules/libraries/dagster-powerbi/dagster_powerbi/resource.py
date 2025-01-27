@@ -14,7 +14,7 @@ from dagster import (
     Definitions,
     _check as check,
 )
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import beta, deprecated, public
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -394,7 +394,7 @@ class PowerBIWorkspace(ConfigurableResource):
         )
 
 
-@experimental
+@beta
 def load_powerbi_asset_specs(
     workspace: PowerBIWorkspace,
     dagster_powerbi_translator: Optional[

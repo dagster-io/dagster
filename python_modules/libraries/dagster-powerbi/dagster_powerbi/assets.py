@@ -4,7 +4,7 @@ from dagster import (
     _check as check,
     multi_asset,
 )
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -13,7 +13,7 @@ from dagster_powerbi.resource import PowerBIWorkspace
 from dagster_powerbi.translator import PowerBIMetadataSet, PowerBITagSet
 
 
-@experimental
+@beta
 def build_semantic_model_refresh_asset_definition(
     resource_key: str, spec: AssetSpec
 ) -> AssetsDefinition:
