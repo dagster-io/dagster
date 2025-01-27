@@ -5,7 +5,7 @@ from typing import Any, Optional
 import jwt
 import requests
 from dagster import ConfigurableResource, resource
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
@@ -101,6 +101,14 @@ def to_seconds(dt: datetime) -> float:
     return (dt - datetime(1970, 1, 1)).total_seconds()
 
 
+@deprecated(
+    breaking_version="0.27",
+    additional_warn_text=(
+        "`GithubClient` is deprecated. Use your own resource and client instead. "
+        "Learn how to create your own resource here: "
+        "https://docs.dagster.io/guides/build/external-resources/defining-resources"
+    ),
+)
 class GithubClient:
     """A client for interacting with the GitHub API.
 
@@ -438,6 +446,14 @@ class GithubClient:
         return pull_request
 
 
+@deprecated(
+    breaking_version="0.27",
+    additional_warn_text=(
+        "`GithubResource` is deprecated. Use your own resource instead. "
+        "Learn how to create your own resource here: "
+        "https://docs.dagster.io/guides/build/external-resources/defining-resources"
+    ),
+)
 class GithubResource(ConfigurableResource):
     """A resource configuration class for GitHub integration.
 
@@ -504,6 +520,14 @@ class GithubResource(ConfigurableResource):
         )
 
 
+@deprecated(
+    breaking_version="0.27",
+    additional_warn_text=(
+        "`github_resource` is deprecated. Use your own resource instead. "
+        "Learn how to create your own resource here: "
+        "https://docs.dagster.io/guides/build/external-resources/defining-resources"
+    ),
+)
 @dagster_maintained_resource
 @resource(
     config_schema=GithubResource.to_config_schema(),
