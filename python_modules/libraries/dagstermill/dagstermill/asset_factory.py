@@ -17,6 +17,7 @@ from dagster import (
     SourceAsset,
     asset,
 )
+from dagster._annotations import beta
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -69,6 +70,7 @@ def _make_dagstermill_asset_compute_fn(
     return _t_fn
 
 
+@beta
 def define_dagstermill_asset(
     name: str,
     notebook_path: str,

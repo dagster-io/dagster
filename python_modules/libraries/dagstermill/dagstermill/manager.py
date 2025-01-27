@@ -15,6 +15,7 @@ from dagster import (
     TypeCheck,
     _check as check,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.definitions.graph_definition import GraphDefinition
@@ -64,6 +65,7 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
         return [teardown_event for teardown_event in super().generate_teardown_events()]
 
 
+@beta
 class Manager:
     def __init__(self):
         self.job = None
