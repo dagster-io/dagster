@@ -11,7 +11,7 @@ from dagster_azure.blob import (
 
 ACCOUNT_URL = "https://example-account.blob.core.windows.net"
 SAS_TOKEN = "example-sas-token"
-SHARED_KEY = "exampe-shared-key"
+SHARED_KEY = "example-shared-key"
 
 
 @patch("dagster_azure.blob.resources.BlobServiceClient")
