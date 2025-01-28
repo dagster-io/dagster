@@ -317,21 +317,24 @@ export const createProvider = <
     if (typeof value !== 'string') {
       if (value.value) {
         const text = `${attribute as string}:"${value.key}"="${value.value}"`;
+        const displayText = `${attribute as string}:${value.key}=${value.value}`;
         return {
           text: textCallback ? textCallback(text) : text,
-          jsx: <SuggestionJSXBase label={attribute as string} />,
+          jsx: <SuggestionJSXBase label={displayText} />,
         };
       }
       const text = `${attribute as string}:"${value.key}"`;
+      const displayText = `${attribute as string}:${value.key}`;
       return {
         text: textCallback ? textCallback(text) : text,
-        jsx: <SuggestionJSXBase label={attribute as string} />,
+        jsx: <SuggestionJSXBase label={displayText} />,
       };
     }
     const text = `${attribute as string}:"${value}"`;
+    const displayText = `${attribute as string}:${value}`;
     return {
       text: textCallback ? textCallback(text) : text,
-      jsx: <SuggestionJSXBase label={attribute as string} />,
+      jsx: <SuggestionJSXBase label={displayText} />,
     };
   },
 });
