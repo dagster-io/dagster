@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 import psycopg2
 from dagster import ConfigurableResource, InitResourceContext
+from dagster._utils.backoff import backoff
 from pydantic import Field, PrivateAttr
 
 
@@ -94,14 +95,19 @@ class PostgresResource(ConfigurableResource):
     _connection: psycopg2.extensions.connection = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._connection = psycopg2.connect(
-            dsn=self.dsn,
-            host=self.host,
-            port=self.port,
-            user=self.user,
-            password=self.password,
-            database=self.database,
-            **self.additional_parameters,
+        self._connection = backoff(
+            fn=psycopg2.connect,
+            retry_on=(psycopg2.OperationalError,),
+            kwargs={
+                "dsn": self.dsn,
+                "host": self.host,
+                "port": self.port,
+                "user": self.user,
+                "password": self.password,
+                "database": self.database,
+                **self.additional_parameters,
+            },
+            max_retries=10,
         )
 
     @classmethod
