@@ -40,7 +40,10 @@ On the backend, these kind inputs are stored as tags on the asset. For more info
 
 When viewing the asset in the lineage view, the attached kinds will be visible at the bottom the asset.
 
-![Asset in lineage view with attached kind tags](/images/guides/build/assets/metadata-tags/kinds/kinds.svg)
+<img
+  src="/images/guides/build/assets/metadata-tags/kinds/kinds.svg"
+  alt="Asset in lineage view with attached kind tags"
+/>
 
 ## Adding compute kinds to assets
 
