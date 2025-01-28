@@ -275,7 +275,7 @@ export const createProvider = <
       jsx: <SuggestionJSXBase label={label} icon={icon} rightLabel={displayText} />,
     };
   },
-  createAttributeValueSuggestion: ({attribute, value, textCallback}) => {
+  createAttributeValueSuggestion: ({value, textCallback}) => {
     if (typeof value !== 'string') {
       const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
       return {
@@ -285,7 +285,7 @@ export const createProvider = <
     }
     return {
       text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
-      jsx: <SuggestionJSXBase label={attribute as string} />,
+      jsx: <SuggestionJSXBase label={value} />,
     };
   },
   createFunctionSuggestion: ({func, text, options}) => {
@@ -314,27 +314,32 @@ export const createProvider = <
     };
   },
   createAttributeValueIncludeAttributeSuggestion: ({attribute, value, textCallback}) => {
+    let text;
+    let valueText;
     if (typeof value !== 'string') {
       if (value.value) {
-        const text = `${attribute as string}:"${value.key}"="${value.value}"`;
-        const displayText = `${attribute as string}:${value.key}=${value.value}`;
-        return {
-          text: textCallback ? textCallback(text) : text,
-          jsx: <SuggestionJSXBase label={displayText} />,
-        };
+        text = `${attribute as string}:"${value.key}"="${value.value}"`;
+        valueText = `${value.key}=${value.value}`;
+      } else {
+        text = `${attribute as string}:"${value.key}"`;
+        valueText = value.key;
       }
-      const text = `${attribute as string}:"${value.key}"`;
-      const displayText = `${attribute as string}:${value.key}`;
-      return {
-        text: textCallback ? textCallback(text) : text,
-        jsx: <SuggestionJSXBase label={displayText} />,
-      };
+    } else {
+      text = `${attribute as string}:"${value}"`;
+      valueText = value;
     }
-    const text = `${attribute as string}:"${value}"`;
-    const displayText = `${attribute as string}:${value}`;
     return {
       text: textCallback ? textCallback(text) : text,
-      jsx: <SuggestionJSXBase label={displayText} />,
+      jsx: (
+        <SuggestionJSXBase
+          label={
+            <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
+              <MonoSmall color={Colors.textLight()}>{attribute as string}:</MonoSmall>
+              <MonoSmall>{valueText}</MonoSmall>
+            </Box>
+          }
+        />
+      ),
     };
   },
 });
