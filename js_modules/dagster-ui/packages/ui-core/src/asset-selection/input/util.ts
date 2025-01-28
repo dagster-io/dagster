@@ -1,11 +1,12 @@
 import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
 import {isKindTag} from '../../graph/KindTags';
+import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
 export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   const assetNamesSet: Set<string> = new Set();
-  const tagNamesSet: Set<string> = new Set();
+  const tagNamesSet: Set<{key: string; value: string}> = new Set();
   const ownersSet: Set<string> = new Set();
   const groupsSet: Set<string> = new Set();
   const kindsSet: Set<string> = new Set();
@@ -17,13 +18,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
       if (isKindTag(tag)) {
         return;
       }
-      if (tag.key && tag.value) {
-        // We add quotes around the equal sign here because the auto-complete suggestion already wraps the entire value in quotes.
-        // So wer end up with tag:"key"="value" as the final suggestion
-        tagNamesSet.add(`${tag.key}"="${tag.value}`);
-      } else {
-        tagNamesSet.add(tag.key);
-      }
+      tagNamesSet.add(memoizedTag(tag.key, tag.value));
     });
     asset.node.owners.forEach((owner) => {
       switch (owner.__typename) {
@@ -66,3 +61,8 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
     code_location: codeLocations,
   };
 };
+
+const memoizedTag = weakMapMemoize((key: string, value: string) => ({
+  key,
+  value,
+}));

@@ -2,13 +2,14 @@ import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionAutoCompleteVisitor} from './SelectionAutoCompleteVisitor';
 import {parseInput} from './SelectionInputParser';
 
-export function createSelectionAutoComplete<T extends {text: string}>({
+export function createSelectionAutoComplete({
   getAttributeResultsMatchingQuery,
   getAttributeValueResultsMatchingQuery,
   getFunctionResultsMatchingQuery,
   getSubstringResultMatchingQuery,
   getAttributeValueIncludeAttributeResultsMatchingQuery,
-}: Omit<SelectionAutoCompleteProvider<T>, 'renderResult' | 'useAutoComplete'>) {
+  createOperatorSuggestion,
+}: Omit<SelectionAutoCompleteProvider, 'renderResult' | 'useAutoComplete'>) {
   return function (line: string, actualCursorIndex: number) {
     const {parseTrees} = parseInput(line);
 
@@ -25,6 +26,7 @@ export function createSelectionAutoComplete<T extends {text: string}>({
         getAttributeValueIncludeAttributeResultsMatchingQuery,
         getFunctionResultsMatchingQuery,
         getSubstringResultMatchingQuery,
+        createOperatorSuggestion,
       });
       visitorWithAutoComplete.addUnmatchedValueResults('');
     } else {
@@ -40,8 +42,8 @@ export function createSelectionAutoComplete<T extends {text: string}>({
             getAttributeValueIncludeAttributeResultsMatchingQuery,
             getFunctionResultsMatchingQuery,
             getSubstringResultMatchingQuery,
+            createOperatorSuggestion,
           });
-          debugger;
           tree.accept(visitor);
           visitorWithAutoComplete = visitor;
           break;

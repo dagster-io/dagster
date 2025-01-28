@@ -28,7 +28,7 @@ type SelectionAutoCompleteInputProps = {
   linter: Linter<any>;
   value: string;
   onChange: (value: string) => void;
-  SelectionAutoCompleteProvider: SelectionAutoCompleteProvider<any>;
+  SelectionAutoCompleteProvider: SelectionAutoCompleteProvider;
 };
 
 export const SelectionAutoCompleteInput = ({
@@ -39,7 +39,7 @@ export const SelectionAutoCompleteInput = ({
   linter,
   SelectionAutoCompleteProvider,
 }: SelectionAutoCompleteInputProps) => {
-  const {useAutoComplete, renderResult} = SelectionAutoCompleteProvider;
+  const {useAutoComplete} = SelectionAutoCompleteProvider;
 
   const trackEvent = useTrackEvent();
 
@@ -73,7 +73,10 @@ export const SelectionAutoCompleteInput = ({
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
 
-  const {autoCompleteResults, loading} = useAutoComplete(innerValue, cursorPosition);
+  const {autoCompleteResults, loading} = useAutoComplete({
+    line: innerValue,
+    cursorIndex: cursorPosition,
+  });
 
   const hintContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -333,7 +336,6 @@ export const SelectionAutoCompleteInput = ({
               onSelect={onSelect}
               setSelectedIndex={setSelectedIndex}
               loading={loading}
-              renderResult={renderResult}
             />
           </div>
         }

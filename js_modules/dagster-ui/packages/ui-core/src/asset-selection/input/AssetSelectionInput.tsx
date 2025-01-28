@@ -17,7 +17,7 @@ interface AssetSelectionInputProps {
   linter?: Linter<any>;
   useAssetSelectionAutoCompleteProvider?: (
     assets: AssetGraphQueryItem[],
-  ) => SelectionAutoCompleteProvider<any>;
+  ) => SelectionAutoCompleteProvider;
 }
 
 const defaultLinter = createSelectionLinter({

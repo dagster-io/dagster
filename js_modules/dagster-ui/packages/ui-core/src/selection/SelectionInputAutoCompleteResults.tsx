@@ -13,33 +13,31 @@ import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect} from 'react';
 import styled from 'styled-components';
 
-import {BaseSuggestion} from './SelectionAutoCompleteProvider';
+import {Suggestion} from './SelectionAutoCompleteProvider';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 
-type SelectionInputAutoCompleteResultsProps<T extends {text: string}> = {
+type SelectionInputAutoCompleteResultsProps = {
   results: {
-    list: Array<T | BaseSuggestion>;
+    list: Suggestion[];
     from: number;
     to: number;
   } | null;
   width?: number;
-  onSelect: (suggestion: T | BaseSuggestion) => void;
-  renderResult: (suggestion: T | BaseSuggestion) => React.ReactNode;
+  onSelect: (suggestion: Suggestion) => void;
   selectedIndex: number;
   setSelectedIndex: React.Dispatch<React.SetStateAction<{current: number}>>;
   loading?: boolean;
 };
 
 export const SelectionInputAutoCompleteResults = React.memo(
-  <T extends {text: string}>({
+  ({
     results,
     width,
     onSelect,
     selectedIndex,
     setSelectedIndex,
     loading,
-    renderResult,
-  }: SelectionInputAutoCompleteResultsProps<T>) => {
+  }: SelectionInputAutoCompleteResultsProps) => {
     const menuRef = React.useRef<HTMLDivElement | null>(null);
     const rowVirtualizer = useVirtualizer({
       count: results?.list.length ?? 0,
@@ -75,7 +73,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
                     <div ref={rowVirtualizer.measureElement} data-index={index}>
                       <MenuItem
                         key={key}
-                        text={renderResult(result)}
+                        text={result.jsx}
                         active={index === selectedIndex}
                         onClick={() => onSelect(result)}
                         onMouseMove={() => setSelectedIndex({current: index})}
