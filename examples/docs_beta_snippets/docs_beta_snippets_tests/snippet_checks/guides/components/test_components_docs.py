@@ -159,7 +159,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
             snippet_replace_regex=[
                 MASK_SLING_WARNING,
                 MASK_SLING_PROMO,
-                MASK_SLING_DOWNLOAD_DUCKDB,
                 MASK_TIME,
                 (r"set in .*?.sling", "set in /.../.sling"),
             ],
@@ -169,7 +168,12 @@ def test_components_docs_index(update_snippets: bool) -> None:
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-sling-test-duckdb.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_SLING_WARNING, MASK_SLING_PROMO, MASK_TIME],
+            snippet_replace_regex=[
+                MASK_SLING_WARNING,
+                MASK_SLING_DOWNLOAD_DUCKDB,
+                MASK_SLING_PROMO,
+                MASK_TIME,
+            ],
         )
 
         # Test sling sync
