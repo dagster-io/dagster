@@ -1,11 +1,6 @@
 import {Operator, SelectionAutoCompleteProvider, Suggestion} from './SelectionAutoCompleteProvider';
 
 /**
- * Creates a `SelectionAutoCompleteProvider` based on the provided attribute map and configuration functions.
- *
- * This provider excludes the `renderResult` and `useAutoComplete` methods from the base `SelectionAutoCompleteProvider`.
- * It generates autocomplete suggestions for attributes, attribute values, functions, substrings, and combined attribute-value suggestions.
- *
  * @type TAttributeMap - A map of attribute names to arrays of values.
  * @type TPrimaryAttributeKey - The key of the `attributesMap` that serves as the identifier for the objects we're filtering. This key will support substring queries.
  * @type TSuggestion - The shape of each autocomplete suggestion, containing at least a `text` property.
