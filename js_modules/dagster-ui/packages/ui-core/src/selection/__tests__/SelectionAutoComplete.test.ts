@@ -14,7 +14,7 @@ describe('createAssetSelectionHint', () => {
   const baseProvider = createSelectionAutoCompleteProviderFromAttributeMap({
     attributesMap,
     ...createProvider<typeof attributesMap, 'key'>({
-      nameBase: 'key',
+      primaryAttributeKey: 'key',
       attributeToIcon: {
         key: 'magnify_glass',
         tag: 'magnify_glass',

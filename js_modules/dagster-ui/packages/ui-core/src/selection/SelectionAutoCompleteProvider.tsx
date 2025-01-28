@@ -222,24 +222,24 @@ const FUNCTIONS = ['sinks', 'roots'] as const;
 
 export const createProvider = <
   TAttributeMap extends {[key: string]: any[]},
-  TNameBase extends keyof TAttributeMap,
+  TPrimaryAttributeKey extends keyof TAttributeMap,
 >({
   attributeToIcon,
-  nameBase,
+  primaryAttributeKey,
 }: {
   attributeToIcon: Record<keyof TAttributeMap, IconName>;
-  nameBase: TNameBase;
+  primaryAttributeKey: TPrimaryAttributeKey;
 }): Omit<
   Parameters<
     typeof createSelectionAutoCompleteProviderFromAttributeMap<
       TAttributeMap,
-      TNameBase,
+      TPrimaryAttributeKey,
       'sinks' | 'roots'
     >
   >[0],
   'attributesMap'
 > => ({
-  nameBase,
+  primaryAttributeKey,
   functions: FUNCTIONS,
   doesValueIncludeQuery: ({value, query}) => {
     if (typeof value !== 'string') {
@@ -263,7 +263,7 @@ export const createProvider = <
     const icon: IconName = attributeToIcon[attribute];
     let label;
     switch (attribute) {
-      case nameBase as string:
+      case primaryAttributeKey as string:
         label = 'Exact match';
         break;
       default:

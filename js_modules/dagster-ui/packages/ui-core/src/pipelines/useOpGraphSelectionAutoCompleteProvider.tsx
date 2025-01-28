@@ -25,7 +25,7 @@ export const useOpGraphSelectionAutoCompleteProvider = (
       createSelectionAutoCompleteProviderFromAttributeMap({
         attributesMap,
         ...createProvider<typeof attributesMap, 'name'>({
-          nameBase: 'name',
+          primaryAttributeKey: 'name',
           attributeToIcon: iconMap,
         }),
       }),

@@ -32,7 +32,7 @@ export function useGanttChartSelectionAutoCompleteProvider(
       createSelectionAutoCompleteProviderFromAttributeMap({
         attributesMap,
         ...createProvider<typeof attributesMap, 'name'>({
-          nameBase: 'name',
+          primaryAttributeKey: 'name',
           attributeToIcon: iconMap,
         }),
       }),

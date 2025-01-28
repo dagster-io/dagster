@@ -7,15 +7,15 @@ import {Operator, SelectionAutoCompleteProvider, Suggestion} from './SelectionAu
  * It generates autocomplete suggestions for attributes, attribute values, functions, substrings, and combined attribute-value suggestions.
  *
  * @type TAttributeMap - A map of attribute names to arrays of values.
- * @type TNameBase - The key of the `attributesMap` that serves as the identifier for the objects we're filtering. This key will support substring queries.
+ * @type TPrimaryAttributeKey - The key of the `attributesMap` that serves as the identifier for the objects we're filtering. This key will support substring queries.
  * @type TSuggestion - The shape of each autocomplete suggestion, containing at least a `text` property.
  */
 export function createSelectionAutoCompleteProviderFromAttributeMap<
   TAttributeMap extends {[key: string]: any[]},
-  TNameBase extends keyof TAttributeMap,
+  TPrimaryAttributeKey extends keyof TAttributeMap,
   TFunc extends string,
 >({
-  nameBase,
+  primaryAttributeKey,
   attributesMap,
   functions,
   createAttributeSuggestion,
@@ -26,7 +26,7 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
   createOperatorSuggestion,
   doesValueIncludeQuery,
 }: {
-  nameBase: TNameBase;
+  primaryAttributeKey: TPrimaryAttributeKey;
 
   attributesMap: TAttributeMap;
 
@@ -43,8 +43,8 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
     value,
     textCallback,
   }: {
-    // @ts-expect-error - TNameBase is a string
-    attribute: K | `${TNameBase}_substring`;
+    // @ts-expect-error - TPrimaryAttributeKey is a string
+    attribute: K | `${TPrimaryAttributeKey}_substring`;
     value: TAttributeMap[K][number];
     textCallback?: (value: string) => string;
   }) => Suggestion;
@@ -106,8 +106,8 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
     },
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
       let values = attributesMap[attribute as keyof typeof attributesMap];
-      if (attribute === `${nameBase as string}_substring`) {
-        values = attributesMap[nameBase];
+      if (attribute === `${primaryAttributeKey as string}_substring`) {
+        values = attributesMap[primaryAttributeKey];
       }
       return (
         values

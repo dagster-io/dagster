@@ -21,7 +21,10 @@ export function useAssetSelectionAutoCompleteProvider(
     () =>
       createSelectionAutoCompleteProviderFromAttributeMap({
         attributesMap,
-        ...createProvider<typeof attributesMap, 'key'>({nameBase: 'key', attributeToIcon: iconMap}),
+        ...createProvider<typeof attributesMap, 'key'>({
+          primaryAttributeKey: 'key',
+          attributeToIcon: iconMap,
+        }),
       }),
     [attributesMap],
   );
