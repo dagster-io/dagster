@@ -247,7 +247,7 @@ export const createProvider = <
       return (
         value.key.includes(query) ||
         value.value?.includes(query) ||
-        `${value.key}=${value.value}`.includes(query)
+        `${value.key}=${value.value ?? ''}`.includes(query)
       );
     }
     return value.includes(query);
