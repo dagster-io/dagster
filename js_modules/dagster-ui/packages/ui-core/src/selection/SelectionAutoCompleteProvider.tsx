@@ -221,7 +221,7 @@ export const SuggestionJSXBase = ({
 const FUNCTIONS = ['sinks', 'roots'] as const;
 
 export const createProvider = <
-  TAttributeMap extends {[key: string]: any[]},
+  TAttributeMap extends {[key: string]: string[] | {key: string; value?: string}[]},
   TPrimaryAttributeKey extends keyof TAttributeMap,
 >({
   attributeToIcon,
@@ -246,7 +246,7 @@ export const createProvider = <
       // This is a tag
       return (
         value.key.includes(query) ||
-        value.value.includes(query) ||
+        value.value?.includes(query) ||
         `${value.key}=${value.value}`.includes(query)
       );
     }

@@ -6,7 +6,7 @@ import {Operator, SelectionAutoCompleteProvider, Suggestion} from './SelectionAu
  * @type TSuggestion - The shape of each autocomplete suggestion, containing at least a `text` property.
  */
 export function createSelectionAutoCompleteProviderFromAttributeMap<
-  TAttributeMap extends {[key: string]: any[]},
+  TAttributeMap extends {[key: string]: string[] | {key: string; value?: string}[]},
   TPrimaryAttributeKey extends keyof TAttributeMap,
   TFunc extends string,
 >({
