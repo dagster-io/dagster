@@ -156,11 +156,9 @@ class DagsterTableauTranslator:
         data_source_ids = set()
         for embedded_data_source in sheet_embedded_data_sources:
             published_data_source_list = embedded_data_source.get("parentPublishedDatasources", [])
-            is_publish_data_source_absent = True
             for published_data_source in published_data_source_list:
-                is_publish_data_source_absent = False
                 data_source_ids.add(published_data_source["luid"])
-            if is_publish_data_source_absent:
+            if not published_data_source_list:
                 data_source_ids.add(embedded_data_source["id"])
 
         data_source_keys = [
