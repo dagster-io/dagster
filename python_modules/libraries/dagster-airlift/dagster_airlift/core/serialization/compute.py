@@ -28,6 +28,8 @@ from dagster_airlift.core.utils import (
 if TYPE_CHECKING:
     from dagster_airlift.core.airflow_defs_data import MappedAsset
 
+
+MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL = 50
 DagSelectorFn = Callable[[DagInfo], bool]
 
 
@@ -169,15 +171,27 @@ def fetch_all_airflow_data(
     )
 
 
+def infer_code_retrieval_enabled(
+    source_code_retrieval_enabled: Optional[bool], fetched_airflow_data: FetchedAirflowData
+) -> bool:
+    if source_code_retrieval_enabled is None:
+        return len(fetched_airflow_data.dag_infos) < MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL
+    return source_code_retrieval_enabled
+
+
 def compute_serialized_data(
     airflow_instance: AirflowInstance,
     mapped_assets: Iterable["MappedAsset"],
     dag_selector_fn: Optional[DagSelectorFn],
     automapping_enabled: bool,
+    source_code_retrieval_enabled: Optional[bool],
 ) -> "SerializedAirflowDefinitionsData":
     mapping_info = build_airlift_metadata_mapping_info(mapped_assets)
     fetched_airflow_data = fetch_all_airflow_data(
         airflow_instance, mapping_info, dag_selector_fn, automapping_enabled=automapping_enabled
+    )
+    source_code_retrieval_enabled = infer_code_retrieval_enabled(
+        source_code_retrieval_enabled, fetched_airflow_data
     )
     return SerializedAirflowDefinitionsData(
         instance_name=airflow_instance.name,
@@ -193,7 +207,9 @@ def compute_serialized_data(
             dag_id: SerializedDagData(
                 dag_id=dag_id,
                 dag_info=dag_info,
-                source_code=airflow_instance.get_dag_source_code(dag_info.metadata["file_token"]),
+                source_code=airflow_instance.get_dag_source_code(dag_info.metadata["file_token"])
+                if source_code_retrieval_enabled
+                else None,
                 leaf_asset_keys=get_leaf_assets_for_dag(
                     asset_keys_in_dag=mapping_info.all_mapped_asset_keys_by_dag_id[dag_id],
                     downstreams_asset_dependency_graph=mapping_info.downstream_deps,
