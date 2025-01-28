@@ -20,7 +20,7 @@ class RDSResource(ResourceWithBoto3Configuration):
     The AWS-RDS client (``RDSResource.get_rds_client()``) allows access to the management layer of RDS (creating, starting, configuring databases).
     The AWS RDS Data (``RDSResource.get_data_client``) allows executing queries on the SQL databases themselves.
     Note that AWS RDS Data service is only availble for Aurora database. For accessing data from other types of RDS databases,
-     you should directly uset the corresponding SQL client instead (e.g. Postgres/MySQL).
+    you should directly uset the corresponding SQL client instead (e.g. Postgres/MySQL).
 
 
     Example:
