@@ -1,6 +1,6 @@
 import boto3
 import pytest
-from moto import mock_s3, mock_secretsmanager, mock_ssm, mock_rds, mock_rdsdata
+from moto import mock_rds, mock_rdsdata, mock_s3, mock_secretsmanager, mock_ssm
 
 
 # Make sure unit tests never connect to real AWS
@@ -33,10 +33,12 @@ def mock_ssm_client():
     with mock_ssm():
         yield boto3.client("ssm")
 
+
 @pytest.fixture
 def mock_rds_client():
     with mock_rds():
         yield boto3.client("rds")
+
 
 @pytest.fixture
 def mock_rds_data_client():

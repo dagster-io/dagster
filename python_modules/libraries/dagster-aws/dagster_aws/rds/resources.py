@@ -1,29 +1,27 @@
-from typing import TYPE_CHECKING, Generator, Any
-
+from collections.abc import Generator
 from contextlib import contextmanager
-import botocore.client
-from dagster_aws.utils import construct_boto_client_retry_config
-from dagster_aws.utils import ResourceWithBoto3Configuration
-import boto3.session
+from typing import TYPE_CHECKING, Any
 
-from dagster_aws.utils import construct_boto_client_retry_config
-from dagster_aws.utils import ResourceWithBoto3Configuration
+import boto3.session
+import botocore.client
+
+from dagster_aws.utils import ResourceWithBoto3Configuration, construct_boto_client_retry_config
 
 if TYPE_CHECKING:
-   import botocore
+    import botocore
 
 
 class RDSResource(ResourceWithBoto3Configuration):
-    """ A resource for interacting with the AWS RDS service.
+    """A resource for interacting with the AWS RDS service.
 
     It wraps both the AWS RDS client (https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds.html),
     and the AWS RDS Data client (https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/rds-data.html).
 
     The AWS-RDS client (``RDSResource.get_rds_client()``) allows access to the management layer of RDS (creating, starting, configuring databases).
     The AWS RDS Data (``RDSResource.get_data_client``) allows executing queries on the SQL databases themselves.
-    Note that AWS RDS Data service is only availble for Aurora database. For accessing data from other types of RDS databases, 
+    Note that AWS RDS Data service is only availble for Aurora database. For accessing data from other types of RDS databases,
      you should directly uset the corresponding SQL client instead (e.g. Postgres/MySQL).
-     
+
 
     Example:
         .. code-block:: python
@@ -50,9 +48,9 @@ class RDSResource(ResourceWithBoto3Configuration):
                     )
                 }
             )
-    
+
     """
-   
+
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
         return True
@@ -72,9 +70,9 @@ class RDSResource(ResourceWithBoto3Configuration):
         )
 
     @contextmanager
-    def get_rds_client(self) -> Generator["botocore.client.rds", None, None]: # pyright: ignore (reportAttributeAccessIssue)
+    def get_rds_client(self) -> Generator["botocore.client.rds", None, None]:  # pyright: ignore (reportAttributeAccessIssue)
         yield self._create_rds_client("rds")
 
     @contextmanager
-    def get_data_client(self) -> Generator["botocore.client.rds_data", None, None]: # pyright: ignore (reportAttributeAccessIssue)
+    def get_data_client(self) -> Generator["botocore.client.rds_data", None, None]:  # pyright: ignore (reportAttributeAccessIssue)
         yield self._create_rds_client("rds-data")
