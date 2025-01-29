@@ -19,7 +19,7 @@ Declarative Automation has two components:
 To use Declarative Automation, you must:
 * [Set automation conditions on assets or asset checks in your code](#setting-automation-conditions-on-assets-and-asset-checks).
 * Enable the automation condition sensor in the Dagster UI:
-    1. Navigate to **Overview > Sensors**.
+    1. Navigate to **Automation**.
     2. Locate the desired code location.
     3. Toggle on the **default_automation_condition_sensor** sensor.
 
