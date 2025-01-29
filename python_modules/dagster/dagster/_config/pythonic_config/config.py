@@ -410,6 +410,7 @@ def infer_schema_from_config_class(
     model_cls: type["Config"],
     description: Optional[str] = None,
     fields_to_omit: Optional[set[str]] = None,
+    default: Optional[Any] = None,
 ) -> DagsterField:
     from dagster._config.pythonic_config.config import Config
     from dagster._config.pythonic_config.resource import (
@@ -440,9 +441,11 @@ def infer_schema_from_config_class(
                     " definition. 'dagster.Field' should only be used in legacy Dagster config"
                     " schemas. Did you mean to use 'pydantic.Field' instead?"
                 )
-
+            field_default = default.get(resolved_field_name) if isinstance(default, dict) else None
             try:
-                fields[resolved_field_name] = _convert_pydantic_field(pydantic_field_info)
+                fields[resolved_field_name] = _convert_pydantic_field(
+                    pydantic_field_info, default=field_default
+                )
             except DagsterInvalidConfigDefinitionError as e:
                 raise DagsterInvalidPythonicConfigDefinitionError(
                     config_class=model_cls,
