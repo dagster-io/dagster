@@ -213,6 +213,7 @@ export type KnownTagType =
   | 'snowpark'
   | 'python'
   | 'fivetran'
+  | 'db2'
   | 'dbt'
   | 'slack'
   | 'pytorch'
