@@ -176,7 +176,7 @@ Sometimes, you may invoke a single call to an API that results in multiple table
 
 <TabItem value="External code in external_code.py">
 
-**Note**: when working with multi-assets, \`<PyObject section="libraries" module="dagster_pipes" object="PipesContext" method="report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
+**Note**: When working with multi-assets, <PyObject section="libraries" module="dagster_pipes" object="PipesContext" method="report_asset_materialization" /> may only be called once per unique asset key. If called more than once, an error similar to the following will surface:
 
 ```bash
 Calling {method} with asset key {asset_key} is undefined. Asset has already been materialized, so no additional data can be reported for it
