@@ -31,9 +31,9 @@ Dagster provides a few pre-built automation conditions to handle common use case
 
 | Name | Condition | Useful for |
 |------|-----------|------------|
-| `AutomationCondition.on_cron(cron_schedule)` | This condition will materialize an asset on a provided `cron_schedule`, after all of its parents have been updated. | Regularly updating an asset without worrying about the specifics of how its parents update. |
+| `AutomationCondition.on_cron(cron_schedule)` | This condition will materialize an asset on a provided `cron_schedule`, after all of its dependencies have been updated. | Regularly updating an asset without worrying about the specifics of how its dependencies update. |
 | `AutomationCondition.on_missing()` | This condition will materialize an asset if all its dependencies have been updated, but the asset itself has not. | Filling in partitioned assets as soon as upstream data is available. |
-| `AutomationCondition.eager()` | This condition will materialize an asset: <ul><li>If the asset has never been materialized before, or</li><li>When the asset's parents update, as long as none of the parents are currently missing or have an update in progress.</li></ul> | Automatically propagating changes through the asset graph.<br /><br />Ensuring assets remain up to date.|
+| `AutomationCondition.eager()` | This condition will materialize an asset: <ul><li>If the asset has never been materialized before, or</li><li>When the asset's dependencies update, as long as none of the dependencies are currently missing or have an update in progress.</li></ul> | Automatically propagating changes through the asset graph.<br /><br />Ensuring assets remain up to date.|
 
 ### Setting automation conditions on assets and asset checks
 
