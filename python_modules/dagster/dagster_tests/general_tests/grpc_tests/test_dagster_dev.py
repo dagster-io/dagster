@@ -1,4 +1,3 @@
-import signal
 import subprocess
 import tempfile
 import time
@@ -6,12 +5,9 @@ from collections import deque
 
 import pytest
 import requests
-from dagster import (
-    _seven as seven,
-    job,
-    op,
-)
+from dagster import job, op
 from dagster._core.test_utils import environ, new_cwd
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster._utils import find_free_port
 
 
@@ -80,7 +76,7 @@ def test_dagster_dev_command_module(use_legacy_code_server_behavior):
         with environ({"DAGSTER_HOME": ""}):
             with new_cwd(tempdir):
                 dagit_port = find_free_port()
-                dev_process = subprocess.Popen(
+                dev_process = open_ipc_subprocess(
                     [
                         "dagster",
                         "dev",
@@ -108,8 +104,8 @@ def test_dagster_dev_command_module(use_legacy_code_server_behavior):
                     # # legacy behavior has 2 code servers, new behavior has a proxy server and a code server
                     # assert len(child_processes) == 4
                 finally:
-                    if seven.IS_WINDOWS:
-                        dev_process.terminate()
-                    else:
-                        dev_process.send_signal(signal.SIGINT)
+                    print("TERMINATING\n")
+                    interrupt_ipc_subprocess(dev_process)
+                    print("COMMUNICATING\n")
                     dev_process.communicate()
+                    print("COMMUNICATED\n")
