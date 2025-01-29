@@ -12,6 +12,7 @@ setup(
         "geopandas",
         "pandas[parquet]",
         "plotly",
+        "kaleido",
         "shapely",
         "smart_open[s3]",
         "s3fs",

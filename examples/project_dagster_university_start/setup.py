@@ -10,6 +10,7 @@ setup(
         "geopandas",
         "pandas",
         "plotly",
+        "kaleido",
         "shapely",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
