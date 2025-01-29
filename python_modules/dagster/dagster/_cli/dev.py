@@ -238,11 +238,11 @@ def dev_command(
 
 
 @contextmanager
-def _temp_grpc_socket_workspace_file(context: WorkspaceProcessContext) -> Iterator[str]:
-    with tempfile.NamedTemporaryFile(mode="w+") as temp_file:
-        temp_file.write(yaml.dump({"load_from": context.get_code_server_specs()}))
-        temp_file.flush()
-        yield temp_file.name
+def _temp_grpc_socket_workspace_file(context: WorkspaceProcessContext) -> Iterator[Path]:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        workspace_file = Path(temp_dir) / "workspace.yaml"
+        workspace_file.write_text(yaml.dump({"load_from": context.get_code_server_specs()}))
+        yield workspace_file
 
 
 @contextmanager
@@ -264,7 +264,7 @@ def _optionally_create_temp_workspace(
             server_command=GrpcServerCommand.CODE_SERVER_START,
         ) as context:
             with _temp_grpc_socket_workspace_file(context) as workspace_file:
-                yield ["--workspace", workspace_file]
+                yield ["--workspace", str(workspace_file)]
     else:
         # sanity check workspace args
         get_workspace_load_target(orig_kwargs)
