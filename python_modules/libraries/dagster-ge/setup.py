@@ -31,8 +31,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.13",
     install_requires=[
-        "dagster==1.9.10",
-        "dagster-pandas==0.25.10",
+        "dagster==1.9.11",
+        "dagster-pandas==0.25.11",
         "pandas",
         "great_expectations >=0.17.15",
     ],
