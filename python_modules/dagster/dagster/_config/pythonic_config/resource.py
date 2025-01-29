@@ -632,7 +632,7 @@ def _is_fully_configured(resource: "CoercibleToResource") -> bool:
         is True
     )
 
-    return res
+    return res and not isinstance(resource, PartialResource)
 
 
 class PartialResourceState(NamedTuple):

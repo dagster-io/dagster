@@ -37,9 +37,8 @@ class HasCustomScope(Component):
         return CustomScopeParams
 
     @classmethod
-    def load(cls, context: ComponentLoadContext):
-        loaded_params = context.load_params(cls.get_schema())
-        return cls(attributes=loaded_params.attributes)
+    def load(cls, params: CustomScopeParams, context: ComponentLoadContext):
+        return cls(attributes=params.attributes)
 
     def build_defs(self, context: ComponentLoadContext):
         return Definitions(assets=[AssetSpec(key="key", **self.attributes)])

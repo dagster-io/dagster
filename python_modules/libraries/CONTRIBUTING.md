@@ -41,11 +41,10 @@ When contributing code, it's recommended to follow these steps:
 
 ## Writing Documentation
 
-There are two places to document your library: within the docstrings of the classes and methods, and prose docs. It's best to start with well-documented
-API documentation. Examples are also highly recommended.
+There are two places to document your library: within the docstrings of the classes and methods, and prose docs. It's best to start with well-documented API documentation. Examples are also highly recommended.
 
-Should you need to add additional documentation beyond what the API docs provide, you can add prose docs to the folder `docs/content` folder.
-See the [Docs README](/docs/README.md) for more details on writing documentation.
+Should you need to add additional documentation beyond what the API docs provide, you can add prose docs to the folder `docs-beta/docs` folder.
+See the [Docs README](/docs/docs-beta/README.md) for more details on writing documentation.
 
 ## Community Support
 

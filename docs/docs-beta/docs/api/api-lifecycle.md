@@ -50,9 +50,3 @@ The lifecycle stages described below provide a clear framework for understanding
 - **Stability**: Stable but scheduled for removal
 - **Usage**: Existing implementations should plan migration
 - **Documentation**: API docs remain, with clear warnings about deprecation. Arguments may be removed from function signature
-
-### Dead
-- **Purpose**: Removed APIs
-- **Stability**: N/A
-- **Usage**: No longer available for use
-- **Documentation**: Removed from all documentation

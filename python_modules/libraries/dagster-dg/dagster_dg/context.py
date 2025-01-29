@@ -35,7 +35,6 @@ class DgContext:
     def __init__(self, config: DgConfig, root_path: Path):
         self.config = config
         self.root_path = root_path
-        # self.use_dg_managed_environment is a property derived from self.config
         if config.disable_cache or not self.use_dg_managed_environment:
             self._cache = None
         else:
@@ -86,6 +85,11 @@ class DgContext:
         ]
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
+
+    def get_cache_key_for_local_components(self, path: Path) -> tuple[str, str, str]:
+        env_hash = hash_paths([path], includes=["*.py"])
+        path_parts = [str(part) for part in path.parts if part != "/"]
+        return ("_".join(path_parts), env_hash, "local_component_registry")
 
     # ########################
     # ##### DEPLOYMENT METHODS

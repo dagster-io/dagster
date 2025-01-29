@@ -1,6 +1,7 @@
 ---
 title: "Managing multiple projects and teams with Dagster+ Hybrid"
 description: "How to set up and manage multiple projects with Dagster+ Hybrid deployments."
+sidebar_position: 300
 ---
 
 
@@ -21,122 +22,10 @@ If you want to manage complexity or divide your work into areas of responsibilit
 
 Refer to the following table for more information, including the pros and cons of each approach.
 
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <thead>
-    <tr>
-      <th
-        style={{
-          width: "14%",
-        }}
-      >
-        Approach
-      </th>
-      <th
-        style={{
-          width: "43%",
-        }}
-      >
-        Multiple directories in a single repository
-      </th>
-      <th>Multiple repositories</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <strong>How it works</strong>
-      </td>
-      <td>
-        You can use a single repository to manage multiple projects by placing
-        each project in a separate directory. Depending on your VCS, you may be
-        able to set{" "}
-        <a href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners">
-          code owners
-        </a>{" "}
-        to restrict who can modify each project.
-      </td>
-      <td>
-        For stronger isolation, you can use multiple repositories to manage
-        multiple projects.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Pros</strong>
-      </td>
-      <td>
-        <ul
-          style={{
-            marginTop: "0px",
-          }}
-        >
-          <li
-            style={{
-              marginTop: "0px",
-            }}
-          >
-            Simple to implement
-          </li>
-          <li>Facilitates code sharing between projects</li>
-        </ul>
-      </td>
-      <td>
-        <ul
-          style={{
-            marginTop: "0px",
-          }}
-        >
-          <li
-            style={{
-              marginTop: "0px",
-            }}
-          >
-            Stronger isolation between projects and teams
-          </li>
-          <li>
-            Each project has its own CI/CD pipeline and be deployed
-            independently
-          </li>
-          <li>Dependencies between projects can be managed independently</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Cons</strong>
-      </td>
-      <td>
-        <ul
-          style={{
-            marginTop: "0px",
-          }}
-        >
-          <li
-            style={{
-              marginTop: "0px",
-            }}
-          >
-            All projects share the same CI/CD pipeline and cannot be deployed
-            independently
-          </li>
-          <li>
-            Shared dependencies between projects may cause conflicts and require
-            coordination between teams
-          </li>
-        </ul>
-      </td>
-      <td>
-        Code sharing between projects require additional coordination to publish
-        and reuse packages between projects
-      </td>
-    </tr>
-  </tbody>
-</table>
+| Approach | How it works | Pros | Cons |
+|----------|--------------|------|------|
+| **Multiple directories in a single repository** | You can use a single repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set code owners to restrict who can modify each project. | <ul><li>Simple to implement</li><li>Facilitates code sharing between projects</li></ul> | <ul><li>All projects share the same CI/CD pipeline and cannot be deployed independently</li><li>Shared dependencies between projects may cause conflicts and require coordination between teams</li></ul> |
+| **Multiple repositories** | For stronger isolation, you can use multiple repositories to manage multiple projects. | <ul><li>Stronger isolation between projects and teams</li><li>Each project has its own CI/CD pipeline and be deployed independently</li><li>Dependencies between projects can be managed independently</li></ul> | Code sharing between projects require additional coordination to publish and reuse packages between projects. |
 
 ### Deployment configuration
 

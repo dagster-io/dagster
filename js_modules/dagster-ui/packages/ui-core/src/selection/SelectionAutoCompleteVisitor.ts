@@ -30,24 +30,43 @@ import {
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
 // set to true for debug output if desired
-const DEBUG = false;
+const DEBUG = true;
 
 export type Suggestion =
   | {
       text: string;
-      displayText?: string;
+      displayText: string;
       type: 'function' | 'logical_operator' | 'parenthesis';
+      attributeName?: never;
+      nameBase?: never;
     }
   | {
       text: string;
-      displayText?: string;
+      displayText: string;
       type: 'attribute';
       attributeName?: string;
+      nameBase?: boolean;
     }
   | {
       text: string;
-      displayText?: string;
-      type: 'traversal';
+      displayText: string;
+      type: 'attribute-value';
+      attributeName?: string;
+      nameBase?: never;
+    }
+  | {
+      text: string;
+      displayText: string;
+      type: 'attribute-with-value';
+      attributeName?: string;
+      nameBase?: never;
+    }
+  | {
+      text: string;
+      displayText: string;
+      type: 'up-traversal' | 'down-traversal';
+      attributeName?: never;
+      nameBase?: never;
     };
 
 export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
@@ -118,13 +137,9 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this._stopReplacementIndex = this.cursorIndex;
   }
 
-  // ----------------------------------------------------------------------------
-  // The rest is the same node-specific logic from the original class
-  // ----------------------------------------------------------------------------
-
   public visitAllExpression(ctx: AllExpressionContext) {
     if (this.nodeIncludesCursor(ctx.postExpressionWhitespace())) {
-      this.visit(ctx.postExpressionWhitespace());
+      this.addAfterExpressionResults(ctx, {excludePlus: true});
     } else {
       this.startReplacementIndex = this.cursorIndex;
       this.stopReplacementIndex = this.cursorIndex;
@@ -135,19 +150,13 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     }
   }
 
-  public visitUpTraversal(ctx: UpTraversalContext) {
-    if (ctx.text.includes('+')) {
-      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
-    }
+  public visitUpTraversal(_ctx: UpTraversalContext) {
     this.list.push({text: '()', displayText: '(', type: 'parenthesis' as const});
   }
 
   public visitDownTraversal(ctx: DownTraversalContext) {
     this.list.push({text: ' and ', displayText: 'and', type: 'logical_operator' as const});
     this.list.push({text: ' or ', displayText: 'or', type: 'logical_operator' as const});
-    if (ctx.text.includes('+')) {
-      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
-    }
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {
       this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
     }
@@ -330,6 +339,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
             displayText: suggestionValue,
             type: 'attribute' as const,
             attributeName: val,
+            nameBase: val === this.nameBase || val === `${this.nameBase}_substring`,
           };
         }),
     );
@@ -366,7 +376,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.list.push({
         text: textCallback(substringMatchText),
         displayText: substringMatchDisplayText,
-        type: 'attribute' as const,
+        type: 'attribute-with-value' as const,
         attributeName: `${this.nameBase}_substring`,
       });
     }
@@ -379,7 +389,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
           this.list.push({
             text: textCallback(`${attribute.key}:"${attribute.value}"`),
             displayText: `${attribute.key}:${attribute.value}`,
-            type: 'attribute' as const,
+            type: 'attribute-with-value' as const,
             attributeName: attribute.key,
           });
         }
@@ -398,7 +408,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
         this.list.push({
           text: textCallback('+'),
           displayText: '+',
-          type: 'traversal' as const,
+          type: 'up-traversal' as const,
         });
       }
       this.list.push({
@@ -424,7 +434,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
         this.list.push({
           text: textCallback(`"${attributeValue}"`),
           displayText: attributeValue,
-          type: 'attribute' as const,
+          type: 'attribute-value' as const,
           attributeName: attributeKey,
         });
       }
@@ -443,7 +453,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     );
 
     if (!options.excludePlus) {
-      this.list.push({text: '+', displayText: '+', type: 'traversal' as const});
+      this.list.push({text: '+', displayText: '+', type: 'down-traversal' as const});
     }
 
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {

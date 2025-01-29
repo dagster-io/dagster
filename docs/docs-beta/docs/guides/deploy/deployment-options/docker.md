@@ -6,6 +6,8 @@ sidebar_position: 40
 
 This guide provides instructions for deploying Dagster using Docker Compose. This is useful when you want to, for example, deploy Dagster on an AWS EC2 host. A typical Dagster Docker deployment includes a several long-running containers: one for the webserver, one for the daemon, and one for each code location. It also typically executes each run in its own container.
 
+The [full example is available on GitHub](https://github.com/dagster-io/dagster/blob/master/examples/deploy_docker).
+
 <details>
   <summary>Prerequisites</summary>
 - Familiarity with Docker and Docker Compose
@@ -78,35 +80,48 @@ version: "3.7"
 
 services:
   # This service runs the postgres DB used by dagster for run storage, schedule storage,
-  # and event log storage.
-  docker_postgresql:
+  # and event log storage. Depending on the hardware you run this Compose on, you may be able
+  # to reduce the interval and timeout in the healthcheck to speed up your `docker-compose up` times.
+  docker_example_postgresql:
     image: postgres:11
-    container_name: docker_postgresql
+    container_name: docker_example_postgresql
     environment:
       POSTGRES_USER: "postgres_user"
       POSTGRES_PASSWORD: "postgres_password"
       POSTGRES_DB: "postgres_db"
     networks:
-      - docker_network
+      - docker_example_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres_user -d postgres_db"]
+      interval: 10s
+      timeout: 8s
+      retries: 5
 
-  # This service runs the code server that loads your user code.
-  docker_code_location_1:
+  # This service runs the gRPC server that loads your user code, in both dagster-webserver
+  # and dagster-daemon. By setting DAGSTER_CURRENT_IMAGE to its own image, we tell the
+  # run launcher to use this same image when launching runs in a new container as well.
+  # Multiple containers like this can be deployed separately - each just needs to run on
+  # its own port, and have its own entry in the workspace.yaml file that's loaded by the
+      # webserver.
+  docker_example_user_code:
     build:
       context: .
-      dockerfile: ./Dockerfile_code_location_1
-    container_name: docker_code_location_1
-    image: docker_user_code_image
+      dockerfile: ./Dockerfile_user_code
+    container_name: docker_example_user_code
+    image: docker_example_user_code_image
     restart: always
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
       DAGSTER_POSTGRES_DB: "postgres_db"
-      DAGSTER_CURRENT_IMAGE: "docker_user_code_image"
+      DAGSTER_CURRENT_IMAGE: "docker_example_user_code_image"
     networks:
-      - docker_network
+      - docker_example_network
 
-  # This service runs dagster-webserver.
-  docker_webserver:
+  # This service runs dagster-webserver, which loads your user code from the user code container.
+  # Since our instance uses the QueuedRunCoordinator, any runs submitted from the webserver will be put on
+  # a queue and later dequeued and launched by dagster-daemon.
+  docker_example_webserver:
     build:
       context: .
       dockerfile: ./Dockerfile_dagster
@@ -118,7 +133,7 @@ services:
       - "3000"
       - -w
       - workspace.yaml
-    container_name: docker_webserver
+    container_name: docker_example_webserver
     expose:
       - "3000"
     ports:
@@ -131,21 +146,23 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage
     networks:
-      - docker_network
+      - docker_example_network
     depends_on:
-      - docker_postgresql
-      - docker_code_location_1
+      docker_example_postgresql:
+        condition: service_healthy
+      docker_example_user_code:
+        condition: service_started
 
   # This service runs the dagster-daemon process, which is responsible for taking runs
   # off of the queue and launching them, as well as creating runs from schedules or sensors.
-  docker_daemon:
+  docker_example_daemon:
     build:
       context: .
       dockerfile: ./Dockerfile_dagster
     entrypoint:
       - dagster-daemon
       - run
-    container_name: docker_daemon
+    container_name: docker_example_daemon
     restart: on-failure
     environment:
       DAGSTER_POSTGRES_USER: "postgres_user"
@@ -155,15 +172,17 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage
     networks:
-      - docker_network
+      - docker_example_network
     depends_on:
-      - docker_postgresql
-      - docker_code_location_1
+      docker_example_postgresql:
+        condition: service_healthy
+      docker_example_user_code:
+        condition: service_started
 
 networks:
-  docker_network:
+  docker_example_network:
     driver: bridge
-    name: docker_network
+    name: docker_example_network
 ```
 
 ## Start your deployment

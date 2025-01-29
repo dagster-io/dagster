@@ -43,6 +43,8 @@ AVAILABLE_EXAMPLES = [
     "project_dagster_university_start",
     "project_du_dbt_starter",
     "project_fully_featured",
+    "project_llm_fine_tune",
+    "project_prompt_eng",
     "quickstart_aws",
     "quickstart_etl",
     "quickstart_gcp",

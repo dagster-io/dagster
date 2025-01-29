@@ -63,70 +63,19 @@ USER hadoop
 
 Call `open_dagster_pipes` in the EMR Serverless script to create a context that can be used to send messages to Dagster:
 
-```python file=/guides/dagster/dagster_pipes/emr-serverless/script.py
-from dagster_pipes import open_dagster_pipes
-from pyspark.sql import SparkSession
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/script.py" />
 
+:::tip
 
-def main():
-    with open_dagster_pipes() as pipes:
-        pipes.log.info("Hello from AWS EMR Serverless!")
+The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
 
-        spark = SparkSession.builder.appName("HelloWorld").getOrCreate()
-
-        df = spark.createDataFrame(
-            [(1, "Alice", 34), (2, "Bob", 45), (3, "Charlie", 56)],
-            ["id", "name", "age"],
-        )
-
-        # calculate a really important statistic
-        avg_age = float(df.agg({"age": "avg"}).collect()[0][0])
-
-        # attach it to the asset materialization in Dagster
-        pipes.report_asset_materialization(
-            metadata={"average_age": {"raw_value": avg_age, "type": "float"}},
-            data_version="alpha",
-        )
-
-        spark.stop()
-
-
-if __name__ == "__main__":
-    main()
-```
+:::
 
 ## Step 3: Create an asset using the PipesEMRServerlessClient to launch the job
 
 In the Dagster asset/op code, use the `PipesEMRServerlessClient` resource to launch the job:
 
-```python file=/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
-import os
-
-import boto3
-from dagster_aws.pipes import PipesEMRServerlessClient
-
-from dagster import AssetExecutionContext, asset
-
-
-@asset
-def emr_serverless_asset(
-    context: AssetExecutionContext,
-    pipes_emr_serverless_client: PipesEMRServerlessClient,
-):
-    return pipes_emr_serverless_client.run(
-        context=context,
-        start_job_run_params={
-            "applicationId": "<app-id>",
-            "executionRoleArn": "<emr-role>",
-            "clientToken": context.run_id,  # idempotency identifier for the job run
-            "configurationOverrides": {
-                "monitoringConfiguration": {
-                    "cloudWatchLoggingConfiguration": {"enabled": True}
-                }
-            },
-        },
-    ).get_results()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py" startAfter="start_asset_marker" endBefore="=end_asset_marker" />
 
 This will launch the AWS EMR Serverless job and wait for it completion. If the job fails, the Dagster process will raise an exception. If the Dagster process is interrupted while the job is still running, the job will be terminated.
 
@@ -134,14 +83,6 @@ This will launch the AWS EMR Serverless job and wait for it completion. If the j
 
 Next, add the `PipesEMRServerlessClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-```python file=/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
-from dagster import Definitions  # noqa
-
-
-defs = Definitions(
-    assets=[emr_serverless_asset],
-    resources={"pipes_emr_serverless_client": PipesEMRServerlessClient()},
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/emr-serverless/dagster_code.py" startAfter="start_definitions_marker" endBefore="=end_definitions_marker"/>
 
 Dagster will now be able to launch the AWS EMR Serverless task from the `emr_serverless_asset` asset, and receive logs and events from the job. If using the default `message_reader` `PipesCloudwatchLogReader`, driver logs will be forwarded to the Dagster process.

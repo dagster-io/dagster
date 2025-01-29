@@ -1447,6 +1447,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
+  allPools: [String!]
   hasUnconstrainedRootNodes: Boolean!
   hasRunMetricsEnabled: Boolean!
 }
@@ -2504,6 +2505,8 @@ type ConcurrencyKeyInfo {
   pendingStepRunIds: [String!]!
   assignedStepCount: Int!
   assignedStepRunIds: [String!]!
+  limit: Int
+  usingDefaultLimit: Boolean
 }
 
 type ClaimedConcurrencySlot {

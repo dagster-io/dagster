@@ -17,6 +17,7 @@ enables:
 tags: [community-supported, etl]
 sidebar_custom_props: 
   logo: images/integrations/meltano.svg
+  community: true
 ---
 
 The `dagster-meltano` library allows you to run Meltano using Dagster. Design and configure ingestion jobs using the popular [Singer.io](https://singer.io) specification.

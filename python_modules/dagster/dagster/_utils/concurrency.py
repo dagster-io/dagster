@@ -74,6 +74,9 @@ class ConcurrencyKeyInfo:
     slot_count: int
     claimed_slots: list[ClaimedSlotInfo]
     pending_steps: list[PendingStepInfo]
+    # limit: None means no slots and no default limit.  `limit` will return the instance-configured default even if the slots have not yet been initialized.
+    limit: Optional[int] = None
+    using_default_limit: bool = False
 
     ###################################################
     # Fields that we need to keep around for backcompat

@@ -409,23 +409,6 @@ table {
   }
 }
 
-.not-found-links {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  border: 1px solid var(--theme-color-keyline);
-  padding: 1rem;
-
-  a {
-    text-align: center;
-    font-weight: var(--ifm-font-weight-normal);
-
-    &:hover {
-      color: var(--theme-color-accent-blue);
-    }
-  }
-}
-
 .footer__title {
   display: none;
 }

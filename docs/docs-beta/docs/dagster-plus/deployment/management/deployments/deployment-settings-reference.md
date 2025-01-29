@@ -1,13 +1,7 @@
 ---
-title: "Deployment settings"
+title: "Full deployment settings"
 sidebar_position: 200
 ---
-
-# Dagster+ deployment settings reference
-
-:::note
-This article is applicable to Dagster+.
-:::
 
 This reference describes the settings that can be configured for full deployments in Dagster+.
 

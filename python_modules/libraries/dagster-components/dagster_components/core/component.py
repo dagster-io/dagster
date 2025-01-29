@@ -10,15 +10,13 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, ClassVar, Optional, TypedDict, TypeVar, Union, cast
+from typing import Any, Callable, ClassVar, Optional, TypedDict, TypeVar, Union
 
-import click
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._utils import pushd, snakecase
-from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
-from pydantic import BaseModel, TypeAdapter
+from dagster._utils import snakecase
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components.core.component_scaffolder import (
@@ -29,7 +27,9 @@ from dagster_components.core.component_scaffolder import (
 from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 
-class ComponentDeclNode: ...
+class ComponentDeclNode(ABC):
+    @abstractmethod
+    def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
 
 class Component(ABC):
@@ -59,7 +59,7 @@ class Component(ABC):
 
     @classmethod
     @abstractmethod
-    def load(cls, context: "ComponentLoadContext") -> Self: ...
+    def load(cls, params: Optional[BaseModel], context: "ComponentLoadContext") -> Self: ...
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
@@ -74,7 +74,7 @@ class Component(ABC):
             )
 
         component_params = cls.get_schema()
-        scaffold_params = scaffolder.get_params_schema_type()
+        scaffold_params = scaffolder.get_schema()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
@@ -99,16 +99,6 @@ def _clean_docstring(docstring: str) -> str:
     else:
         rest = textwrap.dedent("\n".join(lines[1:]))
         return f"{first_line}\n{rest}"
-
-
-def _get_click_cli_help(command: click.Command) -> str:
-    with click.Context(command) as ctx:
-        formatter = click.formatting.HelpFormatter()
-        param_records = [
-            p.get_help_record(ctx) for p in command.get_params(ctx) if p.name != "help"
-        ]
-        formatter.write_dl([pr for pr in param_records if pr])
-        return formatter.getvalue()
 
 
 class ComponentTypeInternalMetadata(TypedDict):
@@ -211,7 +201,7 @@ def get_registered_component_types_in_module(module: ModuleType) -> Iterable[typ
             yield component
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=BaseModel)
 
 
 @dataclass
@@ -237,9 +227,12 @@ class ComponentLoadContext:
 
     @property
     def path(self) -> Path:
-        from dagster_components.core.component_decl_builder import YamlComponentDecl
+        from dagster_components.core.component_decl_builder import (
+            PythonComponentDecl,
+            YamlComponentDecl,
+        )
 
-        if not isinstance(self.decl_node, YamlComponentDecl):
+        if not isinstance(self.decl_node, (YamlComponentDecl, PythonComponentDecl)):
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
@@ -253,33 +246,9 @@ class ComponentLoadContext:
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
 
-    def _raw_params(self) -> Optional[Mapping[str, Any]]:
-        from dagster_components.core.component_decl_builder import YamlComponentDecl
-
-        if not isinstance(self.decl_node, YamlComponentDecl):
-            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
-        return self.decl_node.component_file_model.params
-
-    def load_params(self, params_schema: type[T]) -> T:
-        from dagster_components.core.component_decl_builder import YamlComponentDecl
-
-        with pushd(str(self.path)):
-            preprocessed_params = self.templated_value_resolver.resolve_params(
-                self._raw_params(), params_schema
-            )
-            yaml_decl = cast(YamlComponentDecl, self.decl_node)
-
-            if yaml_decl.source_position_tree:
-                source_position_tree_of_params = yaml_decl.source_position_tree.children["params"]
-                with enrich_validation_errors_with_source_position(
-                    source_position_tree_of_params, ["params"]
-                ):
-                    return TypeAdapter(params_schema).validate_python(preprocessed_params)
-            else:
-                return TypeAdapter(params_schema).validate_python(preprocessed_params)
-
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
+COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"
 
 
 def component_type(cls: Optional[type[Component]] = None, *, name: Optional[str] = None) -> Any:
@@ -323,3 +292,17 @@ def get_component_type_name(component_type: type[Component]) -> str:
         "Expected a registered component. Use @component to register a component.",
     )
     return getattr(component_type, COMPONENT_REGISTRY_KEY_ATTR)
+
+
+T_Component = TypeVar("T_Component", bound=Component)
+
+
+def component_loader(
+    fn: Callable[[ComponentLoadContext], T],
+) -> Callable[[ComponentLoadContext], T]:
+    setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
+    return fn
+
+
+def is_component_loader(obj: Any) -> bool:
+    return getattr(obj, COMPONENT_LOADER_FN_ATTR, False)

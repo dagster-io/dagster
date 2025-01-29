@@ -1110,6 +1110,8 @@ def execute_asset_backfill_iteration(
                 updated_backfill: PartitionBackfill = updated_backfill.with_status(
                     BulkActionStatus.COMPLETED_SUCCESS
                 )
+
+            updated_backfill = updated_backfill.with_end_timestamp(get_current_timestamp())
             instance.update_backfill(updated_backfill)
 
         new_materialized_partitions = (
@@ -1191,7 +1193,9 @@ def execute_asset_backfill_iteration(
             updated_asset_backfill_data.all_requested_partitions_marked_as_materialized_or_failed()
         )
         if all_partitions_marked_completed:
-            updated_backfill = updated_backfill.with_status(BulkActionStatus.CANCELED)
+            updated_backfill = updated_backfill.with_status(
+                BulkActionStatus.CANCELED
+            ).with_end_timestamp(get_current_timestamp())
 
         instance.update_backfill(updated_backfill)
 

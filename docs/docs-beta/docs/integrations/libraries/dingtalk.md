@@ -14,7 +14,8 @@ enabledBy:
 enables:
 tags: [community-supported]
 sidebar_custom_props:
-  logo:
+  logo: images/integrations/ding.svg
+  community: true
 ---
 
 The community-supported `dagster-dingtalk` package provides an integration with DingTalk.

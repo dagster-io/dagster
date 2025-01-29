@@ -71,6 +71,12 @@ Update the `tensorflow/main.js` script to:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/non-python/pipes-full-featured-javascript.js" language="javascript" />
 
+:::tip
+
+The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
+
+:::
+
 ## Step 5: Update the asset to provide extra parameters
 
 Finally, update your Dagster asset to pass in the model information that's used by the script:

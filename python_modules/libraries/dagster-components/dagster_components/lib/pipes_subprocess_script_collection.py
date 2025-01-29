@@ -42,15 +42,15 @@ class PipesSubprocessScriptCollection(Component):
         return PipesSubprocessScriptCollection(dirpath=path, path_specs=path_specs)
 
     @classmethod
-    def get_schema(cls):
+    def get_schema(cls) -> type[PipesSubprocessScriptCollectionParams]:
         return PipesSubprocessScriptCollectionParams
 
     @classmethod
-    def load(cls, context: ComponentLoadContext) -> "PipesSubprocessScriptCollection":
-        loaded_params = context.load_params(cls.get_schema())
-
+    def load(
+        cls, params: PipesSubprocessScriptCollectionParams, context: ComponentLoadContext
+    ) -> "PipesSubprocessScriptCollection":
         path_specs = {}
-        for script in loaded_params.scripts:
+        for script in params.scripts:
             script_path = context.path / script.path
             if not script_path.exists():
                 raise FileNotFoundError(f"Script {script_path} does not exist")
@@ -66,14 +66,13 @@ class PipesSubprocessScriptCollection(Component):
 
         return Definitions(
             assets=[self._create_asset_def(path, specs) for path, specs in self.path_specs.items()],
-            resources={"pipes_client": PipesSubprocessClient()},
         )
 
     def _create_asset_def(self, path: Path, specs: Sequence[AssetSpec]) -> AssetsDefinition:
         # TODO: allow name paraeterization
         @multi_asset(specs=specs, name=f"script_{path.stem}")
-        def _asset(context: AssetExecutionContext, pipes_client: PipesSubprocessClient):
+        def _asset(context: AssetExecutionContext):
             cmd = [shutil.which("python"), path]
-            return pipes_client.run(command=cmd, context=context).get_results()
+            return PipesSubprocessClient().run(command=cmd, context=context).get_results()
 
         return _asset

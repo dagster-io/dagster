@@ -1,5 +1,5 @@
 import os
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence, Set
 from datetime import datetime
 from enum import Enum
 from functools import cached_property
@@ -19,6 +19,7 @@ from dagster._core.storage.tags import (
     AUTOMATION_CONDITION_TAG,
     BACKFILL_ID_TAG,
     PARENT_RUN_ID_TAG,
+    POOL_TAG_PREFIX,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
@@ -162,6 +163,7 @@ class RunOpConcurrency(
         [
             ("root_key_counts", Mapping[str, int]),
             ("has_unconstrained_root_nodes", bool),
+            ("all_pools", Optional[Set[str]]),
         ],
     )
 ):
@@ -173,6 +175,7 @@ class RunOpConcurrency(
         cls,
         root_key_counts: Mapping[str, int],
         has_unconstrained_root_nodes: bool,
+        all_pools: Optional[Set[str]] = None,
     ):
         return super().__new__(
             cls,
@@ -182,6 +185,7 @@ class RunOpConcurrency(
             has_unconstrained_root_nodes=check.bool_param(
                 has_unconstrained_root_nodes, "has_unconstrained_root_nodes"
             ),
+            all_pools=check.opt_set_param(all_pools, "all_pools", of_type=str),
         )
 
 
@@ -481,10 +485,13 @@ class DagsterRun(
                 self.remote_job_origin.repository_origin.get_label()
             )
 
-        if not self.tags:
-            return repository_tags
+        pool_tags = {}
+        if self.run_op_concurrency and self.run_op_concurrency.all_pools:
+            pool_tags = {
+                f"{POOL_TAG_PREFIX}{pool}": "true" for pool in self.run_op_concurrency.all_pools
+            }
 
-        return {**repository_tags, **self.tags}
+        return {**repository_tags, **pool_tags, **(self.tags or {})}
 
     @public
     @property

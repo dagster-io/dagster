@@ -60,7 +60,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         forward_termination: bool = True,
         poll_interval: float = 5.0,
     ):
-        self._client = client or boto3.client("emr-serverless")
+        self._client: EMRServerlessClient = cast(
+            "EMRServerlessClient", client or boto3.client("emr-serverless")
+        )
         self._context_injector = context_injector or PipesEnvContextInjector()
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")

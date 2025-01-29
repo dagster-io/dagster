@@ -14,7 +14,7 @@ class ShellScriptSchema(ComponentSchemaBaseModel):
     script_runner: Annotated[
         str,
         ResolvableFieldInfo(
-            output_type=ScriptRunner, additional_scope={"get_script_runner"}
+            output_type=ScriptRunner, required_scope={"get_script_runner"}
         ),
     ]
     # highlight-end

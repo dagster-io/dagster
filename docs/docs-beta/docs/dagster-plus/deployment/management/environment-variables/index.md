@@ -1,6 +1,6 @@
 ---
 title: Environment variables
-sidebar_position: 30
+sidebar_position: 20
 ---
 
 Environment variables, which are key-value pairs configured outside your source code, allow you to dynamically modify application behavior depending on environment.

@@ -37,3 +37,10 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+
+.cardSubtitle {
+  font-size: 1.0rem;
+  line-height: 1.5rem;
+  color: var(--theme-color-text-blue) !important;
+}

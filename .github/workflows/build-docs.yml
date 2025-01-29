@@ -2,22 +2,23 @@ name: Deploy Docs
 on:
   push:
     branches:
-      - master
-      - "release-*" # older verions of the docs
-      - docs-prod # prod
+      # - master
+      # - "release-*" # older verions of the docs
+      # - docs-prod # prod
+      - "legacy-docs-release-*" # older verions of the docs
     paths:
       - docs/**
       - "!docs/docs-beta/**" # Exclude docs-beta
       - examples/docs_snippets/**
       - CHANGES.md
       - .github/workflows/build-docs.yml
-  pull_request:
-    paths:
-      - docs/**
-      - "!docs/docs-beta/**" # Exclude docs-beta
-      - examples/docs_snippets/**
-      - CHANGES.md
-      - .github/workflows/build-docs.yml
+    # pull_request:
+    #   paths:
+    #     - docs/**
+    #     - "!docs/docs-beta/**" # Exclude docs-beta
+    #     - examples/docs_snippets/**
+    #     - CHANGES.md
+    #     - .github/workflows/build-docs.yml
 concurrency:
   # Cancel in-progress runs on same branch
   group: ${{ github.workflow}}-${{github.ref}}

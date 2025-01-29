@@ -12,7 +12,7 @@ from typing import Any, Optional, TypeVar, Union
 
 import click
 import jinja2
-from click.formatting import HelpFormatter
+from typer.rich_utils import rich_format_help
 from typing_extensions import TypeAlias
 
 from dagster_dg.error import DgError
@@ -39,7 +39,10 @@ def ensure_loadable_path(path: Path) -> Iterator[None]:
 
 
 def is_package_installed(package_name: str) -> bool:
-    return bool(importlib.util.find_spec(package_name))
+    try:
+        return bool(importlib.util.find_spec(package_name))
+    except ModuleNotFoundError:
+        return False
 
 
 def get_path_for_package(package_name: str) -> str:
@@ -103,7 +106,17 @@ def snakecase(string: str) -> str:
     return string
 
 
-_DEFAULT_EXCLUDES: list[str] = [
+_HELP_OUTPUT_GROUP_ATTR = "rich_help_panel"
+
+
+# This is a private API of typer, but it is the only way I can see to get our global options grouped
+# differently and it works well.
+def set_option_help_output_group(param: click.Parameter, group: str) -> None:
+    """Sets the help output group for a click parameter."""
+    setattr(param, "rich_help_panel", group)
+
+
+DEFAULT_FILE_EXCLUDE_PATTERNS: list[str] = [
     "__pycache__",
     ".pytest_cache",
     "*.egg-info",
@@ -127,7 +140,9 @@ def scaffold_subtree(
     **other_template_vars: Any,
 ):
     """Renders templates for Dagster project."""
-    excludes = _DEFAULT_EXCLUDES if not excludes else _DEFAULT_EXCLUDES + excludes
+    excludes = (
+        DEFAULT_FILE_EXCLUDE_PATTERNS if not excludes else DEFAULT_FILE_EXCLUDE_PATTERNS + excludes
+    )
 
     normalized_path = os.path.normpath(path)
     project_name = project_name or os.path.basename(normalized_path).replace("-", "_")
@@ -191,7 +206,7 @@ def scaffold_subtree(
     click.echo(f"Scaffolded files for Dagster project in {path}.")
 
 
-def _should_skip_file(path: str, excludes: list[str] = _DEFAULT_EXCLUDES):
+def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATTERNS):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
     when generating destination files.
 
@@ -214,10 +229,17 @@ def ensure_dagster_dg_tests_import() -> None:
     sys.path.append(dagster_dg_package_root.as_posix())
 
 
-def hash_directory_metadata(hasher: Hash, path: Union[str, Path]) -> None:
+def hash_directory_metadata(
+    hasher: Hash,
+    path: Union[str, Path],
+    includes: Optional[Sequence[str]],
+    excludes: Sequence[str],
+) -> None:
     for root, dirs, files in os.walk(path):
         for name in dirs + files:
-            if any(fnmatch(name, pattern) for pattern in _DEFAULT_EXCLUDES):
+            if any(fnmatch(name, pattern) for pattern in excludes):
+                continue
+            if includes and not any(fnmatch(name, pattern) for pattern in includes):
                 continue
             filepath = os.path.join(root, name)
             hash_file_metadata(hasher, filepath)
@@ -254,51 +276,15 @@ def exit_with_error(error_message: str) -> None:
 
 
 class DgClickHelpMixin:
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-        self._commands: list[str] = []
-
     def format_help(self, context: click.Context, formatter: click.HelpFormatter):
         """Customizes the help to include hierarchical usage."""
         if not isinstance(self, click.Command):
             raise ValueError("This mixin is only intended for use with click.Command instances.")
-        self.format_usage(context, formatter)
-        self.format_help_text(context, formatter)
-        if isinstance(self, click.MultiCommand):
-            self.format_commands(context, formatter)
-        self.format_options(context, formatter)
 
-    def get_partitioned_opts(
-        self, ctx: click.Context
-    ) -> tuple[Sequence[click.Parameter], Sequence[click.Parameter]]:
-        from dagster_dg.cli.global_options import GLOBAL_OPTIONS
-
-        if not isinstance(self, click.Command):
-            raise ValueError("This mixin is only intended for use with click.Command instances.")
-
-        # Filter out arguments
-        opts = [p for p in self.get_params(ctx) if p.get_help_record(ctx) is not None]
-        command_opts = [opt for opt in opts if opt.name not in GLOBAL_OPTIONS]
-        global_opts = [opt for opt in self.get_params(ctx) if opt.name in GLOBAL_OPTIONS]
-        return command_opts, global_opts
-
-    def format_options(self, ctx: click.Context, formatter: HelpFormatter) -> None:
-        """Writes all the options into the formatter if they exist."""
-        if not isinstance(self, click.Command):
-            raise ValueError("This mixin is only intended for use with click.Command instances.")
-
-        # Filter out arguments
-        command_opts, global_opts = self.get_partitioned_opts(ctx)
-
-        if command_opts:
-            records = [not_none(p.get_help_record(ctx)) for p in command_opts]
-            with formatter.section("Options"):
-                formatter.write_dl(records)
-
-        if global_opts:
-            with formatter.section("Global options"):
-                records = [not_none(p.get_help_record(ctx)) for p in global_opts]
-                formatter.write_dl(records)
+        # We use typer's rich_format_help to render our help output, despite the fact that we are
+        # not using typer elsewhere in the app. Global options are separated from command-specific
+        # options by setting the `rich_help_panel` attribute to "Global options" on our global options.
+        rich_format_help(obj=self, ctx=context, markup_mode="rich")
 
 
 class DgClickCommand(DgClickHelpMixin, click.Command): ...
@@ -319,7 +305,6 @@ def json_schema_property_to_click_option(
 ) -> click.Option:
     field_type = field_info.get("type", "string")
     option_name = f"--{key.replace('_', '-')}"
-
     # Handle object type fields as JSON strings
     if field_type == "object":
         option_type = str  # JSON string input

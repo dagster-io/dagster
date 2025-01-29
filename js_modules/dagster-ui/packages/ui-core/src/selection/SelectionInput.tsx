@@ -1,10 +1,10 @@
-import {Colors, Icon, Popover} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor} from 'codemirror';
-import {Linter} from 'codemirror/addon/lint/lint';
+import type {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
 import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import styled, {css} from 'styled-components';
+import styled from 'styled-components';
 
 import {Suggestion} from './SelectionAutoCompleteVisitor';
 import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteResults';
@@ -19,6 +19,7 @@ import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import 'codemirror/addon/edit/closebrackets';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/addon/lint/lint.css';
+import 'codemirror/addon/lint/lint';
 import 'codemirror/addon/display/placeholder';
 
 type SelectionAutoCompleteInputProps = {
@@ -88,15 +89,12 @@ export const SelectionAutoCompleteInput = ({
 
   const [selectedIndexRef, setSelectedIndex] = useState({current: 0});
 
-  const scrollToSelectionRef = useRef(false);
-
   useDangerousRenderEffect(() => {
     // Rather then using a useEffect + setState (extra render), we just set the current value directly
     selectedIndexRef.current = 0;
     if (!autoCompleteResults?.list.length && !loading) {
       showResults.current = false;
     }
-    scrollToSelectionRef.current = true;
   }, [autoCompleteResults, loading]);
 
   useLayoutEffect(() => {
@@ -125,13 +123,25 @@ export const SelectionAutoCompleteInput = ({
 
       // Enforce single line by preventing newlines
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
-        if (change.text.length !== 1 || change.text[0]?.includes('\n')) {
+        if (
+          change.text.length !== 1 ||
+          change.text[0]?.includes('\n') ||
+          change.text[0]?.includes('  ')
+        ) {
           change.cancel();
         }
       });
 
       cmInstance.current.on('change', (instance: Editor) => {
         const newValue = instance.getValue().replace(/\s+/g, ' ');
+        const cursor = instance.getCursor();
+        if (instance.getValue() !== newValue) {
+          const difference = newValue.length - instance.getValue().length;
+          // In this case they added a space, we removed it,
+          // so we need to move the cursor back one character
+          instance.setValue(newValue);
+          instance.setCursor({...cursor, ch: cursor.ch - difference});
+        }
         setInnerValue(newValue);
         setShowResults({current: true});
         adjustHeight();
@@ -154,22 +164,6 @@ export const SelectionAutoCompleteInput = ({
         applyStaticSyntaxHighlighting(instance);
         setCursorPosition(instance.getCursor().ch);
         setShowResults({current: true});
-      });
-
-      cmInstance.current.on('blur', (instance: Editor, ev: FocusEvent) => {
-        focusRef.current = false;
-        instance.setOption('lineWrapping', false);
-        instance.setSize('100%', '20px');
-        const current = document.activeElement;
-        const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
-        if (
-          editorRef.current?.contains(current) ||
-          hintContainerRef.current?.contains(current) ||
-          hintsVisible
-        ) {
-          ev.preventDefault();
-          return;
-        }
       });
 
       requestAnimationFrame(() => {
@@ -198,7 +192,7 @@ export const SelectionAutoCompleteInput = ({
 
   // Update CodeMirror when value prop changes
   useLayoutEffect(() => {
-    const noNewLineValue = value.replace('\n', ' ');
+    const noNewLineValue = value.replace(/\n/g, ' ');
     if (cmInstance.current && cmInstance.current.getValue() !== noNewLineValue) {
       const instance = cmInstance.current;
       const cursor = instance.getCursor();
@@ -253,12 +247,10 @@ export const SelectionAutoCompleteInput = ({
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
         onSelectionChange(innerValueRef.current);
+        setShowResults({current: false});
       }
       if (!showResults.current) {
         return;
-      }
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        scrollToSelectionRef.current = true;
       }
       if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
@@ -311,13 +303,34 @@ export const SelectionAutoCompleteInput = ({
     };
   }, [setShowResults]);
 
-  const isCommitted = innerValue === value;
+  const isEmpty = innerValue === '';
   useLayoutEffect(() => {
-    adjustHeight();
-  }, [isCommitted, adjustHeight]);
+    requestAnimationFrame(() => {
+      adjustHeight();
+    });
+  }, [adjustHeight, isEmpty]);
+
+  const onBlur = useCallback((ev: React.FocusEvent<HTMLDivElement>) => {
+    const current = ev.relatedTarget;
+    const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
+    if (
+      inputRef.current?.contains(current) ||
+      editorRef.current?.contains(current) ||
+      hintContainerRef.current?.contains(current) ||
+      hintsVisible
+    ) {
+      ev.preventDefault();
+      return;
+    }
+    focusRef.current = false;
+    cmInstance.current?.setOption('lineWrapping', false);
+    cmInstance.current?.setSize('100%', '20px');
+  }, []);
+
+  useResizeObserver(inputRef, adjustHeight);
 
   return (
-    <>
+    <div onBlur={onBlur}>
       <Popover
         content={
           <div ref={hintContainerRef} onKeyDown={handleKeyDown}>
@@ -325,7 +338,6 @@ export const SelectionAutoCompleteInput = ({
               results={autoCompleteResults}
               width={width}
               selectedIndex={selectedIndexRef.current}
-              scrollToSelection={scrollToSelectionRef}
               onSelect={onSelect}
               setSelectedIndex={setSelectedIndex}
               loading={loading}
@@ -338,6 +350,7 @@ export const SelectionAutoCompleteInput = ({
         canEscapeKeyClose={true}
       >
         <InputDiv
+          $isCommitted={innerValue === value}
           style={{
             display: 'grid',
             gridTemplateColumns: 'auto minmax(0, 1fr) auto',
@@ -350,44 +363,37 @@ export const SelectionAutoCompleteInput = ({
           }}
         >
           <div style={{alignSelf: 'flex-start'}}>
-            <Icon name="op_selector" style={{marginTop: 2}} />
+            <Icon name="search" style={{marginTop: 2}} />
           </div>
           <div ref={editorRef} />
-          {innerValue !== value ? (
-            <div style={{alignSelf: 'flex-end'}}>
-              <EnterHint>Enter</EnterHint>
-            </div>
-          ) : null}
+          <Box
+            flex={{direction: 'row', alignItems: 'center', gap: 4}}
+            style={{alignSelf: 'flex-end'}}
+          >
+            {innerValue !== '' && (
+              <UnstyledButton
+                onClick={() => {
+                  cmInstance.current?.setValue('');
+                  onSelectionChange('');
+                  setShowResults({current: false});
+                }}
+              >
+                <Icon name="close" />
+              </UnstyledButton>
+            )}
+          </Box>
         </InputDiv>
       </Popover>
-    </>
+    </div>
   );
 };
 
-export const iconStyle = (img: string) => css`
-  &:before {
-    content: ' ';
-    width: 14px;
-    mask-size: contain;
-    mask-repeat: no-repeat;
-    mask-position: center;
-    mask-image: url(${img});
-    background: ${Colors.accentPrimary()};
-    display: inline-block;
-  }
-`;
-
-export const InputDiv = styled.div`
+export const InputDiv = styled.div<{$isCommitted: boolean}>`
   ${SelectionAutoCompleteInputCSS}
-`;
-
-const EnterHint = styled.div`
-  border-radius: 5px;
-  border: 1px solid ${Colors.borderDefault()};
-  background: ${Colors.backgroundDefault()};
-  font-weight: 500;
-  font-size: 12px;
-  color: ${Colors.textLight()};
-  padding: 2px 6px;
-  margin: -2px 0px;
+  ${({$isCommitted}) =>
+    $isCommitted
+      ? ''
+      : `
+      background: ${Colors.backgroundLight()}; 
+      `}
 `;

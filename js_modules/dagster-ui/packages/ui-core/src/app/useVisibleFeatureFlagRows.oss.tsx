@@ -50,4 +50,8 @@ export const useVisibleFeatureFlagRows = () => [
       </>
     ),
   },
+  {
+    key: 'Enable pool concurrency UI',
+    flagType: FeatureFlag.flagPoolUI,
+  },
 ];

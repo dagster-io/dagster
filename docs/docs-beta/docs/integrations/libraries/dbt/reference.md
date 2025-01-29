@@ -347,7 +347,7 @@ Dagster also supports fetching additional metadata at dbt execution time to atta
 #### Attaching code reference metadata
 
 {/* Dagster's dbt integration can automatically attach [code reference](/guides/dagster/code-references) metadata to the SQL files backing your dbt assets. */}
-Dagster's dbt integration can automatically attach [code reference](/guides/build/assets/metadata-and-tags/code-references) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />:
+Dagster's dbt integration can automatically attach [code reference](/guides/build/assets/metadata-and-tags/index.md#source-code) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/code_references/with_dbt_code_references.py" />
 
@@ -428,7 +428,7 @@ You can disable modeling your dbt tests as asset checks. The tests will still ru
 
 ## Customizing asset materialization metadata
 
-Dagster supports fetching additional metadata at dbt execution time to attach as [materialization metadata](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata), which is recorded each time your models are rebuilt and displayed in the Dagster UI.
+Dagster supports fetching additional metadata at dbt execution time to attach as [materialization metadata](/guides/build/assets/metadata-and-tags/), which is recorded each time your models are rebuilt and displayed in the Dagster UI.
 
 ### Fetching row count data
 
@@ -440,7 +440,7 @@ To use this feature, you'll need to be on at least `dagster>=0.17.6` and `dagste
 
 :::
 
-Dagster can automatically fetch [row counts](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata) for dbt-generated tables and emit them as [materialization metadata](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata) to be displayed in the Dagster UI.
+Dagster can automatically fetch [row counts](/guides/build/assets/metadata-and-tags/) for dbt-generated tables and emit them as [materialization metadata](/guides/build/assets/metadata-and-tags/) to be displayed in the Dagster UI.
 
 Row counts are fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator.fetch_row_counts" module="dagster_dbt" displayText="fetch_row_counts()" /> on the <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator" module="dagster_dbt" /> returned by the `stream()` dbt CLI call:
 
@@ -458,7 +458,7 @@ To use this feature, you'll need to be on at least `dagster>=1.8.0` and `dagster
 
 :::
 
-Dagster allows you to emit column-level metadata, like [column schema](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata) and [column lineage](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata), as [materialization metadata](/guides/build/assets/metadata-and-tags/organizing-assets-with-tags-and-metadata).
+Dagster allows you to emit column-level metadata, like [column schema](/guides/build/assets/metadata-and-tags/) and [column lineage](/guides/build/assets/metadata-and-tags/), as [materialization metadata](/guides/build/assets/metadata-and-tags/).
 
 With this metadata, you can view documentation in Dagster for all columns, not just columns described in your dbt project.
 

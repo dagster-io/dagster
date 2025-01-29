@@ -297,8 +297,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     @property
     def pool(self) -> Optional[str]:
         """Optional[str]: The concurrency pool for this op."""
-        # fallback to fetching from tags for backwards compatibility
-        return self._pool if self._pool else self.tags.get(GLOBAL_CONCURRENCY_TAG)
+        return self._pool
 
     @property
     def pools(self) -> Set[str]:
@@ -601,8 +600,6 @@ def _is_result_object_type(ttype):
 
 
 def _validate_pool(pool, tags):
-    from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
-
     check.opt_str_param(pool, "pool")
     tags = check.opt_mapping_param(tags, "tags")
     tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
@@ -614,8 +611,5 @@ def _validate_pool(pool, tags):
     if pool:
         preview_warning("Pools")
         return pool
-
-    if tag_concurrency_key:
-        return tag_concurrency_key
 
     return None
