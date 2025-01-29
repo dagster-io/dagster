@@ -1,6 +1,6 @@
 import {createSelectionAutoComplete} from '../SelectionAutoComplete';
 import {createProvider} from '../SelectionAutoCompleteProvider';
-import {createSelectionAutoCompleteProviderFromAttributeMap} from '../SelectionAutoCompleteProviderFromAttributeMap';
+import {createAttributeBasedAutoCompleteProvider} from '../SelectionAutoCompleteProviderFromAttributeMap';
 
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
@@ -11,7 +11,7 @@ describe('createAssetSelectionHint', () => {
     kind: ['kind1', 'kind2'],
     code_location: ['repo1@location1', 'repo2@location2'],
   };
-  const baseProvider = createSelectionAutoCompleteProviderFromAttributeMap({
+  const baseProvider = createAttributeBasedAutoCompleteProvider({
     attributesMap,
     ...createProvider<typeof attributesMap, 'key'>({
       primaryAttributeKey: 'key',

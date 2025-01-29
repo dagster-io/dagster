@@ -1,7 +1,7 @@
 import {BodySmall, Box, Colors, Icon, IconName, MonoSmall} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {createSelectionAutoCompleteProviderFromAttributeMap} from './SelectionAutoCompleteProviderFromAttributeMap';
+import {createAttributeBasedAutoCompleteProvider} from './SelectionAutoCompleteProviderFromAttributeMap';
 import {assertUnreachable} from '../app/Util';
 
 export interface SelectionAutoCompleteProvider {
@@ -231,7 +231,7 @@ export const createProvider = <
   primaryAttributeKey: TPrimaryAttributeKey;
 }): Omit<
   Parameters<
-    typeof createSelectionAutoCompleteProviderFromAttributeMap<
+    typeof createAttributeBasedAutoCompleteProvider<
       TAttributeMap,
       TPrimaryAttributeKey,
       'sinks' | 'roots'

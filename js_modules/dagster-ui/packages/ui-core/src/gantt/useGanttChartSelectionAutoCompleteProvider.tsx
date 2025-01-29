@@ -7,7 +7,7 @@ import {
   SelectionAutoCompleteProvider,
   createProvider,
 } from '../selection/SelectionAutoCompleteProvider';
-import {createSelectionAutoCompleteProviderFromAttributeMap} from '../selection/SelectionAutoCompleteProviderFromAttributeMap';
+import {createAttributeBasedAutoCompleteProvider} from '../selection/SelectionAutoCompleteProviderFromAttributeMap';
 
 export function useGanttChartSelectionAutoCompleteProvider(
   items: RunGraphQueryItem[],
@@ -29,7 +29,7 @@ export function useGanttChartSelectionAutoCompleteProvider(
 
   const baseProvider = useMemo(
     () =>
-      createSelectionAutoCompleteProviderFromAttributeMap({
+      createAttributeBasedAutoCompleteProvider({
         attributesMap,
         ...createProvider<typeof attributesMap, 'name'>({
           primaryAttributeKey: 'name',

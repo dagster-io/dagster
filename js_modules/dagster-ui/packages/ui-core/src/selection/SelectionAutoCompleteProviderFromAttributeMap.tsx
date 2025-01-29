@@ -5,10 +5,25 @@ import {Operator, SelectionAutoCompleteProvider, Suggestion} from './SelectionAu
  * @type TPrimaryAttributeKey - The key of the `attributesMap` that serves as the identifier for the objects we're filtering. This key will support substring queries.
  * @type TSuggestion - The shape of each autocomplete suggestion, containing at least a `text` property.
  */
-export function createSelectionAutoCompleteProviderFromAttributeMap<
-  TAttributeMap extends {[key: string]: string[] | {key: string; value?: string}[]},
+/**
+ * Creates an autocomplete provider that suggests completions based on a map of attributes and their values
+ * @param primaryAttributeKey - The key used for substring searches and primary identification
+ * @param attributesMap - Map of attribute names to their possible values
+ * @param functions - List of available function names that can be suggested
+ * @param createAttributeSuggestion - Factory function to create suggestions for attributes
+ * @param createAttributeValueSuggestion - Factory function to create suggestions for attribute values
+ * @param createFunctionSuggestion - Factory function to create suggestions for functions
+ * @param createSubstringSuggestion - Factory function to create suggestions for substring matches
+ * @param createAttributeValueIncludeAttributeSuggestion - Factory function for suggestions that include both attribute and value
+ * @param createOperatorSuggestion - Factory function to create suggestions for operators
+ * @param doesValueIncludeQuery - Function to determine if a value matches the search query
+ */
+export function createAttributeBasedAutoCompleteProvider<
+  TAttributeMap extends {
+    [key: string]: string[] | {key: string; value?: string | null | undefined}[];
+  },
   TPrimaryAttributeKey extends keyof TAttributeMap,
-  TFunc extends string,
+  TFunctionName extends string,
 >({
   primaryAttributeKey,
   attributesMap,
@@ -25,7 +40,7 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
 
   attributesMap: TAttributeMap;
 
-  functions: readonly TFunc[];
+  functions: readonly TFunctionName[];
   createAttributeSuggestion: <K extends keyof TAttributeMap>({
     attribute,
     text,
@@ -48,7 +63,7 @@ export function createSelectionAutoCompleteProviderFromAttributeMap<
     options,
     text,
   }: {
-    func: TFunc;
+    func: TFunctionName;
     options?: {includeParenthesis?: boolean};
     text: string;
   }) => Suggestion;

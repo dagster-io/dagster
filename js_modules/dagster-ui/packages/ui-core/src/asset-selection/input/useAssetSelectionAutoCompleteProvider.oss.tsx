@@ -8,7 +8,7 @@ import {
   SelectionAutoCompleteProvider,
   createProvider,
 } from '../../selection/SelectionAutoCompleteProvider';
-import {createSelectionAutoCompleteProviderFromAttributeMap} from '../../selection/SelectionAutoCompleteProviderFromAttributeMap';
+import {createAttributeBasedAutoCompleteProvider} from '../../selection/SelectionAutoCompleteProviderFromAttributeMap';
 
 type Attribute = 'kind' | 'code_location' | 'group' | 'owner' | 'tag' | 'status' | 'key';
 
@@ -19,7 +19,7 @@ export function useAssetSelectionAutoCompleteProvider(
 
   const baseProvider = useMemo(
     () =>
-      createSelectionAutoCompleteProviderFromAttributeMap({
+      createAttributeBasedAutoCompleteProvider({
         attributesMap,
         ...createProvider<typeof attributesMap, 'key'>({
           primaryAttributeKey: 'key',
