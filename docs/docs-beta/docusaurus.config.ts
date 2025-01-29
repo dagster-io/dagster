@@ -22,6 +22,7 @@ const config: Config = {
     require.resolve('docusaurus-plugin-sass'),
     require.resolve('docusaurus-plugin-image-zoom'),
     require.resolve('./src/plugins/scoutos'),
+    require.resolve('./src/plugins/segment'),
   ],
   themeConfig: {
     ...(process.env.ALGOLIA_APP_ID &&
