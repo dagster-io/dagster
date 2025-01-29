@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.11 (core) / 0.25.11 (libraries)
+
+### Bugfixes
+
+- Fixed an issue where running `dagster dev` would fail on Windows machines.
+- Fixed an issue where partially resolved config with default values were not able to be overridden at runtime.
+- Fixed an issue where default config values at the top level were not propagated to nested config values.
+
 ## 1.9.10 (core) / 0.25.10 (libraries)
 
 ### New
