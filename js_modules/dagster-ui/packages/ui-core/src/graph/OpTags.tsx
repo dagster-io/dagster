@@ -41,6 +41,7 @@ import dask from './kindtag-images/tool-dask-color.svg';
 import databricks from './kindtag-images/tool-databricks-color.svg';
 import datadog from './kindtag-images/tool-datadog-color.svg';
 import datahub from './kindtag-images/tool-datahub-color.svg';
+import db2 from './kindtag-images/tool-db2-color.svg';
 import dbt from './kindtag-images/tool-dbt-color.svg';
 import delta_lake from './kindtag-images/tool-deltalake-color.svg';
 import denodo from './kindtag-images/tool-denodo-color.svg';
@@ -212,6 +213,7 @@ export type KnownTagType =
   | 'snowpark'
   | 'python'
   | 'fivetran'
+  | 'db2'
   | 'dbt'
   | 'slack'
   | 'pytorch'
@@ -441,6 +443,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   fivetran: {
     icon: fivetran,
     content: 'Fivetran',
+  },
+  db2: {
+    icon: db2,
+    content: 'IBM DB2',
   },
   dbt: {
     icon: dbt,
