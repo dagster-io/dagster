@@ -70,6 +70,64 @@ class ADLS2Resource(ADLS2BaseResource):
 
     Contains a client for both the Data Lake and Blob APIs, to work around the limitations
     of each.
+
+    Example usage:
+
+    Attach this resource to your Definitions to be used by assets and jobs.
+
+    .. code-block:: python
+
+        from dagster import Definitions, asset, job, op
+        from dagster_azure.adls2 import ADLS2Resource, ADLS2SASToken
+
+        @asset
+        def asset1(adls2: ADLS2Resource):
+            adls2.adls2_client.list_file_systems()
+            ...
+
+        @op
+        def my_op(adls2: ADLS2Resource):
+            adls2.adls2_client.list_file_systems()
+            ...
+
+        @job
+        def my_job():
+            my_op()
+
+        defs = Definitions(
+            assets=[asset1],
+            jobs=[my_job],
+            resources={
+                "adls2": ADLS2Resource(
+                    storage_account="my-storage-account",
+                    credential=ADLS2SASToken(token="my-sas-token"),
+                )
+            },
+        )
+
+
+    Attach this resource to your job to make it available to your ops.
+
+    .. code-block:: python
+
+        from dagster import job, op
+        from dagster_azure.adls2 import ADLS2Resource, ADLS2SASToken
+
+        @op
+        def my_op(adls2: ADLS2Resource):
+            adls2.adls2_client.list_file_systems()
+            ...
+
+        @job(
+            resource_defs={
+                "adls2": ADLS2Resource(
+                    storage_account="my-storage-account",
+                    credential=ADLS2SASToken(token="my-sas-token"),
+                )
+            },
+        )
+        def my_job():
+            my_op()
     """
 
     @classmethod
