@@ -10,12 +10,13 @@ class PostgresResource(ConfigurableResource):
     """Resource for interacting with a postgres database. Wraps an underlying psycopg2 connection.
 
     Note that the underlying pyscopg2.extensions.connection context-manager does
-        not close the connection on __exit__ - but rather only commits the current SQL transaction.
+    not close the connection on __exit__ - but rather only commits the current SQL transaction.
     The dagster resource will automatically call connection.close() (but not connection.commit()),
-        after execution.
+    after execution.
 
     Examples:
         .. code-block:: python
+
             from dagster import Definitions, asset, EnvVar
             from dagster_postgres import PostgresResource
 
