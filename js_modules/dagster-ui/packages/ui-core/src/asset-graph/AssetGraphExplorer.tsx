@@ -19,6 +19,7 @@ import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
+import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -53,7 +54,6 @@ import {
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {featureEnabled} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
-import {AssetSelectionInput} from '../asset-selection/input/AssetSelectionInput';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
