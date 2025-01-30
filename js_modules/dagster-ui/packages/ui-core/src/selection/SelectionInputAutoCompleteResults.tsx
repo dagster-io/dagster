@@ -93,7 +93,7 @@ export const SelectionInputAutoCompleteResults = React.memo(
               justifyContent: 'space-between',
               gap: 32,
             }}
-            padding={{vertical: 8, horizontal: 12}}
+            padding={{vertical: 4, horizontal: 12}}
             style={{color: Colors.textLight(), backgroundColor: Colors.backgroundGray()}}
           >
             <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
