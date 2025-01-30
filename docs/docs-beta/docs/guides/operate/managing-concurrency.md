@@ -47,7 +47,7 @@ You can control the number of assets or ops that are running concurrently within
 
 ## Limit how many of a certain type of op or asset can run across all runs
 
-You can a limit for all ops or assets with a specific tag key or key-value pair. Ops or assets above that limit will be queued. Use `tag_concurrency_limits` in the job's config, either in Python or using the Launchpad in the Dagster UI.
+You can configure a limit for all ops or assets with a specific tag key or key-value pair. Ops or assets above that limit will be queued. Use `tag_concurrency_limits` in the job's config, either in Python or using the Launchpad in the Dagster UI.
 
 For example, you might want to limit the number of ops or assets that are running with a key of `database` across all runs (to limit the load on that database).
 
