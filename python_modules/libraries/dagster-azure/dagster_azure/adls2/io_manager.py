@@ -248,7 +248,7 @@ def adls2_pickle_io_manager(init_context):
 
     Example usage:
 
-    1. Attach this IO manager to a set of assets.
+    Attach this IO manager to a set of assets.
 
     .. code-block:: python
 
@@ -275,7 +275,7 @@ def adls2_pickle_io_manager(init_context):
         )
 
 
-    2. Attach this IO manager to your job to make it available to your ops.
+    Attach this IO manager to your job to make it available to your ops.
 
     .. code-block:: python
 

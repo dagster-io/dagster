@@ -73,7 +73,7 @@ class ADLS2Resource(ADLS2BaseResource):
 
     Example usage:
 
-    1. Attach this resource to your Definitions to be used by assets and jobs.
+    Attach this resource to your Definitions to be used by assets and jobs.
 
     .. code-block:: python
 
@@ -106,7 +106,7 @@ class ADLS2Resource(ADLS2BaseResource):
         )
 
 
-    2. Attach this resource to your job to make it available to your ops.
+    Attach this resource to your job to make it available to your ops.
 
     .. code-block:: python
 
