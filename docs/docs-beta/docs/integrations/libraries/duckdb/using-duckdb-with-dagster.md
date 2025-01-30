@@ -1,5 +1,5 @@
 ---
-title: "Using DucDB with Dagster"
+title: "Using DuckDB with Dagster"
 description: Store your Dagster assets in DuckDB
 sidebar_position: 100
 ---
