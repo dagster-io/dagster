@@ -5308,18 +5308,21 @@ class TestEventLogStorage:
 
         self.set_default_op_concurrency(instance, storage, 1)
         assert instance.global_op_concurrency_default_limit == 1
+        assert storage.get_pool_config().default_pool_limit == 1
 
         assert storage.initialize_concurrency_limit_to_default("foo")
         assert storage.get_concurrency_info("foo").slot_count == 1
 
         self.set_default_op_concurrency(instance, storage, 2)
         assert instance.global_op_concurrency_default_limit == 2
+        assert storage.get_pool_config().default_pool_limit == 2
 
         assert storage.initialize_concurrency_limit_to_default("foo")
         assert storage.get_concurrency_info("foo").slot_count == 2
 
         self.set_default_op_concurrency(instance, storage, None)
         assert instance.global_op_concurrency_default_limit is None
+        assert storage.get_pool_config().default_pool_limit is None
 
         assert storage.initialize_concurrency_limit_to_default("foo")
         assert storage.get_concurrency_info("foo").slot_count == 0

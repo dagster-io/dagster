@@ -26,6 +26,7 @@ from dagster._core.execution.stats import (
     build_run_step_stats_from_events,
 )
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance.config import PoolConfig
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -697,3 +698,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
                 )
             )
         return values
+
+    def get_pool_config(self) -> PoolConfig:
+        # Base implementation of fetching pool config.  To be overriden for remote storage
+        # implementations where the local instance might not match the remote instance.
+        return self._instance.get_concurrency_config().pool_config
