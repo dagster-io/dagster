@@ -1,10 +1,10 @@
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Optional
 
 from dagster import AssetKey, JsonMetadataValue, MarkdownMetadataValue
 from dagster._core.definitions.metadata.metadata_value import UrlMetadataValue
 
-from dagster_airlift.constants import PEERED_DAG_MAPPING_METADATA_KEY
+from dagster_airlift.constants import PEERED_DAG_MAPPING_METADATA_KEY, SOURCE_CODE_METADATA_KEY
 from dagster_airlift.core.airflow_instance import DagInfo
 
 
@@ -22,17 +22,17 @@ def dag_asset_metadata(dag_info: DagInfo) -> dict[str, Any]:
     }
 
 
-def peered_dag_asset_metadata(dag_info: DagInfo, source_code: str) -> Mapping[str, Any]:
+def peered_dag_asset_metadata(dag_info: DagInfo, source_code: Optional[str]) -> Mapping[str, Any]:
     metadata = dag_asset_metadata(dag_info)
     metadata[PEERED_DAG_MAPPING_METADATA_KEY] = [{"dag_id": dag_info.dag_id}]
-    # Attempt to retrieve source code from the DAG.
-    metadata["Source Code"] = MarkdownMetadataValue(
-        f"""
-```python
-{source_code}
-```
-            """
-    )
+    if source_code:
+        metadata[SOURCE_CODE_METADATA_KEY] = MarkdownMetadataValue(
+            f"""
+    ```python
+    {source_code}
+    ```
+                """
+        )
     return metadata
 
 

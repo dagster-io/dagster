@@ -39,6 +39,7 @@ from dagster_airlift.core.utils import get_metadata_key, spec_iterator
 class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
     airflow_instance: AirflowInstance
     mapped_assets: Sequence[MappedAsset]
+    source_code_retrieval_enabled: Optional[bool]
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
     dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None
 
@@ -52,6 +53,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
             mapped_assets=self.mapped_assets,
             dag_selector_fn=self.dag_selector_fn,
             automapping_enabled=False,
+            source_code_retrieval_enabled=self.source_code_retrieval_enabled,
         )
 
     def defs_from_state(
@@ -73,6 +75,7 @@ def build_defs_from_airflow_instance(
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
     dag_selector_fn: Optional[DagSelectorFn] = None,
+    source_code_retrieval_enabled: Optional[bool] = None,
 ) -> Definitions:
     """Builds a :py:class:`dagster.Definitions` object from an Airflow instance.
 
@@ -100,6 +103,7 @@ def build_defs_from_airflow_instance(
         event_transformer_fn (DagsterEventTransformerFn): A function that allows for modifying the Dagster events
             produced by the sensor.
         dag_selector_fn (Optional[DagSelectorFn]): A function that allows for filtering which DAGs assets are created for.
+        source_code_retrieval_enabled (Optional[bool]): Whether to retrieve source code for the Airflow dags. By default, source code is retrieved when the number of dags is under 50 for performance reasons. This setting overrides the default behavior.
 
     Returns:
         Definitions: A :py:class:`dagster.Definitions` object containing the assets and sensor.
@@ -214,6 +218,7 @@ def build_defs_from_airflow_instance(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets,
         dag_selector_fn=dag_selector_fn,
+        source_code_retrieval_enabled=source_code_retrieval_enabled,
     ).get_or_fetch_state()
     mapped_and_constructed_assets = [
         *_apply_airflow_data_to_specs(mapped_assets, serialized_airflow_data),
@@ -254,6 +259,7 @@ class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDef
             mapped_assets=self.mapped_assets,
             dag_selector_fn=None,
             automapping_enabled=True,
+            source_code_retrieval_enabled=True,
         )
 
     def defs_from_state(
@@ -344,10 +350,13 @@ def replace_assets_in_defs(
 def enrich_airflow_mapped_assets(
     mapped_assets: Sequence[MappedAsset],
     airflow_instance: AirflowInstance,
+    source_code_retrieval_enabled: Optional[bool] = None,
 ) -> Sequence[AssetsDefinition]:
     """Enrich Airflow-mapped assets with metadata from the provided :py:class:`AirflowInstance`."""
     serialized_data = AirflowInstanceDefsLoader(
-        airflow_instance=airflow_instance, mapped_assets=mapped_assets
+        airflow_instance=airflow_instance,
+        mapped_assets=mapped_assets,
+        source_code_retrieval_enabled=source_code_retrieval_enabled,
     ).get_or_fetch_state()
     return list(_apply_airflow_data_to_specs(mapped_assets, serialized_data))
 
@@ -356,11 +365,13 @@ def load_airflow_dag_asset_specs(
     airflow_instance: AirflowInstance,
     mapped_assets: Optional[Sequence[MappedAsset]] = None,
     dag_selector_fn: Optional[DagSelectorFn] = None,
+    source_code_retrieval_enabled: Optional[bool] = None,
 ) -> Sequence[AssetSpec]:
     """Load asset specs for Airflow DAGs from the provided :py:class:`AirflowInstance`, and link upstreams from mapped assets."""
     serialized_data = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets or [],
         dag_selector_fn=dag_selector_fn,
+        source_code_retrieval_enabled=source_code_retrieval_enabled,
     ).get_or_fetch_state()
     return list(spec_iterator(construct_dag_assets_defs(serialized_data)))

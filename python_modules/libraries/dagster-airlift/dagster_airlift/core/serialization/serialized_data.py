@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from functools import cached_property
-from typing import AbstractSet, Any, NamedTuple  # noqa: UP035
+from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
 from dagster import (
     AssetKey,
@@ -77,7 +77,7 @@ class SerializedDagData:
 
     dag_id: str
     dag_info: DagInfo
-    source_code: str
+    source_code: Optional[str]
     leaf_asset_keys: set[AssetKey]
     task_infos: Mapping[str, TaskInfo]
 
