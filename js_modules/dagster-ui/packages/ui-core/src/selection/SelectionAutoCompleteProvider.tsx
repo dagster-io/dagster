@@ -76,7 +76,7 @@ export interface SelectionAutoCompleteProvider {
   createOperatorSuggestion: (prop: {
     text: string;
     displayText: string;
-    type: 'and' | 'or' | 'not' | 'parenthesis' | 'up-traversal' | 'down-traversal';
+    type: OperatorType;
   }) => Suggestion;
 
   useAutoComplete: (prop: {line: string; cursorIndex: number}) => {
@@ -94,38 +94,37 @@ export type Suggestion = {
   jsx: React.ReactNode;
 };
 
-export const Operator = ({
-  displayText,
-  type,
-}: {
-  displayText: string;
-  type: 'and' | 'or' | 'not' | 'parenthesis' | 'up-traversal' | 'down-traversal';
-}) => {
-  const icon: IconName | null = 'curly_braces';
-  let label: string | null = null;
+type OperatorType = 'and' | 'or' | 'not' | 'parenthesis' | 'up-traversal' | 'down-traversal';
 
-  switch (type) {
-    case 'or':
-    case 'not':
-    case 'and': {
-      label = displayText.toUpperCase();
-      break;
-    }
-    case 'parenthesis': {
-      label = 'Parenthesis';
-      break;
-    }
-    case 'up-traversal': {
-      label = 'Include upstream dependencies';
-      break;
-    }
-    case 'down-traversal': {
-      label = 'Include downstream dependencies';
-      break;
-    }
-    default:
-      assertUnreachable(type);
-  }
+const operatorToIconAndLabel: Record<OperatorType, {icon: IconName; label: string}> = {
+  and: {
+    icon: 'curly_braces',
+    label: 'And',
+  },
+  or: {
+    icon: 'curly_braces',
+    label: 'Or',
+  },
+  not: {
+    icon: 'curly_braces',
+    label: 'Not',
+  },
+  parenthesis: {
+    icon: 'curly_braces',
+    label: 'Parenthesis',
+  },
+  'up-traversal': {
+    icon: 'curly_braces',
+    label: 'Include upstream dependencies',
+  },
+  'down-traversal': {
+    icon: 'curly_braces',
+    label: 'Include downstream dependencies',
+  },
+};
+
+export const Operator = ({displayText, type}: {displayText: string; type: OperatorType}) => {
+  const {icon, label} = operatorToIconAndLabel[type];
   return <SuggestionJSXBase label={label} icon={icon} rightLabel={displayText} />;
 };
 
