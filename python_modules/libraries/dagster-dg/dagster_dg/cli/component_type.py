@@ -39,9 +39,7 @@ def component_type_scaffold_command(
     will be placed in submodule `<code_location_name>.lib.<name>`.
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-    if not dg_context.is_code_location:
-        exit_with_error("This command must be run inside a Dagster code location directory.")
+    dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     full_component_name = f"{dg_context.root_package_name}.{name}"
     if registry.has_global(full_component_name):
@@ -66,7 +64,7 @@ def component_type_docs_command(
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     if not registry.has_global(component_type):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
@@ -96,7 +94,7 @@ def component_type_info_command(
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     if not registry.has_global(component_type):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
@@ -152,7 +150,7 @@ def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
 def component_type_list(context: click.Context, **global_options: object) -> None:
     """List registered Dagster components in the current code location environment."""
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
     table = Table(border_style="dim")

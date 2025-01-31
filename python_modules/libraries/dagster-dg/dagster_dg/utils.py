@@ -4,7 +4,9 @@ import json
 import os
 import posixpath
 import re
+import shutil
 import sys
+import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from pathlib import Path
@@ -21,7 +23,6 @@ from dagster_dg.version import __version__ as dagster_version
 # There is some weirdness concerning the availabilty of hashlib.HASH between different Python
 # versions, so for nowe we avoid trying to import it and just alias the type to Any.
 Hash: TypeAlias = Any
-
 
 CLI_CONFIG_KEY = "config"
 
@@ -62,6 +63,10 @@ def is_valid_json(value: str) -> bool:
         return True
     except json.JSONDecodeError:
         return False
+
+
+def is_executable_available(command: str) -> bool:
+    return bool(shutil.which(command))
 
 
 # uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
@@ -265,6 +270,39 @@ def exit_with_error(error_message: str) -> None:
     click.echo(click.style(error_message, fg="red"))
     sys.exit(1)
 
+
+def _format_error_message(message: str) -> str:
+    # width=10000 unwraps any hardwrapping
+    return textwrap.fill(message, width=10000)
+
+
+NOT_DEPLOYMENT_ERROR_MESSAGE = _format_error_message("""
+This command must be run inside a Dagster deployment directory. Ensure that there is a
+`pyproject.toml` file with `tool.dg.is_deployment = true` set in the root deployment directory.
+""")
+
+
+NOT_CODE_LOCATION_ERROR_MESSAGE = _format_error_message("""
+This command must be run inside a Dagster code location directory. Ensure that the nearest
+pyproject.toml has `tool.dg.is_code_location = true` set.
+""")
+
+NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = _format_error_message("""
+This command must be run inside a Dagster component library directory. Ensure that the nearest
+pyproject.toml has `tool.dg.is_component_lib = true` set.
+""")
+
+
+MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = _format_error_message("""
+Could not find the `dagster-components` executable on the system path.
+
+The `dagster-components` executable is installed with the `dagster-components` PyPI package and is
+necessary for `dg` to interface with Python environments containing Dagster definitions.
+`dagster-components` is installed by default when a code location is scaffolded by `dg`. However, if
+you are using `dg` in a non-managed environment (either outside of a code location or using the
+`--no-use-dg-managed-environment` flag), you need to independently ensure `dagster-components` is
+installed.
+""")
 
 # ########################
 # ##### CUSTOM CLICK SUBCLASSES

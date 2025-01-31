@@ -73,6 +73,20 @@ def isolated_example_code_location_foo_bar(
             yield
 
 
+# We just use the code location generation function and then modify it to be a component library
+# only.
+@contextmanager
+def isolated_example_component_library_foo_bar(
+    runner: Union[CliRunner, "ProxyRunner"],
+) -> Iterator[None]:
+    runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
+    with isolated_example_code_location_foo_bar(runner):
+        with modify_pyproject_toml() as pyproject_toml:
+            pyproject_toml["tool"]["dg"]["is_code_location"] = False
+        shutil.rmtree("foo_bar/components")
+        yield
+
+
 @contextmanager
 def clear_module_from_cache(module_name: str) -> Iterator[None]:
     if module_name in sys.modules:
@@ -124,7 +138,7 @@ class ProxyRunner:
             ]
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
-    def invoke(self, *args: str):
+    def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
         # We need to find the right spot to inject global options. For the `dg component scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
@@ -140,7 +154,9 @@ class ProxyRunner:
 
         # For some reason the context setting `max_content_width` is not respected when using the
         # CliRunner, so we have to set it manually.
-        return self.original.invoke(dg_cli, all_args, terminal_width=self.console_width)
+        return self.original.invoke(
+            dg_cli, all_args, terminal_width=self.console_width, **invoke_kwargs
+        )
 
     @contextmanager
     def isolated_filesystem(self) -> Iterator[None]:

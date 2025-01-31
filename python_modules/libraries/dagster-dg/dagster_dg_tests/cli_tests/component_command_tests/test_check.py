@@ -71,6 +71,13 @@ def test_component_check_outside_code_location_fails() -> None:
         assert "must be run inside a Dagster code location directory" in result.output
 
 
+def test_list_components_with_no_dagster_components_fails() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+        result = runner.invoke("component", "check", env={"PATH": "/dev/null"})
+        assert_runner_result(result, exit_0=False)
+        assert "Could not find the `dagster-components` executable" in result.output
+
+
 def test_component_check_succeeds_non_default_component_package() -> None:
     with (
         ProxyRunner.test() as runner,

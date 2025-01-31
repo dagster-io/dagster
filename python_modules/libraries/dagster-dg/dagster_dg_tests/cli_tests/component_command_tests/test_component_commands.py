@@ -133,6 +133,19 @@ def test_component_scaffold_outside_code_location_fails() -> None:
         assert "must be run inside a Dagster code location directory" in result.output
 
 
+def test_component_scaffold_with_no_dagster_components_fails() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+        result = runner.invoke(
+            "component",
+            "scaffold",
+            "dagster_components.test.simple_pipes_script_asset",
+            "qux",
+            env={"PATH": "/dev/null"},
+        )
+        assert_runner_result(result, exit_0=False)
+        assert "Could not find the `dagster-components` executable" in result.output
+
+
 @pytest.mark.parametrize("in_deployment", [True, False])
 def test_component_scaffold_already_exists_fails(in_deployment: bool) -> None:
     with (
@@ -275,3 +288,10 @@ def test_list_components_command_outside_code_location_fails() -> None:
         result = runner.invoke("component", "list")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
+
+
+def test_list_components_with_no_dagster_components_fails() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+        result = runner.invoke("component", "list", env={"PATH": "/dev/null"})
+        assert_runner_result(result, exit_0=False)
+        assert "Could not find the `dagster-components` executable" in result.output
