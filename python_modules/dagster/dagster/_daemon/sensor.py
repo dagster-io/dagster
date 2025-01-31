@@ -80,8 +80,6 @@ MAX_TIME_TO_RESUME_TICK_SECONDS = 60 * 60 * 24
 # before proceeding to the next tick
 MAX_FAILURE_RESUBMISSION_RETRIES = 1
 
-DEFAULT_MAX_RUNS_PER_TICK = 25000
-
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
 
 
@@ -1049,13 +1047,11 @@ def _handle_run_requests_and_automation_condition_evaluations(
             return make_new_run_id()
 
     # here do the check for # of run requests
-    if (
-        len(raw_run_requests) > DEFAULT_MAX_RUNS_PER_TICK
-        and instance.limit_num_runs_launched_per_tick()
-    ):
+    max_num_runs_per_tick = instance.max_num_runs_launched_per_tick()
+    if max_num_runs_per_tick and len(raw_run_requests) > max_num_runs_per_tick:
         raise DagsterTickMaxRunsExceededError(
             f"Sensor {remote_sensor.name} requested {len(raw_run_requests)} runs, which exceeds the "
-            f"limit of {DEFAULT_MAX_RUNS_PER_TICK} runs per tick."
+            f"limit of {max_num_runs_per_tick} runs per tick."
         )
 
     reserved_run_ids = [reserved_run_id(run_request) for run_request in raw_run_requests]
