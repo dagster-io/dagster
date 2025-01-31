@@ -273,8 +273,7 @@ def _execute_asset_backfill_iteration_no_side_effects(graphql_context, backfill_
     updated_backfill = backfill.with_asset_backfill_data(
         result.backfill_data.with_run_requests_submitted(
             result.run_requests,
-            asset_graph=graphql_context.asset_graph,
-            instance_queryer=asset_graph_view.get_inner_queryer_for_back_compat(),
+            asset_graph_view=asset_graph_view,
         ),
         dynamic_partitions_store=graphql_context.instance,
         asset_graph=graphql_context.asset_graph,
