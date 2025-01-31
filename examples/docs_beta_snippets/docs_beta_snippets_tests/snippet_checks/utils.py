@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import subprocess
@@ -61,6 +62,9 @@ def _run_command(
     os.chdir(pwd)
 
     actual_output = ANSI_ESCAPE.sub("", actual_output)
+
+    logging.info("Ran command:\n%s", cmd)
+    logging.info("\n\nOutput:\n%s", actual_output)
     return actual_output
 
 
