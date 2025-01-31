@@ -247,8 +247,8 @@ class AirflowInstance:
         end_date_gte: datetime.datetime,
         end_date_lte: datetime.datetime,
         offset: int = 0,
-    ) -> list["DagRun"]:
-        """Return a batch of dag runs for a list of dag_ids. Ordered by end_date."""
+    ) -> tuple[list["DagRun"], int]:
+        """Return a list of dag runs with a starting for a list of dag_ids. Ordered by end_date."""
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/~/dagRuns/list",
             json={
@@ -263,15 +263,18 @@ class AirflowInstance:
         )
         if response.status_code == 200:
             webserver_url = self.auth_backend.get_webserver_url()
-            return [
-                DagRun(
-                    webserver_url=webserver_url,
-                    dag_id=dag_run["dag_id"],
-                    run_id=dag_run["dag_run_id"],
-                    metadata=dag_run,
-                )
-                for dag_run in response.json()["dag_runs"]
-            ]
+            return (
+                [
+                    DagRun(
+                        webserver_url=webserver_url,
+                        dag_id=dag_run["dag_id"],
+                        run_id=dag_run["dag_run_id"],
+                        metadata=dag_run,
+                    )
+                    for dag_run in response.json()["dag_runs"]
+                ],
+                response.json()["total_entries"],
+            )
         else:
             raise DagsterError(
                 f"Failed to fetch dag runs for {dag_ids}. Status code: {response.status_code}, Message: {response.text}"

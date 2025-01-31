@@ -152,6 +152,7 @@ def build_airflow_polling_sensor(
         while get_current_datetime() - current_date < timedelta(seconds=MAIN_LOOP_TIMEOUT_SECONDS):
             batch_result = next(sensor_iter, None)
             if batch_result is None:
+                context.log.info("Received no batch result. Breaking.")
                 break
             all_asset_events.extend(batch_result.asset_events)
 
@@ -255,30 +256,50 @@ def materializations_and_requests_from_batch_iter(
     offset: int,
     airflow_data: AirflowDefinitionsData,
 ) -> Iterator[Optional[BatchResult]]:
-    runs = airflow_data.airflow_instance.get_dag_runs_batch(
-        dag_ids=list(airflow_data.dag_ids_with_mapped_asset_keys),
-        end_date_gte=datetime_from_timestamp(end_date_gte),
-        end_date_lte=datetime_from_timestamp(end_date_lte),
-        offset=offset,
-    )
-    context.log.info(f"Found {len(runs)} dag runs for {airflow_data.airflow_instance.name}")
-    context.log.info(f"All runs {runs}")
-    for i, dag_run in enumerate(runs):
-        mats = build_synthetic_asset_materializations(
-            context, airflow_data.airflow_instance, dag_run, airflow_data
+    total_processed_runs = 0
+    total_entries = 0
+    while True:
+        latest_offset = total_processed_runs + offset
+        runs, total_entries = airflow_data.airflow_instance.get_dag_runs_batch(
+            dag_ids=list(airflow_data.dag_ids_with_mapped_asset_keys),
+            end_date_gte=datetime_from_timestamp(end_date_gte),
+            end_date_lte=datetime_from_timestamp(end_date_lte),
+            offset=latest_offset,
         )
-        context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
-
-        all_asset_keys_materialized = {mat.asset_key for mat in mats}
-        yield (
-            BatchResult(
-                idx=i + offset,
-                asset_events=mats,
-                all_asset_keys_materialized=all_asset_keys_materialized,
+        if len(runs) == 0:
+            yield None
+            context.log.info("Received no runs. Breaking.")
+            break
+        context.log.info(
+            f"Processing {len(runs)}/{total_entries} dag runs for {airflow_data.airflow_instance.name}..."
+        )
+        for i, dag_run in enumerate(runs):
+            context.log.info(
+                f"dag ids: {[dag_id for dag_id in airflow_data.dag_ids_with_mapped_asset_keys]}"
             )
-            if mats
-            else None
+            mats = build_synthetic_asset_materializations(
+                context, airflow_data.airflow_instance, dag_run, airflow_data
+            )
+            context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
+
+            all_asset_keys_materialized = {mat.asset_key for mat in mats}
+            yield (
+                BatchResult(
+                    idx=i + latest_offset,
+                    asset_events=mats,
+                    all_asset_keys_materialized=all_asset_keys_materialized,
+                )
+                if mats
+                else None
+            )
+        total_processed_runs += len(runs)
+        context.log.info(
+            f"Processed {total_processed_runs}/{total_entries} dag runs for {airflow_data.airflow_instance.name}."
         )
+        if total_processed_runs == total_entries:
+            yield None
+            context.log.info("Processed all runs. Breaking.")
+            break
 
 
 def build_synthetic_asset_materializations(
