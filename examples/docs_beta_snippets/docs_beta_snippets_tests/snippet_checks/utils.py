@@ -63,8 +63,9 @@ def _run_command(
 
     actual_output = ANSI_ESCAPE.sub("", actual_output)
 
-    logging.info("Ran command:\n%s", cmd)
-    logging.info("\n\nOutput:\n%s", actual_output)
+    print(f"Ran command:\n{cmd}")  # noqa: T201
+    print("\n\nOutput:")  # noqa: T201
+    print(actual_output)  # noqa: T201
     return actual_output
 
 
