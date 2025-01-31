@@ -1,7 +1,7 @@
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import AbstractSet, Any, Generic, NamedTuple, Optional, Union  # noqa: UP035
+from typing import AbstractSet, Any, Generic, Iterable, NamedTuple, Optional, Union  # noqa: UP035
 
 from typing_extensions import TypeAlias
 

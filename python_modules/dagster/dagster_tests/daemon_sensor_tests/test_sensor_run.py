@@ -300,12 +300,6 @@ def start_skip_sensor(context: SensorEvaluationContext):
     return RunRequest()
 
 
-@sensor(job_name="the_job")
-def sensor_turns_off_while_submitting_runs(context):
-    yield RunRequest(run_key="1")
-    yield RunRequest(run_key="2")
-
-
 @asset
 def asset_a():
     return 1
@@ -1265,6 +1259,7 @@ def test_sensor_stopped_while_submitting_runs(
 
             evaluate_sensors(workspace_context, executor)
 
+        # sensor is stopped after the first run is submitted, so only one run should exist
         assert instance.get_runs_count() == 1
         first_run = instance.get_runs()[0]
         ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
@@ -1279,6 +1274,9 @@ def test_sensor_stopped_while_submitting_runs(
 
         assert ticks[0].run_requests and len(ticks[0].run_requests) == 5
         assert len(ticks[0].unsubmitted_run_ids_with_requests) == 4
+        assert first_run.run_id not in [
+            run_id for run_id, _ in ticks[0].unsubmitted_run_ids_with_requests
+        ]
         # if a tick is stopped mid-iteration we don't reset the cursor
         assert ticks[0].cursor == "1"
 
