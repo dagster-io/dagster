@@ -52,7 +52,7 @@ from dagster_airlift.core.sensor.event_translation import (
 )
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
-DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 1
+DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 30
 START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setting of the cursor.
 
 
