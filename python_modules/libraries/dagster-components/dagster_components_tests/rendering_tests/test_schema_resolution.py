@@ -3,7 +3,8 @@ from typing import Annotated, Optional, Union
 
 import pytest
 from dagster._record import record
-from dagster_components import ResolvableFieldInfo, ResolvableModel, TemplatedValueResolver
+from dagster_components import ResolvableFieldInfo, TemplatedValueResolver
+from dagster_components.core.schema.resolution import ResolvableModel
 from pydantic import ValidationError
 
 

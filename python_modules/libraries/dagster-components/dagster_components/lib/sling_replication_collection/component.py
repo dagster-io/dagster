@@ -19,58 +19,44 @@ from dagster_components.core.schema.objects import (
     AssetAttributesModel,
     AssetSpecTransformModel,
     OpSpecModel,
-    ResolvableModel,
 )
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.core.schema.resolution import ResolvableModel, TemplatedValueResolver
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
 @record
 class SlingReplicationSpec:
     relative_path: str
-    op_spec: OpSpecModel
+    op: OpSpecModel
     translator: DagsterSlingTranslator
 
 
+def get_translator(attributes: Optional[AssetAttributesModel], resolver: TemplatedValueResolver):
+    return get_wrapped_translator_class(DagsterSlingTranslator)(
+        resolving_info=ResolvingInfo(
+            "stream_definition", attributes or AssetAttributesModel(), resolver
+        )
+    )
+
+
 class SlingReplicationParams(ResolvableModel[SlingReplicationSpec]):
-    path: str
-    op: Optional[OpSpecModel] = None
+    path: Annotated[str, ResolvableFieldInfo(resolved_name="relative_path")]
+    op: OpSpecModel = OpSpecModel()
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"stream_definition"})
+        Optional[AssetAttributesModel],
+        ResolvableFieldInfo(
+            required_scope={"stream_definition"},
+            resolved_name="translator",
+            pre_process_fn=lambda attributes, _: attributes,
+            post_process_fn=get_translator,
+        ),
     ] = None
 
-    def resolve(self, resolver: TemplatedValueResolver) -> SlingReplicationSpec:
-        return SlingReplicationSpec(
-            relative_path=resolver.resolve_obj(self.path),
-            op_spec=self.op.resolve(resolver) if self.op else OpSpecModel(),
-            translator=get_wrapped_translator_class(DagsterSlingTranslator)(
-                resolving_info=ResolvingInfo(
-                    "stream_definition", self.asset_attributes or AssetAttributesModel(), resolver
-                ),
-            ),
-        )
 
-
-ResolvedSlingReplicationCollectionParams = tuple[
-    SlingResource,
-    Sequence[SlingReplicationSpec],
-    Sequence[Callable[[Definitions], Definitions]],
-]
-
-
-class SlingReplicationCollectionParams(ResolvableModel[ResolvedSlingReplicationCollectionParams]):
-    sling: Optional[SlingResource] = None
+class SlingReplicationCollectionParams(ResolvableModel):
+    sling: Optional[SlingResource] = SlingResource()
     replications: Sequence[SlingReplicationParams]
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
-
-    def resolve(self, resolver: TemplatedValueResolver) -> ResolvedSlingReplicationCollectionParams:
-        return (
-            self.sling if self.sling else SlingResource(),
-            [replication.resolve(resolver) for replication in self.replications],
-            [transform.resolve(resolver) for transform in self.transforms]
-            if self.transforms
-            else [],
-        )
 
 
 @component_type
@@ -79,12 +65,10 @@ class SlingReplicationCollection(Component):
 
     def __init__(
         self,
-        dirpath: Path,
         resource: SlingResource,
         replication_specs: Sequence[SlingReplicationSpec],
         transforms: Sequence[Callable[[Definitions], Definitions]],
     ):
-        self.dirpath = dirpath
         self.resource = resource
         self.replication_specs = replication_specs
         self.transforms = transforms
@@ -103,21 +87,15 @@ class SlingReplicationCollection(Component):
 
     @classmethod
     def load(cls, params: SlingReplicationCollectionParams, context: ComponentLoadContext) -> Self:
-        resource, replication_specs, transforms = params.resolve(context.templated_value_resolver)
-        return cls(
-            dirpath=context.path,
-            resource=resource,
-            replication_specs=replication_specs,
-            transforms=transforms,
-        )
+        return params.resolve_as(cls, context.templated_value_resolver)
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec
     ) -> AssetsDefinition:
         @sling_assets(
-            name=replication_spec.op_spec.name or Path(replication_spec.relative_path).stem,
-            op_tags=replication_spec.op_spec.tags,
-            replication_config=self.dirpath / replication_spec.relative_path,
+            name=replication_spec.op.name or Path(replication_spec.relative_path).stem,
+            op_tags=replication_spec.op.tags,
+            replication_config=context.path / replication_spec.relative_path,
             dagster_sling_translator=replication_spec.translator,
         )
         def _asset(context: AssetExecutionContext):
