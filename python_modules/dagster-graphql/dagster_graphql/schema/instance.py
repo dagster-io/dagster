@@ -287,9 +287,9 @@ class GrapheneInstance(graphene.ObjectType):
         return isinstance(self._instance.run_coordinator, QueuedRunCoordinator)
 
     def resolve_runQueueConfig(self, _graphene_info: ResolveInfo):
-        run_queue_config = self._instance.get_run_queue_config()
-        if run_queue_config:
-            return GrapheneRunQueueConfig(run_queue_config)
+        concurrency_config = self._instance.get_concurrency_config()
+        if concurrency_config.run_queue_config:
+            return GrapheneRunQueueConfig(concurrency_config.run_queue_config)
         else:
             return None
 

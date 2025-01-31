@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance
-from dagster._core.run_coordinator.queued_run_coordinator import PoolGranularity
+from dagster._core.instance.config import PoolGranularity
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot, ExecutionStepSnap
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
