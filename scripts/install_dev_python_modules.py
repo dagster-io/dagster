@@ -67,6 +67,7 @@ def main(
         "python_modules/libraries/dagster-azure",
         "python_modules/libraries/dagster-celery",
         "python_modules/libraries/dagster-celery-docker",
+        "python_modules/libraries/dagster-components",
         "python_modules/libraries/dagster-dask[yarn,pbs,kube]",
         "python_modules/libraries/dagster-databricks",
         "python_modules/libraries/dagster-datadog",
@@ -80,7 +81,6 @@ def main(
         "python_modules/libraries/dagster-gcp",
         "python_modules/libraries/dagster-gcp-pandas",
         "python_modules/libraries/dagster-gcp-pyspark",
-        "python_modules/libraries/dagster-ge",
         "python_modules/libraries/dagster-embedded-elt",
         "python_modules/libraries/dagster-fivetran",
         "python_modules/libraries/dagster-k8s",
@@ -109,6 +109,11 @@ def main(
         "python_modules/libraries/dagster-twilio",
         "python_modules/libraries/dagstermill",
     ]
+
+    if sys.version_info >= (3, 10):
+        editable_target_paths += [
+            "python_modules/libraries/dagster-ge",
+        ]
 
     if sys.version_info <= (3, 12):
         editable_target_paths += [

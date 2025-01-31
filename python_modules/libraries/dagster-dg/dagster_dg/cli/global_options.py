@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional, TypeVar, Union
 import click
 
 from dagster_dg.config import DgConfig
+from dagster_dg.utils import set_option_help_output_group
 
 T_Command = TypeVar("T_Command", bound=Union[Callable[..., Any], click.Command])
 
@@ -44,6 +45,10 @@ GLOBAL_OPTIONS = {
         ),
     ]
 }
+
+# Ensure that these options show up in the help output under the "Global options" group.
+for option in GLOBAL_OPTIONS.values():
+    set_option_help_output_group(option, "Global options")
 
 
 def dg_global_options(

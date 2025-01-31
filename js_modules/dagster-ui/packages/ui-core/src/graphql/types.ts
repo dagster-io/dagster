@@ -1900,6 +1900,7 @@ export type Instance = {
   info: Maybe<Scalars['String']['output']>;
   maxConcurrencyLimitValue: Scalars['Int']['output'];
   minConcurrencyLimitValue: Scalars['Int']['output'];
+  poolConfig: Maybe<PoolConfig>;
   runLauncher: Maybe<RunLauncher>;
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean']['output'];
@@ -3724,6 +3725,13 @@ export type PipelineTagAndValues = {
   values: Array<Scalars['String']['output']>;
 };
 
+export type PoolConfig = {
+  __typename: 'PoolConfig';
+  defaultPoolLimit: Maybe<Scalars['Int']['output']>;
+  opGranularityRunBuffer: Maybe<Scalars['Int']['output']>;
+  poolGranularity: Maybe<Scalars['String']['output']>;
+};
+
 export type PresetNotFoundError = Error & {
   __typename: 'PresetNotFoundError';
   message: Scalars['String']['output'];
@@ -4485,6 +4493,7 @@ export type ResumeBackfillSuccess = {
 export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename: 'Run';
+    allPools: Maybe<Array<Scalars['String']['output']>>;
     assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
     assetChecks: Maybe<Array<AssetCheckhandle>>;
     assetMaterializations: Array<MaterializationEvent>;
@@ -8972,6 +8981,12 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('minConcurrencyLimitValue')
         ? overrides.minConcurrencyLimitValue!
         : 4538,
+    poolConfig:
+      overrides && overrides.hasOwnProperty('poolConfig')
+        ? overrides.poolConfig!
+        : relationshipsToOmit.has('PoolConfig')
+          ? ({} as PoolConfig)
+          : buildPoolConfig({}, relationshipsToOmit),
     runLauncher:
       overrides && overrides.hasOwnProperty('runLauncher')
         ? overrides.runLauncher!
@@ -12084,6 +12099,29 @@ export const buildPipelineTagAndValues = (
   };
 };
 
+export const buildPoolConfig = (
+  overrides?: Partial<PoolConfig>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PoolConfig'} & PoolConfig => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PoolConfig');
+  return {
+    __typename: 'PoolConfig',
+    defaultPoolLimit:
+      overrides && overrides.hasOwnProperty('defaultPoolLimit')
+        ? overrides.defaultPoolLimit!
+        : 2648,
+    opGranularityRunBuffer:
+      overrides && overrides.hasOwnProperty('opGranularityRunBuffer')
+        ? overrides.opGranularityRunBuffer!
+        : 3091,
+    poolGranularity:
+      overrides && overrides.hasOwnProperty('poolGranularity')
+        ? overrides.poolGranularity!
+        : 'enim',
+  };
+};
+
 export const buildPresetNotFoundError = (
   overrides?: Partial<PresetNotFoundError>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -13147,6 +13185,7 @@ export const buildRun = (
   relationshipsToOmit.add('Run');
   return {
     __typename: 'Run',
+    allPools: overrides && overrides.hasOwnProperty('allPools') ? overrides.allPools! : [],
     assetCheckSelection:
       overrides && overrides.hasOwnProperty('assetCheckSelection')
         ? overrides.assetCheckSelection!

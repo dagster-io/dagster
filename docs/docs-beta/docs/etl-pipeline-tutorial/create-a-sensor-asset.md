@@ -49,9 +49,9 @@ Sensors include the following elements:
 
 3. Navigate to the Automation page.
 
-4. Turn on the `automation_request_sensor`.
+4. Turn on the `adhoc_request_sensor`.
 
-5. Click on the `automation_request_sensor` details.
+5. Click on the `adhoc_request_sensor` details.
 
    ![2048 resolution](/images/tutorial/etl-tutorial/sensor-evaluation.png)
 

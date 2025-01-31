@@ -111,6 +111,16 @@ def test_components_from_dagster():
         assert "dagster_components.sling_replication_collection" in component_types
 
 
+def test_all_dagster_components_have_defined_summary():
+    from dagster_components import ComponentTypeRegistry
+
+    registry = ComponentTypeRegistry.from_entry_point_discovery()
+    for component_name, component_type in registry.items():
+        assert component_type.get_metadata()[
+            "summary"
+        ], f"Component {component_name} has no summary defined"
+
+
 # Our pyproject.toml installs local dagster components
 DAGSTER_FOO_PYPROJECT_TOML = """
 [build-system]

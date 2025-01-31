@@ -36,6 +36,7 @@ from dagster._core.storage.tags import (
 from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
+from dagster._time import get_current_timestamp
 from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
@@ -77,7 +78,11 @@ def execute_job_backfill_iteration(
             )
 
         if all_runs_canceled:
-            instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+            instance.update_backfill(
+                backfill.with_status(BulkActionStatus.CANCELED).with_end_timestamp(
+                    get_current_timestamp()
+                )
+            )
         return
 
     has_more = True
@@ -145,9 +150,17 @@ def execute_job_backfill_iteration(
                 )
                 > 0
             ):
-                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED_FAILED))
+                instance.update_backfill(
+                    backfill.with_status(BulkActionStatus.COMPLETED_FAILED).with_end_timestamp(
+                        get_current_timestamp()
+                    )
+                )
             else:
-                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS))
+                instance.update_backfill(
+                    backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS).with_end_timestamp(
+                        get_current_timestamp()
+                    )
+                )
             yield None
 
 

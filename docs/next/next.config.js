@@ -9,6 +9,19 @@ module.exports = withMarkdoc(
     schemaPath: './markdoc/',
   } /* config: https://markdoc.io/docs/nextjs#options */,
 )({
+  async headers() {
+    return [
+      {
+        headers: [
+          {
+            key: 'X-Robots-Tag',
+            value: 'noindex',
+          },
+        ],
+        source: '/:path*',
+      },
+    ];
+  },
   async redirects() {
     return [
       {

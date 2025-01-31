@@ -181,7 +181,6 @@ export const Warning = ({children}) => {
   return <Admonition style="warning">{children}</Admonition>;
 };
 
-
 //////////////////////
 //       CHECK      //
 //////////////////////
@@ -435,9 +434,9 @@ const Experimental = () => {
 
 const Preview = () => {
   return (
-      <div className="preview-tag">
-        <span className="hidden">(</span>Preview<span className="hidden">)</span>
-      </div>
+    <div className="preview-tag">
+      <span className="hidden">(</span>Preview<span className="hidden">)</span>
+    </div>
   );
 };
 
@@ -447,9 +446,9 @@ const Preview = () => {
 
 const Beta = () => {
   return (
-      <div className="beta-tag">
-        <span className="hidden">(</span>Beta<span className="hidden">)</span>
-      </div>
+    <div className="beta-tag">
+      <span className="hidden">(</span>Beta<span className="hidden">)</span>
+    </div>
   );
 };
 

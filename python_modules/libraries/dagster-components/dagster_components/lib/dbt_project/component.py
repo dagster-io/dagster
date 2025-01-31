@@ -37,6 +37,8 @@ class DbtProjectParams(BaseModel):
 
 @component_type(name="dbt_project")
 class DbtProjectComponent(Component):
+    """Expose a DBT project to Dagster as a set of assets."""
+
     def __init__(
         self,
         dbt_resource: DbtCliResource,

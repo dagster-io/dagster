@@ -1599,7 +1599,7 @@ class GrpcServerProcess:
 
     def auto_restart_thread(self):
         while True:
-            time.sleep(get_auto_restart_code_server_interval())
+            self.__shutdown_event.wait(get_auto_restart_code_server_interval())
             if self.__shutdown_event.is_set():
                 break
             if self._server_process and self._server_process.poll() is not None:

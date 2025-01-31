@@ -35,6 +35,7 @@ from dagster._utils.cached_method import cached_method
 from pydantic import (
     Field as PyField,
     ValidationError,
+    create_model,
 )
 
 
@@ -582,6 +583,44 @@ def test_nested_config_class() -> None:
 
     assert defs.get_implicit_global_asset_job_def().execute_in_process().success
     assert executed["yes"]
+
+
+# https://github.com/dagster-io/dagster/issues/27223
+@pytest.mark.parametrize("child_resource_fields_all_have_default_values", [True, False])
+def test_nested_config_class_with_runtime_config(
+    child_resource_fields_all_have_default_values: bool,
+) -> None:
+    # Type hinting a dynamically-generated Pydantic model is impossible:
+    # https://stackoverflow.com/q/78838473
+    ChildResource = create_model(
+        "ChildResource",
+        date=(str, "2025-01-20" if child_resource_fields_all_have_default_values else ...),
+        __base__=ConfigurableResource,
+    )
+
+    class ParentResource(ConfigurableResource):
+        child: ChildResource  # pyright: ignore[reportInvalidTypeForm]
+
+    @asset
+    def test_asset(
+        child: ChildResource,  # pyright: ignore[reportInvalidTypeForm]
+        parent: ParentResource,
+    ) -> None:
+        assert child.date == "2025-01-21"
+        assert parent.child.date == "2025-01-21"
+
+    child = ChildResource.configure_at_launch()
+    materialize(
+        [test_asset],
+        resources={
+            "child": child,
+            "parent": ParentResource.configure_at_launch(child=child),
+        },
+        run_config={
+            "loggers": {"console": {"config": {"log_level": "ERROR"}}},
+            "resources": {"child": {"config": {"date": "2025-01-21"}}},
+        },
+    )
 
 
 def test_using_enum_simple() -> None:

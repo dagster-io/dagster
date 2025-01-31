@@ -40,7 +40,10 @@ On the backend, these kind inputs are stored as tags on the asset. For more info
 
 When viewing the asset in the lineage view, the attached kinds will be visible at the bottom the asset.
 
-![Asset in lineage view with attached kind tags](/images/guides/build/assets/metadata-tags/kinds/kinds.svg)
+<img
+  src="/images/guides/build/assets/metadata-tags/kinds/kinds.svg"
+  alt="Asset in lineage view with attached kind tags"
+/>
 
 ## Adding compute kinds to assets
 
@@ -94,6 +97,7 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `databricks`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-databricks-color.svg" width={20} height={20} />        |
 | `datadog`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-datadog-color.svg" width={20} height={20} />           |
 | `datahub`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-datahub-color.svg" width={20} height={20} />           |
+| `db2`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-db2-color.svg" width={20} height={20} />               |
 | `dbt`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-dbt-color.svg" width={20} height={20} />               |
 | `deltalake`         | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-deltalake-color.svg" width={20} height={20} />         |
 | `denodo`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-denodo-color.svg" width={20} height={20} />            |

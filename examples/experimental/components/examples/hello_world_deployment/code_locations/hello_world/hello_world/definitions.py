@@ -7,7 +7,7 @@ from dagster_components.lib.pipes_subprocess_script_collection import (
 )
 
 defs = build_component_defs(
-    code_location_root=Path(__file__).parent.parent,
+    Path(__file__).parent / "components",
     registry=ComponentTypeRegistry(
         {"pipes_subprocess_script_collection": PipesSubprocessScriptCollection}
     ),

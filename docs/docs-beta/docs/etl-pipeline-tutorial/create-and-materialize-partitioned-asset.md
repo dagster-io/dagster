@@ -147,7 +147,7 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
 
 
 
-## 4. Materialize partitioned assets
+## 3. Materialize partitioned assets
 
 Now that we have our partitioned assets, let's add them to our Definitions object:
 

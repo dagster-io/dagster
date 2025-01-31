@@ -989,6 +989,7 @@ def test_job_backfill_status(
     backfill = instance.get_backfill("simple")
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="flaky in windows")
@@ -1228,6 +1229,7 @@ def test_unloadable_asset_backfill(instance, workspace_context):
     assert backfill.status == BulkActionStatus.FAILED
     assert backfill.failure_count == 1
     assert isinstance(backfill.error, SerializableErrorInfo)
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_asset_backfill_retryable_error(instance, workspace_context):
@@ -1321,6 +1323,7 @@ def test_asset_backfill_retryable_error(instance, workspace_context):
             updated_backfill = instance.get_backfill(backfill_id)
             assert updated_backfill.status == BulkActionStatus.FAILED
             assert updated_backfill.failure_count == 3
+            assert updated_backfill.backfill_end_timestamp is not None
 
 
 def test_unloadable_backfill_retry(
@@ -1564,6 +1567,7 @@ def test_pure_asset_backfill(
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_backfill_from_failure_for_subselection(
@@ -1663,6 +1667,7 @@ def test_asset_backfill_cancellation(
     assert backfill
     assert backfill.status == BulkActionStatus.CANCELED
     assert instance.get_runs_count() == 1  # Assert that additional runs are not created
+    assert backfill.backfill_end_timestamp is not None
 
 
 # Check run submission at chunk boundary and off of chunk boundary
@@ -2356,6 +2361,7 @@ def test_asset_job_backfill_single_run_multiple_iterations(
     backfill = instance.get_backfill("simple")
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_asset_job_backfill_multi_run(
@@ -2608,6 +2614,7 @@ def test_complex_asset_with_backfill_policy(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_error_code_location(
@@ -3048,6 +3055,7 @@ def test_asset_backfill_logs(
     backfill = instance.get_backfill("backfill_with_asset_selection")
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
     # set num_lines high so we know we get all of the remaining logs
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
@@ -3154,6 +3162,7 @@ def test_asset_backfill_from_asset_graph_subset(
     backfill = instance.get_backfill("backfill_from_asset_graph_subset")
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
@@ -3220,6 +3229,7 @@ def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
     )
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_asset_backfill_not_complete_until_retries_complete(
@@ -3307,6 +3317,7 @@ def test_asset_backfill_not_complete_until_retries_complete(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
@@ -3376,6 +3387,7 @@ def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_asset_backfill_fails_if_retries_fail(
@@ -3461,6 +3473,7 @@ def test_asset_backfill_fails_if_retries_fail(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_FAILED
+    assert backfill.backfill_end_timestamp is not None
 
 
 def test_asset_backfill_retries_make_downstreams_runnable(
@@ -3550,6 +3563,7 @@ def test_asset_backfill_retries_make_downstreams_runnable(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
     assert backfill.asset_backfill_data
     assert (
         backfill.asset_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets
@@ -3604,6 +3618,7 @@ def test_run_retry_not_part_of_completed_backfill(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
     # simulate a retry of a run
     run_to_retry = instance.get_runs()[0]
@@ -3633,6 +3648,7 @@ def test_run_retry_not_part_of_completed_backfill(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED_SUCCESS
+    assert backfill.backfill_end_timestamp is not None
 
     assert retried_run.run_id not in [
         r.run_id for r in instance.get_runs(filters=RunsFilter.for_backfill(backfill_id))

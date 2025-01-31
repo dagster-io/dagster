@@ -1,9 +1,9 @@
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
-import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import {useAssetSelectionState} from 'shared/asset-selection/useAssetSelectionState.oss';
 import {FilterableAssetDefinition} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
+import {AssetSelectionInput} from './AssetSelectionInput';
 import {featureEnabled} from '../../app/Flags';
 import {useAssetSelectionFiltering} from '../useAssetSelectionFiltering';
 

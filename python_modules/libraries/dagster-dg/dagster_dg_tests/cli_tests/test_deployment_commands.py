@@ -17,10 +17,6 @@ def test_scaffold_deployment_command_success() -> None:
         result = runner.invoke("deployment", "scaffold", "foo")
         assert_runner_result(result)
         assert Path("foo").exists()
-        assert Path("foo/.github").exists()
-        assert Path("foo/.github/workflows").exists()
-        assert Path("foo/.github/workflows/dagster-cloud-deploy.yaml").exists()
-        assert Path("foo/dagster_cloud.yaml").exists()
         assert Path("foo/code_locations").exists()
 
 

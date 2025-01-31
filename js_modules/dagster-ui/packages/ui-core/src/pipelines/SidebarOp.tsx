@@ -1,6 +1,7 @@
 import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
 
 import {ExplorerPath} from './PipelinePathUtils';
+import {SidebarSection} from './SidebarComponents';
 import {SIDEBAR_OP_DEFINITION_FRAGMENT, SidebarOpDefinition} from './SidebarOpDefinition';
 import {SidebarOpExecutionGraphs} from './SidebarOpExecutionGraphs';
 import {SIDEBAR_OP_INVOCATION_FRAGMENT, SidebarOpInvocation} from './SidebarOpInvocation';
@@ -12,6 +13,8 @@ import {
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
+import {useFeatureFlags} from '../app/Flags';
+import {PoolTag} from '../instance/PoolTag';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
 import {RepoAddress} from '../workspace/types';
@@ -95,6 +98,7 @@ export const SidebarOp = ({
   repoAddress,
   isGraph,
 }: SidebarOpProps) => {
+  const {flagPoolUI} = useFeatureFlags();
   const {error, solidContainer, isLoading} = useSidebarOpQuery(
     explorerPath.pipelineName,
     handleID,
@@ -120,7 +124,7 @@ export const SidebarOp = ({
       </Box>
     );
   }
-
+  const pools = solidContainer!.solidHandle!.solid.definition.pools;
   return (
     <>
       <SidebarOpInvocation
@@ -132,6 +136,17 @@ export const SidebarOp = ({
             : undefined
         }
       />
+
+      {flagPoolUI && !!pools.length && (
+        <SidebarSection title={isGraph ? 'Pools' : 'Pool'}>
+          <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 4}}>
+            {pools.map((pool) => (
+              <PoolTag key={pool} pool={pool} />
+            ))}
+          </Box>
+        </SidebarSection>
+      )}
+
       {!isGraph && repoAddress && (
         <SidebarOpExecutionGraphs
           key={`${handleID}-graphs`}

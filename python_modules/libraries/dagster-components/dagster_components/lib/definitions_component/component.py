@@ -20,6 +20,8 @@ class DefinitionsParamSchema(BaseModel):
 
 @component_type(name="definitions")
 class DefinitionsComponent(Component):
+    """Wraps an arbitrary set of Dagster definitions."""
+
     def __init__(self, definitions_path: Path):
         self.definitions_path = definitions_path
 

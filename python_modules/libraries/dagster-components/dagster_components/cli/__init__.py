@@ -1,7 +1,6 @@
 import click
 from dagster.version import __version__
 
-from dagster_components.cli.check import check_cli
 from dagster_components.cli.list import list_cli
 from dagster_components.cli.scaffold import scaffold_cli
 from dagster_components.core.component import BUILTIN_MAIN_COMPONENT_ENTRY_POINT
@@ -12,7 +11,6 @@ def create_dagster_components_cli():
     commands = {
         "scaffold": scaffold_cli,
         "list": list_cli,
-        "check": check_cli,
     }
 
     @click.group(

@@ -28,7 +28,7 @@ from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLine
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.events import DagsterEvent, StepMaterializationData
+from dagster._core.events import DagsterEvent, DagsterEventType, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionsFilter, BulkActionStatus, PartitionBackfill
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -1676,3 +1676,108 @@ def test_known_execution_state_step_output_version_serialization() -> None:
     ]
 
     assert deserialize_value(serialized, KnownExecutionState) == known_state
+
+
+def test_add_backfill_end_timestamp():
+    src_dir = file_relative_path(__file__, "snapshot_1_9_3_add_run_tags_run_id_idx/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            completed_backfill = PartitionBackfill(
+                "before_end_timestamp_migration",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.COMPLETED_SUCCESS,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(completed_backfill)
+            in_progress_backfill = PartitionBackfill(
+                "in_progress_backfill",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.REQUESTED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(in_progress_backfill)
+            no_runs_backfill = PartitionBackfill(
+                "no_runs_backfill",
+                serialized_asset_backfill_data="foo",
+                status=BulkActionStatus.CANCELED,
+                from_failure=False,
+                tags={},
+                backfill_timestamp=get_current_timestamp(),
+            )
+            instance.add_backfill(no_runs_backfill)
+            # before migration, backfill end timestamps will be None
+            completed_backfill = instance.get_backfill(completed_backfill.backfill_id)
+            assert completed_backfill
+            assert completed_backfill.backfill_end_timestamp is None
+            in_progress_backfill = instance.get_backfill(in_progress_backfill.backfill_id)
+            assert in_progress_backfill
+            assert in_progress_backfill.backfill_end_timestamp is None
+            no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
+            assert no_runs_backfill
+            assert no_runs_backfill.backfill_end_timestamp is None
+
+            for _ in range(3):
+                instance.run_storage.add_run(
+                    DagsterRun(
+                        job_name="foo",
+                        run_id=make_new_run_id(),
+                        tags={BACKFILL_ID_TAG: completed_backfill.backfill_id},
+                        status=DagsterRunStatus.NOT_STARTED,
+                    )
+                )
+                instance.run_storage.add_run(
+                    DagsterRun(
+                        job_name="foo",
+                        run_id=make_new_run_id(),
+                        tags={BACKFILL_ID_TAG: in_progress_backfill.backfill_id},
+                        status=DagsterRunStatus.NOT_STARTED,
+                    )
+                )
+            completed_backfill_run_end_times = []
+            for run in instance.get_runs(
+                filters=RunsFilter.for_backfill(completed_backfill.backfill_id)
+            ):
+                dagster_event = DagsterEvent(
+                    event_type_value=DagsterEventType.RUN_SUCCESS.value,
+                    job_name=run.job_name,
+                    message="yay run success",
+                    step_key="bar",
+                )
+                instance.report_dagster_event(dagster_event, run_id=run.run_id)
+                updated_run = instance.get_run_record_by_id(run.run_id)
+                completed_backfill_run_end_times.append(
+                    updated_run.end_time if updated_run else None
+                )
+
+            for run in instance.get_runs(
+                filters=RunsFilter.for_backfill(in_progress_backfill.backfill_id)
+            ):
+                dagster_event = DagsterEvent(
+                    event_type_value=DagsterEventType.RUN_SUCCESS.value,
+                    job_name=run.job_name,
+                    message="yay run success",
+                    step_key="bar",
+                )
+                instance.report_dagster_event(dagster_event, run_id=run.run_id)
+
+            instance.upgrade()
+
+            completed_backfill = instance.get_backfill(completed_backfill.backfill_id)
+            assert completed_backfill
+            assert (
+                completed_backfill.backfill_end_timestamp is not None
+                and completed_backfill.backfill_end_timestamp
+                == max(completed_backfill_run_end_times)
+            )
+
+            in_progress_backfill = instance.get_backfill(in_progress_backfill.backfill_id)
+            assert in_progress_backfill
+            assert in_progress_backfill.backfill_end_timestamp is None
+
+            no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
+            assert no_runs_backfill
+            assert no_runs_backfill.backfill_end_timestamp == no_runs_backfill.backfill_timestamp

@@ -1447,6 +1447,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
+  allPools: [String!]
   hasUnconstrainedRootNodes: Boolean!
   hasRunMetricsEnabled: Boolean!
 }
@@ -2485,6 +2486,7 @@ type Instance {
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
   useAutoMaterializeSensors: Boolean!
+  poolConfig: PoolConfig
 }
 
 type RunQueueConfig {
@@ -2519,6 +2521,12 @@ type PendingConcurrencyStep {
   enqueuedTimestamp: Float!
   assignedTimestamp: Float
   priority: Int
+}
+
+type PoolConfig {
+  poolGranularity: String
+  defaultPoolLimit: Int
+  opGranularityRunBuffer: Int
 }
 
 type RunLauncher {

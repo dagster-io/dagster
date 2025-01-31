@@ -313,6 +313,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     jobNames
     isMaterializable
     isExecutable
+    pools
     tags {
       key
       value

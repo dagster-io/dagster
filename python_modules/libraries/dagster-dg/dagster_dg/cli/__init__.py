@@ -48,16 +48,28 @@ def create_dg_cli():
         ),
         default=False,
     )
+    @click.option(
+        "--install-completion",
+        is_flag=True,
+        help="Automatically detect your shell and install a completion script for the `dg` command. This will append to your shell startup file.",
+        default=False,
+    )
     @click.version_option(__version__, "--version", "-v")
     @click.pass_context
     def group(
         context: click.Context,
+        install_completion: bool,
         clear_cache: bool,
         rebuild_component_registry: bool,
         **global_options: object,
     ):
         """CLI for working with Dagster components."""
-        if clear_cache and rebuild_component_registry:
+        if install_completion:
+            import dagster_dg.completion
+
+            dagster_dg.completion.install_completion(context)
+            context.exit(0)
+        elif clear_cache and rebuild_component_registry:
             exit_with_error("Cannot specify both --clear-cache and --rebuild-component-registry.")
         elif clear_cache:
             cli_config = normalize_cli_config(global_options, context)
