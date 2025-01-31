@@ -352,7 +352,7 @@ class ActiveExecution:
                     step_priority = 0
 
                 if not self._instance_concurrency_context.claim(
-                    concurrency_key, step.key, step_priority
+                    concurrency_key, step.key, step_priority, is_legacy_tag=not step.pool
                 ):
                     continue
 

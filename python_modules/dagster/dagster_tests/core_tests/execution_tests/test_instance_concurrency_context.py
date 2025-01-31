@@ -28,11 +28,13 @@ def define_foo_job() -> JobDefinition:
     return foo_job
 
 
-def test_global_concurrency(concurrency_instance):
-    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
-    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 2)
+def test_global_concurrency(concurrency_instance_op_granularity):
+    run = concurrency_instance_op_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 2)
 
-    with InstanceConcurrencyContext(concurrency_instance, run) as context:
+    with InstanceConcurrencyContext(concurrency_instance_op_granularity, run) as context:
         assert context.claim("foo", "a")
         assert not context.has_pending_claims()
         assert context.claim("foo", "b")
@@ -44,33 +46,40 @@ def test_global_concurrency(concurrency_instance):
         assert context.has_pending_claims()
         assert context.pending_claim_steps() == ["c"]
 
-    foo_info = concurrency_instance.event_log_storage.get_concurrency_info("foo")
+    foo_info = concurrency_instance_op_granularity.event_log_storage.get_concurrency_info("foo")
     assert foo_info.active_slot_count == 1
     assert foo_info.pending_step_count == 0
 
 
-def test_limitless_context(concurrency_instance):
-    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
-    assert concurrency_instance.event_log_storage.get_concurrency_info("foo").slot_count == 0
+def test_limitless_context(concurrency_instance_op_granularity):
+    run = concurrency_instance_op_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    assert (
+        concurrency_instance_op_granularity.event_log_storage.get_concurrency_info("foo").slot_count
+        == 0
+    )
 
-    with InstanceConcurrencyContext(concurrency_instance, run) as context:
+    with InstanceConcurrencyContext(concurrency_instance_op_granularity, run) as context:
         assert context.claim("foo", "a")
         assert context.claim("foo", "b")
         assert context.claim("foo", "d")
         assert context.claim("foo", "e")
         assert not context.has_pending_claims()
 
-        foo_info = concurrency_instance.event_log_storage.get_concurrency_info("foo")
+        foo_info = concurrency_instance_op_granularity.event_log_storage.get_concurrency_info("foo")
         assert foo_info.slot_count == 0
         assert foo_info.active_slot_count == 0
 
 
-def test_context_error(concurrency_instance):
-    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
-    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 2)
+def test_context_error(concurrency_instance_op_granularity):
+    run = concurrency_instance_op_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 2)
 
     with pytest.raises(Exception, match="uh oh"):
-        with InstanceConcurrencyContext(concurrency_instance, run) as context:
+        with InstanceConcurrencyContext(concurrency_instance_op_granularity, run) as context:
             assert context.claim("foo", "a")
             assert not context.has_pending_claims()
             assert context.claim("foo", "b")
@@ -82,53 +91,73 @@ def test_context_error(concurrency_instance):
             context.free_step("a")
             raise Exception("uh oh")
 
-    foo_info = concurrency_instance.event_log_storage.get_concurrency_info("foo")
+    foo_info = concurrency_instance_op_granularity.event_log_storage.get_concurrency_info("foo")
     assert foo_info.active_slot_count == 1
     assert foo_info.pending_step_count == 0
 
 
-def test_default_interval(concurrency_instance):
-    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
-    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
+def test_default_interval(concurrency_instance_op_granularity):
+    run = concurrency_instance_op_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 1)
 
-    with InstanceConcurrencyContext(concurrency_instance, run) as context:
+    with InstanceConcurrencyContext(concurrency_instance_op_granularity, run) as context:
         assert context.claim("foo", "a")
         assert not context.claim("foo", "b")
-        call_count = concurrency_instance.event_log_storage.get_check_calls("b")
+        call_count = concurrency_instance_op_granularity.event_log_storage.get_check_calls("b")
 
         context.claim("foo", "b")
         # we have not waited long enough to query the db again
-        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count
+        assert (
+            concurrency_instance_op_granularity.event_log_storage.get_check_calls("b") == call_count
+        )
 
         time.sleep(INITIAL_INTERVAL_VALUE)
         context.claim("foo", "b")
-        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count + 1
+        assert (
+            concurrency_instance_op_granularity.event_log_storage.get_check_calls("b")
+            == call_count + 1
+        )
 
 
-def test_backoff_interval(concurrency_instance):
-    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
-    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
+def test_backoff_interval(concurrency_instance_op_granularity):
+    run = concurrency_instance_op_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 1)
 
-    with InstanceConcurrencyContext(concurrency_instance, run) as context:
+    with InstanceConcurrencyContext(concurrency_instance_op_granularity, run) as context:
         assert context.claim("foo", "a")
         assert not context.claim("foo", "b")
-        call_count = concurrency_instance.event_log_storage.get_check_calls("b")
+        call_count = concurrency_instance_op_granularity.event_log_storage.get_check_calls("b")
 
         context.claim("foo", "b")
         # we have not waited long enough to query the db again
-        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count
+        assert (
+            concurrency_instance_op_granularity.event_log_storage.get_check_calls("b") == call_count
+        )
 
         time.sleep(INITIAL_INTERVAL_VALUE)
         context.claim("foo", "b")
-        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count + 1
+        assert (
+            concurrency_instance_op_granularity.event_log_storage.get_check_calls("b")
+            == call_count + 1
+        )
 
         # sleeping another second will not incur another check call, there's an exponential backoff
         time.sleep(INITIAL_INTERVAL_VALUE)
         context.claim("foo", "b")
-        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count + 1
+        assert (
+            concurrency_instance_op_granularity.event_log_storage.get_check_calls("b")
+            == call_count + 1
+        )
         time.sleep(STEP_UP_BASE - INITIAL_INTERVAL_VALUE)
         context.claim("foo", "b")
-        assert concurrency_instance.event_log_storage.get_check_calls("b") == call_count + 2
+        assert (
+            concurrency_instance_op_granularity.event_log_storage.get_check_calls("b")
+            == call_count + 2
+        )
 
 
 def test_custom_interval(concurrency_custom_sleep_instance):
@@ -159,12 +188,14 @@ def test_custom_interval(concurrency_custom_sleep_instance):
         assert storage.get_check_calls("b") == call_count + 1
 
 
-def test_unset_concurrency_default(concurrency_instance):
-    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
+def test_unset_concurrency_default(concurrency_instance_op_granularity):
+    run = concurrency_instance_op_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
 
-    assert concurrency_instance.event_log_storage.get_concurrency_keys() == set()
+    assert concurrency_instance_op_granularity.event_log_storage.get_concurrency_keys() == set()
 
-    with InstanceConcurrencyContext(concurrency_instance, run) as context:
+    with InstanceConcurrencyContext(concurrency_instance_op_granularity, run) as context:
         assert context.claim("foo", "a")
         assert context.claim("foo", "b")
 
@@ -182,13 +213,17 @@ def test_default_concurrency_key(concurrency_instance_with_default_one):
         assert not context.claim("foo", "b")
 
 
-def test_zero_concurrency_key(concurrency_instance):
-    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
+def test_zero_concurrency_key(concurrency_instance_op_granularity):
+    run = concurrency_instance_op_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
 
-    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 0)
-    assert concurrency_instance.event_log_storage.get_concurrency_keys() == set(["foo"])
+    concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 0)
+    assert concurrency_instance_op_granularity.event_log_storage.get_concurrency_keys() == set(
+        ["foo"]
+    )
 
-    with InstanceConcurrencyContext(concurrency_instance, run) as context:
+    with InstanceConcurrencyContext(concurrency_instance_op_granularity, run) as context:
         assert not context.claim("foo", "a")
         assert not context.claim("foo", "b")
 
@@ -202,7 +237,12 @@ def test_changing_default_concurrency_key():
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },
-                "concurrency": {"default_op_concurrency_limit": 1},
+                "concurrency": {
+                    "pools": {
+                        "granularity": "op",
+                        "default_limit": 1,
+                    },
+                },
             }
         ) as instance_with_default_one:
             run = instance_with_default_one.create_run_for_job(
@@ -224,7 +264,12 @@ def test_changing_default_concurrency_key():
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },
-                "concurrency": {"default_op_concurrency_limit": 2},
+                "concurrency": {
+                    "pools": {
+                        "granularity": "op",
+                        "default_limit": 2,
+                    },
+                },
             }
         ) as instance_with_default_two:
             with InstanceConcurrencyContext(instance_with_default_two, run) as context:
@@ -238,10 +283,12 @@ def test_changing_default_concurrency_key():
 
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.INITIAL_INTERVAL_VALUE", 0.1)
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.STEP_UP_BASE", 1)
-def test_step_priority(concurrency_instance):
-    run = concurrency_instance.create_run_for_job(define_foo_job(), run_id=make_new_run_id())
-    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
-    with InstanceConcurrencyContext(concurrency_instance, run) as context:
+def test_step_priority(concurrency_instance_op_granularity):
+    run = concurrency_instance_op_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 1)
+    with InstanceConcurrencyContext(concurrency_instance_op_granularity, run) as context:
         assert context.claim("foo", "a")
         assert not context.claim("foo", "b")
         assert not context.claim("foo", "c", step_priority=1000)
@@ -258,21 +305,21 @@ def test_step_priority(concurrency_instance):
 
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.INITIAL_INTERVAL_VALUE", 0.1)
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.STEP_UP_BASE", 1)
-def test_run_priority(concurrency_instance):
-    regular_priority_run = concurrency_instance.create_run_for_job(
+def test_run_priority(concurrency_instance_op_granularity):
+    regular_priority_run = concurrency_instance_op_granularity.create_run_for_job(
         define_foo_job(), run_id=make_new_run_id()
     )
-    high_priority_run = concurrency_instance.create_run_for_job(
+    high_priority_run = concurrency_instance_op_granularity.create_run_for_job(
         define_foo_job(), run_id=make_new_run_id(), tags={"dagster/priority": "1000"}
     )
-    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
+    concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 1)
 
     with ExitStack() as stack:
         regular_context = stack.enter_context(
-            InstanceConcurrencyContext(concurrency_instance, regular_priority_run)
+            InstanceConcurrencyContext(concurrency_instance_op_granularity, regular_priority_run)
         )
         high_context = stack.enter_context(
-            InstanceConcurrencyContext(concurrency_instance, high_priority_run)
+            InstanceConcurrencyContext(concurrency_instance_op_granularity, high_priority_run)
         )
         assert regular_context.claim("foo", "a")
         assert not regular_context.claim("foo", "b")
@@ -289,21 +336,21 @@ def test_run_priority(concurrency_instance):
 
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.INITIAL_INTERVAL_VALUE", 0.1)
 @mock.patch("dagster._core.execution.plan.instance_concurrency_context.STEP_UP_BASE", 1)
-def test_run_step_priority(concurrency_instance):
-    low_priority_run = concurrency_instance.create_run_for_job(
+def test_run_step_priority(concurrency_instance_op_granularity):
+    low_priority_run = concurrency_instance_op_granularity.create_run_for_job(
         define_foo_job(), run_id=make_new_run_id(), tags={"dagster/priority": "-1000"}
     )
-    regular_priority_run = concurrency_instance.create_run_for_job(
+    regular_priority_run = concurrency_instance_op_granularity.create_run_for_job(
         define_foo_job(), run_id=make_new_run_id()
     )
-    concurrency_instance.event_log_storage.set_concurrency_slots("foo", 0)
+    concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 0)
 
     with ExitStack() as stack:
         low_context = stack.enter_context(
-            InstanceConcurrencyContext(concurrency_instance, low_priority_run)
+            InstanceConcurrencyContext(concurrency_instance_op_granularity, low_priority_run)
         )
         regular_context = stack.enter_context(
-            InstanceConcurrencyContext(concurrency_instance, regular_priority_run)
+            InstanceConcurrencyContext(concurrency_instance_op_granularity, regular_priority_run)
         )
 
         # at first all steps are blocked
@@ -312,7 +359,7 @@ def test_run_step_priority(concurrency_instance):
         assert not regular_context.claim("foo", "regular_run_low_step", step_priority=-1)  # -1
         assert not regular_context.claim("foo", "regular_run_high_step", step_priority=1000)  # 1000
 
-        concurrency_instance.event_log_storage.set_concurrency_slots("foo", 1)
+        concurrency_instance_op_granularity.event_log_storage.set_concurrency_slots("foo", 1)
         time.sleep(0.1)
 
         assert not low_context.claim("foo", "low_run_low_step", step_priority=-1)  # -1001
@@ -353,3 +400,36 @@ def test_run_step_priority(concurrency_instance):
             regular_context.claim("foo", "too_high_step", step_priority=(2**31 - 1) + 1)
 
         regular_context.claim("foo", "too_high_step", step_priority=-(2**31 - 1))
+
+
+def test_run_granularity(concurrency_instance_run_granularity):
+    run = concurrency_instance_run_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    concurrency_instance_run_granularity.event_log_storage.set_concurrency_slots("foo", 1)
+
+    with InstanceConcurrencyContext(concurrency_instance_run_granularity, run) as context:
+        assert context.claim("foo", "a")
+        assert context.claim("foo", "b")
+        assert context.claim("foo", "c")
+
+    foo_info = concurrency_instance_run_granularity.event_log_storage.get_concurrency_info("foo")
+    assert foo_info.active_slot_count == 0
+
+
+def test_default_granularity(concurrency_instance_default_granularity):
+    run = concurrency_instance_default_granularity.create_run_for_job(
+        define_foo_job(), run_id=make_new_run_id()
+    )
+    concurrency_instance_default_granularity.event_log_storage.set_concurrency_slots("foo", 1)
+
+    with InstanceConcurrencyContext(concurrency_instance_default_granularity, run) as context:
+        assert context.claim("foo", "a")
+        assert context.claim("foo", "b")
+        assert context.claim("foo", "c", is_legacy_tag=True)
+        assert not context.claim("foo", "d", is_legacy_tag=True)
+
+    foo_info = concurrency_instance_default_granularity.event_log_storage.get_concurrency_info(
+        "foo"
+    )
+    assert foo_info.active_slot_count == 1
