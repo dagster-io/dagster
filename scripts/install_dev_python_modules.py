@@ -67,6 +67,7 @@ def main(
         "python_modules/libraries/dagster-azure",
         "python_modules/libraries/dagster-celery",
         "python_modules/libraries/dagster-celery-docker",
+        "python_modules/libraries/dagster-components",
         "python_modules/libraries/dagster-dask[yarn,pbs,kube]",
         "python_modules/libraries/dagster-databricks",
         "python_modules/libraries/dagster-datadog",
