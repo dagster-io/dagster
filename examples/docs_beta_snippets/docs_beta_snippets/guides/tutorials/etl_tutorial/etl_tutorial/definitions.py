@@ -145,7 +145,7 @@ def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
 
         count = query_result[0] if query_result else 0
         return dg.AssetCheckResult(
-            passed=count > 0, metadata={"missing dimensions": count}
+            passed=count == 0, metadata={"missing dimensions": count}
         )
 
 
