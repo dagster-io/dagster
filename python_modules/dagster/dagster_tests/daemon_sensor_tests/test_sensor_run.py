@@ -278,6 +278,18 @@ def run_cursor_sensor(context):
 
 
 @sensor(job_name="the_job")
+def many_requests_cursor_sensor(context):
+    if not context.cursor:
+        cursor = 1
+    else:
+        cursor = int(context.cursor) + 1
+
+    context.update_cursor(str(cursor))
+    for _ in range(5):
+        yield RunRequest(run_key=None, run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
 def start_skip_sensor(context: SensorEvaluationContext):
     context.update_cursor(
         str(context.last_sensor_start_time) if context.last_sensor_start_time else None
@@ -286,6 +298,12 @@ def start_skip_sensor(context: SensorEvaluationContext):
     if context.is_first_tick_since_sensor_start:
         return SkipReason()
     return RunRequest()
+
+
+@sensor(job_name="the_job")
+def sensor_turns_off_while_submitting_runs(context):
+    yield RunRequest(run_key="1")
+    yield RunRequest(run_key="2")
 
 
 @asset
@@ -848,6 +866,7 @@ def the_repo():
         asset_and_check_job,
         large_sensor,
         many_request_sensor,
+        many_requests_cursor_sensor,
         simple_sensor,
         error_sensor,
         passes_on_retry_sensor,
@@ -1220,6 +1239,67 @@ def test_simple_sensor(instance, workspace_context, remote_repo, executor):
             TickStatus.SUCCESS,
             [run.run_id],
         )
+
+
+def test_sensor_stopped_while_submitting_runs(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+    executor: ThreadPoolExecutor,
+):
+    sensor = remote_repo.get_sensor("many_requests_cursor_sensor")
+
+    freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
+
+    with freeze_time(freeze_datetime):
+        instance.start_sensor(sensor)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 0
+
+        with mock.patch(
+            "dagster._daemon.sensor.SensorLaunchContext.sensor_is_enabled"
+        ) as sensor_enabled_mock:
+            sensor_enabled_mock.return_value = False
+
+            evaluate_sensors(workspace_context, executor)
+
+        assert instance.get_runs_count() == 1
+        first_run = instance.get_runs()[0]
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+            [first_run.run_id],
+        )
+
+        assert ticks[0].run_requests and len(ticks[0].run_requests) == 5
+        assert len(ticks[0].unsubmitted_run_ids_with_requests) == 4
+        # if a tick is stopped mid-iteration we don't reset the cursor
+        assert ticks[0].cursor == "1"
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        wait_for_all_runs_to_start(instance)
+        assert instance.get_runs_count() == 6
+        runs = instance.get_runs()
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in runs if run.run_id != first_run.run_id],
+        )
+        assert ticks[0].cursor == "2"
 
 
 def test_sensors_keyed_on_selector_not_origin(

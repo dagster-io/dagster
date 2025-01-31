@@ -786,7 +786,7 @@ def _resume_tick(
             skip_reason="Sensor manually stopped mid-iteration.",
         )
 
-    context.update_state(TickStatus.SUCCESS, cursor=context._tick.cursor)  # noqa # TODO
+    context.update_state(TickStatus.SUCCESS, cursor=context.tick.cursor)  # TODO
 
 
 def _get_code_location_for_sensor(
@@ -891,7 +891,7 @@ def _evaluate_sensor(
         if context.tick.tick_data.user_interrupted:
             context.update_state(
                 TickStatus.SKIPPED,
-                cursor=context.tick.cursor,
+                cursor=sensor_runtime_data.cursor,
                 skip_reason="Sensor manually stopped mid-iteration.",
             )
         elif context.run_count:
@@ -1190,6 +1190,7 @@ def _submit_run_requests(
                     "Sensor has been manually stopped while submitted runs. No more runs will be submitted."
                 )
                 context.update_state(context.status, user_interrupted=True)
+                break
 
     if (
         updated_evaluation_keys
