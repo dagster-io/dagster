@@ -1,3 +1,5 @@
+import {IconName} from '@dagster-io/ui-components';
+
 import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
 import {isKindTag} from '../../graph/KindTags';
@@ -66,3 +68,15 @@ const memoizedTag = weakMapMemoize((key: string, value: string) => ({
   key,
   value,
 }));
+
+export type Attribute = 'kind' | 'code_location' | 'group' | 'owner' | 'tag' | 'status' | 'key';
+
+export const attributeToIcon: Record<Attribute, IconName> = {
+  key: 'magnify_glass',
+  kind: 'compute_kind',
+  code_location: 'code_location',
+  group: 'asset_group',
+  owner: 'owner',
+  tag: 'tag',
+  status: 'status',
+};

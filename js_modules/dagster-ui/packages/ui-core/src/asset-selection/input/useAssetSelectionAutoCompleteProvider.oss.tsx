@@ -1,7 +1,6 @@
-import {IconName} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
-import {getAttributesMap} from './util';
+import {attributeToIcon, getAttributesMap} from './util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
 import {createSelectionAutoComplete} from '../../selection/SelectionAutoComplete';
 import {
@@ -9,8 +8,6 @@ import {
   createProvider,
 } from '../../selection/SelectionAutoCompleteProvider';
 import {createAttributeBasedAutoCompleteProvider} from '../../selection/SelectionAutoCompleteProviderFromAttributeMap';
-
-type Attribute = 'kind' | 'code_location' | 'group' | 'owner' | 'tag' | 'status' | 'key';
 
 export function useAssetSelectionAutoCompleteProvider(
   assets: AssetGraphQueryItem[],
@@ -23,7 +20,7 @@ export function useAssetSelectionAutoCompleteProvider(
         attributesMap,
         ...createProvider<typeof attributesMap, 'key'>({
           primaryAttributeKey: 'key',
-          attributeToIcon: iconMap,
+          attributeToIcon,
         }),
       }),
     [attributesMap],
@@ -44,13 +41,3 @@ export function useAssetSelectionAutoCompleteProvider(
     },
   };
 }
-
-export const iconMap: Record<Attribute, IconName> = {
-  key: 'magnify_glass',
-  kind: 'compute_kind',
-  code_location: 'code_location',
-  group: 'asset_group',
-  owner: 'owner',
-  tag: 'tag',
-  status: 'status',
-};
