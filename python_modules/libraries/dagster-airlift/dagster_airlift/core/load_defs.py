@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_airlift.core.airflow_defs_data import MappedAsset
@@ -76,6 +77,7 @@ def build_defs_from_airflow_instance(
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
     dag_selector_fn: Optional[DagSelectorFn] = None,
     source_code_retrieval_enabled: Optional[bool] = None,
+    default_sensor_status: Optional[DefaultSensorStatus] = None,
 ) -> Definitions:
     """Builds a :py:class:`dagster.Definitions` object from an Airflow instance.
 
@@ -104,6 +106,7 @@ def build_defs_from_airflow_instance(
             produced by the sensor.
         dag_selector_fn (Optional[DagSelectorFn]): A function that allows for filtering which DAGs assets are created for.
         source_code_retrieval_enabled (Optional[bool]): Whether to retrieve source code for the Airflow dags. By default, source code is retrieved when the number of dags is under 50 for performance reasons. This setting overrides the default behavior.
+        default_sensor_status (Optional[DefaultSensorStatus]): The default status for the sensor. By default, the sensor will be enabled.
 
     Returns:
         Definitions: A :py:class:`dagster.Definitions` object containing the assets and sensor.
@@ -237,6 +240,7 @@ def build_defs_from_airflow_instance(
                     airflow_instance=airflow_instance,
                     minimum_interval_seconds=sensor_minimum_interval_seconds,
                     event_transformer_fn=event_transformer_fn,
+                    default_sensor_status=default_sensor_status,
                 )
             ]
         ),
