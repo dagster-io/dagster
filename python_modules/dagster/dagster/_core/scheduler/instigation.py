@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import AbstractSet, Any, Generic, NamedTuple, Optional, Union  # noqa: UP035
@@ -518,12 +518,17 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.run_requests
 
     @property
+    def reserved_run_ids_with_requests(self) -> Iterable[tuple[str, RunRequest]]:
+        reserved_run_ids = self.tick_data.reserved_run_ids or []
+        return zip(reserved_run_ids, self.run_requests or [])
+
+    @property
     def unsubmitted_run_ids_with_requests(self) -> Sequence[tuple[str, RunRequest]]:
         reserved_run_ids = self.tick_data.reserved_run_ids or []
         unrequested_run_ids = set(reserved_run_ids) - set(self.tick_data.run_ids)
         return [
             (run_id, run_request)
-            for run_id, run_request in zip(reserved_run_ids, self.run_requests or [])
+            for run_id, run_request in self.reserved_run_ids_with_requests
             if run_id in unrequested_run_ids
         ]
 

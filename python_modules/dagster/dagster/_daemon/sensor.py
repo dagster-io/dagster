@@ -134,6 +134,10 @@ class SensorLaunchContext(AbstractContextManager):
         return str(self._tick.tick_id)
 
     @property
+    def tick(self) -> InstigatorTick:
+        return self._tick
+
+    @property
     def log_key(self) -> Sequence[str]:
         return [
             self._remote_sensor.handle.repository_handle.repository_name,
@@ -1055,7 +1059,7 @@ def _handle_run_requests_and_automation_condition_evaluations(
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_IDS_RESERVED")
 
-    run_ids_with_run_requests = list(zip(reserved_run_ids, raw_run_requests))
+    run_ids_with_run_requests = list(context.tick.reserved_run_ids_with_requests)
     yield from _submit_run_requests(
         run_ids_with_run_requests,
         evaluations,
