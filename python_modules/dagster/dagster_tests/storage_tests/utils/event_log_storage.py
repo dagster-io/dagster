@@ -700,6 +700,42 @@ class TestEventLogStorage:
             assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[2]))) == 1
             assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[3]))) == 0
 
+            event_type_result = storage.get_records_for_run(
+                test_run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=True
+            )
+            assert [r.event_log_entry.user_message for r in event_type_result.records] == [
+                "A",
+                "B",
+                "C",
+                "D",
+            ]
+
+            event_type_result = storage.get_records_for_run(
+                test_run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=True, limit=2
+            )
+            assert [r.event_log_entry.user_message for r in event_type_result.records] == [
+                "A",
+                "B",
+            ]
+
+            event_type_result = storage.get_records_for_run(
+                test_run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=False
+            )
+            assert [r.event_log_entry.user_message for r in event_type_result.records] == [
+                "D",
+                "C",
+                "B",
+                "A",
+            ]
+
+            event_type_result = storage.get_records_for_run(
+                test_run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=False, limit=2
+            )
+            assert [r.event_log_entry.user_message for r in event_type_result.records] == [
+                "D",
+                "C",
+            ]
+
     def test_event_log_storage_offset_pagination(
         self,
         test_run_id: str,
