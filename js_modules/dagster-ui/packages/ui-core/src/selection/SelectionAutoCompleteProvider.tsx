@@ -1,7 +1,6 @@
 import {BodySmall, Box, Colors, Icon, IconName, MonoSmall} from '@dagster-io/ui-components';
 import React from 'react';
 
-import {createAttributeBasedAutoCompleteProvider} from './SelectionAutoCompleteProviderFromAttributeMap';
 import {assertUnreachable} from '../app/Util';
 
 export interface SelectionAutoCompleteProvider {
@@ -217,32 +216,27 @@ export const SuggestionJSXBase = ({
   );
 };
 
-const FUNCTIONS = ['sinks', 'roots'] as const;
-
 export const createProvider = <
   TAttributeMap extends {[key: string]: string[] | {key: string; value?: string}[]},
   TPrimaryAttributeKey extends keyof TAttributeMap,
 >({
   attributeToIcon,
   primaryAttributeKey,
+  attributesMap,
 }: {
   attributeToIcon: Record<keyof TAttributeMap, IconName>;
   primaryAttributeKey: TPrimaryAttributeKey;
-}): Omit<
-  Parameters<
-    typeof createAttributeBasedAutoCompleteProvider<
-      TAttributeMap,
-      TPrimaryAttributeKey,
-      'sinks' | 'roots'
-    >
-  >[0],
-  'attributesMap'
-> => ({
-  primaryAttributeKey,
-  functions: FUNCTIONS,
-  doesValueIncludeQuery: ({value, query}) => {
+  attributesMap: TAttributeMap;
+}): Omit<SelectionAutoCompleteProvider, 'useAutoComplete'> => {
+  const functions = ['sinks', 'roots'] as const;
+  function doesValueIncludeQuery({
+    value,
+    query,
+  }: {
+    value: TAttributeMap[keyof TAttributeMap][0];
+    query: string;
+  }) {
     if (typeof value !== 'string') {
-      // This is a tag
       return (
         value.key.includes(query) ||
         value.value?.includes(query) ||
@@ -250,14 +244,15 @@ export const createProvider = <
       );
     }
     return value.includes(query);
-  },
-  createOperatorSuggestion: ({type, text, displayText}) => {
-    return {
-      text,
-      jsx: <Operator type={type} displayText={displayText} />,
-    };
-  },
-  createAttributeSuggestion: ({attribute, text}) => {
+  }
+
+  function createAttributeSuggestion({
+    attribute,
+    text,
+  }: {
+    attribute: keyof TAttributeMap;
+    text: string;
+  }) {
     const displayText = `${attribute as string}:`;
     const icon: IconName = attributeToIcon[attribute];
     let label;
@@ -273,8 +268,15 @@ export const createProvider = <
       text,
       jsx: <SuggestionJSXBase label={label} icon={icon} rightLabel={displayText} />,
     };
-  },
-  createAttributeValueSuggestion: ({value, textCallback}) => {
+  }
+
+  function createAttributeValueSuggestion({
+    value,
+    textCallback,
+  }: {
+    value: TAttributeMap[keyof TAttributeMap][0];
+    textCallback?: (text: string) => string;
+  }) {
     if (typeof value !== 'string') {
       const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
       return {
@@ -286,8 +288,17 @@ export const createProvider = <
       text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
       jsx: <SuggestionJSXBase label={value} />,
     };
-  },
-  createFunctionSuggestion: ({func, text, options}) => {
+  }
+
+  function createFunctionSuggestion({
+    func,
+    text,
+    options,
+  }: {
+    func: (typeof functions)[number];
+    text: string;
+    options?: {includeParenthesis?: boolean};
+  }) {
     const displayText = options?.includeParenthesis ? `${func}()` : func;
     let icon: IconName;
     switch (func) {
@@ -304,15 +315,31 @@ export const createProvider = <
       text,
       jsx: <SuggestionJSXBase label={func} icon={icon} rightLabel={displayText} />,
     };
-  },
-  createSubstringSuggestion: ({query, textCallback}) => {
+  }
+
+  function createSubstringSuggestion({
+    query,
+    textCallback,
+  }: {
+    query: string;
+    textCallback?: (text: string) => string;
+  }) {
     const text = `key_substring:"${query}"`;
     return {
       text: textCallback ? textCallback(text) : text,
       jsx: <SuggestionJSXBase label={`Asset key contains "${query}"`} rightLabel={text} />,
     };
-  },
-  createAttributeValueIncludeAttributeSuggestion: ({attribute, value, textCallback}) => {
+  }
+
+  function createAttributeValueIncludeAttributeSuggestion({
+    attribute,
+    value,
+    textCallback,
+  }: {
+    attribute: keyof TAttributeMap;
+    value: TAttributeMap[keyof TAttributeMap][0];
+    textCallback?: (text: string) => string;
+  }) {
     let text;
     let valueText;
     if (typeof value !== 'string') {
@@ -340,5 +367,70 @@ export const createProvider = <
         />
       ),
     };
-  },
-});
+  }
+
+  return {
+    createOperatorSuggestion: ({type, text, displayText}) => {
+      return {
+        text,
+        jsx: <Operator type={type} displayText={displayText} />,
+      };
+    },
+    getAttributeResultsMatchingQuery: ({query, textCallback}) => {
+      return Object.keys(attributesMap)
+        .filter((attr) => attr.startsWith(query))
+        .map((attr) =>
+          createAttributeSuggestion({
+            attribute: attr,
+            text: textCallback ? textCallback(`${attr}:`) : `${attr}:`,
+          }),
+        );
+    },
+    getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
+      let values = attributesMap[attribute as keyof typeof attributesMap];
+      if (attribute === `${primaryAttributeKey as string}_substring`) {
+        values = attributesMap[primaryAttributeKey];
+      }
+      return (
+        values
+          ?.filter((value) => doesValueIncludeQuery({value, query}))
+          .map((value) =>
+            createAttributeValueSuggestion({
+              value,
+              textCallback,
+            }),
+          ) ?? []
+      );
+    },
+    getFunctionResultsMatchingQuery: ({query, textCallback, options}) => {
+      return functions
+        .filter((func) => func.startsWith(query))
+        .map((func) => {
+          const value = options?.includeParenthesis ? `${func}()` : func;
+          return createFunctionSuggestion({
+            func,
+            text: textCallback ? textCallback(value) : value,
+            options,
+          });
+        });
+    },
+    getSubstringResultMatchingQuery: ({query, textCallback}) => {
+      return createSubstringSuggestion({query, textCallback});
+    },
+    getAttributeValueIncludeAttributeResultsMatchingQuery: ({query, textCallback}) => {
+      return Object.keys(attributesMap).flatMap((attribute) => {
+        return (
+          attributesMap[attribute]
+            ?.filter((value) => doesValueIncludeQuery({value, query}))
+            .map((value) =>
+              createAttributeValueIncludeAttributeSuggestion({
+                attribute,
+                value,
+                textCallback,
+              }),
+            ) ?? []
+        );
+      });
+    },
+  };
+};

@@ -7,7 +7,6 @@ import {
   SelectionAutoCompleteProvider,
   createProvider,
 } from '../selection/SelectionAutoCompleteProvider';
-import {createAttributeBasedAutoCompleteProvider} from '../selection/SelectionAutoCompleteProviderFromAttributeMap';
 
 export const useOpGraphSelectionAutoCompleteProvider = (
   items: GraphQueryItem[],
@@ -22,12 +21,10 @@ export const useOpGraphSelectionAutoCompleteProvider = (
 
   const baseProvider = useMemo(
     () =>
-      createAttributeBasedAutoCompleteProvider({
+      createProvider({
         attributesMap,
-        ...createProvider<typeof attributesMap, 'name'>({
-          primaryAttributeKey: 'name',
-          attributeToIcon: iconMap,
-        }),
+        primaryAttributeKey: 'name',
+        attributeToIcon: iconMap,
       }),
     [attributesMap],
   );

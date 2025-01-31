@@ -7,7 +7,6 @@ import {
   SelectionAutoCompleteProvider,
   createProvider,
 } from '../../selection/SelectionAutoCompleteProvider';
-import {createAttributeBasedAutoCompleteProvider} from '../../selection/SelectionAutoCompleteProviderFromAttributeMap';
 
 export function useAssetSelectionAutoCompleteProvider(
   assets: AssetGraphQueryItem[],
@@ -16,12 +15,10 @@ export function useAssetSelectionAutoCompleteProvider(
 
   const baseProvider = useMemo(
     () =>
-      createAttributeBasedAutoCompleteProvider({
+      createProvider({
         attributesMap,
-        ...createProvider<typeof attributesMap, 'key'>({
-          primaryAttributeKey: 'key',
-          attributeToIcon,
-        }),
+        primaryAttributeKey: 'key',
+        attributeToIcon,
       }),
     [attributesMap],
   );

@@ -1,6 +1,5 @@
 import {createSelectionAutoComplete} from '../SelectionAutoComplete';
 import {createProvider} from '../SelectionAutoCompleteProvider';
-import {createAttributeBasedAutoCompleteProvider} from '../SelectionAutoCompleteProviderFromAttributeMap';
 
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
@@ -11,21 +10,19 @@ describe('createAssetSelectionHint', () => {
     kind: ['kind1', 'kind2'],
     code_location: ['repo1@location1', 'repo2@location2'],
   };
-  const baseProvider = createAttributeBasedAutoCompleteProvider({
+  const provider = createProvider({
     attributesMap,
-    ...createProvider<typeof attributesMap, 'key'>({
-      primaryAttributeKey: 'key',
-      attributeToIcon: {
-        key: 'magnify_glass',
-        tag: 'magnify_glass',
-        owner: 'magnify_glass',
-        group: 'magnify_glass',
-        kind: 'magnify_glass',
-        code_location: 'magnify_glass',
-      },
-    }),
+    primaryAttributeKey: 'key',
+    attributeToIcon: {
+      key: 'magnify_glass',
+      tag: 'magnify_glass',
+      owner: 'magnify_glass',
+      group: 'magnify_glass',
+      kind: 'magnify_glass',
+      code_location: 'magnify_glass',
+    },
   });
-  const selectionHint = createSelectionAutoComplete(baseProvider);
+  const selectionHint = createSelectionAutoComplete(provider);
 
   function testAutocomplete(testString: string) {
     const cursorIndex = testString.indexOf('|');
