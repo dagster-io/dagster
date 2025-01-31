@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 import sys
 import traceback
 from collections.abc import Iterator, Sequence
@@ -19,6 +20,25 @@ from dagster_dg.cli import (
 )
 from dagster_dg.utils import discover_git_root, pushd
 from typing_extensions import Self
+
+
+@contextmanager
+def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    libraries_paths = [
+        Path(dagster_git_repo_dir) / "python_modules" / name
+        for name in ["dagster", "libraries/dagster-components", "dagster-pipes"]
+    ]
+    with runner.isolated_filesystem():
+        subprocess.run(["uv", "venv", ".venv"], check=True)
+        install_args: list[str] = []
+        for path in libraries_paths:
+            install_args.extend(["-e", str(path)])
+        subprocess.run(
+            ["uv", "pip", "install", "--python", ".venv/bin/python", *install_args], check=True
+        )
+        with modify_environment_variable("PATH", f"{Path.cwd()}/.venv/bin:{os.environ['PATH']}"):
+            yield
 
 
 @contextmanager
@@ -73,18 +93,56 @@ def isolated_example_code_location_foo_bar(
             yield
 
 
-# We just use the code location generation function and then modify it to be a component library
-# only.
 @contextmanager
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
+    lib_package_name: Optional[str] = None,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    with isolated_example_code_location_foo_bar(runner):
-        with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["is_code_location"] = False
-        shutil.rmtree("foo_bar/components")
-        yield
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with isolated_components_venv(runner):
+        # We just use the code location generation function and then modify it to be a component library
+        # only.
+        runner.invoke(
+            "code-location",
+            "scaffold",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            "--skip-venv",
+            "foo-bar",
+        )
+        with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
+            shutil.rmtree("foo_bar/components")
+
+            # Make it not a code location
+            with modify_pyproject_toml() as pyproject_toml:
+                pyproject_toml["tool"]["dg"]["is_code_location"] = False
+
+                # We need to set any alternative lib package name _before_ we install into the
+                # environment, since it affects entry points which are set at install time.
+                if lib_package_name:
+                    pyproject_toml["tool"]["dg"]["component_lib_package"] = lib_package_name
+                    pyproject_toml["project"]["entry-points"]["dagster.components"]["foo_bar"] = (
+                        lib_package_name
+                    )
+                    Path(*lib_package_name.split(".")).mkdir(exist_ok=True)
+
+            # Install the component library into our venv
+            subprocess.run(
+                ["uv", "pip", "install", "--python", "../.venv/bin/python", "-e", "."], check=True
+            )
+            yield
+
+
+@contextmanager
+def modify_environment_variable(name: str, value: str) -> Iterator[None]:
+    original_value = os.environ.get(name)
+    os.environ[name] = value
+    yield
+    if original_value is not None:
+        os.environ[name] = original_value
+    else:
+        del os.environ[name]
 
 
 @contextmanager
