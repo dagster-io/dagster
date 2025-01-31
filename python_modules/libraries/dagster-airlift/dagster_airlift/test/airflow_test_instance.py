@@ -29,6 +29,7 @@ class AirflowInstanceFake(AirflowInstance):
         dag_runs: list[DagRun],
         variables: list[dict[str, Any]] = [],
         instance_name: Optional[str] = None,
+        max_runs_per_batch: Optional[int] = None,
     ) -> None:
         self._dag_infos_by_dag_id = {dag_info.dag_id: dag_info for dag_info in dag_infos}
         self._task_infos_by_dag_and_task_id = {
@@ -46,6 +47,7 @@ class AirflowInstanceFake(AirflowInstance):
             self._dag_runs_by_dag_id[dag_run.dag_id].append(dag_run)
         self._dag_infos_by_file_token = {dag_info.file_token: dag_info for dag_info in dag_infos}
         self._variables = variables
+        self._max_runs_per_batch = max_runs_per_batch
         super().__init__(
             auth_backend=DummyAuthBackend(),
             name="test_instance" if instance_name is None else instance_name,
@@ -73,7 +75,7 @@ class AirflowInstanceFake(AirflowInstance):
         end_date_gte: datetime,
         end_date_lte: datetime,
         offset: int = 0,
-    ) -> list[DagRun]:
+    ) -> tuple[list[DagRun], int]:
         runs = [
             (run.end_date, run)
             for runs in self._dag_runs_by_dag_id.values()
@@ -82,7 +84,12 @@ class AirflowInstanceFake(AirflowInstance):
             and run.dag_id in dag_ids
         ]
         sorted_by_end_date = [run for _, run in sorted(runs, key=lambda x: x[0])]
-        return sorted_by_end_date[offset:]
+        end_idx = (
+            offset + self._max_runs_per_batch
+            if self._max_runs_per_batch
+            else len(sorted_by_end_date)
+        )
+        return (sorted_by_end_date[offset:end_idx], len(sorted_by_end_date))
 
     def get_task_instance_batch(
         self, dag_id: str, task_ids: Sequence[str], run_id: str, states: Sequence[str]
@@ -212,6 +219,7 @@ def make_instance(
     dag_runs: list[DagRun] = [],
     task_deps: dict[str, list[str]] = {},
     instance_name: Optional[str] = None,
+    max_runs_per_batch: Optional[int] = None,
 ) -> AirflowInstanceFake:
     """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.
 
@@ -257,4 +265,5 @@ def make_instance(
         task_instances=task_instances,
         dag_runs=dag_runs,
         instance_name=instance_name,
+        max_runs_per_batch=max_runs_per_batch,
     )

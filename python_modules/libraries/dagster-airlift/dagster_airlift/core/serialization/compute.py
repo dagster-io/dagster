@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from dagster_airlift.core.airflow_defs_data import MappedAsset
 
 
-MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL = 50
+DEFAULT_MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL = 50
 DagSelectorFn = Callable[[DagInfo], bool]
 
 
@@ -175,7 +175,7 @@ def infer_code_retrieval_enabled(
     source_code_retrieval_enabled: Optional[bool], fetched_airflow_data: FetchedAirflowData
 ) -> bool:
     if source_code_retrieval_enabled is None:
-        return len(fetched_airflow_data.dag_infos) < MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL
+        return len(fetched_airflow_data.dag_infos) < DEFAULT_MAX_NUM_DAGS_SOURCE_CODE_RETRIEVAL
     return source_code_retrieval_enabled
 
 

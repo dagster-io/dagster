@@ -105,7 +105,7 @@ def build_defs_from_airflow_instance(
         event_transformer_fn (DagsterEventTransformerFn): A function that allows for modifying the Dagster events
             produced by the sensor.
         dag_selector_fn (Optional[DagSelectorFn]): A function that allows for filtering which DAGs assets are created for.
-        source_code_retrieval_enabled (Optional[bool]): Whether to retrieve source code for the Airflow dags. By default, source code is retrieved when the number of dags is under 50 for performance reasons. This setting overrides the default behavior.
+        source_code_retrieval_enabled (Optional[bool]): Whether to retrieve source code for the Airflow DAGs. By default, source code is retrieved when the number of DAGs is under 50 for performance reasons. This setting overrides the default behavior.
         default_sensor_status (Optional[DefaultSensorStatus]): The default status for the sensor. By default, the sensor will be enabled.
 
     Returns:
@@ -354,7 +354,7 @@ def replace_assets_in_defs(
 def enrich_airflow_mapped_assets(
     mapped_assets: Sequence[MappedAsset],
     airflow_instance: AirflowInstance,
-    source_code_retrieval_enabled: Optional[bool] = None,
+    source_code_retrieval_enabled: Optional[bool],
 ) -> Sequence[AssetsDefinition]:
     """Enrich Airflow-mapped assets with metadata from the provided :py:class:`AirflowInstance`."""
     serialized_data = AirflowInstanceDefsLoader(
