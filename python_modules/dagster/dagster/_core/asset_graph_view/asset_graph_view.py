@@ -674,10 +674,12 @@ class AssetGraphView(LoadingContext):
         )
 
     async def _compute_updated_since_cursor_subset(
-        self, key: AssetKey, cursor: Optional[int]
+        self, key: AssetKey, cursor: Optional[int], require_data_version_update: bool = False
     ) -> EntitySubset[AssetKey]:
         value = self._queryer.get_asset_subset_updated_after_cursor(
-            asset_key=key, after_cursor=cursor
+            asset_key=key,
+            after_cursor=cursor,
+            require_data_version_update=require_data_version_update,
         ).value
         return EntitySubset(self, key=key, value=_ValidatedEntitySubsetValue(value))
 
@@ -712,6 +714,14 @@ class AssetGraphView(LoadingContext):
             asset_method=functools.partial(
                 self._compute_updated_since_cursor_subset, cursor=temporal_context.last_event_id
             ),
+        )
+
+    @cached_method
+    async def compute_data_version_changed_since_temporal_context_subset(
+        self, *, key: AssetKey, temporal_context: TemporalContext
+    ) -> EntitySubset[AssetKey]:
+        return await self._compute_updated_since_cursor_subset(
+            key, cursor=temporal_context.last_event_id, require_data_version_update=True
         )
 
     class MultiDimInfo(NamedTuple):
