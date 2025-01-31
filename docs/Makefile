@@ -36,3 +36,12 @@ mdx:
 
 mdx_copy:
 	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs-beta/docs/api/python-api/
+
+regenerate_cli_snippets:
+	cd ../examples/docs_beta_snippets && tox -e docs_snapshot_update && echo "\nSnippets regenerated!"
+
+regenerate_cli_snippets_and_test:
+	cd ../examples/docs_beta_snippets && tox -e docs_snapshot_update && tox -e docs_snapshot_test && echo "\nSnippets regenerated and tested!"
+
+test_cli_snippets_simulate_bk:
+	docker run --platform linux/amd64 --rm -it  -v "$(DAGSTER_GIT_REPO_DIR):/dagster" --entrypoint /bin/sh dagster/buildkite-test:py3.9-2025-01-31T181043 -c 'cd /dagster/examples/docs_beta_snippets && tox -e docs_snapshot_test'
