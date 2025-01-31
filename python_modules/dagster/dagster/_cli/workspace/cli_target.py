@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -22,11 +23,16 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, RepositoryPythonOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.origin import (
+    CodeLocationOrigin,
+    InProcessCodeLocationOrigin,
+)
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
     CompositeTarget,
     EmptyWorkspaceTarget,
     GrpcServerTarget,
+    InProcessWorkspaceLoadTarget,
     ModuleTarget,
     PackageTarget,
     PyProjectFileTarget,
@@ -246,6 +252,82 @@ def get_workspace_from_kwargs(
 ) -> Iterator[WorkspaceRequestContext]:
     with get_workspace_process_context_from_kwargs(
         instance, version, read_only=False, kwargs=kwargs
+    ) as workspace_process_context:
+        yield workspace_process_context.create_request_context()
+
+
+def _does_origin_executable_match(origin: CodeLocationOrigin) -> bool:
+    return (
+        origin.loadable_target_origin.executable_path is None
+        or origin.loadable_target_origin.executable_path == sys.executable
+    )
+
+
+@contextmanager
+def get_auto_determined_workspace_from_kwargs(
+    instance: DagsterInstance,
+    kwargs: Mapping[str, Any],
+    version: str,
+) -> Iterator[WorkspaceRequestContext]:
+    """Spins up a workspace in-process with the provided kwargs, as
+    long as there is only a single location which does not specify a
+    distinct Python executable. Otherwise, spins up one or more gRPC
+    servers to handle the locations.
+    """
+    logger = logging.getLogger("dagster")
+    tgt = get_workspace_load_target(kwargs)
+    origins = tgt.create_origins()
+
+    if len(origins) > 1 or not _does_origin_executable_match(origins[0]):
+        logger.debug("Loading workspace with gRPC server")
+        with get_workspace_from_kwargs(
+            instance=instance, kwargs=kwargs, version=version
+        ) as workspace_request_context:
+            yield workspace_request_context
+    else:
+        logger.debug("Loading workspace in-process")
+        with get_in_process_workspace_from_kwargs(
+            instance=instance, kwargs=kwargs
+        ) as workspace_request_context:
+            yield workspace_request_context
+
+
+@contextmanager
+def get_in_process_workspace_from_kwargs(
+    instance: DagsterInstance,
+    kwargs: Mapping[str, Any],
+    container_image: Optional[str] = None,
+) -> Iterator[WorkspaceRequestContext]:
+    """Spins up a workspace in-process with the provided kwargs."""
+    from dagster._core.workspace.context import WorkspaceProcessContext
+
+    tgt = get_workspace_load_target(kwargs)
+    origins = tgt.create_origins()
+
+    if len(origins) > 1:
+        raise click.UsageError(
+            "Cannot specify multiple code locations when loading a workspace in-process."
+        )
+
+    origin = origins[0]
+    if not _does_origin_executable_match(origin):
+        raise click.UsageError(
+            "Cannot load a code location in-process that is not the same Python executable as the "
+            "current process."
+        )
+
+    with WorkspaceProcessContext(
+        instance,
+        InProcessWorkspaceLoadTarget(
+            [
+                InProcessCodeLocationOrigin(
+                    origin.loadable_target_origin,
+                    container_image=container_image,
+                    location_name=origin.location_name,
+                )
+                for origin in origins
+            ]
+        ),
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 
