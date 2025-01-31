@@ -12,6 +12,7 @@ from typing import (  # noqa: UP035
 )
 
 from dagster import _check as check
+from dagster._check.functions import CheckError
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -27,6 +28,7 @@ from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
     get_time_partitions_def,
 )
 from dagster._core.loader import LoadingContext
@@ -198,17 +200,72 @@ class AssetGraphView(LoadingContext):
             self.asset_graph.has(key), f"Asset graph does not contain {key.to_user_string()}"
         )
 
-        serializable_subset = asset_graph_subset.get_asset_subset(key, self.asset_graph)
-        check.invariant(
-            serializable_subset.is_compatible_with_partitions_def(
-                self._get_partitions_def(key),
-            ),
-            f"Partitions definition for {key.to_user_string()} is not compatible with the passed in AssetGraphSubset",
+        serializable_subset = self._with_current_partitions_def(
+            asset_graph_subset.get_asset_subset(key, self.asset_graph)
         )
 
         return EntitySubset(
             self, key=key, value=_ValidatedEntitySubsetValue(serializable_subset.value)
         )
+
+    def _with_current_partitions_def(
+        self, serializable_subset: SerializableEntitySubset
+    ) -> SerializableEntitySubset:
+        """Used to transform a persisted SerializableEntitySubset (e.g. generated from backfill data)
+        into an up-to-date one based on the latest partitions information in the asset graph. Raises
+        an exception if the partitions in the asset graph are now totally incompatible (say, a
+        partitioned asset is now unpartitioned, or the subset references keys that no longer exist)
+        but adjusts the SerializableEntitySubset to reflect the latest version of the
+        PartitionsDefinition if it differs but is still valid (for example, the range of the
+        partitions have been extended and the subset is still valid.
+        """
+        current_partitions_def = self._get_partitions_def(serializable_subset.key)
+        key = serializable_subset.key
+        value = serializable_subset.value
+
+        if serializable_subset.is_partitioned:
+            check.invariant(
+                current_partitions_def is not None,
+                f"{key.to_user_string()} was partitioned when originally stored, but is no longer partitioned.",
+            )
+            if isinstance(value, AllPartitionsSubset):
+                check.invariant(
+                    value.partitions_def == current_partitions_def,
+                    f"Partitions definition for {key.to_user_string()} has an AllPartitionsSubset and no longer matches the stored partitions definition",
+                )
+                return serializable_subset
+            elif isinstance(value, TimeWindowPartitionsSubset):
+                serialized_partitions_def = value.partitions_def
+                if (
+                    not isinstance(current_partitions_def, TimeWindowPartitionsDefinition)
+                    or serialized_partitions_def.timezone != current_partitions_def.timezone
+                    or serialized_partitions_def.fmt != current_partitions_def.fmt
+                    or serialized_partitions_def.cron_schedule
+                    != current_partitions_def.cron_schedule
+                ):
+                    raise CheckError(
+                        f"Stored partitions definition for {key.to_user_string()} is no longer compatible with the latest partitions definition",
+                    )
+                missing_subset = value - current_partitions_def.subset_with_all_partitions(
+                    self._temporal_context.effective_dt,
+                    self._instance,
+                )
+                if not missing_subset.is_empty:
+                    raise CheckError(
+                        f"Stored partitions definition for {key.to_user_string()} includes partitions {missing_subset} that are no longer present",
+                    )
+
+                return SerializableEntitySubset(
+                    key, value.with_partitions_def(current_partitions_def)
+                )
+            else:
+                return serializable_subset
+        else:
+            check.invariant(
+                current_partitions_def is None,
+                f"{key.to_user_string()} was un-partitioned when originally stored, but is now partitioned.",
+            )
+            return serializable_subset
 
     def iterate_asset_subsets(
         self, asset_graph_subset: AssetGraphSubset
