@@ -118,10 +118,6 @@ class SensorLaunchContext(AbstractContextManager):
             self._purge_settings[day_offset].add(status)
 
     @property
-    def tick(self) -> InstigatorTick:
-        return self._tick
-
-    @property
     def status(self) -> TickStatus:
         return self._tick.status
 
