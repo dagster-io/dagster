@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Any
 
 import click
+from rich.console import Console
+from rich.table import Table
 
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
@@ -152,8 +154,11 @@ def component_type_list(context: click.Context, **global_options: object) -> Non
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
+
+    table = Table(border_style="dim")
+    table.add_column("Component Type", style="bold cyan", no_wrap=True)
+    table.add_column("Summary")
     for key in sorted(registry.global_keys()):
-        click.echo(key)
-        component_type = registry.get_global(key)
-        if component_type.summary:
-            click.echo(f"    {component_type.summary}")
+        table.add_row(key, registry.get_global(key).summary)
+    console = Console()
+    console.print(table)
