@@ -140,6 +140,14 @@ RUN wget http://download.redis.io/redis-stable.tar.gz \
     && cd redis-stable \
     && make install
 
+# Install the DuckDB CLI
+RUN curl --fail --silent --show-error --location \
+    --output duckdb_cli-linux-amd64.zip \
+    https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip \
+    && unzip duckdb_cli-linux-amd64.zip \
+    && mv duckdb /usr/local/bin/duckdb \
+    && chmod +x /usr/local/bin/duckdb
+
 # Clean up
 RUN apt-get remove -yqq \
     && apt-get autoremove -yqq --purge \
