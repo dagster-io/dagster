@@ -39,6 +39,8 @@ class SlingReplicationCollectionParams(BaseModel):
 
 @component_type(name="sling_replication_collection")
 class SlingReplicationCollectionComponent(Component):
+    """Expose one or more Sling replications to Dagster as assets."""
+
     def __init__(
         self,
         dirpath: Path,
