@@ -7,6 +7,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Optional
 
+import click
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -28,6 +29,11 @@ def ensure_dagster_components_tests_import() -> None:
         dagster_components_package_root / "dagster_components_tests"
     ).exists(), "Could not find dagster_components_tests where expected"
     sys.path.append(dagster_components_package_root.as_posix())
+
+
+def exit_with_error(error_message: str) -> None:
+    click.echo(click.style(error_message, fg="red"))
+    sys.exit(1)
 
 
 # Temporarily places a path at the front of sys.path, ensuring that any modules in that path are

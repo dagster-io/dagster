@@ -1,11 +1,9 @@
-import os
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Optional
 
 import click
 import yaml
-from dagster._utils import mkdir_p
 
 from dagster_components.core.component import Component
 from dagster_components.core.component_scaffolder import (
@@ -34,15 +32,14 @@ def scaffold_component_yaml(
 
 
 def scaffold_component_instance(
-    root_path: str,
-    name: str,
+    path: Path,
     component_type: type[Component],
     component_type_name: str,
     scaffold_params: Mapping[str, Any],
 ) -> None:
-    component_instance_root_path = Path(os.path.join(root_path, name))
-    click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
-    mkdir_p(str(component_instance_root_path))
+    click.echo(f"Creating a Dagster component instance folder at {path}.")
+    if not path.exists():
+        path.mkdir()
     scaffolder = component_type.get_scaffolder()
 
     if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
@@ -53,13 +50,12 @@ def scaffold_component_instance(
     scaffolder.scaffold(
         ComponentScaffoldRequest(
             component_type_name=component_type_name,
-            component_instance_root_path=component_instance_root_path,
+            component_instance_root_path=path,
         ),
         scaffold_params,
     )
 
-    component_yaml_path = component_instance_root_path / "component.yaml"
-
+    component_yaml_path = path / "component.yaml"
     if not component_yaml_path.exists():
         raise Exception(
             f"Currently all components require a component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."

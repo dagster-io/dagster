@@ -6,5 +6,5 @@ import dagster as dg
 
 defs = dg.Definitions.merge(
     dg.Definitions(assets=[]),
-    dg_components.build_component_defs(code_location_root=Path(__file__).parent),
+    dg_components.build_component_defs(Path(__file__).parent / "components"),
 )
