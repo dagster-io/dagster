@@ -173,23 +173,34 @@ For a final step, let's load up our two code locations with `dagster dev`.
 We'll need a workspace.yaml to do this. Create a new file `workspace.yaml` in
 the `my-deployment` directory:
 
-:::note
-`dg` scaffolding functionality is currently under heavy development. In the
-future we will construct this workspace.yaml file for you automatically in the
-course of scaffolding code locations.
-:::
-
 ```yaml
 load_from:
   - python_file:
       relative_path: code_locations/code-location-1/code_location_1/definitions.py
       location_name: code_location_1
+      executable_path: code_locations/code-location-1/.venv/bin/python
   - python_file:
       relative_path: code_locations/code-location-2/code_location_2/definitions.py
       location_name: code_location_2
+      executable_path: code_locations/code-location-2/.venv/bin/python
 ```
 
-And finally run `dagster dev` to see your two code locations loaded up in the
-UI:
+And finally we'll run `dagster dev` to see your two code locations loaded up in the
+UI. You may already have `dagster` installed in the ambient environment, in
+which case plain `dagster dev` will work. But in case you don't, we'll run
+`dagster dev` using `uv`, which will pull down and run `dagster` for you in
+an isolated environment:
+
+```
+uv tool run --with=dagster-webserver dagster dev
+```
+
 
 ![](/images/guides/build/projects-and-components/setting-up-a-deployment/two-code-locations.png)
+
+:::note
+`dg` scaffolding functionality is currently under heavy development. In the
+future we will construct this workspace.yaml file for you automatically in the
+course of scaffolding code locations, and provide a `dg dev` command that
+handles pulling down `dagster` for you in the background.
+:::
