@@ -4,8 +4,8 @@ import {useRef} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useFeatureFlags} from '../app/Flags';
 import {gql, useQuery} from '../apollo-client';
+import {useFeatureFlags} from '../app/Flags';
 import {
   SingleConcurrencyKeyQuery,
   SingleConcurrencyKeyQueryVariables,
@@ -14,6 +14,7 @@ import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 
+const POOL_TEMPLATE_COLUMNS = '1fr 1fr';
 const TEMPLATE_COLUMNS = '1fr 150px 150px 150px 150px 150px';
 
 export const ConcurrencyTable = ({concurrencyKeys}: {concurrencyKeys: string[]}) => {
@@ -53,9 +54,14 @@ export const ConcurrencyTable = ({concurrencyKeys}: {concurrencyKeys: string[]})
 
 const ConcurrencyHeader = () => {
   const {flagPoolUI} = useFeatureFlags();
-  return (
+  return flagPoolUI ? (
+    <HeaderRow templateColumns={POOL_TEMPLATE_COLUMNS} sticky>
+      <HeaderCell>Pool</HeaderCell>
+      <HeaderCell>Limit</HeaderCell>
+    </HeaderRow>
+  ) : (
     <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
-      <HeaderCell>{flagPoolUI ? 'Pool' : 'Concurrency key'}</HeaderCell>
+      <HeaderCell>Concurrency key</HeaderCell>
       <HeaderCell>Total slots</HeaderCell>
       <HeaderCell>Assigned steps</HeaderCell>
       <HeaderCell>Pending steps</HeaderCell>
@@ -81,6 +87,7 @@ const ConcurrencyRow = ({
       skip: !shouldQuery,
     },
   );
+  const {flagPoolUI} = useFeatureFlags();
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -88,7 +95,21 @@ const ConcurrencyRow = ({
   const limit = data?.instance.concurrencyLimit;
 
   const path = `/deployment/concurrency/${encodeURIComponent(concurrencyKey)}`;
-  return (
+  return flagPoolUI ? (
+    <Row $height={height} $start={start}>
+      <NewRowGrid border="bottom">
+        <RowCell>
+          <Box flex={{gap: 4, alignItems: 'center'}}>
+            <Icon name="dynamic_feed" />
+            <Link to={path}>{concurrencyKey}</Link>
+          </Box>
+        </RowCell>
+        <RowCell>
+          {limit ? <div>{limit.slotCount}</div> : <LoadingOrNone queryResult={queryResult} />}
+        </RowCell>
+      </NewRowGrid>
+    </Row>
+  ) : (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom">
         <RowCell>
@@ -151,6 +172,11 @@ const SINGLE_CONCURRENCY_KEY_QUERY = gql`
   }
 `;
 
+const NewRowGrid = styled(Box)`
+  display: grid;
+  grid-template-columns: ${POOL_TEMPLATE_COLUMNS};
+  height: 100%;
+`;
 const RowGrid = styled(Box)`
   display: grid;
   grid-template-columns: ${TEMPLATE_COLUMNS};

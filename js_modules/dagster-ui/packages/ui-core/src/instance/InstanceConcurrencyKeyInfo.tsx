@@ -1,7 +1,9 @@
 import {
   Box,
   Button,
+  Caption,
   Colors,
+  CursorHistoryControls,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -13,6 +15,7 @@ import {
   Mono,
   NonIdealState,
   Popover,
+  Spinner,
   SpinnerWithText,
   Subheading,
   Table,
@@ -50,9 +53,12 @@ import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RunStatusDot} from '../runs/RunStatusDots';
-import {failedStatuses} from '../runs/RunStatuses';
+import {failedStatuses, inProgressStatuses, queuedStatuses} from '../runs/RunStatuses';
+import {RunTable} from '../runs/RunTable';
+import {DagsterTag} from '../runs/RunTag';
 import {titleForRun} from '../runs/RunUtils';
 import {TimeElapsed} from '../runs/TimeElapsed';
+import {usePaginatedRunsTableRuns} from '../runs/usePaginatedRunsTableRuns';
 
 const DEFAULT_MIN_VALUE = 0;
 const DEFAULT_MAX_VALUE = 1000;
@@ -81,7 +87,7 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
       message: flagPoolUI ? 'Deleted pool limit' : 'Deleted concurrency key',
     });
   };
-
+  const granularity = data?.instance.poolConfig?.poolGranularity;
   return (
     <>
       <div style={{overflowY: 'auto'}}>
@@ -131,22 +137,27 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                   {flagPoolUI ? (
                     <tr>
                       <td style={{verticalAlign: 'middle'}}>Granularity</td>
-                      <td>Op</td>
+                      <td>{granularity === 'run' ? 'Run' : 'Op'}</td>
                     </tr>
                   ) : null}
                   <tr>
                     <td style={{verticalAlign: 'middle'}}>Limit</td>
                     <td>
                       <Box flex={{justifyContent: 'space-between', alignItems: 'center'}}>
-                        <div>
-                          {concurrencyLimit.slotCount ? (
-                            concurrencyLimit.slotCount
-                          ) : concurrencyLimit.limit === null ? (
-                            <>&mdash;</>
-                          ) : (
-                            concurrencyLimit.limit
-                          )}
-                        </div>
+                        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                          <div>
+                            {concurrencyLimit.slotCount ? (
+                              concurrencyLimit.slotCount
+                            ) : concurrencyLimit.limit === null ? (
+                              <>&mdash;</>
+                            ) : (
+                              concurrencyLimit.limit
+                            )}
+                          </div>
+                          {concurrencyLimit.usingDefaultLimit ? (
+                            <Caption color={Colors.textLighter()}>(default)</Caption>
+                          ) : null}
+                        </Box>
                         <Button icon={<Icon name="edit" />} onClick={() => setShowEdit(true)}>
                           Edit limit
                         </Button>
@@ -156,15 +167,36 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                 </tbody>
               </MetadataTableWIP>
             </Box>
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
-            >
-              <Subheading>In progress</Subheading>
-            </Box>
-            <Box style={{marginLeft: -1}}>
-              <PendingStepsTable keyInfo={concurrencyLimit} refresh={refetch} />
-            </Box>
+            {data?.instance.poolConfig?.poolGranularity !== 'run' ? (
+              <>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                >
+                  <Subheading>In progress</Subheading>
+                </Box>
+                <Box style={{marginLeft: -1}}>
+                  <PendingStepsTable keyInfo={concurrencyLimit} refresh={refetch} />
+                </Box>
+              </>
+            ) : (
+              <>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                >
+                  <Subheading>In progress</Subheading>
+                </Box>
+                <PoolRunsTable pool={concurrencyKey} runStatuses={inProgressStatuses} />
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                >
+                  <Subheading>Queued</Subheading>
+                </Box>
+                <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
+              </>
+            )}
           </Box>
         ) : (
           <Box padding={{vertical: 64}}>
@@ -398,6 +430,59 @@ const ConcurrencyActionMenu = ({
   );
 };
 
+const PoolRunsTable = ({pool, runStatuses}: {pool: string; runStatuses: Set<RunStatus>}) => {
+  const filter = {
+    statuses: Array.from(runStatuses),
+    tags: [{key: `${DagsterTag.PoolTagPrefix}/${pool}`, value: 'true'}],
+  };
+  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, 10);
+  const pipelineRunsOrError =
+    queryResult.data?.pipelineRunsOrError || queryResult.previousData?.pipelineRunsOrError;
+
+  const refreshState = useQueryRefreshAtInterval(queryResult, 15000);
+
+  if (!pipelineRunsOrError) {
+    return (
+      <Box padding={{vertical: 48}}>
+        <Spinner purpose="page" />
+      </Box>
+    );
+  }
+  if (pipelineRunsOrError.__typename !== 'Runs') {
+    return (
+      <Box padding={{vertical: 64}}>
+        <NonIdealState icon="error" title="Query error" description={pipelineRunsOrError.message} />
+      </Box>
+    );
+  }
+  if (!pipelineRunsOrError.results.length) {
+    return (
+      <Box
+        padding={{vertical: 24}}
+        border="top-and-bottom"
+        flex={{direction: 'column', alignItems: 'center'}}
+      >
+        {runStatuses.has(RunStatus.STARTED)
+          ? 'No matching runs in progress.'
+          : 'No matching runs in queue.'}
+      </Box>
+    );
+  }
+  return (
+    <>
+      <div style={{position: 'absolute', right: 16, top: -32}}>
+        <QueryRefreshCountdown refreshState={refreshState} />
+      </div>
+      <RunTable runs={pipelineRunsOrError.results} loading={queryResult.loading} />
+      {pipelineRunsOrError.results.length > 0 ? (
+        <Box margin={{vertical: 16}}>
+          <CursorHistoryControls {...paginationProps} />
+        </Box>
+      ) : null}
+    </>
+  );
+};
+
 const PendingStepsTable = ({
   keyInfo,
   refresh,
@@ -572,6 +657,7 @@ const CONCURRENCY_LIMIT_FRAGMENT = gql`
     pendingSteps {
       ...ConcurrencyStepFragment
     }
+    usingDefaultLimit
   }
   ${CONCURRENCY_STEP_FRAGMENT}
 `;
@@ -600,6 +686,11 @@ export const CONCURRENCY_KEY_DETAILS_QUERY = gql`
       id
       minConcurrencyLimitValue
       maxConcurrencyLimitValue
+      poolConfig {
+        poolGranularity
+        defaultPoolLimit
+        opGranularityRunBuffer
+      }
       concurrencyLimit(concurrencyKey: $concurrencyKey) {
         ...ConcurrencyLimitFragment
       }
