@@ -493,7 +493,8 @@ table {
 
 /* API Docs */
 dl {
-  padding: 4px 0px 0px 4px;
+  padding: 6px;
+  margin-top: 6px;
   border: 1px solid var(--theme-color-keyline);
   font-weight: 200;
   background-color: var(--theme-color-background-blue);
@@ -518,7 +519,7 @@ dd {
 }
 
 dd p {
-  margin: 0;
+  margin-bottom: 8px;
 }
 
 dd code {
