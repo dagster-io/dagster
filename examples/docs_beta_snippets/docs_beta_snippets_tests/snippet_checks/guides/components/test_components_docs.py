@@ -45,7 +45,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         TemporaryDirectory() as tempdir,
         environ(
             {
-                "COLUMNS": "120",
+                "COLUMNS": "90",
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
             }
