@@ -18,6 +18,7 @@ from dagster_dg.utils import (
     NOT_DEPLOYMENT_ERROR_MESSAGE,
     ensure_loadable_path,
     exit_with_error,
+    get_path_for_module,
     get_path_for_package,
     get_uv_command_env,
     is_executable_available,
@@ -177,6 +178,12 @@ class DgContext:
     def get_code_location_names(self) -> Iterable[str]:
         return [loc.name for loc in sorted(self.code_location_root_path.iterdir())]
 
+    def get_code_location_path(self, name: str) -> Path:
+        return self.code_location_root_path / name
+
+    def get_code_location_root_module(self, name: str) -> Path:
+        return self.code_location_root_path / name
+
     # ########################
     # ##### GENERAL PYTHON PACKAGE METHODS
     # ########################
@@ -192,6 +199,20 @@ class DgContext:
     @property
     def is_code_location(self) -> bool:
         return self.config.is_code_location
+
+    @property
+    def code_location_name(self) -> str:
+        if not self.is_code_location:
+            raise DgError("`code_location_name` is only available in a code location context")
+        return self.root_path.name
+
+    @property
+    def code_location_python_executable(self) -> Path:
+        if not self.is_code_location:
+            raise DgError(
+                "`code_location_python_executable` is only available in a code location context"
+            )
+        return self.root_path / ".venv" / "bin" / "python"
 
     @cached_property
     def components_package_name(self) -> str:
@@ -218,6 +239,21 @@ class DgContext:
 
     def has_component(self, name: str) -> bool:
         return (self.components_path / name).is_dir()
+
+    @property
+    def definitions_package_name(self) -> str:
+        if not self.is_code_location:
+            raise DgError("`definitions_package_name` is only available in a code location context")
+        return f"{self.root_package_name}.definitions"
+
+    @cached_property
+    def definitions_path(self) -> Path:
+        with ensure_loadable_path(self.root_path):
+            if not is_package_installed(self.definitions_package_name):
+                raise DgError(
+                    f"Definitions package `{self.definitions_package_name}` is not installed in the current environment."
+                )
+            return Path(get_path_for_module(self.definitions_package_name))
 
     # ########################
     # ##### COMPONENT LIBRARY METHODS
