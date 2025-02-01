@@ -31,8 +31,8 @@ def instance_session_scoped_fixture() -> Iterator[DagsterInstance]:
         overrides={
             "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"},
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         }
     ) as instance:

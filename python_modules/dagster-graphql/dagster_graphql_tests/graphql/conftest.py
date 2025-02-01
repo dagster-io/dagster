@@ -21,8 +21,8 @@ def graphql_context():
                     "config": {"base_dir": temp_dir},
                 },
                 "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                    "class": "ImmediatelyLaunchRunCoordinator",
+                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                    "class": "SynchronousRunCoordinator",
                 },
             },
         ) as instance:

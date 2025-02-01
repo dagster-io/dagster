@@ -99,8 +99,8 @@ def get_workspace_request_context(
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
             "run_launcher": {
                 "module": "dagster._core.launcher.sync_in_memory_run_launcher",
@@ -604,8 +604,8 @@ def test_toggle_user_code() -> None:
                     "class": "SyncInMemoryRunLauncher",
                 },
                 "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                    "class": "ImmediatelyLaunchRunCoordinator",
+                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                    "class": "SynchronousRunCoordinator",
                 },
             }
         ) as instance,

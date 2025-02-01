@@ -3455,8 +3455,8 @@ def test_1d_subset_backcompat():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         }
     ) as instance:
@@ -3545,8 +3545,8 @@ def test_2d_subset_backcompat():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         }
     ) as instance:

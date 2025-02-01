@@ -20,8 +20,8 @@ def dagster_cli_runner():
             temp_dir=dagster_home_temp,
             overrides={
                 "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                    "class": "ImmediatelyLaunchRunCoordinator",
+                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                    "class": "SynchronousRunCoordinator",
                 },
                 "run_launcher": {
                     "module": "dagster._core.launcher.sync_in_memory_run_launcher",
@@ -73,8 +73,8 @@ def test_async_resolver():
             temp_dir=dagster_home_temp,
             overrides={
                 "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                    "class": "ImmediatelyLaunchRunCoordinator",
+                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                    "class": "SynchronousRunCoordinator",
                 },
                 "run_launcher": {
                     "module": "dagster._core.launcher.sync_in_memory_run_launcher",
@@ -337,8 +337,8 @@ def test_logs_in_start_execution_predefined():
             temp_dir=temp_dir,
             overrides={
                 "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                    "class": "ImmediatelyLaunchRunCoordinator",
+                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                    "class": "SynchronousRunCoordinator",
                 },
                 "run_launcher": {
                     "module": "dagster._core.launcher.sync_in_memory_run_launcher",

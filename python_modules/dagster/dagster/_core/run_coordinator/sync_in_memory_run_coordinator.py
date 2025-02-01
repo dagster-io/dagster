@@ -11,12 +11,12 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 
-class ImmediatelyLaunchRunCoordinator(RunCoordinator, ConfigurableClass):
+class SynchronousRunCoordinator(RunCoordinator, ConfigurableClass):
     """Immediately send runs to the run launcher."""
 
     def __init__(self, inst_data: Optional[ConfigurableClassData] = None):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-        self._logger = logging.getLogger("dagster.run_coordinator.default_run_coordinator")
+        self._logger = logging.getLogger("dagster.run_coordinator.sync_in_memory_coordinator")
         super().__init__()
 
     @property
