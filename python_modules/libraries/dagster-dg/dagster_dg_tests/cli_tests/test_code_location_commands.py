@@ -43,6 +43,11 @@ def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
         assert Path("code_locations/foo-bar/foo_bar_tests").exists()
         assert Path("code_locations/foo-bar/pyproject.toml").exists()
 
+        # Check TOML content
+        toml = tomli.loads(Path("code_locations/foo-bar/pyproject.toml").read_text())
+        assert toml["tool"]["dagster"]["module_name"] == "foo_bar.definitions"
+        assert toml["tool"]["dagster"]["code_location_name"] == "foo-bar"
+
         # Check venv created
         assert Path("code_locations/foo-bar/.venv").exists()
         assert Path("code_locations/foo-bar/uv.lock").exists()

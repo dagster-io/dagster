@@ -200,7 +200,6 @@ def scaffold_subtree(
                 f.write(
                     template.render(
                         repo_name=project_name,  # deprecated
-                        code_location_name=project_name,
                         dagster_version=dagster_version,
                         project_name=project_name,
                         **other_template_vars,
