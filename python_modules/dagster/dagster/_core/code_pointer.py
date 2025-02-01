@@ -11,7 +11,7 @@ import dagster._check as check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven import get_import_error_message, import_module_from_path
-from dagster._utils import alter_sys_path, hash_collection
+from dagster._utils import hash_collection
 
 
 class CodePointer(ABC):
@@ -74,12 +74,9 @@ def load_python_file(python_file: str, working_directory: Optional[str]) -> Modu
 
     module_name = os.path.splitext(os.path.basename(python_file))[0]
 
-    # Use the passed in working directory for local imports (sys.path[0] isn't
-    # consistently set in the different entry points that Dagster uses to import code)
-    script_path = sys.path[0]
-    alter_sys_path(
-        to_add=([working_directory] if working_directory else []), to_remove=[script_path]
-    )
+    if working_directory and working_directory not in sys.path:
+        sys.path.insert(0, working_directory)
+
     try:
         return import_module_from_path(module_name, python_file)
     except ImportError as ie:
@@ -116,21 +113,13 @@ def load_python_file(python_file: str, working_directory: Optional[str]) -> Modu
 def load_python_module(
     module_name: str,
     working_directory: Optional[str],
-    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> ModuleType:
     check.str_param(module_name, "module_name")
     check.opt_str_param(working_directory, "working_directory")
-    check.opt_callable_param(remove_from_path_fn, "remove_from_path_fn")
 
-    # Use the passed in working directory for local imports (sys.path[0] isn't
-    # consistently set in the different entry points that Dagster uses to import code)
-    remove_paths: list[str] = (
-        list(remove_from_path_fn()) if remove_from_path_fn else []
-    )  # hook for tests
-    remove_paths.insert(0, sys.path[0])  # remove the script path
-    alter_sys_path(
-        to_add=([working_directory] if working_directory else []), to_remove=remove_paths
-    )
+    if working_directory and working_directory not in sys.path:
+        sys.path.insert(0, working_directory)
+
     try:
         return importlib.import_module(module_name)
     except ImportError as ie:

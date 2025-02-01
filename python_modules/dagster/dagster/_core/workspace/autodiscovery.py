@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import Sequence
 from types import ModuleType
-from typing import Callable, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Union
 
 from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
 from dagster._core.code_pointer import load_python_file, load_python_module
@@ -28,12 +28,10 @@ def loadable_targets_from_python_file(
 def loadable_targets_from_python_module(
     module_name: str,
     working_directory: Optional[str],
-    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> Sequence[LoadableTarget]:
     module = load_python_module(
         module_name,
         working_directory=working_directory,
-        remove_from_path_fn=remove_from_path_fn,
     )
     return loadable_targets_from_loaded_module(module)
 
@@ -41,11 +39,8 @@ def loadable_targets_from_python_module(
 def loadable_targets_from_python_package(
     package_name: str,
     working_directory: Optional[str],
-    remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> Sequence[LoadableTarget]:
-    module = load_python_module(
-        package_name, working_directory, remove_from_path_fn=remove_from_path_fn
-    )
+    module = load_python_module(package_name, working_directory)
     return loadable_targets_from_loaded_module(module)
 
 
