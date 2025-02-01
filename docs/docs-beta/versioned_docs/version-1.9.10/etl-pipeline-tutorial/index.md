@@ -3,7 +3,6 @@ title: Build an ETL Pipeline
 description: Learn how to build an ETL pipeline with Dagster
 last_update:
    author: Alex Noonan
-sidebar_position: 10
 sidebar_class_name: hidden
 ---
 
@@ -129,8 +128,9 @@ The data directory contains the raw data files for the project. We will referenc
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:"
 
-followed by a bash code snippet for `dagster dev`
-
+   ```bash
+   dagster dev
+   ```
 
 ## Next steps
 

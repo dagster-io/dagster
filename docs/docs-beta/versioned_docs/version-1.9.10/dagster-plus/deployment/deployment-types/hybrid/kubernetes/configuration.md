@@ -1,7 +1,6 @@
 ---
 title: Kubernetes agent configuration
 sidebar_position: 200
-unlisted: true
 ---
 
 :::note
