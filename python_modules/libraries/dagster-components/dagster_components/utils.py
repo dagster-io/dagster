@@ -67,7 +67,7 @@ class ResolvingInfo:
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
         renderer = self.value_resolver.with_scope(**{self.obj_name: obj})
-        rendered_attributes = self.asset_attributes.resolve_properties(renderer)
+        rendered_attributes = self.asset_attributes.resolve(renderer)
         return (
             rendered_attributes[attribute]
             if attribute in rendered_attributes
@@ -93,7 +93,7 @@ class ResolvingInfo:
         ```
         """
         resolver = self.value_resolver.with_scope(**context)
-        resolved_attributes = self.asset_attributes.resolve_properties(resolver)
+        resolved_attributes = self.asset_attributes.resolve(resolver)
         return base_spec.replace_attributes(**resolved_attributes)
 
 
@@ -103,8 +103,8 @@ def get_wrapped_translator_class(translator_type: type):
     """
 
     class WrappedTranslator(translator_type):
-        def __init__(self, *, base_translator, resolving_info: ResolvingInfo):
-            self.base_translator = base_translator
+        def __init__(self, *, resolving_info: ResolvingInfo):
+            self.base_translator = translator_type()
             self.resolving_info = resolving_info
 
         def get_asset_key(self, obj: Any) -> AssetKey:
