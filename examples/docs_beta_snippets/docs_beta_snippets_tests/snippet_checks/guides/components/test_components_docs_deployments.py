@@ -67,12 +67,9 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
         # Validate scaffolded files
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="cd my-deployment && tree --sort size",
+            cmd="cd my-deployment && tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
-            # Remove --sort size from tree output, sadly OSX and Linux tree
-            # sort differently when using alpha sort
-            snippet_replace_regex=[(" --sort size", "")],
         )
         check_file(
             "pyproject.toml",
@@ -102,6 +99,8 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             cmd="tree --sort size",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
+            # Remove --sort size from tree output, sadly OSX and Linux tree
+            # sort differently when using alpha sort
             snippet_replace_regex=[
                 ("--sort size", ""),
             ],
