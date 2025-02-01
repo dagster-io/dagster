@@ -282,8 +282,12 @@ def test_local_directory_file() -> None:
 
         assert "No module named 'autodiscover_src'" in str(exc_info.value)
 
-    with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
+    to_restore = [path for path in sys.path]
+    try:
+        alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[])
         loadable_targets_from_python_file(path, working_directory=os.path.dirname(path))
+    finally:
+        sys.path = to_restore
 
 
 def test_lazy_definitions() -> None:

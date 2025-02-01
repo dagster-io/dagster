@@ -77,11 +77,11 @@ def load_python_file(python_file: str, working_directory: Optional[str]) -> Modu
     # Use the passed in working directory for local imports (sys.path[0] isn't
     # consistently set in the different entry points that Dagster uses to import code)
     script_path = sys.path[0]
+    alter_sys_path(
+        to_add=([working_directory] if working_directory else []), to_remove=[script_path]
+    )
     try:
-        with alter_sys_path(
-            to_add=([working_directory] if working_directory else []), to_remove=[script_path]
-        ):
-            return import_module_from_path(module_name, python_file)
+        return import_module_from_path(module_name, python_file)
     except ImportError as ie:
         python_file = os.path.abspath(os.path.expanduser(python_file))
 
@@ -128,31 +128,31 @@ def load_python_module(
         list(remove_from_path_fn()) if remove_from_path_fn else []
     )  # hook for tests
     remove_paths.insert(0, sys.path[0])  # remove the script path
-    with alter_sys_path(
+    alter_sys_path(
         to_add=([working_directory] if working_directory else []), to_remove=remove_paths
-    ):
-        try:
-            return importlib.import_module(module_name)
-        except ImportError as ie:
-            msg = get_import_error_message(ie)
-            if working_directory:
-                abs_working_directory = os.path.abspath(os.path.expanduser(working_directory))
-                raise DagsterImportError(
-                    f"Encountered ImportError: `{msg}` while importing module {module_name}. "
-                    "Local modules were resolved using the working "
-                    f"directory `{abs_working_directory}`. If another working directory should be "
-                    "used, please explicitly specify the appropriate path using the `-d` or "
-                    "`--working-directory` for CLI based targets or the `working_directory` "
-                    "configuration option for workspace targets. "
-                ) from ie
-            else:
-                raise DagsterImportError(
-                    f"Encountered ImportError: `{msg}` while importing module {module_name}. "
-                    "If relying on the working directory to resolve modules, please "
-                    "explicitly specify the appropriate path using the `-d` or "
-                    "`--working-directory` for CLI based targets or the `working_directory` "
-                    "configuration option for workspace targets. "
-                ) from ie
+    )
+    try:
+        return importlib.import_module(module_name)
+    except ImportError as ie:
+        msg = get_import_error_message(ie)
+        if working_directory:
+            abs_working_directory = os.path.abspath(os.path.expanduser(working_directory))
+            raise DagsterImportError(
+                f"Encountered ImportError: `{msg}` while importing module {module_name}. "
+                "Local modules were resolved using the working "
+                f"directory `{abs_working_directory}`. If another working directory should be "
+                "used, please explicitly specify the appropriate path using the `-d` or "
+                "`--working-directory` for CLI based targets or the `working_directory` "
+                "configuration option for workspace targets. "
+            ) from ie
+        else:
+            raise DagsterImportError(
+                f"Encountered ImportError: `{msg}` while importing module {module_name}. "
+                "If relying on the working directory to resolve modules, please "
+                "explicitly specify the appropriate path using the `-d` or "
+                "`--working-directory` for CLI based targets or the `working_directory` "
+                "configuration option for workspace targets. "
+            ) from ie
 
 
 @whitelist_for_serdes

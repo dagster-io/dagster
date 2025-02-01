@@ -582,10 +582,7 @@ def is_port_in_use(host, port) -> bool:
         sock.close()
 
 
-@contextlib.contextmanager
 def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[None]:
-    to_restore = [path for path in sys.path]
-
     # remove paths
     for path in to_remove:
         if path in sys.path:
@@ -594,11 +591,6 @@ def alter_sys_path(to_add: Sequence[str], to_remove: Sequence[str]) -> Iterator[
     # add paths
     for path in to_add:
         sys.path.insert(0, path)
-
-    try:
-        yield
-    finally:
-        sys.path = to_restore
 
 
 @contextlib.contextmanager
