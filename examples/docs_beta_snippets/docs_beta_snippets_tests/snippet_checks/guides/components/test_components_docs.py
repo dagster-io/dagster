@@ -5,6 +5,14 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from dagster._utils.env import environ
+from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
+    DAGSTER_ROOT,
+    MASK_JAFFLE_PLATFORM,
+    MASK_SLING_DOWNLOAD_DUCKDB,
+    MASK_SLING_PROMO,
+    MASK_SLING_WARNING,
+    MASK_TIME,
+)
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
@@ -14,13 +22,6 @@ from docs_beta_snippets_tests.snippet_checks.utils import (
     run_command_and_snippet_output,
 )
 
-MASK_TIME = (r"\d+:\d+(:?AM|PM)", "9:00AM")
-MASK_SLING_WARNING = (r"warning.*\n", "")
-MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
-MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
-MASK_JAFFLE_PLATFORM = (r" \/.*?\/jaffle-platform", " /.../jaffle-platform")
-
-DAGSTER_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent.parent
 COMPONENTS_SNIPPETS_DIR = (
     DAGSTER_ROOT
     / "examples"

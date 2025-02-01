@@ -44,6 +44,9 @@ def re_ignore_after(match_str: str) -> tuple[str, str]:
     return (rf"{re.escape(match_str)}[\s\S]*", f"{match_str}\n...")
 
 
+PWD_REGEX = re.compile(r"PWD=(.*?);")
+
+
 def _run_command(
     cmd: Union[str, Sequence[str]],
 ) -> str:
@@ -52,20 +55,17 @@ def _run_command(
 
     actual_output = (
         subprocess.check_output(
-            f'{cmd}; echo "PWD=$(pwd)"', shell=True, stderr=subprocess.STDOUT
+            f'{cmd}; echo "PWD=$(pwd);"', shell=True, stderr=subprocess.STDOUT
         )
         .decode("utf-8")
         .strip()
     )
 
-    actual_output, pwd = actual_output.split("PWD=")
+    pwd = PWD_REGEX.search(actual_output).group(1)
+    actual_output = PWD_REGEX.sub("", actual_output)
+
     os.chdir(pwd)
 
-    actual_output = ANSI_ESCAPE.sub("", actual_output)
-
-    print(f"Ran command:\n{cmd}")  # noqa: T201
-    print("\n\nOutput:")  # noqa: T201
-    print(actual_output)  # noqa: T201
     return actual_output
 
 
