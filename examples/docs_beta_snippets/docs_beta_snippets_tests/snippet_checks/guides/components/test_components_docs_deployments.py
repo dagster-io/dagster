@@ -1,18 +1,10 @@
 import os
 import re
 import subprocess
-from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from dagster._utils.env import environ
-from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
-    DAGSTER_ROOT,
-    MASK_JAFFLE_PLATFORM,
-    MASK_SLING_DOWNLOAD_DUCKDB,
-    MASK_SLING_PROMO,
-    MASK_SLING_WARNING,
-    MASK_TIME,
-)
+from docs_beta_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
@@ -46,7 +38,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
         TemporaryDirectory() as tempdir,
         environ(
             {
-                "COLUMNS": "120",
+                "COLUMNS": "96",
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
             }
@@ -95,6 +87,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Validate scaffolded files
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(r"find . -type d -name code_location_1.egg-info -exec rm -r {} \+")
         run_command_and_snippet_output(
             cmd="tree --sort size",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
@@ -103,6 +96,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             # sort differently when using alpha sort
             snippet_replace_regex=[
                 ("--sort size", ""),
+                (r"\d+ directories, \d+ files", "..."),
             ],
         )
 
