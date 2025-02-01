@@ -1,6 +1,28 @@
+import requests
 from dagster import asset, materialize_to_memory
 
 from dagster_aws.rds import RDSResource
+
+
+def configure_moto_mock_response():
+    mock_response = {
+        "results": [
+            {
+                "records": [
+                    [{"stringValue": "title1"}, {"longValue": 2001}],
+                    [{"stringValue": "title2"}, {"longValue": 2010}],
+                ],
+                "numberOfRecordsUpdated": 0,
+            }
+        ]
+    }
+
+    # moto is configured through HTTP: https://docs.getmoto.org/en/stable/docs/services/rds-data.html
+    resp = requests.post(
+        "http://motoapi.amazonaws.com/moto-api/static/rds-data/statement-results",
+        json=mock_response,
+    )
+    assert resp.status_code == 201
 
 
 def test_rds_resource(mock_rds_client, mock_rds_data_client):
@@ -19,12 +41,16 @@ def test_rds_resource(mock_rds_client, mock_rds_data_client):
 
     @asset
     def rds_data_asset(rds_resource: RDSResource):
+        configure_moto_mock_response()
+
         with rds_resource.get_data_client() as rds_data_client:
-            rds_data_client.execute_statement(
-                resourceArn="arn:aws:rds:us-east-1:example:cluster:database-1",
-                secretArn="arn:aws:secretsmanager:us-east-1:example:secret:rds!cluster-1",
-                sql="SELECT * from mytable",
+            response = rds_data_client.execute_statement(
+                resourceArn="arn:aws:rds:us-east-1:123456789012:cluster:database-1",
+                secretArn="arn:aws:secretsmanager:us-east-1:123456789012:secret:rds!cluster-1",
+                sql="SELECT * from films;",
             )
+
+            assert len(response["records"]) == 2
 
     result = materialize_to_memory(
         [rds_asset, rds_data_asset],
