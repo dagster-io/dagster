@@ -38,7 +38,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
         TemporaryDirectory() as tempdir,
         environ(
             {
-                "COLUMNS": "96",
+                "COLUMNS": "90",
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
             }
@@ -89,10 +89,13 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name code_location_1.egg-info -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="tree",
+            cmd="tree --sort size --dirsfirst",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
+            # Remove --sort size from tree output, sadly OSX and Linux tree
+            # sort differently when using alpha sort
             snippet_replace_regex=[
+                ("--sort size --dirsfirst", ""),
                 (r"\d+ directories, \d+ files", "..."),
             ],
         )
