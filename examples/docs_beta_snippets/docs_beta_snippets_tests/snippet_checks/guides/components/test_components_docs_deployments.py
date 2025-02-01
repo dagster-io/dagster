@@ -110,7 +110,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
         # Validate code location toml
         check_file(
             "code_locations/code-location-1/pyproject.toml",
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-code-location-toml.txt",
+            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-code-location-pyproject.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[tool.dagster]"),
