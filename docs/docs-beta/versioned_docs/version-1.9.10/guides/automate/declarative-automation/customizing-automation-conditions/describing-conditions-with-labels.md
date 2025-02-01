@@ -10,15 +10,15 @@ Arbitrary string labels can be attached to any node in the <PyObject section="as
 ```python
 from dagster import AutomationCondition
 
-in_progress_or_failed_parents = AutomationCondition.any_deps_match(
+in_progress_or_failed_deps = AutomationCondition.any_deps_match(
     AutomationCondition.in_progress() | AutomationCondition.failed()
-).with_label("Any parents in progress or failed")
+).with_label("Any deps in progress or failed")
 ```
 
 Then, when viewing evaluation results in the UI, the label will display next to the condition:
 
-![Any parents in progress or failed condition label in the Dagster UI](/images/guides/automate/declarative-automation/condition-label.png) -->
+![Any dependencies in progress or failed condition label in the Dagster UI](/images/guides/automate/declarative-automation/condition-label.png) -->
 
 Hovering over or expanding the label will display its sub-conditions:
 
-![Expanded Any parents in progress or failed condition label with a list of sub-conditions in the Dagster UI](/images/guides/automate/declarative-automation/condition-label-expanded.png) -->
+![Expanded Any dependencies in progress or failed condition label with a list of sub-conditions in the Dagster UI](/images/guides/automate/declarative-automation/condition-label-expanded.png) -->
