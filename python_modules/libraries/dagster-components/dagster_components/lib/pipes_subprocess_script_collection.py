@@ -10,7 +10,11 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from pydantic import BaseModel
 
-from dagster_components.core.component import Component, ComponentLoadContext, component_type
+from dagster_components.core.component import (
+    Component,
+    ComponentLoadContext,
+    registered_component_type,
+)
 from dagster_components.core.schema.base import ResolvableModel
 from dagster_components.core.schema.objects import AssetSpecModel
 from dagster_components.core.schema.resolver import TemplatedValueResolver
@@ -36,7 +40,7 @@ class PipesSubprocessScriptCollectionParams(ResolvableModel[Mapping[Path, Sequen
         }
 
 
-@component_type(name="pipes_subprocess_script_collection")
+@registered_component_type(name="pipes_subprocess_script_collection")
 class PipesSubprocessScriptCollection(Component):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 

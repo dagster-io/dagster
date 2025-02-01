@@ -3,14 +3,14 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
-    component_type,
+    registered_component_type,
 )
 from pydantic import BaseModel
 
 class {{ component_type_class_name }}Params(BaseModel):
     ...
 
-@component_type(name="{{ name }}")
+@registered_component_type(name="{{ name }}")
 class {{ component_type_class_name }}(Component):
     """COMPONENT SUMMARY HERE.
 

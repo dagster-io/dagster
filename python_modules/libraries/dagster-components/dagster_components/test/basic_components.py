@@ -6,7 +6,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import Self
 
-from dagster_components import Component, component_type
+from dagster_components import Component, registered_component_type
 from dagster_components.core.component import ComponentLoadContext
 
 
@@ -17,7 +17,7 @@ class MyComponentSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-@component_type
+@registered_component_type
 class MyComponent(Component):
     name = "my_component"
 
@@ -46,7 +46,7 @@ class MyNestedComponentSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-@component_type
+@registered_component_type
 class MyNestedComponent(Component):
     name = "my_nested_component"
 
