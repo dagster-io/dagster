@@ -260,9 +260,11 @@ COMPONENT_FILE_SCHEMA = {
     },
 }
 
+LOCAL_COMPONENT_NAMESPACE = "@local"
+
 
 def _is_local_component(component_name: str) -> bool:
-    return component_name.startswith(".")
+    return component_name.split(".", maxsplit=1)[0] == LOCAL_COMPONENT_NAMESPACE
 
 
 @component_group.command(name="check", cls=DgClickCommand)

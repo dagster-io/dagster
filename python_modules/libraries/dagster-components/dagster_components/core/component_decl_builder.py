@@ -33,6 +33,8 @@ class ComponentFileModel(BaseModel):
 
 T = TypeVar("T", bound=BaseModel)
 
+LOCAL_COMPONENT_NAMESPACE = "@local"
+
 
 def find_local_component_types(component_path: Path) -> list[type[Component]]:
     """Find all component types defined in a component directory."""
@@ -115,8 +117,8 @@ class YamlComponentDecl(ComponentDeclNode):
 
     def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
         parsed_defs = self.component_file_model
-        if parsed_defs.type.startswith("."):
-            component_registry_key = parsed_defs.type[1:]
+        if parsed_defs.type.startswith(LOCAL_COMPONENT_NAMESPACE):
+            component_registry_key = parsed_defs.type.split(".", maxsplit=1)[1]
 
             for component_type in find_local_component_types(self.path):
                 if get_component_type_name(component_type) == component_registry_key:

@@ -1,4 +1,4 @@
-type: .debug_sling_replication
+type: "@local.debug_sling_replication"
 
 params:
   sling:

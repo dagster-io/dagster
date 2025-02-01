@@ -1,4 +1,4 @@
-type: .my_nested_component
+type: "@local.my_nested_component"
 
 params:
   nested:

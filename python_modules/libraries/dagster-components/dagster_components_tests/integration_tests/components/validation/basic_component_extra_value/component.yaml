@@ -1,4 +1,4 @@
-type: .my_component
+type: "@local.my_component"
 
 params:
   a_string: "a string"
