@@ -39,11 +39,11 @@ If you have a local clone of the `dagster` repo, you can install a local version
 
 Let's take a look at the help message for `dg`:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/1-help.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/1-help.txt" language="bash" />
 
 We want to scaffold a new code location:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt" language="bash" />
 
 
 This built a code location at `jaffle-platform` and initialized a new Python
@@ -52,7 +52,7 @@ management behavior, you won't need to worry about activating this virtual envir
 
 Let's have a look at the scaffolded files:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/3-tree.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/3-tree.txt" language="bash" />
 
 
 You can see that we have a fairly standard Python project structure. There is a
@@ -100,7 +100,7 @@ Now that we've got a basic scaffold, we're ready to start building components. W
 
 First let's set up Sling. If we query the available component types in our environment, we don't see anything Sling-related:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/7-dg-list-component-types.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/7-dg-list-component-types.txt" language="bash" />
 
 This is because the basic `dagster-components` package (which was installed when we scaffolded our code location) is lightweight and doesn't include components for specific integrations (like Sling). We can get access to a Sling component by installing the `sling` extra of `dagster-components`:
 
@@ -114,17 +114,17 @@ $ uv add 'dagster-components[sling]'
 
 Now let's see what component types are available:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/8-dg-list-component-types.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/8-dg-list-component-types.txt" language="bash" />
 
 
 Great-- now we can see the `dagster_components.sling_replication` component type. Let's create a new instance of this component:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/9-dg-scaffold-sling-replication.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/9-dg-scaffold-sling-replication.txt" language="bash" />
 
 
 This adds a component instance to the project at `jaffle_platform/components/ingest_files`:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/10-tree-jaffle-platform.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/10-tree-jaffle-platform.txt" language="bash" />
 
 
 A single file, `component.yaml`, was created in the component folder. The `component.yaml` file is common to all Dagster components, and specifies the component type and any parameters used to scaffold definitions from the component at runtime.
@@ -140,15 +140,15 @@ The `path` parameter for a replication is relative to the same folder containing
 
 But first, let's set up DuckDB:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/12-sling-setup-duckdb.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/12-sling-setup-duckdb.txt" language="bash" />
 
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/13-sling-test-duckdb.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/13-sling-test-duckdb.txt" language="bash" />
 
 
 Now let's download some files locally to use our Sling source (Sling doesn't support reading from the public internet):
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/14-curl.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/14-curl.txt" language="bash" />
 
 And finally create `replication.yaml` referencing the downloaded files:
 
@@ -164,14 +164,14 @@ uv run dagster dev # will be dg dev in the future
 
 Click "Materialize All", and we should now have tables in the DuckDB instance. Let's verify on the command line:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/16-duckdb-select.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/16-duckdb-select.txt" language="bash" />
 
 
 ## Transform
 
 We'll now download a pre-existing sample DBT project from github. We're going to use the data we are ingesting with Sling as an input for the DBT project. Clone the project (and delete the embedded git repo):
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/17-jaffle-clone.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/17-jaffle-clone.txt" language="bash" />
 
 We'll need to create a Dagster DBT project component to interface with the dbt project. We can access the DBT project component by installing `dagster-components[dbt]` and `dbt-duckdb`:
 
@@ -179,19 +179,19 @@ We'll need to create a Dagster DBT project component to interface with the dbt p
 $ uv add "dagster-components[dbt]" dbt-duckdb
 ```
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" language="bash" />
 
 
 There it is: `dagster_components.dbt_project`. We can access detailed info about a component type using the `dg component-type info` command. Let's have a look at the `dagster_components.dbt_project` component type:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-component-type-info.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-component-type-info.txt" language="bash" />
 
 
 The output of the above command shows the parameters (in JSON schema format) for both component generation and runtime loading of the component (the runtime parameters have been truncated here due to length).
 
 Let's scaffold a new instance of the `dagster_components.dbt_project` component, providing the path to the dbt project we cloned earlier as the `project_path` scaffold paramater. We can pass this on the command line:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/20-dg-scaffold-jdbt.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/20-dg-scaffold-jdbt.txt" language="bash" />
 
 This creates a new component instance in the project at `jaffle_platform/components/jdbt`. Open `component.yaml` and you'll see:
 
@@ -219,7 +219,7 @@ asset graph is correct. Click "Materialize All" to materialize the new assets
 defined via the DBT project component. We can verify that this worked by
 viewing a sample of the newly materialized assets from the command line:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-duckdb-select-orders.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-duckdb-select-orders.txt" language="bash" />
 
 
 ## Automation

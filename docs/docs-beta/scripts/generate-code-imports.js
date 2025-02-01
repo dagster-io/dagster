@@ -3,7 +3,7 @@ const path = require('path');
 
 const DOCUMENTATION_DIRECTORY = 'docs';
 const VALID_DOCUMENT_EXTENSIONS = ['.md', '.mdx'];
-const CODE_EXAMPLE_PATH_REGEX = /<CodeExample\s+[^>]*path=["']([^"']+)["'][^>]*>/g;
+const CODE_EXAMPLE_PATH_REGEX = /<(?:(?:CodeExample)|(?:CliInvocationExample))\s+[^>]*path=["']([^"']+)["'][^>]*>/g;
 
 /**
  * Returns a list of file paths for a given `dir`.
