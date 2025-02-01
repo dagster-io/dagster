@@ -782,7 +782,7 @@ def _resume_tick(
             skip_reason="Sensor manually stopped mid-iteration.",
         )
     else:
-        context.update_state(TickStatus.SUCCESS, cursor=context.tick.cursor)  # TODO
+        context.update_state(TickStatus.SUCCESS, cursor=context.tick.cursor)
 
 
 def _get_code_location_for_sensor(
