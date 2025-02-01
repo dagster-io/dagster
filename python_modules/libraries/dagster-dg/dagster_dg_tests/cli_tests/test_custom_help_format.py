@@ -1,4 +1,6 @@
 import textwrap
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 import click
 from click.testing import CliRunner
@@ -15,6 +17,7 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_code_location_foo_bar,
+    set_env_var,
 )
 
 # ########################
@@ -84,9 +87,20 @@ def _match_output(output: str, expected_output: str):
     return True
 
 
+@contextmanager
+def _fixed_panel_width(width: int = 80) -> Iterator[None]:
+    # The width of panels in the help output is determined by the `COLUMNS` environment variable.
+    # Unclear to me whether this controls the width of the terminal as a whole or just the width of
+    # the panels rendered by `rich`, but regardless it is enough to achieve consistent output in the
+    # below tests.
+    with set_env_var("COLUMNS", str(width)):
+        yield
+
+
 def test_root_help_message():
     runner = CliRunner()
-    result = runner.invoke(root, ["--help"])
+    with _fixed_panel_width():
+        result = runner.invoke(root, ["--help"])
     assert_runner_result(result)
     assert _match_output(
         result.output.strip(),
@@ -112,7 +126,8 @@ def test_root_help_message():
 
 def test_sub_group_with_option_help_message():
     runner = CliRunner()
-    result = runner.invoke(root, ["sub-group", "--help"])
+    with _fixed_panel_width():
+        result = runner.invoke(root, ["sub-group", "--help"])
     assert_runner_result(result)
     assert _match_output(
         result.output.strip(),
@@ -137,7 +152,8 @@ def test_sub_group_with_option_help_message():
 
 def test_sub_group_command_with_option_help_message():
     runner = CliRunner()
-    result = runner.invoke(root, ["sub-group", "sub-group-command", "--help"])
+    with _fixed_panel_width():
+        result = runner.invoke(root, ["sub-group", "sub-group-command", "--help"])
     assert_runner_result(result)
     assert _match_output(
         result.output.strip(),
@@ -159,7 +175,8 @@ def test_sub_group_command_with_option_help_message():
 
 def test_sub_command_with_option_help_message():
     runner = CliRunner()
-    result = runner.invoke(root, ["sub-command", "--help"])
+    with _fixed_panel_width():
+        result = runner.invoke(root, ["sub-command", "--help"])
     assert_runner_result(result)
     assert _match_output(
         result.output.strip(),
@@ -181,14 +198,18 @@ def test_sub_command_with_option_help_message():
 
 def test_dynamic_subcommand_help_message():
     with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        result = runner.invoke(
-            "component", "scaffold", "dagster_components.test.simple_pipes_script_asset", "--help"
-        )
+        with _fixed_panel_width(width=120):
+            result = runner.invoke(
+                "component",
+                "scaffold",
+                "dagster_components.test.simple_pipes_script_asset",
+                "--help",
+            )
         assert _match_output(
             result.output.strip(),
             textwrap.dedent("""
 
-                 Usage: dg component scaffold [GLOBAL OPTIONS] dagster_components.test.simple_pipes_script_asset [OPTIONS]              
+                 Usage: dg component scaffold [GLOBAL OPTIONS] dagster_components.test.simple_pipes_script_asset [OPTIONS]
                  COMPONENT_NAME                                                                                                         
                                                                                                                                         
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
