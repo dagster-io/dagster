@@ -1,0 +1,25 @@
+$ tree 
+
+.
+├── code_locations
+│   └── code-location-1
+│       ├── uv.lock
+│       ├── pyproject.toml
+│       ├── code_location_1.egg-info
+│       │   ├── SOURCES.txt
+│       │   ├── PKG-INFO
+│       │   ├── entry_points.txt
+│       │   ├── requires.txt
+│       │   ├── top_level.txt
+│       │   └── dependency_links.txt
+│       ├── code_location_1
+│       │   ├── definitions.py
+│       │   ├── lib
+│       │   │   └── __init__.py
+│       │   ├── components
+│       │   └── __init__.py
+│       └── code_location_1_tests
+│           └── __init__.py
+└── pyproject.toml
+
+8 directories, 13 files

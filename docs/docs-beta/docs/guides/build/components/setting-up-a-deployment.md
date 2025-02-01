@@ -16,63 +16,32 @@ default. Instead, Python environments are defined per code location.
 
 To scaffold a new deployment, run:
 
-```bash
-$ dg deployment scaffold my-deployment
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/1-deployment-scaffold.txt" language="Bash" />
 
-Creating a Dagster deployment at my-deployment.
-Scaffolded files for Dagster project in my-deployment.
-```
 
 This will create a new directory `my-deployment`. Let's look at the structure:
 
-```bash
-$ cd my-deployment && tree
 
-.
-├── code_locations
-└── pyproject.toml
-```
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/2-tree.txt" language="Bash" />
+
 
 Importantly, the `pyproject.toml` file contains an `is_deployment` setting
 marking this directory as a deployment:
 
-```toml
-### pyproject.toml
-
-[tool.dg]
-is_deployment = true
-```
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/3-pyproject.toml" language="TOML" name="pyproject.toml" />
 
 To add a code location to the deployment, run:
 
-```bash
-$ dg code-location scaffold code-location-1
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/4-code-location-scaffold.txt" language="Bash" />
 
-Creating a Dagster code location at .../my-deployment/code_locations/code-location-1.
-Scaffolded files for Dagster project in .../my-deployment/code_locations/code-location-1.
-...
-```
 
 This will create a new directory `code-location-1` within the `code_locations`.
 It will also setup a new uv-managed Python environment for the code location. Let's have a look:
 
-```bash
-$ tree
 
-├── code_locations
-│   └── code-location-1
-│       ├── code_location_1
-│       │   ├── __init__.py
-│       │   ├── components
-│       │   ├── definitions.py
-│       │   └── lib
-│       │       ├── __init__.py
-│       ├── code_location_1_tests
-│       │   └── __init__.py
-│       ├── pyproject.toml
-│       └── uv.lock
-└── pyproject.toml
-```
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/5-tree.txt" language="Bash" />
+
+
 
 :::note
 `code-location-1` also contains a virtual environment directory `.venv` that is
@@ -83,29 +52,14 @@ specified in the `uv.lock` file.
 The `code-location-1` directory contains a `pyproject.toml` file that defines
 it as a code location and component library:
 
-```toml
-[tool.dagster]
-module_name = "code_location_1.definitions"
-project_name = "code_location_1"
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/6-code-location-pyproject.toml" language="TOML" name="code_locations/code-location-1/pyproject.toml" />
 
-[tool.dg]
-is_code_location = true
-is_component_lib = true
-```
 
 Let's enter this directory and search for registered component types:
 
-```bash
-$ cd code_locations/code-location-1 && dg component-type list
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                        ┃ Summary                                                         ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_components.definitions                        │ Wraps an arbitrary set of Dagster definitions.                  │
-│ dagster_components.pipes_subprocess_script_collection │ Assets that wrap Python scripts executed with Dagster's         │
-│                                                       │ PipesSubprocessClient.                                          │
-└───────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
-```
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/7-component-type-list.txt" language="Bash" />
+
 
 This is the default set of component types available in every new code
 location. We can add to it by installing `dagster-components[sling]`:
@@ -116,18 +70,8 @@ $ uv add dagster-components[sling]
 
 And now we have a new available component:
 
-```bash
-$ dg component-type list
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/8-component-type-list.txt" language="Bash" />
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                        ┃ Summary                                                         ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_components.definitions                        │ Wraps an arbitrary set of Dagster definitions.                  │
-│ dagster_components.pipes_subprocess_script_collection │ Assets that wrap Python scripts executed with Dagster's         │
-│                                                       │ PipesSubprocessClient.                                          │
-│ dagster_components.sling_replication_collection       │ Expose one or more Sling replications to Dagster as assets.     │
-└───────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
-```
 
 As stated above, environments are scoped per code location.  `dg` commands will
 only use the environment of `code-location-1` when we are inside the
@@ -135,35 +79,20 @@ only use the environment of `code-location-1` when we are inside the
 
 Let's create another code location to demonstrate this:
 
-```bash
-$ cd ../.. && dg code-location scaffold code-location-2
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/9-code-location-scaffold.txt" language="Bash" />
 
-Creating a Dagster code location at .../my-deployment/code_locations/code-location-2.
-Scaffolded files for Dagster project in .../my-deployment/code_locations/code-location-2.
-```
 
 Now we have two code locations. We can list them with:
 
-```bash
-$ dg code-location list
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/10-code-location-list.txt" language="Bash" />
 
-code-location-1
-code-location-2
-```
+
 
 And finally, let's check the available component types in `code-location-2`:
 
-```bash
-$ cd code_locations/code-location-2 && dg component-type list
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/11-component-type-list.txt" language="Bash" />
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                        ┃ Summary                                                         ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_components.definitions                        │ Wraps an arbitrary set of Dagster definitions.                  │
-│ dagster_components.pipes_subprocess_script_collection │ Assets that wrap Python scripts executed with Dagster's         │
-│                                                       │ PipesSubprocessClient.                                          │
-└───────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
-```
+
 
 As you can see, we are back to only the default list of component types. This
 is because we are now using the environment of `code-location-2`, in which we
@@ -173,17 +102,10 @@ For a final step, let's load up our two code locations with `dagster dev`.
 We'll need a workspace.yaml to do this. Create a new file `workspace.yaml` in
 the `my-deployment` directory:
 
-```yaml
-load_from:
-  - python_file:
-      relative_path: code_locations/code-location-1/code_location_1/definitions.py
-      location_name: code_location_1
-      executable_path: code_locations/code-location-1/.venv/bin/python
-  - python_file:
-      relative_path: code_locations/code-location-2/code_location_2/definitions.py
-      location_name: code_location_2
-      executable_path: code_locations/code-location-2/.venv/bin/python
-```
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/12-workspace.yaml" language="YAML" name="workspace.yaml" />
+
+
 
 And finally we'll run `dagster dev` to see your two code locations loaded up in the
 UI. You may already have `dagster` installed in the ambient environment, in
