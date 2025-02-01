@@ -24,21 +24,16 @@ const config: Config = {
     require.resolve('./src/plugins/scoutos'),
   ],
   themeConfig: {
-    // Algolia environment variables are not required during development
-    algolia:
-      process.env.NODE_ENV === 'development'
-        ? {
-            appId: 'ABC123',
-            apiKey: 'ABC123',
-            indexName: 'ABC123',
-            contextualSearch: false,
-          }
-        : {
-            appId: process.env.ALGOLIA_APP_ID,
-            apiKey: process.env.ALGOLIA_API_KEY,
-            indexName: process.env.ALGOLIA_INDEX_NAME,
-            contextualSearch: false,
-          },
+    ...(process.env.ALGOLIA_APP_ID &&
+      process.env.ALGOLIA_API_KEY &&
+      process.env.ALGOLIA_INDEX_NAME && {
+        algolia: {
+          appId: process.env.ALGOLIA_APP_ID,
+          apiKey: process.env.ALGOLIA_API_KEY,
+          indexName: process.env.ALGOLIA_INDEX_NAME,
+          contextualSearch: false,
+        },
+      }),
     announcementBar: {
       id: 'announcementBar',
       content: `<div><h3>Welcome to Dagster's new and improved documentation site!</h3> You can find the legacy documentation with content for versions 1.9.9 and earlier at <a target="_blank" href="https://legacy-docs.dagster.io/">legacy-docs.dagster.io</a>.</div>`,
@@ -106,6 +101,11 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
+        {
+          label: 'Dagster University',
+          href: 'https://courses.dagster.io',
+          position: 'left',
+        },
         //{
         //  label: 'Changelog',
         //  type: 'doc',
@@ -125,7 +125,7 @@ const config: Config = {
          },
       ],
     },
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'images/og.png',
     docs: {
       sidebar: {
         autoCollapseCategories: false,
@@ -158,7 +158,7 @@ const config: Config = {
           `,
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Dagster Labs`,
+      copyright: `Copyright ${new Date().getFullYear()} Dagster Labs`,
     },
   } satisfies Preset.ThemeConfig,
 
@@ -192,6 +192,12 @@ const config: Config = {
             return items;
           },
         },
+        ...(process.env.GOOGLE_ANALYTICS_TRACKING_ID && {
+          gtag: {
+            trackingID: process.env.GOOGLE_ANALYTICS_TRACKING_ID,
+            anonymizeIP: true,
+          },
+        }),
       } satisfies Preset.Options,
     ],
   ],

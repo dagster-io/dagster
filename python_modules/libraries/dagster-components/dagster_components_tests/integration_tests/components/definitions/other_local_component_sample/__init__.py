@@ -1,11 +1,11 @@
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_components import Component, component_type
 from dagster_components.core.component import ComponentLoadContext
-from dagster_components.core.schema.base import ComponentSchemaBaseModel
+from pydantic import BaseModel
 from typing_extensions import Self
 
 
-class MyNewComponentSchema(ComponentSchemaBaseModel):
+class MyNewComponentSchema(BaseModel):
     a_string: str
     an_int: int
 

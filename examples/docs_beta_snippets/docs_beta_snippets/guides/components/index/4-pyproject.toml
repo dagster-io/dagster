@@ -1,0 +1,9 @@
+...
+[tool.dagster]
+module_name = "jaffle_platform.definitions"
+project_name = "jaffle_platform"
+
+[tool.dg]
+is_code_location = true
+is_component_lib = true
+...

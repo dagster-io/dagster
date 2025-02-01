@@ -97,6 +97,7 @@ two_disconnected_graphs = ScenarioSpec(
     ]
 )
 
+
 ##################
 # PARTITION STATES
 ##################
@@ -126,6 +127,10 @@ two_assets_in_sequence_fan_out_partitions = two_assets_in_sequence.with_asset_pr
     deps=[AssetDep("A", partition_mapping=StaticPartitionMapping({"1": ["1", "2", "3"]}))],
 )
 dynamic_partitions_def = DynamicPartitionsDefinition(name="dynamic")
+
+two_distinct_partitions_graphs = two_disconnected_graphs.with_asset_properties(
+    keys=["A", "B"], partitions_def=hourly_partitions_def
+).with_asset_properties(keys=["C", "D"], partitions_def=daily_partitions_def)
 
 
 ###########

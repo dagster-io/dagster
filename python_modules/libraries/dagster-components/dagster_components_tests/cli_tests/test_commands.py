@@ -112,8 +112,10 @@ def test_list_local_components_types() -> None:
 
             result = json.loads(result.output)
             assert len(result) == 1
-            assert result[0]["directory"] == "my_location/components/local_component_sample"
-            assert result[0]["key"] == ".my_component"
+            assert set(result.keys()) == {"my_location/components/local_component_sample"}
+            assert set(result["my_location/components/local_component_sample"].keys()) == {
+                ".my_component"
+            }
 
             # Add a second directory and local component
             result = runner.invoke(
@@ -153,6 +155,40 @@ def test_list_local_components_types() -> None:
             assert len(result) == 2
 
 
+def test_all_components_schema_command():
+    runner = CliRunner()
+
+    result = runner.invoke(
+        cli, ["--builtin-component-lib", "dagster_components.test", "list", "all-components-schema"]
+    )
+    assert result.exit_code == 0
+    result = json.loads(result.output)
+
+    component_type_keys = [
+        "complex_schema_asset",
+        "simple_asset",
+        "simple_pipes_script_asset",
+    ]
+
+    assert result["anyOf"] == [
+        {"$ref": f"#/$defs/{component_type_key}"} for component_type_key in component_type_keys
+    ]
+
+    # Sanity check each of the component type schemas has a constant type property matching the
+    # fully scoped component type key
+    for component_type_key in component_type_keys:
+        component_type_schema_def = result["$defs"][component_type_key]
+        assert "type" in component_type_schema_def["properties"]
+        assert (
+            component_type_schema_def["properties"]["type"]["default"]
+            == f"dagster_components.test.{component_type_key}"
+        )
+        assert (
+            component_type_schema_def["properties"]["type"]["const"]
+            == f"dagster_components.test.{component_type_key}"
+        )
+
+
 def test_scaffold_component_command():
     runner = CliRunner()
 
@@ -165,7 +201,7 @@ def test_scaffold_component_command():
                 "scaffold",
                 "component",
                 "dagster_components.test.simple_pipes_script_asset",
-                "qux",
+                "bar/components/qux",
                 "--json-params",
                 '{"asset_key": "my_asset", "filename": "my_asset.py"}',
             ],

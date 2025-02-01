@@ -25,7 +25,7 @@ export const GanttChartSelectionInput = ({
       <SelectionAutoCompleteInput
         id="run-gantt-chart"
         useAutoComplete={useAutoComplete}
-        placeholder="Type a step subset"
+        placeholder="Search and filter steps"
         linter={getLinter()}
         value={value}
         onChange={onChange}

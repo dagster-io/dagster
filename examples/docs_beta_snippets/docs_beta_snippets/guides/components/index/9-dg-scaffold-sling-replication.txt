@@ -1,0 +1,3 @@
+$ dg component scaffold dagster_components.sling_replication_collection ingest_files
+
+Creating a Dagster component instance folder at /.../jaffle-platform/jaffle_platform/components/ingest_files.

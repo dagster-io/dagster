@@ -7,6 +7,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Optional
 
+import click
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -28,6 +29,11 @@ def ensure_dagster_components_tests_import() -> None:
         dagster_components_package_root / "dagster_components_tests"
     ).exists(), "Could not find dagster_components_tests where expected"
     sys.path.append(dagster_components_package_root.as_posix())
+
+
+def exit_with_error(error_message: str) -> None:
+    click.echo(click.style(error_message, fg="red"))
+    sys.exit(1)
 
 
 # Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
@@ -61,7 +67,7 @@ class ResolvingInfo:
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
         renderer = self.value_resolver.with_scope(**{self.obj_name: obj})
-        rendered_attributes = self.asset_attributes.resolve_properties(renderer)
+        rendered_attributes = self.asset_attributes.resolve(renderer)
         return (
             rendered_attributes[attribute]
             if attribute in rendered_attributes
@@ -87,7 +93,7 @@ class ResolvingInfo:
         ```
         """
         resolver = self.value_resolver.with_scope(**context)
-        resolved_attributes = self.asset_attributes.resolve_properties(resolver)
+        resolved_attributes = self.asset_attributes.resolve(resolver)
         return base_spec.replace_attributes(**resolved_attributes)
 
 
@@ -97,8 +103,8 @@ def get_wrapped_translator_class(translator_type: type):
     """
 
     class WrappedTranslator(translator_type):
-        def __init__(self, *, base_translator, resolving_info: ResolvingInfo):
-            self.base_translator = base_translator
+        def __init__(self, *, resolving_info: ResolvingInfo):
+            self.base_translator = translator_type()
             self.resolving_info = resolving_info
 
         def get_asset_key(self, obj: Any) -> AssetKey:

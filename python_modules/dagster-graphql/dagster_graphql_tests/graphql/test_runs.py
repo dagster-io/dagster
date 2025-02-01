@@ -261,6 +261,7 @@ RUN_CONCURRENCY_QUERY = """
         status
         hasConcurrencyKeySlots
         rootConcurrencyKeys
+        allPools
       }
     }
   }
@@ -1005,6 +1006,7 @@ def test_run_has_concurrency_slots():
                     "hasConcurrencyKeySlots"
                 ]
                 assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
+                assert result.data["pipelineRunsOrError"]["results"][0]["allPools"]
 
             claim = instance.event_log_storage.claim_concurrency_slot(
                 "foo", run_id, "fake_step_key"
@@ -1018,6 +1020,7 @@ def test_run_has_concurrency_slots():
                 assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
                 assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]
                 assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
+                assert result.data["pipelineRunsOrError"]["results"][0]["allPools"]
 
 
 @pytest.mark.parametrize(

@@ -3,6 +3,7 @@ import datetime
 from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager, nullcontext
 from typing import Any, Optional, cast
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -65,9 +66,13 @@ from dagster_tests.declarative_automation_tests.scenario_utils.asset_daemon_scen
 )
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import run_request
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_specs import (
+    day_partition_key,
+    hour_partition_key,
     one_asset,
     one_upstream_observable_asset,
+    time_partitions_start_str,
     two_assets_in_sequence,
+    two_distinct_partitions_graphs,
     two_partitions_def,
 )
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import (
@@ -81,17 +86,21 @@ def get_daemon_instance(
     paused: bool = False,
     extra_overrides: Optional[Mapping[str, Any]] = None,
 ) -> Generator[DagsterInstance, None, None]:
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-            **(extra_overrides or {}),
-        }
-    ) as instance:
-        set_auto_materialize_paused(instance, paused)
-        yield instance
+    with mock.patch(
+        "dagster._core.instance.DagsterInstance.get_tick_termination_check_interval",
+        return_value=1,
+    ):
+        with instance_for_test(
+            overrides={
+                "run_launcher": {
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                    "class": "SyncInMemoryRunLauncher",
+                },
+                **(extra_overrides or {}),
+            }
+        ) as instance:
+            set_auto_materialize_paused(instance, paused)
+            yield instance
 
 
 @contextmanager
@@ -108,9 +117,41 @@ def _get_threadpool_executor(instance: DagsterInstance):
         yield executor
 
 
-# just run over a subset of the total scenarios
-daemon_scenarios = [*basic_scenarios, *partition_scenarios]
+mid_iteration_terminate_scenarios = [
+    AssetDaemonScenario(
+        id="stop_while_submitting_runs",
+        initial_spec=two_distinct_partitions_graphs.with_current_time(time_partitions_start_str)
+        .with_current_time_advanced(days=1, hours=1)
+        .with_all_eager(),
+        execution_fn=lambda state: state.with_runs(
+            *[
+                run_request(["A"], partition_key=hour_partition_key(state.current_time, delta=-i))
+                for i in range(25)
+            ],
+            run_request(["C"], partition_key=day_partition_key(state.current_time)),
+        )
+        .evaluate_tick(stop_mid_iteration=True)
+        .assert_requested_runs_for_stopped_iteration(
+            1,
+            run_request(asset_keys=["B"], partition_key=hour_partition_key(state.current_time)),
+            run_request(asset_keys=["D"], partition_key=day_partition_key(state.current_time)),
+        )
+        .with_current_time_advanced(minutes=10)
+        .start_asset_daemon()  # starts the daemon again for non-sensor tests
+        .evaluate_tick()
+        .assert_requested_runs()  # doesn't resubmit the stopped runs
+        .with_current_time_advanced(hours=1)
+        .evaluate_tick()
+        .assert_requested_runs(
+            run_request(
+                asset_keys=["A", "B"], partition_key=hour_partition_key(state.current_time, delta=1)
+            )
+        ),
+    ),
+]
 
+# just run over a subset of the total scenarios
+daemon_scenarios = [*basic_scenarios, *partition_scenarios, *mid_iteration_terminate_scenarios]
 
 # Additional repo with assets that should be not be included in the evaluation
 extra_definitions = ScenarioSpec(
@@ -144,6 +185,7 @@ cross_repo_sensor_scenario = AssetDaemonScenario(
 
 auto_materialize_sensor_scenarios = [
     cross_repo_sensor_scenario,
+    *mid_iteration_terminate_scenarios,
     AssetDaemonScenario(
         id="basic_hourly_cron_unpartitioned",
         initial_spec=one_asset.with_asset_properties(
@@ -228,7 +270,10 @@ def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
         scenario.evaluate_daemon(instance)
 
 
-daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]
+daemon_scenarios_with_threadpool_without_sensor = [
+    *basic_scenarios[:5],
+    *mid_iteration_terminate_scenarios,
+]
 
 
 @pytest.mark.parametrize(

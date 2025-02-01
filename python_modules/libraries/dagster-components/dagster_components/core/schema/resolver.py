@@ -1,4 +1,3 @@
-import functools
 import os
 from collections.abc import Mapping, Sequence
 from typing import Any, Callable, Optional, TypeVar, Union
@@ -8,9 +7,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._record import record
 from jinja2.nativetypes import NativeTemplate
-from pydantic import BaseModel
-
-from dagster_components.core.schema.metadata import allow_resolve
 
 T = TypeVar("T")
 
@@ -72,13 +68,3 @@ class TemplatedValueResolver:
     def resolve_obj(self, val: Any) -> Any:
         """Recursively resolves templated values in a nested object."""
         return self._resolve_obj(val, None, lambda _: True)
-
-    def resolve_params(self, val: T, target_type: type[BaseModel]) -> T:
-        """Given a raw params value, preprocesses it by resolving any templated values that are not marked
-        as deferred in the target_type's json schema.
-        """
-        json_schema = target_type.model_json_schema()
-        should_resolve = functools.partial(
-            allow_resolve, json_schema=json_schema, subschema=json_schema
-        )
-        return self._resolve_obj(val, [], should_resolve=should_resolve)

@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Annotated, Any, Literal, Optional, Union
+from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
@@ -11,26 +11,22 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
+from pydantic import BaseModel
 
-from dagster_components.core.schema.base import ComponentSchemaBaseModel
+from dagster_components.core.schema.base import ResolvableModel
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 
-def _post_process_key(resolved: Optional[str]) -> Optional[AssetKey]:
-    return AssetKey.from_user_string(resolved) if resolved else None
-
-
-class OpSpecBaseModel(ComponentSchemaBaseModel):
+class OpSpecModel(ResolvableModel["OpSpecModel"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
 
+    def resolve(self, resolver: TemplatedValueResolver) -> "OpSpecModel":
+        return OpSpecModel(**resolver.resolve_obj(self.model_dump(exclude_unset=True)))
 
-class AssetAttributesModel(ComponentSchemaBaseModel):
-    key: Annotated[
-        Optional[str],
-        ResolvableFieldInfo(output_type=AssetKey, post_process_fn=_post_process_key),
-    ] = None
+
+class _ResolvableAssetAttributesMixin(BaseModel):
     deps: Sequence[str] = []
     description: Optional[str] = None
     metadata: Annotated[
@@ -49,7 +45,36 @@ class AssetAttributesModel(ComponentSchemaBaseModel):
     ] = None
 
 
-class AssetSpecTransformModel(ComponentSchemaBaseModel):
+class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel[Mapping[str, Any]]):
+    key: Annotated[Optional[str], ResolvableFieldInfo(output_type=AssetKey)] = None
+
+    def resolve(self, resolver: TemplatedValueResolver) -> Mapping[str, Any]:
+        props = resolver.resolve_obj(self.model_dump(exclude_unset=True))
+        if "key" in props:
+            props["key"] = AssetKey.from_user_string(props["key"])
+        return props
+
+
+class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel[AssetSpec]):
+    key: Annotated[Optional[str], ResolvableFieldInfo(output_type=AssetKey)]
+
+    def resolve(self, resolver: TemplatedValueResolver) -> AssetSpec:
+        return AssetSpec(
+            key=AssetKey.from_user_string(resolver.resolve_obj(self.key)),
+            description=resolver.resolve_obj(self.description),
+            metadata=resolver.resolve_obj(self.metadata),
+            group_name=resolver.resolve_obj(self.group_name),
+            skippable=resolver.resolve_obj(self.skippable),
+            code_version=resolver.resolve_obj(self.code_version),
+            owners=resolver.resolve_obj(self.owners),
+            tags=resolver.resolve_obj(self.tags),
+            deps=[AssetKey.from_user_string(d) for d in resolver.resolve_obj(self.deps)]
+            if self.deps
+            else None,
+        )
+
+
+class AssetSpecTransformModel(ResolvableModel[Callable[[Definitions], Definitions]]):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesModel
@@ -63,7 +88,7 @@ class AssetSpecTransformModel(ComponentSchemaBaseModel):
         value_resolver: TemplatedValueResolver,
     ) -> AssetSpec:
         # add the original spec to the context and resolve values
-        attributes = self.attributes.resolve_properties(value_resolver.with_scope(asset=spec))
+        attributes = self.attributes.resolve(value_resolver.with_scope(asset=spec))
 
         if self.operation == "merge":
             mergeable_attributes = {"metadata", "tags"}
@@ -96,3 +121,6 @@ class AssetSpecTransformModel(ComponentSchemaBaseModel):
             *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
         ]
         return replace(defs, assets=assets)
+
+    def resolve(self, resolver: TemplatedValueResolver) -> Callable[[Definitions], Definitions]:
+        return lambda defs: self.apply(defs, resolver)

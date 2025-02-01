@@ -151,6 +151,7 @@ class MdxTranslator(SphinxTranslator):
         self.context: list[str] = []
         self.list_counter: list[int] = []
         self.in_literal = 0
+        self.in_literal_block = 0
         self.desc_count = 0
 
         self.max_line_width = self.config.mdx_max_line_width or 120
@@ -331,7 +332,7 @@ class MdxTranslator(SphinxTranslator):
         if "This parameter will be removed" in content:
             return
 
-        if self.in_literal:
+        if self.in_literal and not self.in_literal_block:
             content = node.astext().replace("<", "\\<").replace("{", "\\{")
         self.add_text(content)
 
@@ -832,12 +833,14 @@ class MdxTranslator(SphinxTranslator):
 
     def visit_literal_block(self, node: Element) -> None:
         self.in_literal += 1
-        lang = node.get("language", "default")
+        self.in_literal_block += 1
+        lang = node.get("language", "python")
         self.new_state()
         self.add_text(f"```{lang}\n")
 
     def depart_literal_block(self, node: Element) -> None:
         self.in_literal -= 1
+        self.in_literal_block -= 1
         self.end_state(wrap=False, end=["```"])
 
     def visit_inline(self, node: Element) -> None:

@@ -33,7 +33,13 @@ setup(
     packages=find_packages(exclude=["dagster_sling_tests*"]),
     include_package_data=True,
     python_requires=">=3.9,<3.13",
-    install_requires=[f"dagster{pin}", "sling>=1.1.5"],
+    install_requires=[
+        f"dagster{pin}",
+        "sling>=1.1.5",
+        # Required due to a bug in uv that can cause sling-linux-amd64 to be installed instead.
+        # See: https://github.com/astral-sh/uv/issues/10945
+        "sling-mac-arm64; platform_system=='Darwin' and platform_machine=='arm64'",
+    ],
     zip_safe=False,
     extras_require={
         "test": [
