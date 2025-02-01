@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 import tomli
+import yaml
 from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, pushd
 
 ensure_dagster_dg_tests_import()
@@ -28,12 +29,19 @@ from dagster_dg_tests.utils import (
 # and returns the local version of the package.
 
 
-def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
+@pytest.mark.parametrize("with_workspace_yaml", [True, False])
+def test_code_location_scaffold_inside_deployment_success(
+    monkeypatch, with_workspace_yaml: bool
+) -> None:
     # Remove when we are able to test without editable install
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
+        # Delete workspace.yaml if we are testing without it
+        if not with_workspace_yaml:
+            Path("workspace.yaml").unlink()
+
         result = runner.invoke("code-location", "scaffold", "foo-bar", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("code_locations/foo-bar").exists()
@@ -46,6 +54,23 @@ def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
         # Check venv created
         assert Path("code_locations/foo-bar/.venv").exists()
         assert Path("code_locations/foo-bar/uv.lock").exists()
+
+        # Check workspace.yaml modified
+        if with_workspace_yaml:
+            workspace_yaml_path = Path("workspace.yaml")
+            assert workspace_yaml_path.exists()
+            workspace_yaml = yaml.safe_load(workspace_yaml_path.read_text())
+            assert len(workspace_yaml["load_from"]) == 1
+            assert workspace_yaml["load_from"][0] == {
+                "python_file": {
+                    "relative_path": "code_locations/foo-bar/foo_bar/definitions.py",
+                    "location_name": "foo-bar",
+                    "executable_path": "code_locations/foo-bar/.venv/bin/python",
+                }
+            }
+        else:
+            assert not Path("workspace.yaml").exists()
+            assert "Expected a workspace.yaml file" in result.output
 
         # Restore when we are able to test without editable install
         # with open("code_locations/bar/pyproject.toml") as f:
@@ -121,37 +146,59 @@ def test_code_location_scaffold_editable_dagster_success(mode: str, monkeypatch)
 
 
 def test_code_location_scaffold_skip_venv_success() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("code-location", "scaffold", "--skip-venv", "foo-bar")
         assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/foo_bar").exists()
-        assert Path("foo-bar/foo_bar/lib").exists()
-        assert Path("foo-bar/foo_bar/components").exists()
-        assert Path("foo-bar/foo_bar_tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
+        assert Path("code_locations/foo-bar").exists()
+        assert Path("code_locations/foo-bar/foo_bar").exists()
+        assert Path("code_locations/foo-bar/foo_bar/lib").exists()
+        assert Path("code_locations/foo-bar/foo_bar/components").exists()
+        assert Path("code_locations/foo-bar/foo_bar_tests").exists()
+        assert Path("code_locations/foo-bar/pyproject.toml").exists()
 
         # Check venv not created
-        assert not Path("foo-bar/.venv").exists()
-        assert not Path("foo-bar/uv.lock").exists()
+        assert not Path("code_locations/foo-bar/.venv").exists()
+        assert not Path("code_locations/foo-bar/uv.lock").exists()
+
+        # Check workspace.yaml modified without executable_path
+        workspace_yaml_path = Path("workspace.yaml")
+        workspace_yaml = yaml.safe_load(workspace_yaml_path.read_text())
+        assert len(workspace_yaml["load_from"]) == 1
+        assert workspace_yaml["load_from"][0] == {
+            "python_file": {
+                "relative_path": "code_locations/foo-bar/foo_bar/definitions.py",
+                "location_name": "foo-bar",
+            }
+        }
 
 
 def test_code_location_scaffold_no_use_dg_managed_environment_success() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke(
             "code-location", "scaffold", "--no-use-dg-managed-environment", "foo-bar"
         )
         assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/foo_bar").exists()
-        assert Path("foo-bar/foo_bar/lib").exists()
-        assert Path("foo-bar/foo_bar/components").exists()
-        assert Path("foo-bar/foo_bar_tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
+        assert Path("code_locations/foo-bar").exists()
+        assert Path("code_locations/foo-bar/foo_bar").exists()
+        assert Path("code_locations/foo-bar/foo_bar/lib").exists()
+        assert Path("code_locations/foo-bar/foo_bar/components").exists()
+        assert Path("code_locations/foo-bar/foo_bar_tests").exists()
+        assert Path("code_locations/foo-bar/pyproject.toml").exists()
 
         # Check venv not created
-        assert not Path("foo-bar/.venv").exists()
-        assert not Path("foo-bar/uv.lock").exists()
+        assert not Path("code_locations/foo-bar/.venv").exists()
+        assert not Path("code_locations/foo-bar/uv.lock").exists()
+
+        # Check workspace.yaml modified without executable_path
+        workspace_yaml_path = Path("workspace.yaml")
+        workspace_yaml = yaml.safe_load(workspace_yaml_path.read_text())
+        assert len(workspace_yaml["load_from"]) == 1
+        assert workspace_yaml["load_from"][0] == {
+            "python_file": {
+                "relative_path": "code_locations/foo-bar/foo_bar/definitions.py",
+                "location_name": "foo-bar",
+            }
+        }
 
 
 def test_code_location_scaffold_editable_dagster_no_env_var_no_value_fails(monkeypatch) -> None:

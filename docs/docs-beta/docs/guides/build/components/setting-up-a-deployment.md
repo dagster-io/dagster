@@ -31,6 +31,7 @@ $ cd my-deployment && tree
 .
 ├── code_locations
 └── pyproject.toml
+└── workspace.yaml
 ```
 
 Importantly, the `pyproject.toml` file contains an `is_deployment` setting
@@ -41,6 +42,23 @@ marking this directory as a deployment:
 
 [tool.dg]
 is_deployment = true
+```
+
+The workspace.yaml file specifies the code locations to load when running
+`dagster dev`. Because we don't have any code locations yet, it's empty except
+for an example comment:
+
+```yaml
+# This file contains the configuration for the workspace-- it should contain an entry in `load_from`
+# for each code location.
+#
+# ##### EXAMPLE
+# 
+# load_from:
+#   - python_file:
+#       relative_path: code_locations/my-code-location/my_code_location/definitions.py
+#       location_name: my_code_location
+#       executable_path: code_locations/my-code-location/.venv/bin/python
 ```
 
 To add a code location to the deployment, run:
@@ -91,6 +109,17 @@ project_name = "code_location_1"
 [tool.dg]
 is_code_location = true
 is_component_lib = true
+```
+
+We can also see that the `workspace.yaml` file has been updated to include the
+new code location:
+
+```yaml
+load_from:
+  - python_file:
+      relative_path: code_locations/code-location-1/code_location_1/definitions.py
+      location_name: code_location_1
+      executable_path: code_locations/code-location-1/.venv/bin/python
 ```
 
 Let's enter this directory and search for registered component types:
@@ -170,8 +199,8 @@ is because we are now using the environment of `code-location-2`, in which we
 have not installed `dagster-components[sling]`.
 
 For a final step, let's load up our two code locations with `dagster dev`.
-We'll need a workspace.yaml to do this. Create a new file `workspace.yaml` in
-the `my-deployment` directory:
+Since `dg code-location scaffold` automatically updates it, our
+`workspace.yaml` should already look like this:
 
 ```yaml
 load_from:
@@ -189,7 +218,8 @@ And finally we'll run `dagster dev` to see your two code locations loaded up in 
 UI. You may already have `dagster` installed in the ambient environment, in
 which case plain `dagster dev` will work. But in case you don't, we'll run
 `dagster dev` using `uv`, which will pull down and run `dagster` for you in
-an isolated environment:
+an isolated environment. Make sure you are in the code location root directory
+and run (it will automatically pick up your `workspace.yaml`):
 
 ```
 uv tool run --with=dagster-webserver dagster dev
@@ -199,8 +229,6 @@ uv tool run --with=dagster-webserver dagster dev
 ![](/images/guides/build/projects-and-components/setting-up-a-deployment/two-code-locations.png)
 
 :::note
-`dg` scaffolding functionality is currently under heavy development. In the
-future we will construct this workspace.yaml file for you automatically in the
-course of scaffolding code locations, and provide a `dg dev` command that
-handles pulling down `dagster` for you in the background.
+`dg` is currently under heavy development. In the future we will provide a `dg
+dev` command that handles pulling down `dagster` for you in the background.
 :::

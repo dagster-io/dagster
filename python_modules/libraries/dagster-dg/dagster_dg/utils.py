@@ -9,11 +9,13 @@ import sys
 import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
 import click
 import jinja2
+import yaml
 from typer.rich_utils import rich_format_help
 from typing_extensions import TypeAlias
 
@@ -46,11 +48,23 @@ def is_package_installed(package_name: str) -> bool:
         return False
 
 
-def get_path_for_package(package_name: str) -> str:
-    spec = importlib.util.find_spec(package_name)
+def _get_spec_for_module(module_name: str) -> ModuleSpec:
+    spec = importlib.util.find_spec(module_name)
     if not spec:
-        raise DgError(f"Cannot find package: {package_name}")
-    # file_path = spec.origin
+        raise DgError(f"Cannot find module: {module_name}")
+    return spec
+
+
+def get_path_for_module(module_name: str) -> str:
+    spec = _get_spec_for_module(module_name)
+    file_path = spec.origin
+    if not file_path:
+        raise DgError(f"Cannot find file path for module: {module_name}")
+    return file_path
+
+
+def get_path_for_package(package_name: str) -> str:
+    spec = _get_spec_for_module(package_name)
     submodule_search_locations = spec.submodule_search_locations
     if not submodule_search_locations:
         raise DgError(f"Package does not have any locations for submodules: {package_name}")
@@ -222,6 +236,17 @@ def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATT
             return True
 
     return False
+
+
+@contextlib.contextmanager
+def modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
+    if not path.exists():
+        raise DgError(f"File does not exist: {path}")
+    with open(path) as f:
+        # Return empty dict if file is empty
+        yaml_content = yaml.safe_load(f) or {}
+    yield yaml_content
+    path.write_text(yaml.dump(yaml_content))
 
 
 def ensure_dagster_dg_tests_import() -> None:

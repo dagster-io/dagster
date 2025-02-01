@@ -8,7 +8,7 @@ import click
 
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.context import DgContext
-from dagster_dg.utils import camelcase, scaffold_subtree
+from dagster_dg.utils import camelcase, modify_yaml, scaffold_subtree
 
 # ########################
 # ##### DEPLOYMENT
@@ -125,6 +125,30 @@ def scaffold_code_location(
     if cl_dg_context.use_dg_managed_environment and not skip_venv:
         cl_dg_context.ensure_uv_lock()
         RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+
+    # Update workspace.yaml
+    if cl_dg_context.is_deployment:
+        if not dg_context.workspace_yaml_path.exists():
+            click.secho(
+                "Expected a workspace.yaml file in the deployment directory, but did not find one. Skipping workspace.yaml modification step.",
+                fg="yellow",
+            )
+        else:
+            with modify_yaml(dg_context.workspace_yaml_path) as workspace_yaml:
+                workspace_yaml.setdefault("load_from", [])
+                entry = {
+                    "relative_path": str(
+                        cl_dg_context.definitions_path.relative_to(dg_context.deployment_root_path)
+                    ),
+                    "location_name": cl_dg_context.code_location_name,
+                }
+                if cl_dg_context.use_dg_managed_environment and not skip_venv:
+                    entry["executable_path"] = str(
+                        cl_dg_context.code_location_python_executable.relative_to(
+                            dg_context.deployment_root_path
+                        )
+                    )
+                workspace_yaml["load_from"].append({"python_file": entry})
 
 
 # ########################
