@@ -73,8 +73,8 @@ def test_dependencies_changed():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         }
     ) as instance:
@@ -91,8 +91,8 @@ def test_stale_status():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         }
     ) as instance:
@@ -158,8 +158,8 @@ def test_stale_status_partitioned():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         }
     ) as instance:
@@ -248,8 +248,8 @@ def test_data_version_from_tags():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         }
     ) as instance:

@@ -54,8 +54,8 @@ def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         },
     ) as instance:
@@ -834,8 +834,8 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
     with instance_with_multiple_code_locations(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
         workspace_load_target=workspace_load_target,
@@ -927,8 +927,8 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
     with instance_with_multiple_code_locations(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
         workspace_load_target=workspace_load_target,
@@ -1022,8 +1022,8 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
     with instance_with_multiple_code_locations(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
         workspace_load_target=workspace_load_target,
@@ -1127,8 +1127,8 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
     with instance_with_multiple_code_locations(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
         workspace_load_target=workspace_load_target,
@@ -1280,8 +1280,8 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
     with instance_with_multiple_code_locations(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
         workspace_load_target=workspace_load_target,
@@ -1407,8 +1407,8 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     with instance_with_single_code_location_multiple_repos_with_sensors(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
     ) as (
@@ -1472,8 +1472,8 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
     with instance_with_single_code_location_multiple_repos_with_sensors(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
     ) as (
@@ -1633,8 +1633,8 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
     with instance_with_sensors(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
     ) as (
@@ -1645,8 +1645,8 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
         with instance_with_sensors(
             overrides={
                 "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                    "class": "ImmediatelyLaunchRunCoordinator",
+                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                    "class": "SynchronousRunCoordinator",
                 }
             },
             attribute="the_other_repo",
@@ -1711,8 +1711,8 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     with instance_with_single_code_location_multiple_repos_with_sensors(
         overrides={
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             }
         },
     ) as (

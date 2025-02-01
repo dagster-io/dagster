@@ -110,8 +110,8 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "run_coordinator": {
-                            "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                            "class": "ImmediatelyLaunchRunCoordinator",
+                            "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                            "class": "SynchronousRunCoordinator",
                         },
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -137,8 +137,8 @@ class InstanceManagers:
             with graphql_postgres_instance(
                 overrides={
                     "run_coordinator": {
-                        "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                        "class": "ImmediatelyLaunchRunCoordinator",
+                        "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                        "class": "SynchronousRunCoordinator",
                     },
                     "run_launcher": {
                         "module": "dagster._core.test_utils",
@@ -212,8 +212,8 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "run_coordinator": {
-                            "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                            "class": "ImmediatelyLaunchRunCoordinator",
+                            "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                            "class": "SynchronousRunCoordinator",
                         },
                         "scheduler": {
                             "module": "dagster.utils.test",
@@ -236,8 +236,8 @@ class InstanceManagers:
             with graphql_postgres_instance(
                 overrides={
                     "run_coordinator": {
-                        "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                        "class": "ImmediatelyLaunchRunCoordinator",
+                        "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                        "class": "SynchronousRunCoordinator",
                     },
                     "run_launcher": {
                         "module": "dagster._core.launcher.sync_in_memory_run_launcher",
@@ -259,8 +259,8 @@ class InstanceManagers:
             with graphql_postgres_instance(
                 overrides={
                     "run_coordinator": {
-                        "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                        "class": "ImmediatelyLaunchRunCoordinator",
+                        "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                        "class": "SynchronousRunCoordinator",
                     },
                 }
             ) as instance:

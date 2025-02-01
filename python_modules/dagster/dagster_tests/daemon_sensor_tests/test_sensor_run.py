@@ -1606,8 +1606,8 @@ def test_launch_failure(caplog, executor, workspace_context, remote_repo):
                 "class": "ExplodingRunLauncher",
             },
             "run_coordinator": {
-                "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                "class": "ImmediatelyLaunchRunCoordinator",
+                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                "class": "SynchronousRunCoordinator",
             },
         },
     ) as instance:

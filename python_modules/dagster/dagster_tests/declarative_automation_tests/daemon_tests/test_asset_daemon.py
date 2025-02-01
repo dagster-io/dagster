@@ -97,8 +97,8 @@ def get_daemon_instance(
                     "class": "SyncInMemoryRunLauncher",
                 },
                 "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.immediately_launch_run_coordinator",
-                    "class": "ImmediatelyLaunchRunCoordinator",
+                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
+                    "class": "SynchronousRunCoordinator",
                 },
                 **(extra_overrides or {}),
             }
