@@ -18,6 +18,7 @@ def test_scaffold_deployment_command_success() -> None:
         assert_runner_result(result)
         assert Path("foo").exists()
         assert Path("foo/code_locations").exists()
+        assert Path("foo/workspace.yaml").exists()
 
 
 def test_scaffold_deployment_command_already_exists_fails() -> None:
