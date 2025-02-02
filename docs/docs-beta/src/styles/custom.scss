@@ -519,7 +519,10 @@ dd {
 }
 
 dd p {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  &:last-child {
+    margin-bottom: 0px;
+  }
 }
 
 dd code {
