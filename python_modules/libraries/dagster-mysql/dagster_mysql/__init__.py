@@ -9,4 +9,4 @@ from dagster_mysql.version import __version__
 DagsterLibraryRegistry.register("dagster-mysql", __version__)
 __all__ = ["DagsterMySQLStorage", "MySQLEventLogStorage", "MySQLRunStorage", "MySQLScheduleStorage"]
 
-from dagster_mysql.resources import MySQLResource
+from dagster_mysql.resources import MySQLResource as MySQLResource

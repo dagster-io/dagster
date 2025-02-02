@@ -1,6 +1,8 @@
+from urllib.parse import urlparse
+
 from dagster import asset, materialize_to_memory
 from dagster_mysql import MySQLResource
-from urllib.parse import urlparse
+
 
 def test_resource(hostname, conn_string):
     @asset
@@ -36,8 +38,16 @@ def test_resource(hostname, conn_string):
     conn_info = urlparse(conn_string)
 
     result = materialize_to_memory(
-        [mysql_create_table, mysql_query_table], 
-        resources={"mysql": MySQLResource(user=conn_info.username, password=conn_info.password, host=conn_info.hostname, port=conn_info.port, database="test")}
+        [mysql_create_table, mysql_query_table],
+        resources={
+            "mysql": MySQLResource(
+                user=conn_info.username,
+                password=conn_info.password,
+                host=conn_info.hostname,
+                port=conn_info.port,
+                database="test",
+            )
+        },
     )
 
     assert result.success

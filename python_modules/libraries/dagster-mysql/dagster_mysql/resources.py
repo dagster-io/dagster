@@ -1,15 +1,14 @@
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Union
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
+import mysql.connector as mysql
 from dagster import ConfigurableResource
 from dagster._utils.backoff import backoff
-from pydantic import Field
-import mysql.connector as mysql
-
-from mysql.connector.pooling import PooledMySQLConnection
 from mysql.connector.abstracts import MySQLConnectionAbstract
+from mysql.connector.pooling import PooledMySQLConnection
+from pydantic import Field
+
 
 class MySQLResource(ConfigurableResource):
     """Resource for interacting with a mysql database. Wraps an underlying mysql.connector connection.
@@ -40,19 +39,21 @@ class MySQLResource(ConfigurableResource):
     """
 
     host: Optional[str] = Field(
-        description=("The host name or IP address of the MySQL server. Defaults to localhost if not provided."),
+        description=(
+            "The host name or IP address of the MySQL server. Defaults to localhost if not provided."
+        ),
         default=None,
     )
 
     port: Optional[int] = Field(
-        description=("The TCP/IP port of the MySQL server. Must be an integer. Defaults to 3306 if not provided."),
+        description=(
+            "The TCP/IP port of the MySQL server. Must be an integer. Defaults to 3306 if not provided."
+        ),
         default=None,
     )
 
     user: str = Field(
-        description=(
-            "The user name used to authenticate with the MySQL server."
-        ),
+        description=("The user name used to authenticate with the MySQL server."),
     )
 
     password: Optional[str] = Field(
@@ -63,7 +64,9 @@ class MySQLResource(ConfigurableResource):
     )
 
     database: Optional[str] = Field(
-        description=("The database name to use when connecting with the MySQL server. Defaults to None."),
+        description=(
+            "The database name to use when connecting with the MySQL server. Defaults to None."
+        ),
         default=None,
     )
 
@@ -84,18 +87,22 @@ class MySQLResource(ConfigurableResource):
         return {key: value for (key, value) in dictionary.items() if (value is not None)}
 
     @contextmanager
-    def get_connection(self) -> Generator[Union[PooledMySQLConnection, MySQLConnectionAbstract], None, None]:
+    def get_connection(
+        self,
+    ) -> Generator[Union[PooledMySQLConnection, MySQLConnectionAbstract], None, None]:
         connection = backoff(
             fn=mysql.connect,
             retry_on=(mysql.errors.DatabaseError,),
-            kwargs=self._drop_none_values({
-                "host": self.host,
-                "port": self.port,
-                "user": self.user,
-                "password": self.password,
-                "database": self.database,
-                **self.additional_parameters,
-            }),
+            kwargs=self._drop_none_values(
+                {
+                    "host": self.host,
+                    "port": self.port,
+                    "user": self.user,
+                    "password": self.password,
+                    "database": self.database,
+                    **self.additional_parameters,
+                }
+            ),
             max_retries=10,
         )
 
