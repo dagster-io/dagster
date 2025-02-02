@@ -10,7 +10,7 @@ from dagster._cli.workspace.cli_target import (
     ClickArgMapping,
     ClickArgValue,
     get_workspace_load_target,
-    workspace_target_argument,
+    workspace_target_options,
 )
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
@@ -67,7 +67,7 @@ def _get_heartbeat_tolerance():
     required=False,
     hidden=True,
 )
-@workspace_target_argument
+@workspace_target_options
 def run_command(
     code_server_log_level: str,
     log_level: str,

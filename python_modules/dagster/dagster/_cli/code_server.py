@@ -11,7 +11,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
-    python_origin_target_argument,
+    python_origin_target_options,
 )
 from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
@@ -66,7 +66,7 @@ def code_server_cli():
     help="Maximum number of (threaded) workers to use in the code server",
     envvar="DAGSTER_CODE_SERVER_MAX_WORKERS",
 )
-@python_origin_target_argument
+@python_origin_target_options
 @click.option(
     "--use-python-environment-entry-point",
     is_flag=True,

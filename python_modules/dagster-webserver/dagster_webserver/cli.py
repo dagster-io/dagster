@@ -14,7 +14,7 @@ from dagster._annotations import deprecated
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace import (
     get_workspace_process_context_from_kwargs,
-    workspace_target_argument,
+    workspace_target_options,
 )
 from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArgValue
 from dagster._core.instance import InstanceRef
@@ -75,7 +75,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     """
     ),
 )
-@workspace_target_argument
+@workspace_target_options
 @click.option(
     "--host",
     "-h",
