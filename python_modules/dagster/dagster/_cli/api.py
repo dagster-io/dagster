@@ -15,7 +15,7 @@ import dagster._seven as seven
 from dagster._cli.utils import get_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
-    python_origin_target_options,
+    python_pointer_options,
 )
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -601,7 +601,7 @@ def _execute_step_command_body(
     ),
     envvar="DAGSTER_LAZY_LOAD_USER_CODE",
 )
-@python_origin_target_options
+@python_pointer_options
 @click.option(
     "--use-python-environment-entry-point",
     is_flag=True,
