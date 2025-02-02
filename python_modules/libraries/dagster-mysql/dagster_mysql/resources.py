@@ -11,7 +11,7 @@ from pydantic import Field
 
 
 class MySQLResource(ConfigurableResource):
-    """Resource for interacting with a mysql database. Wraps an underlying mysql.connector connection.
+    """Resource for interacting with a MySQL database. Wraps an underlying mysql.connector connection.
 
     Examples:
         .. code-block:: python
