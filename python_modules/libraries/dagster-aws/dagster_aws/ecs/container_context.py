@@ -130,6 +130,14 @@ SHARED_TASK_DEFINITION_FIELDS = {
             " for more information."
         ),
     ),
+    "readonly_root_filesystem": Field(
+        BoolSource,
+        is_required=False,
+        description=(
+            "When true, the root filesystem of the container is read-only. "
+            "See https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html"
+        ),
+    ),
     "repository_credentials": Field(
         StringSource,
         is_required=False,
@@ -246,6 +254,7 @@ class EcsContainerContext(
             ("run_sidecar_containers", Sequence[Mapping[str, Any]]),
             ("server_ecs_tags", Sequence[Mapping[str, Optional[str]]]),
             ("run_ecs_tags", Sequence[Mapping[str, Optional[str]]]),
+            ("readonly_root_filesystem", Optional[bool]),
             ("repository_credentials", Optional[str]),
             ("server_health_check", Optional[Mapping[str, Any]]),
         ],
@@ -271,6 +280,7 @@ class EcsContainerContext(
         run_sidecar_containers: Optional[Sequence[Mapping[str, Any]]] = None,
         server_ecs_tags: Optional[Sequence[Mapping[str, Optional[str]]]] = None,
         run_ecs_tags: Optional[Sequence[Mapping[str, Optional[str]]]] = None,
+        readonly_root_filesystem: Optional[bool] = None,
         repository_credentials: Optional[str] = None,
         server_health_check: Optional[Mapping[str, Any]] = None,
     ):
@@ -298,6 +308,7 @@ class EcsContainerContext(
             ),
             server_ecs_tags=check.opt_sequence_param(server_ecs_tags, "server_ecs_tags"),
             run_ecs_tags=check.opt_sequence_param(run_ecs_tags, "run_tags"),
+            readonly_root_filesystem=check.opt_bool_param(readonly_root_filesystem, "readonly_root_filesystem"),
             repository_credentials=check.opt_str_param(
                 repository_credentials, "repository_credentials"
             ),
@@ -325,6 +336,7 @@ class EcsContainerContext(
             run_sidecar_containers=[*other.run_sidecar_containers, *self.run_sidecar_containers],
             server_ecs_tags=[*other.server_ecs_tags, *self.server_ecs_tags],
             run_ecs_tags=[*other.run_ecs_tags, *self.run_ecs_tags],
+            readonly_root_filesystem=other.readonly_root_filesystem or self.readonly_root_filesystem,
             repository_credentials=other.repository_credentials or self.repository_credentials,
             server_health_check=other.server_health_check or self.server_health_check,
         )
@@ -357,6 +369,7 @@ class EcsContainerContext(
                     volumes=run_launcher.volumes,
                     run_sidecar_containers=run_launcher.run_sidecar_containers,
                     run_ecs_tags=run_launcher.run_ecs_tags,
+                    readonly_root_filesystem=run_launcher.readonly_root_filesystem,
                     repository_credentials=run_launcher.repository_credentials,
                 )
             )
@@ -419,6 +432,7 @@ class EcsContainerContext(
                 run_sidecar_containers=processed_context_value.get("run_sidecar_containers"),
                 server_ecs_tags=processed_context_value.get("server_ecs_tags"),
                 run_ecs_tags=processed_context_value.get("run_ecs_tags"),
+                readonly_root_filesystem=processed_context_value.get("readonly_root_filesystem"),
                 repository_credentials=processed_context_value.get("repository_credentials"),
                 server_health_check=processed_context_value.get("server_health_check"),
             )

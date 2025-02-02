@@ -253,6 +253,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         return self.task_definition_dict.get("volumes")
 
     @property
+    def readonly_root_filesystem(self) -> Optional[bool]:
+        if not self.task_definition_dict:
+            return None
+        return self.task_definition_dict.get("readonly_root_filesystem")
+
+    @property
     def repository_credentials(self) -> Optional[str]:
         if not self.task_definition_dict:
             return None
@@ -712,6 +718,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     runtime_platform=runtime_platform,
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
+                    readonly_root_filesystem=container_context.readonly_root_filesystem,
                     repository_credentials=container_context.repository_credentials,
                     linux_parameters=self.linux_parameters,
                 )
@@ -734,6 +741,7 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
                     ephemeral_storage=container_context.run_resources.get("ephemeral_storage"),
                     volumes=container_context.volumes,
                     mount_points=container_context.mount_points,
+                    readonly_root_filesystem=container_context.readonly_root_filesystem,
                     additional_sidecars=container_context.run_sidecar_containers,
                     repository_credentials=container_context.repository_credentials,
                 )

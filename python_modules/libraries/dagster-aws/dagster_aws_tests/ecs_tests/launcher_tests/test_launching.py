@@ -924,6 +924,50 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
         assert run.run_id in str(override["command"])
 
 
+def test_readonly_root_filesystem(ecs, instance_cm, run, workspace, job, remote_job):
+    with instance_cm(
+        {
+            "task_definition": {
+                "task_role_arn": "fake-task-role",
+                "execution_role_arn": "fake-execution-role",
+                "readonly_root_filesystem": True,
+            },
+        }
+    ) as instance:
+        run = instance.create_run_for_job(
+            job,
+            remote_job_origin=remote_job.get_remote_origin(),
+            job_code_origin=remote_job.get_python_origin(),
+        )
+
+        initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+        initial_tasks = ecs.list_tasks()["taskArns"]
+
+        # Launch the run
+        instance.launch_run(run.run_id, workspace)
+
+        # A new task definition is created
+        task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+        assert len(task_definitions) == len(initial_task_definitions) + 1
+
+        # A new task is launched
+        tasks = ecs.list_tasks()["taskArns"]
+        assert len(tasks) == len(initial_tasks) + 1
+
+        task_arn = next(iter(set(tasks).difference(initial_tasks)))
+        task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
+        task_definition_arn = task["taskDefinitionArn"]
+
+        # Get the task definition and container definition
+        task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)[
+            "taskDefinition"
+        ]
+        container_definition = task_definition["containerDefinitions"][0]
+
+        # Assert that readonlyRootFilesystem is set to True
+        assert container_definition.get("readonlyRootFilesystem") is True
+
+
 def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
     initial_tasks = ecs.list_tasks()["taskArns"]
 
