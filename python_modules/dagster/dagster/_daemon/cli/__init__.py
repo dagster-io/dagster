@@ -5,13 +5,8 @@ from typing import Optional
 import click
 
 from dagster import __version__ as dagster_version
-from dagster._cli.utils import get_instance_for_cli
-from dagster._cli.workspace.cli_target import (
-    ClickArgMapping,
-    ClickArgValue,
-    get_workspace_load_target,
-    workspace_target_options,
-)
+from dagster._cli.utils import ClickArgMapping, ClickArgValue, get_instance_for_cli
+from dagster._cli.workspace.cli_target import get_workspace_load_target, workspace_target_options
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (

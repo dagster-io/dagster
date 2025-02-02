@@ -14,10 +14,12 @@ import yaml
 
 from dagster import _check as check
 from dagster._annotations import deprecated
-from dagster._cli.job import apply_click_params
-from dagster._cli.utils import get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import (
+from dagster._cli.utils import (
     ClickArgValue,
+    apply_click_params,
+    get_possibly_temporary_instance_for_cli,
+)
+from dagster._cli.workspace.cli_target import (
     generate_grpc_server_target_options,
     generate_module_name_option,
     generate_python_file_option,

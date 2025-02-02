@@ -5,10 +5,12 @@ import sys
 import click
 
 from dagster import __version__ as dagster_version
-from dagster._cli.job import apply_click_params
-from dagster._cli.utils import get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import (
+from dagster._cli.utils import (
     ClickArgValue,
+    apply_click_params,
+    get_possibly_temporary_instance_for_cli,
+)
+from dagster._cli.workspace.cli_target import (
     generate_module_name_option,
     generate_python_file_option,
     generate_workspace_option,
