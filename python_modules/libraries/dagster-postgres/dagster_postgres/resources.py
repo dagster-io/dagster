@@ -1,18 +1,15 @@
+from collections.abc import Generator
+from contextlib import contextmanager
 from typing import Any, Optional
 
 import psycopg2
-from dagster import ConfigurableResource, InitResourceContext
+from dagster import ConfigurableResource
 from dagster._utils.backoff import backoff
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 
 
 class PostgresResource(ConfigurableResource):
     """Resource for interacting with a postgres database. Wraps an underlying psycopg2 connection.
-
-    Note that the underlying pyscopg2.extensions.connection context-manager does
-    not close the connection on __exit__ - but rather only commits the current SQL transaction.
-    The dagster resource will automatically call connection.close() (but not connection.commit()),
-    after execution.
 
     Examples:
         .. code-block:: python
@@ -93,10 +90,13 @@ class PostgresResource(ConfigurableResource):
         default={},
     )
 
-    _connection: psycopg2.extensions.connection = PrivateAttr()
+    @classmethod
+    def _is_dagster_maintained(cls):
+        return True
 
-    def setup_for_execution(self, context: InitResourceContext) -> None:
-        self._connection = backoff(
+    @contextmanager
+    def get_connection(self) -> Generator[psycopg2.extensions.connection, None, None]:
+        connection = backoff(
             fn=psycopg2.connect,
             retry_on=(psycopg2.OperationalError,),
             kwargs={
@@ -111,12 +111,11 @@ class PostgresResource(ConfigurableResource):
             max_retries=10,
         )
 
-    @classmethod
-    def _is_dagster_maintained(cls):
-        return True
-
-    def get_connection(self) -> psycopg2.extensions.connection:
-        return self._connection
-
-    def teardown_after_execution(self, context: InitResourceContext) -> None:
-        self._connection.close()
+        try:
+            yield connection
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
