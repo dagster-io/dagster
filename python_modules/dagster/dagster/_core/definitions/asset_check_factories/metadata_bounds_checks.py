@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from typing import Optional, Union, cast
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.asset_check_factories.utils import (
     assets_to_keys,
     build_multi_asset_check,
@@ -22,7 +22,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
 
 
-@experimental
+@beta
 def build_metadata_bounds_checks(
     *,
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],

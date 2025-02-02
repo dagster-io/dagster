@@ -15,7 +15,6 @@ from typing import (  # noqa: UP035
 import dagster._check as check
 from dagster._annotations import (
     PublicAttr,
-    experimental_param,
     hidden_param,
     only_allow_hidden_params_in_kwargs,
     public,
@@ -93,7 +92,6 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
         raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
 
 
-@experimental_param(param="owners")
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
