@@ -51,6 +51,7 @@ def test_project_scaffold_command_succeeds():
         origins = get_origins_from_toml("my_dagster_project/pyproject.toml")
         assert len(origins) == 1
         assert origins[0].loadable_target_origin.module_name == "my_dagster_project.definitions"
+        assert origins[0].location_name == "my_dagster_project"
 
 
 def test_project_scaffold_command_excludes_succeeds():

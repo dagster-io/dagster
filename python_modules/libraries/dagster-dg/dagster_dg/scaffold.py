@@ -117,6 +117,7 @@ def scaffold_code_location(
         ),
         dependencies=dependencies,
         dev_dependencies=dev_dependencies,
+        code_location_name=path.name,
         uv_sources=uv_sources,
     )
 
