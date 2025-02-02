@@ -12,6 +12,7 @@ setup(
         "plotly",
         "kaleido",
         "shapely",
+        "kaleido==0.1"
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
 )
