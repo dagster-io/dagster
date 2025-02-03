@@ -10,12 +10,14 @@ import click
 import dagster._check as check
 from dagster import __version__ as dagster_version
 from dagster._cli.config_scaffolder import scaffold_job_config
-from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import (
-    WORKSPACE_TARGET_WARNING,
+from dagster._cli.utils import (
     ClickArgMapping,
     ClickArgValue,
-    ClickOption,
+    get_instance_for_cli,
+    get_possibly_temporary_instance_for_cli,
+)
+from dagster._cli.workspace.cli_target import (
+    WORKSPACE_TARGET_WARNING,
     get_code_location_from_workspace,
     get_config_from_args,
     get_job_python_origin_from_kwargs,
@@ -66,18 +68,11 @@ from dagster._utils.tags import normalize_tags
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 T = TypeVar("T")
-T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
 @click.group(name="job")
 def job_cli():
     """Commands for working with Dagster jobs."""
-
-
-def apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Callable:
-    for click_param in click_params:
-        command = click_param(command)
-    return command
 
 
 @job_cli.command(

@@ -5,11 +5,16 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
 import click
-import tomli
 from click import UsageError
-from typing_extensions import Never, TypeAlias
+from typing_extensions import Never
 
 import dagster._check as check
+from dagster._cli.utils import (
+    ClickArgMapping,
+    ClickOption,
+    apply_click_params,
+    has_pyproject_dagster_block,
+)
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -51,30 +56,6 @@ WORKSPACE_TARGET_WARNING = (
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
-ClickArgValue: TypeAlias = Union[str, tuple[str]]
-ClickArgMapping: TypeAlias = Mapping[str, ClickArgValue]
-ClickOption: TypeAlias = Callable[[T_Callable], T_Callable]
-
-
-def _raise_cli_usage_error(msg: Optional[str] = None) -> Never:
-    raise UsageError(
-        msg or "Invalid set of CLI arguments for loading repository/job. See --help for details."
-    )
-
-
-def _check_cli_arguments_none(kwargs: ClickArgMapping, *keys: str) -> None:
-    for key in keys:
-        if kwargs.get(key):
-            _raise_cli_usage_error()
-
-
-def are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
-    for key in keys:
-        if kwargs.get(key):
-            return False
-
-    return True
-
 
 WORKSPACE_CLI_ARGS = (
     "workspace",
@@ -90,20 +71,9 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def has_pyproject_dagster_block(path: str) -> bool:
-    if not os.path.exists(path):
-        return False
-    with open(path, "rb") as f:
-        data = tomli.load(f)
-        if not isinstance(data, dict):
-            return False
-
-        return "dagster" in data.get("tool", {})
-
-
 def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
     check.mapping_param(kwargs, "kwargs")
-    if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
+    if _are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
         if has_pyproject_dagster_block("pyproject.toml"):
@@ -486,56 +456,40 @@ def generate_repository_identifier_options() -> Sequence[ClickOption]:
 
 def python_job_config_option(*, command_name: str) -> Callable[[T_Callable], T_Callable]:
     def wrap(f: T_Callable) -> T_Callable:
-        from dagster._cli.job import apply_click_params
-
         return apply_click_params(f, generate_run_config_option(command_name))
 
     return wrap
 
 
 def python_job_target_options(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
     return apply_click_params(f, *generate_python_job_target_options())
 
 
 def workspace_target_options(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
     return apply_click_params(f, *generate_workspace_target_options())
 
 
 def job_workspace_target_options(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
     return apply_click_params(f, *generate_workspace_target_options())
 
 
 def grpc_server_origin_target_options(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
     return apply_click_params(f, *generate_grpc_server_target_options())
 
 
 def python_origin_target_options(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
     return apply_click_params(
         f, *generate_python_target_options(allow_multiple_python_targets=False)
     )
 
 
 def repository_target_options(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
     return apply_click_params(
         f, *generate_workspace_target_options(), *generate_repository_identifier_options()
     )
 
 
 def job_repository_target_options(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
     options = [
         *generate_workspace_target_options(),
         *generate_repository_identifier_options(),
@@ -544,8 +498,6 @@ def job_repository_target_options(f: T_Callable) -> T_Callable:
 
 
 def job_target_options(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
     options = [
         *generate_workspace_target_options(),
         *generate_repository_identifier_options(),
@@ -855,3 +807,28 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
             )
     else:
         check.failed("Unhandled case getting config from kwargs")
+
+
+# ########################
+# ##### HELPERS
+# ########################
+
+
+def _raise_cli_usage_error(msg: Optional[str] = None) -> Never:
+    raise UsageError(
+        msg or "Invalid set of CLI arguments for loading repository/job. See --help for details."
+    )
+
+
+def _check_cli_arguments_none(kwargs: ClickArgMapping, *keys: str) -> None:
+    for key in keys:
+        if kwargs.get(key):
+            _raise_cli_usage_error()
+
+
+def _are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
+    for key in keys:
+        if kwargs.get(key):
+            return False
+
+    return True

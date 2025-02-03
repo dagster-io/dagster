@@ -1,14 +1,40 @@
 import logging
 import os
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Optional
+from typing import Any, Callable, Optional, TypeVar, Union
+
+import tomli
+from typing_extensions import TypeAlias
 
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.secrets.env_file import get_env_var_dict
 from dagster._utils.env import environ
+
+T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
+
+ClickArgValue: TypeAlias = Union[str, tuple[str]]
+ClickArgMapping: TypeAlias = Mapping[str, ClickArgValue]
+ClickOption: TypeAlias = Callable[[T_Callable], T_Callable]
+
+
+def apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Callable:
+    for click_param in click_params:
+        command = click_param(command)
+    return command
+
+
+def has_pyproject_dagster_block(path: str) -> bool:
+    if not os.path.exists(path):
+        return False
+    with open(path, "rb") as f:
+        data = tomli.load(f)
+        if not isinstance(data, dict):
+            return False
+
+        return "dagster" in data.get("tool", {})
 
 
 @contextmanager
