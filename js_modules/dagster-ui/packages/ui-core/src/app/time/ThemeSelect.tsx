@@ -17,6 +17,14 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
       label: 'Dark',
     },
     {
+      key: DagsterTheme.LightHighContrast,
+      label: 'Light, high contrast',
+    },
+    {
+      key: DagsterTheme.DarkHighContrast,
+      label: 'Dark, high contrast',
+    },
+    {
       key: DagsterTheme.System,
       label: 'System setting',
     },
