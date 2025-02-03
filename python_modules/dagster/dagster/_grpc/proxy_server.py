@@ -10,8 +10,8 @@ from dagster._core.instance import InstanceRef
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.__generated__ import api_pb2
-from dagster._grpc.__generated__.api_pb2_grpc import DagsterApiServicer
+from dagster._grpc.__generated__ import dagster_api_pb2
+from dagster._grpc.__generated__.dagster_api_pb2_grpc import DagsterApiServicer
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
 from dagster._grpc.server import GrpcServerCommand
 from dagster._grpc.types import (
@@ -166,7 +166,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         if old_heartbeat_thread:
             old_heartbeat_thread.join()
 
-        return api_pb2.ReloadCodeReply()
+        return dagster_api_pb2.ReloadCodeReply()
 
     def cleanup(self):
         # In case ShutdownServer was not called
@@ -233,7 +233,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
     def ListRepositories(self, request, context):
         if self._load_error:
-            return api_pb2.ListRepositoriesReply(
+            return dagster_api_pb2.ListRepositoriesReply(
                 serialized_list_repositories_response_or_error=serialize_value(self._load_error)
             )
         return self._query("ListRepositories", request, context)
@@ -241,9 +241,9 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def Ping(self, request, context):
         return self._query("Ping", request, context)
 
-    def GetServerId(self, request, context) -> api_pb2.GetServerIdReply:
+    def GetServerId(self, request, context) -> dagster_api_pb2.GetServerIdReply:
         return (
-            api_pb2.GetServerIdReply(server_id=self._fixed_server_id)
+            dagster_api_pb2.GetServerIdReply(server_id=self._fixed_server_id)
             if self._fixed_server_id
             else self._query("GetServerId", request, context)
         )
@@ -318,13 +318,13 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         try:
             self._shutdown_once_executions_finish_event.set()
             self._grpc_server_registry.shutdown_all_processes()
-            return api_pb2.ShutdownServerReply(
+            return dagster_api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(success=True, serializable_error_info=None)
                 )
             )
         except:
-            return api_pb2.ShutdownServerReply(
+            return dagster_api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(
                         success=False,
@@ -352,7 +352,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         except:
             serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
-            return api_pb2.CancelExecutionReply(
+            return dagster_api_pb2.CancelExecutionReply(
                 serialized_cancel_execution_result=serialize_value(
                     CancelExecutionResult(
                         success=False,
@@ -367,7 +367,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
     def StartRun(self, request, context):
         if self._shutdown_once_executions_finish_event.is_set():
-            return api_pb2.StartRunReply(
+            return dagster_api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_value(
                     StartRunResult(
                         success=False,
