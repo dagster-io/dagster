@@ -8,6 +8,8 @@ from dagster._utils.warnings import normalize_renamed_param
 from dagster_msteams.card import Card
 from dagster_msteams.resources import MSTeamsResource
 
+# TODO test these hooks
+
 
 def _default_status_message(context: HookContext, status: str) -> str:
     return f"Op {context.op.name} on job {context.job_name} {status}!\nRun ID: {context.run_id}"

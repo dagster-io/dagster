@@ -1,6 +1,8 @@
 from collections.abc import Mapping
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, cast
+from urllib.parse import urlparse
 
+import dagster._check as check
 from requests import codes, exceptions, post
 
 from dagster_msteams.adaptive_card import AdaptiveCard
@@ -39,7 +41,11 @@ class TeamsClient:
         self._headers = {"Content-Type": "application/json"}
 
     def is_legacy_webhook(self) -> bool:
-        return "webhook.office.com" in self._hook_url
+        parsed_url = urlparse(self._hook_url)
+        if parsed_url.hostname is None:
+            check.failed(f"No hostname found in webhook URL: {self._hook_url}")
+
+        return cast(str, parsed_url.hostname).endswith("webhook.office.com")
 
     def _post(self, payload: Mapping) -> bool:
         response = post(
@@ -64,11 +70,7 @@ class TeamsClient:
     def post_message(self, message: str, link: Optional[Link]) -> bool:  # pragma: no cover
         if self.is_legacy_webhook():
             card = Card()
-            if link:
-                message += f" <a href='{link.url}'>{link.text}</a>"
-            card.add_attachment(text_message=message)
+            card.add_attachment(text_message=message, link=link)
             return self._post(card.payload)
         else:
-            if link:
-                message += f" [{link.text}]({link.url})"
-            return self._post(AdaptiveCard(message).payload)
+            return self._post(AdaptiveCard(message, link).payload)
