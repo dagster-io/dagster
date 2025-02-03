@@ -22,10 +22,10 @@ const items: SideNavItemConfig[] = [
     path: '/deployment/daemons',
   },
   {
-    key: 'concurrency-limits',
+    key: 'concurrency',
     type: 'link',
     icon: <Icon name="concurrency" />,
-    label: 'Concurrency limits',
+    label: 'Concurrency',
     path: '/deployment/concurrency',
   },
   {
@@ -57,7 +57,7 @@ export const SettingsLeftPane = () => {
             <SideNavItem
               key={item.key}
               item={item}
-              active={item.type === 'link' && pathname === item.path}
+              active={item.type === 'link' && pathname.startsWith(item.path)}
             />
           );
         })}
