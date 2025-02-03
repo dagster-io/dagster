@@ -145,7 +145,7 @@ But first, let's set up DuckDB:
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/13-sling-test-duckdb.txt" />
 
 
-Now let's download some files locally to use our Sling source (Sling doesn't support reading from the public internet):
+Now, let's download some files locally to use our Sling source (Sling doesn't support reading from the public internet):
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/14-curl.txt" />
 
