@@ -60,7 +60,7 @@ def materialize(
             If not provided, then all assets will be materialized.
 
             If providing a string or sequence of strings,
-            https://docs.dagster.io/concepts/assets/asset-selection-syntax describes the accepted
+            https://docs.dagster.io/guides/build/assets/asset-selection-syntax describes the accepted
             syntax.
 
     Returns:
@@ -147,7 +147,7 @@ def materialize_to_memory(
             If not provided, then all assets will be materialized.
 
             If providing a string or sequence of strings,
-            https://docs.dagster.io/concepts/assets/asset-selection-syntax describes the accepted
+            https://docs.dagster.io/guides/build/assets/asset-selection-syntax describes the accepted
             syntax.
 
     Returns:

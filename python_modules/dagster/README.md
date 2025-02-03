@@ -68,7 +68,7 @@ Dagster is built to be used at every stage of the data development lifecycle - l
 
 ## Quick Start:
 
-If you're new to Dagster, we recommend reading about its [core concepts](https://docs.dagster.io/concepts) or learning with the hands-on [tutorial](https://docs.dagster.io/tutorial).
+If you're new to Dagster, we recommend checking out the [docs](https://docs.dagster.io) or following the hands-on [tutorial](https://docs.dagster.io/etl-pipeline-tutorial/).
 
 Dagster is available on PyPI and officially supports Python 3.9 through Python 3.12.
 
@@ -81,11 +81,9 @@ This installs two packages:
 - `dagster`: The core programming model.
 - `dagster-webserver`: The server that hosts Dagster's web UI for developing and operating Dagster jobs and assets.
 
-Running on a Mac with an Apple silicon chip? Check the [install details here](https://docs.dagster.io/getting-started/install#installing-dagster-into-an-existing-python-environment).
-
 ## Documentation
 
-You can find the full Dagster documentation [here](https://docs.dagster.io), including the ['getting started' guide](https://docs.dagster.io/getting-started).
+You can find the full Dagster documentation [here](https://docs.dagster.io), including the [Quickstart guide](https://docs.dagster.io/getting-started/quickstart).
 
 <hr/>
 
@@ -141,7 +139,7 @@ Join our community here:
 ## Contributing
 
 For details on contributing or running the project for development, check out our [contributing
-guide](https://docs.dagster.io/community/contributing/).
+guide](https://docs.dagster.io/about/contributing).
 
 ## License
 

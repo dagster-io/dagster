@@ -670,7 +670,7 @@ def dbt_cloud_resource(context) -> DbtCloudResource:
     response JSON schemae, see the `dbt Cloud API Docs <https://docs.getdbt.com/dbt-cloud/api-v2>`_.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
+    <https://legacy-docs.dagster.io/concepts/configuration/configured>`_ method.
 
     **Examples:**
 

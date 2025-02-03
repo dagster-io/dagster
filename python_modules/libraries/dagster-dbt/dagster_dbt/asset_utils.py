@@ -55,7 +55,7 @@ DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
     "The following dbt resources are configured with identical Dagster asset keys."
     " Please ensure that each dbt resource generates a unique Dagster asset key."
     " See the reference for configuring Dagster asset keys for your dbt project:"
-    " https://docs.dagster.io/integrations/dbt/reference#customizing-asset-keys."
+    " https://docs.dagster.io/integrations/libraries/dbt/reference#customizing-asset-keys."
 )
 
 

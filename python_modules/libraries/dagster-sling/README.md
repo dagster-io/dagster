@@ -1,4 +1,4 @@
 # dagster-sling
 
 The docs for `dagster-sling` can be found
-[here](https://docs.dagster.io/_apidocs/libraries/dagster-sling).
+[here](https://docs.dagster.io/api/python-api/libraries/dagster-sling).

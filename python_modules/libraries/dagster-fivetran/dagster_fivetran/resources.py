@@ -444,7 +444,7 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
     schemae, see the `Fivetran API Docs <https://fivetran.com/docs/rest-api/connectors>`_.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
+    <https://legacy-docs.dagster.io/concepts/configuration/configured>`_ method.
 
     **Examples:**
 

@@ -322,7 +322,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
                     "This command is deprecated for the DagsterDaemonScheduler. "
                     "Logs for the DagsterDaemonScheduler written to the process output. "
                     "For help troubleshooting the Daemon Scheduler, see "
-                    "https://docs.dagster.io/troubleshooting/schedules"
+                    "https://docs.dagster.io/guides/automate/schedules/troubleshooting-schedules"
                 )
 
             logs_path = os.path.join(

@@ -8,8 +8,8 @@ BigQuery
 
 Related Guides:
 
-* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/bigquery>`_
-* `BigQuery I/O manager reference <https://docs.dagster.io/integrations/bigquery/reference>`_
+* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/libraries/gcp/bigquery/>`_
+* `BigQuery I/O manager reference <https://docs.dagster.io/integrations/libraries/gcp/bigquery/reference>`_
 
 
 BigQuery Resource

@@ -38,7 +38,7 @@ def _check_property_on_test_context(
             f"Attribute '{user_facing_name}' was not provided when "
             f"constructing context. Provide a value for the '{param_on_builder}' parameter on "
             "'build_hook_context'. To learn more, check out the testing hooks section of Dagster's "
-            "concepts docs: https://docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#testing-hooks"
+            "concepts docs: https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/op-hooks#testing-hooks"
         )
     else:
         return value

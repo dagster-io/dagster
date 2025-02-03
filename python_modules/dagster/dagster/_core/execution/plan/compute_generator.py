@@ -208,7 +208,7 @@ def _validate_multi_return(
             "multiple outputs, either yield each output, or return a tuple "
             "containing a value for each output. Check out the "
             "documentation on outputs for more: "
-            "https://docs.dagster.io/concepts/ops-jobs-graphs/ops#outputs."
+            "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/ops#outputs."
         )
     output_tuple = cast(tuple, result)
     if not len(output_tuple) == len(output_defs):
@@ -265,7 +265,7 @@ def validate_and_coerce_op_result_to_iterator(
             "directly, or log them using the context.log_event method to avoid "
             "ambiguity with an implied result from returning a "
             "value. Check out the docs on logging events here: "
-            "https://docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
+            "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/op-events#op-events-and-exceptions"
         )
     # These don't correspond to output defs so pass them through
     elif isinstance(result, (AssetCheckResult, ObserveResult)):
@@ -362,6 +362,6 @@ def validate_and_coerce_op_result_to_iterator(
                         "This value will be passed to downstream "
                         f"{context.op_def.node_type_str}s. For conditional "
                         "execution, results must be yielded: "
-                        "https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
+                        "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
                     )
                 yield Output(output_name=output_def.name, value=element)
