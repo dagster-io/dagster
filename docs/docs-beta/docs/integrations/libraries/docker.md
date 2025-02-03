@@ -6,7 +6,7 @@ title: Dagster & Docker
 sidebar_label: Docker
 excerpt: Run runs external processes in docker containers directly from Dagster.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-docker
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-docker
 docslink:
 partnerlink: https://www.docker.com/
 logo: /integrations/Docker.svg
@@ -33,8 +33,8 @@ pip install dagster-docker
 
 ### Deploying to Docker?
 
-- Deploying to Dagster+: Use with a Dagster+ Hybrid deployment, the Docker agent executes Dagster jobs on a Docker cluster. Checkout the [Dagster+ Docker Agent](https://docs.dagster.io/dagster-plus/deployment/agents/docker) guide for more information.
-- Deploying to Open Source: Visit the [Deploying Dagster to Docker](https://docs.dagster.io/deployment/guides/docker) guide for more information.
+- Deploying to Dagster+: Use with a Dagster+ Hybrid deployment, the Docker agent executes Dagster jobs on a Docker cluster. Checkout the [Dagster+ Docker Agent](https://docs.dagster.io/dagster-plus/deployment/deployment-types/hybrid/docker/) guide for more information.
+- Deploying to Open Source: Visit the [Deploying Dagster to Docker](https://docs.dagster.io/guides/deploy/deployment-options/docker) guide for more information.
 
 ### About Docker
 

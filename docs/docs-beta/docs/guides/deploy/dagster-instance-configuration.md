@@ -20,8 +20,6 @@ Some important configuration, like [execution parallelism](/guides/operate/run-e
 
 :::
 
-{/* This heading is referenced in a call of DagsterUnmetExecutorRequirementsError, so be sure to update code link if this title changes. */}
-
 ## Default local behavior
 
 When a Dagster process like the Dagster webserver or Dagster CLI commands are launched, Dagster tries to load your instance. If the environment variable `DAGSTER_HOME` is set, Dagster looks for an instance config file at `$DAGSTER_HOME/dagster.yaml`. This file contains the configuration settings that make up the instance.

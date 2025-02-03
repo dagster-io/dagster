@@ -37,7 +37,7 @@ def wandb_resource(context: InitResourceContext) -> dict[str, Any]:
     For a complete set of documentation, see `Dagster integration <https://docs.wandb.ai/guides/integrations/dagster>`_.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
+    <https://legacy-docs.dagster.io/concepts/configuration/configured>`_ method.
 
     **Example:**
 

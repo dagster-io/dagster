@@ -6,8 +6,8 @@ title: Dagster & Sling
 sidebar_label: Sling
 excerpt: Extract and load data from popular data sources to destinations with Sling through Dagster.
 date: 2024-08-30
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-sling
-docslink: https://docs.dagster.io/integrations/sling
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-sling
+docslink: https://docs.dagster.io/integrations/libraries/sling
 partnerlink: https://slingdata.io/
 categories:
   - ETL

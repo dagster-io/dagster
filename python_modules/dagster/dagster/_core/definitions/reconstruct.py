@@ -397,7 +397,7 @@ def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJo
                 "``GraphDefinition.to_job``, you must wrap the ``to_job`` call in a function at "
                 "module scope, ie not within any other functions. "
                 "To learn more, check out the docs on ``reconstructable``: "
-                "https://docs.dagster.io/_apidocs/execution#dagster.reconstructable"
+                "https://docs.dagster.io/api/python-api/execution#dagster.reconstructable"
             )
         raise DagsterInvariantViolationError(
             "Reconstructable target should be a function or definition produced "

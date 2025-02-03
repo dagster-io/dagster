@@ -6,8 +6,8 @@ title: Dagster & Pandera
 sidebar_label: Pandera
 excerpt: Generate Dagster Types from Pandera dataframe schemas.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pandera
-docslink: https://docs.dagster.io/integrations/pandera
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-pandera
+docslink: https://docs.dagster.io/integrations/libraries/pandera/
 partnerlink: https://pandera.readthedocs.io/en/stable/
 categories:
   - Metadata

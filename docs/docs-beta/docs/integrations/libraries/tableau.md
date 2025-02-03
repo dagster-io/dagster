@@ -6,7 +6,7 @@ title: Dagster & Tableau
 sidebar_label: Tableau
 excerpt: See and understand your data with Tableau through Dagster.
 date: 
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-tableau
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-tableau
 docslink:
 partnerlink:
 categories:
