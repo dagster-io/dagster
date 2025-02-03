@@ -1,7 +1,7 @@
 ...
 [tool.dagster]
 module_name = "code_location_1.definitions"
-project_name = "code_location_1"
+code_location_name = "code-location-1"
 
 [tool.dg]
 is_code_location = true
