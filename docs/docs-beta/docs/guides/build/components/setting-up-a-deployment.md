@@ -28,7 +28,7 @@ This will create a new directory `my-deployment`. Let's look at the structure:
 Importantly, the `pyproject.toml` file contains an `is_deployment` setting
 marking this directory as a deployment:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/3-pyproject.toml" language="TOML" name="pyproject.toml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/3-pyproject.toml" language="TOML" title="my-deployment/pyproject.toml" />
 
 To add a code location to the deployment, run:
 
@@ -52,7 +52,7 @@ specified in the `uv.lock` file.
 The `code-location-1` directory contains a `pyproject.toml` file that defines
 it as a code location and component library:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/6-code-location-pyproject.toml" language="TOML" name="code_locations/code-location-1/pyproject.toml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/6-code-location-pyproject.toml" language="TOML" title="my-deployment/code_locations/code-location-1/pyproject.toml" />
 
 
 Let's enter this directory and search for registered component types:
@@ -103,7 +103,7 @@ We'll need a workspace.yaml to do this. Create a new file `workspace.yaml` in
 the `my-deployment` directory:
 
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/12-workspace.yaml" language="YAML" name="workspace.yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/12-workspace.yaml" language="YAML" title="my-deployment/workspace.yaml" />
 
 
 

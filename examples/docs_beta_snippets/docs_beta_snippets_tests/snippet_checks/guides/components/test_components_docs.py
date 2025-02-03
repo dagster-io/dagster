@@ -202,10 +202,7 @@ curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/head
                 / "replication.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-replication.yaml",
-                contents="""
-### jaffle_platform/components/ingest_files/replication.yaml
-
-source: LOCAL
+                contents="""source: LOCAL
 target: DUCKDB
 
 defaults:

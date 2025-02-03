@@ -64,6 +64,8 @@ def _run_command(
     pwd = PWD_REGEX.search(actual_output).group(1)
     actual_output = PWD_REGEX.sub("", actual_output)
 
+    actual_output = ANSI_ESCAPE.sub("", actual_output)
+
     os.chdir(pwd)
 
     return actual_output

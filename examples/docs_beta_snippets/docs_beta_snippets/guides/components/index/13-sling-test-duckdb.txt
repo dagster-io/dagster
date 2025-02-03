@@ -1,3 +1,3 @@
 uv run sling conns test DUCKDB
 
-[90m9:00AM[0m [32mINF[0m success!
+9:00AM INF success!
