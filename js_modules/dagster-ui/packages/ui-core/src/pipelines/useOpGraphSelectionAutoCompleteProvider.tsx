@@ -10,7 +10,7 @@ import {
 
 export const useOpGraphSelectionAutoCompleteProvider = (
   items: GraphQueryItem[],
-): SelectionAutoCompleteProvider => {
+): Pick<SelectionAutoCompleteProvider, 'useAutoComplete'> => {
   const attributesMap = useMemo(() => {
     const names = new Set<string>();
     items.forEach((item) => {
@@ -32,7 +32,6 @@ export const useOpGraphSelectionAutoCompleteProvider = (
 
   return useMemo(
     () => ({
-      ...baseProvider,
       useAutoComplete: ({line, cursorIndex}) => {
         const autoCompleteResults = useMemo(
           () => selectionHint(line, cursorIndex),
@@ -44,6 +43,6 @@ export const useOpGraphSelectionAutoCompleteProvider = (
         };
       },
     }),
-    [baseProvider, selectionHint],
+    [selectionHint],
   );
 };

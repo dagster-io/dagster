@@ -10,7 +10,7 @@ import {
 
 export function useAssetSelectionAutoCompleteProvider(
   assets: AssetGraphQueryItem[],
-): SelectionAutoCompleteProvider {
+): Pick<SelectionAutoCompleteProvider, 'useAutoComplete'> {
   const attributesMap = useMemo(() => getAttributesMap(assets), [assets]);
 
   const baseProvider = useMemo(
@@ -25,7 +25,6 @@ export function useAssetSelectionAutoCompleteProvider(
   const selectionHint = useMemo(() => createSelectionAutoComplete(baseProvider), [baseProvider]);
 
   return {
-    ...baseProvider,
     useAutoComplete: ({line, cursorIndex}) => {
       const autoCompleteResults = useMemo(
         () => selectionHint(line, cursorIndex),

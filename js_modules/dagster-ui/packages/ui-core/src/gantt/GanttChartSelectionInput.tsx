@@ -21,7 +21,7 @@ export const GanttChartSelectionInput = ({
     <Wrapper>
       <SelectionAutoCompleteInput
         id="run-gantt-chart"
-        SelectionAutoCompleteProvider={useGanttChartSelectionAutoCompleteProvider(items)}
+        useAutoComplete={useGanttChartSelectionAutoCompleteProvider(items).useAutoComplete}
         placeholder="Search and filter steps"
         linter={getLinter()}
         value={value}

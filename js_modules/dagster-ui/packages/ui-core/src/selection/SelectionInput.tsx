@@ -28,7 +28,7 @@ type SelectionAutoCompleteInputProps = {
   linter: Linter<any>;
   value: string;
   onChange: (value: string) => void;
-  SelectionAutoCompleteProvider: SelectionAutoCompleteProvider;
+  useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
 };
 
 export const SelectionAutoCompleteInput = ({
@@ -37,10 +37,8 @@ export const SelectionAutoCompleteInput = ({
   placeholder,
   onChange,
   linter,
-  SelectionAutoCompleteProvider,
+  useAutoComplete,
 }: SelectionAutoCompleteInputProps) => {
-  const {useAutoComplete} = SelectionAutoCompleteProvider;
-
   const trackEvent = useTrackEvent();
 
   const trackSelection = useMemo(() => {

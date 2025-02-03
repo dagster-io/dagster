@@ -15,9 +15,9 @@ interface AssetSelectionInputProps {
   value: string;
   onChange: (value: string) => void;
   linter?: Linter<any>;
-  useAssetSelectionAutoCompleteProvider?: (
+  useAssetSelectionAutoComplete?: (
     assets: AssetGraphQueryItem[],
-  ) => SelectionAutoCompleteProvider;
+  ) => Pick<SelectionAutoCompleteProvider, 'useAutoComplete'>;
 }
 
 const defaultLinter = createSelectionLinter({
@@ -30,14 +30,14 @@ export const AssetSelectionInput = ({
   onChange,
   assets,
   linter = defaultLinter,
-  useAssetSelectionAutoCompleteProvider = defaultUseAssetSelectionAutoCompleteProvider,
+  useAssetSelectionAutoComplete = defaultUseAssetSelectionAutoCompleteProvider,
 }: AssetSelectionInputProps) => {
-  const SelectionAutoCompleteProvider = useAssetSelectionAutoCompleteProvider(assets);
+  const {useAutoComplete} = useAssetSelectionAutoComplete(assets);
 
   return (
     <SelectionAutoCompleteInput
       id="asset-selection-input"
-      SelectionAutoCompleteProvider={SelectionAutoCompleteProvider}
+      useAutoComplete={useAutoComplete}
       placeholder="Search and filter assets"
       linter={linter}
       value={value}

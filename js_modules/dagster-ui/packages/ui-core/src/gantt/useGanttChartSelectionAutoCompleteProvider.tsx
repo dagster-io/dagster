@@ -10,7 +10,7 @@ import {
 
 export function useGanttChartSelectionAutoCompleteProvider(
   items: RunGraphQueryItem[],
-): SelectionAutoCompleteProvider {
+): Pick<SelectionAutoCompleteProvider, 'useAutoComplete'> {
   const attributesMap = useMemo(() => {
     const statuses = new Set<string>();
     const names = new Set<string>();
@@ -38,7 +38,6 @@ export function useGanttChartSelectionAutoCompleteProvider(
   const selectionHint = useMemo(() => createSelectionAutoComplete(baseProvider), [baseProvider]);
 
   return {
-    ...baseProvider,
     useAutoComplete: ({line, cursorIndex}) => {
       const autoCompleteResults = useMemo(
         () => selectionHint(line, cursorIndex),
