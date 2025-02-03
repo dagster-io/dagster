@@ -1,4 +1,4 @@
-type: dagster_components.sling_replication_collection
+type: sling_replication_collection@dagster_components
 
 params:
   replications:

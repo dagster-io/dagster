@@ -1,7 +1,7 @@
 import textwrap
 from pathlib import Path
 
-from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.component import RemoteComponentKey, RemoteComponentRegistry
 from dagster_dg.context import DgContext
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
@@ -31,7 +31,7 @@ def test_component_type_scaffold_success() -> None:
         assert Path("foo_bar/lib/baz.py").exists()
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        assert registry.has_global("foo_bar.baz")
+        assert registry.has_global(RemoteComponentKey(name="baz", package="foo_bar"))
 
 
 def test_component_type_scaffold_outside_component_library_fails() -> None:
@@ -77,7 +77,7 @@ def test_component_type_scaffold_succeeds_non_default_component_lib_package() ->
         assert Path("foo_bar/_lib/baz.py").exists()
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        assert registry.has_global("foo_bar.baz")
+        assert registry.has_global(RemoteComponentKey(name="baz", package="foo_bar"))
 
 
 def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -> None:
@@ -106,7 +106,7 @@ def test_component_type_docs_success():
         result = runner.invoke(
             "component-type",
             "docs",
-            "dagster_components.test.complex_schema_asset",
+            "complex_schema_asset@dagster_components.test",
         )
         assert_runner_result(result)
 
@@ -119,7 +119,7 @@ def test_component_type_docs_with_no_dagster_components_fails() -> None:
         result = runner.invoke(
             "component-type",
             "docs",
-            "dagster_components.test.complex_schema_asset",
+            "complex_schema_asset@dagster_components.test",
             env={"PATH": "/dev/null"},
         )
         assert_runner_result(result, exit_0=False)
@@ -131,7 +131,7 @@ def test_component_type_docs_with_no_dagster_components_fails() -> None:
 # ########################
 
 _EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
-    dagster_components.test.simple_pipes_script_asset
+    simple_pipes_script_asset@dagster_components.test
 
     Description:
 
@@ -188,7 +188,7 @@ def test_component_type_info_all_metadata_success():
         result = runner.invoke(
             "component-type",
             "info",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
         )
         assert_runner_result(result)
         assert result.output.strip() == _EXPECTED_COMPONENT_TYPE_INFO_FULL
@@ -199,13 +199,13 @@ def test_component_type_info_all_metadata_empty_success():
         result = runner.invoke(
             "component-type",
             "info",
-            "dagster_components.test.all_metadata_empty_asset",
+            "all_metadata_empty_asset@dagster_components.test",
         )
         assert_runner_result(result)
         assert (
             result.output.strip()
             == textwrap.dedent("""
-                dagster_components.test.all_metadata_empty_asset
+                all_metadata_empty_asset@dagster_components.test
             """).strip()
         )
 
@@ -215,7 +215,7 @@ def test_component_type_info_flag_fields_success():
         result = runner.invoke(
             "component-type",
             "info",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             "--description",
         )
         assert_runner_result(result)
@@ -231,7 +231,7 @@ def test_component_type_info_flag_fields_success():
         result = runner.invoke(
             "component-type",
             "info",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             "--scaffold-params-schema",
         )
         assert_runner_result(result)
@@ -262,7 +262,7 @@ def test_component_type_info_flag_fields_success():
         result = runner.invoke(
             "component-type",
             "info",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             "--component-params-schema",
         )
         assert_runner_result(result)
@@ -296,7 +296,7 @@ def test_component_type_info_multiple_flags_fails() -> None:
         result = runner.invoke(
             "component-type",
             "info",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             "--description",
             "--scaffold-params-schema",
         )
@@ -315,7 +315,7 @@ def test_component_type_info_with_no_dagster_components_fails() -> None:
         result = runner.invoke(
             "component-type",
             "info",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             env={"PATH": "/dev/null"},
         )
         assert_runner_result(result, exit_0=False)
@@ -330,10 +330,10 @@ _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     ┃ Component Type                                    ┃ Summary                                                          ┃
     ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-    │ dagster_components.test.all_metadata_empty_asset  │                                                                  │
-    │ dagster_components.test.complex_schema_asset      │ An asset that has a complex params schema.                       │
-    │ dagster_components.test.simple_asset              │ A simple asset that returns a constant string value.             │
-    │ dagster_components.test.simple_pipes_script_asset │ A simple asset that runs a Python script with the Pipes          │
+    │ all_metadata_empty_asset@dagster_components.test  │                                                                  │
+    │ complex_schema_asset@dagster_components.test      │ An asset that has a complex params schema.                       │
+    │ simple_asset@dagster_components.test              │ A simple asset that returns a constant string value.             │
+    │ simple_pipes_script_asset@dagster_components.test │ A simple asset that runs a Python script with the Pipes          │
     │                                                   │ subprocess client.                                               │
     └───────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────┘
 """).strip()

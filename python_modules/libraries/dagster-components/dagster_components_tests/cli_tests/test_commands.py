@@ -44,13 +44,13 @@ def test_list_component_types_command():
     result = json.loads(result.output)
 
     assert list(result.keys()) == [
-        "dagster_components.test.all_metadata_empty_asset",
-        "dagster_components.test.complex_schema_asset",
-        "dagster_components.test.simple_asset",
-        "dagster_components.test.simple_pipes_script_asset",
+        "all_metadata_empty_asset@dagster_components.test",
+        "complex_schema_asset@dagster_components.test",
+        "simple_asset@dagster_components.test",
+        "simple_pipes_script_asset@dagster_components.test",
     ]
 
-    assert result["dagster_components.test.simple_asset"] == {
+    assert result["simple_asset@dagster_components.test"] == {
         "name": "simple_asset",
         "package": "dagster_components.test",
         "summary": "A simple asset that returns a constant string value.",
@@ -77,7 +77,7 @@ def test_list_component_types_command():
         "type": "object",
     }
 
-    assert result["dagster_components.test.simple_pipes_script_asset"] == {
+    assert result["simple_pipes_script_asset@dagster_components.test"] == {
         "name": "simple_pipes_script_asset",
         "package": "dagster_components.test",
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
@@ -114,7 +114,7 @@ def test_list_local_components_types() -> None:
             assert len(result) == 1
             assert set(result.keys()) == {"my_location/components/local_component_sample"}
             assert set(result["my_location/components/local_component_sample"].keys()) == {
-                ".my_component"
+                "my_component@__init__.py"
             }
 
             # Add a second directory and local component
@@ -181,11 +181,11 @@ def test_all_components_schema_command():
         assert "type" in component_type_schema_def["properties"]
         assert (
             component_type_schema_def["properties"]["type"]["default"]
-            == f"dagster_components.test.{component_type_key}"
+            == f"{component_type_key}@dagster_components.test"
         )
         assert (
             component_type_schema_def["properties"]["type"]["const"]
-            == f"dagster_components.test.{component_type_key}"
+            == f"{component_type_key}@dagster_components.test"
         )
 
 
@@ -200,7 +200,7 @@ def test_scaffold_component_command():
                 "dagster_components.test",
                 "scaffold",
                 "component",
-                "dagster_components.test.simple_pipes_script_asset",
+                "simple_pipes_script_asset@dagster_components.test",
                 "bar/components/qux",
                 "--json-params",
                 '{"asset_key": "my_asset", "filename": "my_asset.py"}',

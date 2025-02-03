@@ -41,7 +41,7 @@ CLI_TEST_CASES = [
         should_error=True,
         check_error_msg=msg_includes_all_of(
             "component.yaml:1",
-            "Unable to locate local component type '.my_component_does_not_exist'",
+            "Unable to locate local component type 'my_component_does_not_exist@__init__.py'",
         ),
     ),
 ]
