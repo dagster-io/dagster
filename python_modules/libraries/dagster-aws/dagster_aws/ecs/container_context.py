@@ -134,7 +134,7 @@ SHARED_TASK_DEFINITION_FIELDS = {
         BoolSource,
         is_required=False,
         description=(
-            "When true, the root filesystem of the container is read-only. "
+            "When true, the root filesystem of the container is read-only."
             "See https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html"
         ),
     ),
@@ -336,7 +336,7 @@ class EcsContainerContext(
             run_sidecar_containers=[*other.run_sidecar_containers, *self.run_sidecar_containers],
             server_ecs_tags=[*other.server_ecs_tags, *self.server_ecs_tags],
             run_ecs_tags=[*other.run_ecs_tags, *self.run_ecs_tags],
-            readonly_root_filesystem=other.readonly_root_filesystem or self.readonly_root_filesystem,
+            readonly_root_filesystem=other.readonly_root_filesystem if other.readonly_root_filesystem is not None else self.readonly_root_filesystem,
             repository_credentials=other.repository_credentials or self.repository_credentials,
             server_health_check=other.server_health_check or self.server_health_check,
         )

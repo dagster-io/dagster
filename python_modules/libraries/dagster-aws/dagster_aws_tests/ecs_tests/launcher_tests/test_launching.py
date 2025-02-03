@@ -924,13 +924,14 @@ def test_launching_custom_task_definition(ecs, instance_cm, run, workspace, job,
         assert run.run_id in str(override["command"])
 
 
-def test_readonly_root_filesystem(ecs, instance_cm, run, workspace, job, remote_job):
+@pytest.mark.parametrize("readonly_root_filesystem", [True, False])
+def test_readonly_root_filesystem(ecs, instance_cm, run, workspace, job, remote_job, readonly_root_filesystem):
     with instance_cm(
         {
             "task_definition": {
                 "task_role_arn": "fake-task-role",
                 "execution_role_arn": "fake-execution-role",
-                "readonly_root_filesystem": True,
+                "readonly_root_filesystem": readonly_root_filesystem,
             },
         }
     ) as instance:
@@ -964,8 +965,8 @@ def test_readonly_root_filesystem(ecs, instance_cm, run, workspace, job, remote_
         ]
         container_definition = task_definition["containerDefinitions"][0]
 
-        # Assert that readonlyRootFilesystem is set to True
-        assert container_definition.get("readonlyRootFilesystem") is True
+        # Assert that readonlyRootFilesystem is set to correctly
+        assert container_definition.get("readonlyRootFilesystem") is readonly_root_filesystem
 
 
 def test_eventual_consistency(ecs, instance, workspace, run, monkeypatch):
