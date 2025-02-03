@@ -1,7 +1,15 @@
 from collections.abc import Mapping
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from requests import codes, exceptions, post
+
+from dagster_msteams.adaptive_card import AdaptiveCard
+from dagster_msteams.card import Card
+
+
+class Link(NamedTuple):
+    text: str
+    url: str
 
 
 class TeamsClient:
@@ -30,7 +38,10 @@ class TeamsClient:
                 self._proxy["https"] = https_proxy
         self._headers = {"Content-Type": "application/json"}
 
-    def post_message(self, payload: Mapping) -> bool:  # pragma: no cover
+    def is_legacy_webhook(self) -> bool:
+        return "webhook.office.com" in self._hook_url
+
+    def _post(self, payload: Mapping) -> bool:
         response = post(
             self._hook_url,
             json=payload,
@@ -39,7 +50,25 @@ class TeamsClient:
             timeout=self._timeout,
             verify=self._verify,
         )
-        if response.status_code == codes["ok"] and response.text == "1":
-            return True
+        if self.is_legacy_webhook():
+            if response.status_code == codes["ok"] and response.text == "1":
+                return True
+            else:
+                raise exceptions.RequestException(response.text)
         else:
-            raise exceptions.RequestException(response.text)
+            if response.ok:
+                return True
+            else:
+                raise exceptions.RequestException(response.text)
+
+    def post_message(self, message: str, link: Optional[Link]) -> bool:  # pragma: no cover
+        if self.is_legacy_webhook():
+            card = Card()
+            if link:
+                message += f" <a href='{link.url}'>{link.text}</a>"
+            card.add_attachment(text_message=message)
+            return self._post(card.payload)
+        else:
+            if link:
+                message += f" [{link.text}]({link.url})"
+            return self._post(AdaptiveCard(message).payload)
