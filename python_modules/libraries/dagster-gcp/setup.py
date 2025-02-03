@@ -43,6 +43,10 @@ setup(
         "oauth2client",
     ],
     # we need `pyarrow` for testing read/write parquet files.
-    extras_require={"pyarrow": ["pyarrow"], "test": ["gcp-storage-emulator"]},
+    extras_require={
+        "pyarrow": ["pyarrow"],
+        "test": ["gcp-storage-emulator"],
+        "dataproc": ["google-cloud-dataproc"],
+    },
     zip_safe=False,
 )
