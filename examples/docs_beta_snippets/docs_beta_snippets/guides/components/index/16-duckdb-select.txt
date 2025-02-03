@@ -1,4 +1,4 @@
-$ duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"
+duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"
 
 ┌───────┬────────────┬───────────┬──────────────────┐
 │  id   │ first_name │ last_name │ _sling_loaded_at │

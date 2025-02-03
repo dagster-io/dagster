@@ -254,7 +254,9 @@ COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
 COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"
 
 
-def component_type(cls: Optional[type[Component]] = None, *, name: Optional[str] = None) -> Any:
+def registered_component_type(
+    cls: Optional[type[Component]] = None, *, name: Optional[str] = None
+) -> Any:
     """Decorator for registering a component type. You must annotate a component
     type with this decorator in order for it to be inspectable and loaded by tools.
 

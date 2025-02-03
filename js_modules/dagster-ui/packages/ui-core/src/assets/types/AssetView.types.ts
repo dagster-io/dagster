@@ -21,22 +21,27 @@ export type AssetViewDefinitionQuery = {
         definition: {
           __typename: 'AssetNode';
           id: string;
+          pools: Array<string>;
           groupName: string;
+          isExecutable: boolean;
           hasReportRunlessAssetEventPermission: boolean;
-          description: string | null;
           graphName: string | null;
+          hasMaterializePermission: boolean;
+          jobNames: Array<string>;
+          changedReasons: Array<Types.ChangeReason>;
           opNames: Array<string>;
           opVersion: string | null;
-          jobNames: Array<string>;
-          isMaterializable: boolean;
-          isExecutable: boolean;
-          pools: Array<string>;
-          hasMaterializePermission: boolean;
-          changedReasons: Array<Types.ChangeReason>;
+          description: string | null;
           computeKind: string | null;
           isPartitioned: boolean;
           isObservable: boolean;
+          isMaterializable: boolean;
           kinds: Array<string>;
+          automationCondition: {
+            __typename: 'AutomationCondition';
+            label: string | null;
+            expandedLabel: Array<string>;
+          } | null;
           partitionDefinition: {
             __typename: 'PartitionDefinition';
             description: string;
@@ -47,44 +52,6 @@ export type AssetViewDefinitionQuery = {
             }>;
           } | null;
           partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
-          repository: {
-            __typename: 'Repository';
-            id: string;
-            name: string;
-            location: {__typename: 'RepositoryLocation'; id: string; name: string};
-          };
-          targetingInstigators: Array<
-            | {
-                __typename: 'Schedule';
-                id: string;
-                name: string;
-                cronSchedule: string;
-                executionTimezone: string | null;
-                scheduleState: {
-                  __typename: 'InstigationState';
-                  id: string;
-                  selectorId: string;
-                  status: Types.InstigationStatus;
-                };
-              }
-            | {
-                __typename: 'Sensor';
-                id: string;
-                name: string;
-                sensorType: Types.SensorType;
-                sensorState: {
-                  __typename: 'InstigationState';
-                  id: string;
-                  selectorId: string;
-                  status: Types.InstigationStatus;
-                  typeSpecificData:
-                    | {__typename: 'ScheduleData'}
-                    | {__typename: 'SensorData'; lastCursor: string | null}
-                    | null;
-                };
-              }
-          >;
-          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           owners: Array<
             | {__typename: 'TeamAssetOwner'; team: string}
             | {__typename: 'UserAssetOwner'; email: string}
@@ -98,11 +65,6 @@ export type AssetViewDefinitionQuery = {
               decisionType: Types.AutoMaterializeDecisionType;
             }>;
           } | null;
-          automationCondition: {
-            __typename: 'AutomationCondition';
-            label: string | null;
-            expandedLabel: Array<string>;
-          } | null;
           freshnessPolicy: {
             __typename: 'FreshnessPolicy';
             maximumLagMinutes: number;
@@ -111,7 +73,14 @@ export type AssetViewDefinitionQuery = {
           } | null;
           backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
           requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+          repository: {
+            __typename: 'Repository';
+            id: string;
+            name: string;
+            location: {__typename: 'RepositoryLocation'; id: string; name: string};
+          };
           assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
           configField: {
             __typename: 'ConfigTypeField';
             name: string;
@@ -668,6 +637,37 @@ export type AssetViewDefinitionQuery = {
                   >;
                 };
           } | null;
+          targetingInstigators: Array<
+            | {
+                __typename: 'Schedule';
+                id: string;
+                name: string;
+                cronSchedule: string;
+                executionTimezone: string | null;
+                scheduleState: {
+                  __typename: 'InstigationState';
+                  id: string;
+                  selectorId: string;
+                  status: Types.InstigationStatus;
+                };
+              }
+            | {
+                __typename: 'Sensor';
+                id: string;
+                name: string;
+                sensorType: Types.SensorType;
+                sensorState: {
+                  __typename: 'InstigationState';
+                  id: string;
+                  selectorId: string;
+                  status: Types.InstigationStatus;
+                  typeSpecificData:
+                    | {__typename: 'ScheduleData'}
+                    | {__typename: 'SensorData'; lastCursor: string | null}
+                    | null;
+                };
+              }
+          >;
           metadataEntries: Array<
             | {
                 __typename: 'AssetMetadataEntry';
@@ -16406,22 +16406,27 @@ export type AssetViewDefinitionQuery = {
 export type AssetViewDefinitionNodeFragment = {
   __typename: 'AssetNode';
   id: string;
+  pools: Array<string>;
   groupName: string;
+  isExecutable: boolean;
   hasReportRunlessAssetEventPermission: boolean;
-  description: string | null;
   graphName: string | null;
+  hasMaterializePermission: boolean;
+  jobNames: Array<string>;
+  changedReasons: Array<Types.ChangeReason>;
   opNames: Array<string>;
   opVersion: string | null;
-  jobNames: Array<string>;
-  isMaterializable: boolean;
-  isExecutable: boolean;
-  pools: Array<string>;
-  hasMaterializePermission: boolean;
-  changedReasons: Array<Types.ChangeReason>;
+  description: string | null;
   computeKind: string | null;
   isPartitioned: boolean;
   isObservable: boolean;
+  isMaterializable: boolean;
   kinds: Array<string>;
+  automationCondition: {
+    __typename: 'AutomationCondition';
+    label: string | null;
+    expandedLabel: Array<string>;
+  } | null;
   partitionDefinition: {
     __typename: 'PartitionDefinition';
     description: string;
@@ -16432,44 +16437,6 @@ export type AssetViewDefinitionNodeFragment = {
     }>;
   } | null;
   partitionKeysByDimension: Array<{__typename: 'DimensionPartitionKeys'; name: string}>;
-  repository: {
-    __typename: 'Repository';
-    id: string;
-    name: string;
-    location: {__typename: 'RepositoryLocation'; id: string; name: string};
-  };
-  targetingInstigators: Array<
-    | {
-        __typename: 'Schedule';
-        id: string;
-        name: string;
-        cronSchedule: string;
-        executionTimezone: string | null;
-        scheduleState: {
-          __typename: 'InstigationState';
-          id: string;
-          selectorId: string;
-          status: Types.InstigationStatus;
-        };
-      }
-    | {
-        __typename: 'Sensor';
-        id: string;
-        name: string;
-        sensorType: Types.SensorType;
-        sensorState: {
-          __typename: 'InstigationState';
-          id: string;
-          selectorId: string;
-          status: Types.InstigationStatus;
-          typeSpecificData:
-            | {__typename: 'ScheduleData'}
-            | {__typename: 'SensorData'; lastCursor: string | null}
-            | null;
-        };
-      }
-  >;
-  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   owners: Array<
     {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
   >;
@@ -16482,11 +16449,6 @@ export type AssetViewDefinitionNodeFragment = {
       decisionType: Types.AutoMaterializeDecisionType;
     }>;
   } | null;
-  automationCondition: {
-    __typename: 'AutomationCondition';
-    label: string | null;
-    expandedLabel: Array<string>;
-  } | null;
   freshnessPolicy: {
     __typename: 'FreshnessPolicy';
     maximumLagMinutes: number;
@@ -16495,7 +16457,14 @@ export type AssetViewDefinitionNodeFragment = {
   } | null;
   backfillPolicy: {__typename: 'BackfillPolicy'; description: string} | null;
   requiredResources: Array<{__typename: 'ResourceRequirement'; resourceKey: string}>;
+  repository: {
+    __typename: 'Repository';
+    id: string;
+    name: string;
+    location: {__typename: 'RepositoryLocation'; id: string; name: string};
+  };
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   configField: {
     __typename: 'ConfigTypeField';
     name: string;
@@ -17048,6 +17017,37 @@ export type AssetViewDefinitionNodeFragment = {
           >;
         };
   } | null;
+  targetingInstigators: Array<
+    | {
+        __typename: 'Schedule';
+        id: string;
+        name: string;
+        cronSchedule: string;
+        executionTimezone: string | null;
+        scheduleState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+        };
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        name: string;
+        sensorType: Types.SensorType;
+        sensorState: {
+          __typename: 'InstigationState';
+          id: string;
+          selectorId: string;
+          status: Types.InstigationStatus;
+          typeSpecificData:
+            | {__typename: 'ScheduleData'}
+            | {__typename: 'SensorData'; lastCursor: string | null}
+            | null;
+        };
+      }
+  >;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -32574,4 +32574,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = 'dcda9d955aedec1cd9640f349171a2e9f60934af69f5ea3a5362326757269b45';
+export const AssetViewDefinitionQueryVersion = '4de8b3dc0abaac4f7eebcb753a73e4b70d1b3a4f900a4f0fd609c3a3a593ccc7';

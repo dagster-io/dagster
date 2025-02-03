@@ -17,11 +17,11 @@ import {showSharedToaster} from '../app/DomUtils';
 import {useFeatureFlags} from '../app/Flags';
 import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
-import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrency';
+import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrencyKeyInfo';
 import {
   FreeConcurrencySlotsMutation,
   FreeConcurrencySlotsMutationVariables,
-} from '../instance/types/InstanceConcurrency.types';
+} from '../instance/types/InstanceConcurrencyKeyInfo.types';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 

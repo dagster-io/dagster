@@ -64,6 +64,8 @@ def _run_command(
     pwd = PWD_REGEX.search(actual_output).group(1)
     actual_output = PWD_REGEX.sub("", actual_output)
 
+    actual_output = ANSI_ESCAPE.sub("", actual_output)
+
     os.chdir(pwd)
 
     return actual_output
@@ -198,9 +200,9 @@ def run_command_and_snippet_output(
         assert update_snippets is not None
 
         if ignore_output:
-            contents = f"$ {cmd}"
+            contents = str(cmd)
         else:
-            contents = f"$ {cmd}\n\n{output}"
+            contents = f"{cmd}\n\n{output}"
 
         _assert_matches_or_update_snippet(
             contents=contents,

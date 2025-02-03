@@ -2,7 +2,12 @@ from collections.abc import Mapping
 from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster_components import AssetAttributesModel, Component, ComponentLoadContext, component_type
+from dagster_components import (
+    AssetAttributesModel,
+    Component,
+    ComponentLoadContext,
+    registered_component_type,
+)
 
 
 def my_custom_fn(a: str, b: str) -> str:
@@ -13,7 +18,7 @@ def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
     return AutomationCondition.cron_tick_passed(cron_schedule) & ~AutomationCondition.in_progress()
 
 
-@component_type(name="custom_scope_component")
+@registered_component_type(name="custom_scope_component")
 class HasCustomScope(Component):
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:

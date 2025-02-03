@@ -1,4 +1,8 @@
-from dagster_components import Component, ComponentLoadContext, component_type
+from dagster_components import (
+    Component,
+    ComponentLoadContext,
+    registered_component_type,
+)
 
 import dagster as dg
 
@@ -10,7 +14,7 @@ def _get_script_runner(val: str) -> ScriptRunner:
     return ScriptRunner()
 
 
-@component_type(name="shell_command")
+@registered_component_type(name="shell_command")
 class ShellCommand(Component):
     def __init__(self, params):
         self.params = params
