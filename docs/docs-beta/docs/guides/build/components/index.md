@@ -197,6 +197,10 @@ You can see at first glance that there appear to be two copies of the `raw_custo
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/22-project-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
+After updating a component file, it's often useful to validate that the changes match the component's schema. You can do this by running `dg component check`:
+
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-dg-component-check.txt" />
+
 
 Reload the code location in Dagster UI and now the keys will connect properly:
 
@@ -207,7 +211,7 @@ asset graph is correct. Click "Materialize All" to materialize the new assets
 defined via the DBT project component. We can verify that this worked by
 viewing a sample of the newly materialized assets from the command line:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-duckdb-select-orders.txt" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/24-duckdb-select-orders.txt" />
 
 
 ## Automation
