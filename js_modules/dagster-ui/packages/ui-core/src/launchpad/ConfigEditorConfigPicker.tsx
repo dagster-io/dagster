@@ -287,7 +287,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
           key={showCreatePartition ? '1' : '0'}
           isOpen={showCreatePartition}
           dynamicPartitionsDefinitionName={dynamicPartitionsDefinitionName}
-          repoAddress={repoAddress}
+          repositorySelector={repositorySelector}
           close={() => {
             setShowCreatePartition(false);
           }}

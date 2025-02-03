@@ -6,15 +6,14 @@ import {
   PartitionDimensionSelection,
   PartitionHealthDataMerged,
 } from '../assets/usePartitionHealthData';
-import {PartitionDefinitionType} from '../graphql/types';
-import {RepoAddress} from '../workspace/types';
+import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 
 export const DimensionRangeWizards = ({
   selections,
   setSelections,
   displayedHealth,
   displayedPartitionDefinition,
-  repoAddress,
+  repositorySelector,
   refetch,
 }: {
   selections: PartitionDimensionSelection[];
@@ -27,7 +26,7 @@ export const DimensionRangeWizards = ({
       dynamicPartitionsDefinitionName: string | null;
     }[];
   } | null;
-  repoAddress?: RepoAddress;
+  repositorySelector?: RepositorySelector;
   refetch?: () => Promise<void>;
 }) => {
   return (
@@ -49,7 +48,7 @@ export const DimensionRangeWizards = ({
               : null}
           </Box>
           <DimensionRangeWizard
-            repoAddress={repoAddress}
+            repositorySelector={repositorySelector}
             refetch={refetch}
             partitionKeys={range.dimension.partitionKeys}
             health={{

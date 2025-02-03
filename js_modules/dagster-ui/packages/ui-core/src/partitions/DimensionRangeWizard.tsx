@@ -6,9 +6,8 @@ import {CreatePartitionDialog} from './CreatePartitionDialog';
 import {DimensionRangeInput} from './DimensionRangeInput';
 import {OrdinalPartitionSelector} from './OrdinalPartitionSelector';
 import {PartitionStatus, PartitionStatusHealthSource} from './PartitionStatus';
-import {PartitionDefinitionType} from '../graphql/types';
+import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {testId} from '../testing/testId';
-import {RepoAddress} from '../workspace/types';
 
 export const DimensionRangeWizard = ({
   selected,
@@ -17,7 +16,7 @@ export const DimensionRangeWizard = ({
   health,
   dimensionType,
   dynamicPartitionsDefinitionName,
-  repoAddress,
+  repositorySelector,
   refetch,
 }: {
   selected: string[];
@@ -26,7 +25,7 @@ export const DimensionRangeWizard = ({
   health: PartitionStatusHealthSource;
   dimensionType: PartitionDefinitionType;
   dynamicPartitionsDefinitionName?: string | null;
-  repoAddress?: RepoAddress;
+  repositorySelector?: RepositorySelector;
   refetch?: () => Promise<void>;
 }) => {
   const isTimeseries = dimensionType === PartitionDefinitionType.TIME_WINDOW;
@@ -92,12 +91,12 @@ export const DimensionRangeWizard = ({
           />
         )}
       </Box>
-      {repoAddress && (
+      {repositorySelector && (
         <CreatePartitionDialog
           key={showCreatePartition ? '1' : '0'}
           isOpen={showCreatePartition}
           dynamicPartitionsDefinitionName={dynamicPartitionsDefinitionName}
-          repoAddress={repoAddress}
+          repositorySelector={repositorySelector}
           close={() => {
             setShowCreatePartition(false);
           }}

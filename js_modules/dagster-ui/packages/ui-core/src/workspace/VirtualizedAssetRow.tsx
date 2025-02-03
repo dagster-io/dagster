@@ -23,7 +23,7 @@ import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {AssetKind} from '../graph/KindTags';
-import {AssetKeyInput} from '../graphql/types';
+import {AssetKeyInput, buildRepositorySelector} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {testId} from '../testing/testId';
@@ -89,6 +89,15 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     }
   };
   const kinds = definition?.kinds;
+
+  const repositorySelector = React.useMemo(() => {
+    return repoAddress
+      ? buildRepositorySelector({
+          repositoryLocationName: repoAddress.location,
+          repositoryName: repoAddress.name,
+        })
+      : null;
+  }, [repoAddress]);
 
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
@@ -213,7 +222,7 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
             <AssetActionMenu
               path={path}
               definition={definition}
-              repoAddress={repoAddress}
+              repositorySelector={repositorySelector}
               onRefresh={onRefresh}
             />
           ) : null}

@@ -54,7 +54,7 @@ describe('DeleteDynamicPartitionsDialog', () => {
       >
         <DeleteDynamicPartitionsDialog
           assetKey={{path: ['asset']}}
-          repoAddress={{location: 'location', name: 'repo.py'}}
+          repositorySelector={{repositoryLocationName: 'location', repositoryName: 'repo.py'}}
           partitionsDefName="fruits"
           isOpen
           onClose={() => {}}

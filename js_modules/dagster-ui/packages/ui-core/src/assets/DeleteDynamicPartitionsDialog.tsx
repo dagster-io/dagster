@@ -18,13 +18,12 @@ import {usePartitionHealthData} from './usePartitionHealthData';
 import {RefetchQueriesFunction, gql, useMutation} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
+import {AssetKeyInput, PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {OrdinalPartitionSelector} from '../partitions/OrdinalPartitionSelector';
-import {RepoAddress} from '../workspace/types';
 
 export interface DeleteDynamicPartitionsDialogProps {
   assetKey: AssetKeyInput;
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   partitionsDefName: string;
   isOpen: boolean;
   onClose: () => void;
@@ -47,7 +46,7 @@ export const DeleteDynamicPartitionsDialog = memo((props: DeleteDynamicPartition
 
 export const DeleteDynamicPartitionsDialogInner = memo(
   ({
-    repoAddress,
+    repositorySelector,
     assetKey,
     partitionsDefName,
     onClose,
@@ -75,10 +74,7 @@ export const DeleteDynamicPartitionsDialogInner = memo(
         setDeleting(true);
         const resp = await deletePartitions({
           variables: {
-            repositorySelector: {
-              repositoryLocationName: repoAddress.location,
-              repositoryName: repoAddress.name,
-            },
+            repositorySelector,
             partitionsDefName,
             partitionKeys,
           },
@@ -87,7 +83,7 @@ export const DeleteDynamicPartitionsDialogInner = memo(
         setDeleting(false);
         onComplete?.();
       },
-      [deletePartitions, onComplete, partitionsDefName, repoAddress.location, repoAddress.name],
+      [deletePartitions, onComplete, partitionsDefName, repositorySelector],
     );
 
     const content = useMemo(() => {
