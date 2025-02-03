@@ -147,6 +147,24 @@ This will run `pyright` on all new/changed files relative to the master branch.
 make quick_pyright
 ```
 
+### CLI Invocation Examples
+
+Since CLI invocations often include both a command and its output, which are logically separate and which users might want to copy and paste separately, we have a special component for this.
+
+```
+<CliInvocationExample path="path/to/file.txt" />
+```
+
+The `path` is relative to the `./examples/` directory for maximum flexibility. The contents of the file are expected to either contain just a command, or a command and its output, separated by a blank line. The syntax of the command is bash.
+
+Some CLI invocations may be brief enough that we don't want to include them in a separate file. In that case, we can use the `contents` prop:
+
+```
+<CliInvocationExample contents="uv add 'dagster-components[sling]'" />
+```
+
+For more information on testing the CLI commands used in docs, see [the README in docs tests](../../examples/docs_beta_snippets/docs_beta_snippets_tests/snippet_checks/README.md).
+
 ### Diagrams
 
 You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
