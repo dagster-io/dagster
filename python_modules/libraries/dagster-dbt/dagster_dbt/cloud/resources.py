@@ -18,6 +18,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
@@ -587,10 +588,12 @@ class DbtCloudClient:
         )
 
 
+@beta
 class DbtCloudResource(DbtCloudClient):
     pass
 
 
+@beta
 class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """This resource helps interact with dbt Cloud connectors."""
 
@@ -656,6 +659,7 @@ class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpCon
         return self.get_dbt_client()
 
 
+@beta
 @dagster_maintained_resource
 @resource(
     config_schema=DbtCloudClientResource.to_config_schema(),

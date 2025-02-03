@@ -3,9 +3,11 @@ from datetime import datetime
 from typing import Any, Optional
 
 import dagster._check as check
+from dagster._annotations import beta
 from dagster._vendored.dateutil.parser import isoparse
 
 
+@beta
 class DbtCloudOutput:
     """The results of executing a dbt Cloud job, along with additional metadata produced from the
     job run.
