@@ -1,0 +1,8 @@
+recursive-include dagster_obstore *.sh
+recursive-include dagster_obstore *.yaml
+recursive-include dagster_obstore *.txt
+recursive-include dagster_obstore *.template
+include LICENSE
+include dagster_obstore/py.typed
+
+exclude ruff.toml

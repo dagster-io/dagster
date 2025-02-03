@@ -1,0 +1,7 @@
+extend = "../../../pyproject.toml"
+
+[lint]
+extend-select = [
+  # ban specific top-level imports
+  "TID253",
+]
