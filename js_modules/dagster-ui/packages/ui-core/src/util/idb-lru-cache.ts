@@ -21,8 +21,6 @@ class IDBError extends Error {
   }
 }
 
-let id = 0;
-
 class IDBLRUCache<T> {
   private dbName: string;
   private maxCount: number;
@@ -107,7 +105,6 @@ class IDBLRUCache<T> {
   // This is a helper function to ensure that operations are performed in the order of the operation queue.
   // to avoid race conditions.
   private async withDB<T>(operation: (db: IDBDatabase) => Promise<T>): Promise<T> {
-    const _id = id++;
     return this.withDBInitialized(
       (db) =>
         new Promise((resolve, reject) => {
