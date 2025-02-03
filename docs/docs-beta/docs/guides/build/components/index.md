@@ -21,15 +21,12 @@ First let's install some tools. The centerpiece of this tutorial is the `dg` com
 
 We'll install [`uv`](https://docs.astral.sh/uv/getting-started/installation/) and install two other tools used in this tutorial: [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=macos&download_method=package_manager) for a local database, and [`tree`](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTALL) for visualizing project structure. We will assume we are on a Mac and install using `brew`-- if you are on another platform, follow the preceding links to see the installation instructions. Note that `tree` is strictly optional and is only used to produce an easily understandable representation of the project structure on the CLI. `find`, `ls` or any other directory listing command will also work.
 
-```bash
-$ brew install uv duckdb tree
-```
+<CliInvocationExample contents="brew install uv duckdb tree" />
+
 
 Now that we have `uv`, we can install `dg`:
 
-```bash
-$ uv tool install dagster-dg
-```
+<CliInvocationExample contents="uv tool install dagster-dg" />
 
 `uv tool install` installs python packages from PyPI into isolated environments and exposes their executables on your shell path. This means the `dg` command should now be available. It will always execute in an isolated environment separate from any project environment.
 
@@ -107,9 +104,7 @@ This is because the basic `dagster-components` package (which was installed when
 Recall that `dg` always operates in an isolated environment-- so how is it able to access the set of components types available in our project environment? Under the hood, `dg` attempts to resolve a project root whenever it is run. If it finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will by default expect a `uv`-managed virtual environment to be present in the same directory (this can be confirmed by the presence of a `uv.lock` file). When you run commands like `dg component-type list`, `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up for us as part of the `dg code-location scaffold` command.
 :::
 
-```bash
-$ uv add 'dagster-components[sling]'
-```
+<CliInvocationExample contents="uv add 'dagster-components[sling]'" />
 
 Now let's see what component types are available:
 
@@ -155,9 +150,7 @@ And finally create `replication.yaml` referencing the downloaded files:
 
 Let's load up our code location in the Dagster UI to see what we've got:
 
-```bash
-uv run dagster dev # will be dg dev in the future
-```
+<CliInvocationExample contents="uv run dagster dev # will be dg dev in the future" />
 
 ![](/images/guides/build/projects-and-components/components/sling.png)
 
@@ -174,9 +167,7 @@ We'll now download a pre-existing sample DBT project from github. We're going to
 
 We'll need to create a Dagster DBT project component to interface with the dbt project. We can access the DBT project component by installing `dagster-components[dbt]` and `dbt-duckdb`:
 
-```bash
-$ uv add "dagster-components[dbt]" dbt-duckdb
-```
+<CliInvocationExample contents="uv add 'dagster-components[dbt]' dbt-duckdb" />
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" />
 
@@ -198,9 +189,7 @@ This creates a new component instance in the project at `jaffle_platform/compone
 
 Let’s see the project in the Dagster UI:
 
-```bash
-uv run dagster dev
-```
+<CliInvocationExample contents="uv run dagster dev" />
 
 ![](/images/guides/build/projects-and-components/components/dbt-1.png)
 

@@ -724,12 +724,14 @@ div[class^='announcementBar_'] {
       color: var(--theme-color-text-cyan);
       font-weight: 600;
     }
-    code {
-      border-bottom: 1px dashed var(--theme-color-border-default);
-    }
-    code, div, pre {
-      border-bottom-left-radius: 0 !important;
-      border-bottom-right-radius: 0 !important;
+    &.cli-invocation-example-command-with-result {
+      code {
+          border-bottom: 1px dashed var(--theme-color-border-default);
+      }
+      code, div, pre {
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+      }
     }
   }
 
