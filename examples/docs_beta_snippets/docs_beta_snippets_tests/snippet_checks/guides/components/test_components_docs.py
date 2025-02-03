@@ -291,6 +291,7 @@ params:
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
                     ("--no-use-dg-managed-environment", ""),
+                    MASK_JAFFLE_PLATFORM,
                 ],
             )
 
