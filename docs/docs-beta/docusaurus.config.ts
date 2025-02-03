@@ -110,7 +110,7 @@ const config: Config = {
         {
           label: 'Versions',
           type: 'docsVersionDropdown',
-          position: 'left'
+          position: 'right'
         },
         {
            label: 'Feedback',
