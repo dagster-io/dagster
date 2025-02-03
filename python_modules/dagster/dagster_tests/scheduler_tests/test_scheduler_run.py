@@ -1320,11 +1320,8 @@ def test_launch_failure(
                 "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
         },
+        synchronous_run_coordinator=True,
     ) as scheduler_instance:
         schedule = remote_repo.get_schedule("simple_schedule")
 

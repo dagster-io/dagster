@@ -97,17 +97,9 @@ def get_workspace_request_context(
     filenames: Sequence[str], overrides: Optional[dict[str, Any]] = None
 ):
     with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-            **(overrides or {}),
-        }
+        overrides=overrides,
+        synchronous_run_launcher=True,
+        synchronous_run_coordinator=True,
     ) as instance:
         target = InProcessTestWorkspaceLoadTarget(
             [get_code_location_origin(filename) for filename in filenames]
@@ -598,16 +590,8 @@ def test_backfill_with_runs_and_checks() -> None:
 def test_toggle_user_code() -> None:
     with (
         instance_for_test(
-            overrides={
-                "run_launcher": {
-                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                },
-                "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                    "class": "SynchronousRunCoordinator",
-                },
-            }
+            synchronous_run_launcher=True,
+            synchronous_run_coordinator=True,
         ) as instance,
         get_threadpool_executor() as executor,
     ):

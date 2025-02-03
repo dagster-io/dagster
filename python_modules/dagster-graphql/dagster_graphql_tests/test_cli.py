@@ -18,16 +18,8 @@ def dagster_cli_runner():
     with tempfile.TemporaryDirectory() as dagster_home_temp:
         with instance_for_test(
             temp_dir=dagster_home_temp,
-            overrides={
-                "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                    "class": "SynchronousRunCoordinator",
-                },
-                "run_launcher": {
-                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                },
-            },
+            synchronous_run_launcher=True,
+            synchronous_run_coordinator=True,
         ):
             yield CliRunner(env={"DAGSTER_HOME": dagster_home_temp})
 
@@ -71,16 +63,8 @@ def test_async_resolver():
     with tempfile.TemporaryDirectory() as dagster_home_temp:
         with instance_for_test(
             temp_dir=dagster_home_temp,
-            overrides={
-                "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                    "class": "SynchronousRunCoordinator",
-                },
-                "run_launcher": {
-                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                },
-            },
+            synchronous_run_launcher=True,
+            synchronous_run_coordinator=True,
         ) as instance:
             result = my_job.execute_in_process(instance=instance)
             run_id = result.dagster_run.run_id
@@ -335,16 +319,8 @@ def test_logs_in_start_execution_predefined():
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(
             temp_dir=temp_dir,
-            overrides={
-                "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                    "class": "SynchronousRunCoordinator",
-                },
-                "run_launcher": {
-                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                },
-            },
+            synchronous_run_launcher=True,
+            synchronous_run_coordinator=True,
         ) as instance:
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             result = runner.invoke(
