@@ -101,11 +101,6 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
-        {
-          label: 'Dagster University',
-          href: 'https://courses.dagster.io',
-          position: 'left',
-        },
         //{
         //  label: 'Changelog',
         //  type: 'doc',
