@@ -11,8 +11,7 @@ from dagster._core.definitions.run_status_sensor_definition import (
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.warnings import normalize_renamed_param
 
-from dagster_msteams.card import Card
-from dagster_msteams.client import TeamsClient
+from dagster_msteams.client import Link, TeamsClient
 
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import JobSelector, RepositorySelector
@@ -140,10 +139,13 @@ def make_teams_on_run_failure_sensor(
     )
     def teams_on_run_failure(context: RunFailureSensorContext):
         text = message_fn(context)
-        if webserver_base_url:
-            text += f"<a href='{webserver_base_url}/runs/{context.dagster_run.run_id}'>View in Dagit</a>"
-        card = Card()
-        card.add_attachment(text_message=text)
-        teams_client.post_message(payload=card.payload)
+        teams_client.post_message(
+            message=text,
+            link=Link(
+                text="View in Dagit", url=f"{webserver_base_url}/runs/{context.dagster_run.run_id}"
+            )
+            if webserver_base_url
+            else None,
+        )
 
     return teams_on_run_failure
