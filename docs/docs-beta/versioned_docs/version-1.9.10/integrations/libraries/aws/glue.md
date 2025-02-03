@@ -6,7 +6,7 @@ title: Dagster & AWS Glue
 sidebar_label: Glue
 excerpt: The AWS Glue integration enables you to initiate AWS Glue jobs directly from Dagster, seamlessly pass parameters to your code, and stream logs and structured messages back into Dagster.
 date: 2024-08-20
-apireflink: https://docs.dagster.io/concepts/dagster-pipes/aws-glue
+apireflink: https://docs.dagster.io/integrations/libraries/aws/glue
 docslink:
 partnerlink: https://aws.amazon.com/
 logo: /integrations/aws-glue.svg

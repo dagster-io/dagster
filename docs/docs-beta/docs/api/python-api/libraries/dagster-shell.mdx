@@ -39,7 +39,7 @@ The Dagster shell library provides utilities and op factories for executing inli
     job execution and pass them between ops, you should use `shell_op` instead.
 
     The resulting op can take a single `start` argument that is a
-    [Nothing dependency](https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies)
+    [Nothing dependency](https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies)
     to allow you to run ops before the shell op.
 
     Examples:
@@ -99,7 +99,7 @@ The Dagster shell library provides utilities and op factories for executing inli
     in the cases where you’d like to configure the shell op with different config fields.
 
     If no `ins` are passed then the resulting op can take a single `start` argument that is a
-    [Nothing dependency](https://docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies)
+    [Nothing dependency](https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/graphs#defining-nothing-dependencies)
     to allow you to run ops before the shell op.
 
     Examples:

@@ -6,8 +6,8 @@ title: Dagster & dbt
 sidebar_label: dbt
 excerpt: Put your dbt transformations to work, directly from within Dagster.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-dbt
-docslink: https://docs.dagster.io/integrations/dbt
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-dbt
+docslink: https://docs.dagster.io/api/python-api/libraries/dagster-dbt#dbt-core
 partnerlink: https://www.getdbt.com/
 categories:
   - ETL

@@ -11,11 +11,11 @@ last_update:
 
 # Pipes (dagster-pipes)
 
-The `dagster-pipes` library is intended for inclusion in an external process that integrates with Dagster using the [Pipes](https://docs.dagster.io/concepts/dagster-pipes) protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
+The `dagster-pipes` library is intended for inclusion in an external process that integrates with Dagster using the [Pipes](https://docs.dagster.io/guides/build/external-pipelines/) protocol. This could be in an environment like Databricks, Kubernetes, or Docker. Using this library, you can write code in the external process that streams metadata back to Dagster.
 
-For a detailed look at the Pipes process, including how to customize it, refer to the [Dagster Pipes details and customization guide](https://docs.dagster.io/concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms).
+For a detailed look at the Pipes process, including how to customize it, refer to the [Dagster Pipes details and customization guide](https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization).
 
-<strong>Looking to set up a Pipes client in Dagster?</strong> Refer to the [Dagster Pipes API reference](https://docs.dagster.io/_apidocs/pipes).
+<strong>Looking to set up a Pipes client in Dagster?</strong> Refer to the [Dagster Pipes API reference](https://docs.dagster.io/api/python-api/libraries/dagster-pipes).
 
 <strong>Note</strong>: This library isn’t included with `dagster` and must be [installed separately](https://pypi.org/project/dagster-pipes/).
 
@@ -373,7 +373,7 @@ For a detailed look at the Pipes process, including how to customize it, refer t
 
 Most Pipes users won’t need to use the APIs in the following sections unless they are customizing the Pipes protocol.
 
-Refer to the [Dagster Pipes details and customization guide](https://docs.dagster.io/concepts/dagster-pipes/dagster-pipes-details-and-customization#overview-and-terms) for more information.
+Refer to the [Dagster Pipes details and customization guide](https://docs.dagster.io/guides/build/external-pipelines/dagster-pipes-details-and-customization) for more information.
 
 <div class="section" id="context-loaders">
 

@@ -104,7 +104,7 @@ There are several data types and constraints available on <PyObject section="met
 ### Column lineage metadata \{#column-lineage}
 
 :::tip
-Many integrations such as [dbt](https://docs.dagster.io/integrations/dbt/reference) automatically attach column lineage metadata out-of-the-box.
+Many integrations such as [dbt](/integrations/libraries/dbt/) automatically attach column lineage metadata out-of-the-box.
 :::
 
 [Column lineage metadata](column-level-lineage) is a powerful way to track how columns in a table are derived from other columns:
@@ -126,7 +126,7 @@ To link assets with their source code, you can attach a code reference. Code ref
 
 :::tip
 
-Many integrations, such as [dbt](https://docs.dagster.io/integrations/dbt/reference#attaching-code-reference-metadata), support this capability.
+Many integrations, such as [dbt](/integrations/libraries/dbt/reference#attaching-code-reference-metadata), support this capability.
 
 :::
 

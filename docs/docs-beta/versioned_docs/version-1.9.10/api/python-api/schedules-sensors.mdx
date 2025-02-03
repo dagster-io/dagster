@@ -11,7 +11,7 @@ last_update:
 
 # Schedules and sensors
 
-Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. [Automating your Dagster pipelines](https://docs.dagster.io/concepts/automation) can boost efficiency and ensure that data is produced consistently and reliably.
+Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. [Automating your Dagster pipelines](https://docs.dagster.io/guides/automate/) can boost efficiency and ensure that data is produced consistently and reliably.
 
 <div class="section" id="run-requests">
 
@@ -56,7 +56,7 @@ Dagster offers several ways to run data pipelines without manual intervation, in
 
 ## Schedules
 
-[Schedules](https://docs.dagster.io/concepts/automation/schedules) are Dagster’s way to support traditional ways of automation, such as specifying a job should run at Mondays at 9:00AM. Jobs triggered by schedules can contain a subset of [assets](https://docs.dagster.io/concepts/assets/software-defined-assets) or [ops](https://docs.dagster.io/concepts/ops-jobs-graphs/ops).
+[Schedules](https://docs.dagster.io/guides/automate/schedules/) are Dagster’s way to support traditional ways of automation, such as specifying a job should run at Mondays at 9:00AM. Jobs triggered by schedules can contain a subset of [assets](https://docs.dagster.io/guides/build/assets/) or [ops](https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/ops).
 
 <dl>
     <dt><Link id='dagster.schedule'>@dagster.schedule</Link></dt>
@@ -407,7 +407,7 @@ Dagster offers several ways to run data pipelines without manual intervation, in
 
 ## Sensors
 
-[Sensors](https://docs.dagster.io/concepts/partitions-schedules-sensors/sensors) are typically used to poll, listen, and respond to external events. For example, you could configure a sensor to run a job or materialize an asset in response to specific events.
+[Sensors](https://docs.dagster.io/guides/automate/sensors/) are typically used to poll, listen, and respond to external events. For example, you could configure a sensor to run a job or materialize an asset in response to specific events.
 
 <dl>
     <dt><Link id='dagster.sensor'>@dagster.sensor</Link></dt>
