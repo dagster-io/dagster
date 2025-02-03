@@ -19,7 +19,7 @@ To update the snippets, instead invoke the `docs_snapshot_update` environment:
 tox -e docs_snapshot_update
 ```
 
-These commands are aliased from the `/docs` directory in the Makefile,
+These commands are aliased in the `/docs` directory, through the Makefile, for convenience:
 
 ```bash
 # Regenerate CLI snippets
