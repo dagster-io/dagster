@@ -12,14 +12,14 @@ import {PoolTag} from '../../instance/PoolTag';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {UnderlyingOpsOrGraph} from '../UnderlyingOpsOrGraph';
-import {AssetNodeDefinitionFragment} from '../types/AssetNodeDefinition.types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 export const ComputeDetailsSection = ({
   repoAddress,
   assetNode,
 }: {
   repoAddress: RepoAddress | null;
-  assetNode: AssetNodeDefinitionFragment | null | undefined;
+  assetNode: AssetViewDefinitionNodeFragment | null | undefined;
 }) => {
   const {flagPoolUI} = useFeatureFlags();
   if (!assetNode) {
