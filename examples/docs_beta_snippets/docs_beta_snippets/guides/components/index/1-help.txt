@@ -1,4 +1,4 @@
-$ dg --help
+dg --help
 
 Usage: dg [OPTIONS] COMMAND [ARGS]...                                                    
                                                                                           

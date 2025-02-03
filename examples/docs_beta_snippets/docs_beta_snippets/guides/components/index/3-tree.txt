@@ -1,4 +1,4 @@
-$ cd jaffle-platform && tree
+cd jaffle-platform && tree
 
 .
 ├── uv.lock

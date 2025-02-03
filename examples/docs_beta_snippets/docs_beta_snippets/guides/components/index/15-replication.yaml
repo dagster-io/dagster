@@ -1,6 +1,3 @@
-
-### jaffle_platform/components/ingest_files/replication.yaml
-
 source: LOCAL
 target: DUCKDB
 

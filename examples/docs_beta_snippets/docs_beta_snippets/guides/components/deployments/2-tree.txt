@@ -1,4 +1,4 @@
-$ cd my-deployment && tree
+cd my-deployment && tree
 
 .
 ├── code_locations
