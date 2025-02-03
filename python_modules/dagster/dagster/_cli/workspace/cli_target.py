@@ -1,33 +1,29 @@
 import logging
 import os
 import sys
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Optional, TypeVar, cast
 
 import click
 from click import UsageError
-from typing_extensions import Never, Self
+from typing_extensions import Never, Self, TypeAlias
 
 import dagster._check as check
-from dagster._cli.utils import (
-    ClickArgMapping,
-    ClickOption,
-    apply_click_params,
-    has_pyproject_dagster_block,
-    serialize_sorted_quoted,
-)
+from dagster import __version__ as dagster_version
+from dagster._cli.utils import has_pyproject_dagster_block, serialize_sorted_quoted
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, RepositoryPythonOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external import RemoteJob, RemoteRepository
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
+    GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
 )
-from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
     CompositeTarget,
     EmptyWorkspaceTarget,
@@ -46,19 +42,13 @@ from dagster._seven import JSONDecodeError, json
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import load_yaml_from_glob_list
 
-if TYPE_CHECKING:
-    from dagster._core.workspace.context import WorkspaceProcessContext
-
-from dagster._core.remote_representation.external import RemoteJob
-
 logger = logging.getLogger("dagster")
-
-
 WORKSPACE_TARGET_WARNING = (
     "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port,"
     " --grpc-socket."
 )
 
+T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
 
@@ -69,64 +59,56 @@ WORKSPACE_CLI_ARGS = (
     "package_name",
     "module_name",
     "attribute",
-    "repository_yaml",
     "grpc_host",
     "grpc_port",
     "grpc_socket",
 )
 
 
-def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
-    check.mapping_param(kwargs, "kwargs")
-    if _are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
-        if kwargs.get("empty_workspace"):
+def _get_workspace_load_target_from_cli_opts(
+    workspace_opts: "WorkspaceOpts",
+) -> WorkspaceLoadTarget:
+    if _are_attrs_falsey(workspace_opts, *WORKSPACE_CLI_ARGS):
+        if workspace_opts.empty_workspace:
             return EmptyWorkspaceTarget()
-        if has_pyproject_dagster_block("pyproject.toml"):
+        elif has_pyproject_dagster_block("pyproject.toml"):
             return PyProjectFileTarget("pyproject.toml")
-
-        if os.path.exists("workspace.yaml"):
+        elif os.path.exists("workspace.yaml"):
             return WorkspaceFileTarget(paths=["workspace.yaml"])
-        raise click.UsageError(
-            "No arguments given and no [tool.dagster] block in pyproject.toml found."
-        )
+        else:
+            raise click.UsageError(
+                "No arguments given and no [tool.dagster] block in pyproject.toml found."
+            )
 
-    if kwargs.get("workspace"):
-        _check_cli_arguments_none(
-            kwargs,
-            "python_file",
-            "working_directory",
-            "module_name",
-            "package_name",
-            "attribute",
-            "grpc_host",
-            "grpc_port",
-            "grpc_socket",
+    if workspace_opts.workspace:
+        _check_attrs_falsey(
+            workspace_opts,
+            *(k for k in WORKSPACE_CLI_ARGS if k not in ["workspace"]),
         )
-        return WorkspaceFileTarget(paths=list(cast(Union[list, tuple], kwargs.get("workspace"))))
-    if kwargs.get("python_file"):
-        _check_cli_arguments_none(
-            kwargs,
-            "module_name",
-            "package_name",
-            "grpc_host",
-            "grpc_port",
-            "grpc_socket",
+        return WorkspaceFileTarget(paths=list(workspace_opts.workspace))
+
+    elif workspace_opts.python_file:
+        _check_attrs_falsey(
+            workspace_opts,
+            *(
+                k
+                for k in WORKSPACE_CLI_ARGS
+                if k not in ["python_file", "attribute", "working_directory"]
+            ),
         )
-        python_files = kwargs["python_file"]
+        working_directory = workspace_opts.working_directory or os.getcwd()
 
-        working_directory = get_working_directory_from_kwargs(kwargs)
-
-        if len(python_files) == 1:
+        if len(workspace_opts.python_file) == 1:
             return PythonFileTarget(
-                python_file=python_files[0],
-                attribute=check.opt_str_elem(kwargs, "attribute"),
+                python_file=workspace_opts.python_file[0],
+                attribute=workspace_opts.attribute,
                 working_directory=working_directory,
                 location_name=None,
             )
         else:
             # multiple files
 
-            if kwargs.get("attribute"):
+            if workspace_opts.attribute:
                 raise UsageError(
                     "If you are specifying multiple files you cannot specify an attribute."
                 )
@@ -139,39 +121,36 @@ def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
                         working_directory=working_directory,
                         location_name=None,
                     )
-                    for python_file in python_files
+                    for python_file in workspace_opts.python_file
                 ]
             )
 
-    if kwargs.get("module_name"):
-        _check_cli_arguments_none(
-            kwargs,
-            "package_name",
-            "grpc_host",
-            "grpc_port",
-            "grpc_socket",
+    elif workspace_opts.module_name:
+        _check_attrs_falsey(
+            workspace_opts,
+            *(
+                k
+                for k in WORKSPACE_CLI_ARGS
+                if k not in ["module_name", "attribute", "working_directory"]
+            ),
         )
 
-        module_names = kwargs["module_name"]
+        working_directory = workspace_opts.working_directory or os.getcwd()
 
-        check.is_tuple(module_names, of_type=str)
-
-        working_directory = get_working_directory_from_kwargs(kwargs)
-
-        if len(module_names) == 1:
+        if len(workspace_opts.module_name) == 1:
             return ModuleTarget(
-                module_name=module_names[0],
-                attribute=check.opt_str_elem(kwargs, "attribute"),
+                module_name=workspace_opts.module_name[0],
+                attribute=workspace_opts.attribute,
                 working_directory=working_directory,
                 location_name=None,
             )
         else:
             # multiple modules
 
-            if kwargs.get("attribute"):
+            if workspace_opts.attribute:
                 raise UsageError(
                     "If you are specifying multiple modules you cannot specify an attribute. Got"
-                    f" modules {module_names}."
+                    f" modules {workspace_opts.module_name}."
                 )
 
             return CompositeTarget(
@@ -182,158 +161,125 @@ def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
                         working_directory=working_directory,
                         location_name=None,
                     )
-                    for module_name in module_names
+                    for module_name in workspace_opts.module_name
                 ]
             )
 
-    if kwargs.get("package_name"):
-        _check_cli_arguments_none(
-            kwargs,
-            "grpc_host",
-            "grpc_port",
-            "grpc_socket",
+    elif workspace_opts.package_name:
+        _check_attrs_falsey(
+            workspace_opts,
+            *(
+                k
+                for k in WORKSPACE_CLI_ARGS
+                if k not in ["package_name", "attribute", "working_directory"]
+            ),
         )
-        working_directory = get_working_directory_from_kwargs(kwargs)
-        return PackageTarget(
-            package_name=check.str_elem(kwargs, "package_name"),
-            attribute=check.opt_str_elem(kwargs, "attribute"),
-            working_directory=working_directory,
-            location_name=None,
-        )
-    if kwargs.get("grpc_port"):
-        _check_cli_arguments_none(
-            kwargs,
-            "attribute",
-            "working_directory",
-            "grpc_socket",
+        working_directory = workspace_opts.working_directory or os.getcwd()
+
+        if len(workspace_opts.package_name) == 1:
+            return PackageTarget(
+                package_name=workspace_opts.package_name[0],
+                attribute=workspace_opts.attribute,
+                working_directory=working_directory,
+                location_name=None,
+            )
+        else:
+            if workspace_opts.attribute:
+                raise UsageError(
+                    "If you are specifying multiple packages you cannot specify an attribute. Got"
+                    f" packages {workspace_opts.package_name}."
+                )
+
+            return CompositeTarget(
+                targets=[
+                    PackageTarget(
+                        package_name=package_name,
+                        attribute=None,
+                        working_directory=working_directory,
+                        location_name=None,
+                    )
+                    for package_name in workspace_opts.package_name
+                ]
+            )
+
+    elif workspace_opts.grpc_port:
+        _check_attrs_falsey(
+            workspace_opts,
+            *(k for k in WORKSPACE_CLI_ARGS if k not in ["grpc_port", "grpc_host"]),
         )
         return GrpcServerTarget(
-            port=check.int_elem(kwargs, "grpc_port"),
+            port=workspace_opts.grpc_port,
             socket=None,
-            host=check.opt_str_elem(kwargs, "grpc_host") or "localhost",
+            host=workspace_opts.grpc_host or "localhost",
             location_name=None,
         )
-    elif kwargs.get("grpc_socket"):
-        _check_cli_arguments_none(
-            kwargs,
-            "attribute",
-            "working_directory",
+    elif workspace_opts.grpc_socket:
+        _check_attrs_falsey(
+            workspace_opts,
+            *(k for k in WORKSPACE_CLI_ARGS if k not in ["grpc_socket", "grpc_host"]),
         )
         return GrpcServerTarget(
             port=None,
-            socket=check.str_elem(kwargs, "grpc_socket"),
-            host=check.opt_str_elem(kwargs, "grpc_host") or "localhost",
+            socket=workspace_opts.grpc_socket,
+            host=workspace_opts.grpc_host or "localhost",
             location_name=None,
         )
     else:
         _raise_cli_usage_error()
 
 
-def get_workspace_process_context_from_kwargs(
-    instance: DagsterInstance,
-    version: str,
-    read_only: bool,
-    kwargs: ClickArgMapping,
-    code_server_log_level: str = "INFO",
-) -> "WorkspaceProcessContext":
-    from dagster._core.workspace.context import WorkspaceProcessContext
-
-    return WorkspaceProcessContext(
-        instance,
-        get_workspace_load_target(kwargs),
-        version=version,
-        read_only=read_only,
-        code_server_log_level=code_server_log_level,
-    )
-
-
 @contextmanager
-def get_workspace_from_kwargs(
+def get_workspace_from_cli_opts(
     instance: DagsterInstance,
     version: str,
-    kwargs: ClickArgMapping,
+    workspace_opts: "WorkspaceOpts",
+    allow_in_process: bool = False,
 ) -> Iterator[WorkspaceRequestContext]:
-    logger.debug("Loading workspace with gRPC server")
-
-    with get_workspace_process_context_from_kwargs(
-        instance, version, read_only=False, kwargs=kwargs
-    ) as workspace_process_context:
-        yield workspace_process_context.create_request_context()
-
-
-def _does_origin_executable_match(origin: CodeLocationOrigin) -> bool:
-    return (
-        origin.loadable_target_origin.executable_path is None
-        or origin.loadable_target_origin.executable_path == sys.executable
-    )
-
-
-@contextmanager
-def get_auto_determined_workspace_from_kwargs(
-    instance: DagsterInstance,
-    kwargs: Mapping[str, Any],
-    version: str,
-) -> Iterator[WorkspaceRequestContext]:
-    """Spins up a workspace in-process with the provided kwargs, as
-    long as there is only a single location which does not specify a
-    distinct Python executable. Otherwise, spins up one or more gRPC
-    servers to handle the locations.
-    """
-    tgt = get_workspace_load_target(kwargs)
-    origins = tgt.create_origins()
-
-    if len(origins) > 1 or not _does_origin_executable_match(origins[0]):
-        with get_workspace_from_kwargs(
-            instance=instance, kwargs=kwargs, version=version
-        ) as workspace_request_context:
-            yield workspace_request_context
+    load_target = workspace_opts.to_load_target(allow_in_process)
+    if isinstance(load_target, InProcessWorkspaceLoadTarget):
+        logger.debug("Loading workspace in-process")
     else:
-        with get_in_process_workspace_from_kwargs(
-            instance=instance, kwargs=kwargs
-        ) as workspace_request_context:
-            yield workspace_request_context
-
-
-@contextmanager
-def get_in_process_workspace_from_kwargs(
-    instance: DagsterInstance,
-    kwargs: Mapping[str, Any],
-    container_image: Optional[str] = None,
-) -> Iterator[WorkspaceRequestContext]:
-    """Spins up a workspace in-process with the provided kwargs."""
-    from dagster._core.workspace.context import WorkspaceProcessContext
-
-    logger.debug("Loading workspace in-process")
-
-    tgt = get_workspace_load_target(kwargs)
-    origins = tgt.create_origins()
-
-    if len(origins) > 1:
-        raise click.UsageError(
-            "Cannot specify multiple code locations when loading a workspace in-process."
-        )
-
-    origin = origins[0]
-    if not _does_origin_executable_match(origin):
-        raise click.UsageError(
-            "Cannot load a code location in-process that is not the same Python executable as the "
-            "current process."
-        )
+        logger.debug("Loading workspace with gRPC server")
 
     with WorkspaceProcessContext(
-        instance,
-        InProcessWorkspaceLoadTarget(
-            [
-                InProcessCodeLocationOrigin(
-                    origin.loadable_target_origin,
-                    container_image=container_image,
-                    location_name=origin.location_name,
-                )
-                for origin in origins
-            ]
-        ),
+        instance=instance,
+        version=version,
+        read_only=False,
+        workspace_load_target=load_target,
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
+
+
+@contextmanager
+def get_repository_from_cli_opts(
+    instance: DagsterInstance,
+    version: str,
+    workspace_opts: "WorkspaceOpts",
+    repository_opts: Optional["RepositoryOpts"],
+) -> Iterator[RemoteRepository]:
+    # Instance isn't strictly required to load a RemoteRepository, but is included
+    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
+    with get_workspace_from_cli_opts(
+        instance, version=dagster_version, workspace_opts=workspace_opts
+    ) as workspace:
+        repository_name = repository_opts.repository if repository_opts else None
+        location_name = repository_opts.location if repository_opts else None
+        code_location = get_code_location_from_workspace(workspace, location_name)
+        yield get_remote_repository_from_code_location(code_location, repository_name)
+
+
+@contextmanager
+def get_job_from_cli_opts(
+    instance: DagsterInstance,
+    version: str,
+    workspace_opts: "WorkspaceOpts",
+    repository_opts: Optional["RepositoryOpts"],
+    job_name: Optional[str],
+) -> Iterator[RemoteJob]:
+    # Instance isn't strictly required to load an RemoteJob, but is included
+    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
+    with get_repository_from_cli_opts(instance, version, workspace_opts, repository_opts) as repo:
+        yield get_remote_job_from_remote_repo(repo, job_name)
 
 
 # ########################
@@ -355,15 +301,106 @@ class PythonPointerOpts:
     attribute: Optional[str] = None
 
     @classmethod
-    def extract_from_cli_options(cls, cli_options: dict[str, object]) -> Self:
-        # We pop here without providing a default because we are expecting all keys to be present,
-        # which they will be if this is coming from a click invocation.
+    def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:
+        # This is expected to always be called from a click entry point, so all options should be
+        # present in the dictionary. We rely on `@record` for type-checking.
         return cls(
-            python_file=check.opt_inst(cli_options.pop("python_file"), str),
-            module_name=check.opt_inst(cli_options.pop("module_name"), str),
-            package_name=check.opt_inst(cli_options.pop("package_name"), str),
-            working_directory=check.opt_inst(cli_options.pop("working_directory"), str),
-            attribute=check.opt_inst(cli_options.pop("attribute"), str),
+            python_file=cli_options.pop("python_file"),
+            module_name=cli_options.pop("module_name"),
+            package_name=cli_options.pop("package_name"),
+            working_directory=cli_options.pop("working_directory"),
+            attribute=cli_options.pop("attribute"),
+        )
+
+    def to_workspace_opts(self) -> "WorkspaceOpts":
+        return WorkspaceOpts(
+            python_file=(self.python_file,) if self.python_file else None,
+            module_name=(self.module_name,) if self.module_name else None,
+            package_name=(self.package_name,) if self.package_name else None,
+            working_directory=self.working_directory,
+            attribute=self.attribute,
+        )
+
+
+@record
+class WorkspaceOpts:
+    empty_workspace: bool = False
+    workspace: Optional[Sequence[str]] = None
+
+    # Like PythonPointerParams but multiple files/modules/packages are allowed
+    python_file: Optional[Sequence[str]] = None
+    module_name: Optional[Sequence[str]] = None
+    package_name: Optional[Sequence[str]] = None
+    working_directory: Optional[str] = None
+    attribute: Optional[str] = None
+
+    # For gRPC server
+    grpc_port: Optional[int] = None
+    grpc_socket: Optional[str] = None
+    grpc_host: Optional[str] = None
+    use_ssl: bool = False
+
+    @classmethod
+    def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:
+        # This is expected to always be called from a click entry point, so all options should be
+        # present in the dictionary. We rely on `@record` for type-checking.
+        return cls(
+            empty_workspace=cli_options.pop("empty_workspace"),
+            workspace=cli_options.pop("workspace"),
+            python_file=cli_options.pop("python_file"),
+            module_name=cli_options.pop("module_name"),
+            package_name=cli_options.pop("package_name"),
+            working_directory=cli_options.pop("working_directory"),
+            attribute=cli_options.pop("attribute"),
+            grpc_port=cli_options.pop("grpc_port"),
+            grpc_socket=cli_options.pop("grpc_socket"),
+            grpc_host=cli_options.pop("grpc_host"),
+            use_ssl=cli_options.pop("use_ssl"),
+        )
+
+    def to_load_target(self, allow_in_process: bool = False) -> WorkspaceLoadTarget:
+        load_target = _get_workspace_load_target_from_cli_opts(self)
+        origins = load_target.create_origins()
+
+        # We can load a workspace in-process if there is only one origin and the python executable is
+        # unspecified or matches that of the current process.
+        origins = load_target.create_origins()
+        can_load_in_process = len(origins) == 1 and _origin_executable_matches_current_process(
+            origins[0]
+        )
+        if allow_in_process and can_load_in_process:
+            origin = origins[0]
+            return InProcessWorkspaceLoadTarget(
+                [
+                    InProcessCodeLocationOrigin(
+                        origin.loadable_target_origin,
+                        container_image=None,
+                        location_name=origin.location_name,
+                    )
+                ]
+            )
+        else:
+            return load_target
+
+
+def _origin_executable_matches_current_process(origin: CodeLocationOrigin) -> bool:
+    # loadable_target_origin is unknown for GrpcServerCodeLocationOrigin
+    return not isinstance(origin, GrpcServerCodeLocationOrigin) and (
+        origin.loadable_target_origin.executable_path is None
+        or origin.loadable_target_origin.executable_path == sys.executable
+    )
+
+
+@record
+class RepositoryOpts:
+    repository: Optional[str] = None
+    location: Optional[str] = None
+
+    @classmethod
+    def extract_from_cli_options(cls, cli_options: dict[str, object]) -> Self:
+        return cls(
+            repository=check.opt_inst(cli_options.pop("repository"), str),
+            location=check.opt_inst(cli_options.pop("location"), str),
         )
 
 
@@ -377,7 +414,7 @@ class PythonPointerOpts:
 
 def run_config_option(*, name: str, command_name: str) -> Callable[[T_Callable], T_Callable]:
     def wrap(f: T_Callable) -> T_Callable:
-        return apply_click_params(f, _generate_run_config_option(name, command_name))
+        return _apply_click_params(f, _generate_run_config_option(name, command_name))
 
     return wrap
 
@@ -386,32 +423,39 @@ def job_name_option(f: Optional[T_Callable] = None, *, name: str) -> T_Callable:
     if f is None:
         return lambda f: job_name_option(f, name=name)  # type: ignore
     else:
-        return apply_click_params(f, _generate_job_name_option(name))
+        return _apply_click_params(f, _generate_job_name_option(name))
 
 
 def repository_name_option(f: Optional[T_Callable] = None, *, name: str) -> T_Callable:
     if f is None:
         return lambda f: repository_name_option(f, name=name)  # type: ignore
     else:
-        return apply_click_params(f, _generate_repository_name_option(name))
+        return _apply_click_params(f, _generate_repository_name_option(name))
 
 
 def workspace_options(f: T_Callable) -> T_Callable:
-    return apply_click_params(f, *_generate_workspace_options())
+    return _apply_click_params(f, *_generate_workspace_options())
 
 
 def python_pointer_options(f: T_Callable) -> T_Callable:
-    return apply_click_params(f, *_generate_python_pointer_options(allow_multiple=False))
+    return _apply_click_params(f, *_generate_python_pointer_options(allow_multiple=False))
 
 
 def repository_options(f: T_Callable) -> T_Callable:
-    return apply_click_params(f, *_generate_repository_options())
-
-
-def job_options(f: T_Callable) -> T_Callable:
-    return apply_click_params(
-        f, *_generate_repository_options(), _generate_job_name_option("job_name")
+    return _apply_click_params(
+        f,
+        _generate_repository_name_option("repository"),
+        _generate_code_location_name_option("location"),
     )
+
+
+ClickOption: TypeAlias = Callable[[T_Callable], T_Callable]
+
+
+def _apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Callable:
+    for click_param in click_params:
+        command = click_param(command)
+    return command
 
 
 # ########################
@@ -516,6 +560,7 @@ def _generate_python_pointer_options(allow_multiple: bool) -> Sequence[ClickOpti
         ),
         click.option(
             "--package-name",
+            multiple=allow_multiple,
             help="Specify Python package where repository or job function lives",
             envvar="DAGSTER_PACKAGE_NAME",
         ),
@@ -557,7 +602,7 @@ def _generate_grpc_server_options(hidden=False) -> Sequence[ClickOption]:
         click.option(
             "--use-ssl",
             is_flag=True,
-            required=False,
+            default=False,
             help="Use a secure channel when connecting to the gRPC server",
             hidden=hidden,
         ),
@@ -576,14 +621,6 @@ def _generate_workspace_options() -> Sequence[ClickOption]:
         ),
         *_generate_python_pointer_options(allow_multiple=True),
         *_generate_grpc_server_options(),
-    ]
-
-
-def _generate_repository_options() -> Sequence[ClickOption]:
-    return [
-        *_generate_workspace_options(),
-        _generate_repository_name_option("repository"),
-        _generate_code_location_name_option("location"),
     ]
 
 
@@ -621,10 +658,6 @@ def _get_code_pointer_dict_from_python_pointer_opts(
         code_pointer_dict[repo_def.name] = code_pointer
 
     return code_pointer_dict
-
-
-def get_working_directory_from_kwargs(kwargs: ClickArgMapping) -> Optional[str]:
-    return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
 def get_repository_python_origin_from_cli_opts(
@@ -688,43 +721,32 @@ def get_repository_python_origin_from_cli_opts(
     )
 
 
-@contextmanager
-def get_code_location_from_kwargs(
-    instance: DagsterInstance, version: str, kwargs: ClickArgMapping
-) -> Iterator[CodeLocation]:
-    # Instance isn't strictly required to load a repository location, but is included
-    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
-    with get_workspace_from_kwargs(instance, version, kwargs) as workspace:
-        location_name = check.opt_str_elem(kwargs, "location")
-        yield get_code_location_from_workspace(workspace, location_name)
-
-
 def get_code_location_from_workspace(
-    workspace: WorkspaceRequestContext, provided_location_name: Optional[str]
+    workspace: WorkspaceRequestContext, code_location_name: Optional[str]
 ) -> CodeLocation:
-    if provided_location_name is None:
+    if code_location_name is None:
         if len(workspace.code_location_names) == 1:
-            provided_location_name = workspace.code_location_names[0]
+            code_location_name = workspace.code_location_names[0]
         elif len(workspace.code_location_names) == 0:
             raise click.UsageError("No locations found in workspace")
-        elif provided_location_name is None:
+        elif code_location_name is None:
             raise click.UsageError(
                 "Must provide --location as there are multiple locations "
                 f"available. Options are: {serialize_sorted_quoted(workspace.code_location_names)}"
             )
 
-    if provided_location_name not in workspace.code_location_names:
+    if code_location_name not in workspace.code_location_names:
         raise click.UsageError(
-            f'Location "{provided_location_name}" not found in workspace. '
+            f'Location "{code_location_name}" not found in workspace. '
             f"Found {serialize_sorted_quoted(workspace.code_location_names)} instead."
         )
 
-    if workspace.has_code_location_error(provided_location_name):
+    if workspace.has_code_location_error(code_location_name):
         raise click.UsageError(
-            f'Error loading location "{provided_location_name}": {workspace.get_code_location_error(provided_location_name)!s}'
+            f'Error loading location "{code_location_name}": {workspace.get_code_location_error(code_location_name)!s}'
         )
 
-    return workspace.get_code_location(provided_location_name)
+    return workspace.get_code_location(code_location_name)
 
 
 def get_remote_repository_from_code_location(
@@ -755,17 +777,6 @@ def get_remote_repository_from_code_location(
     return code_location.get_repository(provided_repo_name)
 
 
-@contextmanager
-def get_remote_repository_from_kwargs(
-    instance: DagsterInstance, version: str, kwargs: ClickArgMapping
-) -> Iterator[RemoteRepository]:
-    # Instance isn't strictly required to load an ExternalRepository, but is included
-    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
-    with get_code_location_from_kwargs(instance, version, kwargs) as code_location:
-        provided_repo_name = check.opt_str_elem(kwargs, "repository")
-        yield get_remote_repository_from_code_location(code_location, provided_repo_name)
-
-
 def get_remote_job_from_remote_repo(
     remote_repo: RemoteRepository,
     provided_name: Optional[str],
@@ -793,15 +804,6 @@ def get_remote_job_from_remote_repo(
         )
 
     return remote_jobs[provided_name]
-
-
-@contextmanager
-def get_remote_job_from_kwargs(instance: DagsterInstance, version: str, kwargs: ClickArgMapping):
-    # Instance isn't strictly required to load an ExternalJob, but is included
-    # to satisfy the WorkspaceProcessContext / WorkspaceRequestContext requirements
-    with get_remote_repository_from_kwargs(instance, version, kwargs) as repo:
-        provided_name = check.opt_str_elem(kwargs, "job_name")
-        yield get_remote_job_from_remote_repo(repo, provided_name)
 
 
 def get_run_config_from_file_list(file_list: list[str]) -> Mapping[str, object]:
@@ -840,15 +842,13 @@ def _raise_cli_usage_error(msg: Optional[str] = None) -> Never:
     )
 
 
-def _check_cli_arguments_none(kwargs: ClickArgMapping, *keys: str) -> None:
-    for key in keys:
-        if kwargs.get(key):
-            _raise_cli_usage_error()
+def _check_attrs_falsey(obj: object, *attrs: str) -> None:
+    if not _are_attrs_falsey(obj, *attrs):
+        _raise_cli_usage_error()
 
 
-def _are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
-    for key in keys:
-        if kwargs.get(key):
+def _are_attrs_falsey(obj: object, *attrs: str) -> bool:
+    for attr in attrs:
+        if getattr(obj, attr):
             return False
-
     return True

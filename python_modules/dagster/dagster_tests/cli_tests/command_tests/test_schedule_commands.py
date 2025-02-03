@@ -5,7 +5,6 @@ import click
 import pytest
 from click.testing import CliRunner
 from dagster._cli.schedule import (
-    check_repo_and_scheduler,
     schedule_list_command,
     schedule_logs_command,
     schedule_restart_command,
@@ -13,7 +12,7 @@ from dagster._cli.schedule import (
     schedule_stop_command,
     schedule_wipe_command,
 )
-from dagster._core.instance import DagsterInstance
+from dagster._cli.utils import validate_dagster_home_is_set, validate_repo_has_defined_schedules
 from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import environ
 
@@ -192,21 +191,16 @@ def test_schedules_logs(gen_schedule_args):
             assert "scheduler.log" in result.output
 
 
-def test_check_repo_and_scheduler_no_remote_schedules():
+def test_validate_repo_schedules():
     repository = mock.MagicMock(spec=RemoteRepository)
     repository.get_schedules.return_value = []
-    instance = mock.MagicMock(spec=DagsterInstance)
     with pytest.raises(click.UsageError, match="There are no schedules defined for repository"):
-        check_repo_and_scheduler(repository, instance)
+        validate_repo_has_defined_schedules(repository)
 
 
-def test_check_repo_and_scheduler_dagster_home_not_set():
+def test_validate_no_dagster_home():
     with environ({"DAGSTER_HOME": ""}):
-        repository = mock.MagicMock(spec=RemoteRepository)
-        repository.get_schedules.return_value = [mock.MagicMock()]
-        instance = mock.MagicMock(spec=DagsterInstance)
-
         with pytest.raises(
             click.UsageError, match=re.escape("The environment variable $DAGSTER_HOME is not set.")
         ):
-            check_repo_and_scheduler(repository, instance)
+            validate_dagster_home_is_set()

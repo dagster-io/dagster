@@ -5,8 +5,8 @@ from typing import Optional
 import click
 
 from dagster import __version__ as dagster_version
-from dagster._cli.utils import ClickArgMapping, ClickArgValue, get_instance_for_cli
-from dagster._cli.workspace.cli_target import get_workspace_load_target, workspace_options
+from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
+from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_options
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.telemetry import telemetry_wrapper
 from dagster._daemon.controller import (
@@ -68,14 +68,19 @@ def run_command(
     log_level: str,
     log_format: str,
     instance_ref: Optional[str],
-    **kwargs: ClickArgValue,
+    **other_opts: object,
 ) -> None:
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     try:
         with capture_interrupts():
             with get_instance_for_cli(
                 instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None
             ) as instance:
-                _daemon_run_command(instance, log_level, code_server_log_level, log_format, kwargs)
+                _daemon_run_command(
+                    instance, log_level, code_server_log_level, log_format, workspace_opts
+                )
     except KeyboardInterrupt:
         return  # Exit cleanly on interrupt
 
@@ -86,13 +91,11 @@ def _daemon_run_command(
     log_level: str,
     code_server_log_level: str,
     log_format: str,
-    kwargs: ClickArgMapping,
+    workspace_opts: WorkspaceOpts,
 ) -> None:
-    workspace_load_target = get_workspace_load_target(kwargs)
-
     with daemon_controller_from_instance(
         instance,
-        workspace_load_target=workspace_load_target,
+        workspace_load_target=workspace_opts.to_load_target(),
         heartbeat_tolerance_seconds=_get_heartbeat_tolerance(),
         log_level=log_level,
         code_server_log_level=code_server_log_level,
