@@ -62,6 +62,14 @@ hourly_to_daily_partitions = [
     ),
 ]
 
+daily_to_hourly_partitions = [
+    asset_def(
+        "daily",
+        partitions_def=daily_partitions_def,
+    ),
+    asset_def("hourly", ["daily"], partitions_def=hourly_partitions_def),
+]
+
 unpartitioned_after_dynamic_asset = [
     asset_def("asset1"),
     asset_def("asset2", ["asset1"], partitions_def=DynamicPartitionsDefinition(name="foo")),
