@@ -5,14 +5,16 @@ import sys
 import click
 
 from dagster import __version__ as dagster_version
-from dagster._cli.job import apply_click_params
-from dagster._cli.utils import get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace.cli_target import (
+from dagster._cli.utils import (
     ClickArgValue,
+    apply_click_params,
+    get_possibly_temporary_instance_for_cli,
+)
+from dagster._cli.workspace.cli_target import (
+    generate_module_name_option,
+    generate_python_file_option,
+    generate_workspace_option,
     get_workspace_from_kwargs,
-    python_file_option,
-    python_module_option,
-    workspace_option,
 )
 from dagster._utils.log import configure_loggers
 
@@ -25,9 +27,9 @@ def definitions_cli():
 def validate_command_options(f):
     return apply_click_params(
         f,
-        workspace_option(),
-        python_file_option(allow_multiple=True),
-        python_module_option(allow_multiple=True),
+        generate_workspace_option(),
+        generate_python_file_option(allow_multiple=True),
+        generate_module_name_option(allow_multiple=True),
     )
 
 

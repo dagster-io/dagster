@@ -14,7 +14,7 @@ from dagster._cli.workspace.cli_target import (
     get_code_location_from_kwargs,
     get_remote_repository_from_code_location,
     get_remote_repository_from_kwargs,
-    repository_target_argument,
+    repository_target_options,
 )
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
@@ -123,7 +123,7 @@ def extract_sensor_name(sensor_name):
     name="list",
     help="List all sensors that correspond to a repository.",
 )
-@repository_target_argument
+@repository_target_options
 @click.option("--running", help="Filter for running sensors", is_flag=True, default=False)
 @click.option("--stopped", help="Filter for stopped sensors", is_flag=True, default=False)
 @click.option("--name", help="Only display sensor sensor names", is_flag=True, default=False)
@@ -183,7 +183,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 @sensor_cli.command(name="start", help="Start an existing sensor.")
 @click.argument("sensor_name", nargs=-1)  # , required=True)
 @click.option("--start-all", help="start all sensors", is_flag=True, default=False)
-@repository_target_argument
+@repository_target_options
 def sensor_start_command(sensor_name, start_all, **kwargs):
     if not start_all:
         sensor_name = extract_sensor_name(sensor_name)
@@ -217,7 +217,7 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
 
 @sensor_cli.command(name="stop", help="Stop an existing sensor.")
 @click.argument("sensor_name", nargs=-1)
-@repository_target_argument
+@repository_target_options
 def sensor_stop_command(sensor_name, **kwargs):
     sensor_name = extract_sensor_name(sensor_name)
     return execute_stop_command(sensor_name, kwargs, click.echo)
@@ -259,7 +259,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
     help="Set the cursor value for the sensor context",
     default=None,
 )
-@repository_target_argument
+@repository_target_options
 def sensor_preview_command(sensor_name, since, last_run_key, cursor, **kwargs):
     sensor_name = extract_sensor_name(sensor_name)
     if since:
@@ -332,7 +332,7 @@ def execute_preview_command(
 @click.option(
     "--delete", help="Delete the existing cursor value for the sensor context", is_flag=True
 )
-@repository_target_argument
+@repository_target_options
 def sensor_cursor_command(sensor_name, **kwargs):
     sensor_name = extract_sensor_name(sensor_name)
     return execute_cursor_command(sensor_name, kwargs, click.echo)

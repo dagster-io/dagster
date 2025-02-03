@@ -3,26 +3,26 @@ from typing import Optional
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    ComponentSchemaBaseModel,
-    component_type,
+    registered_component_type,
 )
-from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecBaseModel
+from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecModel
+from pydantic import BaseModel
 
 from dagster import Definitions
 
 
 # highlight-start
-class ShellScriptSchema(ComponentSchemaBaseModel):
+class ShellScriptSchema(BaseModel):
     script_path: str
     asset_attributes: AssetAttributesModel
-    op: Optional[OpSpecBaseModel] = None
+    op: Optional[OpSpecModel] = None
     # highlight-end
 
 
-@component_type(name="shell_command")
+@registered_component_type(name="shell_command")
 class ShellCommand(Component):
     @classmethod
-    def get_schema(cls) -> type[ComponentSchemaBaseModel]:
+    def get_schema(cls) -> type[ShellScriptSchema]:
         # higlight-start
         return ShellScriptSchema
         # highlight-end

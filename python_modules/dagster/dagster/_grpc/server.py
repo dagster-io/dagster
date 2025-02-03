@@ -50,8 +50,8 @@ from dagster._core.types.loadable_target_origin import (
 )
 from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
-from dagster._grpc.__generated__ import api_pb2
-from dagster._grpc.__generated__.api_pb2_grpc import (
+from dagster._grpc.__generated__ import dagster_api_pb2
+from dagster._grpc.__generated__.dagster_api_pb2_grpc import (
     DagsterApiServicer,
     add_DagsterApiServicer_to_server,
 )
@@ -533,21 +533,21 @@ class DagsterApiServer(DagsterApiServicer):
         return loaded_repos.reconstructables_by_name[remote_repo_origin.repository_name]
 
     def ReloadCode(
-        self, _request: api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ReloadCodeReply:
+        self, _request: dagster_api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ReloadCodeReply:
         self._logger.warn(
             "Reloading definitions from a code server launched via `dagster api grpc` "
             "without restarting the process is not currently supported. To enable this functionality, "
             "launch the code server with the `dagster code-server start` command instead."
         )
 
-        return api_pb2.ReloadCodeReply()
+        return dagster_api_pb2.ReloadCodeReply()
 
     @retrieve_metrics()
-    def Ping(self, request, _context: grpc.ServicerContext) -> api_pb2.PingReply:
+    def Ping(self, request, _context: grpc.ServicerContext) -> dagster_api_pb2.PingReply:
         echo = request.echo
 
-        return api_pb2.PingReply(
+        return dagster_api_pb2.PingReply(
             echo=echo,
             serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
             if self._enable_metrics
@@ -555,28 +555,28 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def StreamingPing(
-        self, request: api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
-    ) -> Iterator[api_pb2.StreamingPingEvent]:
+        self, request: dagster_api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
+    ) -> Iterator[dagster_api_pb2.StreamingPingEvent]:
         sequence_length = request.sequence_length
         echo = request.echo
         for sequence_number in range(sequence_length):
-            yield api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
+            yield dagster_api_pb2.StreamingPingEvent(sequence_number=sequence_number, echo=echo)
 
     def Heartbeat(
-        self, request: api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.PingReply:
+        self, request: dagster_api_pb2.StreamingPingRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.PingReply:
         self.__last_heartbeat_time = time.time()
         echo = request.echo
-        return api_pb2.PingReply(echo=echo)
+        return dagster_api_pb2.PingReply(echo=echo)
 
     def GetServerId(
-        self, _request: api_pb2.Empty, _context: grpc.ServicerContext
-    ) -> api_pb2.GetServerIdReply:
-        return api_pb2.GetServerIdReply(server_id=self._server_id)
+        self, _request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.GetServerIdReply:
+        return dagster_api_pb2.GetServerIdReply(server_id=self._server_id)
 
     def ExecutionPlanSnapshot(
-        self, request: api_pb2.ExecutionPlanSnapshotRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExecutionPlanSnapshotReply:
+        self, request: dagster_api_pb2.ExecutionPlanSnapshotRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ExecutionPlanSnapshotReply:
         execution_plan_args = deserialize_value(
             request.serialized_execution_plan_snapshot_args,
             ExecutionPlanSnapshotArgs,
@@ -593,15 +593,15 @@ class DagsterApiServer(DagsterApiServicer):
             execution_plan_snapshot_or_error = ExecutionPlanSnapshotErrorData(
                 error=serializable_error_info_from_exc_info(sys.exc_info())
             )
-        return api_pb2.ExecutionPlanSnapshotReply(
+        return dagster_api_pb2.ExecutionPlanSnapshotReply(
             serialized_execution_plan_snapshot=serialize_value(execution_plan_snapshot_or_error)
         )
 
     def ListRepositories(
-        self, request: api_pb2.ListRepositoriesRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ListRepositoriesReply:
+        self, request: dagster_api_pb2.ListRepositoriesRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ListRepositoriesReply:
         if self._serializable_load_error:
-            return api_pb2.ListRepositoriesReply(
+            return dagster_api_pb2.ListRepositoriesReply(
                 serialized_list_repositories_response_or_error=serialize_value(
                     self._serializable_load_error
                 )
@@ -629,13 +629,13 @@ class DagsterApiServer(DagsterApiServicer):
                 serializable_error_info_from_exc_info(sys.exc_info())
             )
 
-        return api_pb2.ListRepositoriesReply(
+        return dagster_api_pb2.ListRepositoriesReply(
             serialized_list_repositories_response_or_error=serialized_response
         )
 
     def ExternalPartitionNames(
-        self, request: api_pb2.ExternalPartitionNamesRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExternalPartitionNamesReply:
+        self, request: dagster_api_pb2.ExternalPartitionNamesRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ExternalPartitionNamesReply:
         try:
             partition_names_args = deserialize_value(
                 request.serialized_partition_names_args, PartitionNamesArgs
@@ -655,22 +655,22 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        return api_pb2.ExternalPartitionNamesReply(
+        return dagster_api_pb2.ExternalPartitionNamesReply(
             serialized_external_partition_names_or_external_partition_execution_error=serialized_response
         )
 
     def ExternalNotebookData(
-        self, request: api_pb2.ExternalNotebookDataRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExternalNotebookDataReply:
+        self, request: dagster_api_pb2.ExternalNotebookDataRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ExternalNotebookDataReply:
         notebook_path = request.notebook_path
         check.str_param(notebook_path, "notebook_path")
-        return api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
+        return dagster_api_pb2.ExternalNotebookDataReply(content=get_notebook_data(notebook_path))
 
     def ExternalPartitionSetExecutionParams(
         self,
-        request: api_pb2.ExternalPartitionSetExecutionParamsRequest,
+        request: dagster_api_pb2.ExternalPartitionSetExecutionParamsRequest,
         _context: grpc.ServicerContext,
-    ) -> Iterable[api_pb2.StreamingChunkEvent]:
+    ) -> Iterable[dagster_api_pb2.StreamingChunkEvent]:
         try:
             args = deserialize_value(
                 request.serialized_partition_set_execution_param_args,
@@ -698,8 +698,10 @@ class DagsterApiServer(DagsterApiServicer):
         yield from self._split_serialized_data_into_chunk_events(serialized_data)
 
     def ExternalPartitionConfig(
-        self, request: api_pb2.ExternalPartitionConfigRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExternalPartitionConfigReply:
+        self,
+        request: dagster_api_pb2.ExternalPartitionConfigRequest,
+        _context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.ExternalPartitionConfigReply:
         try:
             args = deserialize_value(request.serialized_partition_args, PartitionArgs)
 
@@ -721,13 +723,13 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        return api_pb2.ExternalPartitionConfigReply(
+        return dagster_api_pb2.ExternalPartitionConfigReply(
             serialized_external_partition_config_or_external_partition_execution_error=serialized_data
         )
 
     def ExternalPartitionTags(
-        self, request: api_pb2.ExternalPartitionTagsRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExternalPartitionTagsReply:
+        self, request: dagster_api_pb2.ExternalPartitionTagsRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ExternalPartitionTagsReply:
         try:
             partition_args = deserialize_value(request.serialized_partition_args, PartitionArgs)
 
@@ -751,13 +753,15 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        return api_pb2.ExternalPartitionTagsReply(
+        return dagster_api_pb2.ExternalPartitionTagsReply(
             serialized_external_partition_tags_or_external_partition_execution_error=serialized_data
         )
 
     def ExternalPipelineSubsetSnapshot(
-        self, request: api_pb2.ExternalPipelineSubsetSnapshotRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExternalPipelineSubsetSnapshotReply:
+        self,
+        request: dagster_api_pb2.ExternalPipelineSubsetSnapshotRequest,
+        _context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.ExternalPipelineSubsetSnapshotReply:
         try:
             job_subset_snapshot_args = deserialize_value(
                 request.serialized_pipeline_subset_snapshot_args,
@@ -786,12 +790,12 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        return api_pb2.ExternalPipelineSubsetSnapshotReply(
+        return dagster_api_pb2.ExternalPipelineSubsetSnapshotReply(
             serialized_external_pipeline_subset_result=serialized_external_pipeline_subset_result
         )
 
     def _get_serialized_external_repository_data(
-        self, request: api_pb2.ExternalRepositoryRequest
+        self, request: dagster_api_pb2.ExternalRepositoryRequest
     ) -> str:
         try:
             repository_origin = deserialize_value(
@@ -812,17 +816,17 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
     def ExternalRepository(
-        self, request: api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExternalRepositoryReply:
+        self, request: dagster_api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ExternalRepositoryReply:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
 
-        return api_pb2.ExternalRepositoryReply(
+        return dagster_api_pb2.ExternalRepositoryReply(
             serialized_external_repository_data=serialized_external_repository_data,
         )
 
     def ExternalJob(
-        self, request: api_pb2.ExternalJobRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExternalJobReply:
+        self, request: dagster_api_pb2.ExternalJobRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ExternalJobReply:
         try:
             repository_origin = deserialize_value(
                 request.serialized_repository_origin,
@@ -833,18 +837,18 @@ class DagsterApiServer(DagsterApiServicer):
             ser_job_data = serialize_value(
                 JobDataSnap.from_job_def(job_def, include_parent_snapshot=True)
             )
-            return api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
+            return dagster_api_pb2.ExternalJobReply(serialized_job_data=ser_job_data)
         except Exception:
             _maybe_log_exception(self._logger, "Job")
-            return api_pb2.ExternalJobReply(
+            return dagster_api_pb2.ExternalJobReply(
                 serialized_error=serialize_value(
                     serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
 
     def StreamingExternalRepository(
-        self, request: api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
-    ) -> Iterable[api_pb2.StreamingExternalRepositoryEvent]:
+        self, request: dagster_api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
+    ) -> Iterable[dagster_api_pb2.StreamingExternalRepositoryEvent]:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
 
         num_chunks = int(
@@ -858,7 +862,7 @@ class DagsterApiServer(DagsterApiServicer):
                 len(serialized_external_repository_data),
             )
 
-            yield api_pb2.StreamingExternalRepositoryEvent(
+            yield dagster_api_pb2.StreamingExternalRepositoryEvent(
                 sequence_number=i,
                 serialized_external_repository_chunk=serialized_external_repository_data[
                     start_index:end_index
@@ -867,7 +871,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def _split_serialized_data_into_chunk_events(
         self, serialized_data: str
-    ) -> Iterable[api_pb2.StreamingChunkEvent]:
+    ) -> Iterable[dagster_api_pb2.StreamingChunkEvent]:
         num_chunks = int(math.ceil(float(len(serialized_data)) / STREAMING_CHUNK_SIZE))
         for i in range(num_chunks):
             start_index = i * STREAMING_CHUNK_SIZE
@@ -876,25 +880,27 @@ class DagsterApiServer(DagsterApiServicer):
                 len(serialized_data),
             )
 
-            yield api_pb2.StreamingChunkEvent(
+            yield dagster_api_pb2.StreamingChunkEvent(
                 sequence_number=i,
                 serialized_chunk=serialized_data[start_index:end_index],
             )
 
     def ExternalScheduleExecution(
-        self, request: api_pb2.ExternalScheduleExecutionRequest, _context: grpc.ServicerContext
-    ) -> Iterable[api_pb2.StreamingChunkEvent]:
+        self,
+        request: dagster_api_pb2.ExternalScheduleExecutionRequest,
+        _context: grpc.ServicerContext,
+    ) -> Iterable[dagster_api_pb2.StreamingChunkEvent]:
         yield from self._split_serialized_data_into_chunk_events(
             self._external_schedule_execution(request)
         )
 
     def SyncExternalScheduleExecution(self, request, _context: grpc.ServicerContext):
-        return api_pb2.ExternalScheduleExecutionReply(
+        return dagster_api_pb2.ExternalScheduleExecutionReply(
             serialized_schedule_result=self._external_schedule_execution(request)
         )
 
     def _external_schedule_execution(
-        self, request: api_pb2.ExternalScheduleExecutionRequest
+        self, request: dagster_api_pb2.ExternalScheduleExecutionRequest
     ) -> str:
         try:
             args = deserialize_value(
@@ -919,7 +925,9 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-    def _external_sensor_execution(self, request: api_pb2.ExternalSensorExecutionRequest) -> str:
+    def _external_sensor_execution(
+        self, request: dagster_api_pb2.ExternalSensorExecutionRequest
+    ) -> str:
         try:
             args = deserialize_value(
                 request.serialized_external_sensor_execution_args,
@@ -949,33 +957,37 @@ class DagsterApiServer(DagsterApiServicer):
 
     @retrieve_metrics()
     def SyncExternalSensorExecution(
-        self, request: api_pb2.ExternalSensorExecutionRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.ExternalSensorExecutionReply:
-        return api_pb2.ExternalSensorExecutionReply(
+        self,
+        request: dagster_api_pb2.ExternalSensorExecutionRequest,
+        _context: grpc.ServicerContext,
+    ) -> dagster_api_pb2.ExternalSensorExecutionReply:
+        return dagster_api_pb2.ExternalSensorExecutionReply(
             serialized_sensor_result=self._external_sensor_execution(request)
         )
 
     @retrieve_metrics()
     def ExternalSensorExecution(
-        self, request: api_pb2.ExternalSensorExecutionRequest, _context: grpc.ServicerContext
-    ) -> Iterable[api_pb2.StreamingChunkEvent]:
+        self,
+        request: dagster_api_pb2.ExternalSensorExecutionRequest,
+        _context: grpc.ServicerContext,
+    ) -> Iterable[dagster_api_pb2.StreamingChunkEvent]:
         yield from self._split_serialized_data_into_chunk_events(
             self._external_sensor_execution(request)
         )
 
     def ShutdownServer(
-        self, request: api_pb2.Empty, _context: grpc.ServicerContext
-    ) -> api_pb2.ShutdownServerReply:
+        self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.ShutdownServerReply:
         try:
             self._shutdown_once_executions_finish_event.set()
-            return api_pb2.ShutdownServerReply(
+            return dagster_api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(success=True, serializable_error_info=None)
                 )
             )
         except:
             self._logger.exception("Failed to shut down server")
-            return api_pb2.ShutdownServerReply(
+            return dagster_api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_value(
                     ShutdownServerResult(
                         success=False,
@@ -987,8 +999,8 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
     def CancelExecution(
-        self, request: api_pb2.CancelExecutionRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.CancelExecutionReply:
+        self, request: dagster_api_pb2.CancelExecutionRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.CancelExecutionReply:
         success = False
         message = None
         serializable_error_info = None
@@ -1006,7 +1018,7 @@ class DagsterApiServer(DagsterApiServicer):
         except:
             serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
 
-        return api_pb2.CancelExecutionReply(
+        return dagster_api_pb2.CancelExecutionReply(
             serialized_cancel_execution_result=serialize_value(
                 CancelExecutionResult(
                     success=success,
@@ -1017,8 +1029,8 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def CanCancelExecution(
-        self, request: api_pb2.CanCancelExecutionRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.CanCancelExecutionReply:
+        self, request: dagster_api_pb2.CanCancelExecutionRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.CanCancelExecutionReply:
         can_cancel_execution_request = deserialize_value(
             request.serialized_can_cancel_execution_request,
             CanCancelExecutionRequest,
@@ -1029,17 +1041,17 @@ class DagsterApiServer(DagsterApiServicer):
                 run_id in self._executions and not self._termination_events[run_id].is_set()
             )
 
-        return api_pb2.CanCancelExecutionReply(
+        return dagster_api_pb2.CanCancelExecutionReply(
             serialized_can_cancel_execution_result=serialize_value(
                 CanCancelExecutionResult(can_cancel=can_cancel)
             )
         )
 
     def StartRun(
-        self, request: api_pb2.StartRunRequest, _context: grpc.ServicerContext
-    ) -> api_pb2.StartRunReply:
+        self, request: dagster_api_pb2.StartRunRequest, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.StartRunReply:
         if self._shutdown_once_executions_finish_event.is_set():
-            return api_pb2.StartRunReply(
+            return dagster_api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_value(
                     StartRunResult(
                         success=False,
@@ -1065,7 +1077,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
         except:
-            return api_pb2.StartRunReply(
+            return dagster_api_pb2.StartRunReply(
                 serialized_start_run_result=serialize_value(
                     StartRunResult(
                         success=False,
@@ -1140,7 +1152,7 @@ class DagsterApiServer(DagsterApiServicer):
             with self._execution_lock:
                 self._clear_run(run_id)
 
-        return api_pb2.StartRunReply(
+        return dagster_api_pb2.StartRunReply(
             serialized_start_run_result=serialize_value(
                 StartRunResult(
                     success=success,
@@ -1151,9 +1163,9 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def GetCurrentImage(
-        self, request: api_pb2.Empty, _context: grpc.ServicerContext
-    ) -> api_pb2.GetCurrentImageReply:
-        return api_pb2.GetCurrentImageReply(
+        self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.GetCurrentImageReply:
+        return dagster_api_pb2.GetCurrentImageReply(
             serialized_current_image=serialize_value(
                 GetCurrentImageResult(
                     current_image=self._container_image, serializable_error_info=None
@@ -1162,10 +1174,10 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def GetCurrentRuns(
-        self, request: api_pb2.Empty, _context: grpc.ServicerContext
-    ) -> api_pb2.GetCurrentRunsReply:
+        self, request: dagster_api_pb2.Empty, _context: grpc.ServicerContext
+    ) -> dagster_api_pb2.GetCurrentRunsReply:
         with self._execution_lock:
-            return api_pb2.GetCurrentRunsReply(
+            return dagster_api_pb2.GetCurrentRunsReply(
                 serialized_current_runs=serialize_value(
                     GetCurrentRunsResult(
                         current_runs=list(self._executions.keys()), serializable_error_info=None
@@ -1365,7 +1377,7 @@ def open_server_process(
     instance_ref: Optional[InstanceRef],
     port: Optional[int],
     socket: Optional[str],
-    server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
+    server_command: GrpcServerCommand,
     location_name: Optional[str] = None,
     loadable_target_origin: Optional[LoadableTargetOrigin] = None,
     max_workers: Optional[int] = None,
@@ -1451,7 +1463,8 @@ def open_server_process(
 
 
 def _open_server_process_on_dynamic_port(
-    max_retries: int = 10,
+    max_retries: int,
+    instance_ref: Optional[InstanceRef],
     **kwargs,
 ) -> tuple[Optional["Popen[str]"], Optional[int]]:
     server_process = None
@@ -1460,7 +1473,9 @@ def _open_server_process_on_dynamic_port(
     while server_process is None and retries < max_retries:
         port = find_free_port()
         try:
-            server_process = open_server_process(port=port, socket=None, **kwargs)
+            server_process = open_server_process(
+                instance_ref=instance_ref, port=port, socket=None, **kwargs
+            )
         except CouldNotBindGrpcServerToAddress:
             pass
 
@@ -1548,24 +1563,29 @@ class GrpcServerProcess:
             self.__auto_restart_thread.start()
 
     def start_server_process(self):
+        server_process_kwargs: dict[str, Any] = dict(
+            location_name=self._location_name,
+            loadable_target_origin=self._loadable_target_origin,
+            max_workers=self._max_workers,
+            heartbeat=self._heartbeat,
+            heartbeat_timeout=self._heartbeat_timeout,
+            fixed_server_id=self._fixed_server_id,
+            startup_timeout=self._startup_timeout,
+            cwd=self._cwd,
+            log_level=self._log_level,
+            env=self._env,
+            inject_env_vars_from_instance=self._inject_env_vars_from_instance,
+            container_image=self._container_image,
+            container_context=self._container_context,
+            additional_timeout_msg=self._additional_timeout_msg,
+            server_command=self._server_command,
+        )
+
         if (seven.IS_WINDOWS or self._force_port) and self.port is None:
             server_process, self.port = _open_server_process_on_dynamic_port(
-                instance_ref=self._instance_ref,
-                location_name=self._location_name,
                 max_retries=self._max_retries,
-                loadable_target_origin=self._loadable_target_origin,
-                max_workers=self._max_workers,
-                heartbeat=self._heartbeat,
-                heartbeat_timeout=self._heartbeat_timeout,
-                fixed_server_id=self._fixed_server_id,
-                startup_timeout=self._startup_timeout,
-                cwd=self._cwd,
-                log_level=self._log_level,
-                env=self._env,
-                inject_env_vars_from_instance=self._inject_env_vars_from_instance,
-                container_image=self._container_image,
-                container_context=self._container_context,
-                additional_timeout_msg=self._additional_timeout_msg,
+                instance_ref=self._instance_ref,
+                **server_process_kwargs,
             )
         else:
             if self.socket is None and self.port is None:
@@ -1573,23 +1593,9 @@ class GrpcServerProcess:
 
             server_process = open_server_process(
                 instance_ref=self._instance_ref,
-                location_name=self._location_name,
-                server_command=self._server_command,
                 port=self.port,
                 socket=self.socket,
-                loadable_target_origin=self._loadable_target_origin,
-                max_workers=self._max_workers,
-                heartbeat=self._heartbeat,
-                heartbeat_timeout=self._heartbeat_timeout,
-                fixed_server_id=self._fixed_server_id,
-                startup_timeout=self._startup_timeout,
-                cwd=self._cwd,
-                log_level=self._log_level,
-                env=self._env,
-                inject_env_vars_from_instance=self._inject_env_vars_from_instance,
-                container_image=self._container_image,
-                container_context=self._container_context,
-                additional_timeout_msg=self._additional_timeout_msg,
+                **server_process_kwargs,
             )
 
         if server_process is None:

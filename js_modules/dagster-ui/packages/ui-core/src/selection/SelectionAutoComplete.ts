@@ -1,17 +1,15 @@
+import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionAutoCompleteVisitor} from './SelectionAutoCompleteVisitor';
 import {parseInput} from './SelectionInputParser';
 
-export function generateAutocompleteResults<T extends Record<string, string[]>, N extends keyof T>({
-  nameBase: _nameBase,
-  attributesMap,
-  functions,
-}: {
-  nameBase: N;
-  attributesMap: T;
-  functions: string[];
-}) {
-  const nameBase = _nameBase as string;
-
+export function createSelectionAutoComplete({
+  getAttributeResultsMatchingQuery,
+  getAttributeValueResultsMatchingQuery,
+  getFunctionResultsMatchingQuery,
+  getSubstringResultMatchingQuery,
+  getAttributeValueIncludeAttributeResultsMatchingQuery,
+  createOperatorSuggestion,
+}: Omit<SelectionAutoCompleteProvider, 'renderResult' | 'useAutoComplete'>) {
   return function (line: string, actualCursorIndex: number) {
     const {parseTrees} = parseInput(line);
 
@@ -21,31 +19,36 @@ export function generateAutocompleteResults<T extends Record<string, string[]>, 
     if (!parseTrees.length) {
       // Special case empty string to add unmatched value results
       visitorWithAutoComplete = new SelectionAutoCompleteVisitor({
-        attributesMap,
-        functions,
-        nameBase,
         line,
         cursorIndex: actualCursorIndex,
+        getAttributeResultsMatchingQuery,
+        getAttributeValueResultsMatchingQuery,
+        getAttributeValueIncludeAttributeResultsMatchingQuery,
+        getFunctionResultsMatchingQuery,
+        getSubstringResultMatchingQuery,
+        createOperatorSuggestion,
       });
-      start = actualCursorIndex;
       visitorWithAutoComplete.addUnmatchedValueResults('');
     } else {
       for (const {tree, line} of parseTrees) {
         const cursorIndex = actualCursorIndex - start;
-        const visitor = new SelectionAutoCompleteVisitor({
-          attributesMap,
-          functions,
-          nameBase,
-          line,
-          cursorIndex,
-        });
-        visitor.visit(tree);
-        const length = line.length;
-        if (cursorIndex <= length) {
+
+        if (cursorIndex <= line.length) {
+          const visitor = new SelectionAutoCompleteVisitor({
+            line,
+            cursorIndex,
+            getAttributeResultsMatchingQuery,
+            getAttributeValueResultsMatchingQuery,
+            getAttributeValueIncludeAttributeResultsMatchingQuery,
+            getFunctionResultsMatchingQuery,
+            getSubstringResultMatchingQuery,
+            createOperatorSuggestion,
+          });
+          tree.accept(visitor);
           visitorWithAutoComplete = visitor;
           break;
         }
-        start += length;
+        start += line.length;
       }
     }
     if (visitorWithAutoComplete) {

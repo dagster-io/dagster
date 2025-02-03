@@ -72,7 +72,7 @@ function processModule({
   contentCache[cacheKey] = {content: lines.join('\n')};
 }
 
-function useLoadModule(
+export function useLoadModule(
   cacheKey: string,
   path: string,
   lineStart: number,

@@ -38,7 +38,7 @@ def inject_object_flag(
     elif isinstance(info, SupersededInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
         flag_type = "superseded"
-        message = f"This API has been superseded and its usage is discouraged.\n{additional_text}"
+        message = f"This API has been superseded.\n{additional_text}"
     elif isinstance(info, PreviewInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
         flag_type = "preview"

@@ -1132,12 +1132,12 @@ class AssetDaemon(DagsterDaemon):
         check_after_runs_num = instance.get_tick_termination_check_interval()
 
         check.invariant(len(run_requests) == len(reserved_run_ids))
-        to_submit = zip(range(len(run_requests)), reserved_run_ids, run_requests)
+        to_submit = enumerate(tick_context.tick.reserved_run_ids_with_requests)
 
         def submit_run_request(
-            run_id_with_run_request: tuple[int, str, RunRequest],
+            run_id_with_run_request: tuple[int, tuple[str, RunRequest]],
         ) -> tuple[str, AbstractSet[EntityKey]]:
-            i, run_id, run_request = run_id_with_run_request
+            i, (run_id, run_request) = run_id_with_run_request
             return self._submit_run_request(
                 i=i,
                 instance=instance,

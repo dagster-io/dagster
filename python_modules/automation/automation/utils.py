@@ -1,6 +1,9 @@
+import os
 import subprocess
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from distutils import spawn
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -24,3 +27,40 @@ def which_(exe: str) -> Optional[str]:
 
 def all_equal(iterable: Iterable[object]) -> bool:
     return len(set(iterable)) == 1
+
+
+def discover_git_root(path: Path) -> Path:
+    while path != path.parent:
+        if (path / ".git").exists():
+            return path
+        path = path.parent
+    raise ValueError("Could not find git root")
+
+
+@contextmanager
+def pushd(path: Path) -> Iterator[None]:
+    original_dir = Path.cwd()
+    os.chdir(path)
+    yield
+    os.chdir(original_dir)
+
+
+def git_ls_files(pattern: str) -> list[str]:
+    return (
+        subprocess.run(["git", "ls-files", pattern], check=True, text=True, capture_output=True)
+        .stdout.strip()
+        .split("\n")
+    )
+
+
+def get_all_repo_packages() -> list[Path]:
+    git_root = discover_git_root(Path(__file__))
+    with pushd(git_root):
+        return [
+            Path(p).parent
+            for p in subprocess.run(
+                ["git", "ls-files", "**/setup.py"], check=True, text=True, capture_output=True
+            )
+            .stdout.strip()
+            .split("\n")
+        ]

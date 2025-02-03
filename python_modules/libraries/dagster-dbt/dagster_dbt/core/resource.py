@@ -194,12 +194,13 @@ class DbtCliResource(ConfigurableResource):
         description="The path to the dbt executable.",
     )
     state_path: Optional[str] = Field(
+        default=None,
         description=(
             "The path, relative to the project directory, to a directory of dbt artifacts to be"
             " used with --state / --defer-state."
             " This can be used with methods such as get_defer_args to allow for a @dbt_assets to"
             " use defer in the appropriate environments."
-        )
+        ),
     )
 
     def __init__(
@@ -216,6 +217,12 @@ class DbtCliResource(ConfigurableResource):
         if isinstance(project_dir, DbtProject):
             if not state_path and project_dir.state_path:
                 state_path = project_dir.state_path
+
+            if not profiles_dir and project_dir.profiles_dir:
+                profiles_dir = project_dir.profiles_dir
+
+            if not profile and project_dir.profile:
+                profile = project_dir.profile
 
             if not target and project_dir.target:
                 target = project_dir.target

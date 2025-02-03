@@ -36,6 +36,18 @@ pip install dagster-sling
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/sling.py" language="python" />
 
-### About dlt
+### About Sling
 
-Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
+Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more. 
+
+#### Key Features
+
+- **Data Movement**: Transfer data between different storage systems and databases efficiently
+
+- **Flexible Connectivity**: Support for numerous databases, data warehouses, and file storage systems
+
+- **Transformation Capabilities**: Built-in data transformation features during transfer
+
+- **Multiple Operation Modes**: Support for various replication modes including full-refresh, incremental, and snapshot
+
+- **Production-Ready**: Deployable with monitoring, scheduling, and error handling

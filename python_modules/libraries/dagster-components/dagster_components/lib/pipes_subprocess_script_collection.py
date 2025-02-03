@@ -10,8 +10,14 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from pydantic import BaseModel
 
-from dagster_components.core.component import Component, ComponentLoadContext, component_type
-from dagster_components.core.schema.objects import AssetAttributesModel
+from dagster_components.core.component import (
+    Component,
+    ComponentLoadContext,
+    registered_component_type,
+)
+from dagster_components.core.schema.base import ResolvableModel
+from dagster_components.core.schema.objects import AssetSpecModel
+from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -19,27 +25,35 @@ if TYPE_CHECKING:
 
 class PipesSubprocessScriptParams(BaseModel):
     path: str
-    assets: Sequence[AssetAttributesModel]
+    assets: Sequence[AssetSpecModel]
 
 
-class PipesSubprocessScriptCollectionParams(BaseModel):
+class PipesSubprocessScriptCollectionParams(ResolvableModel[Mapping[Path, Sequence[AssetSpec]]]):
     scripts: Sequence[PipesSubprocessScriptParams]
 
+    def resolve(self, resolver: TemplatedValueResolver) -> Mapping[str, Sequence[AssetSpec]]:
+        return {
+            resolver.resolve_obj(script.path): [
+                asset_model.resolve(resolver) for asset_model in script.assets
+            ]
+            for script in self.scripts
+        }
 
-@component_type(name="pipes_subprocess_script_collection")
+
+@registered_component_type(name="pipes_subprocess_script_collection")
 class PipesSubprocessScriptCollection(Component):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    def __init__(self, dirpath: Path, path_specs: Mapping[Path, Sequence[AssetSpec]]):
+    def __init__(self, dirpath: Path, specs_by_path: Mapping[str, Sequence[AssetSpec]]):
         self.dirpath = dirpath
         # mapping from the script name (e.g. /path/to/script_abc.py -> script_abc)
         # to the specs it produces
-        self.path_specs = path_specs
+        self.specs_by_path = specs_by_path
 
     @staticmethod
     def introspect_from_path(path: Path) -> "PipesSubprocessScriptCollection":
-        path_specs = {path: [AssetSpec(path.stem)] for path in list(path.rglob("*.py"))}
-        return PipesSubprocessScriptCollection(dirpath=path, path_specs=path_specs)
+        path_specs = {str(path): [AssetSpec(path.stem)] for path in list(path.rglob("*.py"))}
+        return PipesSubprocessScriptCollection(dirpath=path, specs_by_path=path_specs)
 
     @classmethod
     def get_schema(cls) -> type[PipesSubprocessScriptCollectionParams]:
@@ -49,23 +63,18 @@ class PipesSubprocessScriptCollection(Component):
     def load(
         cls, params: PipesSubprocessScriptCollectionParams, context: ComponentLoadContext
     ) -> "PipesSubprocessScriptCollection":
-        path_specs = {}
-        for script in params.scripts:
-            script_path = context.path / script.path
-            if not script_path.exists():
-                raise FileNotFoundError(f"Script {script_path} does not exist")
-            path_specs[script_path] = [
-                AssetSpec(**asset.resolve_properties(context.templated_value_resolver))
-                for asset in script.assets
-            ]
-
-        return cls(dirpath=context.path, path_specs=path_specs)
+        return cls(
+            dirpath=context.path, specs_by_path=params.resolve(context.templated_value_resolver)
+        )
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
 
         return Definitions(
-            assets=[self._create_asset_def(path, specs) for path, specs in self.path_specs.items()],
+            assets=[
+                self._create_asset_def(self.dirpath / path, specs)
+                for path, specs in self.specs_by_path.items()
+            ],
         )
 
     def _create_asset_def(self, path: Path, specs: Sequence[AssetSpec]) -> AssetsDefinition:

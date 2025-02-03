@@ -52,4 +52,15 @@ describe('CodeLocationSource', () => {
     expect(link.getAttribute('href')).toBe(cleanedUrl);
     expect(link.textContent).toBe(cleanedUrl);
   });
+
+  it('is treated as a plain link if a sneaky GitHub-like hostname is provided', () => {
+    const url = 'https://not-really-github.com/gh-namespace/foo-project/abcd1234';
+    const metadata = [{key: 'url', value: url}];
+
+    render(<CodeLocationSource metadata={metadata} />);
+
+    const link = screen.getByRole('link', {name: /not-really-github/});
+    expect(link).toBeVisible();
+    expect(link).toHaveAttribute('href', url);
+  });
 });

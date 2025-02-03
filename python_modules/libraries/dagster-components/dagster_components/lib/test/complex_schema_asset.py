@@ -7,26 +7,26 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster_components import Component, ComponentLoadContext, component_type
+from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
     AssetSpecTransformModel,
-    OpSpecBaseModel,
+    OpSpecModel,
 )
 
 
 class ComplexAssetParams(BaseModel):
     value: str
-    op: Optional[OpSpecBaseModel] = None
+    op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
         Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
     ] = None
     asset_transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
 
-@component_type(name="complex_schema_asset")
+@registered_component_type(name="complex_schema_asset")
 class ComplexSchemaAsset(Component):
     """An asset that has a complex params schema."""
 
@@ -50,7 +50,7 @@ class ComplexSchemaAsset(Component):
     def __init__(
         self,
         value: str,
-        op_spec: Optional[OpSpecBaseModel],
+        op_spec: Optional[OpSpecModel],
         asset_attributes: Optional[AssetAttributesModel],
         asset_transforms: Sequence[AssetSpecTransformModel],
     ):

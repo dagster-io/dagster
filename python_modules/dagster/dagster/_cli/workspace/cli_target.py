@@ -5,11 +5,16 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
 import click
-import tomli
 from click import UsageError
-from typing_extensions import Never, TypeAlias
+from typing_extensions import Never
 
 import dagster._check as check
+from dagster._cli.utils import (
+    ClickArgMapping,
+    ClickOption,
+    apply_click_params,
+    has_pyproject_dagster_block,
+)
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -51,30 +56,6 @@ WORKSPACE_TARGET_WARNING = (
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 
-ClickArgValue: TypeAlias = Union[str, tuple[str]]
-ClickArgMapping: TypeAlias = Mapping[str, ClickArgValue]
-ClickOption: TypeAlias = Callable[[T_Callable], T_Callable]
-
-
-def _raise_cli_usage_error(msg: Optional[str] = None) -> Never:
-    raise UsageError(
-        msg or "Invalid set of CLI arguments for loading repository/job. See --help for details."
-    )
-
-
-def _check_cli_arguments_none(kwargs: ClickArgMapping, *keys: str) -> None:
-    for key in keys:
-        if kwargs.get(key):
-            _raise_cli_usage_error()
-
-
-def are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
-    for key in keys:
-        if kwargs.get(key):
-            return False
-
-    return True
-
 
 WORKSPACE_CLI_ARGS = (
     "workspace",
@@ -90,20 +71,9 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def has_pyproject_dagster_block(path: str) -> bool:
-    if not os.path.exists(path):
-        return False
-    with open(path, "rb") as f:
-        data = tomli.load(f)
-        if not isinstance(data, dict):
-            return False
-
-        return "dagster" in data.get("tool", {})
-
-
 def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
     check.mapping_param(kwargs, "kwargs")
-    if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
+    if _are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
         if has_pyproject_dagster_block("pyproject.toml"):
@@ -284,7 +254,15 @@ def get_workspace_from_kwargs(
         yield workspace_process_context.create_request_context()
 
 
-def python_file_option(allow_multiple: bool) -> ClickOption:
+# ########################
+# ##### OPTION GENERATORS
+# ########################
+
+# These are named as generate_*_option(s) and return a ClickOption or list of Click Options. These
+# cannot be directly applied to click commands/groups as decorators.
+
+
+def generate_python_file_option(allow_multiple: bool) -> ClickOption:
     return click.option(
         "--python-file",
         "-f",
@@ -303,7 +281,7 @@ def python_file_option(allow_multiple: bool) -> ClickOption:
     )
 
 
-def workspace_option() -> ClickOption:
+def generate_workspace_option() -> ClickOption:
     return click.option(
         "--workspace",
         "-w",
@@ -313,7 +291,7 @@ def workspace_option() -> ClickOption:
     )
 
 
-def python_module_option(allow_multiple: bool) -> ClickOption:
+def generate_module_name_option(allow_multiple: bool) -> ClickOption:
     return click.option(
         "--module-name",
         "-m",
@@ -329,7 +307,7 @@ def python_module_option(allow_multiple: bool) -> ClickOption:
     )
 
 
-def working_directory_option() -> ClickOption:
+def generate_working_directory_option() -> ClickOption:
     return click.option(
         "--working-directory",
         "-d",
@@ -338,11 +316,54 @@ def working_directory_option() -> ClickOption:
     )
 
 
-def python_target_click_options(allow_multiple_python_targets: bool) -> Sequence[ClickOption]:
+def generate_job_name_option() -> ClickOption:
+    return click.option(
+        "--job",
+        "-j",
+        "job_name",
+        help="Job within the repository, necessary if more than one job is present.",
+    )
+
+
+def generate_repository_name_option() -> ClickOption:
+    return click.option(
+        "--repository",
+        "-r",
+        help=(
+            "Name of the repository, necessary if more than one repository is present in the"
+            " code location."
+        ),
+    )
+
+
+def generate_run_config_option(command_name: str) -> ClickOption:
+    return click.option(
+        "-c",
+        "--config",
+        type=click.Path(exists=True),
+        multiple=True,
+        help=(
+            "Specify one or more run config files. These can also be file patterns. "
+            "If more than one run config file is captured then those files are merged. "
+            "Files listed first take precedence. They will smash the values of subsequent "
+            "files at the key-level granularity. If the file is a pattern then you must "
+            "enclose it in double quotes"
+            "\n\nExample: "
+            f"dagster job {command_name} -f hello_world.py -j pandas_hello_world "
+            '-c "pandas_hello_world/*.yaml"'
+            "\n\nYou can also specify multiple files:"
+            "\n\nExample: "
+            f"dagster job {command_name} -f hello_world.py -j pandas_hello_world "
+            "-c pandas_hello_world/ops.yaml -c pandas_hello_world/env.yaml"
+        ),
+    )
+
+
+def generate_python_target_options(allow_multiple_python_targets: bool) -> Sequence[ClickOption]:
     return [
-        working_directory_option(),
-        python_file_option(allow_multiple=allow_multiple_python_targets),
-        python_module_option(allow_multiple=allow_multiple_python_targets),
+        generate_working_directory_option(),
+        generate_python_file_option(allow_multiple=allow_multiple_python_targets),
+        generate_module_name_option(allow_multiple=allow_multiple_python_targets),
         click.option(
             "--package-name",
             help="Specify Python package where repository or job function lives",
@@ -360,7 +381,7 @@ def python_target_click_options(allow_multiple_python_targets: bool) -> Sequence
     ]
 
 
-def grpc_server_target_click_options(hidden=False) -> Sequence[ClickOption]:
+def generate_grpc_server_target_options(hidden=False) -> Sequence[ClickOption]:
     return [
         click.option(
             "--grpc-port",
@@ -393,99 +414,30 @@ def grpc_server_target_click_options(hidden=False) -> Sequence[ClickOption]:
     ]
 
 
-def workspace_target_click_options() -> Sequence[ClickOption]:
+def generate_workspace_target_options() -> Sequence[ClickOption]:
     return [
         click.option("--empty-workspace", is_flag=True, help="Allow an empty workspace"),
-        workspace_option(),
-        *python_target_click_options(allow_multiple_python_targets=True),
-        *grpc_server_target_click_options(),
+        generate_workspace_option(),
+        *generate_python_target_options(allow_multiple_python_targets=True),
+        *generate_grpc_server_target_options(),
     ]
 
 
-def python_job_target_click_options() -> Sequence[ClickOption]:
+def generate_python_job_target_options() -> Sequence[ClickOption]:
     return [
-        *python_target_click_options(allow_multiple_python_targets=False),
+        *generate_python_target_options(allow_multiple_python_targets=False),
         click.option(
             "--repository",
             "-r",
             help="Repository name, necessary if more than one repository is present.",
         ),
-        job_option(),
+        generate_job_name_option(),
     ]
 
 
-def target_with_config_option(command_name: str) -> ClickOption:
-    return click.option(
-        "-c",
-        "--config",
-        type=click.Path(exists=True),
-        multiple=True,
-        help=(
-            "Specify one or more run config files. These can also be file patterns. "
-            "If more than one run config file is captured then those files are merged. "
-            "Files listed first take precedence. They will smash the values of subsequent "
-            "files at the key-level granularity. If the file is a pattern then you must "
-            "enclose it in double quotes"
-            "\n\nExample: "
-            f"dagster job {command_name} -f hello_world.py -j pandas_hello_world "
-            '-c "pandas_hello_world/*.yaml"'
-            "\n\nYou can also specify multiple files:"
-            "\n\nExample: "
-            f"dagster job {command_name} -f hello_world.py -j pandas_hello_world "
-            "-c pandas_hello_world/ops.yaml -c pandas_hello_world/env.yaml"
-        ),
-    )
-
-
-def python_job_config_argument(command_name: str) -> Callable[[T_Callable], T_Callable]:
-    def wrap(f: T_Callable) -> T_Callable:
-        return target_with_config_option(command_name)(f)
-
-    return wrap
-
-
-def python_job_target_argument(f):
-    from dagster._cli.job import apply_click_params
-
-    return apply_click_params(f, *python_job_target_click_options())
-
-
-def workspace_target_argument(f):
-    from dagster._cli.job import apply_click_params
-
-    return apply_click_params(f, *workspace_target_click_options())
-
-
-def job_workspace_target_argument(f):
-    from dagster._cli.job import apply_click_params
-
-    return apply_click_params(f, *workspace_target_click_options())
-
-
-def grpc_server_origin_target_argument(f):
-    from dagster._cli.job import apply_click_params
-
-    options = grpc_server_target_click_options()
-    return apply_click_params(f, *options)
-
-
-def python_origin_target_argument(f):
-    from dagster._cli.job import apply_click_params
-
-    options = python_target_click_options(allow_multiple_python_targets=False)
-    return apply_click_params(f, *options)
-
-
-def repository_click_options() -> Sequence[ClickOption]:
+def generate_repository_identifier_options() -> Sequence[ClickOption]:
     return [
-        click.option(
-            "--repository",
-            "-r",
-            help=(
-                "Name of the repository, necessary if more than one repository is present in the"
-                " code location."
-            ),
-        ),
+        generate_repository_name_option(),
         click.option(
             "--location",
             "-l",
@@ -494,31 +446,64 @@ def repository_click_options() -> Sequence[ClickOption]:
     ]
 
 
-def repository_target_argument(f):
-    from dagster._cli.job import apply_click_params
+# ########################
+# ##### USABLE AS CLICK DECORATORS
+# ########################
 
-    return apply_click_params(workspace_target_argument(f), *repository_click_options())
-
-
-def job_repository_target_argument(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
-
-    return apply_click_params(job_workspace_target_argument(f), *repository_click_options())
+# These are named as *_options and can be directly applied to click commands/groups as decorators.
+# They contain various subsets from the generate_*
 
 
-def job_option() -> ClickOption:
-    return click.option(
-        "--job",
-        "-j",
-        "job_name",
-        help="Job within the repository, necessary if more than one job is present.",
+def python_job_config_option(*, command_name: str) -> Callable[[T_Callable], T_Callable]:
+    def wrap(f: T_Callable) -> T_Callable:
+        return apply_click_params(f, generate_run_config_option(command_name))
+
+    return wrap
+
+
+def python_job_target_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(f, *generate_python_job_target_options())
+
+
+def workspace_target_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(f, *generate_workspace_target_options())
+
+
+def job_workspace_target_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(f, *generate_workspace_target_options())
+
+
+def grpc_server_origin_target_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(f, *generate_grpc_server_target_options())
+
+
+def python_origin_target_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(
+        f, *generate_python_target_options(allow_multiple_python_targets=False)
     )
 
 
-def job_target_argument(f: T_Callable) -> T_Callable:
-    from dagster._cli.job import apply_click_params
+def repository_target_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(
+        f, *generate_workspace_target_options(), *generate_repository_identifier_options()
+    )
 
-    return apply_click_params(job_repository_target_argument(f), job_option())
+
+def job_repository_target_options(f: T_Callable) -> T_Callable:
+    options = [
+        *generate_workspace_target_options(),
+        *generate_repository_identifier_options(),
+    ]
+    return apply_click_params(f, *options)
+
+
+def job_target_options(f: T_Callable) -> T_Callable:
+    options = [
+        *generate_workspace_target_options(),
+        *generate_repository_identifier_options(),
+        generate_job_name_option(),
+    ]
+    return apply_click_params(f, *options)
 
 
 def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> JobPythonOrigin:
@@ -822,3 +807,28 @@ def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
             )
     else:
         check.failed("Unhandled case getting config from kwargs")
+
+
+# ########################
+# ##### HELPERS
+# ########################
+
+
+def _raise_cli_usage_error(msg: Optional[str] = None) -> Never:
+    raise UsageError(
+        msg or "Invalid set of CLI arguments for loading repository/job. See --help for details."
+    )
+
+
+def _check_cli_arguments_none(kwargs: ClickArgMapping, *keys: str) -> None:
+    for key in keys:
+        if kwargs.get(key):
+            _raise_cli_usage_error()
+
+
+def _are_all_keys_empty(kwargs: ClickArgMapping, keys: Iterable[str]) -> bool:
+    for key in keys:
+        if kwargs.get(key):
+            return False
+
+    return True

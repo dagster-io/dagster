@@ -1,6 +1,6 @@
-from dagster_components import component_type
-from dagster_components.lib import SlingReplicationCollectionComponent
+from dagster_components import registered_component_type
+from dagster_components.lib import SlingReplicationCollection
 
 
-@component_type(name="custom_subclass")
-class CustomSubclass(SlingReplicationCollectionComponent): ...
+@registered_component_type(name="custom_subclass")
+class CustomSubclass(SlingReplicationCollection): ...

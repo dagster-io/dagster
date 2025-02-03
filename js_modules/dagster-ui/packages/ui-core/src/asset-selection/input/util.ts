@@ -1,10 +1,14 @@
+import {IconName} from '@dagster-io/ui-components';
+
 import {assertUnreachable} from '../../app/Util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
+import {isKindTag} from '../../graph/KindTags';
+import {weakMapMemoize} from '../../util/weakMapMemoize';
 import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
 export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   const assetNamesSet: Set<string> = new Set();
-  const tagNamesSet: Set<string> = new Set();
+  const tagSet: Set<{key: string; value: string}> = new Set();
   const ownersSet: Set<string> = new Set();
   const groupsSet: Set<string> = new Set();
   const kindsSet: Set<string> = new Set();
@@ -13,13 +17,10 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   assets.forEach((asset) => {
     assetNamesSet.add(asset.name);
     asset.node.tags.forEach((tag) => {
-      if (tag.key && tag.value) {
-        // We add quotes around the equal sign here because the auto-complete suggestion already wraps the entire value in quotes.
-        // So wer end up with tag:"key"="value" as the final suggestion
-        tagNamesSet.add(`${tag.key}"="${tag.value}`);
-      } else {
-        tagNamesSet.add(tag.key);
+      if (isKindTag(tag)) {
+        return;
       }
+      tagSet.add(memoizedTag(tag.key, tag.value));
     });
     asset.node.owners.forEach((owner) => {
       switch (owner.__typename) {
@@ -47,7 +48,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   });
 
   const assetNames = Array.from(assetNamesSet).sort();
-  const tagNames = Array.from(tagNamesSet).sort();
+  const tagNames = Array.from(tagSet).sort();
   const owners = Array.from(ownersSet).sort();
   const groups = Array.from(groupsSet).sort();
   const kinds = Array.from(kindsSet).sort();
@@ -61,4 +62,20 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
     kind: kinds,
     code_location: codeLocations,
   };
+};
+
+const memoizedTag = weakMapMemoize((key: string, value: string) => ({
+  key,
+  value,
+}));
+
+export type Attribute = keyof ReturnType<typeof getAttributesMap>;
+
+export const attributeToIcon: Record<Attribute, IconName> = {
+  key: 'magnify_glass',
+  kind: 'compute_kind',
+  code_location: 'code_location',
+  group: 'asset_group',
+  owner: 'owner',
+  tag: 'tag',
 };

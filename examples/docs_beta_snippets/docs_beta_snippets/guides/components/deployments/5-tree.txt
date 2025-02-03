@@ -1,0 +1,18 @@
+tree 
+
+.
+├── code_locations
+│   └── code-location-1
+│       ├── code_location_1
+│       │   ├── lib
+│       │   │   └── __init__.py
+│       │   ├── components
+│       │   ├── definitions.py
+│       │   └── __init__.py
+│       ├── code_location_1_tests
+│       │   └── __init__.py
+│       ├── uv.lock
+│       └── pyproject.toml
+└── pyproject.toml
+
+...

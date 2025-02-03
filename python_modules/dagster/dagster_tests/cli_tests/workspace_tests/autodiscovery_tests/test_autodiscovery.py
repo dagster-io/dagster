@@ -223,11 +223,11 @@ def test_local_directory_module_multiple_defs() -> None:
         DagsterInvariantViolationError,
         match="Cannot have more than one Definitions object defined at module scope. Found Definitions objects: autodiscover_in_module_multiple.defs, autodiscover_in_module_multiple.defs1, autodiscover_in_module_multiple.defs2",
     ):
-        loadable_targets_from_python_module(
-            "autodiscover_in_module_multiple",
-            working_directory=os.path.dirname(__file__),
-            remove_from_path_fn=_current_test_directory_paths,
-        )
+        with alter_sys_path(to_add=[], to_remove=_current_test_directory_paths()):
+            loadable_targets_from_python_module(
+                "autodiscover_in_module_multiple",
+                working_directory=os.path.dirname(__file__),
+            )
 
 
 def _current_test_directory_paths():
@@ -251,25 +251,25 @@ def test_local_directory_module() -> None:
     if "autodiscover_in_module" in sys.modules:
         del sys.modules["autodiscover_in_module"]
 
-    with pytest.raises(DagsterImportError):
-        loadable_targets_from_python_module(
-            "complete_bogus_module",
-            working_directory=os.path.dirname(__file__),
-            remove_from_path_fn=_current_test_directory_paths,
-        )
+    with alter_sys_path(to_add=[], to_remove=_current_test_directory_paths()):
+        with pytest.raises(DagsterImportError):
+            loadable_targets_from_python_module(
+                "complete_bogus_module",
+                working_directory=os.path.dirname(__file__),
+            )
 
-    with pytest.raises(DagsterImportError):
-        loadable_targets_from_python_module(
+    with alter_sys_path(to_add=[], to_remove=_current_test_directory_paths()):
+        with pytest.raises(DagsterImportError):
+            loadable_targets_from_python_module(
+                "autodiscover_in_module",
+                working_directory=None,
+            )
+
+    with alter_sys_path(to_add=[], to_remove=_current_test_directory_paths()):
+        loadable_targets = loadable_targets_from_python_module(
             "autodiscover_in_module",
-            working_directory=None,
-            remove_from_path_fn=_current_test_directory_paths,
+            working_directory=os.path.dirname(__file__),
         )
-
-    loadable_targets = loadable_targets_from_python_module(
-        "autodiscover_in_module",
-        working_directory=os.path.dirname(__file__),
-        remove_from_path_fn=_current_test_directory_paths,
-    )
     assert len(loadable_targets) == 1
 
 
@@ -282,8 +282,12 @@ def test_local_directory_file() -> None:
 
         assert "No module named 'autodiscover_src'" in str(exc_info.value)
 
-    with alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[]):
+    to_restore = [path for path in sys.path]
+    try:
+        alter_sys_path(to_add=[os.path.dirname(path)], to_remove=[])
         loadable_targets_from_python_file(path, working_directory=os.path.dirname(path))
+    finally:
+        sys.path = to_restore
 
 
 def test_lazy_definitions() -> None:

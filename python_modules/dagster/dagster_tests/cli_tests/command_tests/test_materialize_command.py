@@ -1,3 +1,5 @@
+import os
+import subprocess
 from typing import Optional
 
 from click.testing import CliRunner
@@ -177,6 +179,23 @@ def test_partition_range_multi_run_backfill_policy():
 def test_failure():
     result = invoke_materialize("fail_asset")
     assert result.exit_code == 1
+
+
+def test_asset_with_multiprocessing():
+    with instance_for_test():
+        subprocess.check_call(
+            [
+                "dagster",
+                "asset",
+                "materialize",
+                "-f",
+                file_relative_path(__file__, "asset_with_process_pool_executor.py"),
+                "--select",
+                "multiprocess_asset",
+                "--working-directory",
+                os.path.dirname(__file__),
+            ]
+        )
 
 
 def test_run_cli_config_json():

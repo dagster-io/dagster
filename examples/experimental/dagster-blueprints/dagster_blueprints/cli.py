@@ -11,7 +11,7 @@ from typing import Optional
 
 import click
 from dagster import _check as check
-from dagster._cli.workspace.cli_target import has_pyproject_dagster_block
+from dagster._cli.utils import has_pyproject_dagster_block
 from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.workspace.load_target import PyProjectFileTarget
 from dagster._utils.warnings import disable_dagster_warnings

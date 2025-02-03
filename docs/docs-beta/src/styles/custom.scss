@@ -493,7 +493,8 @@ table {
 
 /* API Docs */
 dl {
-  padding: 4px 0px 0px 4px;
+  padding: 6px;
+  margin-top: 6px;
   border: 1px solid var(--theme-color-keyline);
   font-weight: 200;
   background-color: var(--theme-color-background-blue);
@@ -518,7 +519,10 @@ dd {
 }
 
 dd p {
-  margin: 0;
+  margin-bottom: 6px;
+  &:last-child {
+    margin-bottom: 0px;
+  }
 }
 
 dd code {
@@ -698,7 +702,7 @@ div[class^='announcementBar_'] {
     background-color: var(--theme-color-background-default);
     border: 1px solid var(--theme-color-keyline) !important;
     transition: all .3s ease;
-    
+
     h2: {
       font-size: 1.5rem;
       margin-top: 0;
@@ -706,10 +710,37 @@ div[class^='announcementBar_'] {
       font-weight: 600;
       display: none;
     }
-    
+
     &:hover {
       background-color: var(--theme-color-background-light);
       border: 1px solid var(--theme-color-border-default) !important;
       transform: translateY(0px);
-    }  
+    }
+  }
+
+  .cli-invocation-example-command{
+    code::before {
+      content: '$ ';
+      color: var(--theme-color-text-cyan);
+      font-weight: 600;
+    }
+    &.cli-invocation-example-command-with-result {
+      code {
+          border-bottom: 1px dashed var(--theme-color-border-default);
+      }
+      code, div, pre {
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+      }
+    }
+  }
+
+  .cli-invocation-example-result {
+    // Negate the margin from the above code block
+    margin-top: calc(-1 * var(--ifm-leading) + 1px);
+
+    code, div, pre {
+      border-top-left-radius: 0 !important;
+      border-top-right-radius: 0 !important;
+    }
   }
