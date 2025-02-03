@@ -59,8 +59,8 @@ def instance_for_test(
             },
             {
                 "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                    "class": "SynchronousRunCoordinator",
+                    "module": "dagster._core.run_coordinator.sync_in_memory_run_coordinator",
+                    "class": "SyncInMemoryRunCoordinator",
                 },
             }
             if synchronous_run_coordinator
