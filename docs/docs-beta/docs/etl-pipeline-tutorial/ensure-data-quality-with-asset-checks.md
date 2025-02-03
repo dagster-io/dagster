@@ -49,4 +49,4 @@ Asset checks will run when an asset is materialized, but asset checks can also b
 
 ## Next steps
 
-- Continue this tutorial with [Asset Checks](create-and-materialize-partitioned-asset)
+- Now that we have the main assets in our ETL pipeline, it's time to add [automation to our pipeline](automate-your-pipeline).

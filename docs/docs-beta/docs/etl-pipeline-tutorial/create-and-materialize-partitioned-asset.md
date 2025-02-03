@@ -177,4 +177,4 @@ To materialize these assets:
 
 ## Next steps
 
-Now that we have the main assets in our ETL pipeline, its time to add [automation to our pipeline](automate-your-pipeline)
+- It is important to ensure the quality of your data. Continue this tutorial by creating a set of [asset checks](ensure-data-quality-with-asset-checks).
