@@ -325,10 +325,14 @@ export const createProvider = <
     query: string;
     textCallback?: (text: string) => string;
   }) {
-    const text = `key_substring:"${query}"`;
+    const attribute = primaryAttributeKey as string;
+    const text = `${attribute}_substring:"${query}"`;
+    let displayAttribute = attribute.replace(/_/g, ' ');
+    displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
+    const displayText = `${displayAttribute} contains "${query}"`;
     return {
       text: textCallback ? textCallback(text) : text,
-      jsx: <SuggestionJSXBase label={`Asset key contains "${query}"`} rightLabel={text} />,
+      jsx: <SuggestionJSXBase label={displayText} rightLabel={text} />,
     };
   }
 
