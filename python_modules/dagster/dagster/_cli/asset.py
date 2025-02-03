@@ -7,8 +7,8 @@ from dagster._cli.job import get_config_from_args
 from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     get_repository_python_origin_from_kwargs,
-    python_job_config_option,
-    python_origin_target_options,
+    python_pointer_options,
+    run_config_option,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
@@ -32,7 +32,7 @@ def asset_cli():
 
 
 @asset_cli.command(name="materialize", help="Execute a run to materialize a selection of assets")
-@python_origin_target_options
+@python_pointer_options
 @click.option("--select", help="Comma-separated Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
 @click.option(
@@ -40,7 +40,7 @@ def asset_cli():
     help="Asset partition range to target i.e. <start>...<end>",
     required=False,
 )
-@python_job_config_option(command_name="materialize")
+@run_config_option(name="config", command_name="materialize")
 @click.option(
     "--config-json",
     type=click.STRING,
@@ -157,7 +157,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
 
 
 @asset_cli.command(name="list", help="List assets")
-@python_origin_target_options
+@python_pointer_options
 @click.option("--select", help="Asset selection to target", required=False)
 def asset_list_command(**kwargs):
     repository_origin = get_repository_python_origin_from_kwargs(kwargs)

@@ -27,10 +27,12 @@ from dagster._cli.workspace.cli_target import (
     get_remote_repository_from_kwargs,
     get_run_config_from_file_list,
     get_workspace_from_kwargs,
-    job_repository_target_options,
-    job_target_options,
-    python_job_config_option,
-    python_job_target_options,
+    job_name_option,
+    job_options,
+    python_pointer_options,
+    repository_name_option,
+    repository_options,
+    run_config_option,
 )
 from dagster._core.definitions import JobDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
@@ -79,7 +81,7 @@ def job_cli():
     name="list",
     help=f"List the jobs in a repository. {WORKSPACE_TARGET_WARNING}",
 )
-@job_repository_target_options
+@repository_options
 def job_list_command(**kwargs):
     return execute_list_command(kwargs, click.echo)
 
@@ -136,7 +138,7 @@ def get_job_instructions(command_name):
     help="Print a job.\n\n{instructions}".format(instructions=get_job_instructions("print")),
 )
 @click.option("--verbose", is_flag=True)
-@job_target_options
+@job_options
 def job_print_command(verbose, **cli_args):
     with get_possibly_temporary_instance_for_cli("``dagster job print``") as instance:
         return execute_print_command(instance, verbose, cli_args, click.echo)
@@ -239,8 +241,10 @@ def print_op(
         instructions=get_job_in_same_python_env_instructions("execute")
     ),
 )
-@python_job_target_options
-@python_job_config_option(command_name="execute")
+@python_pointer_options
+@repository_name_option(name="repository")
+@job_name_option(name="job_name")
+@run_config_option(name="config", command_name="execute")
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option(
     "-o",
@@ -337,8 +341,8 @@ def do_execute_command(
         )
     ),
 )
-@job_target_options
-@python_job_config_option(command_name="launch")
+@job_options
+@run_config_option(name="config", command_name="launch")
 @click.option(
     "--config-json",
     type=click.STRING,
@@ -492,7 +496,9 @@ def _check_execute_remote_job_args(
         instructions=get_job_in_same_python_env_instructions("scaffold_config")
     ),
 )
-@python_job_target_options
+@python_pointer_options
+@repository_name_option(name="repository")
+@job_name_option(name="job_name")
 @click.option("--print-only-required", default=False, is_flag=True)
 def job_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
@@ -525,7 +531,7 @@ def do_scaffold_command(
         instructions=get_job_instructions("backfill")
     ),
 )
-@job_target_options
+@job_options
 @click.option(
     "--partitions",
     type=click.STRING,

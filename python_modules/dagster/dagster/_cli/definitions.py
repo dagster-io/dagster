@@ -5,17 +5,8 @@ import sys
 import click
 
 from dagster import __version__ as dagster_version
-from dagster._cli.utils import (
-    ClickArgValue,
-    apply_click_params,
-    get_possibly_temporary_instance_for_cli,
-)
-from dagster._cli.workspace.cli_target import (
-    generate_module_name_option,
-    generate_python_file_option,
-    generate_workspace_option,
-    get_workspace_from_kwargs,
-)
+from dagster._cli.utils import ClickArgValue, get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace.cli_target import get_workspace_from_kwargs, workspace_options
 from dagster._utils.log import configure_loggers
 
 
@@ -24,16 +15,7 @@ def definitions_cli():
     """Commands for working with Dagster definitions."""
 
 
-def validate_command_options(f):
-    return apply_click_params(
-        f,
-        generate_workspace_option(),
-        generate_python_file_option(allow_multiple=True),
-        generate_module_name_option(allow_multiple=True),
-    )
-
-
-@validate_command_options
+@workspace_options
 @click.option(
     "--log-level",
     help="Set the log level for dagster services.",

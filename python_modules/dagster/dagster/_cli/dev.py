@@ -14,19 +14,8 @@ import yaml
 
 from dagster import _check as check
 from dagster._annotations import deprecated
-from dagster._cli.utils import (
-    ClickArgValue,
-    apply_click_params,
-    get_possibly_temporary_instance_for_cli,
-)
-from dagster._cli.workspace.cli_target import (
-    generate_grpc_server_target_options,
-    generate_module_name_option,
-    generate_python_file_option,
-    generate_working_directory_option,
-    generate_workspace_option,
-    get_workspace_load_target,
-)
+from dagster._cli.utils import ClickArgValue, get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace.cli_target import get_workspace_load_target, workspace_options
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._grpc.server import GrpcServerCommand
@@ -36,17 +25,6 @@ from dagster._utils.log import configure_loggers
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
 _CHECK_SUBPROCESS_INTERVAL = 5
-
-
-def dev_command_options(f):
-    return apply_click_params(
-        f,
-        generate_workspace_option(),
-        generate_python_file_option(allow_multiple=True),
-        generate_module_name_option(allow_multiple=True),
-        generate_working_directory_option(),
-        *generate_grpc_server_target_options(hidden=True),
-    )
 
 
 @click.command(
@@ -60,7 +38,7 @@ def dev_command_options(f):
         help_option_names=["--help"],  # Don't show '-h' since that's the webserver host
     ),
 )
-@dev_command_options
+@workspace_options
 @click.option(
     "--code-server-log-level",
     help="Set the log level for code servers spun up by dagster services.",
@@ -275,6 +253,9 @@ def _optionally_create_temp_workspace(
 
 def _find_targets_in_kwargs(kwargs: Mapping[str, ClickArgValue]) -> Sequence[str]:
     args = []
+    if kwargs.get("empty_workspace"):
+        args.append("--empty-workspace")
+
     if kwargs.get("workspace"):
         for workspace in check.tuple_elem(kwargs, "workspace"):
             args.extend(("--workspace", workspace))
@@ -286,6 +267,9 @@ def _find_targets_in_kwargs(kwargs: Mapping[str, ClickArgValue]) -> Sequence[str
     if kwargs.get("module_name"):
         for module_name in check.tuple_elem(kwargs, "module_name"):
             args.extend(("--module-name", module_name))
+
+    if kwargs.get("attribute"):
+        args.extend(("--attribute", check.str_elem(kwargs, "attribute")))
 
     if kwargs.get("working_directory"):
         args.extend(("--working-directory", check.str_elem(kwargs, "working_directory")))

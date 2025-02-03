@@ -1,7 +1,7 @@
 import click
 import pytest
 from click.testing import CliRunner
-from dagster._cli.workspace.cli_target import get_remote_job_from_kwargs, job_target_options
+from dagster._cli.workspace.cli_target import get_remote_job_from_kwargs, job_options
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteJob
 from dagster._core.test_utils import instance_for_test
@@ -12,7 +12,7 @@ def load_pipeline_via_cli_runner(cli_args):
     capture_result = {"external_pipeline": None}
 
     @click.command(name="test_pipeline_command")
-    @job_target_options
+    @job_options
     def command(**kwargs):
         with get_remote_job_from_kwargs(DagsterInstance.get(), "", kwargs) as remote_job:
             capture_result["external_pipeline"] = remote_job  # pyright: ignore[reportArgumentType]

@@ -4,7 +4,7 @@ from click.testing import CliRunner
 from dagster._cli.workspace.cli_target import (
     get_remote_repository_from_kwargs,
     get_workspace_from_kwargs,
-    repository_target_options,
+    repository_options,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteRepository
@@ -15,7 +15,7 @@ from dagster._utils import file_relative_path
 
 def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
     @click.command(name="test_repository_command")
-    @repository_target_options
+    @repository_options
     def command(**kwargs):
         with get_remote_repository_from_kwargs(
             DagsterInstance.get(),
@@ -34,7 +34,7 @@ def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
 
 def load_workspace_via_cli_runner(cli_args, workspace_assert_fn=None):
     @click.command(name="test_workspace_command")
-    @repository_target_options
+    @repository_options
     def command(**kwargs):
         with get_workspace_from_kwargs(
             DagsterInstance.get(),
