@@ -270,6 +270,31 @@ streams:
                 COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jdbt.yaml",
                 update_snippets=update_snippets,
             )
+
+            # Update component file, with error, check and fix
+            create_file(
+                Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
+                contents="""type: dagster_components.dbt_project
+
+params:
+  dbt:
+    project_dir: ../../../dbt/jdbt
+  asset_attributes:
+    key: "target/main/{{ node.name }}
+""",
+            )
+            run_command_and_snippet_output(
+                cmd="dg component check --no-use-dg-managed-environment",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-dg-component-check-error.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    ("--no-use-dg-managed-environment", ""),
+                ],
+            )
+
             create_file(
                 Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
