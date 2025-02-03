@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
 import click
 from click import UsageError
-from typing_extensions import Never
+from typing_extensions import Never, Self
 
 import dagster._check as check
 from dagster._cli.utils import (
@@ -14,16 +14,12 @@ from dagster._cli.utils import (
     ClickOption,
     apply_click_params,
     has_pyproject_dagster_block,
+    serialize_sorted_quoted,
 )
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_target_def
-from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.instance import DagsterInstance
-from dagster._core.origin import (
-    DEFAULT_DAGSTER_ENTRY_POINT,
-    JobPythonOrigin,
-    RepositoryPythonOrigin,
-)
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, RepositoryPythonOrigin
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.workspace.context import WorkspaceRequestContext
@@ -39,9 +35,9 @@ from dagster._core.workspace.load_target import (
     WorkspaceLoadTarget,
 )
 from dagster._grpc.utils import get_loadable_targets
+from dagster._record import record
 from dagster._seven import JSONDecodeError, json
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster._utils.yaml_utils import load_yaml_from_glob_list
 
 if TYPE_CHECKING:
@@ -255,6 +251,84 @@ def get_workspace_from_kwargs(
 
 
 # ########################
+# ##### VALUE OBJECTS
+# ########################
+
+# These classes correspond to the reusable option groups defined in the decorators below. When one
+# of these decorators is used, the resulting options should be immediately parsed into the
+# corresponding value object at the top of the click command body, by calling
+# `extract_from_cli_options`.
+
+
+@record
+class PythonPointerOpts:
+    python_file: Optional[str] = None
+    module_name: Optional[str] = None
+    package_name: Optional[str] = None
+    working_directory: Optional[str] = None
+    attribute: Optional[str] = None
+
+    @classmethod
+    def extract_from_cli_options(cls, cli_options: dict[str, object]) -> Self:
+        # We pop here without providing a default because we are expecting all keys to be present,
+        # which they will be if this is coming from a click invocation.
+        return cls(
+            python_file=check.opt_inst(cli_options.pop("python_file"), str),
+            module_name=check.opt_inst(cli_options.pop("module_name"), str),
+            package_name=check.opt_inst(cli_options.pop("package_name"), str),
+            working_directory=check.opt_inst(cli_options.pop("working_directory"), str),
+            attribute=check.opt_inst(cli_options.pop("attribute"), str),
+        )
+
+
+# ########################
+# ##### CLICK DECORATORS
+# ########################
+
+# These are named as *_options and can be directly applied to click commands/groups as decorators.
+# They contain various subsets from the generate_*
+
+
+def run_config_option(*, name: str, command_name: str) -> Callable[[T_Callable], T_Callable]:
+    def wrap(f: T_Callable) -> T_Callable:
+        return apply_click_params(f, _generate_run_config_option(name, command_name))
+
+    return wrap
+
+
+def job_name_option(f: Optional[T_Callable] = None, *, name: str) -> T_Callable:
+    if f is None:
+        return lambda f: job_name_option(f, name=name)  # type: ignore
+    else:
+        return apply_click_params(f, _generate_job_name_option(name))
+
+
+def repository_name_option(f: Optional[T_Callable] = None, *, name: str) -> T_Callable:
+    if f is None:
+        return lambda f: repository_name_option(f, name=name)  # type: ignore
+    else:
+        return apply_click_params(f, _generate_repository_name_option(name))
+
+
+def workspace_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(f, *_generate_workspace_options())
+
+
+def python_pointer_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(f, *_generate_python_pointer_options(allow_multiple=False))
+
+
+def repository_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(f, *_generate_repository_options())
+
+
+def job_options(f: T_Callable) -> T_Callable:
+    return apply_click_params(
+        f, *_generate_repository_options(), _generate_job_name_option("job_name")
+    )
+
+
+# ########################
 # ##### OPTION GENERATORS
 # ########################
 
@@ -427,172 +501,74 @@ def _generate_repository_options() -> Sequence[ClickOption]:
     ]
 
 
-# ########################
-# ##### USABLE AS CLICK DECORATORS
-# ########################
-
-# These are named as *_options and can be directly applied to click commands/groups as decorators.
-# They contain various subsets from the generate_*
-
-
-def run_config_option(*, name: str, command_name: str) -> Callable[[T_Callable], T_Callable]:
-    def wrap(f: T_Callable) -> T_Callable:
-        return apply_click_params(f, _generate_run_config_option(name, command_name))
-
-    return wrap
-
-
-def job_name_option(f: Optional[T_Callable] = None, *, name: str) -> T_Callable:
-    if f is None:
-        return lambda f: job_name_option(f, name=name)  # type: ignore
-    else:
-        return apply_click_params(f, _generate_job_name_option(name))
-
-
-def repository_name_option(f: Optional[T_Callable] = None, *, name: str) -> T_Callable:
-    if f is None:
-        return lambda f: repository_name_option(f, name=name)  # type: ignore
-    else:
-        return apply_click_params(f, _generate_repository_name_option(name))
-
-
-def workspace_options(f: T_Callable) -> T_Callable:
-    return apply_click_params(f, *_generate_workspace_options())
-
-
-def python_pointer_options(f: T_Callable) -> T_Callable:
-    return apply_click_params(f, *_generate_python_pointer_options(allow_multiple=False))
-
-
-def repository_options(f: T_Callable) -> T_Callable:
-    return apply_click_params(f, *_generate_repository_options())
-
-
-def job_options(f: T_Callable) -> T_Callable:
-    return apply_click_params(
-        f, *_generate_repository_options(), _generate_job_name_option("job_name")
+def _get_code_pointer_dict_from_python_pointer_opts(
+    params: PythonPointerOpts,
+) -> Mapping[str, CodePointer]:
+    loadable_targets = get_loadable_targets(
+        params.python_file,
+        params.module_name,
+        params.package_name,
+        params.working_directory,
+        params.attribute,
     )
 
-
-def get_job_python_origin_from_kwargs(kwargs: ClickArgMapping) -> JobPythonOrigin:
-    repository_origin = get_repository_python_origin_from_kwargs(kwargs)
-    provided_name = kwargs.get("job_name")
-
-    recon_repo = recon_repository_from_origin(repository_origin)
-    repo_definition = recon_repo.get_definition()
-
-    job_names = set(repo_definition.job_names)  # job (all) vs job (non legacy)
-
-    if provided_name is None and len(job_names) == 1:
-        job_name = next(iter(job_names))
-    elif provided_name is None:
-        raise click.UsageError(
-            "Must provide --job as there is more than one job "
-            f"in {repo_definition.name}. Options are: {_sorted_quoted(job_names)}."
-        )
-    elif provided_name not in job_names:
-        raise click.UsageError(
-            f'Job "{provided_name}" not found in repository "{repo_definition.name}" '
-            f"Found {_sorted_quoted(job_names)} instead."
-        )
-    else:
-        job_name = provided_name
-
-    return JobPythonOrigin(job_name, repository_origin=repository_origin)
-
-
-def _get_code_pointer_dict_from_kwargs(kwargs: ClickArgMapping) -> Mapping[str, CodePointer]:
-    python_file = check.opt_str_elem(kwargs, "python_file")
-    module_name = check.opt_str_elem(kwargs, "module_name")
-    package_name = check.opt_str_elem(kwargs, "package_name")
-    working_directory = get_working_directory_from_kwargs(kwargs)
-    attribute = check.opt_str_elem(kwargs, "attribute")
-    if python_file:
-        _check_cli_arguments_none(kwargs, "module_name", "package_name")
-        return {
-            cast(
-                RepositoryDefinition,
-                repository_def_from_target_def(
-                    loadable_target.target_definition,
-                ),
-            ).name: CodePointer.from_python_file(
-                python_file, loadable_target.attribute, working_directory
+    # repository_name -> code_pointer
+    code_pointer_dict: dict[str, CodePointer] = {}
+    for loadable_target in loadable_targets:
+        repo_def = check.not_none(repository_def_from_target_def(loadable_target.target_definition))
+        if params.python_file:
+            code_pointer = CodePointer.from_python_file(
+                params.python_file, loadable_target.attribute, params.working_directory
             )
-            for loadable_target in get_loadable_targets(
-                python_file, module_name, package_name, working_directory, attribute
+        elif params.module_name:
+            code_pointer = CodePointer.from_module(
+                params.module_name, loadable_target.attribute, params.working_directory
             )
-        }
-    elif module_name:
-        _check_cli_arguments_none(kwargs, "python_file", "package_name")
-        return {
-            cast(
-                RepositoryDefinition,
-                repository_def_from_target_def(
-                    loadable_target.target_definition,
-                ),
-            ).name: CodePointer.from_module(
-                module_name, loadable_target.attribute, working_directory
+        elif params.package_name:
+            code_pointer = CodePointer.from_python_package(
+                params.package_name, loadable_target.attribute, params.working_directory
             )
-            for loadable_target in get_loadable_targets(
-                python_file, module_name, package_name, working_directory, attribute
-            )
-        }
-    elif package_name:
-        _check_cli_arguments_none(kwargs, "module_name", "python_file")
-        return {
-            cast(
-                RepositoryDefinition,
-                repository_def_from_target_def(
-                    loadable_target.target_definition,
-                ),
-            ).name: CodePointer.from_python_package(
-                package_name, loadable_target.attribute, working_directory
-            )
-            for loadable_target in get_loadable_targets(
-                python_file, module_name, package_name, working_directory, attribute
-            )
-        }
-    else:
-        check.failed("Must specify a Python file or module name")
+        else:
+            check.failed("Must specify a Python file or module name")
+
+        code_pointer_dict[repo_def.name] = code_pointer
+
+    return code_pointer_dict
 
 
 def get_working_directory_from_kwargs(kwargs: ClickArgMapping) -> Optional[str]:
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
-def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> RepositoryPythonOrigin:
-    provided_repo_name = check.opt_str_elem(kwargs, "repository")
-
-    if not (kwargs.get("python_file") or kwargs.get("module_name") or kwargs.get("package_name")):
-        raise click.UsageError("Must specify a python file or module name")
+def get_repository_python_origin_from_cli_opts(
+    params: PythonPointerOpts, repo_name: Optional[str] = None
+) -> RepositoryPythonOrigin:
+    if sum([bool(x) for x in (params.python_file, params.module_name, params.package_name)]) != 1:
+        _raise_cli_usage_error()
 
     # Short-circuit the case where an attribute and no repository name is passed in,
     # giving us enough information to return an origin without loading any target
     # definitions - we may need to return an origin for a non-existent repository
     # (e.g. to log an origin ID for an error message)
-    if kwargs.get("attribute") and not provided_repo_name:
-        if kwargs.get("python_file"):
-            _check_cli_arguments_none(kwargs, "module_name", "package_name")
-            python_file = check.str_elem(kwargs, "python_file")
+    if params.attribute and not repo_name:
+        working_directory = params.working_directory or os.getcwd()
+        if params.python_file:
             code_pointer: CodePointer = CodePointer.from_python_file(
-                python_file,
-                check.str_elem(kwargs, "attribute"),
-                get_working_directory_from_kwargs(kwargs),
+                params.python_file,
+                params.attribute,
+                working_directory,
             )
-        elif kwargs.get("module_name"):
-            _check_cli_arguments_none(kwargs, "python_file", "package_name")
-            module_name = check.str_elem(kwargs, "module_name")
+        elif params.module_name:
             code_pointer = CodePointer.from_module(
-                module_name,
-                check.str_elem(kwargs, "attribute"),
-                get_working_directory_from_kwargs(kwargs),
+                params.module_name,
+                params.attribute,
+                working_directory,
             )
-        elif kwargs.get("package_name"):
-            _check_cli_arguments_none(kwargs, "python_file", "module_name")
+        elif params.package_name:
             code_pointer = CodePointer.from_python_package(
-                check.str_elem(kwargs, "package_name"),
-                check.str_elem(kwargs, "attribute"),
-                get_working_directory_from_kwargs(kwargs),
+                params.package_name,
+                params.attribute,
+                working_directory,
             )
         else:
             check.failed("Must specify a Python file or module name")
@@ -602,21 +578,21 @@ def get_repository_python_origin_from_kwargs(kwargs: ClickArgMapping) -> Reposit
             entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
         )
 
-    code_pointer_dict = _get_code_pointer_dict_from_kwargs(kwargs)
-    found_repo_names = _sorted_quoted(code_pointer_dict.keys())
-    if provided_repo_name is None and len(code_pointer_dict) == 1:
+    code_pointer_dict = _get_code_pointer_dict_from_python_pointer_opts(params)
+    found_repo_names = serialize_sorted_quoted(code_pointer_dict.keys())
+    if repo_name is None and len(code_pointer_dict) == 1:
         code_pointer = next(iter(code_pointer_dict.values()))
-    elif provided_repo_name is None:
+    elif repo_name is None:
         raise click.UsageError(
             "Must provide --repository as there is more than one repository. "
             f"Options are: {found_repo_names}."
         )
-    elif provided_repo_name not in code_pointer_dict:
+    elif repo_name not in code_pointer_dict:
         raise click.UsageError(
-            f'Repository "{provided_repo_name}" not found. Found {found_repo_names} instead.'
+            f'Repository "{repo_name}" not found. Found {found_repo_names} instead.'
         )
     else:
-        code_pointer = code_pointer_dict[provided_repo_name]
+        code_pointer = code_pointer_dict[repo_name]
 
     return RepositoryPythonOrigin(
         executable_path=sys.executable,
@@ -647,13 +623,13 @@ def get_code_location_from_workspace(
         elif provided_location_name is None:
             raise click.UsageError(
                 "Must provide --location as there are multiple locations "
-                f"available. Options are: {_sorted_quoted(workspace.code_location_names)}"
+                f"available. Options are: {serialize_sorted_quoted(workspace.code_location_names)}"
             )
 
     if provided_location_name not in workspace.code_location_names:
         raise click.UsageError(
             f'Location "{provided_location_name}" not found in workspace. '
-            f"Found {_sorted_quoted(workspace.code_location_names)} instead."
+            f"Found {serialize_sorted_quoted(workspace.code_location_names)} instead."
         )
 
     if workspace.has_code_location_error(provided_location_name):
@@ -680,13 +656,13 @@ def get_remote_repository_from_code_location(
     if provided_repo_name is None:
         raise click.UsageError(
             "Must provide --repository as there is more than one repository "
-            f"in {code_location.name}. Options are: {_sorted_quoted(repo_dict.keys())}."
+            f"in {code_location.name}. Options are: {serialize_sorted_quoted(repo_dict.keys())}."
         )
 
     if not code_location.has_repository(provided_repo_name):
         raise click.UsageError(
             f'Repository "{provided_repo_name}" not found in location "{code_location.name}". '
-            f"Found {_sorted_quoted(repo_dict.keys())} instead."
+            f"Found {serialize_sorted_quoted(repo_dict.keys())} instead."
         )
 
     return code_location.get_repository(provided_repo_name)
@@ -720,13 +696,13 @@ def get_remote_job_from_remote_repo(
     if provided_name is None:
         raise click.UsageError(
             "Must provide --job as there is more than one job "
-            f"in {remote_repo.name}. Options are: {_sorted_quoted(remote_jobs.keys())}."
+            f"in {remote_repo.name}. Options are: {serialize_sorted_quoted(remote_jobs.keys())}."
         )
 
     if provided_name not in remote_jobs:
         raise click.UsageError(
             f'Job "{provided_name}" not found in repository "{remote_repo.name}". '
-            f"Found {_sorted_quoted(remote_jobs.keys())} instead."
+            f"Found {serialize_sorted_quoted(remote_jobs.keys())} instead."
         )
 
     return remote_jobs[provided_name]
@@ -741,34 +717,23 @@ def get_remote_job_from_kwargs(instance: DagsterInstance, version: str, kwargs: 
         yield get_remote_job_from_remote_repo(repo, provided_name)
 
 
-def _sorted_quoted(strings: Iterable[str]) -> str:
-    return "[" + ", ".join([f"'{s}'" for s in sorted(list(strings))]) + "]"
-
-
-def get_run_config_from_file_list(file_list: Optional[Sequence[str]]) -> Mapping[str, object]:
+def get_run_config_from_file_list(file_list: list[str]) -> Mapping[str, object]:
     check.opt_sequence_param(file_list, "file_list", of_type=str)
     return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
 
 
-def get_config_from_args(kwargs: Mapping[str, str]) -> Mapping[str, object]:
-    config = cast(tuple[str, ...], kwargs.get("config"))  # files
-    config_json = kwargs.get("config_json")
-
-    if not config and not config_json:
+def get_run_config_from_cli_opts(
+    config_files: tuple[str, ...], config_json: Optional[str]
+) -> Mapping[str, object]:
+    if not (config_files or config_json):
         return {}
-
-    elif config and config_json:
+    elif config_files and config_json:
         raise click.UsageError("Cannot specify both -c / --config and --config-json")
-
-    elif config:
-        config_file_list = list(check.opt_tuple_param(config, "config", of_type=str))
-        return get_run_config_from_file_list(config_file_list)
-
+    elif config_files:
+        return get_run_config_from_file_list(list(config_files))
     elif config_json:
-        config_json = cast(str, config_json)
         try:
             return json.loads(config_json)
-
         except JSONDecodeError:
             raise click.UsageError(
                 f"Invalid JSON-string given for `--config-json`: {config_json}\n\n{serializable_error_info_from_exc_info(sys.exc_info()).to_string()}"

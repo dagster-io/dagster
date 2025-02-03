@@ -3,7 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import ContextManager, NoReturn, Optional  # noqa: UP035
+from typing import Any, ContextManager, NoReturn, Optional  # noqa: UP035
 from unittest import mock
 
 import pytest
@@ -27,7 +27,7 @@ from dagster._cli.run import (
     run_migrate_command,
     run_wipe_command,
 )
-from dagster._cli.workspace.cli_target import ClickArgMapping
+from dagster._cli.workspace.cli_target import ClickArgMapping, PythonPointerOpts
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
@@ -445,13 +445,13 @@ def grpc_server_backfill_args():
             yield merge_dicts(args, {"noprompt": True}), instance
 
 
-def non_existant_python_origin_target_args():
+def non_existant_python_origin_target_args() -> dict[str, Any]:
     return {
-        "workspace": None,
-        "job_name": "foo",
-        "python_file": file_relative_path(__file__, "made_up_file.py"),
-        "module_name": None,
-        "attribute": "bar",
+        "python_pointer_opts": PythonPointerOpts(
+            python_file=file_relative_path(__file__, "made_up_file.py"),
+            module_name=None,
+            attribute="bar",
+        ),
     }
 
 
@@ -471,102 +471,122 @@ def valid_job_python_origin_target_args():
     job_def_name = "define_qux_job"
     return [
         {
-            "workspace": None,
             "job_name": job_name,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": None,
-            "attribute": "bar",
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                module_name=None,
+                attribute="bar",
+            ),
         },
         {
-            "workspace": None,
             "job_name": job_name,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": None,
-            "attribute": "bar",
-            "working_directory": os.path.dirname(__file__),
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                module_name=None,
+                attribute="bar",
+                working_directory=os.path.dirname(__file__),
+            ),
         },
         {
-            "workspace": None,
             "job_name": job_name,
-            "python_file": None,
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "attribute": "bar",
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=None,
+                module_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                attribute="bar",
+            ),
         },
         {
-            "workspace": None,
             "job_name": job_name,
-            "python_file": None,
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "attribute": "bar",
-            "working_directory": os.path.dirname(__file__),
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=None,
+                module_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                attribute="bar",
+                working_directory=os.path.dirname(__file__),
+            ),
         },
         {
-            "workspace": None,
             "job_name": job_name,
-            "python_file": None,
-            "package_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "attribute": "bar",
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=None,
+                package_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                attribute="bar",
+            ),
         },
         {
-            "workspace": None,
             "job_name": job_name,
-            "python_file": None,
-            "package_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "attribute": "bar",
-            "working_directory": os.path.dirname(__file__),
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=None,
+                package_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                attribute="bar",
+                working_directory=os.path.dirname(__file__),
+            ),
         },
         {
-            "workspace": None,
             "job_name": None,
-            "python_file": None,
-            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "attribute": job_fn_name,
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=None,
+                module_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                attribute=job_fn_name,
+            ),
         },
         {
-            "workspace": None,
             "job_name": None,
-            "python_file": None,
-            "package_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "attribute": job_fn_name,
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=None,
+                package_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                attribute=job_fn_name,
+            ),
         },
         {
-            "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": None,
-            "attribute": job_def_name,
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                module_name=None,
+                attribute=job_def_name,
+            ),
         },
         {
-            "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": None,
-            "attribute": job_def_name,
-            "working_directory": os.path.dirname(__file__),
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                module_name=None,
+                attribute=job_def_name,
+                working_directory=os.path.dirname(__file__),
+            ),
         },
         {
-            "workspace": None,
             "job_name": None,
-            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
-            "module_name": None,
-            "attribute": job_fn_name,
+            "python_pointer_opts": PythonPointerOpts(
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                module_name=None,
+                attribute=job_fn_name,
+            ),
         },
     ]
 
 
-def job_python_args_to_workspace_args(args):
+def job_python_args_to_workspace_args(job_python_arg_sets: list[dict[str, Any]]):
     # Turn args expecting non-multiple files/modules into args allowing multiple
-    return [
-        {
-            "workspace": a.get("workspace"),
-            "job_name": a.get("job_name"),
-            "python_file": (a["python_file"],) if a.get("python_file") else None,
-            "module_name": (a["module_name"],) if a.get("module_name") else None,
-            "attribute": a["attribute"],
-            "package_name": a.get("package_name"),
-        }
-        for a in args
-    ]
+    workspace_arg_sets: list[dict[str, Any]] = []
+    for arg_set in job_python_arg_sets:
+        python_pointer_opts = arg_set["python_pointer_opts"]
+        job_name = arg_set.get("job_name")
+        workspace_arg_sets.append(
+            {
+                "job_name": job_name,
+                "python_file": (python_pointer_opts.python_file,)
+                if python_pointer_opts.python_file
+                else None,
+                "module_name": (python_pointer_opts.module_name,)
+                if python_pointer_opts.module_name
+                else None,
+                "attribute": python_pointer_opts.attribute,
+                "package_name": python_pointer_opts.package_name
+                if python_pointer_opts.package_name
+                else None,
+            }
+        )
+    return workspace_arg_sets
 
 
 def valid_external_pipeline_target_args():
