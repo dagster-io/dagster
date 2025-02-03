@@ -42,6 +42,7 @@ check_prettier:
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
 	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
+	':!:python_modules/libraries/dagster-components/dagster_components_tests/integration_tests/components/validation/**/*.yaml' \
 	':!:README.md'` --check
 
 prettier:
