@@ -1,4 +1,4 @@
-$ dg component-type info dagster_components.dbt_project
+dg component-type info dagster_components.dbt_project
 
 dagster_components.dbt_project
 

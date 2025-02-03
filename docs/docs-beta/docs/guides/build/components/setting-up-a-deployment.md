@@ -16,13 +16,13 @@ default. Instead, Python environments are defined per code location.
 
 To scaffold a new deployment, run:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/1-deployment-scaffold.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/1-deployment-scaffold.txt" />
 
 
 This will create a new directory `my-deployment`. Let's look at the structure:
 
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/2-tree.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/2-tree.txt" />
 
 
 Importantly, the `pyproject.toml` file contains an `is_deployment` setting
@@ -32,14 +32,14 @@ marking this directory as a deployment:
 
 To add a code location to the deployment, run:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/4-code-location-scaffold.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/4-code-location-scaffold.txt" />
 
 
 This will create a new directory `code-location-1` within the `code_locations`.
 It will also setup a new uv-managed Python environment for the code location. Let's have a look:
 
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/5-tree.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/5-tree.txt" />
 
 
 
@@ -58,7 +58,7 @@ it as a code location and component library:
 Let's enter this directory and search for registered component types:
 
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/7-component-type-list.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/7-component-type-list.txt"  />
 
 
 This is the default set of component types available in every new code
@@ -70,7 +70,7 @@ $ uv add dagster-components[sling]
 
 And now we have a new available component:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/8-component-type-list.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/8-component-type-list.txt"  />
 
 
 As stated above, environments are scoped per code location.  `dg` commands will
@@ -79,18 +79,18 @@ only use the environment of `code-location-1` when we are inside the
 
 Let's create another code location to demonstrate this:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/9-code-location-scaffold.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/9-code-location-scaffold.txt"  />
 
 
 Now we have two code locations. We can list them with:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/10-code-location-list.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/10-code-location-list.txt"  />
 
 
 
 And finally, let's check the available component types in `code-location-2`:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/11-component-type-list.txt" language="Bash" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/11-component-type-list.txt"  />
 
 
 

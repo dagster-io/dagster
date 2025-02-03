@@ -1,4 +1,4 @@
-$ cd code_locations/code-location-2 && dg component-type list
+cd code_locations/code-location-2 && dg component-type list
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Component Type                                        ┃ Summary                        ┃

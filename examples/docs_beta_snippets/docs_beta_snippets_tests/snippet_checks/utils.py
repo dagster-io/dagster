@@ -198,9 +198,9 @@ def run_command_and_snippet_output(
         assert update_snippets is not None
 
         if ignore_output:
-            contents = f"$ {cmd}"
+            contents = str(cmd)
         else:
-            contents = f"$ {cmd}\n\n{output}"
+            contents = f"{cmd}\n\n{output}"
 
         _assert_matches_or_update_snippet(
             contents=contents,

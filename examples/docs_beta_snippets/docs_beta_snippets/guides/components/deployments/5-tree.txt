@@ -1,4 +1,4 @@
-$ tree 
+tree 
 
 .
 ├── code_locations

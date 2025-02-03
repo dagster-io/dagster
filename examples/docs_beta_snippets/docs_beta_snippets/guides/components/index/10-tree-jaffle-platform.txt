@@ -1,4 +1,4 @@
-$ tree jaffle_platform
+tree jaffle_platform
 
 jaffle_platform
 ├── definitions.py

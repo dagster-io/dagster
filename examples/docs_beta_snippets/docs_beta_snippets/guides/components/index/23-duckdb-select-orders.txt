@@ -1,4 +1,4 @@
-$ duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"
+duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"
 
 ┌──────────┬─────────────┬────────────┬───┬───────────────┬──────────────────────┬──────────────────┬────────┐
 │ order_id │ customer_id │ order_date │ … │ coupon_amount │ bank_transfer_amount │ gift_card_amount │ amount │
