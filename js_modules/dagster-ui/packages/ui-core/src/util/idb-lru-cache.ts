@@ -187,7 +187,6 @@ class IDBLRUCache<T> {
         const request = store.delete(key);
         request.onsuccess = () => {
           resolve();
-          resolve();
         };
         request.onerror = () => {
           reject(new IDBError('Failed to delete key', request.error));
