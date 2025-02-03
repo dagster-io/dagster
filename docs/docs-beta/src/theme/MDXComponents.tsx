@@ -6,6 +6,7 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import TOCInline from '@theme/TOCInline';
 import Link from '@docusaurus/Link';
+import CliInvocationExample from '../components/CliInvocationExample';
 
 export default {
   // Re-use the default mapping
@@ -14,6 +15,7 @@ export default {
   Tabs,
   TabItem,
   CodeExample,
+  CliInvocationExample,
   TOCInline,
   Link,
 };
