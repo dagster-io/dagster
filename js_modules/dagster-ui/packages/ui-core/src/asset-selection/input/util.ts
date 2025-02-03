@@ -8,7 +8,7 @@ import {buildRepoPathForHuman} from '../../workspace/buildRepoAddress';
 
 export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   const assetNamesSet: Set<string> = new Set();
-  const tagNamesSet: Set<{key: string; value: string}> = new Set();
+  const tagSet: Set<{key: string; value: string}> = new Set();
   const ownersSet: Set<string> = new Set();
   const groupsSet: Set<string> = new Set();
   const kindsSet: Set<string> = new Set();
@@ -20,7 +20,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
       if (isKindTag(tag)) {
         return;
       }
-      tagNamesSet.add(memoizedTag(tag.key, tag.value));
+      tagSet.add(memoizedTag(tag.key, tag.value));
     });
     asset.node.owners.forEach((owner) => {
       switch (owner.__typename) {
@@ -48,7 +48,7 @@ export const getAttributesMap = (assets: AssetGraphQueryItem[]) => {
   });
 
   const assetNames = Array.from(assetNamesSet).sort();
-  const tagNames = Array.from(tagNamesSet).sort();
+  const tagNames = Array.from(tagSet).sort();
   const owners = Array.from(ownersSet).sort();
   const groups = Array.from(groupsSet).sort();
   const kinds = Array.from(kindsSet).sort();
