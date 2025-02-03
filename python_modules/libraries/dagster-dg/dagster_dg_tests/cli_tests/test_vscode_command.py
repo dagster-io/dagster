@@ -17,11 +17,9 @@ def test_configure_vscode() -> None:
     with (
         ProxyRunner.test() as runner,
         TemporaryDirectory() as extension_dir,
+        mock.patch("dagster_dg.utils.vscode.run_vscode_cli_command", new=mock_vscode_cli_command),
         mock.patch(
-            "dagster_dg.cli.vscode_utils.run_vscode_cli_command", new=mock_vscode_cli_command
-        ),
-        mock.patch(
-            "dagster_dg.cli.vscode_utils.get_default_extension_dir",
+            "dagster_dg.utils.vscode.get_default_extension_dir",
             return_value=Path(extension_dir),
         ),
         isolated_example_code_location_foo_bar(runner, False),

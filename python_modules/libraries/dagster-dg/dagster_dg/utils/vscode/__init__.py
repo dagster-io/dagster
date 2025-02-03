@@ -12,8 +12,10 @@ import click
 def get_default_extension_dir() -> Path:
     if sys.platform == "win32":
         return Path.home() / "AppData" / "dg" / "vscode"
+    elif sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "dg" / "vscode"
     else:
-        return Path.home() / ".dg" / "vscode"
+        return Path.home() / ".local" / "share" / "dg" / "vscode"
 
 
 def has_vscode_cli_command() -> bool:

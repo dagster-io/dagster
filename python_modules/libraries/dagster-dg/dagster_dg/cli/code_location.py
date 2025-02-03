@@ -6,15 +6,15 @@ from typing import Optional
 import click
 
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.cli.vscode_utils import (
-    install_or_update_yaml_schema_extension,
-    recommend_yaml_extension,
-)
 from dagster_dg.component import all_components_schema_from_dg_context
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_code_location
 from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error
+from dagster_dg.utils.vscode import (
+    install_or_update_yaml_schema_extension,
+    recommend_yaml_extension,
+)
 
 
 @click.group(name="code-location", cls=DgClickGroup)
@@ -125,15 +125,14 @@ def code_location_list_command(context: click.Context, **global_options: object)
 _DEFAULT_SCHEMA_FOLDER_NAME = ".vscode"
 
 
-@code_location_group.command(
-    help="Generates and installs a VS Code extension which provides JSON schemas for Components types specified by YamlComponentssLoader objects."
-)
+@code_location_group.command()
 @dg_global_options
 @click.pass_context
 def configure_vscode(
     context: click.Context,
     **global_options: object,
 ) -> None:
+    """Generates and installs a VS Code extension which provides JSON schemas for Components types specified by YamlComponentsLoader objects."""
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
 
