@@ -10,7 +10,7 @@ from dagster._utils import pushd
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster_components import Component, ComponentLoadContext, component_type
+from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
 
 
@@ -18,7 +18,7 @@ class DefinitionsParamSchema(BaseModel):
     definitions_path: Optional[str] = None
 
 
-@component_type(name="definitions")
+@registered_component_type(name="definitions")
 class DefinitionsComponent(Component):
     """Wraps an arbitrary set of Dagster definitions."""
 

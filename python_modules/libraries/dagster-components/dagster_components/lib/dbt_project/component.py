@@ -12,7 +12,7 @@ from dagster_dbt import (
 )
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import component_type
+from dagster_components.core.component import registered_component_type
 from dagster_components.core.schema.base import ResolvableModel
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -46,7 +46,7 @@ class DbtProjectParams(ResolvableModel["DbtProjectComponent"]):
         )
 
 
-@component_type(name="dbt_project")
+@registered_component_type(name="dbt_project")
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 

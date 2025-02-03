@@ -12,7 +12,7 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.env import environ
-from dagster_components import component_type
+from dagster_components import registered_component_type
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -163,7 +163,7 @@ def test_load_from_path(sling_path: Path) -> None:
 
 
 def test_sling_subclass() -> None:
-    @component_type(name="debug_sling_replication")
+    @registered_component_type(name="debug_sling_replication")
     class DebugSlingReplicationComponent(SlingReplicationCollection):
         def execute(
             self, context: AssetExecutionContext, sling: SlingResource

@@ -9,7 +9,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster_components import Component, ComponentLoadContext, component_type
+from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.core.component_scaffolder import (
     ComponentScaffolder,
     ComponentScaffoldRequest,
@@ -47,7 +47,7 @@ context.report_asset_materialization(asset_key="{asset_key}")
 """
 
 
-@component_type(name="simple_pipes_script_asset")
+@registered_component_type(name="simple_pipes_script_asset")
 class SimplePipesScriptAsset(Component):
     """A simple asset that runs a Python script with the Pipes subprocess client.
 

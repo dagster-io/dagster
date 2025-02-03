@@ -12,7 +12,7 @@ from dagster_sling.resources import AssetExecutionContext
 from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component import component_type
+from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_scaffolder import ComponentScaffolder
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -73,7 +73,7 @@ class SlingReplicationCollectionParams(ResolvableModel[ResolvedSlingReplicationC
         )
 
 
-@component_type
+@registered_component_type
 class SlingReplicationCollection(Component):
     """Expose one or more Sling replications to Dagster as assets."""
 
