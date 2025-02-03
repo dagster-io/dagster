@@ -1,6 +1,7 @@
 import {ParserRuleContext} from 'antlr4ts';
 
 import {BaseSelectionVisitor} from './BaseSelectionVisitor';
+import {SelectionAutoCompleteProvider, Suggestion} from './SelectionAutoCompleteProvider';
 import {
   getValueNodeValue,
   isInsideExpressionlessParenthesizedExpression,
@@ -32,81 +33,47 @@ const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 // set to true for debug output if desired
 const DEBUG = false;
 
-export type Suggestion =
-  | {
-      text: string;
-      displayText: string;
-      type: 'function' | 'logical_operator' | 'parenthesis';
-      attributeName?: never;
-      nameBase?: never;
-    }
-  | {
-      text: string;
-      displayText: string;
-      type: 'attribute';
-      attributeName?: string;
-      nameBase?: boolean;
-    }
-  | {
-      text: string;
-      displayText: string;
-      type: 'attribute-value';
-      attributeName?: string;
-      nameBase?: never;
-    }
-  | {
-      text: string;
-      displayText: string;
-      type: 'attribute-with-value';
-      attributeName?: string;
-      nameBase?: never;
-    }
-  | {
-      text: string;
-      displayText: string;
-      type: 'up-traversal' | 'down-traversal';
-      attributeName?: never;
-      nameBase?: never;
-    };
-
 export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
-  private attributesMap: Record<string, string[]>;
-  private functions: string[];
-  private nameBase: string;
-  private attributesWithNameBase: string[];
-  private allAttributes: {key: string; value: string}[];
-  public list: Suggestion[] = [];
+  private getAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeResultsMatchingQuery'];
+  private getAttributeValueResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeValueResultsMatchingQuery'];
+  private getAttributeValueIncludeAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeValueIncludeAttributeResultsMatchingQuery'];
+  private getFunctionResultsMatchingQuery: SelectionAutoCompleteProvider['getFunctionResultsMatchingQuery'];
+  private getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
+  private createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
+
+  public list: Array<Suggestion> = [];
 
   // Replacement indices from the original code
   public _startReplacementIndex: number;
   public _stopReplacementIndex: number;
 
   constructor({
-    attributesMap,
-    functions,
-    nameBase,
     line,
     cursorIndex,
+    getAttributeResultsMatchingQuery,
+    getAttributeValueResultsMatchingQuery,
+    getFunctionResultsMatchingQuery,
+    getSubstringResultMatchingQuery,
+    getAttributeValueIncludeAttributeResultsMatchingQuery,
+    createOperatorSuggestion,
   }: {
-    attributesMap: Record<string, string[]>;
-    functions: string[];
-    nameBase: string;
     line: string;
     cursorIndex: number;
+    getAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeResultsMatchingQuery'];
+    getAttributeValueResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeValueResultsMatchingQuery'];
+    getAttributeValueIncludeAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeValueIncludeAttributeResultsMatchingQuery'];
+    getFunctionResultsMatchingQuery: SelectionAutoCompleteProvider['getFunctionResultsMatchingQuery'];
+    getSubstringResultMatchingQuery: SelectionAutoCompleteProvider['getSubstringResultMatchingQuery'];
+    createOperatorSuggestion: SelectionAutoCompleteProvider['createOperatorSuggestion'];
   }) {
     super({line, cursorIndex});
-    this.attributesMap = attributesMap;
-    this.functions = functions;
-    this.nameBase = nameBase;
-    this.attributesWithNameBase = [
-      this.nameBase,
-      ...Object.keys(attributesMap).filter((name) => name !== this.nameBase),
-    ];
-    this.allAttributes = Object.keys(attributesMap).flatMap((key) => {
-      return (
-        attributesMap[key]?.sort((a, b) => a.localeCompare(b)).map((value) => ({key, value})) ?? []
-      );
-    });
+    this.getAttributeResultsMatchingQuery = getAttributeResultsMatchingQuery;
+    this.getAttributeValueResultsMatchingQuery = getAttributeValueResultsMatchingQuery;
+    this.getFunctionResultsMatchingQuery = getFunctionResultsMatchingQuery;
+    this.getSubstringResultMatchingQuery = getSubstringResultMatchingQuery;
+    this.getAttributeValueIncludeAttributeResultsMatchingQuery =
+      getAttributeValueIncludeAttributeResultsMatchingQuery;
+    this.createOperatorSuggestion = createOperatorSuggestion;
     this._startReplacementIndex = cursorIndex;
     this._stopReplacementIndex = cursorIndex;
   }
@@ -144,20 +111,50 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.stopReplacementIndex = this.cursorIndex;
       this.addUnmatchedValueResults('', DEFAULT_TEXT_CALLBACK, {excludePlus: true});
       if (isInsideExpressionlessParenthesizedExpression(ctx)) {
-        this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
+        this.list.push(
+          this.createOperatorSuggestion({
+            text: ')',
+            type: 'parenthesis',
+            displayText: ')',
+          }),
+        );
       }
     }
   }
 
   public visitUpTraversal(_ctx: UpTraversalContext) {
-    this.list.push({text: '()', displayText: '(', type: 'parenthesis' as const});
+    this.list.push(
+      this.createOperatorSuggestion({
+        text: '()',
+        type: 'parenthesis',
+        displayText: '(',
+      }),
+    );
   }
 
   public visitDownTraversal(ctx: DownTraversalContext) {
-    this.list.push({text: ' and ', displayText: 'and', type: 'logical_operator' as const});
-    this.list.push({text: ' or ', displayText: 'or', type: 'logical_operator' as const});
+    this.list.push(
+      this.createOperatorSuggestion({
+        text: ' and ',
+        type: 'and',
+        displayText: 'and',
+      }),
+    );
+    this.list.push(
+      this.createOperatorSuggestion({
+        text: ' or ',
+        type: 'or',
+        displayText: 'or',
+      }),
+    );
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {
-      this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
+      this.list.push(
+        this.createOperatorSuggestion({
+          text: ')',
+          type: 'parenthesis',
+          displayText: ')',
+        }),
+      );
     }
   }
 
@@ -231,8 +228,8 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.startReplacementIndex = ctx.start.startIndex;
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
       this.list.push(
-        {text: 'or', displayText: 'or', type: 'logical_operator'},
-        {text: 'and', displayText: 'and', type: 'logical_operator'},
+        this.createOperatorSuggestion({text: 'or', type: 'or', displayText: 'or'}),
+        this.createOperatorSuggestion({text: 'and', type: 'and', displayText: 'and'}),
       );
     }
   }
@@ -244,8 +241,8 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.startReplacementIndex = ctx.start.startIndex;
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
       this.list.push(
-        {text: 'and', displayText: 'and', type: 'logical_operator'},
-        {text: 'or', displayText: 'or', type: 'logical_operator'},
+        this.createOperatorSuggestion({text: 'and', type: 'and', displayText: 'and'}),
+        this.createOperatorSuggestion({text: 'or', type: 'or', displayText: 'or'}),
       );
     }
   }
@@ -329,18 +326,10 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     textCallback: (value: string) => string = DEFAULT_TEXT_CALLBACK,
   ) {
     this.list.push(
-      ...this.attributesWithNameBase
-        .filter((attr) => attr.startsWith(value.trim()))
-        .map((val) => {
-          const suggestionValue = `${val}:`;
-          return {
-            text: textCallback(suggestionValue),
-            displayText: suggestionValue,
-            type: 'attribute' as const,
-            attributeName: val,
-            nameBase: val === this.nameBase || val === `${this.nameBase}_substring`,
-          };
-        }),
+      ...this.getAttributeResultsMatchingQuery({
+        query: value.trim(),
+        textCallback,
+      }),
     );
   }
 
@@ -350,16 +339,11 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     includeParenthesis: boolean = false,
   ) {
     this.list.push(
-      ...this.functions
-        .filter((fn) => fn.startsWith(value.trim()))
-        .map((val) => {
-          const suggestionValue = `${val}${includeParenthesis ? '()' : ''}`;
-          return {
-            text: textCallback(suggestionValue),
-            displayText: suggestionValue,
-            type: 'function' as const,
-          };
-        }),
+      ...this.getFunctionResultsMatchingQuery({
+        query: value.trim(),
+        textCallback,
+        options: {includeParenthesis},
+      }),
     );
   }
 
@@ -370,51 +354,51 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   ) {
     const value = _value.trim();
     if (value) {
-      const substringMatchDisplayText = `${this.nameBase}_substring:${removeQuotesFromString(value)}`;
-      const substringMatchText = `${this.nameBase}_substring:"${removeQuotesFromString(value)}"`;
-      this.list.push({
-        text: textCallback(substringMatchText),
-        displayText: substringMatchDisplayText,
-        type: 'attribute-with-value' as const,
-        attributeName: `${this.nameBase}_substring`,
-      });
+      this.list.push(
+        this.getSubstringResultMatchingQuery({
+          query: value,
+          textCallback,
+        }),
+      );
     }
     this.addAttributeResults(value, textCallback);
     this.addFunctionResults(value, textCallback, true);
 
     if (value) {
-      this.allAttributes.forEach((attribute) => {
-        if (attribute.value.includes(value.toLowerCase())) {
-          this.list.push({
-            text: textCallback(`${attribute.key}:"${attribute.value}"`),
-            displayText: `${attribute.key}:${attribute.value}`,
-            type: 'attribute-with-value' as const,
-            attributeName: attribute.key,
-          });
-        }
-      });
+      this.list.push(
+        ...this.getAttributeValueIncludeAttributeResultsMatchingQuery({
+          query: value,
+          textCallback,
+        }),
+      );
     }
 
     if (!options.excludeNot && 'not'.startsWith(value)) {
-      this.list.push({
-        text: textCallback('not '),
-        displayText: 'not',
-        type: 'logical_operator' as const,
-      });
+      this.list.push(
+        this.createOperatorSuggestion({
+          text: textCallback('not '),
+          type: 'not',
+          displayText: 'not',
+        }),
+      );
     }
     if (value === '') {
       if (!options.excludePlus) {
-        this.list.push({
-          text: textCallback('+'),
-          displayText: '+',
-          type: 'up-traversal' as const,
-        });
+        this.list.push(
+          this.createOperatorSuggestion({
+            text: textCallback('+'),
+            type: 'up-traversal',
+            displayText: '+',
+          }),
+        );
       }
-      this.list.push({
-        text: textCallback('()'),
-        displayText: '(',
-        type: 'parenthesis' as const,
-      });
+      this.list.push(
+        this.createOperatorSuggestion({
+          text: textCallback('()'),
+          type: 'parenthesis',
+          displayText: '(',
+        }),
+      );
     }
   }
 
@@ -423,21 +407,14 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     value: string,
     textCallback: (value: string) => string = DEFAULT_TEXT_CALLBACK,
   ) {
-    let possibleValues = this.attributesMap[attributeKey] ?? [];
-    if (attributeKey === `${this.nameBase}_substring`) {
-      possibleValues = this.attributesMap[this.nameBase]!;
-    }
     const unquotedValue = removeQuotesFromString(value);
-    possibleValues.forEach((attributeValue) => {
-      if (attributeValue.includes(unquotedValue)) {
-        this.list.push({
-          text: textCallback(`"${attributeValue}"`),
-          displayText: attributeValue,
-          type: 'attribute-value' as const,
-          attributeName: attributeKey,
-        });
-      }
-    });
+    this.list.push(
+      ...this.getAttributeValueResultsMatchingQuery({
+        attribute: attributeKey,
+        query: unquotedValue,
+        textCallback,
+      }),
+    );
   }
 
   private addAfterExpressionResults(
@@ -447,16 +424,20 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     } = {},
   ) {
     this.list.push(
-      {text: ' and ', displayText: 'and', type: 'logical_operator' as const},
-      {text: ' or ', displayText: 'or', type: 'logical_operator' as const},
+      this.createOperatorSuggestion({text: ' and ', type: 'and', displayText: 'and'}),
+      this.createOperatorSuggestion({text: ' or ', type: 'or', displayText: 'or'}),
     );
 
     if (!options.excludePlus) {
-      this.list.push({text: '+', displayText: '+', type: 'down-traversal' as const});
+      this.list.push(
+        this.createOperatorSuggestion({text: '+', type: 'down-traversal', displayText: '+'}),
+      );
     }
 
     if (isInsideExpressionlessParenthesizedExpression(ctx)) {
-      this.list.push({text: ')', displayText: ')', type: 'parenthesis' as const});
+      this.list.push(
+        this.createOperatorSuggestion({text: ')', type: 'parenthesis', displayText: ')'}),
+      );
     }
   }
 }
