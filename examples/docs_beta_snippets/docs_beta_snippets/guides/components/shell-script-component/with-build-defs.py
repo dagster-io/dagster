@@ -1,22 +1,18 @@
 import subprocess
 from typing import Optional
 
-from dagster_components import (
-    Component,
-    ComponentLoadContext,
-    ComponentSchemaBaseModel,
-    component_type,
-)
-from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecBaseModel
+from dagster_components import Component, ComponentLoadContext, component_type
+from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecModel
+from pydantic import BaseModel
 
 import dagster as dg
 
 
 # highlight-start
-class ShellScriptSchema(ComponentSchemaBaseModel):
+class ShellScriptSchema(BaseModel):
     script_path: str
     asset_attributes: AssetAttributesModel
-    op: Optional[OpSpecBaseModel] = None
+    op: Optional[OpSpecModel] = None
     # highlight-end
 
 

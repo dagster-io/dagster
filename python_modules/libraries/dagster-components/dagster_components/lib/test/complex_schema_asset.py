@@ -13,13 +13,13 @@ from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
     AssetSpecTransformModel,
-    OpSpecBaseModel,
+    OpSpecModel,
 )
 
 
 class ComplexAssetParams(BaseModel):
     value: str
-    op: Optional[OpSpecBaseModel] = None
+    op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
         Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
     ] = None
@@ -50,7 +50,7 @@ class ComplexSchemaAsset(Component):
     def __init__(
         self,
         value: str,
-        op_spec: Optional[OpSpecBaseModel],
+        op_spec: Optional[OpSpecModel],
         asset_attributes: Optional[AssetAttributesModel],
         asset_transforms: Sequence[AssetSpecTransformModel],
     ):

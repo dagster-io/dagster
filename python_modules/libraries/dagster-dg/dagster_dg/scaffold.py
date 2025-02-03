@@ -117,6 +117,7 @@ def scaffold_code_location(
         ),
         dependencies=dependencies,
         dev_dependencies=dev_dependencies,
+        code_location_name=path.name,
         uv_sources=uv_sources,
     )
 
@@ -155,20 +156,18 @@ def scaffold_component_type(dg_context: DgContext, name: str) -> None:
 
 
 def scaffold_component_instance(
-    root_path: Path,
-    name: str,
+    path: Path,
     component_type: str,
     scaffold_params: Optional[Mapping[str, Any]],
     dg_context: "DgContext",
 ) -> None:
-    component_instance_root_path = root_path / name
-    click.echo(f"Creating a Dagster component instance folder at {component_instance_root_path}.")
-    os.makedirs(component_instance_root_path, exist_ok=True)
+    click.echo(f"Creating a Dagster component instance folder at {path}.")
+    os.makedirs(path, exist_ok=True)
     code_location_command = [
         "scaffold",
         "component",
         component_type,
-        name,
+        path,
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
     ]
     dg_context.external_components_command(code_location_command)

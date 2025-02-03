@@ -1641,6 +1641,11 @@
       "permanent": false
     },
     {
+      "source": "/community/contributing/",
+      "destination": "/about/contributing",
+      "permanent": false
+    },
+    {
       "source": "/community/contributing",
       "destination": "/about/contributing",
       "permanent": false
@@ -1652,6 +1657,11 @@
     },
     {
       "source": "/integrations/airlift/airflow-1-migration",
+      "destination": "/integrations/libraries/airlift",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/airlift",
       "destination": "/integrations/libraries/airlift",
       "permanent": false
     }

@@ -134,6 +134,10 @@ class SensorLaunchContext(AbstractContextManager):
         return str(self._tick.tick_id)
 
     @property
+    def tick(self) -> InstigatorTick:
+        return self._tick
+
+    @property
     def log_key(self) -> Sequence[str]:
         return [
             self._remote_sensor.handle.repository_handle.repository_name,
@@ -149,6 +153,7 @@ class SensorLaunchContext(AbstractContextManager):
         skip_reason = cast(Optional[str], kwargs.get("skip_reason"))
         cursor = cast(Optional[str], kwargs.get("cursor"))
         origin_run_id = cast(Optional[str], kwargs.get("origin_run_id"))
+        user_interrupted = cast(Optional[bool], kwargs.get("user_interrupted"))
         if "skip_reason" in kwargs:
             del kwargs["skip_reason"]
 
@@ -157,6 +162,10 @@ class SensorLaunchContext(AbstractContextManager):
 
         if "origin_run_id" in kwargs:
             del kwargs["origin_run_id"]
+
+        if "user_interrupted" in kwargs:
+            del kwargs["user_interrupted"]
+
         if kwargs:
             check.inst_param(status, "status", TickStatus)
 
@@ -171,6 +180,9 @@ class SensorLaunchContext(AbstractContextManager):
 
         if origin_run_id:
             self._tick = self._tick.with_origin_run(origin_run_id)
+
+        if user_interrupted:
+            self._tick = self._tick.with_user_interrupted(user_interrupted)
 
     def add_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None) -> None:
         self._tick = self._tick.with_run_info(run_id, run_key)
@@ -200,6 +212,15 @@ class SensorLaunchContext(AbstractContextManager):
             cursor=cursor,
         )
         self._write()
+
+    def sensor_is_enabled(self):
+        instigator_state = self._instance.get_instigator_state(
+            self._remote_sensor.get_remote_origin_id(), self._remote_sensor.selector_id
+        )
+        if instigator_state and not instigator_state.is_running:
+            return False
+
+        return True
 
     def _write(self) -> None:
         self._instance.update_tick(self._tick)
@@ -754,7 +775,14 @@ def _resume_tick(
         submit_threadpool_executor=submit_threadpool_executor,
         sensor_debug_crash_flags=sensor_debug_crash_flags,
     )
-    context.update_state(TickStatus.SUCCESS, cursor=context._tick.cursor)  # noqa # TODO
+    if context.tick.tick_data.user_interrupted:
+        context.update_state(
+            TickStatus.SKIPPED,
+            cursor=context.tick.cursor,
+            skip_reason="Sensor manually stopped mid-iteration.",
+        )
+    else:
+        context.update_state(TickStatus.SUCCESS, cursor=context.tick.cursor)
 
 
 def _get_code_location_for_sensor(
@@ -856,7 +884,13 @@ def _evaluate_sensor(
             sensor_debug_crash_flags=sensor_debug_crash_flags,
         )
 
-        if context.run_count:
+        if context.tick.tick_data.user_interrupted:
+            context.update_state(
+                TickStatus.SKIPPED,
+                cursor=sensor_runtime_data.cursor,
+                skip_reason="Sensor manually stopped mid-iteration.",
+            )
+        elif context.run_count:
             context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
         else:
             context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
@@ -1055,7 +1089,7 @@ def _handle_run_requests_and_automation_condition_evaluations(
 
     check_for_debug_crash(sensor_debug_crash_flags, "RUN_IDS_RESERVED")
 
-    run_ids_with_run_requests = list(zip(reserved_run_ids, raw_run_requests))
+    run_ids_with_run_requests = list(context.tick.reserved_run_ids_with_requests)
     yield from _submit_run_requests(
         run_ids_with_run_requests,
         evaluations,
@@ -1088,6 +1122,7 @@ def _submit_run_requests(
     existing_runs_by_key = _fetch_existing_runs(
         instance, remote_sensor, [request for _, request in resolved_run_ids_with_requests]
     )
+    check_after_runs_num = instance.get_tick_termination_check_interval()
 
     def submit_run_request(
         run_id_with_run_request: tuple[str, RunRequest],
@@ -1118,7 +1153,7 @@ def _submit_run_requests(
         evaluation.key: evaluation for evaluation in automation_condition_evaluations
     }
     updated_evaluation_keys = set()
-    for run_request_result in gen_run_request_results:
+    for i, run_request_result in enumerate(gen_run_request_results):
         yield run_request_result.error_info
 
         run = run_request_result.run
@@ -1138,6 +1173,20 @@ def _submit_run_requests(
                         evaluation, run_ids=evaluation.run_ids | {run.run_id}
                     )
                     updated_evaluation_keys.add(key)
+
+        # check if the sensor is still enabled:
+        if check_after_runs_num is not None and i % check_after_runs_num == 0:
+            if not context.sensor_is_enabled():
+                # The user has manually stopped the sensor mid-iteration. In this case we assume
+                # the user has a good reason for stopping the sensor (e.g. the sensor is submitting
+                # many unintentional runs) so we stop submitting runs and will mark the tick as
+                # skipped so that when the sensor is turned back on we don't detect this tick as incomplete
+                # and try to submit the same runs again.
+                context.logger.info(
+                    "Sensor has been manually stopped while submitting runs. No more runs will be submitted."
+                )
+                context.update_state(context.status, user_interrupted=True)
+                break
 
     if (
         updated_evaluation_keys

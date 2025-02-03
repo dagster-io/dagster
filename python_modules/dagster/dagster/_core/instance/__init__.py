@@ -49,6 +49,7 @@ from dagster._core.execution.retries import auto_reexecution_should_retry_run
 from dagster._core.instance.config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
+    ConcurrencyConfig,
     get_default_tick_retention_settings,
     get_tick_retention_settings,
 )
@@ -143,7 +144,6 @@ if TYPE_CHECKING:
     )
     from dagster._core.remote_representation.external import RemoteSchedule
     from dagster._core.run_coordinator import RunCoordinator
-    from dagster._core.run_coordinator.queued_run_coordinator import RunQueueConfig
     from dagster._core.scheduler import Scheduler, SchedulerDebugInfo
     from dagster._core.scheduler.instigation import (
         InstigatorState,
@@ -783,15 +783,17 @@ class DagsterInstance(DynamicPartitionsStore):
             self._run_coordinator.register_instance(self)
         return self._run_coordinator
 
-    def get_run_queue_config(self) -> Optional["RunQueueConfig"]:
+    def get_concurrency_config(self) -> ConcurrencyConfig:
         from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 
-        if not isinstance(self.run_coordinator, QueuedRunCoordinator):
-            return None
+        if isinstance(self.run_coordinator, QueuedRunCoordinator):
+            run_coordinator_run_queue_config = self.run_coordinator.get_run_queue_config()
+        else:
+            run_coordinator_run_queue_config = None
 
-        run_coordinator_run_queue_config = self.run_coordinator.get_run_queue_config()
-        return run_coordinator_run_queue_config.with_concurrency_settings(
-            self.get_settings("concurrency")
+        concurrency_settings = self.get_settings("concurrency")
+        return ConcurrencyConfig.from_concurrency_settings(
+            concurrency_settings, run_coordinator_run_queue_config
         )
 
     @property
@@ -969,12 +971,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:
-        default_limit = self.get_settings("concurrency").get("pools", {}).get("default_limit")
-        if default_limit is not None:
-            return default_limit
-
-        # fallback to the old settings
-        return self.get_settings("concurrency").get("default_op_concurrency_limit")
+        return self.get_concurrency_config().pool_config.default_pool_limit
 
     # python logs
 
@@ -3193,6 +3190,9 @@ class DagsterInstance(DynamicPartitionsStore):
 
         default_tick_settings = get_default_tick_retention_settings(instigator_type)
         return get_tick_retention_settings(tick_settings, default_tick_settings)
+
+    def get_tick_termination_check_interval(self) -> Optional[int]:
+        return None
 
     def inject_env_vars(self, location_name: Optional[str]) -> None:
         if not self._secrets_loader:

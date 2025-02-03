@@ -187,6 +187,9 @@ class ComponentTypeRegistry:
     def keys(self) -> Iterable[str]:
         return self._component_types.keys()
 
+    def items(self) -> Iterable[tuple[str, type[Component]]]:
+        return self._component_types.items()
+
     def __repr__(self) -> str:
         return f"<ComponentRegistry {list(self._component_types.keys())}>"
 

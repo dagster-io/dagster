@@ -35,7 +35,10 @@ Then, we will construct our assets:
 
 Once your assets are set up, you should be able to reload your Dagster definitions and see a full representation of the dbt project and other data assets in your code.
 
-![Observed asset graph in Dagster](/images/integrations/airlift/observe.svg)
+<img
+  src="/images/integrations/airlift/observe.svg"
+  alt="Observed asset graph in Dagster"
+/>
 
 Kicking off a run of the DAG in Airflow, you should see the newly created assets materialize in Dagster as each task completes.
 

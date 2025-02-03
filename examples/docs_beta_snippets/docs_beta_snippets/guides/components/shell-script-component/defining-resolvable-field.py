@@ -1,13 +1,14 @@
 from typing import Annotated, Optional
 
-from dagster_components import ComponentSchemaBaseModel, ResolvableFieldInfo
-from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecBaseModel
+from dagster_components import ResolvableFieldInfo
+from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecModel
+from pydantic import BaseModel
 
 
 class ScriptRunner: ...
 
 
-class ShellScriptSchema(ComponentSchemaBaseModel):
+class ShellScriptSchema(BaseModel):
     script_path: str
     asset_attributes: AssetAttributesModel
     # highlight-start
@@ -18,4 +19,4 @@ class ShellScriptSchema(ComponentSchemaBaseModel):
         ),
     ]
     # highlight-end
-    op: Optional[OpSpecBaseModel] = None
+    op: Optional[OpSpecModel] = None

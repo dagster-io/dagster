@@ -1,0 +1,4 @@
+$ dg deployment scaffold my-deployment
+
+Creating a Dagster deployment at my-deployment.
+Scaffolded files for Dagster project in my-deployment.

@@ -16,6 +16,7 @@ export type AssetTableDefinitionFragment = {
   hasMaterializePermission: boolean;
   hasReportRunlessAssetEventPermission: boolean;
   description: string | null;
+  pools: Array<string>;
   jobNames: Array<string>;
   kinds: Array<string>;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
@@ -63,6 +64,7 @@ export type AssetTableFragment = {
     hasMaterializePermission: boolean;
     hasReportRunlessAssetEventPermission: boolean;
     description: string | null;
+    pools: Array<string>;
     jobNames: Array<string>;
     kinds: Array<string>;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};

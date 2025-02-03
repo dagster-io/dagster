@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance
-from dagster._core.run_coordinator.queued_run_coordinator import PoolGranularity
-from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
+from dagster._core.instance.config import PoolGranularity
+from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot, ExecutionStepSnap
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -14,10 +14,19 @@ from dagster._core.storage.dagster_run import (
     RunOpConcurrency,
     RunRecord,
 )
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._time import get_current_timestamp
 
 if TYPE_CHECKING:
     from dagster._utils.concurrency import ConcurrencyKeyInfo
+
+
+def _pool_key_for_step(step: ExecutionStepSnap) -> Optional[str]:
+    if step.pool is not None:
+        return step.pool
+
+    # for backwards compatibility, we also check the tags
+    return (step.tags or {}).get(GLOBAL_CONCURRENCY_TAG)
 
 
 def compute_run_op_concurrency_info_for_snapshot(
@@ -29,26 +38,29 @@ def compute_run_op_concurrency_info_for_snapshot(
     root_step_keys = set(
         [step_key for step_key, deps in plan_snapshot.step_deps.items() if not deps]
     )
-    root_pool_counts: Mapping[str, int] = defaultdict(int)
+    root_key_counts: Mapping[str, int] = defaultdict(int)
     all_pools: set[str] = set()
     has_unconstrained_root_nodes = False
     for step in plan_snapshot.steps:
-        if step.pool is None and step.key in root_step_keys:
+        step_pool = _pool_key_for_step(step)
+        if step_pool is None and step.key in root_step_keys:
             has_unconstrained_root_nodes = True
-        elif step.pool is None:
+        elif step_pool is None:
             continue
         elif step.key in root_step_keys:
-            root_pool_counts[step.pool] += 1
-            all_pools.add(step.pool)
+            root_key_counts[step_pool] += 1
+            if step_pool is not None:
+                all_pools.add(step_pool)
         else:
-            all_pools.add(step.pool)
+            if step_pool is not None:
+                all_pools.add(step_pool)
 
     if len(all_pools) == 0:
         return None
 
     return RunOpConcurrency(
         all_pools=all_pools,
-        root_key_counts=dict(root_pool_counts),
+        root_key_counts=dict(root_key_counts),
         has_unconstrained_root_nodes=has_unconstrained_root_nodes,
     )
 

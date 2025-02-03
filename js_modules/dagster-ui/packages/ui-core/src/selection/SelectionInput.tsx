@@ -187,7 +187,7 @@ export const SelectionAutoCompleteInput = ({
 
   // Update CodeMirror when value prop changes
   useLayoutEffect(() => {
-    const noNewLineValue = value.replace('\n', ' ');
+    const noNewLineValue = value.replace(/\n/g, ' ');
     if (cmInstance.current && cmInstance.current.getValue() !== noNewLineValue) {
       const instance = cmInstance.current;
       const cursor = instance.getCursor();

@@ -130,19 +130,16 @@ class YamlComponentDecl(ComponentDeclNode):
 
     def get_params(self, context: ComponentLoadContext, params_schema: type[T]) -> T:
         with pushd(str(self.path)):
-            raw_params = self.component_file_model.params
-            preprocessed_params = context.templated_value_resolver.resolve_params(
-                raw_params, params_schema
-            )
-
             if self.source_position_tree:
                 source_position_tree_of_params = self.source_position_tree.children["params"]
                 with enrich_validation_errors_with_source_position(
                     source_position_tree_of_params, ["params"]
                 ):
-                    return TypeAdapter(params_schema).validate_python(preprocessed_params)
+                    return TypeAdapter(params_schema).validate_python(
+                        self.component_file_model.params
+                    )
             else:
-                return TypeAdapter(params_schema).validate_python(preprocessed_params)
+                return TypeAdapter(params_schema).validate_python(self.component_file_model.params)
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         component_type = self.get_component_type(context.registry)

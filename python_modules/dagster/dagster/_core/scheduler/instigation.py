@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import AbstractSet, Any, Generic, NamedTuple, Optional, Union  # noqa: UP035
@@ -356,6 +356,11 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             )
         )
 
+    def with_user_interrupted(self, user_interrupted: bool) -> "InstigatorTick":
+        return self._replace(
+            tick_data=self.tick_data.with_user_interrupted(user_interrupted=user_interrupted)
+        )
+
     @property
     def instigator_origin_id(self) -> str:
         return self.tick_data.instigator_origin_id
@@ -513,12 +518,17 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         return self.tick_data.run_requests
 
     @property
+    def reserved_run_ids_with_requests(self) -> Iterable[tuple[str, RunRequest]]:
+        reserved_run_ids = self.tick_data.reserved_run_ids or []
+        return zip(reserved_run_ids, self.run_requests or [])
+
+    @property
     def unsubmitted_run_ids_with_requests(self) -> Sequence[tuple[str, RunRequest]]:
         reserved_run_ids = self.tick_data.reserved_run_ids or []
         unrequested_run_ids = set(reserved_run_ids) - set(self.tick_data.run_ids)
         return [
             (run_id, run_request)
-            for run_id, run_request in zip(reserved_run_ids, self.run_requests or [])
+            for run_id, run_request in self.reserved_run_ids_with_requests
             if run_id in unrequested_run_ids
         ]
 
@@ -569,6 +579,10 @@ class TickData(
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
             ("consecutive_failure_count", int),
+            (
+                "user_interrupted",
+                bool,
+            ),  # indicates if a user stopped the tick while submitting runs
         ],
     )
 ):
@@ -637,6 +651,7 @@ class TickData(
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
         consecutive_failure_count: Optional[int] = None,
+        user_interrupted: bool = False,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -668,6 +683,7 @@ class TickData(
             consecutive_failure_count=check.opt_int_param(
                 consecutive_failure_count, "consecutive_failure_count", 0
             ),
+            user_interrupted=user_interrupted,
         )
 
     def with_status(
@@ -766,6 +782,14 @@ class TickData(
                         dynamic_partitions_request_result,
                     ]
                 },
+            )
+        )
+
+    def with_user_interrupted(self, user_interrupted: bool):
+        return TickData(
+            **merge_dicts(
+                self._asdict(),
+                {"user_interrupted": user_interrupted},
             )
         )
 
