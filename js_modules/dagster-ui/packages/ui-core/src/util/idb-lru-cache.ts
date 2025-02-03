@@ -21,14 +21,18 @@ class IDBError extends Error {
   }
 }
 
+let id = 0;
+
 class IDBLRUCache<T> {
   private dbName: string;
   private maxCount: number;
-  private dbPromise: Promise<IDBDatabase>;
+  private dbPromise: Promise<IDBDatabase> | undefined;
   private isDbOpen = false;
   private inMemoryCache = new Map<string, CacheEntry<T>>();
-  private cleanupPromise: Promise<void> | undefined;
   private cleanupTimeout: number | undefined;
+  private operationQueue: Promise<void> = Promise.resolve();
+  private needsSync = false;
+  private syncTimeout: number | undefined;
 
   constructor({dbName, maxCount}: CacheOptions) {
     this.dbName = dbName;
@@ -82,11 +86,14 @@ class IDBLRUCache<T> {
     });
   }
 
-  private async withDB<T>(operation: (db: IDBDatabase) => Promise<T>): Promise<T> {
+  private async withDBInitialized<T>(operation: (db: IDBDatabase) => Promise<T>): Promise<T> {
     try {
+      if (!this.dbPromise) {
+        this.dbPromise = this.initDB();
+      }
       const db = await this.dbPromise;
       if (!this.isDbOpen) {
-        throw new IDBError('Database is not open');
+        throw new IDBError('Database is not open', this.dbName);
       }
       return await operation(db);
     } catch (error) {
@@ -95,6 +102,25 @@ class IDBLRUCache<T> {
       }
       throw new IDBError('Database operation failed', error);
     }
+  }
+
+  // This is a helper function to ensure that operations are performed in the order of the operation queue.
+  // to avoid race conditions.
+  private async withDB<T>(operation: (db: IDBDatabase) => Promise<T>): Promise<T> {
+    const _id = id++;
+    return this.withDBInitialized(
+      (db) =>
+        new Promise((resolve, reject) => {
+          this.operationQueue = this.operationQueue.then(async () => {
+            try {
+              const result = await operation(db);
+              resolve(result);
+            } catch (error) {
+              reject(error);
+            }
+          });
+        }),
+    );
   }
 
   private syncCleanup(): void {
@@ -126,7 +152,7 @@ class IDBLRUCache<T> {
       window.clearTimeout(this.cleanupTimeout);
     }
 
-    this.cleanupPromise = new Promise((resolve) => {
+    new Promise((resolve) => {
       this.cleanupTimeout = window.setTimeout(() => {
         if ('requestIdleCallback' in window) {
           window.requestIdleCallback(async () => {
@@ -135,7 +161,6 @@ class IDBLRUCache<T> {
             } else {
               await this.cleanup();
             }
-            delete this.cleanupPromise;
             resolve(void 0);
           });
         } else {
@@ -146,7 +171,6 @@ class IDBLRUCache<T> {
             } else {
               await this.cleanup();
             }
-            delete this.cleanupPromise;
             resolve(void 0);
           });
         }
@@ -161,11 +185,60 @@ class IDBLRUCache<T> {
 
       return new Promise((resolve, reject) => {
         const request = store.delete(key);
-        request.onsuccess = () => resolve();
+        request.onsuccess = () => {
+          resolve();
+          resolve();
+        };
         request.onerror = () => {
           reject(new IDBError('Failed to delete key', request.error));
         };
       });
+    });
+  }
+
+  private scheduleSync(): void {
+    if (this.syncTimeout !== undefined) {
+      return;
+    }
+
+    this.syncTimeout = window.setTimeout(() => {
+      this.syncToDB().finally(() => {
+        this.syncTimeout = undefined;
+        if (this.needsSync) {
+          this.scheduleSync();
+        }
+      });
+    }, 100); // Debounce time
+  }
+
+  private async syncToDB(): Promise<void> {
+    if (!this.needsSync) {
+      return;
+    }
+
+    return this.withDB(async (db) => {
+      const transaction = db.transaction('cache', 'readwrite');
+      const store = transaction.objectStore('cache');
+
+      // Clear existing entries
+      await new Promise((resolve, reject) => {
+        const clearRequest = store.clear();
+        clearRequest.onsuccess = () => resolve(void 0);
+        clearRequest.onerror = () =>
+          reject(new IDBError('Failed to clear cache', clearRequest.error));
+      });
+
+      // Add all entries from in-memory cache
+      const entries = Array.from(this.inMemoryCache.values());
+      for (const entry of entries) {
+        await new Promise((resolve, reject) => {
+          const putRequest = store.put(entry);
+          putRequest.onsuccess = () => resolve(void 0);
+          putRequest.onerror = () => reject(new IDBError('Failed to set value', putRequest.error));
+        });
+      }
+
+      this.needsSync = false;
     });
   }
 
@@ -179,27 +252,16 @@ class IDBLRUCache<T> {
 
     // Update in-memory cache immediately
     this.inMemoryCache.set(key, entry);
+    this.needsSync = true;
     this.syncCleanup();
-
-    // Schedule IndexedDB update
-    return this.withDB(async (db) => {
-      const transaction = db.transaction('cache', 'readwrite');
-      const store = transaction.objectStore('cache');
-
-      return new Promise((resolve, reject) => {
-        const request = store.put(entry);
-        request.onsuccess = () => resolve();
-        request.onerror = () => {
-          reject(new IDBError('Failed to set value', request.error));
-        };
-      });
-    });
+    this.scheduleSync();
   }
 
   async get(key: string): Promise<{value: T} | undefined> {
-    return this.withDB(async (db) => {
+    return this.withDBInitialized(async () => {
       // Check in-memory cache first
       const entry = this.inMemoryCache.get(key);
+
       if (!entry) {
         return undefined;
       }
@@ -215,16 +277,18 @@ class IDBLRUCache<T> {
       this.inMemoryCache.set(key, entry);
       this.syncCleanup();
 
-      const transaction = db.transaction('cache', 'readwrite');
-      const store = transaction.objectStore('cache');
-      store.put(entry);
+      this.withDB(async (db) => {
+        const transaction = db.transaction('cache', 'readwrite');
+        const store = transaction.objectStore('cache');
+        await store.put(entry);
+      });
 
       return {value: entry.value};
     });
   }
 
   async has(key: string): Promise<boolean> {
-    return this.withDB(async () => {
+    return this.withDBInitialized(async () => {
       const entry = this.inMemoryCache.get(key);
       if (!entry) {
         return false;
@@ -238,29 +302,17 @@ class IDBLRUCache<T> {
   }
 
   async delete(key: string): Promise<void> {
-    return this.withDB(async () => {
-      this.inMemoryCache.delete(key);
-      this.syncCleanup();
-      return this.deleteFromDB(key);
-    });
+    this.inMemoryCache.delete(key);
+    this.needsSync = true;
+    this.syncCleanup();
+    this.scheduleSync();
   }
 
   async clear(): Promise<void> {
-    return this.withDB(async (db) => {
-      this.inMemoryCache.clear();
-      this.syncCleanup();
-      const transaction = db.transaction('cache', 'readwrite');
-      const store = transaction.objectStore('cache');
-
-      return new Promise((resolve, reject) => {
-        const request = store.clear();
-
-        request.onsuccess = () => resolve();
-        request.onerror = () => {
-          reject(new IDBError('Failed to clear cache', request.error));
-        };
-      });
-    });
+    this.inMemoryCache.clear();
+    this.needsSync = true;
+    this.syncCleanup();
+    return this.syncToDB();
   }
 
   private async cleanup(): Promise<void> {
@@ -287,13 +339,8 @@ class IDBLRUCache<T> {
 
   async close(): Promise<void> {
     return this.withDB(async (db) => {
-      await new Promise(async (resolve) => {
-        if (this.cleanupPromise) {
-          await this.cleanupPromise;
-        }
-        resolve(void 0);
-      });
       this.isDbOpen = false;
+      delete this.dbPromise;
       db.close();
     });
   }

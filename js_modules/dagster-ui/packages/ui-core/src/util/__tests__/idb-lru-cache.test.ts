@@ -1,38 +1,35 @@
 import {cache} from '../idb-lru-cache';
 
 describe('IDBLRUCache', () => {
-  const testCacheOptions = {
-    dbName: 'test-cache',
+  const testCacheOptions = () => ({
+    dbName: 'test-cache' + Math.random(),
     maxCount: 3,
-  };
-
-  beforeEach(async () => {
-    await cache(testCacheOptions).clear();
   });
 
   it('should initialize without throwing', async () => {
-    const cacheInstance = cache(testCacheOptions);
+    const cacheInstance = cache(testCacheOptions());
     expect(cacheInstance).toBeInstanceOf(Object);
     await cacheInstance.close();
   });
 
   it('should set and get values correctly', async () => {
-    const cacheInstance = cache(testCacheOptions);
+    const cacheInstance = cache(testCacheOptions());
     await cacheInstance.set('key1', 'value1');
     const result = await cacheInstance.get('key1');
     expect(result?.value).toBe('value1');
     await cacheInstance.close();
+    // await cacheInstance.close();
   });
 
   it('should return undefined for non-existent keys', async () => {
-    const cacheInstance = cache(testCacheOptions);
+    const cacheInstance = cache(testCacheOptions());
     const result = await cacheInstance.get('non-existent');
     expect(result).toBeUndefined();
     await cacheInstance.close();
   });
 
   it('should handle expiration correctly', async () => {
-    const cacheInstance = cache(testCacheOptions);
+    const cacheInstance = cache(testCacheOptions());
     const expiryDate = new Date(Date.now() + 100); // 100ms in future
     await cacheInstance.set('key1', 'value1', {expiry: expiryDate});
 
@@ -48,26 +45,24 @@ describe('IDBLRUCache', () => {
   });
 
   it('should enforce maxCount limit', async () => {
-    const cacheInstance = cache(testCacheOptions);
+    const cacheInstance = cache(testCacheOptions());
     await cacheInstance.set('key1', 'value1');
     await cacheInstance.set('key2', 'value2');
     await cacheInstance.set('key3', 'value3');
     await cacheInstance.set('key4', 'value4');
-
     const keys = await Promise.all([
       cacheInstance.get('key1'),
       cacheInstance.get('key2'),
       cacheInstance.get('key3'),
       cacheInstance.get('key4'),
     ]);
-
     // The oldest key (key1) should have been removed
     expect(keys).toEqual([undefined, {value: 'value2'}, {value: 'value3'}, {value: 'value4'}]);
     await cacheInstance.close();
   });
 
   it('should delete keys correctly', async () => {
-    const cacheInstance = cache(testCacheOptions);
+    const cacheInstance = cache(testCacheOptions());
     await cacheInstance.set('key1', 'value1');
     await cacheInstance.delete('key1');
     const result = await cacheInstance.get('key1');
@@ -76,7 +71,7 @@ describe('IDBLRUCache', () => {
   });
 
   it('should clear the cache', async () => {
-    const cacheInstance = cache(testCacheOptions);
+    const cacheInstance = cache(testCacheOptions());
     await cacheInstance.set('key1', 'value1');
     await cacheInstance.set('key2', 'value2');
     await cacheInstance.clear();
@@ -88,7 +83,7 @@ describe('IDBLRUCache', () => {
   });
 
   it('should evict least recently used items', async () => {
-    const cacheInstance = cache(testCacheOptions);
+    const cacheInstance = cache(testCacheOptions());
     await cacheInstance.set('key1', 'value1');
     await cacheInstance.set('key2', 'value2');
     await cacheInstance.set('key3', 'value3');
