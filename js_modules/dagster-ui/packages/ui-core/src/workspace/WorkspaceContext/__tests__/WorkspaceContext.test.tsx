@@ -2,7 +2,6 @@ jest.useFakeTimers();
 
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, renderHook, waitFor} from '@testing-library/react';
-import {cache} from 'idb-lru-cache';
 import {useContext} from 'react';
 import {RecoilRoot} from 'recoil';
 
@@ -19,6 +18,7 @@ import {
   createIndexedDBCacheContextValue,
 } from '../../../search/useIndexedDBCachedQuery';
 import {getMockResultFn} from '../../../testing/mocking';
+import {cache} from '../../../util/idb-lru-cache';
 import {
   CODE_LOCATION_STATUS_QUERY_KEY,
   WorkspaceContext,
@@ -35,7 +35,7 @@ const mockCache = cache as any;
 
 const mockedCacheStore: Record<string, any> = {};
 
-jest.mock('idb-lru-cache', () => {
+jest.mock('../../../util/idb-lru-cache', () => {
   return {
     cache: jest.fn(({dbName}) => {
       if (!mockedCacheStore[dbName]) {

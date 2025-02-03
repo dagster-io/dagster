@@ -1,8 +1,8 @@
-import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
 
 import {timeByParts} from './timeByParts';
+import {cache} from '../util/idb-lru-cache';
 
 function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;

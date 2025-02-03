@@ -1,6 +1,5 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, renderHook} from '@testing-library/react-hooks';
-import {cache as _cache} from 'idb-lru-cache';
 import {ReactNode, useMemo} from 'react';
 
 import {useApolloClient} from '../../apollo-client';
@@ -12,6 +11,7 @@ import {
 } from '../../assets/types/AssetsCatalogTable.types';
 import {buildAssetConnection} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
+import {cache as _cache} from '../../util/idb-lru-cache';
 import {__resetForJest, useIndexedDBCachedQuery} from '../useIndexedDBCachedQuery';
 
 const mockCache = _cache as any;
@@ -20,8 +20,7 @@ jest.useFakeTimers();
 
 let mockShouldThrowError = false;
 
-// Mock idb-lru-cache
-jest.mock('idb-lru-cache', () => {
+jest.mock('../../util/idb-lru-cache', () => {
   const mockedCache = {
     has: jest.fn(),
     get: jest.fn(),

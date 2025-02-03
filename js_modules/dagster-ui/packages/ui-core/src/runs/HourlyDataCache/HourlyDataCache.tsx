@@ -1,4 +1,4 @@
-import {cache} from 'idb-lru-cache';
+import {cache} from '../../util/idb-lru-cache';
 
 type TimeWindow<T> = {start: number; end: number; data: T[]};
 
@@ -18,7 +18,7 @@ type CacheType<T> = {
 export class HourlyDataCache<T> {
   private cache: Map<number, Array<TimeWindow<T>>> = new Map();
   private subscriptions: Array<{hour: number; callback: Subscription<T>}> = [];
-  private indexedDBCache?: ReturnType<typeof cache<string, CacheType<T>>>;
+  private indexedDBCache?: ReturnType<typeof cache<CacheType<T>>>;
   private indexedDBKey: string;
   private version: string | number;
 
@@ -42,7 +42,7 @@ export class HourlyDataCache<T> {
 
     if (id) {
       try {
-        this.indexedDBCache = cache<string, CacheType<T>>({
+        this.indexedDBCache = cache<CacheType<T>>({
           dbName: `HourlyDataCache:${id}`,
           maxCount: keyMaxCount,
         });

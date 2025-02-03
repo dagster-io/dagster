@@ -1,4 +1,3 @@
-import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import React, {createContext, useCallback, useContext, useEffect} from 'react';
 
@@ -11,6 +10,7 @@ import {
 } from '../apollo-client';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {cache} from '../util/idb-lru-cache';
 
 type CacheData<TQuery> = {
   data: TQuery;
