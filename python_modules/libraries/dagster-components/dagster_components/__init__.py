@@ -13,12 +13,14 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffoldRequest as ComponentScaffoldRequest,
     DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.base import ResolvableModel as ResolvableModel
 from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel as AssetAttributesModel,
     AssetSpecTransformModel as AssetSpecTransformModel,
     OpSpecModel as OpSpecModel,
 )
-from dagster_components.core.schema.resolver import TemplatedValueResolver as TemplatedValueResolver
+from dagster_components.core.schema.resolution import (
+    ResolvableModel as ResolvableModel,
+    TemplatedValueResolver as TemplatedValueResolver,
+)
 from dagster_components.version import __version__ as __version__

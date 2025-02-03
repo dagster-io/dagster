@@ -13,21 +13,23 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel
 
-from dagster_components.core.schema.base import ResolvableModel
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.core.schema.resolution import ResolvableModel, TemplatedValueResolver
 
 
 class OpSpecModel(ResolvableModel["OpSpecModel"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
 
-    def resolve(self, resolver: TemplatedValueResolver) -> "OpSpecModel":
-        return OpSpecModel(**resolver.resolve_obj(self.model_dump(exclude_unset=True)))
-
 
 class _ResolvableAssetAttributesMixin(BaseModel):
-    deps: Sequence[str] = []
+    deps: Annotated[
+        Sequence[str],
+        ResolvableFieldInfo(
+            output_type=Sequence[AssetKey],
+            post_process_fn=lambda key, _: AssetKey.from_user_string(key),
+        ),
+    ] = []
     description: Optional[str] = None
     metadata: Annotated[
         Union[str, Mapping[str, Any]], ResolvableFieldInfo(output_type=Mapping[str, Any])
@@ -46,32 +48,17 @@ class _ResolvableAssetAttributesMixin(BaseModel):
 
 
 class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel[Mapping[str, Any]]):
-    key: Annotated[Optional[str], ResolvableFieldInfo(output_type=AssetKey)] = None
-
-    def resolve(self, resolver: TemplatedValueResolver) -> Mapping[str, Any]:
-        props = resolver.resolve_obj(self.model_dump(exclude_unset=True))
-        if "key" in props:
-            props["key"] = AssetKey.from_user_string(props["key"])
-        return props
+    key: Annotated[
+        Optional[str],
+        ResolvableFieldInfo(
+            output_type=AssetKey,
+            post_process_fn=lambda key, _: AssetKey.from_user_string(key) if key else None,
+        ),
+    ] = None
 
 
 class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel[AssetSpec]):
     key: Annotated[Optional[str], ResolvableFieldInfo(output_type=AssetKey)]
-
-    def resolve(self, resolver: TemplatedValueResolver) -> AssetSpec:
-        return AssetSpec(
-            key=AssetKey.from_user_string(resolver.resolve_obj(self.key)),
-            description=resolver.resolve_obj(self.description),
-            metadata=resolver.resolve_obj(self.metadata),
-            group_name=resolver.resolve_obj(self.group_name),
-            skippable=resolver.resolve_obj(self.skippable),
-            code_version=resolver.resolve_obj(self.code_version),
-            owners=resolver.resolve_obj(self.owners),
-            tags=resolver.resolve_obj(self.tags),
-            deps=[AssetKey.from_user_string(d) for d in resolver.resolve_obj(self.deps)]
-            if self.deps
-            else None,
-        )
 
 
 class AssetSpecTransformModel(ResolvableModel[Callable[[Definitions], Definitions]]):
@@ -88,7 +75,7 @@ class AssetSpecTransformModel(ResolvableModel[Callable[[Definitions], Definition
         value_resolver: TemplatedValueResolver,
     ) -> AssetSpec:
         # add the original spec to the context and resolve values
-        attributes = self.attributes.resolve(value_resolver.with_scope(asset=spec))
+        attributes = self.attributes.resolve_as(dict, value_resolver.with_scope(asset=spec))
 
         if self.operation == "merge":
             mergeable_attributes = {"metadata", "tags"}

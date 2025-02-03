@@ -24,7 +24,7 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.core.schema.resolution import TemplatedValueResolver
 
 
 class ComponentDeclNode(ABC):

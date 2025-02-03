@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from dagster_components import ResolvableFieldInfo, ResolvableModel
+from dagster_components import ResolvableFieldInfo
+from dagster_components.core.schema.resolution import ResolvableModel
 from dagster_dg.docs import generate_sample_yaml
 from pydantic import BaseModel
 

@@ -1,7 +1,7 @@
 import shutil
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -11,9 +11,9 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 from pydantic import BaseModel
 
 from dagster_components.core.component import Component, ComponentLoadContext, component_type
-from dagster_components.core.schema.base import ResolvableModel
+from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import AssetSpecModel
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.core.schema.resolution import ResolvableModel, TemplatedValueResolver
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -24,8 +24,11 @@ class PipesSubprocessScriptParams(BaseModel):
     assets: Sequence[AssetSpecModel]
 
 
-class PipesSubprocessScriptCollectionParams(ResolvableModel[Mapping[Path, Sequence[AssetSpec]]]):
-    scripts: Sequence[PipesSubprocessScriptParams]
+class PipesSubprocessScriptCollectionParams(ResolvableModel):
+    scripts: Annotated[
+        Sequence[PipesSubprocessScriptParams],
+        ResolvableFieldInfo(output_type=Mapping[str, Sequence[AssetSpec]]),
+    ]
 
     def resolve(self, resolver: TemplatedValueResolver) -> Mapping[str, Sequence[AssetSpec]]:
         return {
@@ -59,9 +62,7 @@ class PipesSubprocessScriptCollection(Component):
     def load(
         cls, params: PipesSubprocessScriptCollectionParams, context: ComponentLoadContext
     ) -> "PipesSubprocessScriptCollection":
-        return cls(
-            dirpath=context.path, specs_by_path=params.resolve(context.templated_value_resolver)
-        )
+        return params.resolve_as(cls, context.templated_value_resolver)
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
