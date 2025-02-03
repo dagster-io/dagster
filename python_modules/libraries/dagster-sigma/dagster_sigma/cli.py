@@ -2,7 +2,7 @@ import click
 from dagster import _check as check
 from dagster._cli.workspace.cli_target import (
     get_repository_python_origin_from_kwargs,
-    python_origin_target_argument,
+    python_origin_target_options,
 )
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,
@@ -24,7 +24,7 @@ def app():
 
 
 @app.command(name="snapshot", help="Snapshot sigma instance data")
-@python_origin_target_argument
+@python_origin_target_options
 @click.option("--output-path", "-o", help="Path to save the snapshot to", required=True)
 def sigma_snapshot_command(**kwargs) -> None:
     experimental_warning("The `dagster-sigma snapshot` command")

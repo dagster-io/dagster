@@ -8,7 +8,7 @@ import dagster._check as check
 import dagster._seven as seven
 import requests
 from dagster._cli.utils import get_instance_for_cli, get_temporary_instance_for_cli
-from dagster._cli.workspace import workspace_target_argument
+from dagster._cli.workspace import workspace_target_options
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_workspace_process_context_from_kwargs,
@@ -127,7 +127,7 @@ PREDEFINED_QUERIES = {
 }
 
 
-@workspace_target_argument
+@workspace_target_options
 @click.command(
     name="ui",
     help=(

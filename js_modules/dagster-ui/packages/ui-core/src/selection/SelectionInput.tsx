@@ -6,7 +6,7 @@ import debounce from 'lodash/debounce';
 import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
-import {Suggestion} from './SelectionAutoCompleteVisitor';
+import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteResults';
 import {
   SelectionAutoCompleteInputCSS,
@@ -28,17 +28,7 @@ type SelectionAutoCompleteInputProps = {
   linter: Linter<any>;
   value: string;
   onChange: (value: string) => void;
-  useAutoComplete: (
-    selection: string,
-    cursor: number,
-  ) => {
-    autoCompleteResults: {
-      list: Suggestion[];
-      from: number;
-      to: number;
-    };
-    loading: boolean;
-  };
+  useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
 };
 
 export const SelectionAutoCompleteInput = ({
@@ -81,7 +71,10 @@ export const SelectionAutoCompleteInput = ({
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
 
-  const {autoCompleteResults, loading} = useAutoComplete(innerValue, cursorPosition);
+  const {autoCompleteResults, loading} = useAutoComplete({
+    line: innerValue,
+    cursorIndex: cursorPosition,
+  });
 
   const hintContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -92,7 +85,7 @@ export const SelectionAutoCompleteInput = ({
   useDangerousRenderEffect(() => {
     // Rather then using a useEffect + setState (extra render), we just set the current value directly
     selectedIndexRef.current = 0;
-    if (!autoCompleteResults?.list.length && !loading) {
+    if (!autoCompleteResults.list.length && !loading) {
       showResults.current = false;
     }
   }, [autoCompleteResults, loading]);
@@ -218,7 +211,7 @@ export const SelectionAutoCompleteInput = ({
   const selectedItem = autoCompleteResults?.list[selectedIndexRef.current];
 
   const onSelect = useCallback(
-    (suggestion: Suggestion) => {
+    (suggestion: {text: string}) => {
       if (autoCompleteResults && suggestion && cmInstance.current) {
         const editor = cmInstance.current;
         editor.replaceRange(
@@ -330,7 +323,7 @@ export const SelectionAutoCompleteInput = ({
   useResizeObserver(inputRef, adjustHeight);
 
   return (
-    <div onBlur={onBlur}>
+    <div onBlur={onBlur} style={{width: '100%'}}>
       <Popover
         content={
           <div ref={hintContainerRef} onKeyDown={handleKeyDown}>

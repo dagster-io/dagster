@@ -1365,7 +1365,7 @@ def open_server_process(
     instance_ref: Optional[InstanceRef],
     port: Optional[int],
     socket: Optional[str],
-    server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
+    server_command: GrpcServerCommand,
     location_name: Optional[str] = None,
     loadable_target_origin: Optional[LoadableTargetOrigin] = None,
     max_workers: Optional[int] = None,
@@ -1451,7 +1451,8 @@ def open_server_process(
 
 
 def _open_server_process_on_dynamic_port(
-    max_retries: int = 10,
+    max_retries: int,
+    instance_ref: Optional[InstanceRef],
     **kwargs,
 ) -> tuple[Optional["Popen[str]"], Optional[int]]:
     server_process = None
@@ -1460,7 +1461,9 @@ def _open_server_process_on_dynamic_port(
     while server_process is None and retries < max_retries:
         port = find_free_port()
         try:
-            server_process = open_server_process(port=port, socket=None, **kwargs)
+            server_process = open_server_process(
+                instance_ref=instance_ref, port=port, socket=None, **kwargs
+            )
         except CouldNotBindGrpcServerToAddress:
             pass
 
@@ -1548,24 +1551,29 @@ class GrpcServerProcess:
             self.__auto_restart_thread.start()
 
     def start_server_process(self):
+        server_process_kwargs: dict[str, Any] = dict(
+            location_name=self._location_name,
+            loadable_target_origin=self._loadable_target_origin,
+            max_workers=self._max_workers,
+            heartbeat=self._heartbeat,
+            heartbeat_timeout=self._heartbeat_timeout,
+            fixed_server_id=self._fixed_server_id,
+            startup_timeout=self._startup_timeout,
+            cwd=self._cwd,
+            log_level=self._log_level,
+            env=self._env,
+            inject_env_vars_from_instance=self._inject_env_vars_from_instance,
+            container_image=self._container_image,
+            container_context=self._container_context,
+            additional_timeout_msg=self._additional_timeout_msg,
+            server_command=self._server_command,
+        )
+
         if (seven.IS_WINDOWS or self._force_port) and self.port is None:
             server_process, self.port = _open_server_process_on_dynamic_port(
-                instance_ref=self._instance_ref,
-                location_name=self._location_name,
                 max_retries=self._max_retries,
-                loadable_target_origin=self._loadable_target_origin,
-                max_workers=self._max_workers,
-                heartbeat=self._heartbeat,
-                heartbeat_timeout=self._heartbeat_timeout,
-                fixed_server_id=self._fixed_server_id,
-                startup_timeout=self._startup_timeout,
-                cwd=self._cwd,
-                log_level=self._log_level,
-                env=self._env,
-                inject_env_vars_from_instance=self._inject_env_vars_from_instance,
-                container_image=self._container_image,
-                container_context=self._container_context,
-                additional_timeout_msg=self._additional_timeout_msg,
+                instance_ref=self._instance_ref,
+                **server_process_kwargs,
             )
         else:
             if self.socket is None and self.port is None:
@@ -1573,23 +1581,9 @@ class GrpcServerProcess:
 
             server_process = open_server_process(
                 instance_ref=self._instance_ref,
-                location_name=self._location_name,
-                server_command=self._server_command,
                 port=self.port,
                 socket=self.socket,
-                loadable_target_origin=self._loadable_target_origin,
-                max_workers=self._max_workers,
-                heartbeat=self._heartbeat,
-                heartbeat_timeout=self._heartbeat_timeout,
-                fixed_server_id=self._fixed_server_id,
-                startup_timeout=self._startup_timeout,
-                cwd=self._cwd,
-                log_level=self._log_level,
-                env=self._env,
-                inject_env_vars_from_instance=self._inject_env_vars_from_instance,
-                container_image=self._container_image,
-                container_context=self._container_context,
-                additional_timeout_msg=self._additional_timeout_msg,
+                **server_process_kwargs,
             )
 
         if server_process is None:

@@ -197,7 +197,9 @@ def test_get_server_id():
 def create_server_process():
     port = find_free_port()
     with instance_for_test() as instance:
-        server_process = open_server_process(instance.get_ref(), port=port, socket=None)
+        server_process = open_server_process(
+            instance.get_ref(), port=port, socket=None, server_command=GrpcServerCommand.API_GRPC
+        )
         assert server_process is not None
         return port, server_process
 
@@ -206,7 +208,11 @@ def test_fixed_server_id():
     port = find_free_port()
     with instance_for_test() as instance:
         server_process = open_server_process(
-            instance.get_ref(), port=port, socket=None, fixed_server_id="fixed_id"
+            instance.get_ref(),
+            port=port,
+            socket=None,
+            fixed_server_id="fixed_id",
+            server_command=GrpcServerCommand.API_GRPC,
         )
         assert server_process is not None
 
@@ -247,7 +253,11 @@ def test_ping_metrics_retrieval():
     with instance_for_test() as instance:
         port = find_free_port()
         server_process = open_server_process(
-            instance.get_ref(), port=port, socket=None, enable_metrics=True
+            instance.get_ref(),
+            port=port,
+            socket=None,
+            enable_metrics=True,
+            server_command=GrpcServerCommand.API_GRPC,
         )
         assert server_process is not None
 
