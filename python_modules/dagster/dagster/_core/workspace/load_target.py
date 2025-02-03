@@ -1,13 +1,14 @@
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Union, cast
 
 import tomli
 
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.workspace.load import (
@@ -40,6 +41,21 @@ class WorkspaceFileTarget(
 ):
     def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return location_origins_from_yaml_paths(self.paths)
+
+
+class InProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
+    """A workspace load target that is in-process and does not spin up a gRPC server."""
+
+    def __init__(
+        self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
+    ):
+        self._origins = cast(
+            Sequence[InProcessCodeLocationOrigin],
+            origin if isinstance(origin, list) else [origin],
+        )
+
+    def create_origins(self) -> Sequence[InProcessCodeLocationOrigin]:
+        return self._origins
 
 
 def validate_dagster_block_for_module_name_or_modules(dagster_block):
