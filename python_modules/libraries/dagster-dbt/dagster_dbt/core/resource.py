@@ -217,6 +217,12 @@ class DbtCliResource(ConfigurableResource):
             if not state_path and project_dir.state_path:
                 state_path = project_dir.state_path
 
+            if not profiles_dir and project_dir.profiles_dir:
+                profiles_dir = project_dir.profiles_dir
+
+            if not profile and project_dir.profile:
+                profile = project_dir.profile
+
             if not target and project_dir.target:
                 target = project_dir.target
 
