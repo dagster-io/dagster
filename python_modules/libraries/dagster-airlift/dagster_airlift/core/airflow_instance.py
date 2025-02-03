@@ -23,6 +23,7 @@ DEFAULT_BATCH_TASK_RETRIEVAL_LIMIT = 100
 # This corresponds directly to the page_limit parameter on airflow's batch dag runs rest API.
 # Airflow dag run batch API: https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dag_runs_batch
 DEFAULT_BATCH_DAG_RUNS_LIMIT = 100
+DEFAULT_DAG_LIST_LIMIT = 100
 SLEEP_SECONDS = 1
 
 
@@ -61,11 +62,13 @@ class AirflowInstance:
         name: str,
         batch_task_instance_limit: int = DEFAULT_BATCH_TASK_RETRIEVAL_LIMIT,
         batch_dag_runs_limit: int = DEFAULT_BATCH_DAG_RUNS_LIMIT,
+        dag_list_limit: int = DEFAULT_DAG_LIST_LIMIT,
     ) -> None:
         self.auth_backend = auth_backend
         self.name = check_valid_name(name)
         self.batch_task_instance_limit = batch_task_instance_limit
         self.batch_dag_runs_limit = batch_dag_runs_limit
+        self.dag_list_limit = dag_list_limit
 
     @property
     def normalized_name(self) -> str:
@@ -75,24 +78,31 @@ class AirflowInstance:
         return f"{self.auth_backend.get_webserver_url()}/api/v1"
 
     def list_dags(self) -> list["DagInfo"]:
-        response = self.auth_backend.get_session().get(
-            f"{self.get_api_url()}/dags", params={"limit": 1000}
-        )
-        if response.status_code == 200:
-            dags = response.json()
-            webserver_url = self.auth_backend.get_webserver_url()
-            return [
-                DagInfo(
-                    webserver_url=webserver_url,
-                    dag_id=dag["dag_id"],
-                    metadata=dag,
-                )
-                for dag in dags["dags"]
-            ]
-        else:
-            raise DagsterError(
-                f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
+        dag_responses = []
+        webserver_url = self.auth_backend.get_webserver_url()
+        while True:
+            prev_len = len(dag_responses)
+            response = self.auth_backend.get_session().get(
+                f"{self.get_api_url()}/dags",
+                params={"limit": self.dag_list_limit, "offset": len(dag_responses)},
             )
+            if response.status_code == 200:
+                dags = response.json()
+                dag_responses.extend(
+                    DagInfo(
+                        webserver_url=webserver_url,
+                        dag_id=dag["dag_id"],
+                        metadata=dag,
+                    )
+                    for dag in dags["dags"]
+                )
+                if len(dag_responses) - prev_len == 0:
+                    break
+            else:
+                raise DagsterError(
+                    f"Failed to fetch DAGs. Status code: {response.status_code}, Message: {response.text}"
+                )
+        return dag_responses
 
     def list_variables(self) -> list[dict[str, Any]]:
         response = self.auth_backend.get_session().get(f"{self.get_api_url()}/variables")
