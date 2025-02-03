@@ -737,7 +737,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
                 # the set of asset partitions which have been updated since the latest storage id
                 parent_partitions_subset = self.get_asset_subset_updated_after_cursor(
-                    asset_key=parent_asset_key, after_cursor=latest_storage_id
+                    asset_key=parent_asset_key,
+                    after_cursor=latest_storage_id,
+                    require_data_version_update=False,
                 ).subset_value
 
                 # we are mapping from the partitions of the parent asset to the partitions of
@@ -930,7 +932,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     @cached_method
     def get_asset_subset_updated_after_cursor(
-        self, *, asset_key: AssetKey, after_cursor: Optional[int]
+        self, *, asset_key: AssetKey, after_cursor: Optional[int], require_data_version_update: bool
     ) -> SerializableEntitySubset[AssetKey]:
         """Returns the AssetSubset of the given asset that has been updated after the given cursor."""
         partitions_def = self.asset_graph.get(asset_key).partitions_def
@@ -938,7 +940,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             asset_key,
             asset_partitions=None,
             after_cursor=after_cursor,
-            respect_materialization_data_versions=False,
+            respect_materialization_data_versions=require_data_version_update,
         )
         if partitions_def is None:
             validated_asset_partitions = {
@@ -988,7 +990,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             return ValidAssetSubset.empty(asset_key, partitions_def=partitions_def)
         else:
             return self.get_asset_subset_updated_after_cursor(
-                asset_key=asset_key, after_cursor=first_event_after_time.storage_id - 1
+                asset_key=asset_key,
+                after_cursor=first_event_after_time.storage_id - 1,
+                require_data_version_update=False,
             )
 
     def get_parent_asset_partitions_updated_after_child(

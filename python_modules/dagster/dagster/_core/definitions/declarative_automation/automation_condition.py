@@ -498,6 +498,18 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
 
     @public
     @staticmethod
+    def data_version_changed() -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true if the target's data version has been changed
+        since the previous tick.
+        """
+        from dagster._core.definitions.declarative_automation.operands.operands import (
+            DataVersionChangedCondition,
+        )
+
+        return DataVersionChangedCondition()
+
+    @public
+    @staticmethod
     def cron_tick_passed(
         cron_schedule: str, cron_timezone: str = "UTC"
     ) -> "BuiltinAutomationCondition":

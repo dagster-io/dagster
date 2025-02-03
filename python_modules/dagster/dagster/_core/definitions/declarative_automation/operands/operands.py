@@ -171,6 +171,22 @@ class NewlyUpdatedCondition(SubsetAutomationCondition):
 
 @whitelist_for_serdes
 @record
+class DataVersionChangedCondition(SubsetAutomationCondition):
+    @property
+    def name(self) -> str:
+        return "data_version_changed"
+
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        # if it's the first time evaluating, just return the empty subset
+        if context.previous_temporal_context is None:
+            return context.get_empty_subset()
+        return await context.asset_graph_view.compute_data_version_changed_since_temporal_context_subset(
+            key=context.key, temporal_context=context.previous_temporal_context
+        )
+
+
+@whitelist_for_serdes
+@record
 class CronTickPassedCondition(SubsetAutomationCondition):
     cron_schedule: str
     cron_timezone: str
