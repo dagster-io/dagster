@@ -3452,14 +3452,7 @@ def get_partitioned_asset_repo():
 
 
 def test_1d_subset_backcompat():
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
-        }
-    ) as instance:
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         instance.can_read_asset_status_cache = lambda: False
         assert instance.can_read_asset_status_cache() is False
 
@@ -3542,14 +3535,7 @@ def test_1d_subset_backcompat():
 
 
 def test_2d_subset_backcompat():
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
-        }
-    ) as instance:
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         instance.can_read_asset_status_cache = lambda: False
         assert instance.can_read_asset_status_cache() is False
 

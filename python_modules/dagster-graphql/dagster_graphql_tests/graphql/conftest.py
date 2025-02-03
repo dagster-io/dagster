@@ -20,11 +20,8 @@ def graphql_context():
                     "class": "FilesystemTestScheduler",
                     "config": {"base_dir": temp_dir},
                 },
-                "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                    "class": "SynchronousRunCoordinator",
-                },
             },
+            synchronous_run_coordinator=True,
         ) as instance:
             with define_test_out_of_process_context(instance) as context:
                 yield context

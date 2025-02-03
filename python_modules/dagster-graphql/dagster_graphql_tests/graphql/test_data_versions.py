@@ -70,14 +70,7 @@ def test_dependencies_changed():
     repo_v1 = get_repo_v1()
     repo_v2 = get_repo_v2()
 
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
-        }
-    ) as instance:
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
             assert _materialize_assets(context_v1, repo_v1)
             wait_for_runs_to_finish(context_v1.instance)
@@ -88,14 +81,7 @@ def test_dependencies_changed():
 def test_stale_status():
     repo = get_repo_v1()
 
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
-        }
-    ) as instance:
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context:
             result = _fetch_data_versions(context, repo)
             foo = _get_asset_node(result, "foo")
@@ -155,14 +141,7 @@ def get_repo_partitioned():
 def test_stale_status_partitioned():
     repo = get_repo_partitioned()
 
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
-        }
-    ) as instance:
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
             for key in ["foo", "bar"]:
                 result = _fetch_partition_data_versions(context, AssetKey([key]))
@@ -245,14 +224,7 @@ def test_stale_status_partitioned():
 
 def test_data_version_from_tags():
     repo_v1 = get_repo_v1()
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
-        }
-    ) as instance:
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
             assert _materialize_assets(context_v1, repo_v1)
             wait_for_runs_to_finish(context_v1.instance)

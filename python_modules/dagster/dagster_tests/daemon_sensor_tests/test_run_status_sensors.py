@@ -51,20 +51,15 @@ def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
     # Overridden from conftest.py, uses DefaultRunLauncher since we care about
     # runs actually completing for run status sensors.
     # Still uses DefaultRunCoordinator, since we don't need to check dequeuing logic.
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
-        },
-    ) as instance:
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         yield instance
 
 
 @contextmanager
-def instance_with_sensors(overrides=None, attribute="the_repo"):
-    with instance_for_test(overrides=overrides) as instance:
+def instance_with_sensors(overrides=None, attribute="the_repo", synchronous_run_coordinator=False):
+    with instance_for_test(
+        overrides=overrides, synchronous_run_coordinator=synchronous_run_coordinator
+    ) as instance:
         with create_test_daemon_workspace_context(
             create_workspace_load_target(attribute=attribute), instance=instance
         ) as workspace_context:
@@ -98,8 +93,11 @@ class CodeLocationInfoForSensorTest(NamedTuple):
 def instance_with_single_code_location_multiple_repos_with_sensors(
     overrides: Optional[Mapping[str, Any]] = None,
     workspace_load_target: Optional[WorkspaceLoadTarget] = None,
+    synchronous_run_coordinator=False,
 ) -> Iterator[tuple[DagsterInstance, WorkspaceProcessContext, dict[str, RemoteRepository]]]:
-    with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
+    with instance_with_multiple_code_locations(
+        overrides, workspace_load_target, synchronous_run_coordinator=synchronous_run_coordinator
+    ) as many_tuples:
         assert len(many_tuples) == 1
         location_info = next(iter(many_tuples.values()))
         yield (
@@ -111,9 +109,13 @@ def instance_with_single_code_location_multiple_repos_with_sensors(
 
 @contextmanager
 def instance_with_multiple_code_locations(
-    overrides: Optional[Mapping[str, Any]] = None, workspace_load_target=None
+    overrides: Optional[Mapping[str, Any]] = None,
+    workspace_load_target=None,
+    synchronous_run_coordinator=False,
 ) -> Iterator[dict[str, CodeLocationInfoForSensorTest]]:
-    with instance_for_test(overrides) as instance:
+    with instance_for_test(
+        overrides, synchronous_run_coordinator=synchronous_run_coordinator
+    ) as instance:
         with create_test_daemon_workspace_context(
             workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
@@ -832,13 +834,8 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
     job_defs_name = "dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs"
 
     with instance_with_multiple_code_locations(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
         workspace_load_target=workspace_load_target,
+        synchronous_run_coordinator=True,
     ) as location_infos:
         assert len(location_infos) == 2
 
@@ -925,13 +922,8 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
     job_defs_name = "dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs"
 
     with instance_with_multiple_code_locations(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
         workspace_load_target=workspace_load_target,
+        synchronous_run_coordinator=True,
     ) as location_infos:
         assert len(location_infos) == 2
 
@@ -1020,12 +1012,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
     )
 
     with instance_with_multiple_code_locations(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
+        synchronous_run_coordinator=True,
         workspace_load_target=workspace_load_target,
     ) as location_infos:
         assert len(location_infos) == 2
@@ -1125,12 +1112,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
     )
 
     with instance_with_multiple_code_locations(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
+        synchronous_run_coordinator=True,
         workspace_load_target=workspace_load_target,
     ) as location_infos:
         assert len(location_infos) == 2
@@ -1278,12 +1260,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
     code_location_with_dupe_job_name = "dagster_tests.daemon_sensor_tests.locations_for_code_location_scoped_sensor_test.code_location_with_duplicate_job_name"
 
     with instance_with_multiple_code_locations(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
+        synchronous_run_coordinator=True,
         workspace_load_target=workspace_load_target,
     ) as location_infos:
         assert len(location_infos) == 2
@@ -1405,12 +1382,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
+        synchronous_run_coordinator=True,
     ) as (
         instance,
         workspace_context,
@@ -1470,12 +1442,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
 def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
+        synchronous_run_coordinator=True,
     ) as (
         instance,
         workspace_context,
@@ -1631,25 +1598,15 @@ def test_partitioned_job_run_status_sensor(
 def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
     with instance_with_sensors(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
+        synchronous_run_coordinator=True,
     ) as (
         instance,
         workspace_context,
         the_repo,
     ):
         with instance_with_sensors(
-            overrides={
-                "run_coordinator": {
-                    "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                    "class": "SynchronousRunCoordinator",
-                }
-            },
             attribute="the_other_repo",
+            synchronous_run_coordinator=True,
         ) as (
             the_other_instance,
             the_other_workspace_context,
@@ -1709,12 +1666,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
 def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            }
-        },
+        synchronous_run_coordinator=True,
     ) as (
         instance,
         workspace_context,

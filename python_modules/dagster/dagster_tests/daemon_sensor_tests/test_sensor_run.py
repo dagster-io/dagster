@@ -1605,11 +1605,8 @@ def test_launch_failure(caplog, executor, workspace_context, remote_repo):
                 "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
-            "run_coordinator": {
-                "module": "dagster._core.run_coordinator.synchronous_run_coordinator",
-                "class": "SynchronousRunCoordinator",
-            },
         },
+        synchronous_run_coordinator=True,
     ) as instance:
         with freeze_time(freeze_datetime):
             exploding_workspace_context = workspace_context.copy_for_test_instance(instance)
