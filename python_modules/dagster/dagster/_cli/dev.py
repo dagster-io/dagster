@@ -18,12 +18,12 @@ from dagster._cli.job import apply_click_params
 from dagster._cli.utils import get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
     ClickArgValue,
+    generate_grpc_server_target_options,
+    generate_module_name_option,
+    generate_python_file_option,
+    generate_working_directory_option,
+    generate_workspace_option,
     get_workspace_load_target,
-    grpc_server_target_click_options,
-    python_file_option,
-    python_module_option,
-    working_directory_option,
-    workspace_option,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -39,11 +39,11 @@ _CHECK_SUBPROCESS_INTERVAL = 5
 def dev_command_options(f):
     return apply_click_params(
         f,
-        workspace_option(),
-        python_file_option(allow_multiple=True),
-        python_module_option(allow_multiple=True),
-        working_directory_option(),
-        *grpc_server_target_click_options(hidden=True),
+        generate_workspace_option(),
+        generate_python_file_option(allow_multiple=True),
+        generate_module_name_option(allow_multiple=True),
+        generate_working_directory_option(),
+        *generate_grpc_server_target_options(hidden=True),
     )
 
 
