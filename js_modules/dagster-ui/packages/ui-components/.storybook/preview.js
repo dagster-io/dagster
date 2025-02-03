@@ -85,6 +85,8 @@ export const decorators = [
     themes: {
       light: 'themeLight',
       dark: 'themeDark',
+      lightHighContrast: 'themeLightHighContrast',
+      darkHighContrast: 'themeDarkHighContrast',
       system: 'themeSystem',
     },
     defaultTheme: 'system',

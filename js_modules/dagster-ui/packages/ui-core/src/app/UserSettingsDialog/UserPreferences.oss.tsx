@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  Checkbox,
-  DAGSTER_THEME_KEY,
-  DagsterTheme,
-  Icon,
-  Subheading,
-} from '@dagster-io/ui-components';
+import {Box, Button, Checkbox, Icon, Subheading} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {useStateWithStorage} from '../../hooks/useStateWithStorage';
@@ -15,6 +7,7 @@ import {HourCycleSelect} from '../time/HourCycleSelect';
 import {ThemeSelect} from '../time/ThemeSelect';
 import {TimezoneSelect} from '../time/TimezoneSelect';
 import {automaticLabel} from '../time/browserTimezone';
+import {useThemeState} from '../useThemeState';
 
 export const UserPreferences = ({
   onChangeRequiresReload,
@@ -26,12 +19,7 @@ export const UserPreferences = ({
     (value: any) => (typeof value === 'boolean' ? value : true),
   );
 
-  const [theme, setTheme] = useStateWithStorage(DAGSTER_THEME_KEY, (value: any) => {
-    if (value === DagsterTheme.Light || value === DagsterTheme.Dark) {
-      return value;
-    }
-    return DagsterTheme.System;
-  });
+  const {theme, setTheme} = useThemeState();
 
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
 
