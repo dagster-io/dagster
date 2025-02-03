@@ -1,7 +1,9 @@
 import click
 from dagster import _check as check
+from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import (
-    get_repository_python_origin_from_kwargs,
+    PythonPointerOpts,
+    get_repository_python_origin_from_cli_opts,
     python_pointer_options,
 )
 from dagster._core.definitions.definitions_load_context import (
@@ -24,9 +26,12 @@ def app():
 
 
 @app.command(name="snapshot", help="Snapshot sigma instance data")
-@python_pointer_options
 @click.option("--output-path", "-o", help="Path to save the snapshot to", required=True)
-def sigma_snapshot_command(**kwargs) -> None:
+@python_pointer_options
+def sigma_snapshot_command(output_path: str, **other_opts: object) -> None:
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     experimental_warning("The `dagster-sigma snapshot` command")
     with environ({SNAPSHOT_ENV_VAR_NAME: "1"}):
         DefinitionsLoadContext.set(
@@ -34,8 +39,7 @@ def sigma_snapshot_command(**kwargs) -> None:
                 load_type=DefinitionsLoadType.INITIALIZATION, repository_load_data=None
             )
         )
-
-        repository_origin = get_repository_python_origin_from_kwargs(kwargs)
+        repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
 
         pending_data = DefinitionsLoadContext.get().get_pending_reconstruction_metadata()
         load_data = (
@@ -56,6 +60,5 @@ def sigma_snapshot_command(**kwargs) -> None:
             raise click.UsageError("No Sigma data found in the repository")
         click.echo(f"Saving {len(load_data.reconstruction_metadata)} cached Sigma data")
 
-        output_path = kwargs["output_path"]
         with open(output_path, "w") as file:
             file.write(serialize_value(load_data))

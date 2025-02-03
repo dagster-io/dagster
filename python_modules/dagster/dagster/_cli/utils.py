@@ -1,13 +1,14 @@
 import logging
 import os
 import tempfile
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from typing import Any, Callable, Optional, TypeVar, Union
 
 import tomli
 from typing_extensions import TypeAlias
 
+import dagster._check as check
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.secrets.env_file import get_env_var_dict
@@ -133,3 +134,14 @@ def get_instance_for_cli(
         else:
             with DagsterInstance.get() as instance:
                 yield instance
+
+
+def assert_no_remaining_opts(opts: Mapping[str, object]) -> None:
+    if opts:
+        check.failed(
+            f"Unexpected options remaining: {list(opts.keys())}. Ensure that all options are extracted."
+        )
+
+
+def serialize_sorted_quoted(strings: Iterable[str]) -> str:
+    return "[" + ", ".join([f"'{s}'" for s in sorted(list(strings))]) + "]"

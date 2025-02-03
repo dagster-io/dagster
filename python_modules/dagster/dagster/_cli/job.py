@@ -12,19 +12,21 @@ from dagster import __version__ as dagster_version
 from dagster._cli.config_scaffolder import scaffold_job_config
 from dagster._cli.utils import (
     ClickArgMapping,
-    ClickArgValue,
+    assert_no_remaining_opts,
     get_instance_for_cli,
     get_possibly_temporary_instance_for_cli,
+    serialize_sorted_quoted,
 )
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
+    PythonPointerOpts,
     get_code_location_from_workspace,
-    get_config_from_args,
-    get_job_python_origin_from_kwargs,
     get_remote_job_from_kwargs,
     get_remote_job_from_remote_repo,
     get_remote_repository_from_code_location,
     get_remote_repository_from_kwargs,
+    get_repository_python_origin_from_cli_opts,
+    get_run_config_from_cli_opts,
     get_run_config_from_file_list,
     get_workspace_from_kwargs,
     job_name_option,
@@ -43,6 +45,7 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.execution.job_backfill import create_backfill_run
 from dagster._core.instance import DagsterInstance
+from dagster._core.origin import JobPythonOrigin
 from dagster._core.remote_representation import (
     CodeLocation,
     RemoteJob,
@@ -62,7 +65,7 @@ from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._time import get_current_timestamp
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.hosted_user_process import recon_job_from_origin
+from dagster._utils.hosted_user_process import recon_job_from_origin, recon_repository_from_origin
 from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
@@ -241,14 +244,10 @@ def print_op(
         instructions=get_job_in_same_python_env_instructions("execute")
     ),
 )
-@python_pointer_options
-@repository_name_option(name="repository")
-@job_name_option(name="job_name")
-@run_config_option(name="config", command_name="execute")
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this job run")
 @click.option(
-    "-o",
     "--op-selection",
+    "-o",
     type=click.STRING,
     help=(
         "Specify the op subselection to execute. It can be multiple clauses separated by commas."
@@ -261,26 +260,59 @@ def print_op(
         '   ancestors, "other_op_a" itself, and "other_op_b" and its direct child ops'
     ),
 )
-def job_execute_command(**kwargs: ClickArgValue):
+@repository_name_option(name="repository")
+@job_name_option(name="job_name")
+@run_config_option(name="config", command_name="execute")
+@python_pointer_options
+def job_execute_command(
+    tags: Optional[str],
+    op_selection: Optional[str],
+    repository: Optional[str],
+    job_name: Optional[str],
+    config: tuple[str, ...],
+    **other_opts: object,
+):
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli("``dagster job execute``") as instance:
-            execute_execute_command(instance, kwargs)
+            execute_execute_command(
+                instance=instance,
+                tags=tags,
+                op_selection=op_selection,
+                repository=repository,
+                job_name=job_name,
+                config=config,
+                python_pointer_opts=python_pointer_opts,
+            )
 
 
+# Even though the CLI will always call this with all parameters explicitly set, we define defaults
+# here to make it easier to call from tests. The defaults are the same as those defined on the
+# command.
 @telemetry_wrapper
-def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) -> ExecutionResult:
+def execute_execute_command(
+    *,
+    python_pointer_opts: PythonPointerOpts,
+    instance: DagsterInstance,
+    tags: Optional[str] = None,
+    op_selection: Optional[str] = None,
+    repository: Optional[str] = None,
+    job_name: Optional[str] = None,
+    config: tuple[str, ...] = (),
+) -> ExecutionResult:
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(
-        check.opt_tuple_param(cast(tuple[str, ...], kwargs.get("config")), "config", of_type=str)
-    )
+    config_files = list(config)
+    normalized_tags = _normalize_cli_tags(tags)
+    normalized_op_selection = _normalize_cli_op_selection(op_selection)
 
-    tags = get_tags_from_args(kwargs)
-
-    job_origin = get_job_python_origin_from_kwargs(kwargs)
+    job_origin = _get_job_python_origin_from_cli_opts(python_pointer_opts, repository, job_name)
     recon_job = recon_job_from_origin(job_origin)
-    op_selection = get_op_selection_from_args(kwargs)
-    result = do_execute_command(recon_job, instance, config, tags, op_selection)
+    result = do_execute_command(
+        recon_job, instance, config_files, normalized_tags, normalized_op_selection
+    )
 
     if not result.success:
         raise click.ClickException(f"Run {result.run_id} resulted in failure.")
@@ -288,33 +320,59 @@ def execute_execute_command(instance: DagsterInstance, kwargs: ClickArgMapping) 
     return result
 
 
-def get_tags_from_args(kwargs: ClickArgMapping) -> Mapping[str, str]:
-    if kwargs.get("tags") is None:
+def _normalize_cli_tags(tags: Optional[str]) -> Mapping[str, str]:
+    if tags is None:
         return {}
     try:
-        tags = json.loads(check.str_elem(kwargs, "tags"))
+        tags = json.loads(tags)
         return check.is_dict(tags, str, str)
     except JSONDecodeError as e:
         raise click.UsageError(
-            "Invalid JSON-string given for `--tags`: {}\n\n{}".format(
-                kwargs.get("tags"),
+            "Invalid JSON-string given for `--tags`: {}\n\n{}".format(  # noqa: UP032
+                tags,
                 serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
             )
         ) from e
 
 
-def get_op_selection_from_args(kwargs: ClickArgMapping) -> Optional[Sequence[str]]:
-    op_selection_str = kwargs.get("op_selection")
-    if not isinstance(op_selection_str, str):
-        return None
+def _get_job_python_origin_from_cli_opts(
+    python_pointer_opts: PythonPointerOpts, repository_name: Optional[str], job_name: Optional[str]
+) -> JobPythonOrigin:
+    repository_origin = get_repository_python_origin_from_cli_opts(
+        python_pointer_opts, repository_name
+    )
 
-    return [ele.strip() for ele in op_selection_str.split(",")] if op_selection_str else None
+    recon_repo = recon_repository_from_origin(repository_origin)
+    repo_definition = recon_repo.get_definition()
+
+    job_names = set(repo_definition.job_names)  # job (all) vs job (non legacy)
+
+    if job_name is None and len(job_names) == 1:
+        job_name = next(iter(job_names))
+    elif job_name is None:
+        raise click.UsageError(
+            "Must provide --job as there is more than one job "
+            f"in {repo_definition.name}. Options are: {serialize_sorted_quoted(job_names)}."
+        )
+    elif job_name not in job_names:
+        raise click.UsageError(
+            f'Job "{job_name}" not found in repository "{repo_definition.name}" '
+            f"Found {serialize_sorted_quoted(job_names)} instead."
+        )
+
+    return JobPythonOrigin(job_name, repository_origin=repository_origin)
+
+
+def _normalize_cli_op_selection(op_selection: Optional[str]) -> Optional[Sequence[str]]:
+    if not op_selection:
+        return None
+    return [ele.strip() for ele in op_selection.split(",")]
 
 
 def do_execute_command(
     recon_job: ReconstructableJob,
     instance: DagsterInstance,
-    config: Optional[Sequence[str]],
+    config: list[str],
     tags: Optional[Mapping[str, str]] = None,
     op_selection: Optional[Sequence[str]] = None,
 ) -> ExecutionResult:
@@ -362,7 +420,9 @@ def execute_launch_command(
 ) -> DagsterRun:
     preset = cast(Optional[str], kwargs.get("preset"))
     check.inst_param(instance, "instance", DagsterInstance)
-    config = get_config_from_args(kwargs)
+    config = get_run_config_from_cli_opts(
+        check.is_tuple(kwargs.get("config", tuple()), of_type=str), kwargs.get("config_json")
+    )
 
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
         code_location = get_code_location_from_workspace(workspace, kwargs.get("location"))
@@ -384,9 +444,9 @@ def execute_launch_command(
         if preset and config:
             raise click.UsageError("Can not use --preset with -c / --config / --config-json.")
 
-        run_tags = get_tags_from_args(kwargs)
+        run_tags = _normalize_cli_tags(kwargs.get("tags"))
 
-        op_selection = get_op_selection_from_args(kwargs)
+        op_selection = _normalize_cli_op_selection(kwargs.get("op_selection"))
 
         dagster_run = _create_run(
             instance=instance,
@@ -496,19 +556,36 @@ def _check_execute_remote_job_args(
         instructions=get_job_in_same_python_env_instructions("scaffold_config")
     ),
 )
-@python_pointer_options
+@click.option("--print-only-required", default=False, is_flag=True)
 @repository_name_option(name="repository")
 @job_name_option(name="job_name")
-@click.option("--print-only-required", default=False, is_flag=True)
-def job_scaffold_command(**kwargs):
-    execute_scaffold_command(kwargs, click.echo)
+@python_pointer_options
+def job_scaffold_command(
+    print_only_required: bool, repository: Optional[str], job_name: Optional[str], **other_opts
+):
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
+    execute_scaffold_command(
+        print_only_required=print_only_required,
+        repository=repository,
+        job_name=job_name,
+        python_pointer_opts=python_pointer_opts,
+        print_fn=click.echo,
+    )
 
 
-def execute_scaffold_command(cli_args, print_fn):
-    job_origin = get_job_python_origin_from_kwargs(cli_args)
+def execute_scaffold_command(
+    *,
+    python_pointer_opts: PythonPointerOpts,
+    print_fn: PrintFn,
+    print_only_required: bool = False,
+    repository: Optional[str] = None,
+    job_name: Optional[str] = None,
+) -> None:
+    job_origin = _get_job_python_origin_from_cli_opts(python_pointer_opts, repository, job_name)
     job = recon_job_from_origin(job_origin)
-    skip_non_required = cli_args["print_only_required"]
-    do_scaffold_command(job.get_definition(), print_fn, skip_non_required)
+    do_scaffold_command(job.get_definition(), print_fn, print_only_required)
 
 
 def do_scaffold_command(
@@ -610,7 +687,7 @@ def _execute_backfill_command_at_location(
     if not job_partition_set:
         raise click.UsageError(f"Job `{remote_job.name}` is not partitioned.")
 
-    run_tags = get_tags_from_args(cli_args)
+    run_tags = _normalize_cli_tags(cli_args.get("tags"))  # type: ignore
 
     repo_handle = RepositoryHandle.from_location(
         repository_name=repo.name,
