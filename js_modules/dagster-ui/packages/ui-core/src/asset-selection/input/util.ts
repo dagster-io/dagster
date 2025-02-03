@@ -69,7 +69,7 @@ const memoizedTag = weakMapMemoize((key: string, value: string) => ({
   value,
 }));
 
-export type Attribute = 'kind' | 'code_location' | 'group' | 'owner' | 'tag' | 'status' | 'key';
+export type Attribute = keyof ReturnType<typeof getAttributesMap>;
 
 export const attributeToIcon: Record<Attribute, IconName> = {
   key: 'magnify_glass',
@@ -78,5 +78,4 @@ export const attributeToIcon: Record<Attribute, IconName> = {
   group: 'asset_group',
   owner: 'owner',
   tag: 'tag',
-  status: 'status',
 };
