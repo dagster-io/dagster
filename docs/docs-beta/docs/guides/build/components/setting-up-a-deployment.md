@@ -64,9 +64,7 @@ Let's enter this directory and search for registered component types:
 This is the default set of component types available in every new code
 location. We can add to it by installing `dagster-components[sling]`:
 
-```bash
-$ uv add dagster-components[sling]
-```
+<CliInvocationExample contents="uv add 'dagster-components[sling]'" />
 
 And now we have a new available component:
 
