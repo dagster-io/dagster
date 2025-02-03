@@ -1,10 +1,16 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from dagster_msteams.client import Link
 
 
 class AdaptiveCard:
     """Class to contruct a MS Teams adaptive card for posting Dagster messages."""
 
-    def __init__(self, message: str):
+    def __init__(self, message: str, link: Optional["Link"] = None):
+        if link:
+            message += f" [{link.text}]({link.url})"
+
         self.payload = {
             "type": "message",
             "attachments": [
