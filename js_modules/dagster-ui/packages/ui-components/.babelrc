@@ -4,11 +4,12 @@
       "@babel/preset-env",
       {
         "useBuiltIns": "entry",
-        "corejs": 3
+        "corejs": 3,
+        "throwIfNamespace": false
       }
     ],
-    ["@babel/preset-react", {"runtime": "automatic"}],
-    "@babel/preset-typescript"
+    ["@babel/preset-react", {"runtime": "automatic", "throwIfNamespace": false}],
+    ["@babel/preset-typescript", {"throwIfNamespace": false}]
   ],
   "plugins": [
     "@babel/plugin-proposal-nullish-coalescing-operator",

@@ -1,8 +1,8 @@
 module.exports = {
   presets: [
     ['@babel/preset-env', {targets: {node: 'current'}}],
-    ['@babel/preset-react', {runtime: 'automatic'}],
-    '@babel/preset-typescript',
+    ['@babel/preset-react', {runtime: 'automatic', throwIfNamespace: false}],
+    ['@babel/preset-typescript', {throwIfNamespace: false}],
   ],
   plugins: [
     'graphql-tag',
