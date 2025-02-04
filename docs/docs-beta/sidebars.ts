@@ -222,6 +222,11 @@ const sidebars: SidebarsConfig = {
           label: 'Making an existing code location components-compatible',
           href: '/guides/build/components/existing-code-location',
         },
+        {
+          type: 'link',
+          label: 'Setting up a deployment',
+          href: '/guides/build/components/setting-up-a-deployment',
+        },
       ],
     },
   ]
