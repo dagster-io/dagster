@@ -252,7 +252,6 @@ export const createProvider = <
     textCallback?: (text: string) => string;
   }) {
     if (typeof value !== 'string') {
-      console.log({value});
       const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
       return {
         text: textCallback ? textCallback(valueText) : valueText,
