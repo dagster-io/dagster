@@ -128,12 +128,11 @@ export const Operator = ({displayText, type}: {displayText: string; type: Operat
 };
 
 export const AttributeValueTagSuggestion = ({
-  key,
-  value,
+  tag,
 }: {
-  key: string;
-  value?: string | null | undefined;
+  tag: {key: string; value?: string | null | undefined};
 }) => {
+  const {key, value} = tag;
   const valueText = value ? `${key}=${value}` : key;
   return <SuggestionJSXBase label={valueText} />;
 };
@@ -154,31 +153,6 @@ export const AttributeWithStringValueSuggestionJSX = ({
         <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
           <MonoSmall color={Colors.textLight()}>{attributeName}:</MonoSmall>
           <MonoSmall>{value}</MonoSmall>
-        </Box>
-      }
-    />
-  );
-};
-
-export const AttributeWithTagValueSuggestionJSX = ({
-  icon,
-  attributeName,
-  tag,
-}: {
-  icon?: IconName | null;
-  attributeName: string;
-  tag: {
-    key: string;
-    value?: string | null | undefined;
-  };
-}) => {
-  return (
-    <SuggestionJSXBase
-      icon={icon}
-      label={
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
-          <MonoSmall color={Colors.textLight()}>{attributeName}:</MonoSmall>
-          <MonoSmall>{tag.value ? `${tag.key}=${tag.value}` : tag.key}</MonoSmall>
         </Box>
       }
     />
@@ -278,10 +252,11 @@ export const createProvider = <
     textCallback?: (text: string) => string;
   }) {
     if (typeof value !== 'string') {
+      console.log({value});
       const valueText = value.value ? `"${value.key}"="${value.value}"` : `"${value.key}"`;
       return {
         text: textCallback ? textCallback(valueText) : valueText,
-        jsx: <AttributeValueTagSuggestion key={value.key} value={value.value} />,
+        jsx: <AttributeValueTagSuggestion tag={value} />,
       };
     }
     return {
