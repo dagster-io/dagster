@@ -18,7 +18,7 @@ from dagster import (
     multi_asset,
     with_resources,
 )
-from dagster._annotations import experimental, experimental_param
+from dagster._annotations import beta, experimental_param
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
@@ -530,7 +530,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         return _assets
 
 
-@experimental
+@beta
 @experimental_param(param="partitions_def")
 @experimental_param(param="partition_key_to_vars_fn")
 def load_assets_from_dbt_cloud_job(
