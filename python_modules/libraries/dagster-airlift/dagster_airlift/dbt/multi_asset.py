@@ -2,6 +2,7 @@ from typing import Optional
 
 import yaml
 from dagster import AssetExecutionContext, Definitions
+from dagster._annotations import beta
 from dagster_dbt import (
     DagsterDbtTranslator,
     DagsterDbtTranslatorSettings,
@@ -12,6 +13,7 @@ from dagster_dbt import (
 from dagster_dbt.dbt_manifest import DbtManifestParam
 
 
+@beta
 def dbt_defs(
     *,
     manifest: DbtManifestParam,

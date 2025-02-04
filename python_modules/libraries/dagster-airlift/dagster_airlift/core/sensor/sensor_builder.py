@@ -14,6 +14,7 @@ from dagster import (
     _check as check,
     sensor,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetObservation
@@ -79,6 +80,7 @@ def check_keys_for_asset_keys(
                 yield check_spec.key
 
 
+@beta
 def build_airflow_polling_sensor(
     *,
     mapped_assets: Sequence[MappedAsset],

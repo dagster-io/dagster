@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import TypedDict, Union, cast
 
+from dagster._annotations import beta
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -13,11 +14,13 @@ from dagster_airlift.core.load_defs import replace_assets_in_defs
 from dagster_airlift.core.top_level_dag_def_api import spec_with_metadata
 
 
+@beta
 class TaskHandleDict(TypedDict):
     dag_id: str
     task_id: str
 
 
+@beta
 def assets_with_multiple_task_mappings(
     assets: Sequence[Union[AssetSpec, AssetsDefinition]], task_handles: list[TaskHandleDict]
 ) -> Sequence[Union[AssetSpec, AssetsDefinition]]:
