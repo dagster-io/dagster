@@ -695,7 +695,7 @@ compute_logs:
 
 #### ComputeLogManagers using `obstore`
 
-<PyObject module="dagster_obstore" provides three lean integrations with object stores, ADLS, GCS & S3.
+\<PyObject module="dagster_obstore" provides three lean integrations with object stores, ADLS, GCS & S3.
 
 The <PyObject module="dagster_obstore.s3" object="S3ComputeLogManager" /> writes `stdout` and `stderr` to any S3 compatible endpoint.
 
@@ -708,9 +708,9 @@ compute_logs:
   class: S3ComputeLogManager
   config:
     bucket: "dagster-logs"
-    access_key_id: 
+    access_key_id:
       env: ACCESS_KEY_ID
-    secret_access_key: 
+    secret_access_key:
       env: SECRET_KEY
     local_dir: "/tmp/dagster-logs"
     allow_http: false
@@ -747,11 +747,11 @@ compute_logs:
 
 #### ComputeLogManagers using `obstore`
 
-<PyObject module="dagster_obstore" provides three lean integrations with object stores, ADLS, GCS & S3.
+\<PyObject module="dagster_obstore" provides three lean integrations with object stores, ADLS, GCS & S3.
 
 The <PyObject module="dagster_obstore.azure" object="ADLSComputeLogManager" /> writes `stdout` and `stderr` to Azure Datalake/Blob storage.
 
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_s3_obstore endbefore=end_marker_compute_log_storage_s3_obstore
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_compute_log_storage_azure_obstore endbefore=end_marker_compute_log_storage_azure_obstore
 # there are multiples ways to configure the ADLSComputeLogManager
 
 # Authenticate with access key
@@ -761,18 +761,17 @@ compute_logs:
   config:
     storage_account: "my-az-account"
     container: "dagster-logs"
-    access_key: 
+    access_key:
       env: ACCESS_KEY
     local_dir: "/tmp/dagster-logs"
     allow_http: false
     allow_invalid_certificates: false
     timeout: "60s"  # Timeout for obstore requests
 
-
 # Authenticate with service principal
 compute_logs:
   module:  dagster_obstore.azure.compute_log_manager
-  class: S3ComputeLogManager
+  class: ADLSComputeLogManager
   config:
     storage_account: "my-az-account"
     container: "dagster-logs"
@@ -785,7 +784,7 @@ compute_logs:
 # Authenticate with use_azure_cli
 compute_logs:
   module:  dagster_obstore.azure.compute_log_manager
-  class: S3ComputeLogManager
+  class: ADLSComputeLogManager
   config:
     storage_account: "my-az-account"
     container: "dagster-logs"
@@ -810,7 +809,7 @@ compute_logs:
 
 #### ComputeLogManagers using `obstore`
 
-<PyObject module="dagster_obstore" provides three lean integrations with object stores, ADLS, GCS & S3.
+\<PyObject module="dagster_obstore" provides three lean integrations with object stores, ADLS, GCS & S3.
 
 The <PyObject module="dagster_obstore.gcs" object="GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
 
