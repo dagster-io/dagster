@@ -41,7 +41,7 @@ CLI_TEST_CASES = [
         should_error=True,
         check_error_msg=msg_includes_all_of(
             "component.yaml:1",
-            "Unable to locate local component type '.my_component_does_not_exist'",
+            "Unable to locate local component type '@local.my_component_does_not_exist'",
         ),
     ),
 ]
@@ -122,13 +122,13 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
         with pushd(tmpdir):
             result = runner.invoke("component", "check")
             if test_case.should_error:
-                assert result.exit_code != 0, str(result.stdout)
+                assert_runner_result(result, exit_0=False)
 
                 assert test_case.check_error_msg
                 test_case.check_error_msg(str(result.stdout))
 
             else:
-                assert result.exit_code == 0
+                assert_runner_result(result)
 
 
 @pytest.mark.parametrize(

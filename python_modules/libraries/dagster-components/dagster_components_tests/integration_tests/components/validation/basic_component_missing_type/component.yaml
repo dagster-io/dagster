@@ -1,4 +1,4 @@
-type: .my_component_does_not_exist
+type: "@local.my_component_does_not_exist"
 
 params:
   a_string: "test"

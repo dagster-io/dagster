@@ -11,7 +11,10 @@ from dagster_components.core.component import (
     ComponentTypeRegistry,
     get_component_type_name,
 )
-from dagster_components.core.component_decl_builder import find_local_component_types
+from dagster_components.core.component_decl_builder import (
+    LOCAL_COMPONENT_NAMESPACE,
+    find_local_component_types,
+)
 from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
@@ -47,12 +50,12 @@ def list_local_component_types_command(component_directories: Sequence[str]) -> 
     for component_directory in component_directories:
         output_for_directory = {}
         for component_type in find_local_component_types(Path(component_directory)):
-            output_for_directory[f".{get_component_type_name(component_type)}"] = (
-                ComponentTypeMetadata(
-                    name=get_component_type_name(component_type),
-                    package=component_directory,
-                    **component_type.get_metadata(),
-                )
+            output_for_directory[
+                f"{LOCAL_COMPONENT_NAMESPACE}.{get_component_type_name(component_type)}"
+            ] = ComponentTypeMetadata(
+                name=get_component_type_name(component_type),
+                package=component_directory,
+                **component_type.get_metadata(),
             )
         if len(output_for_directory) > 0:
             output[component_directory] = output_for_directory

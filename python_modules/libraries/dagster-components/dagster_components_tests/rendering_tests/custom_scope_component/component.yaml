@@ -1,4 +1,4 @@
-type: .custom_scope_component
+type: "@local.custom_scope_component"
 
 params:
   group_name: "{{ custom_str }}"
