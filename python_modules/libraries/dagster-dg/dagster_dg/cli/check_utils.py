@@ -53,6 +53,18 @@ def error_dict_to_formatted_error(
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),
 ) -> str:
+    """Convert a ValidationError to a formatted error message, including
+    a code snippet of the offending YAML file.
+
+    Args:
+        component_name: The name of the component that the error occurred in, e.g. "my_component".
+        error_details: The JSON Schema ValidationError object.
+        source_position_tree: The SourcePositionTree object, which contains the source position of
+            each line in the YAML file.
+        prefix: A prefix to the JSON path of the location of the error in the YAML file. Used because
+            we validate params separately from the top-level component YAML fields, so this is often
+            set to e.g. ["params"] when validating the internal params of a component.
+    """
     source_position, source_position_path = source_position_tree.lookup_closest_and_path(
         [*prefix, *error_details.absolute_path], trace=None
     )
