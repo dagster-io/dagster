@@ -66,6 +66,11 @@ location. We can add to it by installing `dagster-components[sling]`:
 
 <CliInvocationExample contents="uv add 'dagster-components[sling]'" />
 
+:::note
+Due to a bug in `sling` package metadata, if you are on a macOS machine with
+Apple Silicon you may also need to run `uv add sling_mac_arm64`.
+:::
+
 And now we have a new available component:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/8-component-type-list.txt"  />
@@ -96,31 +101,11 @@ As you can see, we are back to only the default list of component types. This
 is because we are now using the environment of `code-location-2`, in which we
 have not installed `dagster-components[sling]`.
 
-For a final step, let's load up our two code locations with `dagster dev`.
-We'll need a workspace.yaml to do this. Create a new file `workspace.yaml` in
-the `my-deployment` directory:
+For a final step, let's load up our two code locations with `dg dev`. `dg dev`
+will automatically recognize the code locations in your deployment and launch
+them in their respective environments. Let's run `dg dev` back in the
+deployment root directory and load up the Dagster UI in your browser:
 
-
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/deployments/12-workspace.yaml" language="YAML" title="my-deployment/workspace.yaml" />
-
-
-
-And finally we'll run `dagster dev` to see your two code locations loaded up in the
-UI. You may already have `dagster` installed in the ambient environment, in
-which case plain `dagster dev` will work. But in case you don't, we'll run
-`dagster dev` using `uv`, which will pull down and run `dagster` for you in
-an isolated environment:
-
-```
-uv tool run --with=dagster-webserver dagster dev
-```
-
+<CliInvocationExample contents="cd ../.. && dg dev" />
 
 ![](/images/guides/build/projects-and-components/setting-up-a-deployment/two-code-locations.png)
-
-:::note
-`dg` scaffolding functionality is currently under heavy development. In the
-future we will construct this workspace.yaml file for you automatically in the
-course of scaffolding code locations, and provide a `dg dev` command that
-handles pulling down `dagster` for you in the background.
-:::
