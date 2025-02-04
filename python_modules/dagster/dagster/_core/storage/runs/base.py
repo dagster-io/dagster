@@ -203,24 +203,16 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
             bool
         """
 
-    def add_snapshot(
-        self,
-        snapshot: Union[JobSnap, ExecutionPlanSnapshot],
-        snapshot_id: Optional[str] = None,
-    ) -> None:
+    def add_snapshot(self, snapshot: Union[JobSnap, ExecutionPlanSnapshot]) -> None:
         """Add a snapshot to the storage.
 
         Args:
             snapshot (Union[PipelineSnapshot, ExecutionPlanSnapshot])
-            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
-                snapshot id will be generated from a hash of the snapshot. This should only be used
-                in debugging, where we might want to import a historical run whose snapshots were
-                calculated using a different hash function than the current code.
         """
         if isinstance(snapshot, JobSnap):
-            self.add_job_snapshot(snapshot, snapshot_id)
+            self.add_job_snapshot(snapshot)
         else:
-            self.add_execution_plan_snapshot(snapshot, snapshot_id)
+            self.add_execution_plan_snapshot(snapshot)
 
     def has_snapshot(self, snapshot_id: str):
         return self.has_job_snapshot(snapshot_id) or self.has_execution_plan_snapshot(snapshot_id)
@@ -237,7 +229,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def add_job_snapshot(self, job_snapshot: JobSnap, snapshot_id: Optional[str] = None) -> str:
+    def add_job_snapshot(self, job_snapshot: JobSnap) -> str:
         """Add a pipeline snapshot to the run store.
 
         Pipeline snapshots are content-addressable, meaning
@@ -247,10 +239,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
         Args:
             job_snapshot (PipelineSnapshot)
-            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
-                snapshot id will be generated from a hash of the snapshot. This should only be used
-                in debugging, where we might want to import a historical run whose snapshots were
-                calculated using a different hash function than the current code.
 
         Return:
             str: The job_snapshot_id
@@ -279,9 +267,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         """
 
     @abstractmethod
-    def add_execution_plan_snapshot(
-        self, execution_plan_snapshot: ExecutionPlanSnapshot, snapshot_id: Optional[str] = None
-    ) -> str:
+    def add_execution_plan_snapshot(self, execution_plan_snapshot: ExecutionPlanSnapshot) -> str:
         """Add an execution plan snapshot to the run store.
 
         Execution plan snapshots are content-addressable, meaning
@@ -291,10 +277,6 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
 
         Args:
             execution_plan_snapshot (ExecutionPlanSnapshot)
-            snapshot_id (Optional[str]): [Internal] The id of the snapshot. If not provided, the
-                snapshot id will be generated from a hash of the snapshot. This should only be used
-                in debugging, where we might want to import a historical run whose snapshots were
-                calculated using a different hash function than the current code.
 
         Return:
             str: The execution_plan_snapshot_id

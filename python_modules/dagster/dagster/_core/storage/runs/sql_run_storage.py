@@ -557,12 +557,10 @@ class SqlRunStorage(RunStorage):
         check.str_param(job_snapshot_id, "job_snapshot_id")
         return self._has_snapshot_id(job_snapshot_id)
 
-    def add_job_snapshot(self, job_snapshot: JobSnap, snapshot_id: Optional[str] = None) -> str:
+    def add_job_snapshot(self, job_snapshot: JobSnap) -> str:
         check.inst_param(job_snapshot, "job_snapshot", JobSnap)
-        check.opt_str_param(snapshot_id, "snapshot_id")
 
-        if not snapshot_id:
-            snapshot_id = job_snapshot.snapshot_id
+        snapshot_id = job_snapshot.snapshot_id
 
         return self._add_snapshot(
             snapshot_id=snapshot_id,
@@ -579,13 +577,12 @@ class SqlRunStorage(RunStorage):
         return bool(self.get_execution_plan_snapshot(execution_plan_snapshot_id))
 
     def add_execution_plan_snapshot(
-        self, execution_plan_snapshot: ExecutionPlanSnapshot, snapshot_id: Optional[str] = None
+        self,
+        execution_plan_snapshot: ExecutionPlanSnapshot,
     ) -> str:
         check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
-        check.opt_str_param(snapshot_id, "snapshot_id")
 
-        if not snapshot_id:
-            snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+        snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
 
         return self._add_snapshot(
             snapshot_id=snapshot_id,
