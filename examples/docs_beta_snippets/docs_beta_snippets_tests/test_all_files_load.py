@@ -27,8 +27,8 @@ EXCLUDED_FILES = {
 }
 
 EXCLUDED_DIRS = {
-    # integrations are excluded because they have external dependencies that
-    # are easier to manage in a separate tox environment
+    # integrations are excluded because they have external dependencies that are easier to manage in
+    # a separate tox environment
     f"{snippets_folder}/integrations",
 }
 
