@@ -216,7 +216,7 @@ streams:
     """,
             )
             _run_command(
-                "dagster asset materialize --select '*' -m jaffle_platform.definitions"
+                "dagster asset materialize --select '*' -d . -m jaffle_platform.definitions"
             )
             run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"',
@@ -291,7 +291,7 @@ params:
 
             # Run dbt, check works
             _run_command(
-                "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '*' -m jaffle_platform.definitions"
+                "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '*' -d . -m jaffle_platform.definitions"
             )
             run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',
