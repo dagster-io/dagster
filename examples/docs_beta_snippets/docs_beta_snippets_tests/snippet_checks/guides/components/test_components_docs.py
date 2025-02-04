@@ -16,6 +16,7 @@ from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
+    compare_tree_output,
     create_file,
     re_ignore_after,
     re_ignore_before,
@@ -74,12 +75,10 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # Validate scaffolded files
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="cd jaffle-platform && tree --sort size",
+            cmd="cd jaffle-platform && tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
-            # Remove --sort size from tree output, sadly OSX and Linux tree
-            # sort differently when using alpha sort
-            snippet_replace_regex=[(" --sort size", "")],
+            custom_comparison_fn=compare_tree_output,
         )
         check_file(
             "pyproject.toml",
@@ -137,13 +136,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # Cleanup __pycache__ directories
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="tree jaffle_platform --sort size",
+            cmd="tree jaffle_platform",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-tree-jaffle-platform.txt",
             update_snippets=update_snippets,
-            # Remove --sort size from tree output, sadly OSX and Linux tree
-            # sort differently when using alpha sort
-            snippet_replace_regex=[(" --sort size", "")],
+            custom_comparison_fn=compare_tree_output,
         )
         check_file(
             Path("jaffle_platform") / "components" / "ingest_files" / "component.yaml",

@@ -8,6 +8,7 @@ from docs_beta_snippets_tests.snippet_checks.guides.components.utils import DAGS
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
+    compare_tree_output,
     create_file,
     re_ignore_after,
     re_ignore_before,
@@ -62,6 +63,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             cmd="cd my-deployment && tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
+            custom_comparison_fn=compare_tree_output,
         )
         check_file(
             "pyproject.toml",
@@ -89,15 +91,15 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name code_location_1.egg-info -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="tree --sort size --dirsfirst",
+            cmd="tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
             # Remove --sort size from tree output, sadly OSX and Linux tree
             # sort differently when using alpha sort
             snippet_replace_regex=[
-                ("--sort size --dirsfirst", ""),
                 (r"\d+ directories, \d+ files", "..."),
             ],
+            custom_comparison_fn=compare_tree_output,
         )
 
         # Validate code location toml
