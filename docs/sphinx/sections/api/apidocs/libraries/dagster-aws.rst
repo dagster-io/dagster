@@ -53,6 +53,12 @@ ECS
   :annotation: ExecutorDefinition
 
 
+RDS
+---
+.. autoconfigurable:: dagster_aws.rds.RDSResource
+  :annotation: ResourceDefinition
+
+
 Redshift
 --------
 .. autoconfigurable:: dagster_aws.redshift.RedshiftClientResource
