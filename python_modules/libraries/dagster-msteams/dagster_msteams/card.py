@@ -1,4 +1,7 @@
 from collections.abc import Mapping
+from typing import Optional
+
+from dagster_msteams.utils import Link
 
 
 class Card:
@@ -23,6 +26,8 @@ class Card:
         content_type = "application/vnd.microsoft.card.hero"
         return {"contentType": content_type, "content": content}
 
-    def add_attachment(self, text_message: str):
+    def add_attachment(self, text_message: str, link: Optional[Link] = None):
+        if link:
+            text_message += f" <a href='{link.url}'>{link.text}</a>"
         hero_card_attachment = self._create_attachment(text_message)
         self.payload["attachments"].append(hero_card_attachment)

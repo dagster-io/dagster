@@ -1,7 +1,13 @@
 from collections.abc import Mapping
-from typing import Optional
+from typing import Optional, cast
+from urllib.parse import urlparse
 
+import dagster._check as check
 from requests import codes, exceptions, post
+
+from dagster_msteams.adaptive_card import AdaptiveCard
+from dagster_msteams.card import Card
+from dagster_msteams.utils import Link
 
 
 class TeamsClient:
@@ -30,7 +36,14 @@ class TeamsClient:
                 self._proxy["https"] = https_proxy
         self._headers = {"Content-Type": "application/json"}
 
-    def post_message(self, payload: Mapping) -> bool:  # pragma: no cover
+    def is_legacy_webhook(self) -> bool:
+        parsed_url = urlparse(self._hook_url)
+        if parsed_url.hostname is None:
+            check.failed(f"No hostname found in webhook URL: {self._hook_url}")
+
+        return cast(str, parsed_url.hostname).endswith("webhook.office.com")
+
+    def _post(self, payload: Mapping) -> bool:
         response = post(
             self._hook_url,
             json=payload,
@@ -39,7 +52,21 @@ class TeamsClient:
             timeout=self._timeout,
             verify=self._verify,
         )
-        if response.status_code == codes["ok"] and response.text == "1":
-            return True
+        if self.is_legacy_webhook():
+            if response.status_code == codes["ok"] and response.text == "1":
+                return True
+            else:
+                raise exceptions.RequestException(response.text)
         else:
-            raise exceptions.RequestException(response.text)
+            if response.ok:
+                return True
+            else:
+                raise exceptions.RequestException(response.text)
+
+    def post_message(self, message: str, link: Optional[Link]) -> bool:  # pragma: no cover
+        if self.is_legacy_webhook():
+            card = Card()
+            card.add_attachment(text_message=message, link=link)
+            return self._post(card.payload)
+        else:
+            return self._post(AdaptiveCard(message, link).payload)
