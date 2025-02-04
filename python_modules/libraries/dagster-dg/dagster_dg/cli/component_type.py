@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.table import Table
 
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.component import RemoteComponentKey, RemoteComponentRegistry
+from dagster_dg.component import GlobalRemoteComponentKey, RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.docs import markdown_for_component_type, render_markdown_in_browser
@@ -41,7 +41,7 @@ def component_type_scaffold_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    component_key = RemoteComponentKey(name=name, package=dg_context.root_package_name)
+    component_key = GlobalRemoteComponentKey(name=name, package=dg_context.root_package_name)
     if registry.has_global(component_key):
         exit_with_error(f"A component type named `{name}` already exists.")
 
@@ -66,7 +66,7 @@ def component_type_docs_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    component_key = RemoteComponentKey.from_string(component_type)
+    component_key = GlobalRemoteComponentKey.from_identifier(component_type)
     if not registry.has_global(component_key):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
 
@@ -97,7 +97,7 @@ def component_type_info_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    component_key = RemoteComponentKey.from_string(component_type)
+    component_key = GlobalRemoteComponentKey.from_identifier(component_type)
     if not registry.has_global(component_key):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
     elif sum([description, scaffold_params_schema, component_params_schema]) > 1:
