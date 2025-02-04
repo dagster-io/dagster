@@ -1,24 +1,24 @@
 {
   "redirects": [
     {
-      "source": "/",
+      "source": "/:path*",
       "has": [
         {
           "type": "host",
           "value": "docs-preview.dagster.io"
         }
       ],
-      "destination": "https://docs.dagster.io"
+      "destination": "https://docs.dagster.io/:path*"
     },
     {
-      "source": "/",
+      "source": "/:path*",
       "has": [
         {
           "type": "host",
           "value": "new-docs.dagster.io"
         }
       ],
-      "destination": "https://docs.dagster.io"
+      "destination": "https://docs.dagster.io/:path*"
     },
     {
       "source": "/dagster-cloud/:path*",
