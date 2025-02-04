@@ -43,4 +43,3 @@ The csvs used in this demo can be found on this [site](https://www.realtor.com/r
 2. Enable the Google Drive API for your project.
 3. Create Service account credentials and download the JSON key file. and save in enviroment variable
 4. Share the Google Drive folder with the service account email address.
-
