@@ -83,7 +83,7 @@ const GlobalStyle = createGlobalStyle`
 `;
 
 export const GlobalStyleProvider = () => {
-  const theme = useThemeState();
+  const {theme} = useThemeState();
 
   // Given a theme setting, apply the appropriate class name to the body to set the
   // desired CSS var values. When the theme changes, the class name is updated.
