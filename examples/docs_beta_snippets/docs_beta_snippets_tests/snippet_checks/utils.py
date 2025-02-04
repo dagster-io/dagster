@@ -4,7 +4,7 @@ import re
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 # https://stackoverflow.com/a/14693789
 ANSI_ESCAPE = re.compile(
@@ -66,6 +66,9 @@ def _run_command(
 
     actual_output = ANSI_ESCAPE.sub("", actual_output)
 
+    print(f"Ran command {cmd}")  # noqa: T201
+    print("Got output:")  # noqa: T201
+    print(actual_output)  # noqa: T201
     os.chdir(pwd)
 
     return actual_output
@@ -76,7 +79,11 @@ def _assert_matches_or_update_snippet(
     snippet_path: Path,
     update_snippets: bool,
     snippet_replace_regex: Optional[Sequence[tuple[str, str]]],
+    custom_comparison_fn: Optional[Callable[[str, str], bool]],
 ):
+    comparison_fn = custom_comparison_fn or (
+        lambda actual, expected: actual == expected
+    )
     if snippet_replace_regex:
         for regex, replacement in snippet_replace_regex:
             contents = re.sub(regex, replacement, contents, re.MULTILINE | re.DOTALL)
@@ -93,7 +100,7 @@ def _assert_matches_or_update_snippet(
 
         contents = contents.rstrip()
         snippet_contents = snippet_output_file.read_text().rstrip()
-        if not snippet_contents == contents:
+        if not comparison_fn(contents, snippet_contents):
             print(f"Snapshot mismatch {snippet_path}")  # noqa: T201
             print("\nActual file:")  # noqa: T201
             print(contents)  # noqa: T201
@@ -102,8 +109,8 @@ def _assert_matches_or_update_snippet(
         else:
             print(f"Snippet {snippet_path} passed")  # noqa: T201
 
-        assert (
-            snippet_contents == contents
+        assert comparison_fn(
+            contents, snippet_contents
         ), "CLI snippets do not match.\nYou may need to run `make regenerate_cli_snippets` in the `dagster/docs` directory.\nYou may also use `make test_cli_snippets_simulate_bk` to simulate the CI environment locally."
 
 
@@ -132,7 +139,51 @@ def create_file(
             snippet_path=snippet_path,
             update_snippets=True,
             snippet_replace_regex=None,
+            custom_comparison_fn=None,
         )
+
+
+def compare_tree_output(actual: str, expected: str) -> bool:
+    """Custom command output comparison function for the output of calling
+    `tree`. Often the order of the output is different on different platforms, so we
+    just check that the filenames are identical rather than the precise tree order or
+    structure.
+    """
+    TREE_PIPE_CHARS = ["│", "├", "└"]
+    actual_non_filepath_lines = [
+        line
+        for line in actual.split("\n")
+        if not any(line.strip().startswith(c) for c in TREE_PIPE_CHARS)
+    ]
+    expected_non_filepath_lines = [
+        line
+        for line in expected.split("\n")
+        if not any(line.strip().startswith(c) for c in TREE_PIPE_CHARS)
+    ]
+
+    actual_filepath_lines = [
+        line
+        for line in actual.split("\n")
+        if any(line.strip().startswith(c) for c in TREE_PIPE_CHARS)
+    ]
+    expected_filepath_lines = [
+        line
+        for line in expected.split("\n")
+        if any(line.strip().startswith(c) for c in TREE_PIPE_CHARS)
+    ]
+
+    # strip out non-filename text from each of the filepath lines
+    actual_filepath_lines = sorted(
+        [line.strip().rsplit(" ", 1)[1] for line in actual_filepath_lines]
+    )
+    expected_filepath_lines = sorted(
+        [line.strip().rsplit(" ", 1)[1] for line in expected_filepath_lines]
+    )
+
+    return (
+        actual_non_filepath_lines == expected_non_filepath_lines
+        and actual_filepath_lines == expected_filepath_lines
+    )
 
 
 def check_file(
@@ -168,6 +219,7 @@ def check_file(
             snippet_path=snippet_path,
             update_snippets=update_snippets,
             snippet_replace_regex=snippet_replace_regex,
+            custom_comparison_fn=None,
         )
 
 
@@ -176,6 +228,7 @@ def run_command_and_snippet_output(
     snippet_path: Optional[Path] = None,
     update_snippets: Optional[bool] = None,
     snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
+    custom_comparison_fn: Optional[Callable[[str, str], bool]] = None,
     ignore_output: bool = False,
 ):
     """Run the given command and check that the output matches the contents of the snippet
@@ -189,6 +242,9 @@ def run_command_and_snippet_output(
         snippet_replace_regex (Optional[Sequence[tuple[str, str]]]): A list of regex
             substitution pairs to apply to the output before checking it against the snippet.
             Useful to remove dynamic content, e.g. the temporary directory path or timestamps.
+        custom_comparison_fn (Optional[Callable]): A function that takes the output of the
+            command and the snippet contents and returns whether they match. Useful for some
+            commands (e.g. tree) where the output is frustratingly platform-dependent.
         ignore_output (bool): Whether to ignore the output of the command when updating the snippet.
             Useful when the output is too verbose or not meaningful.
     """
@@ -209,4 +265,5 @@ def run_command_and_snippet_output(
             snippet_path=snippet_path,
             update_snippets=update_snippets,
             snippet_replace_regex=snippet_replace_regex,
+            custom_comparison_fn=custom_comparison_fn,
         )

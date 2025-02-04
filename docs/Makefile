@@ -44,4 +44,4 @@ regenerate_cli_snippets_and_test:
 	cd ../examples/docs_beta_snippets && tox -e docs_snapshot_update && tox -e docs_snapshot_test && echo "\nSnippets regenerated and tested!"
 
 test_cli_snippets_simulate_bk:
-	docker run --platform linux/amd64 --rm -it  -v "$(DAGSTER_GIT_REPO_DIR):/dagster" --entrypoint /bin/sh dagster/buildkite-test:py3.9-2025-01-31T181043 -c 'cd /dagster/examples/docs_beta_snippets && tox -e docs_snapshot_test'
+	docker run --platform linux/amd64 --rm -it  -v "$(DAGSTER_GIT_REPO_DIR):/dagster" --entrypoint /bin/sh dagster/buildkite-test:py3.9-2025-01-31T181043 -c 'cd /dagster/examples/docs_beta_snippets && tox -e docs_snapshot_test -- --pdb'
