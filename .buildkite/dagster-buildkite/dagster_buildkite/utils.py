@@ -320,6 +320,14 @@ def has_dagster_airlift_changes():
 
 
 @functools.lru_cache(maxsize=None)
+def has_dg_or_components_changes():
+    return any(
+        "dagster-dg" in str(path) or "dagster-components" in str(path)
+        for path in ChangedFiles.all
+    )
+
+
+@functools.lru_cache(maxsize=None)
 def skip_if_not_airlift_or_dlift_commit() -> Optional[str]:
     """If no dlift or airlift files are touched, then do NOT run. Even if on master."""
     return (
