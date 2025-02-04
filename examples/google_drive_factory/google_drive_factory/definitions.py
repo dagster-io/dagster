@@ -18,41 +18,17 @@ class DriveFile(BaseModel):
     modifiedTime: str
 
 
-class GoogleDrive:
-    SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+class GoogleDriveClient:
+    """Handles the Google Drive client creation and API interactions."""
 
-    def __init__(self, json_data):
-        if isinstance(json_data, str):  # Ensure it's a dictionary, not a string
-            json_data = json.loads(json_data)
-
-        self.json_data = json_data
-        self.service = self._service()
-
-    @classmethod
-    def from_env(cls):
-        service_account_json = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
-
-        if not service_account_json:
-            raise ValueError("Environment variable 'GOOGLE_SERVICE_ACCOUNT_JSON' is not set.")
-
-        try:
-            json_data = json.loads(service_account_json)  # Ensure we parse JSON properly
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON format in 'GOOGLE_SERVICE_ACCOUNT_JSON': {e}")
-
-        if not isinstance(json_data, dict):
-            raise ValueError("Parsed service account JSON must be a dictionary.")
-
-        return cls(json_data)
-
-    def _service(self):
-        credentials = service_account.Credentials.from_service_account_info(
-            self.json_data,
-            scopes=self.SCOPES,
+    def __init__(self, credentials_json: dict):
+        self.credentials = service_account.Credentials.from_service_account_info(
+            credentials_json, scopes=["https://www.googleapis.com/auth/drive.readonly"]
         )
-        return build("drive", "v3", credentials=credentials)
+        self.service = build("drive", "v3", credentials=self.credentials)
 
-    def query(self, folder_id):
+    def retrieve_files(self, folder_id: str):
+        """Query for files in a Google Drive folder."""
         query = f"'{folder_id}' in parents and mimeType='text/csv'"
         return (
             self.service.files()
@@ -60,25 +36,30 @@ class GoogleDrive:
             .execute()
         )
 
-    def request_content(self, file_id):
+    def request_content(self, file_id: str):
+        """Fetch file content from Google Drive using file_id."""
         request = self.service.files().get_media(fileId=file_id)
         return request.execute()
 
 
 class GoogleDriveResource(dg.ConfigurableResource):
+    """Resource configuration for Google Drive credentials."""
+
     json_data: str
 
-    _client: GoogleDrive = PrivateAttr()
+    _client: GoogleDriveClient = PrivateAttr()
 
     def setup_for_execution(self, context: dg.InitResourceContext):
-        self._client = GoogleDrive(
-            json_data=self.json_data,
-        )
+        """Initialize the Google Drive client using the credentials."""
+        credentials_json = json.loads(self.json_data)
+        self._client = GoogleDriveClient(credentials_json)
 
-    def query(self, folder_id):
-        return self._client.query(folder_id)
+    def retrieve_files(self, folder_id: str):
+        """Delegates to the client to retrieve files."""
+        return self._client.retrieve_files(folder_id)
 
-    def request_content(self, file_id):
+    def request_content(self, file_id: str):
+        """Delegates to the client to fetch content."""
         return self._client.request_content(file_id)
 
 
@@ -153,7 +134,7 @@ google_drive_resource.setup_for_execution(dg.build_init_resource_context())
 
 # Fetch files from the Google Drive folder using properly initialized _client
 folder_id = os.environ.get("GOOGLE_DRIVE_FOLDER_ID")
-file_results = google_drive_resource.query(folder_id).get("files", [])
+file_results = google_drive_resource.retrieve_files(folder_id).get("files", [])
 
 # Create realtor definitions dynamically
 realtor_definitions = [
