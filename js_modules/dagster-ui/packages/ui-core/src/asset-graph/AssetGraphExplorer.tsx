@@ -157,7 +157,7 @@ export const AssetGraphExplorer = (props: Props) => {
         if (graphDataLoading || filteredAssetsLoading || fullAssetGraphDataLoading) {
           return <LoadingSpinner purpose="page" />;
         }
-        if (!assetGraphData || !allAssetKeys || !fullAssetGraphData) {
+        if (!assetGraphData || !allAssetKeys) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
@@ -176,7 +176,7 @@ export const AssetGraphExplorer = (props: Props) => {
           <AssetGraphExplorerWithData
             key={props.explorerPath.pipelineName}
             assetGraphData={assetGraphData}
-            fullAssetGraphData={fullAssetGraphData}
+            fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
             allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
             filterBar={filterBar}
