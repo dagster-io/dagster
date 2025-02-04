@@ -78,6 +78,25 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 | <PyObject section="libraries" module="dagster_duckdb_pyspark" object="DuckDBPySparkIOManager" />               | Stores PySpark DataFrame outputs in DuckDB.                                   |
 | <PyObject section="libraries" module="dagster_duckdb_polars" object="DuckDBPolarsIOManager" />                 | Stores Polars DataFrame outputs in DuckDB.                                    |                                       |
 
+## IO Managers and multi-assets
+
+When your computation produces multiple assets, such as usage of the <PyObject section="dagster" module="dagster" object="multi_asset"/>, you can customize each individual asset's I/O management behavior. 
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/external-systems/multi-asset-io-managers.py" language="python" />
+
+# Using IO managers with multi-part or prefixed asset keys
+
+If you want to load an input from an asset key that has multiple parts or is prefixed, you'll need to explicitly map the asset key to an input name.
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/external-systems/asset-key-remap.py" language="python" />
+
+# Customizing input behavior
+
+You can use a different IO manager to _load_ the input than you used to store it. For example, let's say I have two assets, upstream and downstream. I returned a pandas dataframe from my upstream asset, and used the `SnowflakePandasIOManager` to store it in a Snowflake table, but want to load that table as a spark dataframe in my downstream asset.
+
+I can do this by overriding the `input_manager_key` argument on my downstream asset.
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/external-systems/swapping-input-managers.py" language="python" />
+
+
 ## Next steps
 
 - Learn to [connect databases](/guides/build/external-resources/connecting-to-databases) with resources
