@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 from abc import abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -11,41 +12,54 @@ from dagster_dg.utils import is_valid_json
 if TYPE_CHECKING:
     from dagster_dg.context import DgContext
 
+COMPONENT_TYPE_REGEX = re.compile(r"^([a-zA-Z0-9_]+)@([a-zA-Z0-9_]+)$")
+
+
+def _name_and_namespace_from_type(typename: str) -> tuple[str, str]:
+    match = COMPONENT_TYPE_REGEX.match(typename)
+    if not match:
+        raise ValueError(f"Invalid component type name: {typename}")
+    return match.group(1), match.group(2)
+
 
 @dataclass(frozen=True)
-class RemoteComponentKey:
+class ComponentKey:
     name: str
-    package: str
+    namespace: str
 
     @abstractmethod
-    def to_string(self) -> str: ...
+    def to_typename(self) -> str: ...
 
     @staticmethod
-    def from_identifier(identifier: str, dirpath: Path) -> "RemoteComponentKey":
-        if identifier.endswith(".py"):
-            name, package = identifier.split("@")
-            return LocalRemoteComponentKey(name=name, package=package, path=str(dirpath / package))
+    def from_typename(typename: str, dirpath: str) -> "ComponentKey":
+        if typename.endswith(".py"):
+            return LocalComponentKey.from_type(typename, dirpath)
         else:
-            return GlobalRemoteComponentKey.from_identifier(identifier)
+            return GlobalComponentKey.from_typename(typename)
 
 
 @dataclass(frozen=True)
-class GlobalRemoteComponentKey(RemoteComponentKey):
-    def to_string(self) -> str:
-        return f"{self.name}@{self.package}"
+class GlobalComponentKey(ComponentKey):
+    def to_typename(self) -> str:
+        return f"{self.name}@{self.namespace}"
 
     @staticmethod
-    def from_identifier(identifier: str) -> "GlobalRemoteComponentKey":
-        name, package = identifier.split("@")
-        return GlobalRemoteComponentKey(name=name, package=package)
+    def from_typename(typename: str) -> "GlobalComponentKey":
+        name, namespace = _name_and_namespace_from_type(typename)
+        return GlobalComponentKey(name=name, namespace=namespace)
 
 
 @dataclass(frozen=True)
-class LocalRemoteComponentKey(RemoteComponentKey):
-    path: str
+class LocalComponentKey(ComponentKey):
+    dirpath: str
 
-    def to_string(self) -> str:
-        return f"{self.name}@{self.package} ({self.path})"
+    def to_typename(self) -> str:
+        return f"{self.name}@{self.namespace} ({self.dirpath})"
+
+    @staticmethod
+    def from_type(typename, dirpath: str) -> "LocalComponentKey":
+        name, namespace = _name_and_namespace_from_type(typename)
+        return LocalComponentKey(name=name, namespace=namespace, dirpath=dirpath)
 
 
 @dataclass
@@ -60,22 +74,19 @@ class RemoteComponentType:
 
 def _get_remote_type_mapping_from_raw_data(
     raw_data: Mapping[str, Any],
-) -> Mapping[GlobalRemoteComponentKey, RemoteComponentType]:
+) -> Mapping[ComponentKey, RemoteComponentType]:
     data = {}
-    for identifier, metadata in raw_data.items():
-        data[GlobalRemoteComponentKey.from_identifier(identifier)] = RemoteComponentType(**metadata)
+    for typename, metadata in raw_data.items():
+        data[GlobalComponentKey.from_typename(typename)] = RemoteComponentType(**metadata)
     return data
 
 
 def _get_local_type_mapping_from_raw_data(
-    raw_data: Mapping[str, Any], path: Path
-) -> Mapping[LocalRemoteComponentKey, RemoteComponentType]:
+    raw_data: Mapping[str, Any], dirpath: Path
+) -> Mapping[LocalComponentKey, RemoteComponentType]:
     data = {}
-    for identifier, metadata in raw_data.items():
-        name, package = identifier.split("@")
-        data[LocalRemoteComponentKey(name=name, package=package, path=str(path))] = (
-            RemoteComponentType(**metadata)
-        )
+    for typename, metadata in raw_data.items():
+        data[LocalComponentKey.from_type(typename, str(dirpath))] = RemoteComponentType(**metadata)
     return data
 
 
@@ -93,9 +104,9 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
 
 def _retrieve_local_component_types(
     dg_context: "DgContext", paths: Sequence[Path]
-) -> Mapping[LocalRemoteComponentKey, RemoteComponentType]:
+) -> Mapping[LocalComponentKey, RemoteComponentType]:
     paths_to_fetch = set(paths)
-    data: dict[LocalRemoteComponentKey, RemoteComponentType] = {}
+    data: dict[LocalComponentKey, RemoteComponentType] = {}
     if dg_context.has_cache:
         for path in paths:
             cache_key = dg_context.get_cache_key_for_local_components(path)
@@ -159,31 +170,31 @@ class RemoteComponentRegistry:
 
         return RemoteComponentRegistry(component_data)
 
-    def __init__(self, components: dict[RemoteComponentKey, RemoteComponentType]):
-        self._components: dict[RemoteComponentKey, RemoteComponentType] = copy.copy(components)
+    def __init__(self, components: dict[ComponentKey, RemoteComponentType]):
+        self._components: dict[ComponentKey, RemoteComponentType] = copy.copy(components)
 
     @staticmethod
     def empty() -> "RemoteComponentRegistry":
         return RemoteComponentRegistry({})
 
-    def has_global(self, key: RemoteComponentKey) -> bool:
+    def has_global(self, key: ComponentKey) -> bool:
         return key in self._components
 
-    def get(self, key: RemoteComponentKey) -> RemoteComponentType:
+    def get(self, key: ComponentKey) -> RemoteComponentType:
         """Resolves a component type within the scope of a given component directory."""
         return self._components[key]
 
-    def get_global(self, key: GlobalRemoteComponentKey) -> RemoteComponentType:
-        if not isinstance(key, GlobalRemoteComponentKey):
+    def get_global(self, key: GlobalComponentKey) -> RemoteComponentType:
+        if not isinstance(key, GlobalComponentKey):
             raise ValueError(f"Expected GlobalRemoteComponentKey, got {key}")
         return self._components[key]
 
-    def global_keys(self) -> Iterable[GlobalRemoteComponentKey]:
-        for key in sorted(self._components.keys(), key=lambda k: k.to_string()):
-            if isinstance(key, GlobalRemoteComponentKey):
+    def global_keys(self) -> Iterable[GlobalComponentKey]:
+        for key in sorted(self._components.keys(), key=lambda k: k.to_typename()):
+            if isinstance(key, GlobalComponentKey):
                 yield key
 
-    def global_items(self) -> Iterable[tuple[GlobalRemoteComponentKey, RemoteComponentType]]:
+    def global_items(self) -> Iterable[tuple[GlobalComponentKey, RemoteComponentType]]:
         for key in self.global_keys():
             yield key, self.get_global(key)
 

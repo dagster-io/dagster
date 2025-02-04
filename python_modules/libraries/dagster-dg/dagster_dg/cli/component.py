@@ -12,9 +12,9 @@ from yaml.scanner import ScannerError
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
 from dagster_dg.component import (
-    GlobalRemoteComponentKey,
-    LocalRemoteComponentKey,
-    RemoteComponentKey,
+    ComponentKey,
+    GlobalComponentKey,
+    LocalComponentKey,
     RemoteComponentRegistry,
     RemoteComponentType,
 )
@@ -88,7 +88,7 @@ class ComponentScaffoldGroup(DgClickGroup):
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         for key, component_type in registry.global_items():
-            command = _create_component_scaffold_subcommand(key.to_string(), component_type)
+            command = _create_component_scaffold_subcommand(key, component_type)
             self.add_command(command)
 
 
@@ -152,16 +152,16 @@ def component_scaffold_group(context: click.Context, help_: bool, **global_optio
 
 
 def _create_component_scaffold_subcommand(
-    component_key: str, component_type: RemoteComponentType
+    component_key: GlobalComponentKey, component_type: RemoteComponentType
 ) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
-        name=component_key,
+        name=component_key.to_typename(),
         cls=ComponentScaffoldSubCommand,
         context_settings={"help_option_names": ["-h", "--help"]},
     )
-    @click.argument("component_name", type=str)
+    @click.argument("component_instance_name", type=str)
     @click.option(
         "--json-params",
         type=str,
@@ -172,7 +172,7 @@ def _create_component_scaffold_subcommand(
     @click.pass_context
     def scaffold_component_command(
         cli_context: click.Context,
-        component_name: str,
+        component_instance_name: str,
         json_params: Mapping[str, Any],
         **key_value_params: Any,
     ) -> None:
@@ -197,10 +197,12 @@ def _create_component_scaffold_subcommand(
         dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has_global(GlobalRemoteComponentKey.from_identifier(component_key)):
-            exit_with_error(f"No component type `{component_key}` could be resolved.")
-        elif dg_context.has_component(component_name):
-            exit_with_error(f"A component instance named `{component_name}` already exists.")
+        if not registry.has_global(component_key):
+            exit_with_error(f"Component type `{component_key.to_typename()}` not found.")
+        elif dg_context.has_component_instance(component_instance_name):
+            exit_with_error(
+                f"A component instance named `{component_instance_name}` already exists."
+            )
 
         # Specified key-value params will be passed to this function with their default value of
         # `None` even if the user did not set them. Filter down to just the ones that were set by
@@ -223,8 +225,8 @@ def _create_component_scaffold_subcommand(
             scaffold_params = None
 
         scaffold_component_instance(
-            Path(dg_context.components_path) / component_name,
-            component_key,
+            Path(dg_context.components_path) / component_instance_name,
+            component_key.to_typename(),
             scaffold_params,
             dg_context,
         )
@@ -254,8 +256,8 @@ def component_list_command(context: click.Context, **global_options: object) -> 
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
-    for component_name in dg_context.get_component_names():
-        click.echo(component_name)
+    for component_instance_name in dg_context.get_component_instance_names():
+        click.echo(component_instance_name)
 
 
 # ########################
@@ -290,7 +292,7 @@ def _scaffold_value_and_source_position_tree(
 
 
 class ErrorInput(NamedTuple):
-    component_name: Optional[str]
+    component_name: Optional[ComponentKey]
     error: ValidationError
     source_position_tree: ValueAndSourcePositionTree
 
@@ -313,7 +315,7 @@ def component_check_command(
 
     validation_errors: list[ErrorInput] = []
 
-    component_contents_by_key: dict[RemoteComponentKey, Any] = {}
+    component_contents_by_key: dict[ComponentKey, Any] = {}
     local_component_dirs = set()
     for component_dir in dg_context.components_path.iterdir():
         if resolved_paths and not any(
@@ -352,10 +354,11 @@ def component_check_command(
             if top_level_errs:
                 continue
 
-            component_name = component_doc_tree.value.get("type")
-            component_key = RemoteComponentKey.from_identifier(component_name, component_path)
+            component_key = ComponentKey.from_typename(
+                component_doc_tree.value.get("type"), str(component_path)
+            )
             component_contents_by_key[component_key] = component_doc_tree
-            if isinstance(component_key, LocalRemoteComponentKey):
+            if isinstance(component_key, LocalComponentKey):
                 local_component_dirs.add(component_dir)
 
     # Fetch the local component types, if we need any local components
@@ -369,28 +372,28 @@ def component_check_command(
 
             v = Draft202012Validator(json_schema)
             for err in v.iter_errors(component_doc_tree.value["params"]):
-                validation_errors.append(ErrorInput(component_key.name, err, component_doc_tree))
+                validation_errors.append(ErrorInput(component_key, err, component_doc_tree))
         except KeyError:
             # No matching component type found
             validation_errors.append(
                 ErrorInput(
                     None,
                     ValidationError(
-                        f"Unable to locate local component type '{component_key.name}' in {component_key.path}."
-                        if isinstance(component_key, LocalRemoteComponentKey)
-                        else f"No component type named '{component_key.to_string()}' found."
+                        f"Component type '{component_key.to_typename()}' not found in {component_key.dirpath}."
+                        if isinstance(component_key, LocalComponentKey)
+                        else f"Component type '{component_key.to_typename()}' not found."
                     ),
                     component_doc_tree,
                 )
             )
     if validation_errors:
-        for component_name, error, component_doc_tree in validation_errors:
+        for component_key, error, component_doc_tree in validation_errors:
             click.echo(
                 error_dict_to_formatted_error(
-                    component_name,
+                    component_key,
                     error,
                     source_position_tree=component_doc_tree.source_position_tree,
-                    prefix=["params"] if component_name else [],
+                    prefix=["params"] if component_key else [],
                 )
             )
         context.exit(1)

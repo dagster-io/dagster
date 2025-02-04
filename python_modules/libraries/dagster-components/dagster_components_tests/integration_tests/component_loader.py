@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_components.core.component import (
-    ComponentTypeKey,
+    ComponentKey,
     ComponentTypeRegistry,
     get_component_type_name,
     get_registered_component_types_in_module,
@@ -31,9 +31,9 @@ def load_test_component_project_registry(include_test: bool = False) -> Componen
         dc_module = importlib.import_module(package_name)
 
         for component in get_registered_component_types_in_module(dc_module):
-            key = ComponentTypeKey(
+            key = ComponentKey(
                 name=get_component_type_name(component),
-                package=f"dagster_components{'.test' if package_name.endswith('test') else ''}",
+                namespace=f"dagster_components{'.test' if package_name.endswith('test') else ''}",
             )
             components[key] = component
     return ComponentTypeRegistry(components)
