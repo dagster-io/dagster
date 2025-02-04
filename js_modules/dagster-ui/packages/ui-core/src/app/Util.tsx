@@ -1,8 +1,8 @@
-import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import LRU from 'lru-cache';
 
 import {timeByParts} from './timeByParts';
+import {cache} from '../util/idb-lru-cache';
 
 function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
@@ -150,9 +150,9 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
 ): U & {
   isCached: (arg: T, ...rest: any[]) => Promise<boolean>;
 } {
-  let lru: ReturnType<typeof cache<string, R>> | undefined;
+  let lru: ReturnType<typeof cache<R>> | undefined;
   try {
-    lru = cache<string, R>({
+    lru = cache<R>({
       dbName: 'indexDBAsyncMemoizeDB',
       maxCount: 50,
     });
@@ -176,11 +176,16 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
   }
 
   const ret = (async (arg: T, ...rest: any[]) => {
-    return new Promise<R>(async (resolve) => {
+    return new Promise<R>(async (resolve, reject) => {
       const hashKey = await genHashKey(arg, ...rest);
       if (lru && (await lru.has(hashKey))) {
-        const {value} = await lru.get(hashKey);
-        resolve(value);
+        const entry = await lru.get(hashKey);
+        const value = entry?.value;
+        if (value) {
+          resolve(value);
+        } else {
+          reject(new Error('No value found'));
+        }
         return;
       } else if (!hashToPromise[hashKey]) {
         hashToPromise[hashKey] = new Promise(async (res) => {
@@ -188,10 +193,7 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
           // Resolve the promise before storing the result in IndexedDB
           res(result);
           if (lru) {
-            await lru.set(hashKey, result, {
-              // Some day in the year 2050...
-              expiry: new Date(9 ** 13),
-            });
+            await lru.set(hashKey, result);
             delete hashToPromise[hashKey];
           }
         });
