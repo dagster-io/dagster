@@ -329,7 +329,7 @@ In the UI, you can manually trigger a test evaluation of a sensor and view the r
 
 2. Click the sensor you want to test.
 
-3. Click the **Test Sensor** button, located near the top right corner of the page.
+3. Click the **Preview tick result** button, located near the top right corner of the page.
 
    <Image
    src="/images/concepts/partitions-schedules-sensors/sensors/test-sensor-button.png"
@@ -337,7 +337,7 @@ In the UI, you can manually trigger a test evaluation of a sensor and view the r
    height={270}
    />
 
-4. You'll be prompted to provide a cursor value. You can use the existing cursor for the sensor (which will be prepopulated) or enter a different value. If you're not using cursors, leave this field blank.
+4. You'll be prompted to provide a cursor value (optional). You can use the existing cursor for the sensor (which will be prepopulated) or enter a different value. If you're not using cursors, leave this field blank.
 
    <Image
    src="/images/concepts/partitions-schedules-sensors/sensors/provide-cursor-page.png"
@@ -345,7 +345,7 @@ In the UI, you can manually trigger a test evaluation of a sensor and view the r
    height={454}
    />
 
-5. Click **Evaluate** to fire the sensor. A window containing the result of the evaluation will display, whether it's run requests, a skip reason, or a Python error:
+5. Click **Continue** to fire the sensor. A window containing the result of the evaluation will display, whether it's run requests, a skip reason, or a Python error:
 
    <Image
    src="/images/concepts/partitions-schedules-sensors/sensors/eval-result-page.png"
@@ -353,7 +353,27 @@ In the UI, you can manually trigger a test evaluation of a sensor and view the r
    height={455}
    />
 
-   If the run was successful, then for each produced run request, you can open the launchpad pre-scaffolded with the config produced by that run request. You'll also see a new computed cursor value from the evaluation, with the option to persist the value.
+6. If the preview was successful, then for each produced run request, you can view the run config and tags produced by that run request by clicking the **{}** button in the Actions column.
+
+    <!-- ![Actions page in the Dagster UI](/images/concepts/partitions-schedules-sensors/sensors/actions-page.png) -->
+
+   <Image
+   alt="Actions page in the Dagster UI"
+   src="/images/concepts/partitions-schedules-sensors/sensors/actions-page.png"
+   width={2638}
+   height={1388}
+   />
+
+7. Click the **Launch all & commit tick result** on the bottom right to launch all the run requests. It will launch the runs and link to the /runs page filtered to the IDs of the runs that launched.
+
+    <!-- ![Runs page after launching all runs in the Dagster UI](/images/concepts/partitions-schedules-sensors/sensors/launch-all-page.png) -->
+
+   <Image
+   alt="Runs page after launching all runs"
+   src="/images/concepts/partitions-schedules-sensors/sensors/launch-all-page.png"
+   width={2638}
+   height={1388}
+   />
 
 </TabItem>
 <TabItem name="Via the CLI">

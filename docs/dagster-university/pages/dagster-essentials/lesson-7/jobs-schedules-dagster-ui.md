@@ -113,9 +113,9 @@ To ensure the jobs and schedules are visible, **reload the definitions** before 
 ---
 
 - {% width="60%" %}
-  To test a schedule, use the **Test Schedule** button in the upper-right corner of the page. This can be handy when a schedule doesn’t run very often or you want to make sure a schedule is working correctly.
+  To test a schedule, use the **Preview tick result** button in the upper-right corner of the page. This can be handy when a schedule doesn’t run very often or you want to make sure a schedule is working correctly.
 
-- ![The Test Schedule button highlighted in the Schedule details page](/images/dagster-essentials/lesson-7/ui-test-schedule.png) {% rowspan=2 %}
+- ![The Preview tick result button highlighted in the Schedule details page](/images/dagster-essentials/lesson-7/ui-test-schedule.png) {% rowspan=2 %}
 
 {% /table %}
 
@@ -128,7 +128,7 @@ To ensure the jobs and schedules are visible, **reload the definitions** before 
 - {% width="60%" %}
   After the button is clicked, you’ll be prompted to select a mock evaluation time.
 
-  Click **Evaluate** to run the test.
+  Click **Continue** to run the test.
 
 - ![Mock evaluation time selection](/images/dagster-essentials/lesson-7/ui-mock-evaluation-time.png) {% rowspan=2 %}
 
