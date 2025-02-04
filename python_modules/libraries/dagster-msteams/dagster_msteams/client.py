@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import NamedTuple, Optional, cast
+from typing import Optional, cast
 from urllib.parse import urlparse
 
 import dagster._check as check
@@ -7,11 +7,7 @@ from requests import codes, exceptions, post
 
 from dagster_msteams.adaptive_card import AdaptiveCard
 from dagster_msteams.card import Card
-
-
-class Link(NamedTuple):
-    text: str
-    url: str
+from dagster_msteams.utils import Link
 
 
 class TeamsClient:
