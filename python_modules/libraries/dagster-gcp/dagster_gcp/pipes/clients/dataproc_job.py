@@ -125,7 +125,7 @@ class PipesDataprocJobClient(PipesClient, TreatAsResourceParam):
 
         Args:
             context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
-            submit_job_params (SubmitJobParams): Parameters for the ``JobControllerClient.submit_job`` call.
+            submit_job_params (dict): Parameters for the ``JobControllerClient.submit_job`` call.
                 See `Google Cloud SDK Documentation <https://cloud.google.com/python/docs/reference/dataproc/latest/google.cloud.dataproc_v1.services.job_controller.JobControllerClient#google_cloud_dataproc_v1_services_job_controller_JobControllerClient_submit_job>`_
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
