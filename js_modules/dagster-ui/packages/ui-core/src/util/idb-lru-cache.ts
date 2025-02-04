@@ -113,8 +113,10 @@ class IDBLRUCache<T> {
   }, 1000);
 
   async set(key: string, value: T): Promise<void> {
-    this.lruCache.put(key, value);
-    this.syncToDB();
+    return this.withDB(async () => {
+      this.lruCache.put(key, value);
+      this.syncToDB();
+    });
   }
 
   async get(key: string): Promise<{value: T} | undefined> {
@@ -125,17 +127,23 @@ class IDBLRUCache<T> {
   }
 
   async has(key: string): Promise<boolean> {
-    return this.lruCache.get(key) !== undefined;
+    return this.withDB(async () => {
+      return this.lruCache.get(key) !== undefined;
+    });
   }
 
   async delete(key: string): Promise<void> {
-    this.lruCache.put(key, undefined as any); // Using put to trigger LRU eviction
-    this.syncToDB();
+    return this.withDB(async () => {
+      this.lruCache.put(key, undefined as any); // Using put to trigger LRU eviction
+      this.syncToDB();
+    });
   }
 
   async clear(): Promise<void> {
-    this.lruCache = new LRUCache<T>(this.maxCount);
-    this.syncToDB();
+    return this.withDB(async () => {
+      this.lruCache = new LRUCache<T>(this.maxCount);
+      this.syncToDB();
+    });
   }
 
   async close(): Promise<void> {
