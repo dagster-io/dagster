@@ -12,6 +12,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.container import (
     UNCONSTRAINED_CGROUP_MEMORY_LIMIT,
+    compatible_cgroup_version_detected,
     retrieve_containerized_utilization_metrics,
 )
 
@@ -29,15 +30,24 @@ def _process_is_containerized() -> bool:
     if _get_platform_name() != "linux":
         return False
 
-    # the root process (pid==1) under linux is expected to be 'init'
-    # this test should be simpler and more robust than testing for cgroup v1, v2 or docker
+    # examining the root process (pid==1) under linux to determine if we can rule out being in a container
     file = "/proc/1/exe"
-    if os.path.isfile(file) and os.access(file, os.R_OK):
-        target = os.readlink(file)
-        return os.path.split(target)[-1] != "init"
+    if not os.path.isfile(file) or not os.access(file, os.R_OK):
+        # /proc/1/exe should exist on linux; if it doesn't, we don't know what kind of system we're on
+        return False
 
-    # /proc/1/exe should exist on linux; if it doesn't, we don't know what kind of system we're on
-    return False
+    target = os.readlink(file)
+    if os.path.split(target)[-1] == "init":
+        # SysVinit and upstart init - ex: /init, /sbin/init, /etc/init
+        if not target == "/dev/init":
+            # docker with `--init` will have /dev/init as the target
+            return False
+    elif os.path.split(target)[-1] == "systemd":
+        # the default init process on systemd
+        return False
+
+    # can we detect cgroup v1 or v2?
+    return compatible_cgroup_version_detected()
 
 
 def _metric_tags(dagster_run: DagsterRun) -> dict[str, str]:
@@ -172,7 +182,9 @@ def _capture_metrics(
     check.opt_inst_param(logger, "logger", logging.Logger)
 
     if not (container_metrics_enabled or python_metrics_enabled):
-        raise Exception("No metrics enabled")
+        if logger:
+            logger.warning("No metrics to capture, shutting down metrics capture thread")
+        return False  # terminate the thread safely without interrupting the main thread
 
     run_tags = _metric_tags(dagster_run)
 
@@ -211,7 +223,10 @@ def _capture_metrics(
 
         except:
             if logger:
-                logger.error("Exception during capture of metrics, will cease capturing")
+                logger.warning(
+                    "Exception caught during capture of metrics, will cease capturing",
+                    exc_info=True,
+                )
             return False  # terminate the thread safely without interrupting the main thread
 
         shutdown_event.wait(polling_interval)
@@ -241,7 +256,11 @@ def start_run_metrics_thread(
     container_metrics_enabled = _process_is_containerized()
     if not container_metrics_enabled and not python_metrics_enabled:
         if logger:
-            logger.debug("No collectable metrics, skipping run metrics thread")
+            logger.info(
+                "No collectable metrics, skipping run metrics thread. "
+                "This feature is not supported by some agents and requires execution in compatible linux "
+                "containers based on cgroup v1 or v2."
+            )
         return None, None
 
     if logger:

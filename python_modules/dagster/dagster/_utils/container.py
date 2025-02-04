@@ -10,6 +10,10 @@ from dagster._time import get_current_timestamp
 UNCONSTRAINED_CGROUP_MEMORY_LIMIT = 9223372036854000000
 
 
+def compatible_cgroup_version_detected() -> bool:
+    return _retrieve_cgroup_version(logger=None) is not None
+
+
 def cpu_usage_path_cgroup_v1() -> str:
     """Path to the cgroup file containing the CPU time in nanoseconds.
 
