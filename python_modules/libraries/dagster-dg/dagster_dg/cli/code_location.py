@@ -125,7 +125,7 @@ def code_location_list_command(context: click.Context, **global_options: object)
 _DEFAULT_SCHEMA_FOLDER_NAME = ".vscode"
 
 
-@code_location_group.command()
+@code_location_group.command(name="configure-vscode", cls=DgClickCommand)
 @dg_global_options
 @click.pass_context
 def configure_vscode(
