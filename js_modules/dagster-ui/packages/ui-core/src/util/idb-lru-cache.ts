@@ -148,7 +148,7 @@ class IDBLRUCache<T> {
 
   async close(): Promise<void> {
     await this.syncToDB.flush();
-    return this.withDB(async (db) => {
+    await this.withDB(async (db) => {
       this.isDbOpen = false;
       delete this.dbPromise;
       db.close();
