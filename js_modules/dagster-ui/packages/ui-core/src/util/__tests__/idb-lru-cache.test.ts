@@ -18,7 +18,6 @@ describe('IDBLRUCache', () => {
     const result = await cacheInstance.get('key1');
     expect(result?.value).toBe('value1');
     await cacheInstance.close();
-    // await cacheInstance.close();
   });
 
   it('should return undefined for non-existent keys', async () => {
