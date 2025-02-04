@@ -72,6 +72,7 @@ locations:
             value: MyEcsTagValue
         run_ecs_tags:
           - key: MyEcsTagKeyWithoutValue
+        readonly_root_filesystem: true
         repository_credentials: MyRepositoryCredentialsSecretArn
 ```
 
@@ -195,6 +196,7 @@ user_code_launcher:
         value: MyEcsTagValue
     run_ecs_tags:
       - key: MyEcsTagKeyWithoutValue
+    readonly_root_filesystem: true
     repository_credentials: MyRepositoryCredentialsSecretArn
 
 isolated_agents:
@@ -239,6 +241,7 @@ agent_queues:
 | config.server_ecs_tags | Additional ECS tags to include in the service for each code location. If set, must be a list of dictionaries, each with a `key` key and optional `value` key. |
 | config.run_ecs_tags | AAdditional ECS tags to include in the task for each run. If set, must be a list of dictionaries, each with a `key` key and optional `value` key. |
 | config.repository_credentials | Optional arn of the secret to authenticate into your private container registry. This does not apply if you are leveraging ECR for your images, see the [AWS private auth guide.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html) |
+| config.readonly_root_filesystem | Optional. When this parameter is true, the container is given read-only access to its root file system. This parameter maps to ReadonlyRootfs in the docker container create command and the --read-only option to docker run. [See AWS ECS docs.](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ecs-taskdefinition-containerdefinition.html#cfn-ecs-taskdefinition-containerdefinition-readonlyrootfilesystem) |
 | config.enable_ecs_exec | Boolean that determines whether tasks created by the agent should be configured with the needed linuxParameters and permissions to use [ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) to shell into the task. Also grants the `SYS_PTRACE` linux capability to enable running tools like py-spy to debug slow or hanging tasks. Defaults to false. **Note**: For ECS Exec to work, the task IAM role must be granted [certain permissions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html#ecs-exec-required-iam-permissions). |
 
 
