@@ -43,6 +43,8 @@ from typing import (  # noqa: UP035
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
 
+    from google.cloud.storage import Client as GCSClient
+
 # ########################
 # ##### PROTOCOL
 # ########################
@@ -1257,6 +1259,78 @@ class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
             Bucket=self._bucket,
             Key=key,
         )
+
+
+# ########################
+# ##### IO - GCS
+# ########################
+
+
+class PipesGCSContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on GCS.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+    """
+
+    def __init__(self, client: "GCSClient"):
+        self._client = client
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key = _assert_env_param_type(params, "key", str, self.__class__)
+        obj = self._client.get_bucket(bucket).blob(key).download_as_bytes()
+        yield json.loads(obj.decode("utf-8"))
+
+
+class PipesGCSMessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks to a GCS bucket.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
+    def __init__(self, client: "GCSClient", *, interval: float = 10):
+        super().__init__(interval=interval)
+        self._client = client
+
+    def make_channel(
+        self,
+        params: PipesParams,
+    ) -> "PipesGCSMessageWriterChannel":
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key_prefix = _assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
+        return PipesGCSMessageWriterChannel(
+            client=self._client,
+            bucket=bucket,
+            key_prefix=key_prefix,
+            interval=self.interval,
+        )
+
+
+class PipesGCSMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
+    """Message writer channel for writing messages by periodically writing message chunks to a GCS bucket.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+        bucket (str): The name of the GCS bucket to write to.
+        key_prefix (Optional[str]): An optional prefix to use for the keys of written blobs.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
+    def __init__(
+        self, client: "GCSClient", bucket: str, key_prefix: Optional[str], *, interval: float = 10
+    ):
+        super().__init__(interval=interval)
+        self._client = client
+        self._bucket = bucket
+        self._key_prefix = key_prefix
+
+    def upload_messages_chunk(self, payload: IO, index: int) -> None:
+        key = f"{self._key_prefix}/{index}.json" if self._key_prefix else f"{index}.json"
+        self._client.get_bucket(self._bucket).blob(key).upload_from_file(payload)
 
 
 # ########################
