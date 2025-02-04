@@ -48,6 +48,6 @@ setup(
     extras_require={
         "sling": ["dagster-sling"],
         "dbt": ["dagster-dbt"],
-        "test": ["dbt-duckdb"],
+        "test": ["dbt-duckdb", "tomli", "tomli_w"],
     },
 )
