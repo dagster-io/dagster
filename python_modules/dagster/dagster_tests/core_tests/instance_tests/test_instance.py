@@ -372,12 +372,14 @@ def test_get_required_daemon_types():
         SchedulerDaemon,
         SensorDaemon,
     )
+    from dagster._daemon.run_coordinator import QueuedRunCoordinatorDaemon
 
     with instance_for_test() as instance:
         assert instance.get_required_daemon_types() == [
             SensorDaemon.daemon_type(),
             BackfillDaemon.daemon_type(),
             SchedulerDaemon.daemon_type(),
+            QueuedRunCoordinatorDaemon.daemon_type(),
             AssetDaemon.daemon_type(),
         ]
 
@@ -394,6 +396,7 @@ def test_get_required_daemon_types():
             SensorDaemon.daemon_type(),
             BackfillDaemon.daemon_type(),
             SchedulerDaemon.daemon_type(),
+            QueuedRunCoordinatorDaemon.daemon_type(),
             MonitoringDaemon.daemon_type(),
             AssetDaemon.daemon_type(),
         ]
@@ -407,6 +410,7 @@ def test_get_required_daemon_types():
             SensorDaemon.daemon_type(),
             BackfillDaemon.daemon_type(),
             SchedulerDaemon.daemon_type(),
+            QueuedRunCoordinatorDaemon.daemon_type(),
         ]
 
 

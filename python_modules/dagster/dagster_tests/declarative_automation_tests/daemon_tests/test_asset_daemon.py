@@ -91,13 +91,9 @@ def get_daemon_instance(
         return_value=1,
     ):
         with instance_for_test(
-            overrides={
-                "run_launcher": {
-                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                },
-                **(extra_overrides or {}),
-            }
+            overrides=extra_overrides,
+            synchronous_run_launcher=True,
+            synchronous_run_coordinator=True,
         ) as instance:
             set_auto_materialize_paused(instance, paused)
             yield instance

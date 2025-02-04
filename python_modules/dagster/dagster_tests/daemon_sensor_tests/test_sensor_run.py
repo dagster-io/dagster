@@ -1606,6 +1606,7 @@ def test_launch_failure(caplog, executor, workspace_context, remote_repo):
                 "class": "ExplodingRunLauncher",
             },
         },
+        synchronous_run_coordinator=True,
     ) as instance:
         with freeze_time(freeze_datetime):
             exploding_workspace_context = workspace_context.copy_for_test_instance(instance)
