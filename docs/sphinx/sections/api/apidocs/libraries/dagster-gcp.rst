@@ -107,6 +107,11 @@ Dataproc Ops
 Pipes
 --------------
 
+Clients
+^^^^^^^
+
+.. autoclass:: dagster_gcp.pipes.PipesDataprocJobClient
+
 Context Injectors
 ^^^^^^^^^^^^^^^^^
 
