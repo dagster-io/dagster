@@ -7,7 +7,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 Using dbt Cloud? Check out the [Dagster & dbt Cloud guide](/integrations/libraries/dbt/dbt-cloud).
 
-:::note
+:::
 
 In this tutorial, we'll walk you through integrating dbt with Dagster using a smaller version of dbt's example [jaffle shop project](https://github.com/dbt-labs/jaffle_shop), the [dagster-dbt library](/api/python-api/libraries/dagster-dbt), and a data warehouse, such as [DuckDB](https://duckdb.org/).
 
