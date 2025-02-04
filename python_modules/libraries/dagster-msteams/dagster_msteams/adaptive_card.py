@@ -6,11 +6,12 @@ from dagster_msteams.utils import Link
 class AdaptiveCard:
     """Class to contruct a MS Teams adaptive card for posting Dagster messages."""
 
-    def __init__(self, message: str, link: Optional[Link] = None):
-        if link:
-            message += f" [{link.text}]({link.url})"
+    def __init__(self):
+        self._text_blocks = []
 
-        self.payload = {
+    @property
+    def payload(self) -> dict[str, Any]:
+        return {
             "type": "message",
             "attachments": [
                 {
@@ -19,7 +20,7 @@ class AdaptiveCard:
                     "content": {
                         "type": "AdaptiveCard",
                         "version": "1.0",
-                        "body": [self._build_text_block(message)],
+                        "body": self._text_blocks,
                     },
                 }
             ],
@@ -31,3 +32,9 @@ class AdaptiveCard:
             "text": text,
             "wrap": True,
         }
+
+    def add_attachment(self, text_message: str, link: Optional[Link] = None) -> None:
+        if link:
+            text_message += f" [{link.text}]({link.url})"
+
+        self._text_blocks.append(self._build_text_block(text_message))

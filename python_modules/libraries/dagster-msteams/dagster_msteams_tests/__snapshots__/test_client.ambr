@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_client_compatible_with_legacy_and_workflow_webhooks[https://foo.webhook.office.com/bar/baz]
+# name: test_client_compatible_with_legacy_webhook
   _CallList([
     _Call(
       tuple(
@@ -28,7 +28,7 @@
     ),
   ])
 # ---
-# name: test_client_compatible_with_legacy_and_workflow_webhooks[https://foo.westus.logic.azure.com:443/workflows/8be36cde7f394925af220480f6701bd0]
+# name: test_client_compatible_with_workflow_webhook
   _CallList([
     _Call(
       tuple(
