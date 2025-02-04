@@ -5,10 +5,8 @@ from dagster._core.definitions import failure_hook, success_hook
 from dagster._core.execution.context.hook import HookContext
 from dagster._utils.warnings import normalize_renamed_param
 
-from dagster_msteams.card import Card
 from dagster_msteams.resources import MSTeamsResource
-
-# TODO test these hooks
+from dagster_msteams.utils import Link
 
 
 def _default_status_message(context: HookContext, status: str) -> str:
@@ -73,15 +71,16 @@ def teams_on_failure(
 
     @failure_hook(required_resource_keys={"msteams"})
     def _hook(context: HookContext):
-        text = message_fn(context)
-        if webserver_base_url:
-            text += f"<a href='{webserver_base_url}/runs/{context.run_id}'>View in Dagster UI</a>"
-        card = Card()
-        card.add_attachment(text_message=text)
+        message = message_fn(context)
+        link = (
+            Link("View in Dagster UI", f"{webserver_base_url}/runs/{context.run_id}")
+            if webserver_base_url
+            else None
+        )
         if isinstance(context.resources.msteams, MSTeamsResource):
-            context.resources.msteams.get_client().post_message(payload=card.payload)
+            context.resources.msteams.get_client().post_message(message=message, link=link)
         else:
-            context.resources.msteams.post_message(payload=card.payload)
+            context.resources.msteams.post_message(message=message, link=link)
 
     return _hook
 
@@ -133,14 +132,15 @@ def teams_on_success(
 
     @success_hook(required_resource_keys={"msteams"})
     def _hook(context: HookContext):
-        text = message_fn(context)
-        if webserver_base_url:
-            text += f"<a href='{webserver_base_url}/runs/{context.run_id}'>View in webserver</a>"
-        card = Card()
-        card.add_attachment(text_message=text)
+        message = message_fn(context)
+        link = (
+            Link("View in Dagster UI", f"{webserver_base_url}/runs/{context.run_id}")
+            if webserver_base_url
+            else None
+        )
         if isinstance(context.resources.msteams, MSTeamsResource):
-            context.resources.msteams.get_client().post_message(payload=card.payload)
+            context.resources.msteams.get_client().post_message(message=message, link=link)
         else:
-            context.resources.msteams.post_message(payload=card.payload)
+            context.resources.msteams.post_message(message=message, link=link)
 
     return _hook
