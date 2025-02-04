@@ -63,9 +63,9 @@ def definitions_validate_command(
     os.environ["DAGSTER_IS_DEFS_VALIDATION_CLI"] = "1"
 
     configure_loggers(formatter=log_format, log_level=log_level.upper())
-
     logger = logging.getLogger("dagster")
-    logger.info("Starting validation...")
+    logging.captureWarnings(True)
+
     with get_possibly_temporary_instance_for_cli(
         "dagster definitions validate", logger=logger
     ) as instance:
@@ -76,18 +76,25 @@ def definitions_validate_command(
                 instance=instance, version=dagster_version, kwargs=kwargs
             )
         ) as workspace:
-            invalid = any(
+            if logger.parent:
+                logger.parent.handlers.clear()
+            invalid_locations = [
                 entry
                 for entry in workspace.get_code_location_entries().values()
                 if entry.load_error
-            )
+            ]
             for code_location, entry in workspace.get_code_location_entries().items():
                 if entry.load_error:
                     logger.error(
-                        f"Validation failed for code location {code_location} with exception: "
-                        f"{entry.load_error.message}."
+                        f"Validation failed for code location {code_location}:\n\n"
+                        f"{entry.load_error.to_string()}"
                     )
+                    pass
                 else:
                     logger.info(f"Validation successful for code location {code_location}.")
-    logger.info("Ending validation...")
-    sys.exit(0) if not invalid else sys.exit(1)
+
+    if invalid_locations:
+        logger.error(f"Validation for {len(invalid_locations)} code locations failed.")
+        sys.exit(1)
+    else:
+        logger.info("All code locations passed validation.")
