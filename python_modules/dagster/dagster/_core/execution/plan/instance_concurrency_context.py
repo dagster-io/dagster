@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional
 from typing_extensions import Self
 
 from dagster._core.instance import DagsterInstance
+from dagster._core.instance.config import PoolGranularity
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import PRIORITY_TAG
 
@@ -40,7 +41,7 @@ class InstanceConcurrencyContext:
         self._pending_timeouts = defaultdict(float)
         self._pending_claim_counts = defaultdict(int)
         self._pending_claims = set()
-        self._default_limit = instance.global_op_concurrency_default_limit
+        self._pool_config = instance.event_log_storage.get_pool_config()
         self._claims = set()
         try:
             self._run_priority = int(dagster_run.tags.get(PRIORITY_TAG, "0"))
@@ -86,15 +87,26 @@ class InstanceConcurrencyContext:
         pool_limits = self._instance.event_log_storage.get_pool_limits()
         self._pools = {pool.name: pool for pool in pool_limits}
 
-    def claim(self, concurrency_key: str, step_key: str, step_priority: int = 0):
+    def claim(
+        self,
+        concurrency_key: str,
+        step_key: str,
+        step_priority: int = 0,
+        is_legacy_tag: bool = False,
+    ) -> bool:
         if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
 
+        if self._pool_config.pool_granularity == PoolGranularity.RUN or (
+            self._pool_config.pool_granularity is None and not is_legacy_tag
+        ):
+            # short-circuit claiming global op concurrency slot claiming
+            return True
+
+        default_limit = self._pool_config.default_pool_limit
         pool_info = self.get_pool_info(concurrency_key)
-        if (pool_info is None and self._default_limit is not None) or (
-            pool_info is not None
-            and pool_info.from_default
-            and pool_info.limit != self._default_limit
+        if (pool_info is None and default_limit is not None) or (
+            pool_info is not None and pool_info.from_default and pool_info.limit != default_limit
         ):
             self._instance.event_log_storage.initialize_concurrency_limit_to_default(
                 concurrency_key

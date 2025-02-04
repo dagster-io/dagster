@@ -197,6 +197,9 @@ def test_active_concurrency(use_tags):
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },
+                "concurrency": {
+                    "pools": {"granularity": "op"},
+                },
             }
         ) as instance:
             assert instance.event_log_storage.supports_global_concurrency_limits
@@ -248,7 +251,9 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
     def global_concurrency_keys(self) -> set[str]:
         return {"foo"}
 
-    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
+    def claim(
+        self, concurrency_key: str, step_key: str, priority: int = 0, is_legacy_tag: bool = False
+    ):
         self._pending_claims.add(step_key)
         return False
 
