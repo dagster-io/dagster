@@ -50,15 +50,12 @@ OFFSET_LINES_AFTER = 3
 def error_dict_to_formatted_error(
     component_name: Optional[str],
     error_details: ValidationError,
-    source_position_tree: Optional[SourcePositionTree],
+    source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),
 ) -> str:
-    source_position = None
-    source_position_path = []
-    if source_position_tree:
-        source_position, source_position_path = source_position_tree.lookup_closest_and_path(
-            [*prefix, *error_details.absolute_path], trace=None
-        )
+    source_position, source_position_path = source_position_tree.lookup_closest_and_path(
+        [*prefix, *error_details.absolute_path], trace=None
+    )
 
     # Retrieves dotted path representation of the location of the error in the YAML file, e.g.
     # params.nested.foo.an_int
@@ -68,19 +65,15 @@ def error_dict_to_formatted_error(
 
     # Find the first source position that has a different start line than the current source position
     # This is e.g. the parent json key of the current source position
-    preceding_source_position = (
-        next(
-            iter(
-                [
-                    value
-                    for value in reversed(list(source_position_path))
-                    if value.start.line < source_position.start.line
-                ]
-            ),
-            source_position,
-        )
-        if source_position
-        else None
+    preceding_source_position = next(
+        iter(
+            [
+                value
+                for value in reversed(list(source_position_path))
+                if value.start.line < source_position.start.line
+            ]
+        ),
+        source_position,
     )
     with open(source_position.filename) as f:
         lines = f.readlines()
