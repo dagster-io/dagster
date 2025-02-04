@@ -1,4 +1,4 @@
-type: .custom_scope_component
+type: custom_scope_component@component.py
 
 params:
   group_name: "{{ custom_str }}"

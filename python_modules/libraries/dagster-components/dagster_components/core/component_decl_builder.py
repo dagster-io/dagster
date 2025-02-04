@@ -18,6 +18,7 @@ from dagster_components.core.component import (
     Component,
     ComponentDeclNode,
     ComponentLoadContext,
+    ComponentTypeKey,
     ComponentTypeRegistry,
     get_component_type_name,
     is_component_loader,
@@ -34,18 +35,26 @@ class ComponentFileModel(BaseModel):
 T = TypeVar("T", bound=BaseModel)
 
 
-def find_local_component_types(component_path: Path) -> list[type[Component]]:
-    """Find all component types defined in a component directory."""
-    component_types = []
+def find_local_component_types(component_path: Path) -> Mapping[ComponentTypeKey, type[Component]]:
+    """Find all component types defined in a component directory, and their respective paths."""
+    component_types = {}
     for py_file in component_path.glob("*.py"):
-        module_name = py_file.stem
+        for component_type in find_component_types_in_file(py_file):
+            component_types[
+                ComponentTypeKey(name=get_component_type_name(component_type), package=py_file.name)
+            ] = component_type
+    return component_types
 
-        module = load_module_from_path(module_name, component_path / f"{module_name}.py")
 
-        for _name, obj in inspect.getmembers(module, inspect.isclass):
-            assert isinstance(obj, type)
-            if is_registered_component_type(obj):
-                component_types.append(obj)
+def find_component_types_in_file(file_path: Path) -> list[type[Component]]:
+    """Find all component types defined in a specific file."""
+    component_types = []
+    for _name, obj in inspect.getmembers(
+        load_module_from_path(file_path.stem, file_path), inspect.isclass
+    ):
+        assert isinstance(obj, type)
+        if is_registered_component_type(obj):
+            component_types.append(obj)
     return component_types
 
 
@@ -115,18 +124,16 @@ class YamlComponentDecl(ComponentDeclNode):
 
     def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
         parsed_defs = self.component_file_model
-        if parsed_defs.type.startswith("."):
-            component_registry_key = parsed_defs.type[1:]
-
-            for component_type in find_local_component_types(self.path):
-                if get_component_type_name(component_type) == component_registry_key:
+        key = ComponentTypeKey.from_string(parsed_defs.type)
+        if parsed_defs.type.endswith(".py"):
+            file = self.path / key.package
+            for component_type in find_component_types_in_file(file):
+                if get_component_type_name(component_type) == key.name:
                     return component_type
 
-            raise Exception(
-                f"Could not find component type {component_registry_key} in {self.path}"
-            )
+            raise Exception(f"Could not find component type {key.name} in {file}")
 
-        return registry.get(parsed_defs.type)
+        return registry.get(key)
 
     def get_params(self, context: ComponentLoadContext, params_schema: type[T]) -> T:
         with pushd(str(self.path)):

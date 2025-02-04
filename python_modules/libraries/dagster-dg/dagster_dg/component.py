@@ -12,6 +12,20 @@ if TYPE_CHECKING:
     from dagster_dg.context import DgContext
 
 
+@dataclass(frozen=True)
+class RemoteComponentKey:
+    name: str
+    package: str
+
+    @staticmethod
+    def from_string(s: str) -> "RemoteComponentKey":
+        name, package = s.split("@")
+        return RemoteComponentKey(name=name, package=package)
+
+    def to_string(self) -> str:
+        return f"{self.name}@{self.package}"
+
+
 @dataclass
 class RemoteComponentType:
     name: str
@@ -22,8 +36,8 @@ class RemoteComponentType:
     component_params_schema: Optional[Mapping[str, Any]]  # json schema
 
     @property
-    def key(self) -> str:
-        return self.name
+    def key(self) -> RemoteComponentKey:
+        return RemoteComponentKey(name=self.name, package=self.package)
 
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
@@ -40,15 +54,18 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
 
 def _retrieve_local_component_types(
     dg_context: "DgContext", paths: Sequence[Path]
-) -> Mapping[str, Mapping[str, Mapping[str, Any]]]:
+) -> Mapping[str, Mapping[RemoteComponentKey, Mapping[str, Any]]]:
     paths_to_fetch = set(paths)
-    data_for_path: dict[str, dict[str, Mapping[str, Any]]] = {}
+    data_for_path: dict[str, dict[RemoteComponentKey, Mapping[str, Any]]] = {}
     if dg_context.has_cache:
         for path in paths:
             cache_key = dg_context.get_cache_key_for_local_components(path)
             raw_data = dg_context.cache.get(cache_key)
             if raw_data:
-                data_for_path[str(path)] = json.loads(raw_data)
+                loaded_data = json.loads(raw_data)
+                data_for_path[str(path)] = {
+                    RemoteComponentKey.from_string(key): value for key, value in loaded_data.items()
+                }
                 paths_to_fetch.remove(path)
 
     if paths_to_fetch:
@@ -96,9 +113,12 @@ class RemoteComponentRegistry:
             if dg_context.has_cache and cache_key and is_valid_json(raw_registry_data):
                 dg_context.cache.set(cache_key, raw_registry_data)
 
-        registry_data = json.loads(raw_registry_data)
+        registry_data = {
+            RemoteComponentKey.from_string(key): value
+            for key, value in json.loads(raw_registry_data).items()
+        }
 
-        local_component_data: Mapping[str, Mapping[str, Mapping[str, Any]]] = {}
+        local_component_data: Mapping[str, Mapping[RemoteComponentKey, Mapping[str, Any]]] = {}
         if local_component_type_dirs:
             local_component_data = _retrieve_local_component_types(
                 dg_context, local_component_type_dirs
@@ -110,8 +130,8 @@ class RemoteComponentRegistry:
     @classmethod
     def from_dict(
         cls,
-        global_component_types: Mapping[str, Mapping[str, Any]],
-        local_component_types: Mapping[str, Mapping[str, Mapping[str, Any]]],
+        global_component_types: Mapping[RemoteComponentKey, Mapping[str, Any]],
+        local_component_types: Mapping[str, Mapping[RemoteComponentKey, Mapping[str, Any]]],
     ) -> "RemoteComponentRegistry":
         components_by_path = defaultdict(dict)
         for directory in local_component_types:
@@ -125,36 +145,36 @@ class RemoteComponentRegistry:
 
     def __init__(
         self,
-        components: dict[str, RemoteComponentType],
-        local_components: dict[str, dict[str, RemoteComponentType]],
+        components: dict[RemoteComponentKey, RemoteComponentType],
+        local_components: dict[str, dict[RemoteComponentKey, RemoteComponentType]],
     ):
-        self._components: dict[str, RemoteComponentType] = copy.copy(components)
-        self._local_components: dict[str, dict[str, RemoteComponentType]] = copy.copy(
-            local_components
+        self._components: dict[RemoteComponentKey, RemoteComponentType] = copy.copy(components)
+        self._local_components: dict[str, dict[RemoteComponentKey, RemoteComponentType]] = (
+            copy.copy(local_components)
         )
 
     @staticmethod
     def empty() -> "RemoteComponentRegistry":
         return RemoteComponentRegistry({}, {})
 
-    def has_global(self, name: str) -> bool:
-        return name in self._components
+    def has_global(self, key: RemoteComponentKey) -> bool:
+        return key in self._components
 
-    def get(self, path: Path, key: str) -> RemoteComponentType:
+    def get(self, path: Path, key: RemoteComponentKey) -> RemoteComponentType:
         """Resolves a component type within the scope of a given component directory."""
         if key in self._components:
             return self._components[key]
 
         return self._local_components[str(path)][key]
 
-    def get_global(self, name: str) -> RemoteComponentType:
-        return self._components[name]
+    def get_global(self, key: RemoteComponentKey) -> RemoteComponentType:
+        return self._components[key]
 
-    def global_keys(self) -> Iterable[str]:
+    def global_keys(self) -> Iterable[RemoteComponentKey]:
         return self._components.keys()
 
-    def global_items(self) -> Iterable[tuple[str, RemoteComponentType]]:
-        for key in sorted(self.global_keys()):
+    def global_items(self) -> Iterable[tuple[RemoteComponentKey, RemoteComponentType]]:
+        for key in sorted(self.global_keys(), key=lambda k: k.to_string()):
             yield key, self.get_global(key)
 
     def __repr__(self) -> str:

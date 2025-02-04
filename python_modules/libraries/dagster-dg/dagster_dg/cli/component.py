@@ -11,7 +11,7 @@ from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
-from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.component import RemoteComponentKey, RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.config import (
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -82,7 +82,7 @@ class ComponentScaffoldGroup(DgClickGroup):
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         for key, component_type in registry.global_items():
-            command = _create_component_scaffold_subcommand(key, component_type)
+            command = _create_component_scaffold_subcommand(key.to_string(), component_type)
             self.add_command(command)
 
 
@@ -191,7 +191,7 @@ def _create_component_scaffold_subcommand(
         dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has_global(component_key):
+        if not registry.has_global(RemoteComponentKey.from_string(component_key)):
             exit_with_error(f"No component type `{component_key}` could be resolved.")
         elif dg_context.has_component(component_name):
             exit_with_error(f"A component instance named `{component_name}` already exists.")
@@ -266,7 +266,7 @@ COMPONENT_FILE_SCHEMA = {
 
 
 def _is_local_component(component_name: str) -> bool:
-    return component_name.startswith(".")
+    return component_name.endswith(".py")
 
 
 def _scaffold_value_and_source_position_tree(
@@ -361,7 +361,10 @@ def component_check_command(
 
         try:
             json_schema = (
-                component_registry.get(component_dir, component_name).component_params_schema or {}
+                component_registry.get(
+                    component_dir, RemoteComponentKey.from_string(component_name)
+                ).component_params_schema
+                or {}
             )
 
             v = Draft202012Validator(json_schema)

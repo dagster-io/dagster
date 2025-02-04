@@ -1,4 +1,4 @@
-type: dagster_components.test.simple_asset
+type: simple_asset@dagster_components.test
 
 params:
   asset_key: "test"
