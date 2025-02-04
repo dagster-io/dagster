@@ -1,10 +1,5 @@
 import {cache} from '../idb-lru-cache';
 
-jest.mock('lodash/debounce', () => ({
-  __esModule: true,
-  default: jest.fn((fn) => fn),
-}));
-
 describe('IDBLRUCache', () => {
   const testCacheOptions = () => ({
     dbName: 'test-cache' + Math.random(),
