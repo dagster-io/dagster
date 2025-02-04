@@ -23,7 +23,6 @@ from typing import (  # noqa: UP035
     Optional,
     TypeVar,
     Union,
-    cast,
 )
 
 from typing_extensions import Self
@@ -70,7 +69,10 @@ from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
-from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._core.workspace.load_target import (
+    InProcessWorkspaceLoadTarget as InProcessTestWorkspaceLoadTarget,
+    WorkspaceLoadTarget,
+)
 from dagster._core.workspace.workspace import CodeLocationEntry, WorkspaceSnapshot
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
@@ -478,20 +480,6 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
 
 def get_crash_signals() -> Sequence[Signals]:
     return [get_terminate_signal()]
-
-
-# Test utility for creating a test workspace for a function
-class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
-    def __init__(
-        self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
-    ):
-        self._origins = cast(
-            Sequence[InProcessCodeLocationOrigin],
-            origin if isinstance(origin, list) else [origin],
-        )
-
-    def create_origins(self) -> Sequence[InProcessCodeLocationOrigin]:
-        return self._origins
 
 
 @contextmanager
