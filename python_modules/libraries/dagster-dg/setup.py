@@ -38,6 +38,7 @@ setup(
         "typing_extensions>=4.4.0,<5",
         "markdown",
         "jsonschema",
+        "psutil",
         "PyYAML>=5.1",
         "rich",
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
@@ -52,6 +53,13 @@ setup(
         ]
     },
     extras_require={
-        "test": ["click", "dagster-components", "pydantic", "pytest", "tomli-w"],
+        "test": [
+            "click",
+            "dagster-components",
+            "dagster-graphql",
+            "pydantic",
+            "pytest",
+            "tomli-w",
+        ],
     },
 )

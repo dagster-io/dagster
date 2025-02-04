@@ -9,13 +9,14 @@ import sys
 import textwrap
 from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
 import click
 import jinja2
 from typer.rich_utils import rich_format_help
-from typing_extensions import TypeAlias
+from typing_extensions import Never, TypeAlias
 
 from dagster_dg.error import DgError
 from dagster_dg.version import __version__ as dagster_version
@@ -46,11 +47,23 @@ def is_package_installed(package_name: str) -> bool:
         return False
 
 
-def get_path_for_package(package_name: str) -> str:
-    spec = importlib.util.find_spec(package_name)
+def _get_spec_for_module(module_name: str) -> ModuleSpec:
+    spec = importlib.util.find_spec(module_name)
     if not spec:
-        raise DgError(f"Cannot find package: {package_name}")
-    # file_path = spec.origin
+        raise DgError(f"Cannot find module: {module_name}")
+    return spec
+
+
+def get_path_for_module(module_name: str) -> str:
+    spec = _get_spec_for_module(module_name)
+    file_path = spec.origin
+    if not file_path:
+        raise DgError(f"Cannot find file path for module: {module_name}")
+    return file_path
+
+
+def get_path_for_package(package_name: str) -> str:
+    spec = _get_spec_for_module(package_name)
     submodule_search_locations = spec.submodule_search_locations
     if not submodule_search_locations:
         raise DgError(f"Package does not have any locations for submodules: {package_name}")
@@ -265,7 +278,7 @@ def not_none(value: Optional[T]) -> T:
     return value
 
 
-def exit_with_error(error_message: str) -> None:
+def exit_with_error(error_message: str) -> Never:
     click.echo(click.style(error_message, fg="red"))
     sys.exit(1)
 
