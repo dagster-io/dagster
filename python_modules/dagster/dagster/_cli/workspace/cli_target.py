@@ -51,6 +51,9 @@ if TYPE_CHECKING:
 
 from dagster._core.remote_representation.external import RemoteJob
 
+logger = logging.getLogger("dagster")
+
+
 WORKSPACE_TARGET_WARNING = (
     "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port,"
     " --grpc-socket."
@@ -250,6 +253,8 @@ def get_workspace_from_kwargs(
     version: str,
     kwargs: ClickArgMapping,
 ) -> Iterator[WorkspaceRequestContext]:
+    logger.debug("Loading workspace with gRPC server")
+
     with get_workspace_process_context_from_kwargs(
         instance, version, read_only=False, kwargs=kwargs
     ) as workspace_process_context:
@@ -274,18 +279,15 @@ def get_auto_determined_workspace_from_kwargs(
     distinct Python executable. Otherwise, spins up one or more gRPC
     servers to handle the locations.
     """
-    logger = logging.getLogger("dagster")
     tgt = get_workspace_load_target(kwargs)
     origins = tgt.create_origins()
 
     if len(origins) > 1 or not _does_origin_executable_match(origins[0]):
-        logger.debug("Loading workspace with gRPC server")
         with get_workspace_from_kwargs(
             instance=instance, kwargs=kwargs, version=version
         ) as workspace_request_context:
             yield workspace_request_context
     else:
-        logger.debug("Loading workspace in-process")
         with get_in_process_workspace_from_kwargs(
             instance=instance, kwargs=kwargs
         ) as workspace_request_context:
@@ -300,6 +302,8 @@ def get_in_process_workspace_from_kwargs(
 ) -> Iterator[WorkspaceRequestContext]:
     """Spins up a workspace in-process with the provided kwargs."""
     from dagster._core.workspace.context import WorkspaceProcessContext
+
+    logger.debug("Loading workspace in-process")
 
     tgt = get_workspace_load_target(kwargs)
     origins = tgt.create_origins()
