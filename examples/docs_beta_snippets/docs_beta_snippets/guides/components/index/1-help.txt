@@ -33,4 +33,5 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ component        Commands for operating on components.                                 │
 │ component-type   Commands for operating on components types.                           │
 │ deployment       Commands for operating on deployment directories.                     │
+│ dev              Start a local deployment of your Dagster project.                     │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
