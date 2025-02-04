@@ -11,6 +11,16 @@
       "destination": "https://docs.dagster.io"
     },
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "new-docs.dagster.io"
+        }
+      ],
+      "destination": "https://docs.dagster.io"
+    },
+    {
       "source": "/dagster-cloud/:path*",
       "destination": "/dagster-plus/:path*",
       "permanent": false
