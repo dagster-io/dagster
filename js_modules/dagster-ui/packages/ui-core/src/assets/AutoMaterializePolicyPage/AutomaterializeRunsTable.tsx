@@ -72,7 +72,7 @@ export const AutomaterializeRunsTable = ({runIds}: {runIds: string[]}) => {
                 <RunTime run={run} />
               </td>
               <td>
-                <RunStatusTagWithStats runId={run.runId} status={run.status} />
+                <RunStatusTagWithStats status={run.status} runId={run.runId} />
               </td>
               <td>
                 <RunStateSummary run={run} />

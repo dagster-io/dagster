@@ -1,4 +1,4 @@
-import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
+import {Box, CaptionMono, Colors, Popover, Tag, Tooltip} from '@dagster-io/ui-components';
 
 import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
@@ -128,5 +128,27 @@ export const RunStatusTagWithStats = (props: Props) => {
     >
       <RunStatusTag status={status} />
     </Popover>
+  );
+};
+
+export const RunAlertStatus = (props: {tags: {key: string; value: string}[]}) => {
+  const {tags} = props;
+
+  const alerted = tags?.some((tag) => tag.key === 'dagster-cloud/triggered_alert');
+  const numAlerts = tags?.filter((tag) =>
+    tag.key.startsWith('dagster-cloud/triggered_alert/'),
+  ).length;
+
+  return (
+    <>
+      {alerted ? (
+        <Tooltip
+          content={`This run has triggered ${numAlerts} alert${numAlerts === 1 ? '' : 's'}`}
+          position="bottom"
+        >
+          <Tag icon="alert" intent="warning"></Tag>
+        </Tooltip>
+      ) : null}
+    </>
   );
 };
