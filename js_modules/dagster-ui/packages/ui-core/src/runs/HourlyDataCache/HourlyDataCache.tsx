@@ -6,10 +6,6 @@ export const ONE_HOUR_S = 60 * 60;
 
 type Subscription<T> = (data: T[]) => void;
 
-export const defaultOptions = {
-  expiry: new Date('3030-01-01'), // never expire,
-};
-
 type CacheType<T> = {
   version: string | number;
   cache: InstanceType<typeof HourlyDataCache<T>>['cache'];
@@ -85,11 +81,7 @@ export class HourlyDataCache<T> {
       if (!this.indexedDBCache) {
         return;
       }
-      this.indexedDBCache.set(
-        this.indexedDBKey,
-        {version: this.version, cache: this.cache},
-        defaultOptions,
-      );
+      this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
       return;
     }
     clearTimeout(this.saveTimeout);
@@ -97,11 +89,7 @@ export class HourlyDataCache<T> {
       if (!this.indexedDBCache) {
         return;
       }
-      this.indexedDBCache.set(
-        this.indexedDBKey,
-        {version: this.version, cache: this.cache},
-        defaultOptions,
-      );
+      this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
     }, 10000);
     if (!this.registeredUnload) {
       this.registeredUnload = true;
@@ -109,11 +97,7 @@ export class HourlyDataCache<T> {
         if (!this.indexedDBCache) {
           return;
         }
-        this.indexedDBCache.set(
-          this.indexedDBKey,
-          {version: this.version, cache: this.cache},
-          defaultOptions,
-        );
+        this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
       });
     }
   }

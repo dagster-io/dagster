@@ -193,10 +193,7 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
           // Resolve the promise before storing the result in IndexedDB
           res(result);
           if (lru) {
-            await lru.set(hashKey, result, {
-              // Some day in the year 2050...
-              expiry: new Date(9 ** 13),
-            });
+            await lru.set(hashKey, result);
             delete hashToPromise[hashKey];
           }
         });

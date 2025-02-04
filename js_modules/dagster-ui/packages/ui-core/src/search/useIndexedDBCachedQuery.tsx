@@ -70,7 +70,7 @@ export class CacheManager<TQuery> {
     if (!this.cache) {
       return;
     }
-    return this.cache.set('cache', {data, version}, {expiry: new Date('3030-01-01')});
+    return this.cache.set('cache', {data, version});
   }
 
   async clear() {

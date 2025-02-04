@@ -1,5 +1,10 @@
 import {cache} from '../idb-lru-cache';
 
+jest.mock('lodash/debounce', () => ({
+  __esModule: true,
+  default: jest.fn((fn) => fn),
+}));
+
 describe('IDBLRUCache', () => {
   const testCacheOptions = () => ({
     dbName: 'test-cache' + Math.random(),
@@ -24,22 +29,6 @@ describe('IDBLRUCache', () => {
   it('should return undefined for non-existent keys', async () => {
     const cacheInstance = cache(testCacheOptions());
     const result = await cacheInstance.get('non-existent');
-    expect(result).toBeUndefined();
-    await cacheInstance.close();
-  });
-
-  it('should handle expiration correctly', async () => {
-    const cacheInstance = cache(testCacheOptions());
-    const expiryDate = new Date(Date.now() + 100); // 100ms in future
-    await cacheInstance.set('key1', 'value1', {expiry: expiryDate});
-
-    // Before expiry
-    let result = await cacheInstance.get('key1');
-    expect(result?.value).toBe('value1');
-
-    // After expiry
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    result = await cacheInstance.get('key1');
     expect(result).toBeUndefined();
     await cacheInstance.close();
   });
