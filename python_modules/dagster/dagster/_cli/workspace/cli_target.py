@@ -590,11 +590,12 @@ def _generate_repository_options() -> Sequence[ClickOption]:
 def _get_code_pointer_dict_from_python_pointer_opts(
     params: PythonPointerOpts,
 ) -> Mapping[str, CodePointer]:
+    working_directory = params.working_directory or os.getcwd()
     loadable_targets = get_loadable_targets(
         params.python_file,
         params.module_name,
         params.package_name,
-        params.working_directory,
+        working_directory,
         params.attribute,
     )
 
@@ -604,15 +605,15 @@ def _get_code_pointer_dict_from_python_pointer_opts(
         repo_def = check.not_none(repository_def_from_target_def(loadable_target.target_definition))
         if params.python_file:
             code_pointer = CodePointer.from_python_file(
-                params.python_file, loadable_target.attribute, params.working_directory
+                params.python_file, loadable_target.attribute, working_directory
             )
         elif params.module_name:
             code_pointer = CodePointer.from_module(
-                params.module_name, loadable_target.attribute, params.working_directory
+                params.module_name, loadable_target.attribute, working_directory
             )
         elif params.package_name:
             code_pointer = CodePointer.from_python_package(
-                params.package_name, loadable_target.attribute, params.working_directory
+                params.package_name, loadable_target.attribute, working_directory
             )
         else:
             check.failed("Must specify a Python file or module name")
