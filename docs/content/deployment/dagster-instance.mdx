@@ -34,20 +34,18 @@ If `DAGSTER_HOME` isn't set, Dagster tools will use a temporary directory for st
 
 If `DAGSTER_HOME` is set but `dagster.yaml` isn't present or is empty, Dagster will persist data on the local filesystem, structured like the following:
 
-```
-$DAGSTER_HOME
-├── dagster.yaml
-├── history
-│   ├── runs
-│   │   ├── 00636713-98a9-461c-a9ac-d049407059cd.db
-│   │   └── ...
-│   └── runs.db
-└── storage
-    ├── 00636713-98a9-461c-a9ac-d049407059cd
-    │   └── compute_logs
-    │       └── ...
-    └── ...
-```
+    $DAGSTER_HOME
+    ├── dagster.yaml
+    ├── history
+    │   ├── runs
+    │   │   ├── 00636713-98a9-461c-a9ac-d049407059cd.db
+    │   │   └── ...
+    │   └── runs.db
+    └── storage
+        ├── 00636713-98a9-461c-a9ac-d049407059cd
+        │   └── compute_logs
+        │       └── ...
+        └── ...
 
 Here's a breakdown of the files and directories that are generated:
 
