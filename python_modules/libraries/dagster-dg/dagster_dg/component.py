@@ -1,71 +1,21 @@
 import copy
 import json
-import re
-from abc import abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
+from dagster_dg.component_key import ComponentKey, GlobalComponentKey, LocalComponentKey
 from dagster_dg.utils import is_valid_json
 
 if TYPE_CHECKING:
     from dagster_dg.context import DgContext
 
-COMPONENT_TYPE_REGEX = re.compile(r"^([a-zA-Z0-9_]+)@([a-zA-Z0-9_]+)$")
-
-
-def _name_and_namespace_from_type(typename: str) -> tuple[str, str]:
-    match = COMPONENT_TYPE_REGEX.match(typename)
-    if not match:
-        raise ValueError(f"Invalid component type name: {typename}")
-    return match.group(1), match.group(2)
-
-
-@dataclass(frozen=True)
-class ComponentKey:
-    name: str
-    namespace: str
-
-    @abstractmethod
-    def to_typename(self) -> str: ...
-
-    @staticmethod
-    def from_typename(typename: str, dirpath: str) -> "ComponentKey":
-        if typename.endswith(".py"):
-            return LocalComponentKey.from_type(typename, dirpath)
-        else:
-            return GlobalComponentKey.from_typename(typename)
-
-
-@dataclass(frozen=True)
-class GlobalComponentKey(ComponentKey):
-    def to_typename(self) -> str:
-        return f"{self.name}@{self.namespace}"
-
-    @staticmethod
-    def from_typename(typename: str) -> "GlobalComponentKey":
-        name, namespace = _name_and_namespace_from_type(typename)
-        return GlobalComponentKey(name=name, namespace=namespace)
-
-
-@dataclass(frozen=True)
-class LocalComponentKey(ComponentKey):
-    dirpath: str
-
-    def to_typename(self) -> str:
-        return f"{self.name}@{self.namespace} ({self.dirpath})"
-
-    @staticmethod
-    def from_type(typename, dirpath: str) -> "LocalComponentKey":
-        name, namespace = _name_and_namespace_from_type(typename)
-        return LocalComponentKey(name=name, namespace=namespace, dirpath=dirpath)
-
 
 @dataclass
 class RemoteComponentType:
     name: str
-    package: str
+    namespace: str
     summary: Optional[str]
     description: Optional[str]
     scaffold_params_schema: Optional[Mapping[str, Any]]  # json schema
@@ -86,7 +36,7 @@ def _get_local_type_mapping_from_raw_data(
 ) -> Mapping[LocalComponentKey, RemoteComponentType]:
     data = {}
     for typename, metadata in raw_data.items():
-        data[LocalComponentKey.from_type(typename, str(dirpath))] = RemoteComponentType(**metadata)
+        data[LocalComponentKey.from_type(typename, dirpath)] = RemoteComponentType(**metadata)
     return data
 
 
@@ -125,7 +75,9 @@ def _retrieve_local_component_types(
         )
         local_component_data = json.loads(raw_local_component_data)
         for path in paths_to_fetch:
-            data.update(_get_local_type_mapping_from_raw_data(local_component_data, path))
+            data.update(
+                _get_local_type_mapping_from_raw_data(local_component_data.get(str(path), {}), path)
+            )
 
         if dg_context.has_cache:
             for path in paths_to_fetch:

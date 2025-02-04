@@ -210,10 +210,11 @@ def test_dynamic_subcommand_help_message():
             textwrap.dedent("""
 
                  Usage: dg component scaffold [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
-                 COMPONENT_NAME                                                                                                         
+                 COMPONENT_INSTANCE_NAM
+                 E                                                                                                         
                                                                                                                                         
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ *    component_name      TEXT  [required]                                                                            │
+                │ *    component_instance_name      TEXT  [required]                                                                   │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ --json-params          TEXT  JSON string of component parameters.                                                    │

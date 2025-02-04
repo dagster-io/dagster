@@ -17,13 +17,11 @@ from pydantic import BaseModel, TypeAdapter
 from dagster_components.core.component import (
     Component,
     ComponentDeclNode,
-    ComponentKey,
     ComponentLoadContext,
     ComponentTypeRegistry,
-    get_component_type_name,
     is_component_loader,
-    is_registered_component_type,
 )
+from dagster_components.core.component_key import ComponentKey
 from dagster_components.utils import load_module_from_path
 
 
@@ -33,29 +31,6 @@ class ComponentFileModel(BaseModel):
 
 
 T = TypeVar("T", bound=BaseModel)
-
-
-def find_local_component_types(component_path: Path) -> Mapping[ComponentKey, type[Component]]:
-    """Find all component types defined in a component directory, and their respective paths."""
-    component_types = {}
-    for py_file in component_path.glob("*.py"):
-        for component_type in find_component_types_in_file(py_file):
-            component_types[
-                ComponentKey(name=get_component_type_name(component_type), namespace=py_file.name)
-            ] = component_type
-    return component_types
-
-
-def find_component_types_in_file(file_path: Path) -> list[type[Component]]:
-    """Find all component types defined in a specific file."""
-    component_types = []
-    for _name, obj in inspect.getmembers(
-        load_module_from_path(file_path.stem, file_path), inspect.isclass
-    ):
-        assert isinstance(obj, type)
-        if is_registered_component_type(obj):
-            component_types.append(obj)
-    return component_types
 
 
 @record
@@ -124,15 +99,7 @@ class YamlComponentDecl(ComponentDeclNode):
 
     def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
         parsed_defs = self.component_file_model
-        key = ComponentKey.from_typename(parsed_defs.type)
-        if parsed_defs.type.endswith(".py"):
-            file = self.path / key.namespace
-            for component_type in find_component_types_in_file(file):
-                if get_component_type_name(component_type) == key.name:
-                    return component_type
-
-            raise Exception(f"Could not find component type {key.name} in {file}")
-
+        key = ComponentKey.from_typename(parsed_defs.type, self.path)
         return registry.get(key)
 
     def get_params(self, context: ComponentLoadContext, params_schema: type[T]) -> T:

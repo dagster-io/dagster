@@ -52,7 +52,7 @@ def test_list_component_types_command():
 
     assert result["simple_asset@dagster_components.test"] == {
         "name": "simple_asset",
-        "package": "dagster_components.test",
+        "namespace": "dagster_components.test",
         "summary": "A simple asset that returns a constant string value.",
         "description": "A simple asset that returns a constant string value.",
         "scaffold_params_schema": None,
@@ -79,7 +79,7 @@ def test_list_component_types_command():
 
     assert result["simple_pipes_script_asset@dagster_components.test"] == {
         "name": "simple_pipes_script_asset",
-        "package": "dagster_components.test",
+        "namespace": "dagster_components.test",
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         "scaffold_params_schema": pipes_script_params_schema,
