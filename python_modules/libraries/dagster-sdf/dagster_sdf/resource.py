@@ -16,9 +16,8 @@ from dagster import (
     OpExecutionContext,
     get_dagster_logger,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidPropertyError
-from dagster._utils.warnings import suppress_dagster_warnings
 from pydantic import Field, validator
 
 from dagster_sdf.asset_utils import dagster_name_fn, get_test_prefix
@@ -41,8 +40,6 @@ from dagster_sdf.sdf_workspace import SdfWorkspace
 logging = get_dagster_logger()
 
 
-@suppress_dagster_warnings
-@experimental
 class SdfCliResource(ConfigurableResource):
     """A resource used to execute sdf CLI commands.
 

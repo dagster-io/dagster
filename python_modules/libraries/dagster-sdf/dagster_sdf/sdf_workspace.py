@@ -4,10 +4,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Optional, Union
 
-from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._utils import run_with_concurrent_update_guard
-from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_sdf.constants import DEFAULT_SDF_WORKSPACE_ENVIRONMENT, SDF_EXECUTABLE, SDF_TARGET_DIR
 from dagster_sdf.errors import (
@@ -24,7 +22,6 @@ def using_dagster_dev() -> bool:
     return bool(os.getenv("DAGSTER_IS_DEV_CLI"))
 
 
-@experimental
 class SdfWorkspacePreparer:
     def on_load(self, workspace: "SdfWorkspace") -> None:
         """Invoked when SdfWorkspace is instantiated with this preparer."""
@@ -39,7 +36,6 @@ class SdfWorkspacePreparer:
         return bool(os.getenv("DAGSTER_SDF_COMPILE_ON_LOAD"))
 
 
-@experimental
 class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
     def __init__(
         self,
@@ -98,8 +94,6 @@ class DagsterSdfWorkspacePreparer(SdfWorkspacePreparer):
         )
 
 
-@suppress_dagster_warnings
-@experimental
 class SdfWorkspace(DagsterModel):
     """The SdfWorkspace is a representation of an sdf workspace that can be compiled and executed.
 
