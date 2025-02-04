@@ -23,6 +23,7 @@ from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
     exit_with_error,
+    generate_missing_component_type_error_message,
     json_schema_property_to_click_option,
     not_none,
     parse_json_option,
@@ -59,7 +60,10 @@ class ComponentScaffoldGroup(DgClickGroup):
     def get_command(self, cli_context: click.Context, cmd_name: str) -> Optional[click.Command]:
         if not self._commands_defined:
             self._define_commands(cli_context)
-        return super().get_command(cli_context, cmd_name)
+        cmd = super().get_command(cli_context, cmd_name)
+        if cmd is None:
+            exit_with_error(generate_missing_component_type_error_message(cmd_name))
+        return cmd
 
     def list_commands(self, cli_context: click.Context) -> list[str]:
         if not self._commands_defined:

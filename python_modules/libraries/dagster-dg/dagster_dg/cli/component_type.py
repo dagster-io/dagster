@@ -13,7 +13,12 @@ from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.docs import markdown_for_component_type, render_markdown_in_browser
 from dagster_dg.scaffold import scaffold_component_type
-from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error
+from dagster_dg.utils import (
+    DgClickCommand,
+    DgClickGroup,
+    exit_with_error,
+    generate_missing_component_type_error_message,
+)
 
 
 @click.group(name="component-type", cls=DgClickGroup)
@@ -97,7 +102,7 @@ def component_type_info_command(
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     if not registry.has_global(component_type):
-        exit_with_error(f"No component type `{component_type}` could be resolved.")
+        exit_with_error(generate_missing_component_type_error_message(component_type))
     elif sum([description, scaffold_params_schema, component_params_schema]) > 1:
         exit_with_error(
             "Only one of --description, --scaffold-params-schema, and --component-params-schema can be specified."

@@ -279,33 +279,42 @@ def not_none(value: Optional[T]) -> T:
 
 
 def exit_with_error(error_message: str) -> Never:
-    click.echo(click.style(error_message, fg="red"))
+    formatted_error_message = _format_error_message(error_message)
+    click.echo(click.style(formatted_error_message, fg="red"))
     sys.exit(1)
 
 
 def _format_error_message(message: str) -> str:
     # width=10000 unwraps any hardwrapping
-    return textwrap.fill(message, width=10000)
+    return textwrap.dedent(textwrap.fill(message, width=10000))
 
 
-NOT_DEPLOYMENT_ERROR_MESSAGE = _format_error_message("""
+def generate_missing_component_type_error_message(component_type_name: str) -> str:
+    return f"""
+        No component type named `{component_type_name}` is registered. Use 'dg component-type list'
+        to see the registered component types in your environment. You may need to install a package
+        that provides `{component_type_name}` into your environment.
+    """
+
+
+NOT_DEPLOYMENT_ERROR_MESSAGE = """
 This command must be run inside a Dagster deployment directory. Ensure that there is a
 `pyproject.toml` file with `tool.dg.is_deployment = true` set in the root deployment directory.
-""")
+"""
 
 
-NOT_CODE_LOCATION_ERROR_MESSAGE = _format_error_message("""
+NOT_CODE_LOCATION_ERROR_MESSAGE = """
 This command must be run inside a Dagster code location directory. Ensure that the nearest
 pyproject.toml has `tool.dg.is_code_location = true` set.
-""")
+"""
 
-NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = _format_error_message("""
+NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
 pyproject.toml has `tool.dg.is_component_lib = true` set.
-""")
+"""
 
 
-MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = _format_error_message("""
+MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = """
 Could not find the `dagster-components` executable on the system path.
 
 The `dagster-components` executable is installed with the `dagster-components` PyPI package and is
@@ -314,7 +323,7 @@ necessary for `dg` to interface with Python environments containing Dagster defi
 you are using `dg` in a non-managed environment (either outside of a code location or using the
 `--no-use-dg-managed-environment` flag), you need to independently ensure `dagster-components` is
 installed.
-""")
+"""
 
 # ########################
 # ##### CUSTOM CLICK SUBCLASSES

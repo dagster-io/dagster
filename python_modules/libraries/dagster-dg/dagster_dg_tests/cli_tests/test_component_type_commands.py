@@ -322,6 +322,20 @@ def test_component_type_info_with_no_dagster_components_fails() -> None:
         assert "Could not find the `dagster-components` executable" in result.output
 
 
+def test_component_type_info_undefined_component_type_fails() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_components_venv(runner),
+    ):
+        result = runner.invoke(
+            "component-type",
+            "info",
+            "fake",
+        )
+        assert_runner_result(result, exit_0=False)
+        assert "No component type named `fake` is registered" in result.output
+
+
 # ########################
 # ##### LIST
 # ########################

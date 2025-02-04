@@ -126,6 +126,13 @@ def test_component_scaffold_json_params_and_key_value_params_fails() -> None:
         )
 
 
+def test_component_scaffold_undefined_component_type_fails() -> None:
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+        result = runner.invoke("component", "scaffold", "fake", "qux")
+        assert_runner_result(result, exit_0=False)
+        assert "No component type named `fake` is registered" in result.output
+
+
 def test_component_scaffold_outside_code_location_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("component", "scaffold", "bar.baz", "qux")
