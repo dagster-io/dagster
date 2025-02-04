@@ -1,12 +1,13 @@
 from collections.abc import Mapping, Sequence
 from copy import copy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import Any, NamedTuple, Optional
 
 import click
 from click.core import ParameterSource
 from jsonschema import Draft202012Validator, ValidationError
 from typer.rich_utils import rich_format_help
+from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
@@ -28,9 +29,12 @@ from dagster_dg.utils import (
     parse_json_option,
 )
 from dagster_dg.yaml_utils import parse_yaml_with_source_positions
-
-if TYPE_CHECKING:
-    from dagster_dg.yaml_utils.source_position import ValueAndSourcePositionTree
+from dagster_dg.yaml_utils.source_position import (
+    LineCol,
+    SourcePosition,
+    SourcePositionTree,
+    ValueAndSourcePositionTree,
+)
 
 
 @click.group(name="component", cls=DgClickGroup)
@@ -265,6 +269,26 @@ def _is_local_component(component_name: str) -> bool:
     return component_name.startswith(".")
 
 
+def _scaffold_value_and_source_position_tree(
+    filename: str, row: int, col: int
+) -> ValueAndSourcePositionTree:
+    return ValueAndSourcePositionTree(
+        value=None,
+        source_position_tree=SourcePositionTree(
+            position=SourcePosition(
+                filename=filename, start=LineCol(row, col), end=LineCol(row, col)
+            ),
+            children={},
+        ),
+    )
+
+
+class ErrorInput(NamedTuple):
+    component_name: Optional[str]
+    error: ValidationError
+    source_position_tree: ValueAndSourcePositionTree
+
+
 @component_group.command(name="check", cls=DgClickCommand)
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @dg_global_options
@@ -281,7 +305,7 @@ def component_check_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
-    validation_errors: list[tuple[Optional[str], ValidationError, ValueAndSourcePositionTree]] = []
+    validation_errors: list[ErrorInput] = []
 
     component_contents_by_dir = {}
     local_component_dirs = set()
@@ -295,17 +319,30 @@ def component_check_command(
 
         if component_path.exists():
             text = component_path.read_text()
-            component_doc_tree = parse_yaml_with_source_positions(
-                text, filename=str(component_path)
-            )
-
+            try:
+                component_doc_tree = parse_yaml_with_source_positions(
+                    text, filename=str(component_path)
+                )
+            except ScannerError as se:
+                validation_errors.append(
+                    ErrorInput(
+                        None,
+                        ValidationError(f"Unable to parse YAML: {se.context}, {se.problem}"),
+                        _scaffold_value_and_source_position_tree(
+                            filename=str(component_path),
+                            row=se.problem_mark.line + 1 if se.problem_mark else 1,
+                            col=se.problem_mark.column + 1 if se.problem_mark else 1,
+                        ),
+                    )
+                )
+                continue
             # First, validate the top-level structure of the component file
             # (type and params keys) before we try to validate the params themselves.
             top_level_errs = list(
                 top_level_component_validator.iter_errors(component_doc_tree.value)
             )
             for err in top_level_errs:
-                validation_errors.append((None, err, component_doc_tree))
+                validation_errors.append(ErrorInput(None, err, component_doc_tree))
             if top_level_errs:
                 continue
 
@@ -329,11 +366,11 @@ def component_check_command(
 
             v = Draft202012Validator(json_schema)
             for err in v.iter_errors(component_doc_tree.value["params"]):
-                validation_errors.append((component_name, err, component_doc_tree))
+                validation_errors.append(ErrorInput(component_name, err, component_doc_tree))
         except KeyError:
             # No matching component type found
             validation_errors.append(
-                (
+                ErrorInput(
                     None,
                     ValidationError(
                         f"Unable to locate local component type '{component_name}' in {component_dir}."
@@ -343,7 +380,6 @@ def component_check_command(
                     component_doc_tree,
                 )
             )
-
     if validation_errors:
         for component_name, error, component_doc_tree in validation_errors:
             click.echo(
