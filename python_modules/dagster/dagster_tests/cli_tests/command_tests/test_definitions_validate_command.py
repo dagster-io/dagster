@@ -16,7 +16,9 @@ PROJECT_ALTERNATE_ENTRYPOINT_PATH = file_relative_path(
 
 def invoke_validate(options: Optional[Sequence[str]] = None, log_level: str = "DEBUG"):
     runner = CliRunner()
-    return runner.invoke(definitions_validate_command, (options or []) + ["--log-level", log_level])
+    return runner.invoke(
+        definitions_validate_command, list(options or []) + ["--log-level", log_level]
+    )
 
 
 def test_empty_project(monkeypatch):
