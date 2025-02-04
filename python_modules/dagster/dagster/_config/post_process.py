@@ -10,8 +10,8 @@ from dagster._config.errors import (
     create_failed_post_processing_error,
 )
 from dagster._config.evaluate_value_result import EvaluateValueResult
-from dagster._config.stack import EvaluationStack
-from dagster._config.traversal_context import TraversalContext, TraversalType
+from dagster._config.stack import EvaluationStackRoot
+from dagster._config.traversal_context import TraversalContext
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -19,8 +19,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
-        stack=EvaluationStack(entries=[]),
-        traversal_type=TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS,
+        stack=EvaluationStackRoot(),
+        do_post_process=True,
     )
     return _recursively_process_config(ctx, config_value)
 
@@ -28,8 +28,8 @@ def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateV
 def resolve_defaults(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:
     ctx = TraversalContext.from_config_type(
         config_type=check.inst_param(config_type, "config_type", ConfigType),
-        stack=EvaluationStack(entries=[]),
-        traversal_type=TraversalType.RESOLVE_DEFAULTS,
+        stack=EvaluationStackRoot(),
+        do_post_process=False,
     )
 
     return _recursively_process_config(ctx, config_value)
@@ -184,16 +184,17 @@ def _recurse_in_to_shape(
             processed_fields[extra_field] = EvaluateValueResult.for_value(config_value[extra_field])
 
     errors: list[EvaluationError] = []
-    for result in processed_fields.values():
+    value = {}
+    for key, result in processed_fields.items():
         if not result.success:
             errors.extend(check.not_none(result.errors))
+        else:
+            value[key] = result.value
 
     if errors:
         return EvaluateValueResult.for_errors(errors)
 
-    return EvaluateValueResult.for_value(
-        {key: result.value for key, result in processed_fields.items()}
-    )
+    return EvaluateValueResult.for_value(value)
 
 
 def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> EvaluateValueResult[Any]:

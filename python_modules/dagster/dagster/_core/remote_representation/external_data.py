@@ -1289,7 +1289,7 @@ class ResourceSnap(IHaveNew):
             resource_snapshot=build_resource_def_snap(name, resource_def),
             configured_values=configured_values,
             config_field_snaps=unconfigured_config_type_snap.fields or [],
-            config_schema_snap=config_type.get_schema_snapshot(),
+            config_schema_snap=config_type.schema_snapshot,
             nested_resources=nested_resources,
             parent_resources=parent_resources,
             is_top_level=True,

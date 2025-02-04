@@ -1,6 +1,7 @@
 import typing
 from collections.abc import Iterator, Sequence
 from enum import Enum as PythonEnum
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
@@ -77,9 +78,6 @@ class ConfigType:
             else None
         )
 
-        # memoized snap representation
-        self._snap: Optional[ConfigTypeSnap] = None
-
     @property
     def description(self) -> Optional[str]:
         return self._description
@@ -98,22 +96,21 @@ class ConfigType:
         """
         return value
 
-    def get_snapshot(self) -> "ConfigTypeSnap":
+    @cached_property
+    def snapshot(self) -> "ConfigTypeSnap":
         from dagster._config.snap import snap_from_config_type
 
-        if self._snap is None:
-            self._snap = snap_from_config_type(self)
-
-        return self._snap
+        return snap_from_config_type(self)
 
     def type_iterator(self) -> Iterator["ConfigType"]:
         yield self
 
-    def get_schema_snapshot(self) -> "ConfigSchemaSnapshot":
+    @cached_property
+    def schema_snapshot(self) -> "ConfigSchemaSnapshot":
         from dagster._config.snap import ConfigSchemaSnapshot
 
         return ConfigSchemaSnapshot(
-            all_config_snaps_by_key={ct.key: ct.get_snapshot() for ct in self.type_iterator()}
+            all_config_snaps_by_key={ct.key: ct.snapshot for ct in self.type_iterator()}
         )
 
 
