@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "https://docs-preview.dagster.io/(.*)",
+      "destination": "https://docs.dagster.io/$1",
+      "permanent": false
+    },
+    {
       "source": "/dagster-cloud/:path*",
       "destination": "/dagster-plus/:path*",
       "permanent": false
