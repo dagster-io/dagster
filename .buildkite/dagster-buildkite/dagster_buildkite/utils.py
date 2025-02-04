@@ -102,7 +102,7 @@ BuildkiteStep: TypeAlias = Union[
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
-UV_PIN = "uv==0.4.30"
+UV_PIN = "uv==0.5.27"
 
 
 def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
