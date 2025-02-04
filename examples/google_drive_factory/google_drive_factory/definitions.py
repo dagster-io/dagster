@@ -133,7 +133,7 @@ google_drive_resource = GoogleDriveResource(json_data=os.environ["GOOGLE_SERVICE
 google_drive_resource.setup_for_execution(dg.build_init_resource_context())
 
 # Fetch files from the Google Drive folder using properly initialized _client
-folder_id = os.environ.get("GOOGLE_DRIVE_FOLDER_ID")
+folder_id = os.environ.get("GOOGLE_DRIVE_FOLDER_ID", "")
 file_results = google_drive_resource.retrieve_files(folder_id).get("files", [])
 
 # Create realtor definitions dynamically
