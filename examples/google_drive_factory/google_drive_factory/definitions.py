@@ -1,3 +1,4 @@
+import json
 import os
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,7 +11,7 @@ import polars as pl
 from dagster_duckdb import DuckDBResource
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-import json
+
 
 @dataclass
 class DriveFile:
@@ -19,9 +20,10 @@ class DriveFile:
     createdTime: str
     modifiedTime: str
 
+
 def drop_create_duckdb_table(
-        table_name: str, df: Union[pl.DataFrame, duckdb.DuckDBPyRelation]
-    ) -> None:
+    table_name: str, df: Union[pl.DataFrame, duckdb.DuckDBPyRelation]
+) -> None:
     """Drop and recreate a table with the provided DataFrame or DuckDB relation data.
 
     Args:
@@ -38,6 +40,7 @@ def drop_create_duckdb_table(
         if conn:
             conn.close()
 
+
 def realtor_asset_factory(file_definition: DriveFile) -> dg.Definitions:
     file_name = file_definition.name[:-4]
     file_id = file_definition.id
@@ -46,12 +49,11 @@ def realtor_asset_factory(file_definition: DriveFile) -> dg.Definitions:
         name=file_name,
         group_name="ingestion",
         kinds={"polars", "duckdb", "google_drive"},
-        description=f"Reads {file_name} from Google Drive folder and saves to duckdb database"
+        description=f"Reads {file_name} from Google Drive folder and saves to duckdb database",
     )
     def read_csv_from_drive(
         context: dg.AssetExecutionContext, duckdb: DuckDBResource
     ) -> dg.MaterializeResult:
-        
         context.log.info(f"Reading file {file_name} from Google Drive")
         request = service.files().get_media(fileId=file_id)
         content = request.execute()
@@ -110,7 +112,7 @@ json_data = json.loads(json_str)
 # Create credentials - using json_data, not folder ID
 credentials = service_account.Credentials.from_service_account_info(
     json_data,
-    scopes=SCOPES  # Remove asterisks around scopes
+    scopes=SCOPES,  # Remove asterisks around scopes
 )
 service = build("drive", "v3", credentials=credentials)
 folder_id = os.environ["GOOGLE_DRIVE_FOLDER_ID"]
