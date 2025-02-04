@@ -154,7 +154,7 @@ export const AssetGraphExplorer = (props: Props) => {
   return (
     <Loading allowStaleData queryResult={fetchResult}>
       {() => {
-        if (graphDataLoading || filteredAssetsLoading || fullAssetGraphDataLoading) {
+        if (graphDataLoading || filteredAssetsLoading) {
           return <LoadingSpinner purpose="page" />;
         }
         if (!assetGraphData || !allAssetKeys) {
