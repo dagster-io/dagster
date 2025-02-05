@@ -107,11 +107,11 @@ const config: Config = {
         //  docId: 'changelog',
         //  position: 'right',
         //},
-        {
-          label: 'Versions',
-          type: 'docsVersionDropdown',
-          position: 'right'
-        },
+        //{
+        //  label: 'Versions',
+        //  type: 'docsVersionDropdown',
+        //  position: 'right'
+        //},
         {
            label: 'Feedback',
            href: 'https://github.com/dagster-io/dagster/discussions/27332',
