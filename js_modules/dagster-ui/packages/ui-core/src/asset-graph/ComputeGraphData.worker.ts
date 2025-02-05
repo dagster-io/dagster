@@ -8,7 +8,6 @@ type WorkerMessageData = ComputeGraphDataMessageType | BuildGraphDataMessageType
 
 createWorkerThread(
   async (postMessage: (message: any) => void, data: WorkerMessageData) => {
-    console.log({data});
     if (data.type === 'computeGraphData') {
       const state = await computeGraphData(data);
       postMessage({...state, id: data.id});
