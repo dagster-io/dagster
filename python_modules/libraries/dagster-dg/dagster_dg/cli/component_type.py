@@ -8,7 +8,8 @@ from rich.console import Console
 from rich.table import Table
 
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.component import GlobalComponentKey, RemoteComponentRegistry
+from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.component_key import GlobalComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.docs import markdown_for_component_type, render_markdown_in_browser

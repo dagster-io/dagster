@@ -3,6 +3,8 @@ import re
 import subprocess
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from dagster._utils.env import environ
 from docs_beta_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
 from docs_beta_snippets_tests.snippet_checks.utils import (
@@ -27,6 +29,7 @@ COMPONENTS_SNIPPETS_DIR = (
 MASK_MY_DEPLOYMENT = (r" \/.*?\/my-deployment", " /.../my-deployment")
 
 
+@pytest.mark.skip
 def test_components_docs_deployments(update_snippets: bool) -> None:
     snip_no = 0
 

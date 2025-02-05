@@ -3,7 +3,6 @@ import dataclasses
 import importlib
 import importlib.metadata
 import inspect
-import re
 import sys
 import textwrap
 from abc import ABC, abstractmethod
@@ -16,17 +15,22 @@ from typing import Any, Callable, ClassVar, Optional, TypedDict, TypeVar, Union
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._record import record
 from dagster._utils import snakecase
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from dagster_components.core.component_key import (
+    ComponentKey,
+    GlobalComponentKey,
+    LocalComponentKey,
+)
 from dagster_components.core.component_scaffolder import (
     ComponentScaffolder,
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
 from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.utils import load_module_from_path
 
 
 class ComponentDeclNode(ABC):
@@ -115,26 +119,6 @@ class ComponentTypeMetadata(ComponentTypeInternalMetadata):
     namespace: str
 
 
-COMPONENT_TYPE_REGEX = re.compile(r"^([a-zA-Z0-9_]+)@([a-zA-Z0-9_]+)$")
-
-
-@record
-class ComponentKey:
-    name: str
-    namespace: str
-
-    def to_typename(self) -> str:
-        return f"{self.name}@{self.namespace}"
-
-    @staticmethod
-    def from_typename(typename: str) -> "ComponentKey":
-        match = COMPONENT_TYPE_REGEX.match(typename)
-        if not match:
-            raise ValueError(f"Invalid component type name: {typename}")
-        name, package = match.groups()
-        return ComponentKey(name=name, namespace=package)
-
-
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
     if sys.version_info >= (3, 10):
         return importlib.metadata.entry_points(group=group)
@@ -183,7 +167,7 @@ class ComponentTypeRegistry:
                     f"Value expected to be a module, got {root_module}."
                 )
             for component_type in get_registered_component_types_in_module(root_module):
-                key = ComponentKey(
+                key = GlobalComponentKey(
                     name=get_component_type_name(component_type), namespace=entry_point.name
                 )
                 component_types[key] = component_type
@@ -206,7 +190,15 @@ class ComponentTypeRegistry:
         return key in self._component_types
 
     def get(self, key: ComponentKey) -> type[Component]:
-        return self._component_types[key]
+        if isinstance(key, LocalComponentKey):
+            for component_type in find_component_types_in_file(key.python_file):
+                if get_component_type_name(component_type) == key.name:
+                    return component_type
+            raise ValueError(
+                f"Could not find component type {key.to_typename()} in {key.python_file}"
+            )
+        else:
+            return self._component_types[key]
 
     def keys(self) -> Iterable[ComponentKey]:
         return self._component_types.keys()
@@ -335,3 +327,30 @@ def component_loader(
 
 def is_component_loader(obj: Any) -> bool:
     return getattr(obj, COMPONENT_LOADER_FN_ATTR, False)
+
+
+def find_component_types_in_file(file_path: Path) -> list[type[Component]]:
+    """Find all component types defined in a specific file."""
+    component_types = []
+    for _name, obj in inspect.getmembers(
+        load_module_from_path(file_path.stem, file_path), inspect.isclass
+    ):
+        assert isinstance(obj, type)
+        if is_registered_component_type(obj):
+            component_types.append(obj)
+    return component_types
+
+
+def find_local_component_types(component_path: Path) -> Mapping[LocalComponentKey, type[Component]]:
+    """Find all component types defined in a component directory, and their respective paths."""
+    component_types = {}
+    for py_file in component_path.glob("*.py"):
+        for component_type in find_component_types_in_file(py_file):
+            component_types[
+                LocalComponentKey(
+                    name=get_component_type_name(component_type),
+                    namespace=py_file.name,
+                    dirpath=py_file.parent,
+                )
+            ] = component_type
+    return component_types
