@@ -1,6 +1,6 @@
 ---
 title: "Snippet graveyard"
-sidebar_position: 200
+sidebar_position: 500
 unlisted: true
 ---
 

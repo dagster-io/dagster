@@ -1,6 +1,6 @@
 ---
 title: "Setting up a deployment"
-sidebar_position: 200
+sidebar_position: 400
 unlisted: true
 displayed_sidebar: 'components'
 ---
