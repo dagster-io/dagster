@@ -2,7 +2,7 @@ import {css} from 'styled-components';
 
 export const darkHighContrastThemeColors = css`
   --browser-color-scheme: dark;
-  --color-keyline-default: var(--color-translucent-gray15);
+  --color-keyline-default: var(--color-translucent-gray20);
   --color-link-default: var(--color-core-blue200);
   --color-link-hover: var(--color-core-blue400);
   --color-link-disabled: var(--color-core-gray750);
@@ -10,13 +10,13 @@ export const darkHighContrastThemeColors = css`
   --color-text-light: var(--color-core-gray300);
   --color-text-lighter: var(--color-core-gray500);
   --color-text-disabled: var(--color-core-gray600);
-  --color-text-red: var(--color-core-red2white00);
-  --color-text-yellow: var(--color-core-white);
-  --color-text-green: var(--color-core-white);
-  --color-text-blue: var(--color-core-white);
-  --color-text-olive: var(--color-core-white);
-  --color-text-cyan: var(--color-core-white);
-  --color-text-lime: var(--color-core-white);
+  --color-text-red: var(--color-core-red200);
+  --color-text-yellow: var(--color-core-yellow200);
+  --color-text-green: var(--color-core-cobalt200);
+  --color-text-blue: var(--color-core-blue200);
+  --color-text-olive: var(--color-core-olive200);
+  --color-text-cyan: var(--color-core-cyan200);
+  --color-text-lime: var(--color-core-lime200);
   --color-background-default: var(--color-core-gray990);
   --color-background-default-hover: var(--color-core-gray950);
   --color-background-light: var(--color-core-gray950);
@@ -24,14 +24,14 @@ export const darkHighContrastThemeColors = css`
   --color-background-lighter: var(--color-core-gray850);
   --color-background-lighter-hover: var(--color-core-gray800);
   --color-background-disabled: var(--color-core-gray800);
-  --color-background-red: var(--color-translucent-lime15);
-  --color-background-red-hover: var(--color-translucent-lime20);
-  --color-background-yellow: var(--color-translucent-cyan15);
-  --color-background-yellow-hover: var(--color-translucent-cyan20);
-  --color-background-green: var(--color-translucent-blue15);
-  --color-background-green-hover: var(--color-translucent-blue20);
-  --color-background-blue: var(--color-translucent-gray20);
-  --color-background-blue-hover: var(--color-translucent-gray25);
+  --color-background-red: var(--color-translucent-yellow15);
+  --color-background-red-hover: var(--color-translucent-yellow20);
+  --color-background-yellow: var(--color-translucent-yellow15);
+  --color-background-yellow-hover: var(--color-translucent-yellow20);
+  --color-background-green: var(--color-translucent-cobalt15);
+  --color-background-green-hover: var(--color-translucent-cobalt20);
+  --color-background-blue: var(--color-translucent-gray15);
+  --color-background-blue-hover: var(--color-translucent-gray20);
   --color-background-olive: var(--color-translucent-olive15);
   --color-background-oliver-hover: var(--color-translucent-olive20);
   --color-background-cyan: var(--color-translucent-cyan15);
@@ -48,12 +48,12 @@ export const darkHighContrastThemeColors = css`
   --color-accent-primary-hover: var(--color-core-gray50);
   --color-accent-reversed: var(--color-core-gray950);
   --color-accent-reversed-hover: var(--color-core-gray800);
-  --color-accent-red: var(--color-core-lime500);
-  --color-accent-red-hover: var(--color-core-lime600);
-  --color-accent-yellow: var(--color-core-cyan500);
-  --color-accent-yellow-hover: var(--color-core-cyan600);
-  --color-accent-green: var(--color-core-blue400);
-  --color-accent-green-hover: var(--color-core-blue500);
+  --color-accent-red: var(--color-core-yellow500);
+  --color-accent-red-hover: var(--color-core-yellow600);
+  --color-accent-yellow: var(--color-core-yellow700);
+  --color-accent-yellow-hover: var(--color-core-yellow600);
+  --color-accent-green: var(--color-core-cobalt400);
+  --color-accent-green-hover: var(--color-core-cobalt500);
   --color-accent-blue: var(--color-core-gray600);
   --color-accent-blue-hover: var(--color-core-gray500);
   --color-accent-cyan: var(--color-core-cyan500);
@@ -118,6 +118,8 @@ export const darkHighContrastThemeColors = css`
   --color-data-viz-violet-alt: var(--color-dataviz-violet100);
   --color-data-viz-yellow: var(--color-dataviz-yellow200);
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow100);
+  --color-checkbox-unchecked: var(--color-core-gray500);
+  --color-checkbox-checked: var(--color-core-cobalt500);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray950),
     var(--color-translucent-blue15) 100%
