@@ -2,7 +2,7 @@ import {css} from 'styled-components';
 
 export const lightHighContrastThemeColors = css`
   --browser-color-scheme: 'light';
-  --color-keyline-default: var(--color-translucent-gray30);
+  --color-keyline-default: var(--color-translucent-gray20);
   --color-link-default: var(--color-core-blue700);
   --color-link-hover: var(--color-core-blue500);
   --color-link-disabled: var(--color-core-gray150);
@@ -10,13 +10,13 @@ export const lightHighContrastThemeColors = css`
   --color-text-light: var(--color-core-gray700);
   --color-text-lighter: var(--color-core-gray500);
   --color-text-disabled: var(--color-core-gray400);
-  --color-text-red: var(--color-core-gray990);
-  --color-text-yellow: var(--color-core-gray990);
-  --color-text-green: var(--color-core-gray990);
-  --color-text-blue: var(--color-core-gray990);
-  --color-text-olive: var(--color-core-gray990);
-  --color-text-cyan: var(--color-core-gray990);
-  --color-text-lime: var(--color-core-gray990);
+  --color-text-red: var(--color-core-yellow800);
+  --color-text-yellow: var(--color-core-yellow800);
+  --color-text-green: var(--color-core-cobalt800);
+  --color-text-blue: var(--color-core-gray800);
+  --color-text-olive: var(--color-core-olive800);
+  --color-text-cyan: var(--color-core-cyan800);
+  --color-text-lime: var(--color-core-lime800);
   --color-background-default: var(--color-core-white);
   --color-background-default-hover: var(--color-core-gray10);
   --color-background-light: var(--color-core-gray10);
@@ -26,12 +26,12 @@ export const lightHighContrastThemeColors = css`
   --color-background-disabled: var(--color-core-gray150);
   --color-background-red: var(--color-translucent-yellow12);
   --color-background-red-hover: var(--color-translucent-yellow15);
-  --color-background-yellow: var(--color-translucent-cyan12);
-  --color-background-yellow-hover: var(--color-translucent-cyan15);
-  --color-background-green: var(--color-translucent-blue12);
-  --color-background-green-hover: var(--color-translucent-blue15);
-  --color-background-blue: var(--color-translucent-blue15);
-  --color-background-blue-hover: var(--color-translucent-blue20);
+  --color-background-yellow: var(--color-translucent-yellow15);
+  --color-background-yellow-hover: var(--color-translucent-yellow20);
+  --color-background-green: var(--color-translucent-cobalt12);
+  --color-background-green-hover: var(--color-translucent-cobalt15);
+  --color-background-blue: var(--color-translucent-gray15);
+  --color-background-blue-hover: var(--color-translucent-gray20);
   --color-background-olive: var(--color-translucent-olive12);
   --color-background-oliver-hover: var(--color-translucent-olive15);
   --color-background-cyan: var(--color-translucent-cyan12);
@@ -50,18 +50,18 @@ export const lightHighContrastThemeColors = css`
   --color-accent-reversed-hover: var(--color-core-white);
   --color-accent-red: var(--color-core-yellow500);
   --color-accent-red-hover: var(--color-core-yellow600);
-  --color-accent-yellow: var(--color-core-cyan500);
-  --color-accent-yellow-hover: var(--color-core-cyan400);
-  --color-accent-green: var(--color-core-blue500);
-  --color-accent-green-hover: var(--color-core-blue400);
+  --color-accent-yellow: var(--color-core-yellow800);
+  --color-accent-yellow-hover: var(--color-core-yellow900);
+  --color-accent-green: var(--color-core-cobalt500);
+  --color-accent-green-hover: var(--color-core-cobalt400);
   --color-accent-blue: var(--color-core-gray500);
   --color-accent-blue-hover: var(--color-core-gray400);
-  --color-accent-cyan: var(--color-core-red500);
-  --color-accent-cyan-hover: var(--color-core-red400);
+  --color-accent-cyan: var(--color-core-cyan500);
+  --color-accent-cyan-hover: var(--color-core-cyan400);
   --color-accent-lime: var(--color-core-lime500);
   --color-accent-lime-hover: var(--color-core-lime400);
-  --color-accent-lavender: var(--color-core-blue200);
-  --color-accent-lavender-hover: var(--color-core-blue100);
+  --color-accent-lavender: var(--color-core-cyan500);
+  --color-accent-lavender-hover: var(--color-core-cyan400);
   --color-accent-olive: var(--color-core-olive500);
   --color-accent-olive-hover: var(--color-core-olive400);
   --color-accent-gray: var(--color-core-gray500);
@@ -118,6 +118,10 @@ export const lightHighContrastThemeColors = css`
   --color-data-viz-violet-alt: var(--color-dataviz-violet300);
   --color-data-viz-yellow: var(--color-dataviz-yellow200);
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow300);
+  --color-checkbox-unchecked: var(--color-core-gray400);
+  --color-checkbox-checked: var(--color-core-cobalt500);
+  --color-checkbox-disabled: var(--color-core-gray150);
+
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray10),
     var(--color-translucent-blue10) 100%
