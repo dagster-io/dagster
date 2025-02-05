@@ -276,9 +276,6 @@ def test_base_with_custom_tags_translator_legacy() -> None:
         def get_group_name(self, stream_definition):
             return super().get_group_name(stream_definition)
 
-        def get_freshness_policy(self, stream_definition):
-            return super().get_freshness_policy(stream_definition)
-
         def get_auto_materialize_policy(self, stream_definition):
             return super().get_auto_materialize_policy(stream_definition)
 

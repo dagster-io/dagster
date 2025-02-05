@@ -11,7 +11,6 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AutoMaterializePolicy,
-    FreshnessPolicy,
     MetadataValue,
     PartitionsDefinition,
     ResourceDefinition,
@@ -33,7 +32,6 @@ from dagster_dbt.asset_utils import (
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_description_fn,
-    default_freshness_policy_fn,
     default_group_from_dbt_resource_props,
 )
 from dagster_dbt.cloud.resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
@@ -52,7 +50,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         job_id: int,
         node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey],
         node_info_to_group_fn: Callable[[Mapping[str, Any]], Optional[str]],
-        node_info_to_freshness_policy_fn: Callable[[Mapping[str, Any]], Optional[FreshnessPolicy]],
         node_info_to_auto_materialize_policy_fn: Callable[
             [Mapping[str, Any]], Optional[AutoMaterializePolicy]
         ],
@@ -77,7 +74,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._job_materialization_command_step: int
         self._node_info_to_asset_key = node_info_to_asset_key
         self._node_info_to_group_fn = node_info_to_group_fn
-        self._node_info_to_freshness_policy_fn = node_info_to_freshness_policy_fn
         self._node_info_to_auto_materialize_policy_fn = node_info_to_auto_materialize_policy_fn
         self._partitions_def = partitions_def
         self._partition_key_to_vars_fn = partition_key_to_vars_fn
@@ -325,10 +321,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 return self._node_info_to_group_fn(dbt_resource_props)
 
             @classmethod
-            def get_freshness_policy(cls, dbt_resource_props):
-                return self._node_info_to_freshness_policy_fn(dbt_resource_props)
-
-            @classmethod
             def get_auto_materialize_policy(cls, dbt_resource_props):
                 return self._node_info_to_auto_materialize_policy_fn(dbt_resource_props)
 
@@ -368,11 +360,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     ]["fqn"]
                     for spec in specs
                 },
-            },
-            freshness_policies_by_output_name={
-                spec.key.to_python_identifier(): spec.freshness_policy
-                for spec in specs
-                if spec.freshness_policy
             },
             auto_materialize_policies_by_output_name={
                 spec.key.to_python_identifier(): spec.auto_materialize_policy
@@ -415,9 +402,6 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                     ].get(id),
                     deps=(cacheable_data.internal_asset_deps or {}).get(id),
                     metadata=(cacheable_data.metadata_by_output_name or {}).get(id),
-                    freshness_policy=(cacheable_data.freshness_policies_by_output_name or {}).get(
-                        id
-                    ),
                     auto_materialize_policy=(
                         cacheable_data.auto_materialize_policies_by_output_name or {}
                     ).get(id),
@@ -540,9 +524,6 @@ def load_assets_from_dbt_cloud_job(
     node_info_to_group_fn: Callable[
         [Mapping[str, Any]], Optional[str]
     ] = default_group_from_dbt_resource_props,
-    node_info_to_freshness_policy_fn: Callable[
-        [Mapping[str, Any]], Optional[FreshnessPolicy]
-    ] = default_freshness_policy_fn,
     node_info_to_auto_materialize_policy_fn: Callable[
         [Mapping[str, Any]], Optional[AutoMaterializePolicy]
     ] = default_auto_materialize_policy_fn,
@@ -564,13 +545,6 @@ def load_assets_from_dbt_cloud_job(
             dbt source -> AssetKey([source_name, table_name])
         node_info_to_group_fn (Dict[str, Any] -> Optional[str]): A function that takes a
             dictionary of dbt node info and returns the group that this node should be assigned to.
-        node_info_to_freshness_policy_fn (Dict[str, Any] -> Optional[FreshnessPolicy]): A function
-            that takes a dictionary of dbt node info and optionally returns a FreshnessPolicy that
-            should be applied to this node. By default, freshness policies will be created from
-            config applied to dbt models, i.e.:
-            `dagster_freshness_policy={"maximum_lag_minutes": 60, "cron_schedule": "0 9 * * *"}`
-            will result in that model being assigned
-            `FreshnessPolicy(maximum_lag_minutes=60, cron_schedule="0 9 * * *")`
         node_info_to_auto_materialize_policy_fn (Dict[str, Any] -> Optional[AutoMaterializePolicy]):
             A function that takes a dictionary of dbt node info and optionally returns a AutoMaterializePolicy
             that should be applied to this node. By default, AutoMaterializePolicies will be created from
@@ -625,7 +599,6 @@ def load_assets_from_dbt_cloud_job(
         job_id=job_id,
         node_info_to_asset_key=node_info_to_asset_key,
         node_info_to_group_fn=node_info_to_group_fn,
-        node_info_to_freshness_policy_fn=node_info_to_freshness_policy_fn,
         node_info_to_auto_materialize_policy_fn=node_info_to_auto_materialize_policy_fn,
         partitions_def=partitions_def,
         partition_key_to_vars_fn=partition_key_to_vars_fn,

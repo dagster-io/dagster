@@ -741,7 +741,6 @@ def get_asset_spec(
         group_name=translator.get_group_name(resource_props),
         code_version=translator.get_code_version(resource_props),
         automation_condition=translator.get_automation_condition(resource_props),
-        freshness_policy=translator.get_freshness_policy(resource_props),
         owners=translator.get_owners(
             {
                 **resource_props,
