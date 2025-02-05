@@ -29,7 +29,6 @@ COMPONENTS_SNIPPETS_DIR = (
 MASK_MY_DEPLOYMENT = (r" \/.*?\/my-deployment", " /.../my-deployment")
 
 
-@pytest.mark.skip
 def test_components_docs_deployments(update_snippets: bool) -> None:
     snip_no = 0
 
