@@ -14,7 +14,7 @@ This article assumes familiarity with [assets](/guides/build/assets/) and [jobs]
 
 :::
 
-## Limit how many jobs can be running at the same time
+## Limit how many runs can be in progress at the same time
 
 
 * Dagster Core, add the following to your [dagster.yaml](/guides/deploy/dagster-yaml)
@@ -26,28 +26,20 @@ run_queue:
 ```
 
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-global.py" language="python" title="Global concurrency limits" />
+## Limit how many runs can be in progress by tag
 
-## Limit how many ops or assets can be running at the same time
+You can configure a limit for runs that are tagged with a specific tag key or key-value pair.
 
-You can control the number of assets or ops that are running concurrently within a job using the `config` argument of `dg.define_asset_job()` or `dg.@job()` for ops.
-
-<Tabs>
-  <TabItem value="Assets" label="Asset job">
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-job-asset.py" language="python" title="Asset concurrency limits in a job" />
-
-  </TabItem>
-
-  <TabItem value="Ops" label="Op job">
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-job-op.py" language="python" title="Op concurrency limits in a job" />
-
-  </TabItem>
-</Tabs>
-
+```yaml
+# dagster.yaml for Dagster Core; Deployment Settings for Dagster+
+run_queue:
+  tag_concurrency_limits:
+    - key: "dagster/concurrency_key"
+      value: "database"
+      limit: 1
+```
 
 ## Limit how many of a certain type of op or asset can run across all runs
-
-You can configure a limit for all ops or assets with a specific tag key or key-value pair. Ops or assets above that limit will be queued. Use `tag_concurrency_limits` in the job's config, either in Python or using the Launchpad in the Dagster UI.
 
 For example, you might want to limit the number of ops or assets that are running with a key of `database` across all runs (to limit the load on that database).
 
@@ -55,18 +47,6 @@ For example, you might want to limit the number of ops or assets that are runnin
 This feature is experimental and is only supported with Postgres/MySQL storage.
 :::
 
-
-```yaml
-# dagster.yaml for Dagster Core; Deployment Settings for Dagster+
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-  config:
-    tag_concurrency_limits:
-      - key: "dagster/concurrency_key"
-        value: "database"
-        limit: 1
-```
 
 To specify a global concurrency limit using the CLI, use:
 
@@ -96,6 +76,24 @@ concurrency:
   </TabItem>
 </Tabs>
 
+## Limit how many ops or assets can be executing at the same time for a specific job
+
+You can control the number of assets or ops that are running concurrently within a job using the `config` argument of `dg.define_asset_job()` or `dg.@job()` for ops.
+
+<Tabs>
+  <TabItem value="Assets" label="Asset job">
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-job-asset.py" language="python" title="Asset concurrency limits in a job" />
+
+  </TabItem>
+
+  <TabItem value="Ops" label="Op job">
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-job-op.py" language="python" title="Op concurrency limits in a job" />
+
+  </TabItem>
+</Tabs>
+
+## Limit how many ops or assets can be executing at the same time by tag
+
 You can also limit concurrency for a tag within the job definition, for example to limit the number of specific assets running at the same time *within* that run.
 
 <Tabs>
@@ -109,17 +107,11 @@ You can also limit concurrency for a tag within the job definition, for example 
 </Tabs>
 
 
-## Override job level concurrency in the Launchpad
-
-You can override the default job-level settings, such as the value of the `max_concurrent` key for a job, by launching a job in the Launchpad in the Dagster UI.
-
-Need screenshot here
 
 ## Prevent runs from starting if another run is already occurring (advanced)
 
 You can use Dagster's rich metadata to use a schedule or a sensor to only start a run when there are no currently running jobs.
 
-{/* TODO fix this code example */}
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-no-more-than-1-job.py" language="python" title="No more than 1 running job from a schedule" />
 
 
