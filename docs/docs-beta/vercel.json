@@ -1704,6 +1704,15 @@
       "source": "/integrations/airlift",
       "destination": "/integrations/libraries/airlift",
       "permanent": false
+    },
+    {
+      "source": "/next/guides/build/components/",
+      "destination": "/preview/components/"
+    },
+    {
+      "source": "/next/guides/build/components/:path",
+      "destination": "/preview/components/:path",
+      "permanent": false
     }
   ]
 }
