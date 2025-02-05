@@ -18,7 +18,6 @@ from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
 )
-from dagster_components.core.schema.objects import OpSpecModel
 from dagster_components.lib.sling_replication_collection.component import SlingReplicationCollection
 from dagster_sling import SlingResource
 
@@ -83,7 +82,7 @@ def test_python_params(sling_path: Path) -> None:
     replications = component.replication_specs
     assert len(replications) == 1
     op_spec = replications[0].op_spec
-    assert op_spec == OpSpecModel()
+    assert op_spec is None
     assert get_asset_keys(component) == {
         AssetKey("input_csv"),
         AssetKey("input_duckdb"),

@@ -25,7 +25,7 @@ class ShellCommand(Component):
         # highlight-start
         # resolve the script runner with its required additional scope
         script_runner = self.params.resolve_properties(
-            load_context.resolve_context.with_scope(
+            load_context.resolution_context.with_scope(
                 get_script_runner=_get_script_runner
             )
         )["script_runner"]

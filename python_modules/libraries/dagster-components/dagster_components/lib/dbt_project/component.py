@@ -19,22 +19,22 @@ from dagster_components.core.schema.objects import (
     AssetAttributesModel,
     AssetSpecTransformModel,
     OpSpecModel,
-    ResolveContext,
+    ResolutionContext,
 )
 from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectParams(ResolvableModel):
-    dbt: DbtCliResource
-    op: Optional[OpSpecModel] = None
+class DbtProjectParams(ResolvableModel["DbtProjectComponent"]):
+    dbt: Annotated[DbtCliResource, ResolvableFieldInfo(resolved_field_name="resource")]
+    op: Annotated[Optional[OpSpecModel], ResolvableFieldInfo(resolved_field_name="op_spec")] = None
     asset_attributes: Annotated[
         Optional[AssetAttributesModel],
         ResolvableFieldInfo(required_scope={"node"}, resolved_field_name="translator"),
     ] = None
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
-    def resolve_translator(self, context: ResolveContext) -> DagsterDbtTranslator:
+    def resolve_translator(self, context: ResolutionContext) -> DagsterDbtTranslator:
         return get_wrapped_translator_class(DagsterDbtTranslator)(
             resolving_info=ResolvingInfo(
                 "node", self.asset_attributes or AssetAttributesModel(), context
@@ -51,12 +51,12 @@ class DbtProjectComponent(Component):
         resource: DbtCliResource,
         op_spec: Optional[OpSpecModel],
         translator: DagsterDbtTranslator,
-        transforms: Sequence[Callable[[Definitions], Definitions]],
+        transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None,
     ):
         self.resource = resource
         self.project = DbtProject(resource.project_dir)
         self.op_spec = op_spec
-        self.transforms = transforms
+        self.transforms = transforms or []
         self.translator = translator
 
     @classmethod
@@ -69,7 +69,7 @@ class DbtProjectComponent(Component):
 
     @classmethod
     def load(cls, params: DbtProjectParams, context: ComponentLoadContext) -> "DbtProjectComponent":
-        return params.resolve_as(cls, context=context.resolve_context)
+        return params.resolve_as(cls, context=context.resolution_context)
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None

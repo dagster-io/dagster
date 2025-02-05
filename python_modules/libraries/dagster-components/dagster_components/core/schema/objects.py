@@ -16,26 +16,30 @@ from pydantic import BaseModel
 
 from dagster_components.core.schema.base import ResolvableModel
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
-from dagster_components.core.schema.resolver import ResolveContext
+from dagster_components.core.schema.resolver import ResolutionContext
+
+
+def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
+    resolved_val = context.resolve_value(key)
+    return (
+        AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
+    )
 
 
 class OpSpecModel(ResolvableModel):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
 
-    def resolve(self, context: ResolveContext) -> "OpSpecModel":
+    def resolve(self, context: ResolutionContext) -> "OpSpecModel":
         return self.resolve_as(OpSpecModel, context)
 
 
-class AssetDepModel(ResolvableModel):
+class AssetDepModel(ResolvableModel[AssetDep]):
     asset: str
     partition_mapping: Optional[str] = None
 
-    def resolve_asset(self, context: ResolveContext) -> AssetKey:
-        return AssetKey.from_coercible(context.resolve_value(self.asset))
-
-    def resolve(self, context: ResolveContext) -> AssetDep:
-        return self.resolve_as(AssetDep, context)
+    def resolve_asset(self, context: ResolutionContext) -> AssetKey:
+        return _resolve_asset_key(self.asset, context)
 
 
 class _ResolvableAssetAttributesMixin(BaseModel):
@@ -57,24 +61,23 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     ] = None
 
 
-class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
+class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel[Mapping[str, Any]]):
     key: Optional[str] = None
 
-    def resolve_key(self, context: ResolveContext) -> Optional[AssetKey]:
-        return AssetKey.from_coercible(context.resolve_value(self.key)) if self.key else None
+    def resolve_key(self, context: ResolutionContext) -> Optional[AssetKey]:
+        return _resolve_asset_key(self.key, context) if self.key else None
 
-    def resolve(self, context: ResolveContext) -> Mapping[str, Any]:
-        return self.resolve_as(dict, context)
+    def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
+        # only include fields that are explcitly set
+        set_fields = self.model_dump(exclude_unset=True).keys()
+        return {k: v for k, v in self.get_resolved_properties(context).items() if k in set_fields}
 
 
-class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel):
+class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel[AssetSpec]):
     key: str
 
-    def resolve_key(self, context: ResolveContext) -> AssetKey:
-        return AssetKey.from_coercible(context.resolve_value(self.key))
-
-    def resolve(self, context: ResolveContext) -> AssetSpec:
-        return AssetSpec(**self.resolve_properties(context))
+    def resolve_key(self, context: ResolutionContext) -> AssetKey:
+        return _resolve_asset_key(self.key, context)
 
 
 class AssetSpecTransformModel(ResolvableModel):
@@ -85,7 +88,7 @@ class AssetSpecTransformModel(ResolvableModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def apply_to_spec(self, spec: AssetSpec, context: ResolveContext) -> AssetSpec:
+    def apply_to_spec(self, spec: AssetSpec, context: ResolutionContext) -> AssetSpec:
         # add the original spec to the context and resolve values
         attributes = self.attributes.resolve(context.with_scope(asset=spec))
 
@@ -103,7 +106,7 @@ class AssetSpecTransformModel(ResolvableModel):
         else:
             check.failed(f"Unsupported operation: {self.operation}")
 
-    def apply(self, defs: Definitions, context: ResolveContext) -> Definitions:
+    def apply(self, defs: Definitions, context: ResolutionContext) -> Definitions:
         target_selection = AssetSelection.from_string(self.target, include_sources=True)
         target_keys = target_selection.resolve(defs.get_asset_graph())
 
@@ -119,5 +122,5 @@ class AssetSpecTransformModel(ResolvableModel):
         ]
         return replace(defs, assets=assets)
 
-    def resolve(self, context: ResolveContext) -> Callable[[Definitions], Definitions]:
+    def resolve(self, context: ResolutionContext) -> Callable[[Definitions], Definitions]:
         return lambda defs: self.apply(defs, context)

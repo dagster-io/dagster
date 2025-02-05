@@ -16,7 +16,7 @@ from dagster_components.core.component import (
 )
 from dagster_components.core.schema.base import ResolvableModel
 from dagster_components.core.schema.objects import AssetSpecModel
-from dagster_components.core.schema.resolver import ResolveContext
+from dagster_components.core.schema.resolver import ResolutionContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -26,14 +26,14 @@ class PipesSubprocessScriptParams(ResolvableModel):
     path: str
     assets: Sequence[AssetSpecModel]
 
-    def resolve(self, context: ResolveContext) -> tuple[str, Sequence[AssetSpec]]:
-        return context.resolve_value(self.path), context.resolve_value(self.assets)
+    def resolve(self, context: ResolutionContext) -> tuple[str, Sequence[AssetSpec]]:
+        return context.resolve_value((self.path, self.assets))
 
 
 class PipesSubprocessScriptCollectionParams(ResolvableModel):
     scripts: Sequence[PipesSubprocessScriptParams]
 
-    def resolve(self, resolver: ResolveContext) -> Mapping[str, Sequence[AssetSpec]]:
+    def resolve(self, resolver: ResolutionContext) -> Mapping[str, Sequence[AssetSpec]]:
         return dict(script.resolve(resolver) for script in self.scripts)
 
 
@@ -60,7 +60,7 @@ class PipesSubprocessScriptCollection(Component):
     def load(
         cls, params: PipesSubprocessScriptCollectionParams, context: ComponentLoadContext
     ) -> "PipesSubprocessScriptCollection":
-        return cls(dirpath=context.path, specs_by_path=params.resolve(context.resolve_context))
+        return cls(dirpath=context.path, specs_by_path=params.resolve(context.resolution_context))
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

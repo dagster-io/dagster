@@ -23,17 +23,17 @@ def automation_condition_scope() -> Mapping[str, Any]:
 
 
 @record
-class ResolveContext:
+class ResolutionContext:
     scope: Mapping[str, Any]
 
     @staticmethod
-    def default() -> "ResolveContext":
-        return ResolveContext(
+    def default() -> "ResolutionContext":
+        return ResolutionContext(
             scope={"env": env_scope, "automation_condition": automation_condition_scope()}
         )
 
-    def with_scope(self, **additional_scope) -> "ResolveContext":
-        return ResolveContext(scope={**self.scope, **additional_scope})
+    def with_scope(self, **additional_scope) -> "ResolutionContext":
+        return ResolutionContext(scope={**self.scope, **additional_scope})
 
     def _resolve_inner_value(self, val: Any) -> Any:
         """Resolves a single value, if it is a templated string."""
@@ -45,6 +45,8 @@ class ResolveContext:
             return val.resolve(self)
         elif isinstance(val, dict):
             return {k: self.resolve_value(v) for k, v in val.items()}
+        elif isinstance(val, tuple):
+            return tuple(self.resolve_value(v) for v in val)
         elif isinstance(val, list):
             return [self.resolve_value(v) for v in val]
         else:

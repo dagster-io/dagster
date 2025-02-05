@@ -21,18 +21,18 @@ from dagster_components.core.schema.objects import (
     OpSpecModel,
     ResolvableModel,
 )
-from dagster_components.core.schema.resolver import ResolveContext
+from dagster_components.core.schema.resolver import ResolutionContext
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
 @record
 class SlingReplicationSpec:
-    relative_path: str
-    op_spec: OpSpecModel
+    path: str
+    op_spec: Optional[OpSpecModel]
     translator: DagsterSlingTranslator
 
 
-class SlingReplicationParams(ResolvableModel):
+class SlingReplicationParams(ResolvableModel[SlingReplicationSpec]):
     path: str
     op: Annotated[Optional[OpSpecModel], ResolvableFieldInfo(resolved_field_name="op_spec")] = None
     asset_attributes: Annotated[
@@ -40,15 +40,12 @@ class SlingReplicationParams(ResolvableModel):
         ResolvableFieldInfo(required_scope={"stream_definition"}, resolved_field_name="translator"),
     ] = None
 
-    def resolve_translator(self, resolver: ResolveContext) -> DagsterSlingTranslator:
+    def resolve_translator(self, resolver: ResolutionContext) -> DagsterSlingTranslator:
         return get_wrapped_translator_class(DagsterSlingTranslator)(
             resolving_info=ResolvingInfo(
                 "stream_definition", self.asset_attributes or AssetAttributesModel(), resolver
             ),
         )
-
-    def resolve(self, context: ResolveContext) -> SlingReplicationSpec:
-        return self.resolve_as(SlingReplicationSpec, context)
 
 
 class SlingReplicationCollectionParams(ResolvableModel):
@@ -66,12 +63,12 @@ class SlingReplicationCollection(Component):
         dirpath: Path,
         resource: SlingResource,
         replication_specs: Sequence[SlingReplicationSpec],
-        transforms: Sequence[Callable[[Definitions], Definitions]],
+        transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None,
     ):
         self.dirpath = dirpath
         self.resource = resource
         self.replication_specs = replication_specs
-        self.transforms = transforms
+        self.transforms = transforms or []
 
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:
@@ -90,17 +87,19 @@ class SlingReplicationCollection(Component):
         return cls(
             dirpath=context.path,
             resource=params.sling or SlingResource(),
-            replication_specs=context.resolve_context.resolve_value(params.replications),
-            transforms=context.resolve_context.resolve_value(params.transforms),
+            replication_specs=context.resolution_context.resolve_value(params.replications),
+            transforms=context.resolution_context.resolve_value(params.transforms),
         )
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec
     ) -> AssetsDefinition:
+        op_spec = replication_spec.op_spec or OpSpecModel()
+
         @sling_assets(
-            name=replication_spec.op_spec.name or Path(replication_spec.relative_path).stem,
-            op_tags=replication_spec.op_spec.tags,
-            replication_config=self.dirpath / replication_spec.relative_path,
+            name=op_spec.name or Path(replication_spec.path).stem,
+            op_tags=op_spec.tags,
+            replication_config=self.dirpath / replication_spec.path,
             dagster_sling_translator=replication_spec.translator,
         )
         def _asset(context: AssetExecutionContext):
