@@ -4,6 +4,7 @@ import {LRUCache} from './lru-cache';
 
 interface CacheOptions {
   dbName: string;
+  dbVersion?: number;
   maxCount: number;
 }
 
@@ -26,17 +27,19 @@ class IDBLRUCache<T> {
   private dbPromise: Promise<IDBDatabase> | undefined;
   private isDbOpen = false;
   private lruCache: LRUCache<T>;
+  private dbVersion?: number;
 
-  constructor({dbName, maxCount}: CacheOptions) {
-    this.dbName = dbName;
+  constructor({dbName, dbVersion, maxCount}: CacheOptions) {
+    this.dbName = `idb-lru-cache-v1-${dbName}`;
     this.maxCount = maxCount;
     this.lruCache = new LRUCache<T>(maxCount);
     this.dbPromise = this.initDB();
+    this.dbVersion = dbVersion;
   }
 
   private async initDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, 3);
+      const request = indexedDB.open(this.dbName, this.dbVersion);
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
