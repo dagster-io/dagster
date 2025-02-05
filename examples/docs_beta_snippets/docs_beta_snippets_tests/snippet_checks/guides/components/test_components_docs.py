@@ -53,6 +53,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 "COLUMNS": "90",
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
+                "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
             }
         ),
     ):
