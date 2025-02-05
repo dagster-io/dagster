@@ -208,7 +208,7 @@ def check_file(
             Useful to remove dynamic content, e.g. the temporary directory path or timestamps.
     """
     file_path = Path(file_path)
-    assert file_path.exists()
+    assert file_path.exists(), f"Expected file {file_path} to exist"
     contents = file_path.read_text()
 
     if snippet_path:

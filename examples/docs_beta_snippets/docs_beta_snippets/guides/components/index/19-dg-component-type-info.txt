@@ -1,6 +1,6 @@
-dg component-type info dagster_components.dbt_project
+dg component-type info 'dbt_project@dagster_components'
 
-dagster_components.dbt_project
+dbt_project@dagster_components
 
 Description:
 

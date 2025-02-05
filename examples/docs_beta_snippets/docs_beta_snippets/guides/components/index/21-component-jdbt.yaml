@@ -1,4 +1,4 @@
-type: dagster_components.dbt_project
+type: dbt_project@dagster_components
 
 params:
   dbt:
