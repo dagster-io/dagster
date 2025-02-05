@@ -34,7 +34,9 @@ class DbtProjectParams(ResolvableModel):
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
 
-@resolver(fromtype=DbtProjectParams, renamed_fields={"asset_attributes": "translator"})
+@resolver(
+    fromtype=DbtProjectParams, exclude_fields={"asset_attributes"}, additional_fields={"translator"}
+)
 class DbtProjectResolver(Resolver[DbtProjectParams]):
     def resolve_translator(self, context: ResolutionContext) -> DagsterDbtTranslator:
         return get_wrapped_translator_class(DagsterDbtTranslator)(

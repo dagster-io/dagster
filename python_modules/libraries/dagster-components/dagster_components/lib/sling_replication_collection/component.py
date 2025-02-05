@@ -51,19 +51,25 @@ class SlingReplicationCollectionParams(ResolvableModel):
 @resolver(
     fromtype=SlingReplicationParams,
     totype=SlingReplicationSpec,
-    renamed_fields={"asset_attributes": "translator"},
+    exclude_fields={"asset_attributes"},
+    additional_fields={"translator"},
 )
 class SlingReplicationResolver(Resolver):
     def resolve_translator(self, resolver: ResolutionContext) -> DagsterSlingTranslator:
         return get_wrapped_translator_class(DagsterSlingTranslator)(
             resolving_info=ResolvingInfo(
-                "stream_definition", self.model.asset_attributes or AssetAttributesModel(), resolver
+                "stream_definition",
+                self.model.asset_attributes or AssetAttributesModel(),
+                resolver,
             ),
         )
 
 
 @resolver(fromtype=SlingReplicationCollectionParams)
-class SlingReplicationCollectionResolver(Resolver):
+class SlingReplicationCollectionResolver(Resolver[SlingReplicationCollectionParams]):
+    def resolve_sling(self, resolver: ResolutionContext) -> SlingResource:
+        return SlingResource(**resolver.resolve_value(self.model.sling.model_dump()))
+
     def resolve_replications(self, resolver: ResolutionContext) -> Sequence[SlingReplicationSpec]:
         return [resolver.resolve_value(replication) for replication in self.model.replications]
 
