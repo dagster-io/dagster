@@ -1,5 +1,5 @@
 ---
-title: "OpenAI & Dagster | Dagster Docs"
+title: "OpenAI & Dagster"
 description: "The dagster-openai library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights."
 ---
 

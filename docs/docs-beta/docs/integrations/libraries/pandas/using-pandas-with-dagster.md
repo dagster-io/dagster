@@ -1,5 +1,5 @@
 ---
-title: "Pandas & Dagster | Dagster Docs"
+title: "Pandas & Dagster"
 description: "The dagster-pandas library provides the ability to perform data validation, emit summary statistics, and enable reliable dataframe serialization/deserialization."
 ---
 

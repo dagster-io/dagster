@@ -1,5 +1,5 @@
 ---
-title: "Pandera & Dagster | Dagster Docs"
+title: "Pandera & Dagster"
 description: Generate Dagster types for dataframes with Pandera.
 ---
 
