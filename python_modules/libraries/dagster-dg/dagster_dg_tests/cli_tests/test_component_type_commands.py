@@ -1,7 +1,7 @@
 import textwrap
 from pathlib import Path
 
-from dagster_dg.component import GlobalRemoteComponentKey, RemoteComponentRegistry
+from dagster_dg.component import GlobalComponentKey, RemoteComponentRegistry
 from dagster_dg.context import DgContext
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
@@ -31,7 +31,7 @@ def test_component_type_scaffold_success() -> None:
         assert Path("foo_bar/lib/baz.py").exists()
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        assert registry.has_global(GlobalRemoteComponentKey(name="baz", package="foo_bar"))
+        assert registry.has_global(GlobalComponentKey(name="baz", namespace="foo_bar"))
 
 
 def test_component_type_scaffold_outside_component_library_fails() -> None:
@@ -77,7 +77,7 @@ def test_component_type_scaffold_succeeds_non_default_component_lib_package() ->
         assert Path("foo_bar/_lib/baz.py").exists()
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        assert registry.has_global(GlobalRemoteComponentKey(name="baz", package="foo_bar"))
+        assert registry.has_global(GlobalComponentKey(name="baz", namespace="foo_bar"))
 
 
 def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -> None:

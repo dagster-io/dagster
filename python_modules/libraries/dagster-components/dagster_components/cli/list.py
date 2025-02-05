@@ -29,10 +29,10 @@ def list_component_types_command(ctx: click.Context) -> None:
     registry = ComponentTypeRegistry.from_entry_point_discovery(
         builtin_component_lib=builtin_component_lib
     )
-    for key in sorted(registry.keys(), key=lambda k: k.to_string()):
-        output[key.to_string()] = ComponentTypeMetadata(
+    for key in sorted(registry.keys(), key=lambda k: k.to_typename()):
+        output[key.to_typename()] = ComponentTypeMetadata(
             name=key.name,
-            package=key.package,
+            package=key.namespace,
             **registry.get(key).get_metadata(),
         )
     click.echo(json.dumps(output))
@@ -46,7 +46,7 @@ def list_local_component_types_command(component_directories: Sequence[str]) -> 
     for component_directory in component_directories:
         output_for_directory = {}
         for key, component_type in find_local_component_types(Path(component_directory)).items():
-            output_for_directory[key.to_string()] = ComponentTypeMetadata(
+            output_for_directory[key.to_typename()] = ComponentTypeMetadata(
                 name=get_component_type_name(component_type),
                 package=component_directory,
                 **component_type.get_metadata(),
@@ -71,7 +71,7 @@ def list_all_components_schema_command(ctx: click.Context) -> None:
     for key, component_type in sorted(registry.items()):
         # Create ComponentFileModel schema for each type
         schema_type = component_type.get_schema()
-        key_string = key.to_string()
+        key_string = key.to_typename()
         if schema_type:
             schemas.append(
                 create_model(
