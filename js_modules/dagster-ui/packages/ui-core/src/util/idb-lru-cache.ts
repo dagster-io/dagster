@@ -38,16 +38,15 @@ class IDBLRUCache<T> {
   }
 
   private async initDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
+    const request = indexedDB.open(this.dbName, this.dbVersion);
 
+    return new Promise((resolve, reject) => {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains('cache')) {
           db.createObjectStore('cache');
         }
       };
-
       request.onsuccess = async (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         this.isDbOpen = true;
@@ -71,12 +70,10 @@ class IDBLRUCache<T> {
 
         resolve(db);
       };
-
       request.onerror = (event) => {
         this.isDbOpen = false;
         reject(new IDBError('Failed to open database', (event.target as IDBOpenDBRequest).error));
       };
-
       request.onblocked = () => {
         this.isDbOpen = false;
         reject(new IDBError('Database is blocked'));
