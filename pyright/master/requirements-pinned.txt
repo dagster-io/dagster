@@ -162,7 +162,6 @@ dagster-modal==0.0.2
 -e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus
 -e python_modules/libraries/dagster-pyspark
--e python_modules/libraries/dagster-sdf
 -e python_modules/libraries/dagster-shell
 -e python_modules/libraries/dagster-sigma
 -e python_modules/libraries/dagster-slack
