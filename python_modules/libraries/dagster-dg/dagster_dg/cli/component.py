@@ -11,7 +11,13 @@ from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
-from dagster_dg.component import RemoteComponentKey, RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.component import (
+    GlobalRemoteComponentKey,
+    LocalRemoteComponentKey,
+    RemoteComponentKey,
+    RemoteComponentRegistry,
+    RemoteComponentType,
+)
 from dagster_dg.config import (
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -191,7 +197,7 @@ def _create_component_scaffold_subcommand(
         dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has_global(RemoteComponentKey.from_string(component_key)):
+        if not registry.has_global(GlobalRemoteComponentKey.from_identifier(component_key)):
             exit_with_error(f"No component type `{component_key}` could be resolved.")
         elif dg_context.has_component(component_name):
             exit_with_error(f"A component instance named `{component_name}` already exists.")
@@ -307,7 +313,7 @@ def component_check_command(
 
     validation_errors: list[ErrorInput] = []
 
-    component_contents_by_dir = {}
+    component_contents_by_key: dict[RemoteComponentKey, Any] = {}
     local_component_dirs = set()
     for component_dir in dg_context.components_path.iterdir():
         if resolved_paths and not any(
@@ -346,9 +352,10 @@ def component_check_command(
             if top_level_errs:
                 continue
 
-            component_contents_by_dir[component_dir] = component_doc_tree
             component_name = component_doc_tree.value.get("type")
-            if _is_local_component(component_name):
+            component_key = RemoteComponentKey.from_identifier(component_name, component_path)
+            component_contents_by_key[component_key] = component_doc_tree
+            if isinstance(component_key, LocalRemoteComponentKey):
                 local_component_dirs.add(component_dir)
 
     # Fetch the local component types, if we need any local components
@@ -356,29 +363,22 @@ def component_check_command(
         dg_context, local_component_type_dirs=list(local_component_dirs)
     )
 
-    for component_dir, component_doc_tree in component_contents_by_dir.items():
-        component_name = component_doc_tree.value.get("type")
-
+    for component_key, component_doc_tree in component_contents_by_key.items():
         try:
-            json_schema = (
-                component_registry.get(
-                    component_dir, RemoteComponentKey.from_string(component_name)
-                ).component_params_schema
-                or {}
-            )
+            json_schema = component_registry.get(component_key).component_params_schema or {}
 
             v = Draft202012Validator(json_schema)
             for err in v.iter_errors(component_doc_tree.value["params"]):
-                validation_errors.append(ErrorInput(component_name, err, component_doc_tree))
+                validation_errors.append(ErrorInput(component_key.name, err, component_doc_tree))
         except KeyError:
             # No matching component type found
             validation_errors.append(
                 ErrorInput(
                     None,
                     ValidationError(
-                        f"Unable to locate local component type '{component_name}' in {component_dir}."
-                        if _is_local_component(component_name)
-                        else f"No component type named '{component_name}' found."
+                        f"Unable to locate local component type '{component_key.name}' in {component_key.path}."
+                        if isinstance(component_key, LocalRemoteComponentKey)
+                        else f"No component type named '{component_key.to_string()}' found."
                     ),
                     component_doc_tree,
                 )
