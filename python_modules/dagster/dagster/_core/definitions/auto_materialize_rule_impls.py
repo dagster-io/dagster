@@ -847,6 +847,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                 context.legacy_context.instance_queryer.get_asset_subset_updated_after_cursor(
                     asset_key=parent_asset_key,
                     after_cursor=context.legacy_context.previous_max_storage_id,
+                    require_data_version_update=False,
                 ),
                 parent_partitions_def,
             )
