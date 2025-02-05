@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Union, cast
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import beta, deprecated, public
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -624,7 +624,7 @@ def reconcile_connections_post(
                 )
 
 
-@experimental
+@beta
 @deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteManagedElementReconciler(ManagedElementReconciler):
     """Reconciles Python-specified Airbyte connections with an Airbyte instance.
@@ -727,7 +727,7 @@ class AirbyteManagedElementCacheableAssetsDefinition(AirbyteInstanceCacheableAss
         return super()._get_connections()
 
 
-@experimental
+@beta
 @deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 def load_assets_from_connections(
     airbyte: Union[AirbyteResource, ResourceDefinition],

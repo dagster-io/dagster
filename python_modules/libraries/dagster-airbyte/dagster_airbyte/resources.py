@@ -22,7 +22,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import beta, public, superseded
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
@@ -286,6 +286,12 @@ class BaseAirbyteResource(ConfigurableResource):
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
 
+@superseded(
+    additional_warn_text=(
+        "Using `AirbyteCloudResource` with `build_airbyte_assets`is no longer best practice. "
+        "Use `AirbyteCloudWorkspace` with `build_airbyte_assets_definitions` instead."
+    )
+)
 class AirbyteCloudResource(BaseAirbyteResource):
     """This resource allows users to programmatically interface with the Airbyte Cloud API to launch
     syncs and monitor their progress.
@@ -823,6 +829,7 @@ def airbyte_resource(context) -> AirbyteResource:
     return AirbyteResource.from_resource_context(context)
 
 
+@superseded(additional_warn_text=("Use `AirbyteCloudWorkspace` instead."))
 @dagster_maintained_resource
 @resource(config_schema=infer_schema_from_config_class(AirbyteCloudResource))
 def airbyte_cloud_resource(context) -> AirbyteCloudResource:
@@ -839,7 +846,7 @@ def airbyte_cloud_resource(context) -> AirbyteCloudResource:
 # -------------
 
 
-@experimental
+@beta
 class AirbyteCloudClient(DagsterModel):
     """This class exposes methods on top of the Airbyte APIs for Airbyte Cloud."""
 
@@ -1109,7 +1116,7 @@ class AirbyteCloudClient(DagsterModel):
         return AirbyteOutput(job_details=poll_job_details, connection_details=connection_details)
 
 
-@experimental
+@beta
 class AirbyteCloudWorkspace(ConfigurableResource):
     """This class represents a Airbyte Cloud workspace and provides utilities
     to interact with Airbyte APIs.
@@ -1260,7 +1267,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
                 )
 
     @public
-    @experimental
+    @beta
     def sync_and_poll(self, context: AssetExecutionContext):
         """Executes a sync and poll process to materialize Airbyte Cloud assets.
             This method can only be used in the context of an asset execution.
@@ -1308,7 +1315,7 @@ class AirbyteCloudWorkspace(ConfigurableResource):
             context.log.warning(f"Assets were not materialized: {unmaterialized_asset_keys}")
 
 
-@experimental
+@beta
 def load_airbyte_cloud_asset_specs(
     workspace: AirbyteCloudWorkspace,
     dagster_airbyte_translator: Optional[DagsterAirbyteTranslator] = None,
