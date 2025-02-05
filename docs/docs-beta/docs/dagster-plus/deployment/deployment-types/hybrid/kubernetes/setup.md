@@ -40,7 +40,7 @@ helm repo update
 ### Step 4: Install the Dagster+ agent Helm chart
 
 ```shell
-helm --namespace dagster-cloud install agent --install dagster-cloud/dagster-cloud-agent
+helm --namespace dagster-cloud install agent dagster-cloud/dagster-cloud-agent
 ```
 
 ## Upgrading
