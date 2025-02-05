@@ -6,7 +6,11 @@ from tempfile import TemporaryDirectory
 import pytest
 
 from dagster._utils.env import environ
-from docs_beta_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
+from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
+    DAGSTER_ROOT,
+    EDITABLE_DIR,
+    MASK_EDITABLE_DAGSTER,
+)
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
@@ -29,7 +33,6 @@ COMPONENTS_SNIPPETS_DIR = (
 MASK_MY_DEPLOYMENT = (r" \/.*?\/my-deployment", " /.../my-deployment")
 
 
-@pytest.mark.skip
 def test_components_docs_deployments(update_snippets: bool) -> None:
     snip_no = 0
 
@@ -45,6 +48,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
                 "COLUMNS": "90",
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
+                "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
             }
         ),
     ):
@@ -80,11 +84,12 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Scaffold code location
         run_command_and_snippet_output(
-            cmd="dg code-location scaffold code-location-1",
+            cmd="dg code-location scaffold code-location-1 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-code-location-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
+                MASK_EDITABLE_DAGSTER,
                 MASK_MY_DEPLOYMENT,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
@@ -123,11 +128,8 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
         )
-        components_dir = str(
-            DAGSTER_ROOT / "python_modules" / "libraries" / "dagster-components"
-        )
         _run_command(
-            f"uv add sling_mac_arm64 && uv add --editable '{components_dir}[sling]'"
+            f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[sling]'"
         )
         run_command_and_snippet_output(
             cmd="dg component-type list",
@@ -138,11 +140,12 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Scaffold new code location
         run_command_and_snippet_output(
-            cmd="cd ../.. && dg code-location scaffold code-location-2",
+            cmd="cd ../.. && dg code-location scaffold code-location-2 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-code-location-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
+                MASK_EDITABLE_DAGSTER,
                 MASK_MY_DEPLOYMENT,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
