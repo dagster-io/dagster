@@ -17,6 +17,7 @@ from dagster import (
     _check as check,
     _seven,
 )
+from dagster._annotations import beta
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
@@ -62,6 +63,7 @@ def _find_first_tagged_cell_index(nb, tag):
 # This is based on papermill.parameterize.parameterize_notebook
 # Typically, papermill injects the injected-parameters cell *below* the parameters cell
 # but we want to *replace* the parameters cell, which is what this function does.
+@beta
 def replace_parameters(context, nb, parameters):
     """Assigned parameters into the appropriate place in the input notebook.
 
@@ -108,6 +110,7 @@ def replace_parameters(context, nb, parameters):
     return nb
 
 
+@beta
 def get_papermill_parameters(
     step_context: StepExecutionContext,
     inputs: Mapping[str, object],
@@ -161,6 +164,7 @@ def get_papermill_parameters(
     return parameters
 
 
+@beta
 def execute_notebook(
     step_context: StepExecutionContext,
     name: str,
@@ -342,6 +346,7 @@ def _make_dagstermill_compute_fn(
     return _t_fn
 
 
+@beta
 def define_dagstermill_op(
     name: str,
     notebook_path: str,
