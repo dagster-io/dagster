@@ -1,6 +1,6 @@
 import os
-from collections.abc import Mapping
-from typing import Any, Optional, TypeVar
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional, TypeVar, overload
 
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -24,6 +24,9 @@ def automation_condition_scope() -> Mapping[str, Any]:
     }
 
 
+T = TypeVar("T")
+
+
 @record
 class ResolutionContext:
     scope: Mapping[str, Any]
@@ -40,6 +43,30 @@ class ResolutionContext:
     def _resolve_inner_value(self, val: Any) -> Any:
         """Resolves a single value, if it is a templated string."""
         return NativeTemplate(val).render(**self.scope) if isinstance(val, str) else val
+
+    @overload
+    def resolve_value(self, val: ResolvableModel[T]) -> T: ...
+
+    @overload
+    def resolve_value(self, val: Mapping) -> Mapping: ...
+
+    @overload
+    def resolve_value(self, val: tuple) -> tuple: ...
+
+    @overload
+    def resolve_value(self, val: Sequence) -> Sequence: ...
+
+    @overload
+    def resolve_value(self, val: Optional[Mapping]) -> Optional[Mapping]: ...
+
+    @overload
+    def resolve_value(self, val: Optional[tuple]) -> Optional[tuple]: ...
+
+    @overload
+    def resolve_value(self, val: Optional[Sequence]) -> Optional[Sequence]: ...
+
+    @overload
+    def resolve_value(self, val: Any) -> Any: ...
 
     def resolve_value(self, val: Any) -> Any:
         """Recursively resolves templated values in a nested object."""

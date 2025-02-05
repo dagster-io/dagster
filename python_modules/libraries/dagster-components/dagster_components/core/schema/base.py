@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Set
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional, TypeVar
 
 from dagster._record import record
@@ -20,7 +20,11 @@ class _ResolverData:
     """Container for configuration of a Resolver that is set when using the @resolver decorator."""
 
     resolved_type: Optional[type]
-    renamed_fields: Mapping[str, str]
+    exclude_fields: Set[str]
+    additional_fields: Set[str]
+
+    def fields(self, model: "ResolvableModel") -> Set[str]:
+        return set(model.model_fields.keys()) - self.exclude_fields | self.additional_fields
 
 
 class Resolver(Generic[T_ResolvableModel]):
@@ -50,29 +54,24 @@ class Resolver(Generic[T_ResolvableModel]):
     """
 
     __resolver_data__: ClassVar[_ResolverData] = _ResolverData(
-        resolved_type=None, renamed_fields={}
+        resolved_type=None, exclude_fields=set(), additional_fields=set()
     )
 
     def __init__(self, model: T_ResolvableModel):
         self.model: T_ResolvableModel = model
 
-    def _get_resolved_fieldname(self, fieldname: str) -> str:
-        return self.__resolver_data__.renamed_fields.get(fieldname, fieldname)
-
-    def _get_resolved_field(self, context: "ResolutionContext", fieldname: str) -> tuple[str, Any]:
-        resolved_fieldname = self._get_resolved_fieldname(fieldname)
-        field_resolver = getattr(self, f"resolve_{resolved_fieldname}", None)
-        if field_resolver:
-            resolved_value = field_resolver(context)
+    def _resolve_field(self, context: "ResolutionContext", field: str) -> Any:
+        field_resolver = getattr(self, f"resolve_{field}", None)
+        if field_resolver is not None:
+            return field_resolver(context)
         else:
-            resolved_value = context.resolve_value(getattr(self.model, fieldname))
-        return resolved_fieldname, resolved_value
+            return context.resolve_value(getattr(self.model, field))
 
     def get_resolved_fields(self, context: "ResolutionContext") -> Mapping[str, Any]:
         """Returns a mapping of field names to resolved values for those fields."""
         return dict(
-            self._get_resolved_field(context, fieldname)
-            for fieldname in self.model.model_fields.keys()
+            self._resolve_field(context, field)
+            for field in self.__resolver_data__.fields(self.model)
         )
 
     def resolve_as(self, as_type: type[T_ResolveAs], context: "ResolutionContext") -> T_ResolveAs:
@@ -106,11 +105,14 @@ def resolver(
     *,
     fromtype: type[ResolvableModel],
     totype: Optional[type] = None,
-    renamed_fields: Optional[Mapping[str, str]] = None,
+    exclude_fields: Optional[Set[str]] = None,
+    additional_fields: Optional[Set[str]] = None,
 ) -> Callable[[T_ResolverType], T_ResolverType]:
     def inner(resolver_type: T_ResolverType) -> T_ResolverType:
         resolver_type.__resolver_data__ = _ResolverData(
-            resolved_type=totype, renamed_fields=renamed_fields or {}
+            resolved_type=totype,
+            exclude_fields=exclude_fields or set(),
+            additional_fields=additional_fields or set(),
         )
         fromtype.__dagster_resolver__ = resolver_type
         return resolver_type
