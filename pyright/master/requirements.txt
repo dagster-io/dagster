@@ -101,7 +101,6 @@ dagster-anthropic
 dagster-chroma
 dagster-gemini
 dagster-weaviate
-dagster-sdf
 
 ### OTHER
 pandas_gbq  # (quickstart_gcp)

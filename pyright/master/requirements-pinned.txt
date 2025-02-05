@@ -177,7 +177,6 @@ dagster-modal==0.0.2
 -e python_modules/libraries/dagster-twilio
 -e docs/dagster-ui-screenshot
 -e python_modules/libraries/dagster-wandb
-dagster-sdf==0.25.11
 dagster-weaviate==0.0.1
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagstermill
