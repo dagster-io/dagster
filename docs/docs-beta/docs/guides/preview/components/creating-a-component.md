@@ -2,7 +2,6 @@
 title: 'Creating a New Component Type'
 sidebar_position: 100
 unlisted: true
-displayed_sidebar: 'components'
 ---
 
 :::note

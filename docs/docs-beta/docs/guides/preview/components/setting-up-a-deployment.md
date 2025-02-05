@@ -2,7 +2,6 @@
 title: "Setting up a deployment"
 sidebar_position: 400
 unlisted: true
-displayed_sidebar: 'components'
 ---
 
 Many users will want to manage multiple code locations within a single coherent
