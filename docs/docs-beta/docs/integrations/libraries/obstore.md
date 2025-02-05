@@ -14,7 +14,7 @@ The community-supported `dagster-obstore` package provides an integration with o
 
 ### S3ComputeLogManager
 
-The `S3ComputeLogManagere` writes `stdout` and `stderr` to any S3 compatible endpoint.
+The `S3ComputeLogManager` writes `stdout` and `stderr` to any S3 compatible endpoint.
 
 ```yaml
 # there are multiples ways to configure the S3ComputeLogManager
