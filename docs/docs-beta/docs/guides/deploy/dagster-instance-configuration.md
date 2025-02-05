@@ -1,5 +1,5 @@
 ---
-title: "Dagster instance | Dagster Docs"
+title: "Dagster instance"
 description: "Define configuration options for your Dagster instance."
 sidebar_position: 200
 ---
