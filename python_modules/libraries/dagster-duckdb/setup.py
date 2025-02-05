@@ -32,7 +32,7 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     install_requires=[
-        "duckdb",
+        "duckdb<1.1.3",
         f"dagster{pin}",
     ],
     extras_require={
