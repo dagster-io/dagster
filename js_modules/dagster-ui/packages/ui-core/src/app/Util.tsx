@@ -155,6 +155,7 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
     lru = cache<string, R>({
       dbName: 'indexDBAsyncMemoizeDB',
       maxCount: 50,
+      dbVersion: 4,
     });
   } catch {}
 
