@@ -29,10 +29,10 @@ def test_component_scaffold_dynamic_subcommand_generation() -> None:
         # These are wrapped in a table so it's hard to check exact output.
         for line in [
             "╭─ Commands",
-            "│ dagster_components.test.all_metadata_empty_asset",
-            "│ dagster_components.test.complex_schema_asset",
-            "│ dagster_components.test.simple_asset",
-            "│ dagster_components.test.simple_pipes_script_asset",
+            "│ all_metadata_empty_asset@dagster_components.test",
+            "│ complex_schema_asset@dagster_components.test",
+            "│ simple_asset@dagster_components.test",
+            "│ simple_pipes_script_asset@dagster_components.test",
         ]:
             assert line in result.output
 
@@ -46,7 +46,7 @@ def test_component_scaffold_no_params_success(in_deployment: bool) -> None:
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.all_metadata_empty_asset",
+            "all_metadata_empty_asset@dagster_components.test",
             "qux",
         )
         assert_runner_result(result)
@@ -54,7 +54,7 @@ def test_component_scaffold_no_params_success(in_deployment: bool) -> None:
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: dagster_components.test.all_metadata_empty_asset"
+            "type: all_metadata_empty_asset@dagster_components.test"
             in component_yaml_path.read_text()
         )
 
@@ -68,7 +68,7 @@ def test_component_scaffold_json_params_success(in_deployment: bool) -> None:
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             "qux",
             "--json-params",
             '{"asset_key": "foo", "filename": "hello.py"}',
@@ -79,7 +79,7 @@ def test_component_scaffold_json_params_success(in_deployment: bool) -> None:
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: dagster_components.test.simple_pipes_script_asset"
+            "type: simple_pipes_script_asset@dagster_components.test"
             in component_yaml_path.read_text()
         )
 
@@ -93,7 +93,7 @@ def test_component_scaffold_key_value_params_success(in_deployment: bool) -> Non
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             "qux",
             "--asset-key=foo",
             "--filename=hello.py",
@@ -104,7 +104,7 @@ def test_component_scaffold_key_value_params_success(in_deployment: bool) -> Non
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: dagster_components.test.simple_pipes_script_asset"
+            "type: simple_pipes_script_asset@dagster_components.test"
             in component_yaml_path.read_text()
         )
 
@@ -114,7 +114,7 @@ def test_component_scaffold_json_params_and_key_value_params_fails() -> None:
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             "qux",
             "--json-params",
             '{"filename": "hello.py"}',
@@ -138,7 +138,7 @@ def test_component_scaffold_with_no_dagster_components_fails() -> None:
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.simple_pipes_script_asset",
+            "simple_pipes_script_asset@dagster_components.test",
             "qux",
             env={"PATH": "/dev/null"},
         )
@@ -155,14 +155,14 @@ def test_component_scaffold_already_exists_fails(in_deployment: bool) -> None:
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.all_metadata_empty_asset",
+            "all_metadata_empty_asset@dagster_components.test",
             "qux",
         )
         assert_runner_result(result)
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.all_metadata_empty_asset",
+            "all_metadata_empty_asset@dagster_components.test",
             "qux",
         )
         assert_runner_result(result, exit_0=False)
@@ -178,7 +178,7 @@ def test_component_scaffold_succeeds_non_default_component_package() -> None:
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.all_metadata_empty_asset",
+            "all_metadata_empty_asset@dagster_components.test",
             "qux",
         )
         assert_runner_result(result)
@@ -186,7 +186,7 @@ def test_component_scaffold_succeeds_non_default_component_package() -> None:
         component_yaml_path = Path("foo_bar/_components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: dagster_components.test.all_metadata_empty_asset"
+            "type: all_metadata_empty_asset@dagster_components.test"
             in component_yaml_path.read_text()
         )
 
@@ -198,7 +198,7 @@ def test_component_scaffold_fails_components_package_does_not_exist() -> None:
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.all_metadata_empty_asset",
+            "all_metadata_empty_asset@dagster_components.test",
             "qux",
         )
         assert_runner_result(result, exit_0=False)
@@ -211,12 +211,12 @@ def test_component_scaffold_succeeds_scaffolded_component_type() -> None:
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
 
-        result = runner.invoke("component", "scaffold", "foo_bar.baz", "qux")
+        result = runner.invoke("component", "scaffold", "baz@foo_bar", "qux")
         assert_runner_result(result)
         assert Path("foo_bar/components/qux").exists()
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
-        assert "type: foo_bar.baz" in component_yaml_path.read_text()
+        assert "type: baz@foo_bar" in component_yaml_path.read_text()
 
 
 # ##### REAL COMPONENTS
@@ -243,7 +243,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.dbt_project",
+            "dbt_project@dagster_components",
             "my_project",
             *params,
         )
@@ -252,7 +252,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
         component_yaml_path = Path("foo_bar/components/my_project/component.yaml")
         assert component_yaml_path.exists()
-        assert "type: dagster_components.dbt_project" in component_yaml_path.read_text()
+        assert "type: dbt_project@dagster_components" in component_yaml_path.read_text()
         assert (
             "stub_code_locations/dbt_project_location/components/jaffle_shop"
             in component_yaml_path.read_text()
@@ -269,7 +269,7 @@ def test_list_components_succeeds():
         result = runner.invoke(
             "component",
             "scaffold",
-            "dagster_components.test.all_metadata_empty_asset",
+            "all_metadata_empty_asset@dagster_components.test",
             "qux",
         )
         assert_runner_result(result)

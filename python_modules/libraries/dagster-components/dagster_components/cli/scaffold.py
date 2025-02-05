@@ -5,6 +5,7 @@ import click
 from pydantic import TypeAdapter
 
 from dagster_components import ComponentTypeRegistry
+from dagster_components.core.component import ComponentTypeKey
 from dagster_components.scaffold import (
     ComponentScaffolderUnavailableReason,
     scaffold_component_instance,
@@ -32,10 +33,11 @@ def scaffold_component_command(
     registry = ComponentTypeRegistry.from_entry_point_discovery(
         builtin_component_lib=builtin_component_lib
     )
-    if not registry.has(component_type):
+    component_key = ComponentTypeKey.from_string(component_type)
+    if not registry.has(component_key):
         exit_with_error(f"No component type `{component_type}` could be resolved.")
 
-    component_type_cls = registry.get(component_type)
+    component_type_cls = registry.get(component_key)
     if json_params:
         scaffolder = component_type_cls.get_scaffolder()
         if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
