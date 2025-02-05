@@ -1734,6 +1734,11 @@
       "source": "/guides/build/components/:path",
       "destination": "/guides/preview/components/:path",
       "permanent": false
+    },
+    {
+      "source": "/next/:path*",
+      "destination": "/:path*",
+      "permanent": false
     }
   ]
 }
