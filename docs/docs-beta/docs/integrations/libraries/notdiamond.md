@@ -9,7 +9,7 @@ sidebar_custom_props:
   community: true
 ---
 
-Leverage the Not Diamond resource to easily determine with LLM provider is most appropriate for your use case.
+Leverage the Not Diamond resource to easily determine which LLM provider is most appropriate for your use case.
 
 ### Installation
 
