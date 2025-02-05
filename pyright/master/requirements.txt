@@ -82,7 +82,6 @@
 -e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
--e python_modules/libraries/dagster-sdf/
 -e python_modules/libraries/dagster-shell/
 -e python_modules/libraries/dagster-sigma[test]
 -e python_modules/libraries/dagster-slack/
@@ -102,6 +101,7 @@ dagster-anthropic
 dagster-chroma
 dagster-gemini
 dagster-weaviate
+dagster-sdf
 
 ### OTHER
 pandas_gbq  # (quickstart_gcp)

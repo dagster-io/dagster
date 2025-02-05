@@ -162,7 +162,6 @@ dagster-modal==0.0.2
 -e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus
 -e python_modules/libraries/dagster-pyspark
--e python_modules/libraries/dagster-sdf
 -e python_modules/libraries/dagster-shell
 -e python_modules/libraries/dagster-sigma
 -e python_modules/libraries/dagster-slack
@@ -178,6 +177,7 @@ dagster-modal==0.0.2
 -e python_modules/libraries/dagster-twilio
 -e docs/dagster-ui-screenshot
 -e python_modules/libraries/dagster-wandb
+dagster-sdf==1.9.11
 dagster-weaviate==0.0.1
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagstermill
