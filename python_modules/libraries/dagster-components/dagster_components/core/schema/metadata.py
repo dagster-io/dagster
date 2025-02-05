@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Mapping, Sequence, Set
 from dataclasses import dataclass
-from typing import Annotated, Any, Callable, Optional, Union, get_args, get_origin
+from typing import Annotated, Any, Optional, Union, get_args, get_origin
 
 import dagster._check as check
 from pydantic.fields import FieldInfo
@@ -14,8 +14,8 @@ JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
 class ResolutionMetadata:
     """Internal class that stores arbitrary metadata about a resolved field."""
 
-    output_type: type
-    post_process: Optional[Callable[[Any], Any]] = None
+    output_type: Optional[type] = None
+    resolved_field_name: Optional[str] = None
 
 
 class ResolvableFieldInfo(FieldInfo):
@@ -32,13 +32,11 @@ class ResolvableFieldInfo(FieldInfo):
         self,
         *,
         output_type: Optional[type] = None,
-        post_process_fn: Optional[Callable[[Any], Any]] = None,
+        resolved_field_name: Optional[str] = None,
         required_scope: Optional[Set[str]] = None,
     ):
-        self.resolution_metadata = (
-            ResolutionMetadata(output_type=output_type, post_process=post_process_fn)
-            if output_type
-            else None
+        self.resolution_metadata = ResolutionMetadata(
+            output_type=output_type, resolved_field_name=resolved_field_name
         )
         super().__init__(
             json_schema_extra={JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY: list(required_scope or [])},

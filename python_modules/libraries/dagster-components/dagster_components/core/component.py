@@ -29,7 +29,7 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.core.schema.resolver import ResolveContext
 from dagster_components.utils import load_module_from_path
 
 
@@ -228,7 +228,7 @@ class ComponentLoadContext:
     resources: Mapping[str, object]
     registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
-    templated_value_resolver: TemplatedValueResolver
+    resolve_context: ResolveContext
 
     @staticmethod
     def for_test(
@@ -241,7 +241,7 @@ class ComponentLoadContext:
             resources=resources or {},
             registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
-            templated_value_resolver=TemplatedValueResolver.default(),
+            resolve_context=ResolveContext.default(),
         )
 
     @property
@@ -259,7 +259,7 @@ class ComponentLoadContext:
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
             self,
-            templated_value_resolver=self.templated_value_resolver.with_scope(**rendering_scope),
+            templated_value_resolver=self.resolve_context.with_scope(**rendering_scope),
         )
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":

@@ -20,5 +20,5 @@ from dagster_components.core.schema.objects import (
     AssetSpecTransformModel as AssetSpecTransformModel,
     OpSpecModel as OpSpecModel,
 )
-from dagster_components.core.schema.resolver import TemplatedValueResolver as TemplatedValueResolver
+from dagster_components.core.schema.resolver import ResolveContext as ResolveContext
 from dagster_components.version import __version__ as __version__

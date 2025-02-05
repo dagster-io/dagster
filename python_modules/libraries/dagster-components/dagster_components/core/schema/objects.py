@@ -2,6 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 import dagster._check as check
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
@@ -15,15 +16,26 @@ from pydantic import BaseModel
 
 from dagster_components.core.schema.base import ResolvableModel
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.core.schema.resolver import ResolveContext
 
 
-class OpSpecModel(ResolvableModel["OpSpecModel"]):
+class OpSpecModel(ResolvableModel):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
 
-    def resolve(self, resolver: TemplatedValueResolver) -> "OpSpecModel":
-        return OpSpecModel(**resolver.resolve_obj(self.model_dump(exclude_unset=True)))
+    def resolve(self, context: ResolveContext) -> "OpSpecModel":
+        return self.resolve_as(OpSpecModel, context)
+
+
+class AssetDepModel(ResolvableModel):
+    asset: str
+    partition_mapping: Optional[str] = None
+
+    def resolve_asset(self, context: ResolveContext) -> AssetKey:
+        return AssetKey.from_coercible(context.resolve_value(self.asset))
+
+    def resolve(self, context: ResolveContext) -> AssetDep:
+        return self.resolve_as(AssetDep, context)
 
 
 class _ResolvableAssetAttributesMixin(BaseModel):
@@ -45,36 +57,27 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     ] = None
 
 
-class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel[Mapping[str, Any]]):
-    key: Annotated[Optional[str], ResolvableFieldInfo(output_type=AssetKey)] = None
+class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
+    key: Optional[str] = None
 
-    def resolve(self, resolver: TemplatedValueResolver) -> Mapping[str, Any]:
-        props = resolver.resolve_obj(self.model_dump(exclude_unset=True))
-        if "key" in props:
-            props["key"] = AssetKey.from_user_string(props["key"])
-        return props
+    def resolve_key(self, context: ResolveContext) -> Optional[AssetKey]:
+        return AssetKey.from_coercible(context.resolve_value(self.key)) if self.key else None
 
-
-class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel[AssetSpec]):
-    key: Annotated[Optional[str], ResolvableFieldInfo(output_type=AssetKey)]
-
-    def resolve(self, resolver: TemplatedValueResolver) -> AssetSpec:
-        return AssetSpec(
-            key=AssetKey.from_user_string(resolver.resolve_obj(self.key)),
-            description=resolver.resolve_obj(self.description),
-            metadata=resolver.resolve_obj(self.metadata),
-            group_name=resolver.resolve_obj(self.group_name),
-            skippable=resolver.resolve_obj(self.skippable),
-            code_version=resolver.resolve_obj(self.code_version),
-            owners=resolver.resolve_obj(self.owners),
-            tags=resolver.resolve_obj(self.tags),
-            deps=[AssetKey.from_user_string(d) for d in resolver.resolve_obj(self.deps)]
-            if self.deps
-            else None,
-        )
+    def resolve(self, context: ResolveContext) -> Mapping[str, Any]:
+        return self.resolve_as(dict, context)
 
 
-class AssetSpecTransformModel(ResolvableModel[Callable[[Definitions], Definitions]]):
+class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel):
+    key: str
+
+    def resolve_key(self, context: ResolveContext) -> AssetKey:
+        return AssetKey.from_coercible(context.resolve_value(self.key))
+
+    def resolve(self, context: ResolveContext) -> AssetSpec:
+        return AssetSpec(**self.resolve_properties(context))
+
+
+class AssetSpecTransformModel(ResolvableModel):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesModel
@@ -82,13 +85,9 @@ class AssetSpecTransformModel(ResolvableModel[Callable[[Definitions], Definition
     class Config:
         arbitrary_types_allowed = True
 
-    def apply_to_spec(
-        self,
-        spec: AssetSpec,
-        value_resolver: TemplatedValueResolver,
-    ) -> AssetSpec:
+    def apply_to_spec(self, spec: AssetSpec, context: ResolveContext) -> AssetSpec:
         # add the original spec to the context and resolve values
-        attributes = self.attributes.resolve(value_resolver.with_scope(asset=spec))
+        attributes = self.attributes.resolve(context.with_scope(asset=spec))
 
         if self.operation == "merge":
             mergeable_attributes = {"metadata", "tags"}
@@ -104,15 +103,13 @@ class AssetSpecTransformModel(ResolvableModel[Callable[[Definitions], Definition
         else:
             check.failed(f"Unsupported operation: {self.operation}")
 
-    def apply(self, defs: Definitions, value_resolver: TemplatedValueResolver) -> Definitions:
+    def apply(self, defs: Definitions, context: ResolveContext) -> Definitions:
         target_selection = AssetSelection.from_string(self.target, include_sources=True)
         target_keys = target_selection.resolve(defs.get_asset_graph())
 
         mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
         mapped_assets = map_asset_specs(
-            lambda spec: self.apply_to_spec(spec, value_resolver)
-            if spec.key in target_keys
-            else spec,
+            lambda spec: self.apply_to_spec(spec, context) if spec.key in target_keys else spec,
             mappable,
         )
 
@@ -122,5 +119,5 @@ class AssetSpecTransformModel(ResolvableModel[Callable[[Definitions], Definition
         ]
         return replace(defs, assets=assets)
 
-    def resolve(self, resolver: TemplatedValueResolver) -> Callable[[Definitions], Definitions]:
-        return lambda defs: self.apply(defs, resolver)
+    def resolve(self, context: ResolveContext) -> Callable[[Definitions], Definitions]:
+        return lambda defs: self.apply(defs, context)

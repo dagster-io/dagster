@@ -1,42 +1,37 @@
 from abc import abstractmethod
 from collections.abc import Mapping
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import BaseModel, ConfigDict
 
 from dagster_components.core.schema.metadata import get_resolution_metadata
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+
+if TYPE_CHECKING:
+    from dagster_components.core.schema.resolver import ResolveContext
 
 T = TypeVar("T")
 
 
-class ResolvableModel(BaseModel, Generic[T]):
-    """Base class for models that are part of a component schema."""
-
+class ResolvableModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    def _resolved_properties(self, value_resolver: TemplatedValueResolver) -> Mapping[str, Any]:
-        """Returns a dictionary of resolved properties for this class."""
-        raw_properties = self.model_dump(exclude_unset=True)
+    def _get_resolved_field(self, field_name: str, context: "ResolveContext") -> tuple[str, Any]:
+        resolution_metadata = get_resolution_metadata(self.__annotations__[field_name])
+        resolved_field_name = resolution_metadata.resolved_field_name or field_name
 
-        # validate that the resolved properties match the output type
-        resolved_properties = {}
-        for k, v in raw_properties.items():
-            resolved = value_resolver.resolve_obj(v)
-            annotation = self.__annotations__[k]
-            rendering_metadata = get_resolution_metadata(annotation)
+        field_resolver = getattr(self, f"resolve_{resolved_field_name}", None)
+        if field_resolver:
+            resolved_field_value = field_resolver(context)
+        else:
+            resolved_field_value = context.resolve_value(getattr(self, field_name))
 
-            if rendering_metadata.post_process:
-                resolved = rendering_metadata.post_process(resolved)
+        return resolved_field_name, resolved_field_value
 
-            # hook into pydantic's type validation to handle complicated stuff like Optional[Mapping[str, int]]
-            TypeAdapter(
-                rendering_metadata.output_type, config={"arbitrary_types_allowed": True}
-            ).validate_python(resolved)
+    def resolve_properties(self, context: "ResolveContext") -> Mapping[str, Any]:
+        return dict(self._get_resolved_field(k, context) for k in self.model_fields.keys())
 
-            resolved_properties[k] = resolved
-
-        return resolved_properties
+    def resolve_as(self, as_type: type[T], context: "ResolveContext") -> T:
+        return as_type(**self.resolve_properties(context))
 
     @abstractmethod
-    def resolve(self, value_resolver: TemplatedValueResolver) -> T: ...
+    def resolve(self, context: "ResolveContext") -> Any: ...

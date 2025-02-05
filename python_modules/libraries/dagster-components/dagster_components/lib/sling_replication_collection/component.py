@@ -21,7 +21,7 @@ from dagster_components.core.schema.objects import (
     OpSpecModel,
     ResolvableModel,
 )
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.core.schema.resolver import ResolveContext
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
@@ -32,47 +32,29 @@ class SlingReplicationSpec:
     translator: DagsterSlingTranslator
 
 
-class SlingReplicationParams(ResolvableModel[SlingReplicationSpec]):
+class SlingReplicationParams(ResolvableModel):
     path: str
-    op: Optional[OpSpecModel] = None
+    op: Annotated[Optional[OpSpecModel], ResolvableFieldInfo(resolved_field_name="op_spec")] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"stream_definition"})
+        Optional[AssetAttributesModel],
+        ResolvableFieldInfo(required_scope={"stream_definition"}, resolved_field_name="translator"),
     ] = None
 
-    def resolve(self, resolver: TemplatedValueResolver) -> SlingReplicationSpec:
-        return SlingReplicationSpec(
-            relative_path=resolver.resolve_obj(self.path),
-            op_spec=self.op.resolve(resolver) if self.op else OpSpecModel(),
-            translator=get_wrapped_translator_class(DagsterSlingTranslator)(
-                resolving_info=ResolvingInfo(
-                    "stream_definition", self.asset_attributes or AssetAttributesModel(), resolver
-                ),
+    def resolve_translator(self, resolver: ResolveContext) -> DagsterSlingTranslator:
+        return get_wrapped_translator_class(DagsterSlingTranslator)(
+            resolving_info=ResolvingInfo(
+                "stream_definition", self.asset_attributes or AssetAttributesModel(), resolver
             ),
         )
 
-
-ResolvedSlingReplicationCollectionParams = tuple[
-    SlingResource,
-    Sequence[SlingReplicationSpec],
-    Sequence[Callable[[Definitions], Definitions]],
-]
+    def resolve(self, context: ResolveContext) -> SlingReplicationSpec:
+        return self.resolve_as(SlingReplicationSpec, context)
 
 
-class SlingReplicationCollectionParams(ResolvableModel[ResolvedSlingReplicationCollectionParams]):
+class SlingReplicationCollectionParams(ResolvableModel):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationParams]
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
-
-    def resolve(self, resolver: TemplatedValueResolver) -> ResolvedSlingReplicationCollectionParams:
-        return (
-            SlingResource(**resolver.resolve_obj(self.sling.model_dump()))
-            if self.sling
-            else SlingResource(),
-            [replication.resolve(resolver) for replication in self.replications],
-            [transform.resolve(resolver) for transform in self.transforms]
-            if self.transforms
-            else [],
-        )
 
 
 @registered_component_type
@@ -105,12 +87,11 @@ class SlingReplicationCollection(Component):
 
     @classmethod
     def load(cls, params: SlingReplicationCollectionParams, context: ComponentLoadContext) -> Self:
-        resource, replication_specs, transforms = params.resolve(context.templated_value_resolver)
         return cls(
             dirpath=context.path,
-            resource=resource,
-            replication_specs=replication_specs,
-            transforms=transforms,
+            resource=params.sling or SlingResource(),
+            replication_specs=context.resolve_context.resolve_value(params.replications),
+            transforms=context.resolve_context.resolve_value(params.transforms),
         )
 
     def build_asset(

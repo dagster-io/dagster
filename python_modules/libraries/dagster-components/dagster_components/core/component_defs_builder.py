@@ -8,7 +8,7 @@ from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
     ComponentTypeRegistry,
-    TemplatedValueResolver,
+    ResolveContext,
 )
 from dagster_components.core.component_decl_builder import (
     ComponentDeclNode,
@@ -55,7 +55,7 @@ def build_defs_from_component_path(
         resources=resources,
         registry=registry,
         decl_node=decl_node,
-        templated_value_resolver=TemplatedValueResolver.default(),
+        resolve_context=ResolveContext.default(),
     )
     components = decl_node.load(context)
     return defs_from_components(resources=resources, context=context, components=components)

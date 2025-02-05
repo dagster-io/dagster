@@ -19,30 +19,26 @@ from dagster_components.core.schema.objects import (
     AssetAttributesModel,
     AssetSpecTransformModel,
     OpSpecModel,
-    TemplatedValueResolver,
+    ResolveContext,
 )
 from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectParams(ResolvableModel["DbtProjectComponent"]):
+class DbtProjectParams(ResolvableModel):
     dbt: DbtCliResource
     op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
+        Optional[AssetAttributesModel],
+        ResolvableFieldInfo(required_scope={"node"}, resolved_field_name="translator"),
     ] = None
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
-    def resolve(self, resolver: TemplatedValueResolver) -> "DbtProjectComponent":
-        return DbtProjectComponent(
-            resource=self.dbt,
-            op_spec=self.op.resolve(resolver) if self.op else None,
-            translator=get_wrapped_translator_class(DagsterDbtTranslator)(
-                resolving_info=ResolvingInfo(
-                    "node", self.asset_attributes or AssetAttributesModel(), resolver
-                )
-            ),
-            transforms=[transform.resolve(resolver) for transform in (self.transforms or [])],
+    def resolve_translator(self, context: ResolveContext) -> DagsterDbtTranslator:
+        return get_wrapped_translator_class(DagsterDbtTranslator)(
+            resolving_info=ResolvingInfo(
+                "node", self.asset_attributes or AssetAttributesModel(), context
+            )
         )
 
 
@@ -73,7 +69,7 @@ class DbtProjectComponent(Component):
 
     @classmethod
     def load(cls, params: DbtProjectParams, context: ComponentLoadContext) -> "DbtProjectComponent":
-        return params.resolve(context.templated_value_resolver)
+        return params.resolve_as(cls, context=context.resolve_context)
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None

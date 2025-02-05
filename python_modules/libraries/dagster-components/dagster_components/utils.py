@@ -16,7 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.errors import DagsterError
 
 from dagster_components.core.schema.objects import AssetAttributesModel
-from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.core.schema.resolver import ResolveContext
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
 
@@ -63,16 +63,12 @@ def get_path_for_package(package_name: str) -> str:
 class ResolvingInfo:
     obj_name: str
     asset_attributes: AssetAttributesModel
-    value_resolver: TemplatedValueResolver
+    resolve_context: ResolveContext
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        renderer = self.value_resolver.with_scope(**{self.obj_name: obj})
-        rendered_attributes = self.asset_attributes.resolve(renderer)
-        return (
-            rendered_attributes[attribute]
-            if attribute in rendered_attributes
-            else default_method(obj)
-        )
+        context = self.resolve_context.with_scope(**{self.obj_name: obj})
+        resolved_attributes = self.asset_attributes.resolve(context)
+        return resolved_attributes[attribute] if attribute else default_method(obj)
 
     def get_asset_spec(self, base_spec: AssetSpec, context: Mapping[str, Any]) -> AssetSpec:
         """Returns an AssetSpec that combines the base spec with attributes resolved using the provided context.
@@ -92,7 +88,7 @@ class ResolvingInfo:
 
         ```
         """
-        resolver = self.value_resolver.with_scope(**context)
+        resolver = self.resolve_context.with_scope(**context)
         resolved_attributes = self.asset_attributes.resolve(resolver)
         return base_spec.replace_attributes(**resolved_attributes)
 
