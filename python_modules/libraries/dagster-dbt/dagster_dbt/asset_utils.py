@@ -26,12 +26,14 @@ from dagster import (
     _check as check,
     define_asset_job,
 )
+from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
+from dagster._core.types.dagster_type import Nothing
 
 from dagster_dbt.metadata_set import DbtMetadataSet
 from dagster_dbt.utils import (
@@ -812,9 +814,10 @@ def build_dbt_specs(
         spec = get_asset_spec(translator, manifest, dbt_nodes, group_props, project, resource_props)
         key_by_unique_id[unique_id] = spec.key
 
-        # add the io manager key
+        # add the io manager key and set the dagster type to Nothing
         if io_manager_key is not None:
             spec = spec.with_io_manager_key(io_manager_key)
+            spec = spec.merge_attributes(metadata={SYSTEM_METADATA_KEY_DAGSTER_TYPE: Nothing})
 
         specs.append(spec)
 

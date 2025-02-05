@@ -43,7 +43,11 @@ from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_DAGSTER_TYPE,
+    SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
+    AssetSpec,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
@@ -59,7 +63,7 @@ from dagster._core.event_api import EventRecordsFilter
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
-from dagster._core.types.dagster_type import Nothing
+from dagster._core.types.dagster_type import Any, Int, Nothing
 
 
 def test_with_replaced_asset_keys():
@@ -713,6 +717,7 @@ def test_multi_asset_io_manager_execution_specs() -> None:
             self._the_list = the_list
 
         def handle_output(self, _context, obj):
+            assert isinstance(obj, int)
             self._the_list.append(obj)
 
         def load_input(self, _context):
@@ -737,8 +742,23 @@ def test_multi_asset_io_manager_execution_specs() -> None:
 
     @multi_asset(
         specs=[
-            AssetSpec(key=AssetKey("key1"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo"}),
-            AssetSpec(key=AssetKey("key2"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
+            AssetSpec(
+                key=AssetKey("key1"),
+                metadata={
+                    SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "foo",
+                    # explicit int
+                    SYSTEM_METADATA_KEY_DAGSTER_TYPE: int,
+                },
+            ),
+            AssetSpec(
+                key=AssetKey("key2"),
+                metadata={
+                    SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar",
+                    # set to Nothing
+                    SYSTEM_METADATA_KEY_DAGSTER_TYPE: Nothing,
+                },
+            ),
+            AssetSpec(key=AssetKey("key3"), metadata={SYSTEM_METADATA_KEY_IO_MANAGER_KEY: "bar"}),
         ],
         resource_defs={"foo": foo_manager, "bar": bar_manager, "baz": baz_resource},
     )
@@ -747,7 +767,13 @@ def test_multi_asset_io_manager_execution_specs() -> None:
         assert hasattr(context.resources, "foo")
         assert hasattr(context.resources, "bar")
         yield Output(1, "key1")
-        yield Output(2, "key2")
+        # emit a None value, which would fail the assertion if the IOManager handled it
+        yield Output(None, "key2")
+        yield Output(2, "key3")
+
+    assert my_asset.op.output_defs[0].dagster_type == Int
+    assert my_asset.op.output_defs[1].dagster_type == Nothing
+    assert my_asset.op.output_defs[2].dagster_type == Any
 
     with instance_for_test() as instance:
         materialize([my_asset], instance=instance)
