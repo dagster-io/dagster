@@ -355,9 +355,11 @@ const getWorker = memoize(
     new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
 );
 
-// Pre-warm workers
-getWorker('computeGraphWorker');
-getWorker('buildGraphWorker');
+if (typeof jest === 'undefined') {
+  // Pre-warm workers
+  getWorker('computeGraphWorker');
+  getWorker('buildGraphWorker');
+}
 
 let _id = 0;
 async function computeGraphDataWrapper(
