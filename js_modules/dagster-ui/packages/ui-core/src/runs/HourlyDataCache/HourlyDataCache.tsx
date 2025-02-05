@@ -44,6 +44,7 @@ export class HourlyDataCache<T> {
       try {
         this.indexedDBCache = cache<string, CacheType<T>>({
           dbName: `HourlyDataCache:${id}`,
+          dbVersion: 4,
           maxCount: keyMaxCount,
         });
         this.loadCacheFromIndexedDB();
