@@ -50,7 +50,7 @@
                   }),
                 ]),
                 'type': 'AdaptiveCard',
-                'version': '1.0',
+                'version': '1.5',
               }),
               'contentType': 'application/vnd.microsoft.card.adaptive',
               'contentUrl': None,

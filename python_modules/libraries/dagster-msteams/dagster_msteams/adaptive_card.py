@@ -1,13 +1,17 @@
-from typing import Any, Optional
-
-from dagster_msteams.utils import Link
+from typing import Any
 
 
 class AdaptiveCard:
     """Class to contruct a MS Teams adaptive card for posting Dagster messages."""
 
-    def __init__(self):
-        self._text_blocks = []
+    def __init__(self, adaptive_card_version: str = "1.5"):
+        """Constructs an adaptive card with the given version.
+
+        Args:
+            adaptive_card_version (str): The version of the adaptive card to use. Defaults to "1.5".
+        """
+        self._body = []
+        self._adaptive_card_version = adaptive_card_version
 
     @property
     def payload(self) -> dict[str, Any]:
@@ -19,8 +23,8 @@ class AdaptiveCard:
                     "contentUrl": None,
                     "content": {
                         "type": "AdaptiveCard",
-                        "version": "1.0",
-                        "body": self._text_blocks,
+                        "version": self._adaptive_card_version,
+                        "body": self._body,
                     },
                 }
             ],
@@ -33,8 +37,6 @@ class AdaptiveCard:
             "wrap": True,
         }
 
-    def add_attachment(self, text_message: str, link: Optional[Link] = None) -> None:
-        if link:
-            text_message += f" [{link.text}]({link.url})"
-
-        self._text_blocks.append(self._build_text_block(text_message))
+    def add_attachment(self, text_message: str) -> None:
+        """Appends a text message to the adaptive card."""
+        self._body.append(self._build_text_block(text_message))

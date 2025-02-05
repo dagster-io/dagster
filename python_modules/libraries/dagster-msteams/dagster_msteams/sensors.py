@@ -14,7 +14,7 @@ from dagster._utils.warnings import normalize_renamed_param
 from dagster_msteams.adaptive_card import AdaptiveCard
 from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient
-from dagster_msteams.utils import Link
+from dagster_msteams.utils import MSTeamsHyperlink, build_message_with_link
 
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import JobSelector, RepositorySelector
@@ -144,12 +144,16 @@ def make_teams_on_run_failure_sensor(
         text = message_fn(context)
         card = Card() if teams_client.is_legacy_webhook() else AdaptiveCard()
         card.add_attachment(
-            text,
-            Link(
-                text="View in Dagit", url=f"{webserver_base_url}/runs/{context.dagster_run.run_id}"
-            )
-            if webserver_base_url
-            else None,
+            build_message_with_link(
+                teams_client.is_legacy_webhook(),
+                text=text,
+                link=MSTeamsHyperlink(
+                    text="View in Dagit",
+                    url=f"{webserver_base_url}/runs/{context.dagster_run.run_id}",
+                )
+                if webserver_base_url
+                else None,
+            ),
         )
         teams_client.post_message(card.payload)
 

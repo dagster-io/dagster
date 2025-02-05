@@ -8,7 +8,7 @@ from dagster._utils.warnings import normalize_renamed_param
 from dagster_msteams.adaptive_card import AdaptiveCard
 from dagster_msteams.card import Card
 from dagster_msteams.resources import MSTeamsResource
-from dagster_msteams.utils import Link
+from dagster_msteams.utils import MSTeamsHyperlink, build_message_with_link
 
 
 def _default_status_message(context: HookContext, status: str) -> str:
@@ -80,12 +80,12 @@ def teams_on_failure(
 
         message = message_fn(context)
         link = (
-            Link("View in Dagster UI", f"{webserver_base_url}/runs/{context.run_id}")
+            MSTeamsHyperlink("View in Dagster UI", f"{webserver_base_url}/runs/{context.run_id}")
             if webserver_base_url
             else None
         )
         card = Card() if client.is_legacy_webhook() else AdaptiveCard()
-        card.add_attachment(message, link)
+        card.add_attachment(build_message_with_link(client.is_legacy_webhook(), message, link))
         client.post_message(card.payload)
 
     return _hook
@@ -145,12 +145,12 @@ def teams_on_success(
 
         message = message_fn(context)
         link = (
-            Link("View in Dagster UI", f"{webserver_base_url}/runs/{context.run_id}")
+            MSTeamsHyperlink("View in Dagster UI", f"{webserver_base_url}/runs/{context.run_id}")
             if webserver_base_url
             else None
         )
         card = Card() if client.is_legacy_webhook() else AdaptiveCard()
-        card.add_attachment(message, link)
+        card.add_attachment(build_message_with_link(client.is_legacy_webhook(), message, link))
         client.post_message(card.payload)
 
     return _hook
