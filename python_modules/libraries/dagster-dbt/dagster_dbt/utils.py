@@ -51,7 +51,7 @@ def select_unique_ids_from_manifest(
             {
                 "unit_tests": {
                     # unit test nodes must be of type UnitTestDefinition
-                    unique_id: UnitTestDefinition(**info)
+                    unique_id: UnitTestDefinition.from_dict(info)
                     for unique_id, info in manifest_json["unit_tests"].items()
                 },
             }
