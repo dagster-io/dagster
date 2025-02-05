@@ -14,7 +14,6 @@ import boto3
 import dagster._check as check
 from botocore.exceptions import ClientError
 from dagster import DagsterInvariantViolationError
-from dagster._annotations import experimental
 from dagster._core.pipes.client import PipesLaunchedData, PipesMessageReader, PipesParams
 from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
@@ -263,7 +262,6 @@ def tail_cloudwatch_events(
         response = get_log_events(client=client, max_retries=max_retries, **params)
 
 
-@experimental
 class PipesCloudWatchLogReader(PipesLogReader):
     def __init__(
         self,
@@ -343,7 +341,6 @@ class PipesCloudWatchLogReader(PipesLogReader):
         return self.thread is not None and self.thread.is_alive()
 
 
-@experimental
 class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
     """Message reader that consumes AWS CloudWatch logs to read pipes messages."""
 
