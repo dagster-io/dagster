@@ -36,6 +36,7 @@ AVAILABLE_EXAMPLES = [
     "development_to_production",
     "feature_graph_backed_assets",
     "getting_started_etl_tutorial",
+    "google_drive_factory",
     "project_analytics",
     "project_ask_ai_dagster",
     "project_atproto_dashboard",
