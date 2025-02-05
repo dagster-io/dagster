@@ -1,7 +1,6 @@
 ---
 title: "Setting up a deployment"
 sidebar_position: 400
-unlisted: true
 ---
 
 Many users will want to manage multiple code locations within a single coherent
