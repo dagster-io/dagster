@@ -234,10 +234,10 @@ class DgContext:
                 )
             return Path(get_path_for_package(self.components_package_name))
 
-    def get_component_names(self) -> Iterable[str]:
+    def get_component_instance_names(self) -> Iterable[str]:
         return [str(instance_path.name) for instance_path in self.components_path.iterdir()]
 
-    def has_component(self, name: str) -> bool:
+    def has_component_instance(self, name: str) -> bool:
         return (self.components_path / name).is_dir()
 
     @property

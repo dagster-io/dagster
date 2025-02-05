@@ -17,8 +17,8 @@ from pydantic import BaseModel, TypeAdapter
 from dagster_components.core.component import (
     Component,
     ComponentDeclNode,
+    ComponentKey,
     ComponentLoadContext,
-    ComponentTypeKey,
     ComponentTypeRegistry,
     get_component_type_name,
     is_component_loader,
@@ -35,13 +35,13 @@ class ComponentFileModel(BaseModel):
 T = TypeVar("T", bound=BaseModel)
 
 
-def find_local_component_types(component_path: Path) -> Mapping[ComponentTypeKey, type[Component]]:
+def find_local_component_types(component_path: Path) -> Mapping[ComponentKey, type[Component]]:
     """Find all component types defined in a component directory, and their respective paths."""
     component_types = {}
     for py_file in component_path.glob("*.py"):
         for component_type in find_component_types_in_file(py_file):
             component_types[
-                ComponentTypeKey(name=get_component_type_name(component_type), package=py_file.name)
+                ComponentKey(name=get_component_type_name(component_type), namespace=py_file.name)
             ] = component_type
     return component_types
 
@@ -124,9 +124,9 @@ class YamlComponentDecl(ComponentDeclNode):
 
     def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
         parsed_defs = self.component_file_model
-        key = ComponentTypeKey.from_string(parsed_defs.type)
+        key = ComponentKey.from_typename(parsed_defs.type)
         if parsed_defs.type.endswith(".py"):
-            file = self.path / key.package
+            file = self.path / key.namespace
             for component_type in find_component_types_in_file(file):
                 if get_component_type_name(component_type) == key.name:
                     return component_type

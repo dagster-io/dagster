@@ -5,6 +5,7 @@ import click
 import typer
 from jsonschema import ValidationError
 
+from dagster_dg.component import ComponentKey
 from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
 
@@ -48,7 +49,7 @@ OFFSET_LINES_AFTER = 3
 
 
 def error_dict_to_formatted_error(
-    component_name: Optional[str],
+    component_key: Optional[ComponentKey],
     error_details: ValidationError,
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),
@@ -121,5 +122,7 @@ def error_dict_to_formatted_error(
         f":{typer.style(source_position.start.line, fg=typer.colors.GREEN)}"
     )
     fmt_location = typer.style(location, fg=typer.colors.BRIGHT_WHITE)
-    fmt_name = typer.style(f"{component_name} " if component_name else "", fg=typer.colors.RED)
+    fmt_name = typer.style(
+        f"{component_key.to_typename()} " if component_key else "", fg=typer.colors.RED
+    )
     return f"{fmt_filename} - {fmt_name}{fmt_location} {error_details.message}\n{code_snippet}\n"
