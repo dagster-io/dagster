@@ -1706,12 +1706,33 @@
       "permanent": false
     },
     {
+      "source": "/next/guides/build/components",
+      "destination": "/guides/preview/components/",
+      "permanent": false
+    },
+    {
       "source": "/next/guides/build/components/",
-      "destination": "/preview/components/"
+      "destination": "/guides/preview/components/",
+      "permanent": false
     },
     {
       "source": "/next/guides/build/components/:path",
-      "destination": "/preview/components/:path",
+      "destination": "/guides/preview/components/:path",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/components",
+      "destination": "/guides/preview/components/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/components/",
+      "destination": "/guides/preview/components/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/components/:path",
+      "destination": "/guides/preview/components/:path",
       "permanent": false
     }
   ]
