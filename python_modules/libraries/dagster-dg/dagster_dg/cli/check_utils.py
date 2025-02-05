@@ -5,7 +5,7 @@ import click
 import typer
 from jsonschema import ValidationError
 
-from dagster_dg.component import ComponentKey
+from dagster_dg.component_key import ComponentKey
 from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
 

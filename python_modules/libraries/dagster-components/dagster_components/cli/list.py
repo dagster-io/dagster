@@ -9,9 +9,8 @@ from pydantic import TypeAdapter, create_model
 from dagster_components.core.component import (
     ComponentTypeMetadata,
     ComponentTypeRegistry,
-    get_component_type_name,
+    find_local_component_types,
 )
-from dagster_components.core.component_decl_builder import find_local_component_types
 from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY
 
 
@@ -32,7 +31,7 @@ def list_component_types_command(ctx: click.Context) -> None:
     for key in sorted(registry.keys(), key=lambda k: k.to_typename()):
         output[key.to_typename()] = ComponentTypeMetadata(
             name=key.name,
-            package=key.namespace,
+            namespace=key.namespace,
             **registry.get(key).get_metadata(),
         )
     click.echo(json.dumps(output))
@@ -47,8 +46,8 @@ def list_local_component_types_command(component_directories: Sequence[str]) -> 
         output_for_directory = {}
         for key, component_type in find_local_component_types(Path(component_directory)).items():
             output_for_directory[key.to_typename()] = ComponentTypeMetadata(
-                name=get_component_type_name(component_type),
-                package=component_directory,
+                name=key.name,
+                namespace=key.namespace,
                 **component_type.get_metadata(),
             )
         if len(output_for_directory) > 0:
@@ -68,7 +67,8 @@ def list_all_components_schema_command(ctx: click.Context) -> None:
     )
 
     schemas = []
-    for key, component_type in sorted(registry.items()):
+    for key in sorted(registry.keys(), key=lambda k: k.to_typename()):
+        component_type = registry.get(key)
         # Create ComponentFileModel schema for each type
         schema_type = component_type.get_schema()
         key_string = key.to_typename()

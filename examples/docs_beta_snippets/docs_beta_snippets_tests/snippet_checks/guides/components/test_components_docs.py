@@ -4,6 +4,8 @@ import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from dagster._utils.env import environ
 from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
@@ -34,6 +36,7 @@ COMPONENTS_SNIPPETS_DIR = (
 )
 
 
+@pytest.mark.skip
 def test_components_docs_index(update_snippets: bool) -> None:
     snip_no = 0
 

@@ -1,7 +1,8 @@
 import textwrap
 from pathlib import Path
 
-from dagster_dg.component import GlobalComponentKey, RemoteComponentRegistry
+from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.component_key import GlobalComponentKey
 from dagster_dg.context import DgContext
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 

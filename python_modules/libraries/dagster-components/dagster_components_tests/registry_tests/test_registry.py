@@ -7,7 +7,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 
-from dagster_components.core.component import ComponentKey
+from dagster_dg.component import GlobalComponentKey
 
 
 @contextmanager
@@ -32,7 +32,7 @@ from dagster_components import ComponentTypeRegistry
 
 registry = ComponentTypeRegistry.from_entry_point_discovery()
 for component_key in list(registry.keys()):
-    print(component_key.to_string())
+    print(component_key.to_typename())
 """
 
 
@@ -181,10 +181,10 @@ def test_components_from_third_party_lib(tmpdir):
         with _temp_venv(deps) as python_executable:
             component_types = _get_component_types_in_python_environment(python_executable)
             assert (
-                ComponentKey(name="test_component_1", namespace="dagster_foo").to_typename()
+                GlobalComponentKey(name="test_component_1", namespace="dagster_foo").to_typename()
                 in component_types
             )
             assert (
-                ComponentKey(name="test_component_2", namespace="dagster_foo").to_typename()
+                GlobalComponentKey(name="test_component_2", namespace="dagster_foo").to_typename()
                 in component_types
             )
