@@ -351,8 +351,13 @@ const computeGraphData = throttleLatest(
 );
 
 const getWorker = memoize(
-  (_key: string = '') => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
+  (_key: 'computeGraphWorker' | 'buildGraphWorker') =>
+    new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
 );
+
+// Pre-warm workers
+getWorker('computeGraphWorker');
+getWorker('buildGraphWorker');
 
 let _id = 0;
 async function computeGraphDataWrapper(

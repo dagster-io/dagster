@@ -27,7 +27,7 @@ export class Worker {
     });
   }
 
-  onError(handler: (error: ErrorEvent) => void) {
+  public onError(handler: (error: ErrorEvent) => void) {
     this.errorHandlers.push(handler);
     this.worker.addEventListener('error', handler);
     return () => {
@@ -36,16 +36,16 @@ export class Worker {
     };
   }
 
-  onMessage(handler: (event: MessageEvent) => void) {
+  public onMessage(handler: (event: MessageEvent) => void) {
     this.worker.addEventListener('message', handler);
     return () => this.worker.removeEventListener('message', handler);
   }
 
-  postMessage(message: any) {
+  public postMessage(message: any) {
     this.worker.postMessage(message);
   }
 
-  terminate() {
+  public terminate() {
     this.worker.terminate();
   }
 }
