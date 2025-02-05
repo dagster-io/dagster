@@ -1,4 +1,4 @@
-import {Popover, Spinner} from '@dagster-io/ui-components';
+import {Colors, Icon, Popover, Spinner} from '@dagster-io/ui-components';
 import {memo} from 'react';
 import styled, {css, keyframes} from 'styled-components';
 
@@ -36,6 +36,15 @@ export const RunStatusIndicator = memo(({status, size}: RunStatusProps) => {
   }
   if (status === 'SCHEDULED') {
     return <RunStatusDot status={status} size={size || 12} />;
+  }
+  if (status === 'SUCCESS') {
+    return <Icon name="run_success" color={Colors.accentGreen()} size={16} />;
+  }
+  if (status === 'FAILURE') {
+    return <Icon name="run_failed" color={Colors.accentRed()} size={16} />;
+  }
+  if (status === 'CANCELED') {
+    return <Icon name="run_canceled" color={Colors.accentGray()} size={16} />;
   }
   return (
     <RunStatusDot
