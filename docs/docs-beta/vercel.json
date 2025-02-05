@@ -1704,6 +1704,46 @@
       "source": "/integrations/airlift",
       "destination": "/integrations/libraries/airlift",
       "permanent": false
+    },
+    {
+      "source": "/next/guides/build/components",
+      "destination": "/guides/preview/components/",
+      "permanent": false
+    },
+    {
+      "source": "/next/guides/build/components/",
+      "destination": "/guides/preview/components/",
+      "permanent": false
+    },
+    {
+      "source": "/next/guides/build/components/:path",
+      "destination": "/guides/preview/components/:path",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/components",
+      "destination": "/guides/preview/components/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/components/",
+      "destination": "/guides/preview/components/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/components/:path",
+      "destination": "/guides/preview/components/:path",
+      "permanent": false
+    },
+    {
+      "source": "/next/:path*",
+      "destination": "/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/next/:path*/",
+      "destination": "/:path*/",
+      "permanent": false
     }
   ]
 }
