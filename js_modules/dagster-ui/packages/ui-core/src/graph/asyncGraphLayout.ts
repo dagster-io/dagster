@@ -1,5 +1,6 @@
 import memoize from 'lodash/memoize';
 import {useEffect, useLayoutEffect, useMemo, useReducer, useRef} from 'react';
+import {Worker} from 'shared/workers/Worker.oss';
 
 import {ILayoutOp, LayoutOpGraphOptions, OpGraphLayout, layoutOpGraph} from './layout';
 import {useFeatureFlags} from '../app/Flags';
@@ -27,7 +28,7 @@ export const getFullOpLayout = memoize(layoutOpGraph, _opLayoutCacheKey);
 const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraphOptions) => {
   return new Promise<OpGraphLayout>((resolve) => {
     const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
-    worker.addEventListener('message', (event) => {
+    worker.onMessage((event) => {
       resolve(event.data);
       worker.terminate();
     });
@@ -77,7 +78,7 @@ export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
-      worker.addEventListener('message', (event) => {
+      worker.onMessage((event) => {
         resolve(event.data);
         worker.terminate();
       });
@@ -91,7 +92,7 @@ const asyncGetFullAssetLayout = asyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
       const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
-      worker.addEventListener('message', (event) => {
+      worker.onMessage((event) => {
         resolve(event.data);
         worker.terminate();
       });
