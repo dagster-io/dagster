@@ -29,11 +29,10 @@ def list_component_types_command(ctx: click.Context) -> None:
     registry = ComponentTypeRegistry.from_entry_point_discovery(
         builtin_component_lib=builtin_component_lib
     )
-    for key in sorted(registry.keys()):
-        package, name = key.rsplit(".", 1)
-        output[key] = ComponentTypeMetadata(
-            name=name,
-            package=package,
+    for key in sorted(registry.keys(), key=lambda k: k.to_string()):
+        output[key.to_string()] = ComponentTypeMetadata(
+            name=key.name,
+            package=key.package,
             **registry.get(key).get_metadata(),
         )
     click.echo(json.dumps(output))
@@ -46,13 +45,11 @@ def list_local_component_types_command(component_directories: Sequence[str]) -> 
     output: dict = {}
     for component_directory in component_directories:
         output_for_directory = {}
-        for component_type in find_local_component_types(Path(component_directory)):
-            output_for_directory[f".{get_component_type_name(component_type)}"] = (
-                ComponentTypeMetadata(
-                    name=get_component_type_name(component_type),
-                    package=component_directory,
-                    **component_type.get_metadata(),
-                )
+        for key, component_type in find_local_component_types(Path(component_directory)).items():
+            output_for_directory[key.to_string()] = ComponentTypeMetadata(
+                name=get_component_type_name(component_type),
+                package=component_directory,
+                **component_type.get_metadata(),
             )
         if len(output_for_directory) > 0:
             output[component_directory] = output_for_directory
@@ -71,17 +68,14 @@ def list_all_components_schema_command(ctx: click.Context) -> None:
     )
 
     schemas = []
-    for key in sorted(registry.keys()):
-        component_type = registry.get(key)
-
+    for key, component_type in sorted(registry.items()):
         # Create ComponentFileModel schema for each type
         schema_type = component_type.get_schema()
+        key_string = key.to_string()
         if schema_type:
             schemas.append(
                 create_model(
-                    key,
-                    type=(Literal[key], key),
-                    params=(schema_type, None),
+                    key.name, type=(Literal[key_string], key_string), params=(schema_type, None)
                 )
             )
     union_type = Union[tuple(schemas)]  # type: ignore
