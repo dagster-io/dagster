@@ -3,9 +3,9 @@ cd code_locations/code-location-1 && dg component-type list
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Component Type                                        ┃ Summary                        ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_components.definitions                        │ Wraps an arbitrary set of      │
+│ definitions@dagster_components                        │ Wraps an arbitrary set of      │
 │                                                       │ Dagster definitions.           │
-│ dagster_components.pipes_subprocess_script_collection │ Assets that wrap Python        │
+│ pipes_subprocess_script_collection@dagster_components │ Assets that wrap Python        │
 │                                                       │ scripts executed with          │
 │                                                       │ Dagster's                      │
 │                                                       │ PipesSubprocessClient.         │
