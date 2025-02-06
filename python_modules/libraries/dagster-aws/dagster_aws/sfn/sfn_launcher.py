@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional
 
@@ -12,7 +11,13 @@ from dagster import (
     _check as check,
 )
 from dagster._core.instance import T_DagsterInstance
-from dagster._core.launcher.base import CheckRunHealthResult, LaunchRunContext, RunLauncher
+from dagster._core.launcher.base import (
+    CheckRunHealthResult,
+    LaunchRunContext,
+    RunLauncher,
+    WorkerStatus,
+)
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import ConfigurableClass
 from dagster._utils.backoff import backoff
 from mypy_boto3_stepfunctions.type_defs import StartExecutionInputRequestTypeDef
@@ -26,12 +31,7 @@ if TYPE_CHECKING:
     )
 
 
-SFN_FINISHED_STATUSES = ["FAILED", "SUCCEEDED", "TIMED_OUT", "ABORTED"]
 DEFAULT_RUN_TASK_RETRIES = 3
-
-
-class SFNFinishedExecutioinError(Exception):
-    pass
 
 
 class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
@@ -78,7 +78,7 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             )
             raise
 
-    def check_run_worker_health(self, run_id: str) -> CheckRunHealthResult:
+    def check_run_worker_health(self, run: DagsterRun) -> CheckRunHealthResult:
         response = backoff(
             self._describe_execution,
             retry_on=(ClientError,),
@@ -117,22 +117,6 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     def terminate(self, run_id):
         check.not_implemented("Termination not supported.")
-
-    def _wait_for_execution_completion(
-        self, execution_arn: str
-    ) -> "DescribeExecutionOutputTypeDef":
-        while True:
-            response = backoff(
-                self._describe_execution,
-                retry_on=(ClientError,),
-                kwargs={"execution_arn": execution_arn},
-                max_retries=int(
-                    os.getenv("RUN_TASK_RETRIES", DEFAULT_RUN_TASK_RETRIES),
-                ),
-            )
-            if response["status"] in SFN_FINISHED_STATUSES:
-                return response
-            time.sleep(5)
 
     def _describe_execution(self, execution_arn: str) -> "DescribeExecutionOutputTypeDef":
         try:
