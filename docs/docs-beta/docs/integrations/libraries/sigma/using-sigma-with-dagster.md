@@ -3,7 +3,7 @@ title: "Using Sigma with Dagster"
 description: Represent your Sigma assets in Dagster
 ---
 
-:::
+:::note
 
 This feature is considered **experimental**
 
@@ -42,21 +42,7 @@ To load Sigma assets into the Dagster asset graph, you must first construct a <P
 
 Dagster can automatically load all datasets and workbooks from your Sigma workspace as asset specs. Call the <PyObject section="libraries" module="dagster_sigma" object="load_sigma_asset_specs" /> function, which returns list of <PyObject section="assets" module="dagster" object="AssetSpec" />s representing your Sigma assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/sigma/representing-sigma-assets.py
-from dagster_sigma import SigmaBaseUrl, SigmaOrganization, load_sigma_asset_specs
-
-import dagster as dg
-
-sigma_organization = SigmaOrganization(
-    base_url=SigmaBaseUrl.AWS_US,
-    client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
-    client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
-)
-
-sigma_specs = load_sigma_asset_specs(sigma_organization)
-defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/sigma/representing-sigma-assets.py" />
 
 ## Load Sigma assets from filtered workbooks
 
@@ -64,76 +50,13 @@ It is possible to load a subset of your Sigma assets by providing a <PyObject se
 
 Note that the content and size of Sigma organization may affect the performance of your Dagster deployments. Filtering the workbooks selection from which your Sigma assets will be loaded is particularly useful for improving loading times.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/sigma/filtering-sigma-assets.py
-from dagster_sigma import (
-    SigmaBaseUrl,
-    SigmaFilter,
-    SigmaOrganization,
-    load_sigma_asset_specs,
-)
-
-import dagster as dg
-
-sigma_organization = SigmaOrganization(
-    base_url=SigmaBaseUrl.AWS_US,
-    client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
-    client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
-)
-
-sigma_specs = load_sigma_asset_specs(
-    organization=sigma_organization,
-    sigma_filter=SigmaFilter(
-        # Filter down to only the workbooks in these folders
-        workbook_folders=[
-            ("my_folder", "my_subfolder"),
-            ("my_folder", "my_other_subfolder"),
-        ],
-        # Specify whether to include datasets that are not used in any workbooks
-        # default is True
-        include_unused_datasets=False,
-    ),
-)
-defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/sigma/filtering-sigma-assets.py" />
 
 ### Customize asset definition metadata for Sigma assets
 
 By default, Dagster will generate asset specs for each Sigma asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_sigma" object="DagsterSigmaTranslator" /> subclass to the <PyObject section="libraries" module="dagster_sigma" object="load_sigma_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Sigma asset type.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/sigma/customize-sigma-asset-defs.py
-from dagster_sigma import (
-    DagsterSigmaTranslator,
-    SigmaBaseUrl,
-    SigmaOrganization,
-    SigmaWorkbookTranslatorData,
-    load_sigma_asset_specs,
-)
-
-import dagster as dg
-
-sigma_organization = SigmaOrganization(
-    base_url=SigmaBaseUrl.AWS_US,
-    client_id=dg.EnvVar("SIGMA_CLIENT_ID"),
-    client_secret=dg.EnvVar("SIGMA_CLIENT_SECRET"),
-)
-
-
-# A translator class lets us customize properties of the built Sigma assets, such as the owners or asset key
-class MyCustomSigmaTranslator(DagsterSigmaTranslator):
-    def get_asset_spec(self, data: SigmaWorkbookTranslatorData) -> dg.AssetSpec:
-        # We create the default asset spec using super()
-        default_spec = super().get_asset_spec(data)
-        # we customize the team owner tag for all Sigma assets
-        return default_spec.replace_attributes(owners=["team:my_team"])
-
-
-sigma_specs = load_sigma_asset_specs(
-    sigma_organization, dagster_sigma_translator=MyCustomSigmaTranslator()
-)
-defs = dg.Definitions(assets=[*sigma_specs], resources={"sigma": sigma_organization})
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/sigma/customize-sigma-asset-defs.py" />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
@@ -141,36 +64,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 Definitions from multiple Sigma organizations can be combined by instantiating multiple <PyObject section="libraries" module="dagster_sigma" object="SigmaOrganization" /> resources and merging their specs. This lets you view all your Sigma assets in a single asset graph:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/sigma/multiple-sigma-organizations.py
-from dagster_sigma import SigmaBaseUrl, SigmaOrganization, load_sigma_asset_specs
-
-import dagster as dg
-
-sales_team_organization = SigmaOrganization(
-    base_url=SigmaBaseUrl.AWS_US,
-    client_id=dg.EnvVar("SALES_SIGMA_CLIENT_ID"),
-    client_secret=dg.EnvVar("SALES_SIGMA_CLIENT_SECRET"),
-)
-
-marketing_team_organization = SigmaOrganization(
-    base_url=SigmaBaseUrl.AWS_US,
-    client_id=dg.EnvVar("MARKETING_SIGMA_CLIENT_ID"),
-    client_secret=dg.EnvVar("MARKETING_SIGMA_CLIENT_SECRET"),
-)
-
-sales_team_specs = load_sigma_asset_specs(sales_team_organization)
-marketing_team_specs = load_sigma_asset_specs(marketing_team_organization)
-
-# Merge the specs into a single set of definitions
-defs = dg.Definitions(
-    assets=[*sales_team_specs, *marketing_team_specs],
-    resources={
-        "marketing_sigma": marketing_team_organization,
-        "sales_sigma": sales_team_organization,
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/sigma/multiple-sigma-organizations.py" />
 
 ### Related
 

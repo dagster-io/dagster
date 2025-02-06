@@ -27,24 +27,7 @@ For further information on the DuckDB resource, see the [DuckDB resource API doc
 
 ### Executing custom SQL queries
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/resource.py startafter=start endbefore=end
-from dagster_duckdb import DuckDBResource
-
-from dagster import asset
-
-# this example executes a query against the iris_dataset table created in Step 2 of the
-# Using Dagster with DuckDB tutorial
-
-
-@asset(deps=[iris_dataset])
-def small_petals(duckdb: DuckDBResource) -> None:
-    with duckdb.get_connection() as conn:  # conn is a DuckDBPyConnection
-        conn.execute(
-            "CREATE TABLE iris.small_petals AS SELECT * FROM iris.iris_dataset WHERE"
-            " 'petal_length_cm' < 1 AND 'petal_width_cm' < 1"
-        )
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/resource.py" startAfter="start" endBefore="end" />
 
 In this example, we attach the DuckDB resource to the `small_petals` asset. In the body of the asset function, we use the `get_connection` context manager on the resource to get a [`duckdb.DuckDBPyConnection`](https://duckdb.org/docs/api/python/reference/#duckdb.DuckDBPyConnection). We can use this connection to execute a custom SQL query against the `iris_dataset` table created in [Step 2: Create tables in DuckDB](using-duckdb-with-dagster#option-1-step-2) of the [Using Dagster with DuckDB tutorial](using-duckdb-with-dagster). When the `duckdb.get_connection` context is exited, the DuckDB connection will be closed.
 
@@ -56,29 +39,7 @@ The DuckDB I/O manager provides several ways to customize how your data is store
 
 Sometimes you may not want to fetch an entire table as the input to a downstream asset. With the DuckDB I/O manager, you can select specific columns to load by supplying metadata on the downstream asset.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/downstream_columns.py
-import pandas as pd
-
-from dagster import AssetIn, asset
-
-# this example uses the iris_dataset asset from Step 2 of the Using Dagster with DuckDB tutorial
-
-
-@asset(
-    ins={
-        "iris_sepal": AssetIn(
-            key="iris_dataset",
-            metadata={"columns": ["sepal_length_cm", "sepal_width_cm"]},
-        )
-    }
-)
-def sepal_data(iris_sepal: pd.DataFrame) -> pd.DataFrame:
-    iris_sepal["sepal_area_cm2"] = (
-        iris_sepal["sepal_length_cm"] * iris_sepal["sepal_width_cm"]
-    )
-    return iris_sepal
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/downstream_columns.py" />
 
 In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2: Create tables in DuckDB](using-duckdb-with-dagster#option-2-step-2) of the [Using Dagster with DuckDB tutorial](using-duckdb-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
@@ -95,40 +56,7 @@ In the following sections, we describe how the I/O manager constructs these quer
 
 To store static partitioned assets in DuckDB, specify `partition_expr` metadata on the asset to tell the DuckDB I/O manager which column contains the partition data:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/static_partition.py startafter=start_example endbefore=end_example
-import pandas as pd
-
-from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
-
-
-@asset(
-    partitions_def=StaticPartitionsDefinition(
-        ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
-    ),
-    metadata={"partition_expr": "SPECIES"},
-)
-def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
-    species = context.partition_key
-
-    full_df = pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-    return full_df[full_df["Species"] == species]
-
-
-@asset
-def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
-    return iris_dataset_partitioned.dropna().drop_duplicates()
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/static_partition.py"  startAfter="start_example" endBefore="end_example" />
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the partition in the downstream asset. When loading a static partition (or multiple static partitions), the following statement is used:
 
@@ -151,30 +79,7 @@ SELECT *
 
 Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the DuckDB I/O manager which column contains the partition data:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/time_partition.py startafter=start_example endbefore=end_example
-import pandas as pd
-
-from dagster import AssetExecutionContext, DailyPartitionsDefinition, asset
-
-
-@asset(
-    partitions_def=DailyPartitionsDefinition(start_date="2023-01-01"),
-    metadata={"partition_expr": "TO_TIMESTAMP(TIME)"},
-)
-def iris_data_per_day(context: AssetExecutionContext) -> pd.DataFrame:
-    partition = context.partition_key
-
-    # get_iris_data_for_date fetches all of the iris data for a given date,
-    # the returned dataframe contains a column named 'time' with that stores
-    # the time of the row as an integer of seconds since epoch
-    return get_iris_data_for_date(partition)
-
-
-@asset
-def iris_cleaned(iris_data_per_day: pd.DataFrame):
-    return iris_data_per_day.dropna().drop_duplicates()
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/time_partition.py" startAfter="start_example" endBefore="end_example" />
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in the downstream asset. When loading a dynamic partition, the following statement is used:
 
@@ -201,47 +106,7 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 
 The DuckDB I/O manager can also store data partitioned on multiple dimensions. To do this, specify the column for each partition as a dictionary of `partition_expr` metadata:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/multi_partition.py startafter=start_example endbefore=end_example
-import pandas as pd
-
-from dagster import (
-    AssetExecutionContext,
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    asset,
-)
-
-
-@asset(
-    partitions_def=MultiPartitionsDefinition(
-        {
-            "date": DailyPartitionsDefinition(start_date="2023-01-01"),
-            "species": StaticPartitionsDefinition(
-                ["Iris-setosa", "Iris-virginica", "Iris-versicolor"]
-            ),
-        }
-    ),
-    metadata={"partition_expr": {"date": "TO_TIMESTAMP(TIME)", "species": "SPECIES"}},
-)
-def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
-    partition = context.partition_key.keys_by_dimension
-    species = partition["species"]
-    date = partition["date"]
-
-    # get_iris_data_for_date fetches all of the iris data for a given date,
-    # the returned dataframe contains a column named 'time' with that stores
-    # the time of the row as an integer of seconds since epoch
-    full_df = get_iris_data_for_date(date)
-
-    return full_df[full_df["species"] == species]
-
-
-@asset
-def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
-    return iris_dataset_partitioned.dropna().drop_duplicates()
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/multi_partition.py" startAfter="start_example" endBefore="end_example" />
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
 
@@ -267,49 +132,16 @@ You can specify the default schema where data will be stored as configuration to
 
 If you want to store assets in different schemas, you can specify the schema as metadata:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/schema.py startafter=start_metadata endbefore=end_metadata dedent=4
-daffodil_dataset = AssetSpec(
-    key=["daffodil_dataset"], metadata={"schema": "daffodil"}
-)
-
-@asset(metadata={"schema": "iris"})
-def iris_dataset() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-```
+{/* TODO add dedent to this CodeExample */}
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/schema.py" startAfter="start_metadata" endBefore="end_metadata" />
 
 You can also specify the schema as part of the asset's key:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/schema.py startafter=start_asset_key endbefore=end_asset_key dedent=4
-daffodil_dataset = AssetSpec(key=["daffodil", "daffodil_dataset"])
-
-@asset(key_prefix=["iris"])
-def iris_dataset() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/schema.py" startAfter="start_asset_key" endBefore="end_asset_key" />
 
 In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, and the `daffodil_dataset` asset will be found in the `DAFFODIL` schema.
 
-:::
+:::note
 
   The schema is determined in this order:
   <ol>
@@ -331,47 +163,7 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 
 You may have assets that you don't want to store in DuckDB. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/multiple_io_managers.py startafter=start_example endbefore=end_example
-import pandas as pd
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
-from dagster_duckdb_pandas import DuckDBPandasIOManager
-
-from dagster import Definitions, asset
-
-
-@asset(io_manager_key="warehouse_io_manager")
-def iris_dataset() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-
-@asset(io_manager_key="blob_io_manager")
-def iris_plots(iris_dataset):
-    # plot_data is a function we've defined somewhere else
-    # that plots the data in a DataFrame
-    return plot_data(iris_dataset)
-
-
-defs = Definitions(
-    assets=[iris_dataset, iris_plots],
-    resources={
-        "warehouse_io_manager": DuckDBPandasIOManager(
-            database="path/to/my_duckdb_database.duckdb",
-            schema="IRIS",
-        ),
-        "blob_io_manager": s3_pickle_io_manager,
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/multiple_io_managers.py" startAfter="start_example" endBefore="end_example" />
 
 In this example:
 
@@ -394,114 +186,20 @@ pip install dagster-duckdb-pyspark
 
 Then you can use the `DuckDBPySparkIOManager` in your <PyObject section="definitions" module="dagster" object="Definitions" /> as in [Step 1: Configure the DuckDB I/O manager](using-duckdb-with-dagster#step-1-configure-the-duckdb-io-manager) of the [Using Dagster with DuckDB tutorial](using-duckdb-with-dagster).
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/pyspark_configuration.py startafter=start_configuration endbefore=end_configuration
-from dagster_duckdb_pyspark import DuckDBPySparkIOManager
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "io_manager": DuckDBPySparkIOManager(
-            database="path/to/my_duckdb_database.duckdb",  # required
-            schema="IRIS",  # optional, defaults to PUBLIC
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/pyspark_configuration.py" startAfter="start_configuration" endBefore="end_configuration" />
 
 The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either create your own `SparkSession` or use the <PyObject section="libraries" module="dagster_spark" object="spark_resource"/>.
 
 <Tabs>
 <TabItem value="With the spark_resource">
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/pyspark_with_spark_resource.py
-from dagster_duckdb_pyspark import DuckDBPySparkIOManager
-from dagster_pyspark import pyspark_resource
-from pyspark import SparkFiles
-from pyspark.sql import DataFrame
-from pyspark.sql.types import DoubleType, StringType, StructField, StructType
-
-from dagster import AssetExecutionContext, Definitions, asset
-
-
-@asset(required_resource_keys={"pyspark"})
-def iris_dataset(context: AssetExecutionContext) -> DataFrame:
-    spark = context.resources.pyspark.spark_session
-
-    schema = StructType(
-        [
-            StructField("sepal_length_cm", DoubleType()),
-            StructField("sepal_width_cm", DoubleType()),
-            StructField("petal_length_cm", DoubleType()),
-            StructField("petal_width_cm", DoubleType()),
-            StructField("species", StringType()),
-        ]
-    )
-
-    url = "https://docs.dagster.io/assets/iris.csv"
-    spark.sparkContext.addFile(url)
-
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
-
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "io_manager": DuckDBPySparkIOManager(
-            database="path/to/my_duckdb_database.duckdb",
-            schema="IRIS",
-        ),
-        "pyspark": pyspark_resource,
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/pyspark_with_spark_resource.py" />
 
 </TabItem>
 <TabItem value="With your own SparkSession">
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/pyspark_with_spark_session.py startafter=start endbefore=end
-from dagster_duckdb_pyspark import DuckDBPySparkIOManager
-from pyspark import SparkFiles
-from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
-from dagster import Definitions, asset
-
-
-@asset
-def iris_dataset() -> DataFrame:
-    spark = SparkSession.builder.getOrCreate()
-
-    schema = StructType(
-        [
-            StructField("sepal_length_cm", DoubleType()),
-            StructField("sepal_width_cm", DoubleType()),
-            StructField("petal_length_cm", DoubleType()),
-            StructField("petal_width_cm", DoubleType()),
-            StructField("species", StringType()),
-        ]
-    )
-
-    url = "https://docs.dagster.io/assets/iris.csv"
-    spark.sparkContext.addFile(url)
-
-    return spark.read.schema(schema).csv("file://" + SparkFiles.get("iris.csv"))
-
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "io_manager": DuckDBPySparkIOManager(
-            database="path/to/my_duckdb_database.duckdb",
-            schema="IRIS",
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/pyspark_with_spark_session.py" startAfter="start" endBefore="end" />
 
 </TabItem>
 </Tabs>
@@ -517,22 +215,8 @@ pip install dagster-duckdb-polars
 
 Then you can use the `DuckDBPolarsIOManager` in your <PyObject section="definitions" module="dagster" object="Definitions" /> as in [Step 1: Configure the DuckDB I/O manager](using-duckdb-with-dagster#step-1-configure-the-duckdb-io-manager) of the [Using Dagster with DuckDB tutorial](using-duckdb-with-dagster).
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/polars_configuration.py startafter=start_configuration endbefore=end_configuration
-from dagster_duckdb_polars import DuckDBPolarsIOManager
 
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "io_manager": DuckDBPolarsIOManager(
-            database="path/to/my_duckdb_database.duckdb",  # required
-            schema="IRIS",  # optional, defaults to PUBLIC
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/polars_configuration.py" startAfter="start_configuration" endBefore="end_configuration" />
 
 </TabItem>
 </Tabs>
@@ -543,48 +227,5 @@ If you work with several DataFrame libraries and want a single I/O manager to ha
 
 To do this, inherit from the <PyObject section="libraries" module="dagster_duckdb" object="DuckDBIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DuckDBIOManager`.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/reference/multiple_dataframe_types.py startafter=start_example endbefore=end_example
-from typing import Optional, Type
 
-import pandas as pd
-from dagster_duckdb import DuckDBIOManager
-from dagster_duckdb_pandas import DuckDBPandasTypeHandler
-from dagster_duckdb_polars import DuckDBPolarsTypeHandler
-from dagster_duckdb_pyspark import DuckDBPySparkTypeHandler
-
-from dagster import Definitions
-
-
-class DuckDBPandasPySparkPolarsIOManager(DuckDBIOManager):
-    @staticmethod
-    def type_handlers():
-        """type_handlers should return a list of the TypeHandlers that the I/O manager can use.
-        Here we return the DuckDBPandasTypeHandler, DuckDBPySparkTypeHandler, and DuckDBPolarsTypeHandler so that the I/O
-        manager can store Pandas DataFrames, PySpark DataFrames, and Polars DataFrames.
-        """
-        return [
-            DuckDBPandasTypeHandler(),
-            DuckDBPySparkTypeHandler(),
-            DuckDBPolarsTypeHandler(),
-        ]
-
-    @staticmethod
-    def default_load_type() -> Optional[type]:
-        """If an asset is not annotated with an return type, default_load_type will be used to
-        determine which TypeHandler to use to store and load the output.
-        In this case, unannotated assets will be stored and loaded as Pandas DataFrames.
-        """
-        return pd.DataFrame
-
-
-defs = Definitions(
-    assets=[iris_dataset, rose_dataset],
-    resources={
-        "io_manager": DuckDBPandasPySparkPolarsIOManager(
-            database="path/to/my_duckdb_database.duckdb",
-            schema="IRIS",
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/multiple_dataframe_types.py" startAfter="start_example" endBefore="end_example" />

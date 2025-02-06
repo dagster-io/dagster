@@ -228,49 +228,7 @@ The <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTransla
 
 For example, to change how the name of the asset is derived, or if you would like to change the key of the upstream source asset, you can override the <PyObject section="libraries" module="dagster_dlt" object="DagsterDltTranslator" method="get_asset_spec" /> method.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/dlt/dlt_dagster_translator.py
-import dlt
-from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
-from dagster_dlt.translator import DltResourceTranslatorData
-
-from dagster import AssetExecutionContext, AssetKey, AssetSpec
-
-
-@dlt.source
-def example_dlt_source():
-    def example_resource(): ...
-
-    return example_resource
-
-
-class CustomDagsterDltTranslator(DagsterDltTranslator):
-    def get_asset_spec(self, data: DltResourceTranslatorData) -> AssetSpec:
-        """Overrides asset spec to:
-        - Override asset key to be the dlt resource name,
-        - Override upstream asset key to be a single source asset.
-        """
-        default_spec = super().get_asset_spec(data)
-        return default_spec.replace_attributes(
-            key=AssetKey(f"{data.resource.name}"),
-            deps=[AssetKey("common_upstream_dlt_dependency")],
-        )
-
-
-@dlt_assets(
-    name="example_dlt_assets",
-    dlt_source=example_dlt_source(),
-    dlt_pipeline=dlt.pipeline(
-        pipeline_name="example_pipeline_name",
-        dataset_name="example_dataset_name",
-        destination="snowflake",
-        progress="log",
-    ),
-    dagster_dlt_translator=CustomDagsterDltTranslator(),
-)
-def dlt_example_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
-    yield from dlt.run(context=context)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/dlt/dlt_dagster_translator.py" />
 
 In this example, we customized the translator to change how the dlt assets' names are defined. We also hard-coded the asset dependency upstream of our assets to provide a fan-out model from a single dependency to our dlt assets.
 
@@ -282,38 +240,7 @@ This can be accomplished by defining a <PyObject section="assets" module="dagste
 
 For example, let's say we have defined a set of dlt assets named `thinkific_assets`, we can iterate over those assets and derive a <PyObject section="assets" module="dagster" object="AssetSpec" /> with attributes like `group_name`.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/dlt/dlt_source_assets.py
-import dlt
-from dagster_dlt import DagsterDltResource, dlt_assets
-
-from dagster import AssetExecutionContext, AssetSpec
-
-
-@dlt.source
-def example_dlt_source():
-    def example_resource(): ...
-
-    return example_resource
-
-
-@dlt_assets(
-    dlt_source=example_dlt_source(),
-    dlt_pipeline=dlt.pipeline(
-        pipeline_name="example_pipeline_name",
-        dataset_name="example_dataset_name",
-        destination="snowflake",
-        progress="log",
-    ),
-)
-def example_dlt_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
-    yield from dlt.run(context=context)
-
-
-thinkific_source_assets = [
-    AssetSpec(key, group_name="thinkific") for key in example_dlt_assets.dependency_keys
-]
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/dlt/dlt_source_assets.py" />
 
 ### Using partitions in your dlt assets
 
@@ -321,43 +248,7 @@ While still an experimental feature, it is possible to use partitions within you
 
 That said, here is an example of using static named partitions from a dlt source.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/dlt/dlt_partitions.py
-from typing import Optional
-
-import dlt
-from dagster_dlt import DagsterDltResource, dlt_assets
-
-from dagster import AssetExecutionContext, StaticPartitionsDefinition
-
-color_partitions = StaticPartitionsDefinition(["red", "green", "blue"])
-
-
-@dlt.source
-def example_dlt_source(color: Optional[str] = None):
-    def load_colors():
-        if color:
-            # partition-specific processing
-            ...
-        else:
-            # non-partitioned processing
-            ...
-
-
-@dlt_assets(
-    dlt_source=example_dlt_source(),
-    name="example_dlt_assets",
-    dlt_pipeline=dlt.pipeline(
-        pipeline_name="example_pipeline_name",
-        dataset_name="example_dataset_name",
-        destination="snowflake",
-    ),
-    partitions_def=color_partitions,
-)
-def compute(context: AssetExecutionContext, dlt: DagsterDltResource):
-    color = context.partition_key
-    yield from dlt.run(context=context, dlt_source=example_dlt_source(color=color))
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/dlt/dlt_partitions.py" />
 
 ## What's next?
 
