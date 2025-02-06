@@ -14,7 +14,7 @@ from sphinx.locale import admonitionlabels
 from sphinx.util.docutils import SphinxTranslator
 
 if TYPE_CHECKING:
-    from ..builders.mdx import MdxBuilder
+    from ..builders.mdx import MdxBuilder  # noqa
 
 logger = logging.getLogger(__name__)
 STDINDENT = 4

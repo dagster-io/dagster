@@ -7,7 +7,7 @@ from sphinx.builders import Builder
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir
 
-from ..writers.mdx import MdxWriter
+from ..writers.mdx import MdxWriter  # noqa
 
 logger = logging.getLogger(__name__)
 

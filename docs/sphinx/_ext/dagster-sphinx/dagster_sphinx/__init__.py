@@ -34,13 +34,13 @@ from dagster_sphinx.docstring_flags import (
     FlagDirective,
     depart_flag,
     flag,
+    inject_object_flag,
+    inject_param_flag,
     inline_flag,
     inline_flag_role,
     visit_flag,
     visit_inline_flag,
 )
-
-from .docstring_flags import inject_object_flag, inject_param_flag
 
 logger = logging.getLogger(__name__)
 
