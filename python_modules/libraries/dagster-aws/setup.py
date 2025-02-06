@@ -43,8 +43,7 @@ setup(
         "redshift": ["psycopg2-binary"],
         "pyspark": ["dagster-pyspark"],
         "stubs": [
-            "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr]",
-            "mypy-boto3-stepfunctions",
+            "boto3-stubs-lite[s3,logs,ecs,glue,emr-serverless,emr, stepfunctions]",
         ],
         "test": [
             "botocore!=1.32.1",

@@ -11,18 +11,17 @@ from dagster import (
     StringSource,
     _check as check,
 )
-from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.instance import T_DagsterInstance
-from dagster._core.launcher.base import LaunchRunContext, RunLauncher
+from dagster._core.launcher.base import CheckRunHealthResult, LaunchRunContext, RunLauncher
 from dagster._serdes import ConfigurableClass
 from dagster._utils.backoff import backoff
+from mypy_boto3_stepfunctions.type_defs import StartExecutionInputRequestTypeDef
 
 if TYPE_CHECKING:
     from dagster._serdes.config_class import ConfigurableClassData
     from mypy_boto3_stepfunctions import SFNClient
     from mypy_boto3_stepfunctions.type_defs import (
         DescribeExecutionOutputTypeDef,
-        StartExecutionInputRequestTypeDef,
         StopExecutionOutputTypeDef,
     )
 
@@ -54,7 +53,7 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         )
 
     @cached_property
-    def _start_execution_input(self) -> "StartExecutionInputRequestTypeDef":
+    def _start_execution_input(self) -> StartExecutionInputRequestTypeDef:
         input_dict: StartExecutionInputRequestTypeDef = {"stateMachineArn": self._sfn_arn}
         if self._name is not None:
             input_dict["name"] = self._name
@@ -66,10 +65,9 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         try:
-            execution_arn = self._client.start_execution(**self._start_execution_input)[
+            self._execution_arn = self._client.start_execution(**self._start_execution_input)[
                 "executionArn"
             ]
-
         except ClientError as err:
             error_info = err.response.get("Error", {})
             logging.error(
@@ -80,27 +78,29 @@ class SFNLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
             )
             raise
 
-        try:
-            response = self._wait_for_execution_completion(execution_arn)
-        except DagsterExecutionInterruptedError as e:
-            logging.error(f"Error waiting for execution completion: {e}")
-            _ = backoff(
-                self._stop_execution,
-                retry_on=(ClientError,),
-                kwargs={"execution_arn": execution_arn},
-                max_retries=int(
-                    os.getenv("RUN_TASK_RETRIES", DEFAULT_RUN_TASK_RETRIES),
-                ),
-            )
-            raise
-        else:
-            logging.info(
-                f"Execution {execution_arn} completed successfully, Status: {response['status']}"
-            )
-            if response["status"] != "SUCCEEDED":
-                raise SFNFinishedExecutioinError(
-                    f"Step Function execution {self._sfn_arn} run {execution_arn} completed with status {response['status']} :\n{response.get('errorMessage')}",
-                )
+    def check_run_worker_health(self, run_id: str) -> CheckRunHealthResult:
+        response = backoff(
+            self._describe_execution,
+            retry_on=(ClientError,),
+            kwargs={"execution_arn": self._execution_arn},
+            max_retries=int(
+                os.getenv("RUN_TASK_RETRIES", DEFAULT_RUN_TASK_RETRIES),
+            ),
+        )
+        logging.info(
+            f"Execution {self._execution_arn} completed successfully, Status: {response['status']}"
+        )
+        if response["status"] == "SUCCEEDED":
+            return CheckRunHealthResult(WorkerStatus.SUCCESS)
+        elif response["status"] in "RUNNING":
+            return CheckRunHealthResult(WorkerStatus.RUNNING)
+        elif response["status"] in "FAILED":
+            return CheckRunHealthResult(WorkerStatus.FAILED, response.get("error"))
+        elif response["status"] in "TIMED_OUT":
+            return CheckRunHealthResult(WorkerStatus.FAILED, "Execution timed out.")
+        elif response["status"] in "ABORTED":
+            return CheckRunHealthResult(WorkerStatus.FAILED, "Execution abourted.")
+        return CheckRunHealthResult(WorkerStatus.UNKNOWN)
 
     def _stop_execution(self, execution_arn: str) -> "StopExecutionOutputTypeDef":
         logging.info(f"Terminating execution {execution_arn}")
