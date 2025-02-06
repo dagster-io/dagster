@@ -1105,7 +1105,7 @@ def test_beta_class_with_methods():
 
     with pytest.warns(
         BetaWarning,
-        match=r"Function `[^`]+goodbye` currently in beta",
+        match=r"Function `[^`]+goodbye` is currently in beta",
     ):
         assert beta_class_with_beta_function.goodbye("dagster") == "goodbye dagster"
 
