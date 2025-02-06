@@ -633,7 +633,7 @@ class AirbyteManagedElementReconciler(ManagedElementReconciler):
     CLI will allow you to check the state of your Python-code-specified Airbyte connections
     against an Airbyte instance, and reconcile them if necessary.
 
-    This functionality is experimental and subject to change.
+    This functionality is in beta and subject to change.
     """
 
     @public
