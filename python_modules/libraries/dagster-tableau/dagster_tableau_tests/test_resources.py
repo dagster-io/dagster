@@ -1,8 +1,9 @@
+import uuid
 from unittest.mock import MagicMock
 
 import pytest
 from dagster import asset, instance_for_test, materialize
-from dagster_tableau.resources import *
+from dagster_tableau.resources import TableauCloudWorkspace, TableauServerWorkspace, Union
 
 
 @pytest.mark.parametrize(

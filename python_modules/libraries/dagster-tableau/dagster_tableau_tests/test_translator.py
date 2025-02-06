@@ -3,6 +3,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster_tableau import DagsterTableauTranslator
 from dagster_tableau.translator import TableauTranslatorData, TableauWorkspaceData
 
+
 def test_translator_sheet_spec(
     workspace_data: TableauWorkspaceData, workbook_id: str
 ) -> None:

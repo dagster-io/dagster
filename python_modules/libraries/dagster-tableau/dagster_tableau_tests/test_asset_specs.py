@@ -48,9 +48,9 @@ def test_fetch_tableau_workspace_data(
 
     actual_workspace_data = resource.fetch_tableau_workspace_data()
     assert len(actual_workspace_data.workbooks_by_id) == 1
-    assert len(actual_workspace_data.sheets_by_id) == 1
+    assert len(actual_workspace_data.sheets_by_id) == 2
     assert len(actual_workspace_data.dashboards_by_id) == 1
-    assert len(actual_workspace_data.data_sources_by_id) == 1
+    assert len(actual_workspace_data.data_sources_by_id) == 2
 
 
 @responses.activate
@@ -145,9 +145,9 @@ def test_translator_spec(
         all_assets = load_tableau_asset_specs(resource)
         all_assets_keys = [asset.key for asset in all_assets]
 
-        # 1 sheet, 1 dashboard and 1 data source as external assets
-        assert len(all_assets) == 3
-        assert len(all_assets_keys) == 3
+        # 2 sheet, 1 dashboard and 2 data source as external assets
+        assert len(all_assets) == 5
+        assert len(all_assets_keys) == 5
 
         # Sanity check outputs, translator tests cover details here
         sheet_asset_key = next(
