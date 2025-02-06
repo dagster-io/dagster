@@ -152,10 +152,10 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
 } {
   let lru: ReturnType<typeof cache<string, R>> | undefined;
   try {
-    lru = cache<string, R>({
-      dbName: 'indexDBAsyncMemoizeDBv2',
-      maxCount: 50,
-    });
+    // lru = cache<string, R>({
+    //   dbName: 'indexDBAsyncMemoizeDBv2',
+    //   maxCount: 50,
+    // });
   } catch {}
 
   const hashToPromise: Record<string, Promise<R>> = {};

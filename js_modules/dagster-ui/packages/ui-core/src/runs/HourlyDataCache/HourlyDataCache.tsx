@@ -42,10 +42,10 @@ export class HourlyDataCache<T> {
 
     if (id) {
       try {
-        this.indexedDBCache = cache<string, CacheType<T>>({
-          dbName: `HourlyDataCacheV2:${id}`,
-          maxCount: keyMaxCount,
-        });
+        // this.indexedDBCache = cache<string, CacheType<T>>({
+        //   dbName: `HourlyDataCacheV2:${id}`,
+        //   maxCount: keyMaxCount,
+        // });
         this.loadCacheFromIndexedDB();
         this.clearOldEntries();
       } catch {}

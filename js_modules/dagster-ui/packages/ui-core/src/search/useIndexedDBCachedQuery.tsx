@@ -28,7 +28,7 @@ export class CacheManager<TQuery> {
   constructor(key: string) {
     this.key = `${KEY_PREFIX}${key}`;
     try {
-      this.cache = cache<string, CacheData<TQuery>>({dbName: `${this.key}-v2`, maxCount: 1});
+      // this.cache = cache<string, CacheData<TQuery>>({dbName: `${this.key}-v2`, maxCount: 1});
     } catch {}
   }
 
