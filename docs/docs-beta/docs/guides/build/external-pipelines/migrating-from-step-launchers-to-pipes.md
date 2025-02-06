@@ -1,5 +1,5 @@
 ---
-title: "Migrating From Spark Step Launchers to Dagster Pipes"
+title: "Migrating from Spark Step Launchers to Dagster Pipes"
 description: "Learn how to migrate from Spark step launchers to Dagster Pipes."
 ---
 
@@ -39,21 +39,21 @@ It's also possible to run Java or Scala Spark jobs with Dagster Pipes, but curre
 
 The goal is to keep the same observability and orchestration features while moving compute to an external script. Suppose you have existing code using step launchers similar to this:
 
-<CodeExample path="docs_snippets/docs_snippets/migrations/from_step_launchers_to_pipes/old_code.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/old_code.py" />
 
 The corresponding Pipes code will instead have two components: the Dagster asset definition, and the external PySpark job.
 
 Let's start with the PySpark job. The upstream asset will invoke the following script:
 
-<CodeExample path="docs_snippets/docs_snippets/migrations/from_step_launchers_to_pipes/upstream_asset_script.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/upstream_asset_script.py" />
 
 Now, we have to run this script from Dagster. First, let's factor the boilerplate EMR config into a reusable function:
 
-<CodeExample path="docs_snippets/docs_snippets/migrations/from_step_launchers_to_pipes/utils.py" startAfter="start_emr_config_marker" endBefore="end_emr_config_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/utils.py" startAfter="start_emr_config_marker" endBefore="end_emr_config_marker" />
 
 Now, the asset body will be as follows:
 
-<CodeExample path="docs_snippets/docs_snippets/migrations/from_step_launchers_to_pipes/new_code.py" endBefore="after_upstream_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/new_code.py" endBefore="after_upstream_marker" />
 
 Since the asset now returns the Parquet file path, it will be saved by the `IOManager`, and the downstream asset will be abe to access it.
 
@@ -61,15 +61,15 @@ Let's continue to migrating the second `downstream` asset.
 
 Since we can't use IO Managers in scripts launched by Pipes, we would have to either make a CLI argument parser or use the handy `extras` feature provided by Pipes in order to pass this `"path"` value to the job. We will demonstrate the latter approach. The `downstream` asset turns into:
 
-<CodeExample path="docs_snippets/docs_snippets/migrations/from_step_launchers_to_pipes/new_code.py" startAfter="after_upstream_marker" endBefore="after_downstream_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/new_code.py" startAfter="after_upstream_marker" endBefore="after_downstream_marker" />
 
 Now, let's access the `path` value in the PySpark job:
 
-<CodeExample path="docs_snippets/docs_snippets/migrations/from_step_launchers_to_pipes/downstream_asset_script.py" />
+<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/downstream_asset_script.py" />
 
 Finally, provide the required resources to `Definitions`:
 
-<CodeExample path="docs_snippets/docs_snippets/migrations/from_step_launchers_to_pipes/new_code.py" startAfter="after_downstream_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/new_code.py" startAfter="after_downstream_marker" />
 
 # Conclusion
 
@@ -87,7 +87,7 @@ In this guide, we have demonstrated how to migrate from using step launchers to 
 
 **Heads up!** As an alternative to storing paths with an `IOManager`, the following utility function can be used to retrieve logged metadata values from upstream assets:
 
-<CodeExample path="docs_snippets/docs_snippets/migrations/from_step_launchers_to_pipes/utils.py" startAfter="start_metadata_marker" endBefore="end_metadata_marker" />
+<CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/utils.py" startAfter="start_metadata_marker" endBefore="end_metadata_marker" />
 
 :::
 
