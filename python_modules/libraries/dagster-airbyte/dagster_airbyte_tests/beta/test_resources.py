@@ -20,7 +20,7 @@ from dagster_airbyte.translator import AirbyteJobStatusType
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import clean_name
 
-from dagster_airbyte_tests.experimental.conftest import (
+from dagster_airbyte_tests.beta.conftest import (
     SAMPLE_CONNECTION_DETAILS,
     TEST_ACCESS_TOKEN,
     TEST_ANOTHER_STREAM_NAME,
@@ -35,7 +35,7 @@ from dagster_airbyte_tests.experimental.conftest import (
     TEST_WORKSPACE_ID,
     get_job_details_sample,
 )
-from dagster_airbyte_tests.experimental.utils import optional_pytest_raise
+from dagster_airbyte_tests.beta.utils import optional_pytest_raise
 
 
 def assert_token_call_and_split_calls(calls: responses.CallList):

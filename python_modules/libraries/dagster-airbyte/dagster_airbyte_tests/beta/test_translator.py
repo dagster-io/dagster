@@ -6,7 +6,7 @@ from dagster_airbyte import AirbyteCloudWorkspace, DagsterAirbyteTranslator
 from dagster_airbyte.translator import AirbyteConnectionTableProps, AirbyteMetadataSet
 from dagster_airbyte.utils import generate_table_schema
 
-from dagster_airbyte_tests.experimental.conftest import (
+from dagster_airbyte_tests.beta.conftest import (
     TEST_AIRBYTE_CONNECTION_TABLE_PROPS,
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
