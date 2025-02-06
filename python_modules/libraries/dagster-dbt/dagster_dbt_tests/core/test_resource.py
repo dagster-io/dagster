@@ -602,6 +602,10 @@ def test_custom_subclass():
     assert isinstance(custom, DbtCliResource)
 
 
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.8"),
+    reason="Lock issue with Duckdb in test suite for `dbt-core==1.7`",
+)
 def test_metadata(test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource) -> None:
     def assert_on_expected_metadata(metadata):
         assert isinstance(metadata["Execution Duration"], FloatMetadataValue)
