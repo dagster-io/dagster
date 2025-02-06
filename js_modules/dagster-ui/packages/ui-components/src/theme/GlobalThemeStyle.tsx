@@ -13,11 +13,19 @@ const ThemeRoot = createGlobalStyle`
     :root, .themeSystem {
       ${lightThemeColors}
     }
+
+    .themeSystemHighContrast {
+      ${lightHighContrastThemeColors}
+    }
   }
 
   @media (prefers-color-scheme: dark) {
     :root, .themeSystem {
       ${darkThemeColors}
+    }
+
+    .themeSystemHighContrast {
+      ${darkHighContrastThemeColors}
     }
   }
 

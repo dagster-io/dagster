@@ -7,6 +7,7 @@ export const themeSet = new Set([
   DagsterTheme.Dark,
   DagsterTheme.LightHighContrast,
   DagsterTheme.DarkHighContrast,
+  DagsterTheme.SystemHighContrast,
 ]);
 
 export const useThemeState = () => {
