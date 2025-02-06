@@ -11,7 +11,7 @@ from dagster_fivetran import (
 from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.translator import FivetranMetadataSet
 
-from dagster_fivetran_tests.experimental.conftest import (
+from dagster_fivetran_tests.beta.conftest import (
     TEST_ACCOUNT_ID,
     TEST_ANOTHER_ACCOUNT_ID,
     TEST_API_KEY,
