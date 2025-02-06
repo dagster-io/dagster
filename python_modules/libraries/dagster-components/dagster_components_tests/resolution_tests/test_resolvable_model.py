@@ -1,10 +1,11 @@
 from collections.abc import Sequence
-from typing import Annotated, Optional, Union
+from typing import Optional
 
 import pytest
 from dagster._check.functions import ParameterCheckError
 from dagster._record import record
-from dagster_components import ResolutionContext, ResolvableFieldInfo, ResolvableModel
+from dagster_components import ResolutionContext, ResolvableModel
+from dagster_components.core.schema.base import Resolver
 
 
 @record
@@ -16,28 +17,29 @@ class InnerObject:
 @record
 class TargetObject:
     int_val: int
-    str_val_renamed: str
+    str_val: str
     inners: Optional[Sequence[InnerObject]]
 
 
 class InnerParams(ResolvableModel[InnerObject]):
-    val1: Annotated[
-        Union[int, str], ResolvableFieldInfo(output_type=int, resolved_field_name="val1_renamed")
-    ]
+    val1: str
     val2: Optional[str]
 
-    def resolve_val1_renamed(self, context: ResolutionContext) -> int:
-        resolved_val = context.resolve_value(self.val1)
-        return resolved_val + 20
+    def get_resolver(self):
+        return InnerParamsResolver()
+
+
+class InnerParamsResolver(Resolver[InnerParams, InnerObject]):
+    __ignored_fields__ = {"val1"}
+
+    def resolve_val1_renamed(self, context: ResolutionContext, model: InnerParams) -> int:
+        return context.resolve_value(model.val1) + 20
 
 
 class TargetParams(ResolvableModel[TargetObject]):
-    int_val: Annotated[str, ResolvableFieldInfo(output_type=int)]
-    str_val: Annotated[str, ResolvableFieldInfo(resolved_field_name="str_val_renamed")]
-    inners: Annotated[
-        Optional[Sequence[InnerParams]],
-        ResolvableFieldInfo(output_type=Optional[Sequence[InnerObject]]),
-    ] = None
+    int_val: str
+    str_val: str
+    inners: Optional[Sequence[InnerParams]] = None
 
 
 def test_valid_resolution_simple() -> None:
@@ -57,7 +59,7 @@ def test_valid_resolution_nested() -> None:
 
     assert resolved == TargetObject(
         int_val=1,
-        str_val_renamed="a_x",
+        str_val="a_x",
         inners=[InnerObject(val1_renamed=21, val2="a_y")],
     )
 

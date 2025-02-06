@@ -13,7 +13,7 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
-from dagster_components.core.schema.base import ResolvableModel
+from dagster_components.core.schema.base import ResolvableModel, Resolver
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
@@ -26,20 +26,31 @@ from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
 class DbtProjectParams(ResolvableModel["DbtProjectComponent"]):
-    dbt: Annotated[DbtCliResource, ResolvableFieldInfo(resolved_field_name="resource")]
-    op: Annotated[Optional[OpSpecModel], ResolvableFieldInfo(resolved_field_name="op_spec")] = None
+    dbt: DbtCliResource
+    op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel],
-        ResolvableFieldInfo(required_scope={"node"}, resolved_field_name="translator"),
+        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
     ] = None
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
-    def resolve_translator(self, context: ResolutionContext) -> DagsterDbtTranslator:
+    def get_resolver(self):
+        return DbtProjectResolver()
+
+
+class DbtProjectResolver(Resolver[DbtProjectParams, "DbtProjectComponent"]):
+    __ignored_fields__ = {"asset_attributes"}
+
+    def resolve_translator(
+        self, context: ResolutionContext, model: DbtProjectParams
+    ) -> DagsterDbtTranslator:
         return get_wrapped_translator_class(DagsterDbtTranslator)(
             resolving_info=ResolvingInfo(
-                "node", self.asset_attributes or AssetAttributesModel(), context
+                "node", model.asset_attributes or AssetAttributesModel(), context
             )
         )
+
+    def resolve(self, context: ResolutionContext, model: DbtProjectParams) -> "DbtProjectComponent":
+        return self.resolve_as(DbtProjectComponent, context, model)
 
 
 @registered_component_type(name="dbt_project")
@@ -48,14 +59,14 @@ class DbtProjectComponent(Component):
 
     def __init__(
         self,
-        resource: DbtCliResource,
-        op_spec: Optional[OpSpecModel],
+        dbt: DbtCliResource,
+        op: Optional[OpSpecModel],
         translator: DagsterDbtTranslator,
         transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None,
     ):
-        self.resource = resource
-        self.project = DbtProject(resource.project_dir)
-        self.op_spec = op_spec
+        self.resource = dbt
+        self.project = DbtProject(dbt.project_dir)
+        self.op_spec = op
         self.transforms = transforms or []
         self.translator = translator
 

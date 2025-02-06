@@ -14,6 +14,7 @@ from typing_extensions import Self
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_scaffolder import ComponentScaffolder
+from dagster_components.core.schema.base import Resolver
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
@@ -28,22 +29,31 @@ from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 @record
 class SlingReplicationSpec:
     path: str
-    op_spec: Optional[OpSpecModel]
+    op: Optional[OpSpecModel]
     translator: DagsterSlingTranslator
 
 
 class SlingReplicationParams(ResolvableModel[SlingReplicationSpec]):
     path: str
-    op: Annotated[Optional[OpSpecModel], ResolvableFieldInfo(resolved_field_name="op_spec")] = None
+    op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
         Optional[AssetAttributesModel],
-        ResolvableFieldInfo(required_scope={"stream_definition"}, resolved_field_name="translator"),
+        ResolvableFieldInfo(required_scope={"stream_definition"}),
     ] = None
 
-    def resolve_translator(self, resolver: ResolutionContext) -> DagsterSlingTranslator:
+    def get_resolver(self):
+        return SlingReplicationResolver()
+
+
+class SlingReplicationResolver(Resolver[SlingReplicationParams, SlingReplicationSpec]):
+    __ignored_fields__ = {"asset_attributes"}
+
+    def resolve_translator(
+        self, resolver: ResolutionContext, model: SlingReplicationParams
+    ) -> DagsterSlingTranslator:
         return get_wrapped_translator_class(DagsterSlingTranslator)(
             resolving_info=ResolvingInfo(
-                "stream_definition", self.asset_attributes or AssetAttributesModel(), resolver
+                "stream_definition", model.asset_attributes or AssetAttributesModel(), resolver
             ),
         )
 
@@ -94,7 +104,7 @@ class SlingReplicationCollection(Component):
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec
     ) -> AssetsDefinition:
-        op_spec = replication_spec.op_spec or OpSpecModel()
+        op_spec = replication_spec.op or OpSpecModel()
 
         @sling_assets(
             name=op_spec.name or Path(replication_spec.path).stem,

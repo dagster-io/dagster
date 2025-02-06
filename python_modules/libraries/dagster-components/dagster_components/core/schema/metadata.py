@@ -1,6 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence, Set
-from dataclasses import dataclass
-from typing import Annotated, Any, Optional, Union, get_args, get_origin
+from typing import Any, Optional, Union
 
 import dagster._check as check
 from pydantic.fields import FieldInfo
@@ -10,46 +9,24 @@ REF_TEMPLATE = f"{REF_BASE}{{model}}"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
 
 
-@dataclass
-class ResolutionMetadata:
-    """Internal class that stores arbitrary metadata about a resolved field."""
-
-    output_type: Optional[type] = None
-    resolved_field_name: Optional[str] = None
-
-
 class ResolvableFieldInfo(FieldInfo):
     """Wrapper class that stores additional resolution metadata within a pydantic FieldInfo object.
 
     Examples:
     ```python
     class MyModel(ResolvableModel):
-        resolvable_obj: Annotated[str, ResolvableFieldInfo(output_type=SomeObj)]
+        resolvable_obj: Annotated[str, ResolvableFieldInfo(required_scope={"some_field"})]
     ```
     """
 
     def __init__(
         self,
         *,
-        output_type: Optional[type] = None,
-        resolved_field_name: Optional[str] = None,
         required_scope: Optional[Set[str]] = None,
     ):
-        self.resolution_metadata = ResolutionMetadata(
-            output_type=output_type, resolved_field_name=resolved_field_name
-        )
         super().__init__(
             json_schema_extra={JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY: list(required_scope or [])},
         )
-
-
-def get_resolution_metadata(annotation: type) -> ResolutionMetadata:
-    origin = get_origin(annotation)
-    if origin is Annotated:
-        _, f_metadata, *_ = get_args(annotation)
-        if isinstance(f_metadata, ResolvableFieldInfo) and f_metadata.resolution_metadata:
-            return f_metadata.resolution_metadata
-    return ResolutionMetadata(output_type=annotation)
 
 
 def _subschemas_on_path(

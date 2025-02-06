@@ -1,22 +1,74 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, get_args
 
 from dagster._core.errors import DagsterInvariantViolationError
-from pydantic import BaseModel, ConfigDict
-
-from dagster_components.core.schema.metadata import get_resolution_metadata
+from pydantic import BaseModel
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from dagster_components.core.schema.resolver import ResolutionContext
 
+T_Model = TypeVar("T_Model", bound=BaseModel)
+T_Resolved = TypeVar("T_Resolved")
 T = TypeVar("T")
 
+FieldResolver = Callable[["ResolutionContext", T_Model], Any]
 
-class ResolvableModel(BaseModel, Generic[T]):
-    model_config = ConfigDict(extra="forbid")
+RESOLVE_METHOD_PREFIX = "resolve_"
+
+
+class Resolver(Generic[T_Model, T_Resolved]):
+    __ignored_fields__ = set()
 
     @property
-    def _resolved_type(self) -> type[T]:
+    def resolved_type(self) -> type[T_Resolved]:
+        generic_base = getattr(self.__class__, "__orig_bases__")[0]
+        return get_args(generic_base)[1]
+
+    def _get_default_resolver(self, model: T_Model, field_name: str) -> FieldResolver:
+        return lambda context, model: context.resolve_value(getattr(model, field_name))
+
+    def _get_field_resolvers(self, model: T_Model) -> Mapping[str, FieldResolver]:
+        field_resolvers = {
+            k: self._get_default_resolver(model, k)
+            for k in model.model_fields.keys()
+            if k not in self.__ignored_fields__
+        }
+        for attr in dir(self):
+            if attr == "resolve_as":
+                continue
+            if attr.startswith(RESOLVE_METHOD_PREFIX):
+                field_name = attr.split(RESOLVE_METHOD_PREFIX)[1]
+                field_resolvers[field_name] = getattr(self, attr)
+        return field_resolvers
+
+    def get_resolved_properties(
+        self, context: "ResolutionContext", model: T_Model
+    ) -> Mapping[str, Any]:
+        return {
+            field_name: field_resolver(context, model)
+            for field_name, field_resolver in self._get_field_resolvers(model).items()
+        }
+
+    def resolve_as(self, as_type: type[T], context: "ResolutionContext", model: T_Model) -> T:
+        return as_type(**self.get_resolved_properties(context, model))
+
+    def resolve(self, context: "ResolutionContext", model: T_Model) -> T_Resolved:
+        return self.resolve_as(self.resolved_type, context, model)
+
+
+class DefaultResolver(Resolver[Any, T_Resolved], Generic[T_Resolved]):
+    def __init__(self, resolved_type: type[T_Resolved]):
+        self._resolved_type = resolved_type
+
+    @property
+    def resolved_type(self) -> type[T_Resolved]:
+        return self._resolved_type
+
+
+class ResolvableModel(BaseModel, Generic[T_Resolved]):
+    @property
+    def _resolved_type(self) -> type[T_Resolved]:
         resolvable_model_base_class = next(
             base for base in self.__class__.__bases__ if issubclass(base, ResolvableModel)
         )
@@ -25,33 +77,16 @@ class ResolvableModel(BaseModel, Generic[T]):
             raise DagsterInvariantViolationError(
                 "Subclasses of `ResolvableModel` must have exactly one generic type argument. "
                 "Make sure to specify subclasses as `class MyModel(ResolvableModel[<type>])` or "
-                "override `resolve()` in the subclass."
+                "override `get_resolver()` in the subclass."
             )
         return generic_args[0]
 
-    def _get_annotation(self, field_name: str) -> type:
-        for base in self.__class__.__mro__:
-            if field_name in base.__annotations__:
-                return base.__annotations__[field_name]
-        raise ValueError(f"Field {field_name} not found in any base class.")
+    def get_resolver(self) -> Resolver[Self, T_Resolved]:
+        return DefaultResolver[T_Resolved](self._resolved_type)
 
-    def _get_resolved_field(self, field_name: str, context: "ResolutionContext") -> tuple[str, Any]:
-        resolution_metadata = get_resolution_metadata(self._get_annotation(field_name))
-        resolved_field_name = resolution_metadata.resolved_field_name or field_name
+    def resolve(self, context: "ResolutionContext") -> T_Resolved:
+        return self.get_resolver().resolve(context, self)
 
-        field_resolver = getattr(self, f"resolve_{resolved_field_name}", None)
-        if field_resolver:
-            resolved_field_value = field_resolver(context)
-        else:
-            resolved_field_value = context.resolve_value(getattr(self, field_name))
-
-        return resolved_field_name, resolved_field_value
-
-    def get_resolved_properties(self, context: "ResolutionContext") -> Mapping[str, Any]:
-        return dict(self._get_resolved_field(k, context) for k in self.model_fields.keys())
-
-    def resolve_as(self, as_type: type[T], context: "ResolutionContext") -> T:
-        return as_type(**self.get_resolved_properties(context))
-
-    def resolve(self, context: "ResolutionContext") -> T:
-        return self.resolve_as(self._resolved_type, context)
+    def resolve_as(self, as_type: type[T_Resolved], context: "ResolutionContext") -> T_Resolved:
+        print(self.get_resolver())
+        return self.get_resolver().resolve_as(as_type, context, self)
