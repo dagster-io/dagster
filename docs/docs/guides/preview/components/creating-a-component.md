@@ -1,5 +1,5 @@
 ---
-title: 'Creating a New Component Type'
+title: 'Creating a new component type'
 sidebar_position: 100
 ---
 
@@ -36,13 +36,11 @@ For this example, we'll write a lightweight component that executes a shell comm
 
 First, we use the `dg` command-line utility to scaffold a new component type:
 
-```bash
-dg component-type generate shell_command
-```
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
 
 This will add a new file to your project in the `lib` directory:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/empty.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/2-shell-command-empty.py" language="python" title="my_component_library/lib/shell_command.py" />
 
 This file contains the basic structure for the new component type. There are two methods that you'll need to implement:
 
@@ -92,18 +90,15 @@ Our `build_defs` method will create a single `@asset` that executes the provided
 
 Following the steps above will automatically register your component type in your environment. You can now run:
 
-```bash
-dg component-type list
-```
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/3-dg-list-component-types.txt" />
 
 and see your new component type in the list of available component types.
 
 You can also view automatically generated documentation describing your new component type by running:
 
-```bash
-dg component-type docs your_library.shell_command
-```
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/4-dg-component-type-docs.txt" />
 
+![](/images/guides/build/projects-and-components/components/component-type-docs.png)
 ## [Advanced] Custom templating
 
 The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file. All string values in a `ResolvableModel` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
@@ -126,4 +121,4 @@ params:
 
 ## Next steps
 
-- Add a new component to your project
+- [Add a new component to your project](./using-a-component.md)

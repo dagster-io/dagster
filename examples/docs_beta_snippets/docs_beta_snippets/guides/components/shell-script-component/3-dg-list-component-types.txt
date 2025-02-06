@@ -1,0 +1,14 @@
+dg component-type list
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Component Type                                        ┃ Summary                        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ definitions@dagster_components                        │ Wraps an arbitrary set of      │
+│                                                       │ Dagster definitions.           │
+│ pipes_subprocess_script_collection@dagster_components │ Assets that wrap Python        │
+│                                                       │ scripts executed with          │
+│                                                       │ Dagster's                      │
+│                                                       │ PipesSubprocessClient.         │
+│ shell_command@my_component_library                    │ Models a shell script as a     │
+│                                                       │ Dagster asset.                 │
+└───────────────────────────────────────────────────────┴────────────────────────────────┘
