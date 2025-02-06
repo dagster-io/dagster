@@ -14,16 +14,7 @@ To host Dagster on a bare VM or in Docker on EC2, see "[Running Dagster as a ser
 
 You can use a hosted RDS PostgreSQL database for your Dagster run/events data by configuring your `dagster.yaml` file:
 
-```python file=/deploying/dagster-pg.yaml
-storage:
-  postgres:
-    postgres_db:
-      username: my_username
-      password: my_password
-      hostname: my_hostname
-      db_name: my_database
-      port: 5432
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/dagster-pg.yaml" />
 
 In this case, you'll want to ensure that:
 
@@ -212,39 +203,11 @@ To enable parallel computation (e.g., with the multiprocessing or Dagster celery
 
 You'll need to use <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager"/> as your I/O Manager or customize your own persistent I/O managers. Refer to the [I/O managers documentation](/guides/build/io-managers/) for an example.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/aws/io_manager.py
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
-from dagster_aws.s3.resources import s3_resource
-
-from dagster import Int, Out, job, op
-
-
-@op(out=Out(Int))
-def my_op():
-    return 1
-
-
-@job(
-    resource_defs={
-        "io_manager": s3_pickle_io_manager,
-        "s3": s3_resource,
-    }
-)
-def my_job():
-    my_op()
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.py" />
 
 Then, add the following YAML block in your job's config:
 
-{/* TODO convert to <CodeExample> */}
-```yaml file=/deploying/aws/io_manager.yaml
-resources:
-  io_manager:
-    config:
-      s3_bucket: my-cool-bucket
-      s3_prefix: good/prefix-for-files-
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/aws/io_manager.yaml" />
 
 The resource uses `boto` under the hood. If you're accessing your private buckets, you'll need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow [one of the other boto authentication methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 

@@ -14,16 +14,7 @@ To host the Dagster webserver or Dagster daemon on a bare VM or in Docker on GCE
 
 We recommend launching a Cloud SQL PostgreSQL instance for run and events data. You can configure the webserver to use Cloud SQL to run and events data by setting blocks in your `$DAGSTER_HOME/dagster.yaml` appropriately:
 
-```python file=/deploying/dagster-pg.yaml
-storage:
-  postgres:
-    postgres_db:
-      username: my_username
-      password: my_password
-      hostname: my_hostname
-      db_name: my_database
-      port: 5432
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/dagster-pg.yaml" />
 
 In this case, you'll want to ensure you provide the right connection strings for your Cloud SQL instance, and that the node or container hosting the webserver is able to connect to Cloud SQL.
 
@@ -37,31 +28,6 @@ You'll probably also want to configure a GCS bucket to store op outputs via pers
 
 You'll first need to need to create a job using <PyObject section="libraries" module="dagster_gcp" object="gcs_pickle_io_manager"/> as its IO Manager (or [define a custom IO Manager](/guides/build/io-managers/defining-a-custom-io-manager)):
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/gcp/gcp_job.py
-from dagster_gcp.gcs.io_manager import gcs_pickle_io_manager
-from dagster_gcp.gcs.resources import gcs_resource
-
-from dagster import job
-
-
-@job(
-    resource_defs={
-        "gcs": gcs_resource,
-        "io_manager": gcs_pickle_io_manager,
-    },
-    config={
-        "resources": {
-            "io_manager": {
-                "config": {
-                    "gcs_bucket": "my-cool-bucket",
-                    "gcs_prefix": "good/prefix-for-files-",
-                }
-            }
-        }
-    },
-)
-def gcs_job(): ...
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/gcp/gcp_job.py" />
 
 With this in place, your job runs will store outputs on GCS in the location `gs://<bucket>/dagster/storage/<job run id>/files/<op name>.compute`.

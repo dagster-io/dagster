@@ -22,20 +22,7 @@ run_retries:
 
 In both Dagster+ and Dagster Open Source, you can also configure retries using tags either on Job definitions or in the Dagster UI [Launchpad](/guides/operate/webserver).
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/job_retries.py
-from dagster import job
-
-
-@job(tags={"dagster/max_retries": 3})
-def sample_job():
-    pass
-
-
-@job(tags={"dagster/max_retries": 3, "dagster/retry_strategy": "ALL_STEPS"})
-def other_sample_sample_job():
-    pass
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/job_retries.py" />
 
 ### Retry Strategy
 

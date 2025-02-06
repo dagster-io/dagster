@@ -29,7 +29,7 @@ Using these Dagster concepts we will:
 
 :::tip
 
-You can find the code for this example on [GitHub](https://github.com/dagster-io/dagster/tree/1.9.8/examples/development_to_production/).
+You can find the code for this example on [GitHub](https://github.com/dagster-io/dagster/tree/master/examples/development_to_production/).
 
 :::
 
@@ -51,79 +51,11 @@ In this section we will:
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/assets.py startafter=start_assets endbefore=end_assets
-# assets.py
-import pandas as pd
-import requests
-
-from dagster import Config, asset
-
-
-class ItemsConfig(Config):
-    base_item_id: int
-
-
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def items(config: ItemsConfig) -> pd.DataFrame:
-    """Items from the Hacker News API: each is a story or a comment on a story."""
-    rows = []
-    max_id = requests.get(
-        "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
-    ).json()
-    # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
-        item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        rows.append(requests.get(item_url, timeout=5).json())
-
-    # ITEM_FIELD_NAMES is a list of the column names in the Hacker News dataset
-    result = pd.DataFrame(rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
-    result.rename(columns={"by": "user_id"}, inplace=True)
-    return result
-
-
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def comments(items: pd.DataFrame) -> pd.DataFrame:
-    """Comments from the Hacker News API."""
-    return items[items["type"] == "comment"]
-
-
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def stories(items: pd.DataFrame) -> pd.DataFrame:
-    """Stories from the Hacker News API."""
-    return items[items["type"] == "story"]
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py" startAfter="start_assets" endBefore="end_assets" />
 
 Now we can add these assets to our <PyObject section="definitions" module="dagster" object="Definitions" /> object and materialize them via the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/repository/repository_v1.py startafter=start endbefore=end
-# definitions.py
-from dagster_snowflake_pandas import SnowflakePandasIOManager
-
-from dagster import Definitions
-from development_to_production.assets.hacker_news_assets import comments, items, stories
-
-# Note that storing passwords in configuration is bad practice. It will be resolved later in the guide.
-resources = {
-    "snowflake_io_manager": SnowflakePandasIOManager(
-        account="abc1234.us-east-1",
-        user="me@company.com",
-        # password in config is bad practice
-        password="my_super_secret_password",
-        database="LOCAL",
-        schema="ALICE",
-    ),
-}
-
-defs = Definitions(assets=[items, comments, stories], resources=resources)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v1.py" startAfter="start" endBefore="end" />
 
 Note that we have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it shortly.
 
@@ -152,39 +84,7 @@ We want to store the assets in a production Snowflake database, so we need to up
 
 Instead, we can determine the configuration for resources based on the environment:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/repository/repository_v2.py startafter=start endbefore=end
-# definitions.py
-
-# Note that storing passwords in configuration is bad practice. It will be resolved soon.
-resources = {
-    "local": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",
-            user="me@company.com",
-            # password in config is bad practice
-            password="my_super_secret_password",
-            database="LOCAL",
-            schema="ALICE",
-        ),
-    },
-    "production": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",
-            user="dev@company.com",
-            # password in config is bad practice
-            password="company_super_secret_password",
-            database="PRODUCTION",
-            schema="HACKER_NEWS",
-        ),
-    },
-}
-deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
-
-defs = Definitions(
-    assets=[items, comments, stories], resources=resources[deployment_name]
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v2.py" startAfter="start" endBefore="end" />
 
 Note that we still have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it next.
 
@@ -197,37 +97,7 @@ We still have some problems with this setup:
 
 We can easily solve these problems using <PyObject section="resources" module="dagster" object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the I/O manager to those environment variables:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start endbefore=end
-# definitions.py
-
-
-resources = {
-    "local": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",
-            user=EnvVar("DEV_SNOWFLAKE_USER"),
-            password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
-            database="LOCAL",
-            schema=EnvVar("DEV_SNOWFLAKE_SCHEMA"),
-        ),
-    },
-    "production": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",
-            user="system@company.com",
-            password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
-            database="PRODUCTION",
-            schema="HACKER_NEWS",
-        ),
-    },
-}
-deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
-
-defs = Definitions(
-    assets=[items, comments, stories], resources=resources[deployment_name]
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py" startAfter="start" endBefore="end" />
 
 ### Staging
 
@@ -237,22 +107,7 @@ Depending on your organization’s Dagster setup, there are a couple of options 
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_staging endbefore=end_staging
-resources = {
-    "local": {...},
-    "production": {...},
-    "staging": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",
-            user="system@company.com",
-            password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
-            database="STAGING",
-            schema="HACKER_NEWS",
-        ),
-    },
-}
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py" startAfter="start_staging" endBefore="end_staging" />
 
 ## Advanced: Unit tests with stubs and mocks
 
@@ -275,64 +130,11 @@ Determining when it makes sense to stub a resource for a unit test can be a topi
 
 We'll start by writing the "real" Hacker News API Client:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/resources/resources_v1.py startafter=start_resource endbefore=end_resource
-# resources.py
-from typing import Any, Dict, Optional
-
-import requests
-
-from dagster import ConfigurableResource
-
-
-class HNAPIClient(ConfigurableResource):
-    """Hacker News client that fetches live data."""
-
-    def fetch_item_by_id(self, item_id: int) -> Optional[dict[str, Any]]:
-        """Fetches a single item from the Hacker News API by item id."""
-        item_url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
-        item = requests.get(item_url, timeout=5).json()
-        return item
-
-    def fetch_max_item_id(self) -> int:
-        return requests.get(
-            "https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=5
-        ).json()
-
-    @property
-    def item_field_names(self) -> list:
-        # omitted for brevity, see full code example for implementation
-        return []
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/resources/resources_v1.py" startAfter="start_resource" endBefore="end_resource" />
 
 We'll also need to update the `items` asset to use this client as a resource:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/assets_v2.py startafter=start_items endbefore=end_items
-# assets.py
-
-
-class ItemsConfig(Config):
-    base_item_id: int
-
-
-@asset(
-    io_manager_key="snowflake_io_manager",
-)
-def items(config: ItemsConfig, hn_client: HNAPIClient) -> pd.DataFrame:
-    """Items from the Hacker News API: each is a story or a comment on a story."""
-    max_id = hn_client.fetch_max_item_id()
-    rows = []
-    # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(max_id - config.base_item_id + 1, max_id + 1):
-        rows.append(hn_client.fetch_item_by_id(item_id))
-
-    result = pd.DataFrame(rows, columns=hn_client.item_field_names).drop_duplicates(
-        subset=["id"]
-    )
-    result.rename(columns={"by": "user_id"}, inplace=True)
-    return result
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets_v2.py" startAfter="start_items" endBefore="end_items" />
 
 :::note
 
@@ -342,45 +144,11 @@ For the sake of brevity, we've omitted the implementation of the property `item_
 
 We'll also need to add an instance of `HNAPIClient` to `resources` in our `Definitions` object.
 
-```python file=/guides/dagster/development_to_production/repository/repository_v3.py startafter=start_hn_resource endbefore=end_hn_resource
-resource_defs = {
-    "local": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
-    "production": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
-    "staging": {"hn_client": HNAPIClient(), "snowflake_io_manager": {...}},
-}
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py" startAfter="start_hn_resource" endBefore="end_hn_resource" />
 
 Now we can write a stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method `HNAPIClient` implements.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/resources/resources_v2.py startafter=start_mock endbefore=end_mock
-# resources.py
-
-
-class StubHNClient:
-    """Hacker News Client that returns fake data."""
-
-    def __init__(self):
-        self.data = {
-            1: {
-                "id": 1,
-                "type": "comment",
-                "title": "the first comment",
-                "by": "user1",
-            },
-            2: {"id": 2, "type": "story", "title": "an awesome story", "by": "user2"},
-        }
-
-    def fetch_item_by_id(self, item_id: int) -> Optional[dict[str, Any]]:
-        return self.data.get(item_id)
-
-    def fetch_max_item_id(self) -> int:
-        return 2
-
-    @property
-    def item_field_names(self) -> list:
-        return ["id", "type", "title", "by"]
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/resources/resources_v2.py" startAfter="start_mock" endBefore="end_mock" />
 
 :::note
 
@@ -390,24 +158,7 @@ Since the stub Hacker News resource and the real Hacker News resource need to im
 
 Now we can use the stub Hacker News resource to test that the `items` asset transforms the data in the way we expect:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/development_to_production/test_assets.py startafter=start endbefore=end
-# test_assets.py
-
-
-def test_items():
-    hn_dataset = items(
-        config=ItemsConfig(base_item_id=StubHNClient().fetch_max_item_id()),
-        hn_client=StubHNClient(),
-    )
-    assert isinstance(hn_dataset, pd.DataFrame)
-
-    expected_data = pd.DataFrame(StubHNClient().data.values()).rename(
-        columns={"by": "user_id"}
-    )
-
-    assert (hn_dataset == expected_data).all().all()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/test_assets.py" startAfter="start" endBefore="end" />
 
 :::note
 

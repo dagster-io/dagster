@@ -8,17 +8,7 @@ Dagster can detect hanging runs and restart crashed [run workers](/guides/deploy
 - Running the Dagster Daemon
 - Enabling run monitoring in the Dagster Instance:
 
-{/* TODO convert to <CodeExample> */}
-```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_run_monitoring endbefore=end_run_monitoring
-# Opt in to run monitoring
-run_monitoring:
-  enabled: true
-  # values below are the defaults, and don't need to be specified except to override them
-  start_timeout_seconds: 180
-  cancel_timeout_seconds: 180
-  max_resume_run_attempts: 3 # experimental if above 0
-  poll_interval_seconds: 120
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_run_monitoring" endBefore="end_run_monitoring" />
 
 :::note
 
@@ -55,19 +45,7 @@ run_monitoring:
 
 The below code example shows how to set a run timeout of 10 seconds on a per-job basis:
 
-```python file=/deploying/monitoring_daemon/run_timeouts.py startafter=start_timeout
-from dagster import define_asset_job, job
-
-
-@job(tags={"dagster/max_runtime": 10})
-def my_job(): ...
-
-
-asset_job = define_asset_job(
-    name="some_job", selection="*", tags={"dagster/max_runtime": 10}
-)
-# end_timeout
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/monitoring_daemon/run_timeouts.py" startAfter="start_timeout" endBefore="end_timeout" />
 
 ## Detecting run worker crashes
 

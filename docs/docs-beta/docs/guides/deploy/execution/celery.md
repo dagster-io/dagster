@@ -29,23 +29,7 @@ To demonstrate, we'll start by constructing a parallel toy job that uses the Cel
 
 In your Dagster project, create a new file named `celery_job.py` and paste in the following:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/celery_job.py
-from dagster_celery import celery_executor
-
-from dagster import job, op
-
-
-@op
-def not_much():
-    return
-
-
-@job(executor_def=celery_executor)
-def parallel_job():
-    for i in range(50):
-        not_much.alias("not_much_" + str(i))()
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/celery_job.py" />
 
 Now, run the Celery executor. In our case, we're running RabbitMQ as our broker. With Docker, this is something like the following:
 
