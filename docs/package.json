@@ -1,6 +1,6 @@
 {
-  "name": "dagster-docs-beta",
-  "version": "0.0.0",
+  "name": "dagster-docs",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",

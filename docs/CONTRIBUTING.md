@@ -32,7 +32,7 @@ Note that the `method` property causes the build to break -- use `object` instea
 
 #### Location
 
-Images are located in [/docs/docs-beta/static/images](https://github.com/dagster-io/dagster/tree/master/docs/docs-beta/static/images).
+Images are located in [/docs/static/images](https://github.com/dagster-io/dagster/tree/master/docs/static/images).
 
 #### Formatting
 
@@ -129,7 +129,7 @@ To include code snippets, use the following format:
 <CodeExample path="path/to/file.py" />
 ```
 
-You can optionally include [additional properties](https://github.com/dagster-io/dagster/blob/master/docs/docs-beta/src/components/CodeExample.tsx#L6), such as `language`, `title`, `lineStart`, `lineEnd`, `startAfter`, and `endBefore`:
+You can optionally include [additional properties](https://github.com/dagster-io/dagster/blob/master/docs/src/components/CodeExample.tsx#L6), such as `language`, `title`, `lineStart`, `lineEnd`, `startAfter`, and `endBefore`:
 
 ```
 <CodeExample path="path/to/file.py" language="python" startAfter="start-after-comment" endBefore="end-before-comment" title="My example" />
