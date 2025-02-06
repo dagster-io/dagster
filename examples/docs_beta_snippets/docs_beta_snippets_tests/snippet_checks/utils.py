@@ -53,22 +53,25 @@ def _run_command(
     if not isinstance(cmd, str):
         cmd = " ".join(cmd)
 
-    actual_output = (
-        subprocess.check_output(
-            f'{cmd}; echo "PWD=$(pwd);"', shell=True, stderr=subprocess.STDOUT
+    try:
+        actual_output = (
+            subprocess.check_output(
+                f'{cmd} && echo "PWD=$(pwd);"', shell=True, stderr=subprocess.STDOUT
+            )
+            .decode("utf-8")
+            .strip()
         )
-        .decode("utf-8")
-        .strip()
-    )
+    except subprocess.CalledProcessError as e:
+        print(f"Ran command {cmd}")  # noqa: T201
+        print("Got output:")  # noqa: T201
+        print(e.output.decode("utf-8").strip())  # noqa: T201
+        raise e
 
     pwd = PWD_REGEX.search(actual_output).group(1)
     actual_output = PWD_REGEX.sub("", actual_output)
 
     actual_output = ANSI_ESCAPE.sub("", actual_output)
 
-    print(f"Ran command {cmd}")  # noqa: T201
-    print("Got output:")  # noqa: T201
-    print(actual_output)  # noqa: T201
     os.chdir(pwd)
 
     return actual_output
