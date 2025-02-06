@@ -36,10 +36,10 @@ With Pipes, the code inside the asset or op definition submits a Spark job to an
 You can either use one of the available Pipes Clients or make your own. The available Pipes Clients for popular Spark providers are:
 
 - [Databricks](/guides/build/external-pipelines/databricks-pipeline)
-- [AWS Glue](/guides/build/external-pipelines/aws-glue-pipeline)
-- [AWS EMR](/guides/build/external-pipelines/aws-emr-pipeline)
-- [AWS EMR on EKS](/guides/build/external-pipelines/aws-emr-containers-pipeline)
-- [AWS EMR Serverless](/guides/build/external-pipelines/aws-emr-serverless-pipeline)
+- [AWS Glue](/guides/build/external-pipelines/aws/aws-glue-pipeline)
+- [AWS EMR](/guides/build/external-pipelines/aws/aws-emr-pipeline)
+- [AWS EMR on EKS](/guides/build/external-pipelines/aws/aws-emr-containers-pipeline)
+- [AWS EMR Serverless](/guides/build/external-pipelines/aws/aws-emr-serverless-pipeline)
 
 Existing Spark jobs can be used with Pipes without any modifications. In this case, Dagster will be receiving logs from the job, but not events like asset checks or attached metadata.
 

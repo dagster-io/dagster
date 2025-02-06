@@ -30,7 +30,7 @@ When running PySpark jobs, the following changes to Python dependencies should b
 - drop `dagster`
 - add `dagster-pipes`
 
-You can learn more about packaging Python dependencies for PySpark in [PySpark documentation](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html#python-package-management) or in the [AWS EMR Pipes](aws-emr-pipeline) guide.
+You can learn more about packaging Python dependencies for PySpark in [PySpark documentation](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html#python-package-management) or in the [AWS EMR Pipes](/guides/build/external-pipelines/aws/aws-emr-pipeline) guide.
 
 The process of packaging the Python dependencies and scripts should be automated with a CI/CD pipeline and run before deploying the Dagster code location.
 
@@ -81,7 +81,7 @@ In this guide, we have demonstrated how to migrate from using step launchers to 
 - [Dagster Pipes](index.md)
 - [GitHub discussion](https://github.com/dagster-io/dagster/discussions/25685) on the topic
 - [Dagster + Spark](/integrations/libraries/spark) - an up to date list of Pipes Clients for various Spark providers can be found here
-- [AWS EMR Pipes tutorial](aws-emr-pipeline)
+- [AWS EMR Pipes tutorial](/guides/build/external-pipelines/aws/aws-emr-pipeline)
 - [PipesEMRClient API docs](/api/python-api/libraries/dagster-aws#dagster_aws.pipes.PipesEMRClient)
 
 :::note
