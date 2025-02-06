@@ -3,7 +3,7 @@ title: "I/O managers"
 sidebar_position: 50
 ---
 
-I/O managers in Dagster allow you to keep the code for data processing separate from the code for reading and writing data. This reduces repetitive code and makes it easier to change where your data is stored.
+I/O managers in Dagster allow you to keep the code for data processing separate from the code for reading and writing data. This reduces repetitive code and makes it easier to change where your data is stored in different environments.
 
 In many Dagster pipelines, assets can be broken down as the following steps:
 
@@ -21,7 +21,7 @@ This article assumes familiarity with: [assets](/guides/build/assets/) and [reso
 
 ## Before you begin
 
-**I/O managers aren't required to use Dagster, nor are they the best option in all scenarios.** If you find yourself writing the same code at the start and end of each asset to load and store data, an I/O manager may be useful. For example:
+**I/O managers aren't required in Dagster.** You can define dependencies between assets **without** using an IO manager, or only using an IO manager for certain dependencies. Here are examples where an IO manager might be useful:
 
 - You have assets that are stored in the same location and follow a consistent set of rules to determine the storage path
 - You have assets that are stored differently in local, staging, and production environments
@@ -33,7 +33,7 @@ This article assumes familiarity with: [assets](/guides/build/assets/) and [reso
 - Your pipeline manages I/O on its own by using other libraries/tools that write to storage
 - Your assets won't fit in memory, such as a database table with billions of rows
 
-As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/build/assets/passing-data-between-assets).
+As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you can use `deps` to [define dependencies](/guides/build/assets/passing-data-between-assets) without opting in to IO managers at all.
 
 ## Using I/O managers in assets \{#io-in-assets}
 
@@ -41,7 +41,7 @@ Consider the following example, which contains assets that construct a DuckDB co
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/external-systems/assets-without-io-managers.py" language="python" />
 
-Using an I/O manager would remove the code that reads and writes data from the assets themselves, instead delegating it to the I/O manager. The assets would be left only with the code that applies transformations or retrieves the initial CSV file.
+You can consolidate the code that reads and writes data from the assets, into an I/O manager. The assets would then be left with onlythe code that applies transformations or retrieves the initial CSV file.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/external-systems/assets-with-io-managers.py" language="python" />
 

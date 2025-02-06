@@ -12,15 +12,15 @@ def raw_sales_data() -> pd.DataFrame:
 
 
 # highlight-start
-@dg.asset
-# Load the upstream `raw_sales_data` asset as input & specify the returned data type (`pd.DataFrame`)
+@dg.asset(deps=[raw_sales_data])
+# Load the upstream `raw_sales_data` asset as an input & specify the returned data type (`pd.DataFrame`)
 def clean_sales_data(raw_sales_data: pd.DataFrame) -> pd.DataFrame:
     # Storing data with an I/O manager requires returning the data
     return raw_sales_data.fillna({"amount": 0.0})
     # highlight-end
 
 
-@dg.asset
+@dg.asset(deps=[clean_sales_data])
 def sales_summary(clean_sales_data: pd.DataFrame) -> pd.DataFrame:
     return clean_sales_data.groupby(["owner"])["amount"].sum().reset_index()
 
