@@ -143,7 +143,7 @@ def generate_sample_yaml(component_type: str, json_schema: Mapping[str, Any]) ->
     return "\n".join(commented_lines)
 
 
-def render_markdown_in_browser(markdown_content: str) -> None:
+def html_from_markdown(markdown_content: str) -> str:
     # Convert the markdown string to HTML
     html_content = markdown.markdown(markdown_content)
 
@@ -161,10 +161,13 @@ def render_markdown_in_browser(markdown_content: str) -> None:
     </body>
     </html>
     """
+    return full_html
 
+
+def open_html_in_browser(html_content: str) -> None:
     # Create a temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as temp_file:
-        temp_file.write(full_html.encode("utf-8"))
+        temp_file.write(html_content.encode("utf-8"))
         temp_file_path = temp_file.name
 
     # Open the temporary file in the default web browser
@@ -179,8 +182,8 @@ def markdown_for_component_type(remote_component_type: RemoteComponentType) -> s
     rows = len(sample_yaml.split("\n")) + 1
     return f"""
 ## Component: `{component_type_name}`
- 
-### Description: 
+
+### Description:
 {remote_component_type.description}
 
 ### Sample Component Params:

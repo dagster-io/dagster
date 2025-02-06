@@ -12,7 +12,7 @@ from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import GlobalComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.docs import markdown_for_component_type, render_markdown_in_browser
+from dagster_dg.docs import html_from_markdown, markdown_for_component_type, open_html_in_browser
 from dagster_dg.scaffold import scaffold_component_type
 from dagster_dg.utils import (
     DgClickCommand,
@@ -61,11 +61,13 @@ def component_type_scaffold_command(
 
 @component_type_group.command(name="docs", cls=DgClickCommand)
 @click.argument("component_type", type=str)
+@click.option("--output", type=click.Choice(["browser", "cli"]), default="browser")
 @dg_global_options
 @click.pass_context
 def component_type_docs_command(
     context: click.Context,
     component_type: str,
+    output: str,
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
@@ -76,7 +78,11 @@ def component_type_docs_command(
     if not registry.has_global(component_key):
         exit_with_error(f"Component type`{component_type}` not found.")
 
-    render_markdown_in_browser(markdown_for_component_type(registry.get_global(component_key)))
+    markdown = markdown_for_component_type(registry.get_global(component_key))
+    if output == "browser":
+        open_html_in_browser(html_from_markdown(markdown))
+    else:
+        click.echo(html_from_markdown(markdown))
 
 
 # ########################
