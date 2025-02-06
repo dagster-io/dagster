@@ -124,9 +124,18 @@ class AssetDaemonCursor:
         evaluation_timestamp: float,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         condition_cursors: Sequence["AutomationConditionCursor"],
+        asset_graph: BaseAssetGraph,
     ) -> "AssetDaemonCursor":
-        # do not "forget" about values for non-evaluated assets
-        new_condition_cursors = dict(self.previous_condition_cursors_by_key)
+        # do not "forget" about values for assets that are no longer part of the
+        # asset graph, as this can happen when code locations are temporarily
+        # unavailable
+        current_asset_keys = asset_graph.get_all_asset_keys()
+        new_condition_cursors = {
+            k: v
+            for k, v in self.previous_condition_cursors_by_key.items()
+            if k not in current_asset_keys
+        }
+        # populate the real new cursors
         for cursor in condition_cursors:
             new_condition_cursors[cursor.key] = cursor
 
