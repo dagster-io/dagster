@@ -51,22 +51,11 @@ Note that all GraphQL methods on the API are not yet available in Python - the `
 
 The snippet below shows example instantiation of the client:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/webserver/graphql/client_example.py startafter=start_setup_marker endbefore=end_setup_marker
-from dagster_graphql import DagsterGraphQLClient
-
-client = DagsterGraphQLClient("localhost", port_number=3000)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_setup_marker" endBefore="end_setup_marker" />
 
 If you are using Dagster+, you can configure your client against the Dagster+ API by passing your deployment-specific URL and a User Token to the client as follows:
 
-```python file=/concepts/webserver/graphql/client_example.py startafter=start_cloud_usage endbefore=end_cloud_usage
-url = "yourorg.dagster.cloud/prod"  # Your deployment-scoped url
-user_token = (  # a User Token generated from the Organization Settings page in Dagster+.
-    "your_token_here"
-)
-client = DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_token})
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_cloud_usage" endBefore="end_cloud_usage" />
 
 ## Examples
 
@@ -74,22 +63,7 @@ client = DagsterGraphQLClient(url, headers={"Dagster-Cloud-Api-Token": user_toke
 
 You can use the client to get the status of a job run as follows:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/webserver/graphql/client_example.py startafter=start_run_status_marker endbefore=end_run_status_marker
-from dagster_graphql import DagsterGraphQLClientError
-
-from dagster import DagsterRunStatus
-
-try:
-    status: DagsterRunStatus = client.get_run_status(RUN_ID)
-    if status == DagsterRunStatus.SUCCESS:
-        do_something_on_success()
-    else:
-        do_something_else()
-except DagsterGraphQLClientError as exc:
-    do_something_with_exc(exc)
-    raise exc
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_run_status_marker" endBefore="end_run_status_marker" />
 
 ### Reloading all repositories in a repository location
 
@@ -97,38 +71,13 @@ You can also reload a repository location in a Dagster deployment.
 
 This reloads all repositories in that repository location. This is useful in a variety of contexts, including refreshing the Dagster UI without restarting the server. Example usage is as follows:
 
-```python file=/concepts/webserver/graphql/client_example.py startafter=start_reload_repo_location_marker endbefore=end_reload_repo_location_marker
-from dagster_graphql import ReloadRepositoryLocationInfo, ReloadRepositoryLocationStatus
-
-reload_info: ReloadRepositoryLocationInfo = client.reload_repository_location(REPO_NAME)
-if reload_info.status == ReloadRepositoryLocationStatus.SUCCESS:
-    do_something_on_success()
-else:
-    raise Exception(
-        "Repository location reload failed because of a "
-        f"{reload_info.failure_type} error: {reload_info.message}"
-    )
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_reload_repo_location_marker" endBefore="end_reload_repo_location_marker" />
 
 ### Submitting a job run
 
 You can use the client to submit a job run as follows:
 
-```python file=/concepts/webserver/graphql/client_example.py startafter=start_submit_marker_default endbefore=end_submit_marker_default
-from dagster_graphql import DagsterGraphQLClientError
-
-try:
-    new_run_id: str = client.submit_job_execution(
-        JOB_NAME,
-        repository_location_name=REPO_LOCATION_NAME,
-        repository_name=REPO_NAME,
-        run_config={},
-    )
-    do_something_on_success(new_run_id)
-except DagsterGraphQLClientError as exc:
-    do_something_with_exc(exc)
-    raise exc
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_submit_marker_default" endBefore="end_submit_marker_default" />
 
 ### Shutting down a repository location server
 
@@ -138,37 +87,11 @@ One way to cause your server to restart and your repositories to be reloaded is 
 
 Example usage:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/webserver/graphql/client_example.py startafter=start_shutdown_repo_location_marker endbefore=end_shutdown_repo_location_marker
-from dagster_graphql import (
-    ShutdownRepositoryLocationInfo,
-    ShutdownRepositoryLocationStatus,
-)
 
-shutdown_info: ShutdownRepositoryLocationInfo = client.shutdown_repository_location(
-    REPO_NAME
-)
-if shutdown_info.status == ShutdownRepositoryLocationStatus.SUCCESS:
-    do_something_on_success()
-else:
-    raise Exception(f"Repository location shutdown failed: {shutdown_info.message}")
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_shutdown_repo_location_marker" endBefore="end_shutdown_repo_location_marker" />
 
 #### Repository location and repository inference
 
 Note that specifying the repository location name and repository name are not always necessary; the GraphQL client will infer the repository name and repository location name if the job name is unique.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/webserver/graphql/client_example.py startafter=start_submit_marker_job_name_only endbefore=end_submit_marker_job_name_only
-from dagster_graphql import DagsterGraphQLClientError
-
-try:
-    new_run_id: str = client.submit_job_execution(
-        JOB_NAME,
-        run_config={},
-    )
-    do_something_on_success(new_run_id)
-except DagsterGraphQLClientError as exc:
-    do_something_with_exc(exc)
-    raise exc
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_submit_marker_job_name_only" endBefore="end_submit_marker_job_name_only" />
