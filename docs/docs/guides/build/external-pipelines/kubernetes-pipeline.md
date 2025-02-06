@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with Kubernetes
 description: "Learn to integrate Dagster Pipes with Kubernetes to launch external code from Dagster assets."
-sidebar_position: 700
+sidebar_position: 60
 ---
 
 :::note

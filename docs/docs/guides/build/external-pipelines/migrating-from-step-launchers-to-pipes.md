@@ -1,6 +1,7 @@
 ---
 title: "Migrating from Spark Step Launchers to Dagster Pipes"
 description: "Learn how to migrate from Spark step launchers to Dagster Pipes."
+sidebar_position: 80
 ---
 
 In this guide, we’ll show you how to migrate from using step launchers to using [Dagster Pipes](index.md) in Dagster.

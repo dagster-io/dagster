@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with AWS EMR Serverless
 description: "Learn to integrate Dagster Pipes with AWS EMR Serverless to launch external code from Dagster assets."
-sidebar_position: 300
+sidebar_position: 400
 ---
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR Serverless](https://aws.amazon.com/emr-serverless/).

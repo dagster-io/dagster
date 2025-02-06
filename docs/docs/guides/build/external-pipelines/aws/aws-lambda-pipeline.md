@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with AWS Lambda
 description: "Learn to integrate Dagster Pipes with AWS Lambda to launch external code from Dagster assets."
-sidebar_position: 500
+sidebar_position: 600
 ---
 
 :::note

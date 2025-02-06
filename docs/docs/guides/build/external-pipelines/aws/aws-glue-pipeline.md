@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with AWS Glue
 description: "Learn to integrate Dagster Pipes with AWS Glue to launch external code from Dagster assets."
-sidebar_position: 400
+sidebar_position: 500
 ---
 
 # AWS Glue & Dagster Pipes

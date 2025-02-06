@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with AWS ECS
 description: "Learn to integrate Dagster Pipes with AWS ECS to launch external code from Dagster assets."
-sidebar_position: 200
+sidebar_position: 100
 ---
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS ECS](https://aws.amazon.com/ecs/).

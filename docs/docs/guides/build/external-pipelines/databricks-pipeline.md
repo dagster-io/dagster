@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with Databricks
 description: "Learn to integrate Dagster Pipes with Databricks to launch external code from Dagster assets."
-sidebar_position: 600
+sidebar_position: 50
 ---
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with Dagster's [Databricks integration](/integrations/libraries/databricks) to launch Databricks jobs.

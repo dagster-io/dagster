@@ -1,7 +1,7 @@
 ---
 title: "Build pipelines with AWS EMR on EKS"
 description: "Learn to integrate Dagster Pipes with AWS EMR Containers to launch external code from Dagster assets."
-sidebar_position: 300
+sidebar_position: 200
 ---
 
 This tutorial gives a short overview on how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR on EKS](https://aws.amazon.com/emr/features/eks/) (the corresponding AWS API is called `emr-containers`).
