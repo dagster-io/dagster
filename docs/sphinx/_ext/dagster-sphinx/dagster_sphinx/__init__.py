@@ -19,18 +19,6 @@ from dagster._annotations import (
     is_superseded,
 )
 from dagster._record import get_original_class, is_record
-from typing_extensions import Literal, TypeAlias
-
-from dagster_sphinx.configurable import ConfigurableDocumenter
-from dagster_sphinx.docstring_flags import (
-    FlagDirective,
-    depart_flag,
-    flag,
-    inline_flag,
-    inline_flag_role,
-    visit_flag,
-    visit_inline_flag,
-)
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
@@ -39,8 +27,20 @@ from sphinx.ext.autodoc import (
     Options as AutodocOptions,
 )
 from sphinx.util import logging
+from typing_extensions import Literal, TypeAlias
 
-from .docstring_flags import inject_object_flag, inject_param_flag
+from dagster_sphinx.configurable import ConfigurableDocumenter
+from dagster_sphinx.docstring_flags import (
+    FlagDirective,
+    depart_flag,
+    flag,
+    inject_object_flag,
+    inject_param_flag,
+    inline_flag,
+    inline_flag_role,
+    visit_flag,
+    visit_inline_flag,
+)
 
 logger = logging.getLogger(__name__)
 
