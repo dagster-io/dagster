@@ -22,42 +22,7 @@ Inside the body of the function, we can use `AssetCheckExecutionContext.selected
 
 As we don't know in advance which checks will be executed, we explicitly `yield` each asset check result that we're expected to create:
 
-```python file=/concepts/assets/asset_checks/subset_multi_asset_check.py
-from collections.abc import Iterable
-
-from dagster import (
-    AssetCheckExecutionContext,
-    AssetCheckKey,
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetKey,
-    multi_asset_check,
-)
-
-
-@multi_asset_check(
-    specs=[
-        AssetCheckSpec(name="asset_check_one", asset="asset_one"),
-        AssetCheckSpec(name="asset_check_two", asset="asset_two"),
-    ],
-    can_subset=True,
-)
-def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
-    if (
-        AssetCheckKey(AssetKey("asset_one"), "asset_check_one")
-        in context.selected_asset_check_keys
-    ):
-        yield AssetCheckResult(
-            passed=True, metadata={"foo": "bar"}, check_name="asset_check_one"
-        )
-    if (
-        AssetCheckKey(AssetKey("asset_two"), "asset_check_two")
-        in context.selected_asset_check_keys
-    ):
-        yield AssetCheckResult(
-            passed=True, metadata={"foo": "bar"}, check_name="asset_check_two"
-        )
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/asset_checks/subset_multi_asset_check.py" />
 
 ## Subsetting checks in @multi_assets
 
@@ -65,41 +30,7 @@ When using [multi-assets](/guides/build/assets/defining-assets#multi-asset), Dag
 
 In the following example, we only want to execute a check when the `multi_asset_piece_1` asset produced by the `multi_asset_1_and_2` multi-asset is materialized:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/assets/asset_checks/subset_check_multi_asset.py
-from dagster import (
-    AssetCheckKey,
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetExecutionContext,
-    AssetKey,
-    AssetSpec,
-    MaterializeResult,
-    multi_asset,
-)
-
-
-@multi_asset(
-    specs=[
-        AssetSpec("multi_asset_piece_1", group_name="asset_checks", skippable=True),
-        AssetSpec("multi_asset_piece_2", group_name="asset_checks", skippable=True),
-    ],
-    check_specs=[AssetCheckSpec("my_check", asset="multi_asset_piece_1")],
-    can_subset=True,
-)
-def multi_asset_1_and_2(context: AssetExecutionContext):
-    if AssetKey("multi_asset_piece_1") in context.selected_asset_keys:
-        yield MaterializeResult(asset_key="multi_asset_piece_1")
-    # The check will only execute when multi_asset_piece_1 is materialized
-    if (
-        AssetCheckKey(AssetKey("multi_asset_piece_1"), "my_check")
-        in context.selected_asset_check_keys
-    ):
-        yield AssetCheckResult(passed=True, metadata={"foo": "bar"})
-    if AssetKey("multi_asset_piece_2") in context.selected_asset_keys:
-        # No check on multi_asset_piece_2
-        yield MaterializeResult(asset_key="multi_asset_piece_2")
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/asset_checks/subset_check_multi_asset.py" />
 
 Let's review what we did to accomplish this:
 

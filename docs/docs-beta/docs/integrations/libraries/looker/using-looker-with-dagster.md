@@ -44,21 +44,7 @@ To load Looker assets into the Dagster asset graph, you must first construct a <
 
 Dagster can automatically load all views, explores, and dashboards from your Looker instance as asset specs. Call the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> representing your Looker assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/looker/representing-looker-assets.py
-from dagster_looker import LookerResource, load_looker_asset_specs
-
-import dagster as dg
-
-looker_resource = LookerResource(
-    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
-    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
-    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
-)
-
-looker_specs = load_looker_asset_specs(looker_resource=looker_resource)
-defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/looker/representing-looker-assets.py" />
 
 ## Load Looker assets from filtered dashboards and explores
 
@@ -66,77 +52,14 @@ It is possible to load a subset of your Looker assets by providing a <PyObject s
 
 Note that the content and size of Looker instance may affect the performance of your Dagster deployments. Filtering the dashboards and explores selection from which your Looker assets will be loaded is particularly useful for improving loading times.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/looker/filtering-looker-assets.py
-from dagster_looker import LookerFilter, LookerResource, load_looker_asset_specs
-
-import dagster as dg
-
-looker_resource = LookerResource(
-    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
-    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
-    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
-)
-
-looker_specs = load_looker_asset_specs(
-    looker_resource=looker_resource,
-    looker_filter=LookerFilter(
-        dashboard_folders=[
-            ["my_folder", "my_subfolder"],
-            ["my_folder", "my_other_subfolder"],
-        ],
-        only_fetch_explores_used_in_dashboards=True,
-    ),
-)
-defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/looker/filtering-looker-assets.py" />
 
 ### Customize asset definition metadata for Looker assets
 
 By default, Dagster will generate asset specs for each Looker asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Looker asset type.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/looker/customize-looker-assets.py
-from dagster_looker import (
-    DagsterLookerApiTranslator,
-    LookerApiTranslatorStructureData,
-    LookerResource,
-    LookerStructureType,
-    load_looker_asset_specs,
-)
 
-import dagster as dg
-
-looker_resource = LookerResource(
-    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
-    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
-    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
-)
-
-
-class CustomDagsterLookerApiTranslator(DagsterLookerApiTranslator):
-    def get_asset_spec(
-        self, looker_structure: LookerApiTranslatorStructureData
-    ) -> dg.AssetSpec:
-        # We create the default asset spec using super()
-        default_spec = super().get_asset_spec(looker_structure)
-        # We customize the team owner tag for all assets,
-        # and we customize the asset key prefix only for dashboards.
-        return default_spec.replace_attributes(
-            key=(
-                default_spec.key.with_prefix("looker")
-                if looker_structure.structure_type == LookerStructureType.DASHBOARD
-                else default_spec.key
-            ),
-            owners=["team:my_team"],
-        )
-
-
-looker_specs = load_looker_asset_specs(
-    looker_resource, dagster_looker_translator=CustomDagsterLookerApiTranslator()
-)
-defs = dg.Definitions(assets=[*looker_specs], resources={"looker": looker_resource})
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/looker/customize-looker-assets.py" />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
@@ -144,38 +67,8 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 You can use Dagster to orchestrate the materialization of Looker PDTs. To model PDTs as assets, build their asset definitions by passing a list of <PyObject section="libraries" module="dagster_looker" object="RequestStartPdtBuild" /> to <PyObject section="libraries" module="dagster_looker" object="build_looker_pdt_assets_definitions" /> function.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/looker/materializing-looker-pdts.py
-from dagster_looker import (
-    LookerResource,
-    RequestStartPdtBuild,
-    build_looker_pdt_assets_definitions,
-    load_looker_asset_specs,
-)
 
-import dagster as dg
-
-looker_resource = LookerResource(
-    client_id=dg.EnvVar("LOOKERSDK_CLIENT_ID"),
-    client_secret=dg.EnvVar("LOOKERSDK_CLIENT_SECRET"),
-    base_url=dg.EnvVar("LOOKERSDK_HOST_URL"),
-)
-
-looker_specs = load_looker_asset_specs(looker_resource=looker_resource)
-
-pdts = build_looker_pdt_assets_definitions(
-    resource_key="looker",
-    request_start_pdt_builds=[
-        RequestStartPdtBuild(model_name="my_model", view_name="my_view")
-    ],
-)
-
-
-defs = dg.Definitions(
-    assets=[*pdts, *looker_specs],
-    resources={"looker": looker_resource},
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/looker/materializing-looker-pdts.py" />
 
 ### Related
 

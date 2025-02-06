@@ -13,47 +13,8 @@ All Dagster definitions, including schedules and resources, must be attached to 
 
 :::
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
-from dagster import (
-    schedule,
-    ScheduleEvaluationContext,
-    ConfigurableResource,
-    job,
-    RunRequest,
-    RunConfig,
-    Definitions,
-)
-from datetime import datetime
-from typing import List
-
-class DateFormatter(ConfigurableResource):
-    format: str
-
-    def strftime(self, dt: datetime) -> str:
-        return dt.strftime(self.format)
-
-@job
-def process_data(): ...
-
-@schedule(job=process_data, cron_schedule="* * * * *")
-def process_data_schedule(
-    context: ScheduleEvaluationContext,
-    date_formatter: DateFormatter,
-):
-    formatted_date = date_formatter.strftime(context.scheduled_execution_time)
-
-    return RunRequest(
-        run_key=None,
-        tags={"date": formatted_date},
-    )
-
-defs = Definitions(
-    jobs=[process_data],
-    schedules=[process_data_schedule],
-    resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
-)
-```
+{/* TODO add dedent=4 prop to CodeExample below when implemented */}
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" />
 
 ## APIs in this guide
 

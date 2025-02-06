@@ -47,42 +47,19 @@ To complete this tutorial, you'll need:
     For more information on authenticating with a private key, see [Authenticating with a private key](reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 
 
-
 ## Step 1: Configure the Snowflake I/O manager
 
 The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. The `account`, `user` are required to connect with Snowflake. One method of authentication is required. You can use a password or a private key. Additionally, you need to specify a `database` to where all the tables should be stored.
 
 You can also provide some optional configuration to further customize the Snowflake I/O manager. You can specify a `warehouse` and `schema` where data should be stored, and a `role` for the I/O manager.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/snowflake/io_manager_tutorial/configuration.py startafter=start_example endbefore=end_example
-from dagster_snowflake_pandas import SnowflakePandasIOManager
-
-from dagster import Definitions, EnvVar
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",  # required
-            user=EnvVar("SNOWFLAKE_USER"),  # required
-            password=EnvVar("SNOWFLAKE_PASSWORD"),  # password or private key required
-            database="FLOWERS",  # required
-            role="writer",  # optional, defaults to the default role for the account
-            warehouse="PLANTS",  # optional, defaults to default warehouse for the account
-            schema="IRIS",  # optional, defaults to PUBLIC
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/io_manager_tutorial/configuration.py" startAfter="start_example" endBefore="end_example" />
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
 Finally, in the <PyObject section="definitions" module="dagster" object="Definitions" /> object, we assign the <PyObject section="libraries" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> to the `io_manager` key. `io_manager` is a reserved key to set the default I/O manager for your assets.
 
 For more info about each of the configuration values, refer to the <PyObject section="libraries" module="dagster_snowflake_pandas" object="SnowflakePandasIOManager" /> API documentation.
-
-
 
 ## Step 2: Create tables in Snowflake
 
@@ -96,26 +73,7 @@ The Snowflake I/O manager can create and update tables for your Dagster defined 
 
 To store data in Snowflake using the Snowflake I/O manager, the definitions of your assets don't need to change. You can tell Dagster to use the Snowflake I/O manager, like in [Step 1: Configure the Snowflake I/O manager](#step-1-configure-the-snowflake-io-manager), and Dagster will handle storing and loading your assets in Snowflake.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/snowflake/io_manager_tutorial/create_table.py
-import pandas as pd
-
-from dagster import asset
-
-
-@asset
-def iris_dataset() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/io_manager_tutorial/create_table.py" />
 
 In this example, we first define our [asset](/guides/build/assets/defining-assets). Here, we are fetching the Iris dataset as a Pandas DataFrame and renaming the columns. The type signature of the function tells the I/O manager what data type it is working with, so it is important to include the return type `pd.DataFrame`.
 
@@ -127,12 +85,7 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 You may already have tables in Snowflake that you want to make available to other Dagster assets. You can define [external assets](/guides/build/assets/external-assets) for these tables. By defining an external asset for the existing table, you tell Dagster how to find the table so it can be fetched for downstream assets.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/snowflake/source_asset.py
-from dagster import AssetSpec
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/source_asset.py" />
 
 In this example, we create a <PyObject section="assets" module="dagster" object="AssetSpec" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, we need to tell the Snowflake I/O manager how to find the data.
 
@@ -145,19 +98,7 @@ Since we supply the database and the schema in the I/O manager configuration in 
 
 Once you have created an asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/snowflake/io_manager_tutorial/downstream.py startafter=start_example endbefore=end_example
-import pandas as pd
-
-from dagster import asset
-
-# this example uses the iris_dataset asset from Step 2
-
-
-@asset
-def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
-    return iris_dataset.dropna().drop_duplicates()
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/io_manager_tutorial/downstream.py" startAfter="start_example" endBefore="end_example" />
 
 In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in Snowflake](#store-a-dagster-asset-as-a-table-in-snowflake) example to the `iris_cleaned` asset. In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`.
 
@@ -167,47 +108,4 @@ When materializing these assets, Dagster will use the `SnowflakePandasIOManager`
 
 When finished, your code should look like the following:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/snowflake/io_manager_tutorial/full_example.py
-import pandas as pd
-from dagster_snowflake_pandas import SnowflakePandasIOManager
-
-from dagster import AssetSpec, Definitions, EnvVar, asset
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-
-
-@asset
-def iris_dataset() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-
-@asset
-def iris_cleaned(iris_dataset: pd.DataFrame) -> pd.DataFrame:
-    return iris_dataset.dropna().drop_duplicates()
-
-
-defs = Definitions(
-    assets=[iris_dataset, iris_harvest_data, iris_cleaned],
-    resources={
-        "io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",
-            user=EnvVar("SNOWFLAKE_USER"),
-            password=EnvVar("SNOWFLAKE_PASSWORD"),
-            database="FLOWERS",
-            role="writer",
-            warehouse="PLANTS",
-            schema="IRIS",
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/io_manager_tutorial/full_example.py" />

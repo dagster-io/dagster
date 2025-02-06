@@ -36,15 +36,8 @@ By default, Dagster automatically computes a data version for each materializati
 
 Let's start with a trivial asset that returns a hardcoded number:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/vanilla_asset.py
-from dagster import asset
 
-
-@asset
-def a_number():
-    return 1
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset.py" />
 
 Next, start the Dagster UI:
 
@@ -66,15 +59,7 @@ If you materialize the asset again, you'll notice that both the code version and
 
 Let's improve this situation by setting an explicit code version. Add a `code_version` on the asset:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py
-from dagster import asset
-
-
-@asset(code_version="v1")
-def versioned_number():
-    return 1
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version.py" />
 
 Now, materialize the asset. The user-defined code version `v1` will be associated with the latest materialization:
 
@@ -82,15 +67,7 @@ Now, materialize the asset. The user-defined code version `v1` will be associate
 
 Now, let's update the code and inform Dagster that the code has changed. Do this by changing the `code_version` argument:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version_v2.py
-from dagster import asset
-
-
-@asset(code_version="v2")
-def versioned_number():
-    return 11
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/vanilla_asset_with_code_version_v2.py" />
 
 Click **Reload definitions** to pick up the changes.
 
@@ -104,20 +81,8 @@ The `versioned_number` asset must be materialized again to become up-to-date. Cl
 
 Tracking changes becomes more powerful when there are dependencies in play. Let's add an asset downstream of our first asset:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py
-from dagster import asset
 
-
-@asset(code_version="v2")
-def versioned_number():
-    return 11
-
-
-@asset(code_version="v1")
-def multiplied_number(versioned_number):
-    return versioned_number * 2
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py" />
 
 In the Dagster UI, click **Reload definitions**. The `multipled_number` asset will be marked as **Never materialized**.
 
@@ -129,20 +94,7 @@ In the created run, only the step associated with `multiplied_number` is run. Th
 
 Now, let's update the `versioned_number` asset. Specifically, we'll change its return value and code version:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only_v2.py
-from dagster import asset
-
-
-@asset(code_version="v3")
-def versioned_number():
-    return 15
-
-
-@asset(code_version="v1")
-def multiplied_number(versioned_number):
-    return versioned_number * 2
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only_v2.py" />
 
 As before, this will cause `versioned_number` to get a label indicating that its code version has changed since its latest materialization. But since `multiplied_number` depends on `versioned_number`, it must be recomputed as well and so gets a label indicating that the code version of an upstream asset has changed. If you hover over the **Upstream code version** tag on `multiplied_number`, you will see the upstream asset whose code version has changed:
 
@@ -158,21 +110,7 @@ For example, when a materialization function contains an element of randomness, 
 
 Dagster accommodates these and similar scenarios by allowing user code to supply its own data versions. To do so, include the data version alongside the returned asset value in an <PyObject section="ops" module="dagster" object="Output" /> object. Let's update `versioned_number` to do this. For simplicity, you'll use the stringified return value as the data version:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py
-from dagster import DataVersion, Output, asset
-
-
-@asset(code_version="v4")
-def versioned_number():
-    value = 20
-    return Output(value, data_version=DataVersion(str(value)))
-
-
-@asset(code_version="v1")
-def multiplied_number(versioned_number):
-    return versioned_number * 2
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py" />
 
 Both assets get labels to indicate that they're impacted by the new code version of `versioned_number`. Let's re-materialize them both to make them fresh. Notice the `DataVersion` of `versioned_number` is now `20`:
 
@@ -180,21 +118,7 @@ Both assets get labels to indicate that they're impacted by the new code version
 
 Let's simulate a cosmetic refactor by updating `versioned_number` again, but without changing the returned value. Bump the code version to `v5` and change `20` to `10 + 10`:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/manual_data_versions_2.py
-from dagster import DataVersion, Output, asset
-
-
-@asset(code_version="v5")
-def versioned_number():
-    value = 10 + 10
-    return Output(value, data_version=DataVersion(str(value)))
-
-
-@asset(code_version="v1")
-def multiplied_number(versioned_number):
-    return versioned_number * 2
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_2.py" />
 
 Once again, both assets have labels to indicate the change in the code version. Dagster doesn't know that `v5` of the versioned number will return the same value as `v4`, as it only knows about code versions and data versions.
 
@@ -214,52 +138,11 @@ External data sources in Dagster are modeled by <PyObject section="assets" modul
 
 Let's add an <PyObject section="assets" module="dagster" object="observable_source_asset" decorator="true" /> called `input_number`. This will represent a file written by an external process upstream of our pipeline:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/input_number.txt
-29034
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/input_number.txt" />
 
 The body of the `input_number` function computes a hash of the file contents and returns it as a `DataVersion`. We'll set `input_number` as an upstream dependency of `versioned_number` and have `versioned_number` return the value it reads from the file:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py
-from hashlib import sha256
-
-from dagster import (
-    DataVersion,
-    Output,
-    asset,
-    file_relative_path,
-    observable_source_asset,
-)
-
-
-def sha256_digest_from_str(string: str) -> str:
-    hash_sig = sha256()
-    hash_sig.update(bytearray(string, "utf8"))
-    return hash_sig.hexdigest()
-
-
-FILE_PATH = file_relative_path(__file__, "input_number.txt")
-
-
-@observable_source_asset
-def input_number():
-    with open(FILE_PATH) as ff:
-        return DataVersion(sha256_digest_from_str(ff.read()))
-
-
-@asset(code_version="v6", deps=[input_number])
-def versioned_number():
-    with open(FILE_PATH) as ff:
-        value = int(ff.read())
-        return Output(value, data_version=DataVersion(str(value)))
-
-
-@asset(code_version="v1")
-def multiplied_number(versioned_number):
-    return versioned_number * 2
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/observable_source_asset_path_with_non_argument_deps.py" />
 
 Adding an observable source asset to an asset graph will cause a new button, **Observe sources**, to appear:
 
@@ -275,8 +158,6 @@ We also see that `versioned_number` and `multiplied_number` have labels indicati
 
 Finally, let's manually alter the file to simulate the activity of an external process. Change the content of `input_number.txt`:
 
-```python file=/guides/dagster/asset_versioning_and_caching/input_number_v2.txt
-15397
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/input_number_v2.txt" />
 
 If we click the **Observe Sources** button again, the downstream assets will again have labels indicating that upstream data has changed. The observation run generated a new data version for `input_number` because its content changed.

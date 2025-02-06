@@ -43,20 +43,7 @@ When defining a priority value, note that:
 
 In this example, the priority is set to `-1` with a `dagster/priority` tag value of `"-1"`:
 
-{/* TODO convert to <CodeExample> */}
-```python startafter=start_marker_priority endbefore=end_marker_priority file=/deploying/concurrency_limits/concurrency_limits.py
-@job(tags={"dagster/priority": "3"})
-def important_job(): ...
-
-
-@schedule(
-    cron_schedule="* * * * *",
-    job_name="important_job",
-    execution_timezone="US/Central",
-    tags={"dagster/priority": "-1"},
-)
-def less_important_schedule(_): ...
-```
+<CodeExample startAfter="start_marker_priority" endBefore="end_marker_priority" path="docs_snippets/docs_snippets/deploying/concurrency_limits/concurrency_limits.py" />
 
 </TabItem>
 <TabItem value="In the Dagster UI" label="In the Dagster UI">

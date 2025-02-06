@@ -9,20 +9,5 @@ Dagster supports passing plain Python objects as resources. This follows a simil
 
 {/* TODO replace `ResourceParam` with <PyObject section="resources" module="dagster" object="ResourceParam"/>  */}
 
-```python file=/concepts/resources/pythonic_resources.py startafter=start_raw_github_resource endbefore=end_raw_github_resource dedent=4
-from dagster import Definitions, asset, ResourceParam
-
-# `ResourceParam[GitHub]` is treated exactly like `GitHub` for type checking purposes,
-# and the runtime type of the github parameter is `GitHub`. The purpose of the
-# `ResourceParam` wrapper is to let Dagster know that `github` is a resource and not an
-# upstream asset.
-
-@asset
-def public_github_repos(github: ResourceParam[GitHub]):
-    return github.organization("dagster-io").repositories()
-
-defs = Definitions(
-    assets=[public_github_repos],
-    resources={"github": GitHub(...)},
-)
-```
+{/* TODO add dedent=4 prop when implemented */}
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_raw_github_resource" endBefore="end_raw_github_resource" />

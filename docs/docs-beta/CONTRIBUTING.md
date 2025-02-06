@@ -129,7 +129,7 @@ To include code snippets, use the following format:
 <CodeExample path="path/to/file.py" />
 ```
 
-You can optionally include [additional properties](https://github.com/dagster-io/dagster/blob/master/docs/docs-beta/src/components/CodeExample.tsx#L4), such as `language`, `title`, `lineStart`, `lineEnd`, `startAfter`, and `endBefore`:
+You can optionally include [additional properties](https://github.com/dagster-io/dagster/blob/master/docs/docs-beta/src/components/CodeExample.tsx#L6), such as `language`, `title`, `lineStart`, `lineEnd`, `startAfter`, and `endBefore`:
 
 ```
 <CodeExample path="path/to/file.py" language="python" startAfter="start-after-comment" endBefore="end-before-comment" title="My example" />

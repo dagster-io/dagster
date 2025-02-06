@@ -193,22 +193,7 @@ Let's review what's happening here:
 
 As storing secrets in configuration is bad practice, we'll opt for using an environment variable. In this code, we're configuring the resource supplying it to our assets:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/using_environment_variables_and_secrets/repository.py startafter=start endbefore=end
-# definitions.py
-
-from my_dagster_project import assets
-from my_dagster_project.resources import GithubClientResource
-
-from dagster import Definitions, EnvVar, load_assets_from_package_module
-
-defs = Definitions(
-    assets=load_assets_from_package_module(assets),
-    resources={
-        "github_api": GithubClientResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository.py" startAfter="start" endBefore="end" />
 
 Let's review what's happening here:
 
@@ -227,37 +212,7 @@ In this example, we'll demonstrate how to use different I/O manager configuratio
 
 This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/deploy/dev-to-prod):
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/using_environment_variables_and_secrets/repository_v2.py startafter=start_new endbefore=end_new
-# definitions.py
-
-resources = {
-    "local": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",
-            user=EnvVar("DEV_SNOWFLAKE_USER"),
-            password=EnvVar("DEV_SNOWFLAKE_PASSWORD"),
-            database="LOCAL",
-            schema=EnvVar("DEV_SNOWFLAKE_SCHEMA"),
-        ),
-    },
-    "production": {
-        "snowflake_io_manager": SnowflakePandasIOManager(
-            account="abc1234.us-east-1",
-            user="system@company.com",
-            password=EnvVar("SYSTEM_SNOWFLAKE_PASSWORD"),
-            database="PRODUCTION",
-            schema="HACKER_NEWS",
-        ),
-    },
-}
-
-deployment_name = os.getenv("DAGSTER_DEPLOYMENT", "local")
-
-defs = Definitions(
-    assets=[items, comments, stories], resources=resources[deployment_name]
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository_v2.py" startAfter="start_new" endBefore="end_new" />
 
 Let's review what's happening here:
 

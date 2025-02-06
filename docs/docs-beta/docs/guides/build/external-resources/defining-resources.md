@@ -17,31 +17,8 @@ The following example demonstrates defining a subclass of <PyObject section="res
 
 You can define methods on the resource class which depend on config values.
 
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_configurable_defs endbefore=end_new_resources_configurable_defs dedent=4
-from dagster import asset, Definitions, ConfigurableResource
-import requests
-from requests import Response
-
-class MyConnectionResource(ConfigurableResource):
-    username: str
-
-    def request(self, endpoint: str) -> Response:
-        return requests.get(
-            f"https://my-api.com/{endpoint}",
-            headers={"user-agent": "dagster"},
-        )
-
-@asset
-def data_from_service(my_conn: MyConnectionResource) -> Dict[str, Any]:
-    return my_conn.request("/fetch_data").json()
-
-defs = Definitions(
-    assets=[data_from_service],
-    resources={
-        "my_conn": MyConnectionResource(username="my_user"),
-    },
-)
-```
+{/* TODO add dedent=4 prop when implemented */}
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs" endBefore="end_new_resources_configurable_defs" />
 
 Assets specify resource dependencies by annotating the resource as a parameter to the asset function.
 
@@ -65,34 +42,7 @@ The following example defines a subclass of <PyObject section="resources" module
 
 You can define methods on the resource class which depend on config values.
 
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resources_configurable_defs_ops endbefore=end_new_resources_configurable_defs_ops dedent=4
-from dagster import Definitions, job, op, ConfigurableResource
-import requests
-from requests import Response
-
-class MyConnectionResource(ConfigurableResource):
-    username: str
-
-    def request(self, endpoint: str) -> Response:
-        return requests.get(
-            f"https://my-api.com/{endpoint}",
-            headers={"user-agent": "dagster"},
-        )
-
-@op
-def update_service(my_conn: MyConnectionResource):
-    my_conn.request("/update")
-
-@job
-def update_service_job():
-    update_service()
-
-defs = Definitions(
-    jobs=[update_service_job],
-    resources={
-        "my_conn": MyConnectionResource(username="my_user"),
-    },
-)
-```
+{/* TODO add dedent=4 prop when implemented */}
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resources_configurable_defs_ops" endBefore="end_new_resources_configurable_defs_ops" />
 
 There are many supported config types that can be used when defining resources. Refer to the [advanced config types documentation](/guides/operate/configuration/advanced-config-types) for a more comprehensive overview of the available config types.

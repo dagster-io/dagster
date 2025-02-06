@@ -26,30 +26,7 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
-{/* TODO convert to <CodeExample> */}
-```yaml file=/deploying/kubernetes/run_k8s_config.yaml
-runLauncher:
-  type: K8sRunLauncher
-  config:
-    k8sRunLauncher:
-      runK8sConfig:
-        containerConfig: # raw config for the pod's main container
-          resources:
-            limits:
-              cpu: 100m
-              memory: 128Mi
-        podTemplateSpecMetadata: # raw config for the pod's metadata
-          annotations:
-            mykey: myvalue
-        podSpecConfig: # raw config for the spec of the launched's pod
-          nodeSelector:
-            disktype: ssd
-        jobSpecConfig: # raw config for the kubernetes job's spec
-          ttlSecondsAfterFinished: 7200
-        jobMetadata: # raw config for the kubernetes job's metadata
-          annotations:
-            mykey: myvalue
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/run_k8s_config.yaml" />
 
 If your Dagster job is configured with the <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set in `runK8sConfig` will also be propagated to the pods that are created for each step, unless that step's configuration is overridden using one of the methods below.
 
@@ -69,49 +46,7 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/kubernetes/k8s_config_tag_job.py startafter=start_k8s_config endbefore=end_k8s_config
-@job(
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "250m", "memory": "64Mi"},
-                    "limits": {"cpu": "500m", "memory": "2560Mi"},
-                },
-                "volume_mounts": [
-                    {"name": "volume1", "mount_path": "foo/bar", "sub_path": "file.txt"}
-                ],
-            },
-            "pod_template_spec_metadata": {
-                "annotations": {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
-            },
-            "pod_spec_config": {
-                "volumes": [{"name": "volume1", "secret": {"secret_name": "volume_secret_name"}}],
-                "affinity": {
-                    "node_affinity": {
-                        "required_during_scheduling_ignored_during_execution": {
-                            "node_selector_terms": [
-                                {
-                                    "match_expressions": [
-                                        {
-                                            "key": "beta.kubernetes.io/os",
-                                            "operator": "In",
-                                            "values": ["windows", "linux"],
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                },
-            },
-        },
-    },
-)
-def my_job():
-    my_op()
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_job.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
 
 Other run launchers will ignore the `dagster-k8s/config` tag.
 
@@ -135,24 +70,7 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/kubernetes/step_k8s_config.py startafter=start_step_k8s_config endbefore=end_step_k8s_config
-my_k8s_executor = k8s_job_executor.configured(
-    {
-        "step_k8s_config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "200m", "memory": "32Mi"},
-                }
-            }
-        }
-    }
-)
-
-@job(executor_def=my_k8s_executor)
-def my_job():
-    ...
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/step_k8s_config.py" startAfter="start_step_k8s_config" endBefore="end_step_k8s_config" />
 
 ### Kubernetes configuration on individual steps in a run
 
@@ -172,47 +90,11 @@ The value for each of these keys is a dictionary with the YAML configuration for
 
 For example, for an asset:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/kubernetes/k8s_config_tag_asset.py startafter=start_k8s_config endbefore=end_k8s_config
-@asset(
-    op_tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "200m", "memory": "32Mi"},
-                }
-            },
-        }
-    }
-)
-def my_asset(context: AssetExecutionContext):
-    context.log.info("running")
-
-my_job = define_asset_job(name="my_job", selection="my_asset", executor_def=k8s_job_executor)
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_asset.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
 
 or an op:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/kubernetes/k8s_config_tag_op.py startafter=start_k8s_config endbefore=end_k8s_config
-@op(
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "200m", "memory": "32Mi"},
-                }
-            },
-        }
-    }
-)
-def my_op(context: OpExecutionContext):
-    context.log.info("running")
-
-@job(executor_def=k8s_job_executor)
-def my_job():
-    my_op()
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_op.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
 
 Other executors will ignore the `dagster-k8s/config` tag when it is set on an op or asset.
 
@@ -379,20 +261,7 @@ helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/va
 
 If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day. The TTL value can be modified in your job tags:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/kubernetes/ttl_config_job.py startafter=start_ttl endbefore=end_ttl
-@job(
-    tags = {
-        'dagster-k8s/config': {
-            'job_spec_config': {
-                'ttl_seconds_after_finished': 7200
-            }
-        }
-    }
-)
-def my_job():
-    my_op()
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/ttl_config_job.py" startAfter="start_ttl" endBefore="end_ttl" />
 
 If you do not use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then you can run the following commands:
 

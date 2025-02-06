@@ -26,23 +26,7 @@ Every job has an executor. The default executor is the <PyObject section="execut
 
 An executor can be specified directly on a job by supplying an <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> to the `executor_def` parameter of <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" />:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/executors/executors.py startafter=start_executor_on_job endbefore=end_executor_on_job
-from dagster import graph, job, multiprocess_executor
-
-
-# Providing an executor using the job decorator
-@job(executor_def=multiprocess_executor)
-def the_job(): ...
-
-
-@graph
-def the_graph(): ...
-
-
-# Providing an executor using graph_def.to_job(...)
-other_job = the_graph.to_job(executor_def=multiprocess_executor)
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/executors/executors.py" startAfter="start_executor_on_job" endBefore="end_executor_on_job" />
 
 ### For a code location
 
@@ -50,30 +34,7 @@ To specify a default executor for all jobs and assets provided to a code locatio
 
 If a job explicitly specifies an executor, then that executor will be used. Otherwise, jobs that don't specify an executor will use the default provided to the code location:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/deploying/executors/executors.py startafter=start_executor_on_repo endbefore=end_executor_on_repo
-from dagster import multiprocess_executor, define_asset_job, asset, Definitions
-
-
-@asset
-def the_asset():
-    pass
-
-
-asset_job = define_asset_job("the_job", selection="*")
-
-
-@job
-def op_job(): ...
-
-
-# op_job and asset_job will both use the multiprocess_executor,
-# since neither define their own executor.
-
-defs = Definitions(
-    assets=[the_asset], jobs=[asset_job, op_job], executor=multiprocess_executor
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/deploying/executors/executors.py" startAfter="start_executor_on_repo" endBefore="end_executor_on_repo" />
 
 :::note
 

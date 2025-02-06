@@ -52,62 +52,16 @@ dagster sensor preview my_sensor_name
 
 To unit test sensors, you can directly invoke the sensor's Python function. This will return all the run requests yielded by the sensor. The config obtained from the returned run requests can be validated using the <PyObject section="execution" module="dagster" object="validate_run_config" /> function:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing endbefore=end_sensor_testing
-from dagster import validate_run_config
 
-
-@sensor(target=log_file_job)
-def sensor_to_test():
-    yield RunRequest(
-        run_key="foo",
-        run_config={"ops": {"process_file": {"config": {"filename": "foo"}}}},
-    )
-
-
-def test_sensor():
-    for run_request in sensor_to_test():
-        assert validate_run_config(log_file_job, run_request.run_config)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py" startAfter="start_sensor_testing" endBefore="end_sensor_testing" />
 
 Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided via <PyObject section="schedules-sensors" module="dagster" object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cursor_sensors_marker endbefore=end_cursor_sensors_marker
-@sensor(target=log_file_job)
-def my_directory_sensor_cursor(context):
-    last_mtime = float(context.cursor) if context.cursor else 0
-
-    max_mtime = last_mtime
-    for filename in os.listdir(MY_DIRECTORY):
-        filepath = os.path.join(MY_DIRECTORY, filename)
-        if os.path.isfile(filepath):
-            fstats = os.stat(filepath)
-            file_mtime = fstats.st_mtime
-            if file_mtime <= last_mtime:
-                continue
-
-            # the run key should include mtime if we want to kick off new runs based on file modifications
-            run_key = f"{filename}:{file_mtime}"
-            run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
-            yield RunRequest(run_key=run_key, run_config=run_config)
-            max_mtime = max(max_mtime, file_mtime)
-
-    context.update_cursor(str(max_mtime))
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py" startAfter="start_cursor_sensors_marker" endBefore="end_cursor_sensors_marker" />
 
 This sensor uses the `context` argument. To invoke it, we need to provide one:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing_with_context endbefore=end_sensor_testing_with_context
-from dagster import build_sensor_context
-
-
-def test_my_directory_sensor_cursor():
-    context = build_sensor_context(cursor="0")
-    for run_request in my_directory_sensor_cursor(context):
-        assert validate_run_config(log_file_job, run_request.run_config)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py" startAfter="start_sensor_testing_with_context" endBefore="end_sensor_testing_with_context" />
 
 **Testing sensors with resources**
 
@@ -115,19 +69,8 @@ For sensors which utilize [resources](/guides/build/external-resources/), you ca
 
 Below is a test for the `process_new_users_sensor` that we defined in "[Using resources in sensors](using-resources-in-sensors)", which uses the `users_api` resource.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_sensor endbefore=end_test_resource_on_sensor dedent=4
-from dagster import build_sensor_context, validate_run_config
-
-def test_process_new_users_sensor():
-    class FakeUsersAPI:
-        def fetch_users(self) -> list[str]:
-            return ["1", "2", "3"]
-
-    context = build_sensor_context()
-    run_requests = process_new_users_sensor(context, users_api=FakeUsersAPI())
-    assert len(run_requests) == 3
-```
+{/* TODO add dedent=4 prop to CodeExample below when implemented */}
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_sensor" endBefore="end_test_resource_on_sensor" />
 
 </TabItem>
 </Tabs>

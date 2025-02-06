@@ -5,13 +5,7 @@ sidebar_position: 200
 
 Any sensor can emit log messages during its evaluation function:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
-@sensor(target=the_job)
-def logs_then_skips(context):
-    context.log.info("Logging from a sensor!")
-    return SkipReason("Nothing to do")
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py" startAfter="start_sensor_logging" endBefore="end_sensor_logging" />
 
 These logs can be viewed when inspecting a tick in the tick history view on the corresponding sensor page.
 

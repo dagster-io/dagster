@@ -7,24 +7,7 @@ If you want to act on the status of a run, Dagster provides a way to create a se
 
 Here is an example of a run status sensor that launches a run of `status_reporting_job` if a run is successful:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py startafter=start endbefore=end
-@run_status_sensor(
-    run_status=DagsterRunStatus.SUCCESS,
-    request_job=status_reporting_job,
-)
-def report_status_sensor(context):
-    # this condition prevents the sensor from triggering status_reporting_job again after it succeeds
-    if context.dagster_run.job_name != status_reporting_job.name:
-        run_config = {
-            "ops": {
-                "status_report": {"config": {"job_name": context.dagster_run.job_name}}
-            }
-        }
-        return RunRequest(run_key=None, run_config=run_config)
-    else:
-        return SkipReason("Don't report status of status_reporting_job")
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/run_status_run_requests.py" startAfter="start" endBefore="end" />
 
 `request_job` is the job that will be run when the `RunRequest` is returned.
 
@@ -32,29 +15,10 @@ Note that in `report_status_sensor` we conditionally return a `RunRequest`. This
 
 Here is an example of a sensor that reports job success in a Slack message:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_success_sensor_marker endbefore=end_success_sensor_marker
-from dagster import run_status_sensor, RunStatusSensorContext, DagsterRunStatus
-
-
-@run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
-def my_slack_on_run_success(context: RunStatusSensorContext):
-    slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
-
-    slack_client.chat_postMessage(
-        channel="#alert-channel",
-        text=f'Job "{context.dagster_run.job_name}" succeeded.',
-    )
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py" startAfter="start_success_sensor_marker" endBefore="end_success_sensor_marker" />
 
 When a run status sensor is triggered by a run but doesn't return anything, Dagster will report an event back to the run to indicate that the sensor ran.
 
 Once you have written your sensor, you can add the sensor to a <PyObject section="definitions" module="dagster" object="Definitions" /> object so it can be enabled and used the same as other sensors:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_definitions_marker endbefore=end_definitions_marker
-from dagster import Definitions
-
-
-defs = Definitions(jobs=[my_sensor_job], sensors=[my_slack_on_run_success])
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensor_alert.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />

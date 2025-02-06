@@ -66,12 +66,8 @@ Windows / Azure users may need to enable the environment variable `PYTHONLEGACYW
 
 Loggers can be configured when you run a job. For example, to filter all messages below `ERROR` out of the colored console logger, add the following lines to your `config.yaml`:
 
-```yaml file=/concepts/logging/config.yaml
-loggers:
-  console:
-    config:
-      log_level: ERROR
-```
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/logging/config.yaml" />
 
 When a job with the above configuration is executed, you'll only see the `ERROR` level logs.
 

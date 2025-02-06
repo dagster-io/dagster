@@ -60,22 +60,7 @@ To use the BigQuery resource, you'll need to add it to your `Definitions` object
 
 You can also specify a `location` where computation should take place.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/resource/configuration.py startafter=start_example endbefore=end_example
-from dagster_gcp import BigQueryResource
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[iris_data],
-    resources={
-        "bigquery": BigQueryResource(
-            project="my-gcp-project",  # required
-            location="us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/configuration.py" startAfter="start_example" endBefore="end_example" />
 
 ### Step 2: Create tables in BigQuery
 
@@ -87,34 +72,7 @@ defs = Definitions(
 
 Using the BigQuery resource, you can create BigQuery tables using the BigQuery Python API:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/resource/create_table.py startafter=start_example endbefore=end_example
-import pandas as pd
-from dagster_gcp import BigQueryResource
-
-from dagster import asset
-
-
-@asset
-def iris_data(bigquery: BigQueryResource) -> None:
-    iris_df = pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-    with bigquery.get_client() as client:
-        job = client.load_table_from_dataframe(
-            dataframe=iris_df,
-            destination="iris.iris_data",
-        )
-        job.result()
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/create_table.py" startAfter="start_example" endBefore="end_example" />
 
 In this example, you're defining an asset that fetches the Iris dataset as a Pandas DataFrame and renames the columns. Then, using the BigQuery resource, the DataFrame is stored in BigQuery as the `iris.iris_data` table.
 
@@ -128,12 +86,7 @@ Now you can run `dagster dev` and materialize the `iris_data` asset from the Dag
 
 If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by defining [external assets](/guides/build/assets/external-assets) for these tables.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/resource/source_asset.py
-from dagster import AssetSpec
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/source_asset.py" />
 
 In this example, you're creating an <PyObject section="assets" module="dagster" object="AssetSpec" /> for a pre-existing table called `iris_harvest_data`.
 
@@ -145,24 +98,7 @@ In this example, you're creating an <PyObject section="assets" module="dagster" 
 
 Once you have created an asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/resource/downstream.py startafter=start_example endbefore=end_example
-from dagster import asset
-
-from .create_table import iris_data
-
-# this example uses the iris_dataset asset from Step 2
-
-
-@asset(deps=[iris_data])
-def iris_setosa(bigquery: BigQueryResource) -> None:
-    job_config = bq.QueryJobConfig(destination="iris.iris_setosa")
-    sql = "SELECT * FROM iris.iris_data WHERE species = 'Iris-setosa'"
-
-    with bigquery.get_client() as client:
-        job = client.query(sql, job_config=job_config)
-        job.result()
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/downstream.py" startAfter="start_example" endBefore="end_example" />
 
 In this asset, you're creating second table that only contains the data for the _Iris Setosa_ species. This asset has a dependency on the `iris_data` asset. To define this dependency, you provide the `iris_data` asset as the `deps` parameter to the `iris_setosa` asset. You can then run the SQL query to create the table of _Iris Setosa_ data.
 
@@ -170,58 +106,7 @@ In this asset, you're creating second table that only contains the data for the 
 
 When finished, your code should look like the following:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/resource/full_example.py
-import pandas as pd
-from dagster_gcp import BigQueryResource
-from google.cloud import bigquery as bq
-
-from dagster import AssetSpec, Definitions, asset
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-
-
-@asset
-def iris_data(bigquery: BigQueryResource) -> None:
-    iris_df = pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-    with bigquery.get_client() as client:
-        job = client.load_table_from_dataframe(
-            dataframe=iris_df,
-            destination="iris.iris_data",
-        )
-        job.result()
-
-
-@asset(deps=[iris_data])
-def iris_setosa(bigquery: BigQueryResource) -> None:
-    job_config = bq.QueryJobConfig(destination="iris.iris_setosa")
-    sql = "SELECT * FROM iris.iris_data WHERE species = 'Iris-setosa'"
-
-    with bigquery.get_client() as client:
-        job = client.query(sql, job_config=job_config)
-        job.result()
-
-
-defs = Definitions(
-    assets=[iris_data, iris_setosa, iris_harvest_data],
-    resources={
-        "bigquery": BigQueryResource(
-            project="my-gcp-project",
-            location="us-east5",
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/full_example.py" />
 
 ## Option 2: Using the BigQuery I/O manager
 
@@ -243,24 +128,7 @@ To use the BigQuery I/O manager, you'll need to add it to your `Definitions` obj
 
 You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables. You can also set a `timeout` when working with Pandas DataFrames.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/io_manager/configuration.py startafter=start_example endbefore=end_example
-from dagster_gcp_pandas import BigQueryPandasIOManager
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[iris_data],
-    resources={
-        "io_manager": BigQueryPandasIOManager(
-            project="my-gcp-project",  # required
-            location="us-east5",  # optional, defaults to the default location for the project - see https://cloud.google.com/bigquery/docs/locations for a list of locations
-            dataset="IRIS",  # optional, defaults to PUBLIC
-            timeout=15.0,  # optional, defaults to None
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/configuration.py" startAfter="start_example" endBefore="end_example" />
 
 With this configuration, if you materialized an asset called `iris_data`, the BigQuery I/O manager would store the data in the `IRIS.IRIS_DATA` table in the `my-gcp-project` project. The BigQuery instance would be located in `us-east5`.
 
@@ -280,26 +148,7 @@ The BigQuery I/O manager can create and update tables for your Dagster defined a
 
 To store data in BigQuery using the BigQuery I/O manager, you can simply return a Pandas DataFrame from your asset. Dagster will handle storing and loading your assets in BigQuery.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/io_manager/basic_example.py
-import pandas as pd
-
-from dagster import asset
-
-
-@asset
-def iris_data() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/basic_example.py" />
 
 In this example, you're defining an [asset](/guides/build/assets/defining-assets) that fetches the Iris dataset as a Pandas DataFrame, renames the columns, then returns the DataFrame. The type signature of the function tells the I/O manager what data type it is working with, so it is important to include the return type `pd.DataFrame`.
 
@@ -313,12 +162,7 @@ When Dagster materializes the `iris_data` asset using the configuration from [St
 
 If you already have existing tables in BigQuery and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can define [external assets](/guides/build/assets/external-assets) for these tables. When using an I/O manager, defining an external asset for an existing table also allows you to tell Dagster how to find the table so it can be fetched for downstream assets.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/io_manager/source_asset.py
-from dagster import AssetSpec
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/source_asset.py" />
 
 In this example, you're creating a <PyObject section="assets" module="dagster" object="AssetSpec" /> for a pre-existing table - perhaps created by an external data ingestion tool - that contains data about iris harvests. To make the data available to other Dagster assets, you need to tell the BigQuery I/O manager how to find the data, so that the I/O manager can load the data into memory.
 
@@ -331,19 +175,7 @@ Because you already supplied the project and dataset in the I/O manager configur
 
 Once you have created an asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data. Dagster and the BigQuery I/O manager allow you to load the data stored in BigQuery tables into downstream assets.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/io_manager/load_downstream.py startafter=start_example endbefore=end_example
-import pandas as pd
-
-from dagster import asset
-
-# this example uses the iris_data asset from Step 2
-
-
-@asset
-def iris_setosa(iris_data: pd.DataFrame) -> pd.DataFrame:
-    return iris_data[iris_data["species"] == "Iris-setosa"]
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/load_downstream.py" startAfter="start_example" endBefore="end_example" />
 
 In this asset, you're providing the `iris_data` asset from the [Store a Dagster asset as a table in BigQuery](#option-2-step-2) example to the `iris_setosa` asset.
 
@@ -353,47 +185,7 @@ In this asset, you're providing the `iris_data` asset as a dependency to `iris_s
 
 When finished, your code should look like the following:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/bigquery/tutorial/io_manager/full_example.py
-import pandas as pd
-from dagster_gcp_pandas import BigQueryPandasIOManager
-
-from dagster import AssetSpec, Definitions, asset
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-
-
-@asset
-def iris_data() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-
-@asset
-def iris_setosa(iris_data: pd.DataFrame) -> pd.DataFrame:
-    return iris_data[iris_data["species"] == "Iris-setosa"]
-
-
-defs = Definitions(
-    assets=[iris_data, iris_harvest_data, iris_setosa],
-    resources={
-        "io_manager": BigQueryPandasIOManager(
-            project="my-gcp-project",
-            location="us-east5",
-            dataset="IRIS",
-            timeout=15.0,
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/full_example.py" />
 
 ## Related
 

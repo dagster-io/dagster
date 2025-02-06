@@ -29,12 +29,7 @@ Using the `execution_timezone` parameter allows you to specify a timezone for th
 
 This parameter accepts any [`tz` timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). For example, the following schedule will execute **every day at 9:00 AM in US Pacific time (America/Los_Angeles)**:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
-my_timezone_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py" startAfter="start_timezone" endBefore="end_timezone" />
 
 ## Setting timezones on partitioned jobs
 
@@ -42,14 +37,7 @@ Schedules constructed from partitioned jobs execute in the timezone defined on t
 
 For example, the following partition uses the **US Pacific (America/Los_Angeles)** timezone:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/partition_with_timezone.py
-from dagster import DailyPartitionsDefinition
-
-daily_partition = DailyPartitionsDefinition(
-    start_date="2024-05-20", timezone="America/Los_Angeles"
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_with_timezone.py" />
 
 ## Execution times and Daylight Savings Time
 

@@ -49,21 +49,7 @@ To complete this tutorial, you'll need:
 
 To use the DuckDB resource, you'll need to add it to your `Definitions` object. The DuckDB resource requires some configuration. You must set a path to a DuckDB database as the `database` configuration value. If the database does not already exist, it will be created for you:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/resource/configuration.py startafter=start_example endbefore=end_example
-from dagster_duckdb import DuckDBResource
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "duckdb": DuckDBResource(
-            database="path/to/my_duckdb_database.duckdb",  # required
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/resource/configuration.py" startAfter="start_example" endBefore="end_example" />
 
 ### Step 2: Create tables in DuckDB \{#option-1-step-2}
 
@@ -75,30 +61,7 @@ defs = Definitions(
 
 Using the DuckDB resource, you can create DuckDB tables using the DuckDB Python API:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/resource/create_table.py startafter=start_example endbefore=end_example
-import pandas as pd
-from dagster_duckdb import DuckDBResource
-
-from dagster import asset
-
-
-@asset
-def iris_dataset(duckdb: DuckDBResource) -> None:
-    iris_df = pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-    with duckdb.get_connection() as conn:
-        conn.execute("CREATE TABLE iris.iris_dataset AS SELECT * FROM iris_df")
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/resource/create_table.py" startAfter="start_example" endBefore="end_example" />
 
 In this example, you're defining an asset that fetches the Iris dataset as a Pandas DataFrame and renames the columns. Then, using the DuckDB resource, the DataFrame is stored in DuckDB as the `iris.iris_dataset` table.
 
@@ -110,12 +73,8 @@ In this example, you're defining an asset that fetches the Iris dataset as a Pan
 
 If you already have existing tables in DuckDB and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by defining [external assets](/guides/build/assets/external-assets) for these tables.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/io_manager/source_asset.py
-from dagster import AssetSpec
 
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/io_manager/source_asset.py" />
 
 In this example, you're creating a <PyObject section="assets" module="dagster" object="AssetSpec" /> for a pre-existing table called `iris_harvest_data`.
 
@@ -129,21 +88,7 @@ Now you can run `dagster dev` and materialize the `iris_dataset` asset from the 
 
 Once you have created an asset that represents a table in DuckDB, you will likely want to create additional assets that work with the data.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/resource/downstream.py startafter=start_example endbefore=end_example
-from dagster import asset
-
-# this example uses the iris_dataset asset from Step 1
-
-
-@asset(deps=[iris_dataset])
-def iris_setosa(duckdb: DuckDBResource) -> None:
-    with duckdb.get_connection() as conn:
-        conn.execute(
-            "CREATE TABLE iris.iris_setosa AS SELECT * FROM iris.iris_dataset WHERE"
-            " species = 'Iris-setosa'"
-        )
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/resource/downstream.py" startAfter="start_example" endBefore="end_example" />
 
 In this asset, you're creating second table that only contains the data for the _Iris Setosa_ species. This asset has a dependency on the `iris_dataset` asset. To define this dependency, you provide the `iris_dataset` asset as the `deps` parameter to the `iris_setosa` asset. You can then run the SQL query to create the table of _Iris Setosa_ data.
 
@@ -151,51 +96,7 @@ In this asset, you're creating second table that only contains the data for the 
 
 When finished, your code should look like the following:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/resource/full_example.py
-import pandas as pd
-from dagster_duckdb import DuckDBResource
-
-from dagster import AssetSpec, Definitions, asset
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-
-
-@asset
-def iris_dataset(duckdb: DuckDBResource) -> None:
-    iris_df = pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-    with duckdb.get_connection() as conn:
-        conn.execute("CREATE TABLE iris.iris_dataset AS SELECT * FROM iris_df")
-
-
-@asset(deps=[iris_dataset])
-def iris_setosa(duckdb: DuckDBResource) -> None:
-    with duckdb.get_connection() as conn:
-        conn.execute(
-            "CREATE TABLE iris.iris_setosa AS SELECT * FROM iris.iris_dataset WHERE"
-            " species = 'Iris-setosa'"
-        )
-
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "duckdb": DuckDBResource(
-            database="path/to/my_duckdb_database.duckdb",
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/resource/full_example.py" />
 
 ## Option 2: Using the DuckDB I/O manager
 
@@ -212,22 +113,7 @@ This section of the guide focuses on storing and loading Pandas DataFrames in Du
 
 To use the DuckDB I/O, you'll need to add it to your `Definitions` object. The DuckDB I/O manager requires some configuration to connect to your database. You must provide a path where a DuckDB database will be created. Additionally, you can specify a `schema` where the DuckDB I/O manager will create tables.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/io_manager/configuration.py startafter=start_example endbefore=end_example
-from dagster_duckdb_pandas import DuckDBPandasIOManager
-
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[iris_dataset],
-    resources={
-        "io_manager": DuckDBPandasIOManager(
-            database="path/to/my_duckdb_database.duckdb",  # required
-            schema="IRIS",  # optional, defaults to PUBLIC
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/io_manager/configuration.py" startAfter="start_example" endBefore="end_example" />
 
 ### Step 2: Create tables in DuckDB \{#option-2-step-2}
 
@@ -241,26 +127,7 @@ The DuckDB I/O manager can create and update tables for your Dagster-defined ass
 
 To store data in DuckDB using the DuckDB I/O manager, you can simply return a Pandas DataFrame from your asset. Dagster will handle storing and loading your assets in DuckDB.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/io_manager/basic_example.py
-import pandas as pd
-
-from dagster import asset
-
-
-@asset
-def iris_dataset() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/io_manager/basic_example.py" />
 
 In this example, you're defining an asset that fetches the Iris dataset as a Pandas DataFrame, renames the columns, then returns the DataFrame. The type signature of the function tells the I/O manager what data type it is working with, so it is important to include the return type `pd.DataFrame`.
 
@@ -274,12 +141,7 @@ When Dagster materializes the `iris_dataset` asset using the configuration from 
 
 If you already have existing tables in DuckDB and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by defining [external assets](/guides/build/assets/external-assets) for these tables.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/io_manager/source_asset.py
-from dagster import AssetSpec
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/io_manager/source_asset.py" />
 
 In this example, you're creating a <PyObject section="assets" module="dagster" object="AssetSpec" /> for a pre-existing table containing iris harvests data. To make the data available to other Dagster assets, you need to tell the DuckDB I/O manager how to find the data.
 
@@ -292,19 +154,7 @@ Because you already supplied the database and schema in the I/O manager configur
 
 Once you have created an asset that represents a table in DuckDB, you will likely want to create additional assets that work with the data. Dagster and the DuckDB I/O manager allow you to load the data stored in DuckDB tables into downstream assets.
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/io_manager/load_downstream.py startafter=start_example endbefore=end_example
-import pandas as pd
-
-from dagster import asset
-
-# this example uses the iris_dataset asset from Step 2
-
-
-@asset
-def iris_setosa(iris_dataset: pd.DataFrame) -> pd.DataFrame:
-    return iris_dataset[iris_dataset["species"] == "Iris-setosa"]
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/io_manager/load_downstream.py" startAfter="start_example" endBefore="end_example" />
 
 In this asset, you're providing the `iris_dataset` asset as a dependency to `iris_setosa`. By supplying `iris_dataset` as a parameter to `iris_setosa`, Dagster knows to use the `DuckDBPandasIOManager` to load this asset into memory as a Pandas DataFrame and pass it as an argument to `iris_setosa`. Next, a DataFrame that only contains the data for the _Iris Setosa_ species is created and returned. Then the `DuckDBPandasIOManager` will store the DataFrame as the `IRIS.IRIS_SETOSA` table in DuckDB.
 
@@ -312,45 +162,7 @@ In this asset, you're providing the `iris_dataset` asset as a dependency to `iri
 
 When finished, your code should look like the following:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/integrations/duckdb/tutorial/io_manager/full_example.py
-import pandas as pd
-from dagster_duckdb_pandas import DuckDBPandasIOManager
-
-from dagster import AssetSpec, Definitions, asset
-
-iris_harvest_data = AssetSpec(key="iris_harvest_data")
-
-
-@asset
-def iris_dataset() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/iris.csv",
-        names=[
-            "sepal_length_cm",
-            "sepal_width_cm",
-            "petal_length_cm",
-            "petal_width_cm",
-            "species",
-        ],
-    )
-
-
-@asset
-def iris_setosa(iris_dataset: pd.DataFrame) -> pd.DataFrame:
-    return iris_dataset[iris_dataset["species"] == "Iris-setosa"]
-
-
-defs = Definitions(
-    assets=[iris_dataset, iris_harvest_data, iris_setosa],
-    resources={
-        "io_manager": DuckDBPandasIOManager(
-            database="path/to/my_duckdb_database.duckdb",
-            schema="IRIS",
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/io_manager/full_example.py" />
 
 ## Related
 
