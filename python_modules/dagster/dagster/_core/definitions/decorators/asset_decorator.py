@@ -2,11 +2,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import (
-    experimental_param,
-    hidden_param,
-    only_allow_hidden_params_in_kwargs,
-)
+from dagster._annotations import beta_param, hidden_param, only_allow_hidden_params_in_kwargs
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import (
@@ -119,9 +115,9 @@ def _validate_hidden_non_argument_dep_param(
     return non_argument_deps
 
 
-@experimental_param(param="resource_defs")
-@experimental_param(param="io_manager_def")
-@experimental_param(param="backfill_policy")
+@beta_param(param="resource_defs")
+@beta_param(param="io_manager_def")
+@beta_param(param="backfill_policy")
 @hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
@@ -539,7 +535,7 @@ def create_assets_def_from_fn_and_decorator_args(
     return builder.create_assets_definition()
 
 
-@experimental_param(param="resource_defs")
+@beta_param(param="resource_defs")
 @hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
