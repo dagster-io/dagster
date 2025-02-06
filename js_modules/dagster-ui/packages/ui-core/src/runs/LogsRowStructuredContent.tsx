@@ -463,9 +463,12 @@ const AssetCheckEvaluationContent = ({
   const {checkName, success, metadataEntries, targetMaterialization, assetKey} = node.evaluation;
 
   const checkLink = assetDetailsPathForAssetCheck({assetKey, name: checkName});
+
+  // Target materialization timestamp is in seconds, and must be converted to msec for the query param.
+  const asOf = targetMaterialization?.timestamp ?? null;
   const matLink = assetDetailsPathForKey(assetKey, {
     view: 'events',
-    asOf: targetMaterialization ? `${targetMaterialization.timestamp}` : undefined,
+    asOf: asOf ? `${Math.floor(asOf * 1000)}` : undefined,
   });
 
   return (
