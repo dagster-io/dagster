@@ -58,7 +58,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
         ),
     ):
         os.chdir(tempdir)
-        subprocess.check_call(["uv", "pip", "install", "dg"])
 
         run_command_and_snippet_output(
             cmd="dg --help",
