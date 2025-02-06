@@ -18,20 +18,7 @@ In this part of the tutorial, you'll create a Dagster asset that, in its executi
 
 Before getting started, make sure you have fulfilled all the [prerequisites](index.md#prerequisites) for the tutorial. You should have a standalone Python script named `external_code.py` which looks like the following:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py lines=2-
-import pandas as pd
-
-
-def main():
-    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
-    total_orders = len(orders_df)
-    print(f"processing total {total_orders} orders")
-
-
-if __name__ == "__main__":
-    main()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py" lineStart="3" />
 
 ### Step 1.1: Define the asset
 
@@ -39,25 +26,8 @@ First, create a new file named `dagster_code.py` in the same directory as the `e
 
 Next, you’ll define the asset. Copy and paste the following into the file:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker lines=-16
-import shutil
 
-from dagster import (
-    AssetExecutionContext,
-    MaterializeResult,
-    PipesSubprocessClient,
-    asset,
-    file_relative_path,
-)
-
-
-@asset
-def subprocess_asset(
-    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
-) -> MaterializeResult:
-    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
 
 Here’s what we did in this example:
 
@@ -72,28 +42,8 @@ Here’s what we did in this example:
 
 Then, invoke a subprocess that executes the external code from the asset using the `pipes_subprocess_client` resource:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
-import shutil
 
-from dagster import (
-    AssetExecutionContext,
-    MaterializeResult,
-    PipesSubprocessClient,
-    asset,
-    file_relative_path,
-)
-
-
-@asset
-def subprocess_asset(
-    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
-) -> MaterializeResult:
-    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
-    return pipes_subprocess_client.run(
-        command=cmd, context=context
-    ).get_materialize_result()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
 
 Let’s take a look at what this code does:
 
@@ -108,46 +58,11 @@ To make the asset and subprocess resource loadable and accessible by Dagster's t
 
 Copy and paste the following to the bottom of `dagster_code.py`:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
-from dagster import Definitions
-
-defs = Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": PipesSubprocessClient()},
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
 
 At this point, `dagster_code.py` should look like the following:
 
-```python file=/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code_finished.py
-import shutil
-
-from dagster import (
-    AssetExecutionContext,
-    Definitions,
-    MaterializeResult,
-    PipesSubprocessClient,
-    asset,
-    file_relative_path,
-)
-
-
-@asset
-def subprocess_asset(
-    context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
-) -> MaterializeResult:
-    cmd = [shutil.which("python"), file_relative_path(__file__, "external_code.py")]
-    return pipes_subprocess_client.run(
-        command=cmd, context=context
-    ).get_materialize_result()
-
-
-defs = Definitions(
-    assets=[subprocess_asset],
-    resources={"pipes_subprocess_client": PipesSubprocessClient()},
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/dagster_code_finished.py" />
 
 ## Step 3: Run the subprocess from the Dagster UI
 

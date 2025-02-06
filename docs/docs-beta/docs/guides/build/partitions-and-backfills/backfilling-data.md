@@ -47,27 +47,5 @@ To get this behavior, you need to:
 
   Which property to use depends on whether it's most convenient for you to operate on start/end datetime objects, start/end partition keys, or a list of partition keys.
 
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/backfills/single_run_backfill_asset.py" startAfter="start_marker" endBefore="end_marker" />
 
-```python file=/concepts/partitions_schedules_sensors/backfills/single_run_backfill_asset.py startafter=start_marker endbefore=end_marker
-from dagster import (
-    AssetExecutionContext,
-    AssetKey,
-    BackfillPolicy,
-    DailyPartitionsDefinition,
-    asset,
-)
-
-
-@asset(
-    partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
-    backfill_policy=BackfillPolicy.single_run(),
-    deps=[AssetKey("raw_events")],
-)
-def events(context: AssetExecutionContext) -> None:
-    start_datetime, end_datetime = context.partition_time_window
-
-    input_data = read_data_in_datetime_range(start_datetime, end_datetime)
-    output_data = compute_events_from_raw_events(input_data)
-
-    overwrite_data_in_datetime_range(start_datetime, end_datetime, output_data)
-```

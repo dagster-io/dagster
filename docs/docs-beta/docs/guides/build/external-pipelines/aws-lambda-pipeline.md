@@ -88,7 +88,6 @@ For simplicity, we're going to copy the contents of the single Dagster Pipes fil
 
 In this step, you'll add the code you want to execute to the function. Create another file in the AWS UI - or use the default `lambda_function.py` file created by the function - and paste in the following code:
 
-{/* TODO convert to <CodeExample> */}
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/lambda/lambda_function.py" />
 
 :::tip

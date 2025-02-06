@@ -26,20 +26,7 @@ You'll also need **an existing Python script.** We’ll use the following Python
 
 Create a file named `external_code.py` and paste the following into it:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py lines=2-
-import pandas as pd
-
-
-def main():
-    orders_df = pd.DataFrame({"order_id": [1, 2], "item_id": [432, 878]})
-    total_orders = len(orders_df)
-    print(f"processing total {total_orders} orders")
-
-
-if __name__ == "__main__":
-    main()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py" lineStart="3" />
 
 ## Ready to get started?
 

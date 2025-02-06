@@ -11,8 +11,6 @@ This guide assumes familiarity with [assets](/guides/build/assets/) and [resourc
 
 :::
 
-
-
 <details>
   <summary>Prerequisites</summary>
 

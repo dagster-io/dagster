@@ -54,8 +54,6 @@ Consider this example:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="Dynamic partitioning" />
 
-Because the partition values are unknown in advance, `DynamicPartitionsDefinition` is used to define the partition. Then, the `all_regions_sensor` TODO: incomplete sentence
-
 In this example:
 
 - Because the partition values are unknown in advance, `DynamicPartitionsDefinition` is used to define `region_partitions`
