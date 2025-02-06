@@ -48,7 +48,7 @@ function getUniqueRegexMatches(files, regex) {
  * Helper function to create a `raw-loader` import from a `path`.
  */
 function pathToImport(path) {
-  return `import('!!raw-loader!/../../examples/${path}')`;
+  return `import('!!raw-loader!/../examples/${path}')`;
 }
 
 const files = getAllDocuments('docs');
