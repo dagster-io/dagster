@@ -21,7 +21,7 @@ You'll need one or more assets that emit the same metadata key at run time. Insi
 are most valuable when you have multiple assets that emit the same kind of metadata, such as
 such as the number of rows processed or the size of a file uploaded to object storage.
 
-Follow [the metadata guide](/guides/build/assets/organizing-assets-with-tags-and-metadata#runtime-metadata) to add numeric metadata
+Follow [the metadata guide](/guides/build/assets/metadata-and-tags/index.md#runtime-metadata) to add numeric metadata
 to your asset materializations.
 
 ## Step 2: Enable viewing your metadata in Dagster+ Insights
@@ -30,13 +30,7 @@ Once your assets are emitting numeric metadata values, you'll be able to enable 
 
 To add your metadata key to the list of metrics shown in Insights, click **Edit** in the sidebar next to the **User provided metrics** header:
 
-![Viewing the Insights tab in the Dagster+ UI](/img/placeholder.svg)
-{/* <Image
-alt="Viewing the Insights tab in the Dagster UI"
-src="/images/dagster-cloud/insights/insights-tab.png"
-width={2640}
-height={1516}
-*/}
+![Viewing the Insights tab in the Dagster+ UI](/images/dagster-plus/features/insights/insights-settings.png)
 
 In the dialog that appears, use the eye indicator to show or hide metrics in Insights. Selected metrics will be visible in both the Insights sidebar and on individual asset pages.
 
@@ -55,4 +49,4 @@ in the **Edit** dialog.
 If the metric you're tracking is directly associated with a cost, you can input the cost per unit in the **Estimate costs** tab. Insights will
 use this to show an estimated cost alongside any aggregations of that metric.
 
-![Cost editor dialog](/img/placeholder.svg)
+![Cost editor dialog](/images/dagster-plus/features/insights/customized-metrics.png)

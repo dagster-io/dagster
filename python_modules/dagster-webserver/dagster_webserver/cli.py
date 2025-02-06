@@ -11,12 +11,9 @@ import click
 import dagster._check as check
 import uvicorn
 from dagster._annotations import deprecated
-from dagster._cli.utils import get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace import (
-    get_workspace_process_context_from_kwargs,
-    workspace_target_argument,
-)
-from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArgValue
+from dagster._cli.utils import ClickArgValue, get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace import get_workspace_process_context_from_kwargs, workspace_options
+from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
@@ -75,7 +72,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     """
     ),
 )
-@workspace_target_argument
+@workspace_options
 @click.option(
     "--host",
     "-h",

@@ -1,6 +1,6 @@
 ---
 title: Tokens
-sidebar_position: 80
+sidebar_position: 30
 ---
 
 import DocCardList from '@theme/DocCardList';

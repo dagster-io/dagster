@@ -12,10 +12,10 @@ In this guide, you'll configure Okta to use single sign-on (SSO) with your Dagst
 To complete the steps in this guide, you'll need:
 
 - **An existing Okta account**
-- **To install the [`dagster-cloud` CLI](/todo)**
+- **To install the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
-  - [Access to a user token](/todo)
+  - [Access to a user token](/dagster-plus/deployment/management/tokens/user-tokens)
   - [Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) in your organization
 
 </details>
@@ -38,7 +38,7 @@ To complete the steps in this guide, you'll need:
 
   For example, your organization name is `hooli` and your Dagster+ domain is `https://hooli.dagster.cloud`. To configure this correctly, you'd enter `hooli` into the **Organization** field:
 
-   ![Okta Subdomain Configuration](/img/placeholder.svg)
+   ![Okta Subdomain Configuration](/images/dagster-plus/features/authentication-and-access-control/okta/subdomain-configuration.png)
 
 4. When finished, click **Done**.
 
@@ -51,13 +51,13 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
 2. Click the **Actions** button of the **Active** certificate.
 3. Click **View IdP metadata**:
 
-   ![Okta IdP metadata options](/img/placeholder.svg)
+   ![Okta IdP metadata options](/images/dagster-plus/features/authentication-and-access-control/okta/save-identity-provider-metadata.png)
 
    This will open a new page in your browser with the IdP metadata in XML format.
 
 4. Right-click the page and use **Save As** or **Save Page As**:
 
-   ![Save IdP metadata as XML](/img/placeholder.svg)
+   ![Save IdP metadata as XML](/images/dagster-plus/features/authentication-and-access-control/okta/save-xml-as-page.png)
 
    In Chrome and Edge, the file will be downloaded as an XML file. In Firefox, choose **Save Page As > Save as type**, then select **All files**.
 
@@ -88,6 +88,6 @@ import TestSSO from '../../../../partials/\_TestSSO.md';
 
 In the Okta **Applications** page, click the **Dagster+** icon:
 
-![Okta idP Login](/img/placeholder.svg)
+![Okta idP Login](/images/dagster-plus/features/authentication-and-access-control/okta/idp-login.png)
 
 If successful, you'll be automatically signed into your Dagster+ organization.

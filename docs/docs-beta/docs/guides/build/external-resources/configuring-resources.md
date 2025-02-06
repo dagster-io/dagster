@@ -33,7 +33,7 @@ defs = Definitions(
 
 <!-- Lives in /next/components/includes/EnvVarsBenefits.mdx -->
 
-For more information on using environment variables with Dagster, refer to the [Environment variables guide](/todo).
+For more information on using environment variables with Dagster, refer to the [Environment variables guide](/guides/deploy/using-environment-variables-and-secrets).
 
 ## Configuring resources at launch time
 
@@ -143,4 +143,4 @@ defs = Definitions(
 
 ## Next steps
 
-Resources are a powerful way to encapsulate reusable logic in your assets and ops. For more information on the supported config types for resources, see [the advanced config types documentation](/todo). For information on the Dagster config system, which you can use to parameterize assets and ops, refer to the [run configuration documentation](/todo).
+Resources are a powerful way to encapsulate reusable logic in your assets and ops. For more information on the supported config types for resources, see [the advanced config types documentation](/guides/operate/configuration/advanced-config-types). For information on the Dagster config system, which you can use to parameterize assets and ops, refer to the [run configuration documentation](/guides/operate/configuration/run-configuration).

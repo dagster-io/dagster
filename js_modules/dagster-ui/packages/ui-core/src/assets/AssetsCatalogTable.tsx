@@ -3,6 +3,7 @@ import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
@@ -21,12 +22,13 @@ import {
 import {AssetViewType, useAssetView} from './useAssetView';
 import {gql, useApolloClient} from '../apollo-client';
 import {AppContext} from '../app/AppContext';
+import {featureEnabled} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {useAssetSelectionInput} from '../asset-selection/useAssetSelectionInput';
+import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
@@ -264,7 +266,9 @@ export const AssetsCatalogTable = ({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'auto auto minmax(0, 1fr)',
+            gridTemplateColumns: featureEnabled(FeatureFlag.flagSelectionSyntax)
+              ? 'auto minmax(0, 1fr)'
+              : 'auto auto minmax(0, 1fr)',
             gap: 12,
             alignItems: 'flex-start',
           }}
@@ -282,16 +286,18 @@ export const AssetsCatalogTable = ({
               }
             }}
           />
-          {filterButton}
+          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterButton}
           {filterInput}
         </div>
       }
       belowActionBarComponents={
-        <AssetGraphFilterBar
-          activeFiltersJsx={activeFiltersJsx}
-          assetSelection={assetSelection}
-          setAssetSelection={setAssetSelection}
-        />
+        featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (
+          <AssetGraphFilterBar
+            activeFiltersJsx={activeFiltersJsx}
+            assetSelection={assetSelection}
+            setAssetSelection={setAssetSelection}
+          />
+        )
       }
       refreshState={refreshState}
       prefixPath={prefixPath || emptyArray}

@@ -10,7 +10,7 @@ from dagster import (
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.utils import exhaust_iterator_and_yield_results_with_exception, imap
@@ -206,7 +206,6 @@ class DbtEventIterator(Iterator[T]):
         return self
 
     @public
-    @experimental
     def fetch_row_counts(
         self,
     ) -> (
@@ -224,7 +223,6 @@ class DbtEventIterator(Iterator[T]):
         return self._attach_metadata(_fetch_row_count_metadata)
 
     @public
-    @experimental
     def fetch_column_metadata(
         self,
         with_column_lineage: bool = True,
@@ -305,7 +303,6 @@ class DbtEventIterator(Iterator[T]):
         )
 
     @public
-    @experimental
     def with_insights(
         self,
         skip_config_check: bool = False,

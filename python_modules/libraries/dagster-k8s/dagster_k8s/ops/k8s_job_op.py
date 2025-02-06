@@ -15,7 +15,7 @@ from dagster import (
     StringSource,
     op,
 )
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
 
@@ -135,7 +135,7 @@ K8S_JOB_OP_CONFIG = merge_dicts(
 )
 
 
-@experimental
+@beta
 def execute_k8s_job(
     context: OpExecutionContext,
     image: str,
@@ -403,6 +403,12 @@ def execute_k8s_job(
                     print(log_entry)  # noqa: T201
                 except StopIteration:
                     break
+                except Exception:
+                    context.log.warning(
+                        "Error reading pod logs. Giving up and waiting for the pod to finish",
+                        exc_info=True,
+                    )
+                    break
         else:
             context.log.info("Pod logs are disabled, because restart_policy is not Never")
 
@@ -442,7 +448,7 @@ def execute_k8s_job(
 
 
 @op(ins={"start_after": In(Nothing)}, config_schema=K8S_JOB_OP_CONFIG)
-@experimental
+@beta
 def k8s_job_op(context):
     """An op that runs a Kubernetes job using the k8s API.
 

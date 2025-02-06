@@ -1,5 +1,5 @@
 ---
-title: Define cross-job dependencies with asset sensors
+title: "Asset sensors"
 sidebar_position: 40
 ---
 
@@ -9,7 +9,7 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 :::note
 
-This documentation assumes familiarity with [assets](/guides/build/assets/index.md) and [jobs](/guides/build/assets/asset-jobs)
+This documentation assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/assets/asset-jobs)
 
 :::
 
@@ -47,7 +47,7 @@ end
 
 This is an example of an asset sensor that triggers a job when an asset is materialized. The `daily_sales_data` asset is in the same code location as the job and other asset for this example, but the same pattern can be applied to assets in different code locations.
 
-<CodeExample filePath="guides/automation/simple-asset-sensor-example.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/simple-asset-sensor-example.py" language="python" />
 
 ## Customizing the evaluation function of an asset sensor
 
@@ -76,7 +76,7 @@ stateDiagram-v2
 
 In the following example, the `@asset_sensor` decorator defines a custom evaluation function that returns a `RunRequest` object when the asset is materialized and certain metadata is present, otherwise it skips the run.
 
-<CodeExample filePath="guides/automation/asset-sensor-custom-eval.py" language="python"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/asset-sensor-custom-eval.py" language="python"/>
 
 ## Triggering a job with custom configuration
 
@@ -84,17 +84,22 @@ By providing a configuration to the `RunRequest` object, you can trigger a job w
 
 For example, you might use a sensor to trigger a job when an asset is materialized, but also pass metadata about that materialization to the job:
 
-<CodeExample filePath="guides/automation/asset-sensor-with-config.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/asset-sensor-with-config.py" language="python" />
 
 ## Monitoring multiple assets
+
+:::note
+
+The experimental `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system. For more information, see the [Declarative Automation documentation](/guides/automate/declarative-automation/).
+
+:::
 
 When building a pipeline, you may want to monitor multiple assets with a single sensor. This can be accomplished with a multi-asset sensor.
 
 The following example uses a `@multi_asset_sensor` to monitor multiple assets and trigger a job when any of the assets are materialized:
 
-<CodeExample filePath="guides/automation/multi-asset-sensor.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/multi-asset-sensor.py" language="python" />
 
 ## Next steps
 
-- Learn more about asset sensors in [Understanding Automation](/guides/automate)
-- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to asset sensors
+- Explore [Declarative Automation](/guides/automate/declarative-automation/) as an alternative to asset sensors

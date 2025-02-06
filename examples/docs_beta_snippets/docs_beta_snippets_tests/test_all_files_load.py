@@ -20,11 +20,15 @@ EXCLUDED_FILES = {
     # these files are part of a completed project and the import references are failing the tests
     f"{snippets_folder}/guides/tutorials/etl_tutorial_completed/etl_tutorial/assets.py",
     f"{snippets_folder}/guides/tutorials/etl_tutorial_completed/etl_tutorial/definitions.py",
+    # there are no components defined in the snippets and so it would fail to load
+    f"{snippets_folder}/guides/components/existing-project/definitions-after.py",
+    # there are no components defined in the snippets and so it would fail to load
+    f"{snippets_folder}/guides/components/index/5-definitions.py",
 }
 
 EXCLUDED_DIRS = {
-    # integrations are excluded because they have external dependencies that
-    # are easier to manage in a separate tox environment
+    # integrations are excluded because they have external dependencies that are easier to manage in
+    # a separate tox environment
     f"{snippets_folder}/integrations",
 }
 

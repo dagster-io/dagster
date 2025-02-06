@@ -3,13 +3,13 @@ import {Box, Caption, Colors, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {MaterializationTag} from './MaterializationTag';
-import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {titleForRun} from '../runs/RunUtils';
+import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 
 /** We explicitly don't want to share partition-level information with stakeholders,
  * so this status component exposes only basic "materializing, success, failed, missing"
@@ -20,7 +20,7 @@ export const SimpleStakeholderAssetStatus = ({
   assetNode,
 }: {
   liveData: LiveDataForNode | undefined;
-  assetNode: Pick<AssetNodeDefinitionFragment, 'assetKey' | 'isObservable'>;
+  assetNode: Pick<AssetViewDefinitionNodeFragment, 'assetKey' | 'isObservable'>;
 }) => {
   if (!liveData) {
     return <span />;

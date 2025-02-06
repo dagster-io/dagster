@@ -15,7 +15,7 @@ import zlib
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager, nullcontext
-from io import StringIO
+from io import StringIO, TextIOWrapper
 from queue import Queue
 from threading import Event, Thread
 from traceback import TracebackException
@@ -42,6 +42,8 @@ from typing import (  # noqa: UP035
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
+
+    from google.cloud.storage import Client as GCSClient
 
 # ########################
 # ##### PROTOCOL
@@ -165,6 +167,10 @@ PipesMetadataType = Literal[
     "dagster_run",
     "asset",
     "null",
+    "table",
+    "table_schema",
+    "table_column_lineage",
+    "timestamp",
 ]
 
 
@@ -817,11 +823,16 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         return self._name
 
     @property
-    def stdio(self) -> IO[str]:
+    def stdio(self) -> TextIOWrapper:
+        # this property is a handy way to access the correct underlying original IO stream (typically for reading)
+        # specifically, it used `sys.__stdout__`/`sys.__stderr__` dunder attributes to access the underlying IO stream
+        # instead of the more common `sys.stdout`/`sys.stderr` attributes which are often
+        # replaced by various tools and environments (e.g. Databricks) and no longer point to the original IO stream
+        # more info in Python docs: https://docs.python.org/3.8/library/sys.html#sys.__stdout__
         if self.stream == "stdout":
-            return sys.stdout
+            return cast(TextIOWrapper, sys.__stdout__)
         elif self.stream == "stderr":
-            return sys.stderr
+            return cast(TextIOWrapper, sys.__stderr__)
         else:
             raise ValueError(f"stream must be 'stdout' or 'stderr', got {self.stream}")
 
@@ -1248,6 +1259,80 @@ class PipesS3MessageWriterChannel(PipesBlobStoreMessageWriterChannel):
             Bucket=self._bucket,
             Key=key,
         )
+
+
+# ########################
+# ##### IO - GCS
+# ########################
+
+
+class PipesGCSContextLoader(PipesContextLoader):
+    """Context loader that reads context from a JSON file on GCS.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+    """
+
+    def __init__(self, client: "GCSClient"):
+        self._client = client
+
+    @contextmanager
+    def load_context(self, params: PipesParams) -> Iterator[PipesContextData]:
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key = _assert_env_param_type(params, "key", str, self.__class__)
+        obj = self._client.get_bucket(bucket).blob(key).download_as_bytes()
+        yield json.loads(obj.decode("utf-8"))
+
+
+class PipesGCSMessageWriter(PipesBlobStoreMessageWriter):
+    """Message writer that writes messages by periodically writing message chunks to a GCS bucket.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
+    def __init__(self, client: "GCSClient", *, interval: float = 10):
+        super().__init__(interval=interval)
+        self._client = client
+
+    def make_channel(
+        self,
+        params: PipesParams,
+    ) -> "PipesGCSMessageWriterChannel":
+        bucket = _assert_env_param_type(params, "bucket", str, self.__class__)
+        key_prefix = _assert_opt_env_param_type(params, "key_prefix", str, self.__class__)
+        return PipesGCSMessageWriterChannel(
+            client=self._client,
+            bucket=bucket,
+            key_prefix=key_prefix,
+            interval=self.interval,
+        )
+
+
+class PipesGCSMessageWriterChannel(PipesBlobStoreMessageWriterChannel):
+    """Message writer channel for writing messages by periodically writing message chunks to a GCS bucket.
+
+    Args:
+        client (google.cloud.storage.Client): A google.cloud.storage.Client object.
+        bucket (str): The name of the GCS bucket to write to.
+        key_prefix (Optional[str]): An optional prefix to use for the keys of written blobs.
+        interval (float): interval in seconds between upload chunk uploads
+    """
+
+    def __init__(
+        self, client: "GCSClient", bucket: str, key_prefix: Optional[str], *, interval: float = 10
+    ):
+        super().__init__(interval=interval)
+        self._client = client
+        self._bucket = bucket
+        self._key_prefix = key_prefix
+
+        self._gcp_bucket = self._client.get_bucket(self._bucket)
+
+    def upload_messages_chunk(self, payload: IO, index: int) -> None:
+        key = f"{self._key_prefix}/{index}.json" if self._key_prefix else f"{index}.json"
+        self._gcp_bucket.blob(key).upload_from_string(payload.read())
 
 
 # ########################

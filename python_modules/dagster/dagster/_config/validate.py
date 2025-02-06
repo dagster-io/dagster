@@ -27,7 +27,7 @@ from dagster._config.evaluate_value_result import EvaluateValueResult
 from dagster._config.field import resolve_to_config_type
 from dagster._config.post_process import post_process_config
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
-from dagster._config.stack import EvaluationStack
+from dagster._config.stack import EvaluationStackRoot
 from dagster._config.traversal_context import ValidationContext
 from dagster._utils import ensure_single_item
 
@@ -58,7 +58,7 @@ def validate_config(config_schema: object, config_value: T) -> EvaluateValueResu
     config_type = check.inst(resolve_to_config_type(config_schema), ConfigType)
 
     return validate_config_from_snap(
-        config_schema_snapshot=config_type.get_schema_snapshot(),
+        config_schema_snapshot=config_type.schema_snapshot,
         config_type_key=config_type.key,
         config_value=config_value,
     )
@@ -73,7 +73,7 @@ def validate_config_from_snap(
         ValidationContext(
             config_schema_snapshot=config_schema_snapshot,
             config_type_snap=config_schema_snapshot.get_config_snap(config_type_key),
-            stack=EvaluationStack(entries=[]),
+            stack=EvaluationStackRoot(),
         ),
         config_value,
     )
@@ -244,7 +244,7 @@ def _validate_shape_config(
     config_value = cast(dict[str, object], config_value)
 
     field_snaps = check.not_none(context.config_type_snap.fields)
-    defined_field_names = {cast(str, fs.name) for fs in field_snaps}
+    defined_field_names = cast(set[str], {fs.name for fs in field_snaps})
     defined_field_names = defined_field_names.union(set(field_aliases.values()))
 
     incoming_field_names = set(config_value.keys())
@@ -334,7 +334,11 @@ def validate_map_config(
         if not result.success:
             errors += cast(list, result.errors)
 
-    return EvaluateValueResult(not bool(errors), config_value, errors)
+    return EvaluateValueResult(
+        success=not bool(errors),
+        value=config_value,
+        errors=errors,
+    )
 
 
 def validate_shape_config(
@@ -410,7 +414,11 @@ def validate_array_config(
         else:
             errors.extend(check.not_none(result.errors))
 
-    return EvaluateValueResult(not bool(errors), values, errors)
+    return EvaluateValueResult(
+        success=not bool(errors),
+        value=values,
+        errors=errors,
+    )
 
 
 def validate_enum_config(

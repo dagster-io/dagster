@@ -14,10 +14,10 @@ To complete the steps in this guide, you'll need:
 - **The following in Google**:
   - An existing Google account
   - [Workspace Admin permissions](https://support.google.com/a/answer/6365252?hl=en&ref_topic=4388346)
-- **To install the [`dagster-cloud` CLI](/todo)**
+- **To install the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
-  - [Access to a user token](/todo)
+  - [Access to a user token](/dagster-plus/deployment/management/tokens/user-tokens)
   - [Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) in your organization
 
 </details>
@@ -27,10 +27,10 @@ To complete the steps in this guide, you'll need:
 1. Navigate to your [Google Admin Console](https://admin.google.com).
 2. Using the sidebar, navigate to **Apps > Web and mobile apps**:
 
-   ![Google Workspace Sidebar](/img/placeholder.svg)
+   ![Google Workspace Sidebar](/images/dagster-plus/features/authentication-and-access-control/google-workspace/sidebar.png)
 
 3. On the **Web and mobile apps** page, click **Add App > Add custom SAML app**:
-   ![Add App](/img/placeholder.svg)
+   ![Add App](/images/dagster-plus/features/authentication-and-access-control/google-workspace/add-app.png)
    This opens a new page for adding app details.
 
 ## Step 2: Configure SSO in Google Workspace \{#configure-sso}
@@ -41,7 +41,7 @@ To complete the steps in this guide, you'll need:
 
        The page should look similar to the following:
 
-       ![Application Details](/img/placeholder.svg)
+       ![Application Details](/images/dagster-plus/features/authentication-and-access-control/google-workspace/application-details.png)
 
     3. Click **Continue**.
 
@@ -57,7 +57,7 @@ To complete the steps in this guide, you'll need:
 
     2.  Check the **Signed Response** box. The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
 
-        ![Service Provider Details](/img/placeholder.svg)
+        ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/google-workspace/service-provider-details.png)
 
     3.  When finished, click **Continue**.
 4.  On the **Attributes** page:
@@ -69,7 +69,7 @@ To complete the steps in this guide, you'll need:
 
        The page should look like the following image:
 
-       ![Attribute Mapping](/img/placeholder.svg)
+       ![Attribute Mapping](/images/dagster-plus/features/authentication-and-access-control/google-workspace/attribute-mapping.png)
 
     2. Click **Finish**.
 
@@ -80,7 +80,7 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
 1. In your Google Workspace, open the Dagster+ application you added in [Step 2](#configure-sso).
 2. Click **Download metadata**:
 
-   ![SAML Metadata](/img/placeholder.svg)
+   ![SAML Metadata](/images/dagster-plus/features/authentication-and-access-control/google-workspace/saml-metadata.png)
 
 3. In the modal that displays, click **Download metadata** to start the download. Save the file to your computer.
 4. After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
@@ -100,7 +100,7 @@ In this step, you'll assign users in your Google Workspace to the Dagster+ appli
 3. Click **ON for everyone**.
 4. Click **Save**.
 
-   ![Assign New Login](/img/placeholder.svg)
+   ![Assign New Login](/images/dagster-plus/features/authentication-and-access-control/google-workspace/new-login.png)
 
 import TestSSO from '../../../../partials/\_TestSSO.md';
 

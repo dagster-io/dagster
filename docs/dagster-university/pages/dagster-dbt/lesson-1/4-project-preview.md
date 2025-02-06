@@ -15,4 +15,4 @@ By the end of the course, you will:
 - Apply partitions to incremental dbt models
 - Deploy the Dagster project to Dagster+
 
-If you get stuck or want to jump ahead, check out the [finished project here on GitHub](https://github.com/dagster-io/project-dagster-university/tree/module/dagster-and-dbt).
+If you get stuck or want to jump ahead, check out the [finished project here on GitHub](https://github.com/dagster-io/project-dagster-university/tree/main/dagster_university/dagster-and-dbt).

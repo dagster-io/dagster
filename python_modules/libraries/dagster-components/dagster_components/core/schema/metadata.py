@@ -7,8 +7,7 @@ from pydantic.fields import FieldInfo
 
 REF_BASE = "#/$defs/"
 REF_TEMPLATE = f"{REF_BASE}{{model}}"
-JSON_SCHEMA_EXTRA_DEFER_RENDERING_KEY = "dagster_defer_rendering"
-JSON_SCHEMA_EXTRA_AVAILABLE_SCOPE_KEY = "dagster_available_scope"
+JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
 
 
 @dataclass
@@ -24,8 +23,8 @@ class ResolvableFieldInfo(FieldInfo):
 
     Examples:
     ```python
-    class MyModel(ComponentSchemaBaseModel):
-        renderable_obj: Annotated[str, ResolvableFieldInfo(output_type=SomeObj)]
+    class MyModel(ResolvableModel):
+        resolvable_obj: Annotated[str, ResolvableFieldInfo(output_type=SomeObj)]
     ```
     """
 
@@ -34,7 +33,7 @@ class ResolvableFieldInfo(FieldInfo):
         *,
         output_type: Optional[type] = None,
         post_process_fn: Optional[Callable[[Any], Any]] = None,
-        additional_scope: Optional[Set[str]] = None,
+        required_scope: Optional[Set[str]] = None,
     ):
         self.resolution_metadata = (
             ResolutionMetadata(output_type=output_type, post_process=post_process_fn)
@@ -42,10 +41,7 @@ class ResolvableFieldInfo(FieldInfo):
             else None
         )
         super().__init__(
-            json_schema_extra={
-                JSON_SCHEMA_EXTRA_AVAILABLE_SCOPE_KEY: list(additional_scope or []),
-                JSON_SCHEMA_EXTRA_DEFER_RENDERING_KEY: True,
-            },
+            json_schema_extra={JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY: list(required_scope or [])},
         )
 
 
@@ -65,7 +61,9 @@ def _subschemas_on_path(
     # List[ComplexType] (e.g.) will contain a reference to the complex type schema in the
     # top-level $defs, so we dereference it here.
     if "$ref" in subschema:
-        subschema = json_schema["$defs"].get(subschema["$ref"][len(REF_BASE) :])
+        # depending on the pydantic version, the extras may be stored with the reference or not
+        extras = {k: v for k, v in subschema.items() if k != "$ref"}
+        subschema = {**json_schema["$defs"].get(subschema["$ref"][len(REF_BASE) :]), **extras}
 
     yield subschema
     if len(valpath) == 0:
@@ -96,33 +94,16 @@ def _subschemas_on_path(
     yield from _subschemas_on_path(rest, json_schema, inner)
 
 
-def _should_defer_render(subschema: Mapping[str, Any]) -> bool:
-    raw = check.opt_inst(subschema.get(JSON_SCHEMA_EXTRA_DEFER_RENDERING_KEY), bool)
-    return raw or False
-
-
-def _get_available_scope(subschema: Mapping[str, Any]) -> Set[str]:
-    raw = check.opt_inst(subschema.get(JSON_SCHEMA_EXTRA_AVAILABLE_SCOPE_KEY), list)
+def _get_additional_required_scope(subschema: Mapping[str, Any]) -> Set[str]:
+    raw = check.opt_inst(subschema.get(JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY), list)
     return set(raw) if raw else set()
 
 
-def allow_render(
-    valpath: Sequence[Union[str, int]], json_schema: Mapping[str, Any], subschema: Mapping[str, Any]
-) -> bool:
-    """Given a valpath and the json schema of a given target type, determines if there is a rendering scope
-    required to render the value at the given path.
-    """
-    for subschema in _subschemas_on_path(valpath, json_schema, subschema):
-        if _should_defer_render(subschema):
-            return False
-    return True
-
-
-def get_available_scope(
-    valpath: Sequence[Union[str, int]], json_schema: Mapping[str, Any], subschema: Mapping[str, Any]
+def get_required_scope(
+    valpath: Sequence[Union[str, int]], json_schema: Mapping[str, Any]
 ) -> Set[str]:
     """Given a valpath and the json schema of a given target type, determines the available rendering scope."""
-    available_scope = set()
-    for subschema in _subschemas_on_path(valpath, json_schema, subschema):
-        available_scope |= _get_available_scope(subschema)
-    return available_scope
+    required_scope = set()
+    for subschema in _subschemas_on_path(valpath, json_schema, json_schema):
+        required_scope |= _get_additional_required_scope(subschema)
+    return required_scope

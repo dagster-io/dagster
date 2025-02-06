@@ -1,4 +1,3 @@
-import {cache} from 'idb-lru-cache';
 import memoize from 'lodash/memoize';
 import React, {createContext, useCallback, useContext, useEffect} from 'react';
 
@@ -11,6 +10,7 @@ import {
 } from '../apollo-client';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {cache} from '../util/idb-lru-cache';
 
 type CacheData<TQuery> = {
   data: TQuery;
@@ -20,7 +20,7 @@ type CacheData<TQuery> = {
 export const KEY_PREFIX = 'indexdbQueryCache:';
 
 export class CacheManager<TQuery> {
-  private cache: ReturnType<typeof cache<string, CacheData<TQuery>>> | undefined;
+  private cache: ReturnType<typeof cache<CacheData<TQuery>>> | undefined;
   private key: string;
   private current?: CacheData<TQuery>;
   private currentAwaitable?: Promise<TQuery | undefined>;
@@ -28,7 +28,7 @@ export class CacheManager<TQuery> {
   constructor(key: string) {
     this.key = `${KEY_PREFIX}${key}`;
     try {
-      this.cache = cache<string, CacheData<TQuery>>({dbName: this.key, maxCount: 1});
+      this.cache = cache<CacheData<TQuery>>({dbName: this.key, maxCount: 1});
     } catch {}
   }
 
@@ -43,7 +43,8 @@ export class CacheManager<TQuery> {
           return;
         }
         if (await this.cache.has('cache')) {
-          const {value} = await this.cache.get('cache');
+          const entry = await this.cache.get('cache');
+          const value = entry?.value;
           if (value && version === value.version) {
             this.current = value;
             res(value.data);
@@ -69,7 +70,7 @@ export class CacheManager<TQuery> {
     if (!this.cache) {
       return;
     }
-    return this.cache.set('cache', {data, version}, {expiry: new Date('3030-01-01')});
+    return this.cache.set('cache', {data, version});
   }
 
   async clear() {

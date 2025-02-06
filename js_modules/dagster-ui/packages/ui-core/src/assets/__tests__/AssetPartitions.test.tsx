@@ -146,6 +146,31 @@ describe('AssetPartitions', () => {
     expect(screen.queryByText('2022-08-31-00:00')).toBeVisible();
   });
 
+  it('should support filtering by partition status and partition text', async () => {
+    render(<SingleDimensionAssetPartitions assetKey={{path: ['single_dimension_time']}} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('partitions-selected')).toHaveTextContent('6,000 Partitions');
+    });
+
+    const successCheck = screen.getByTestId(
+      `partition-status-${AssetPartitionStatus.MATERIALIZED}-checkbox`,
+    );
+    const missingCheck = screen.getByTestId(
+      `partition-status-${AssetPartitionStatus.MISSING}-checkbox`,
+    );
+    await userEvent.click(missingCheck);
+    await userEvent.click(successCheck);
+    expect(screen.getByTestId('router-search')).toHaveTextContent(
+      `status=${AssetPartitionStatus.FAILED}%2C${AssetPartitionStatus.MATERIALIZING}`,
+    );
+
+    const searchInput = screen.getByTestId(`search-0`);
+    await userEvent.type(searchInput, '09');
+
+    // verify that filtering by state updates the left sidebar
+    expect(screen.queryByText('2022-09-23-19:00')).toBeVisible();
+  });
+
   it('should support reverse sorting individual dimensions', async () => {
     const Component = () => {
       const [params, setParams] = useState<AssetViewParams>({});

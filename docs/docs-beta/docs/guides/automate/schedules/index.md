@@ -1,5 +1,5 @@
 ---
-title: "Cron-based schedules"
+title: "Schedules"
 sidebar_position: 10
 ---
 
@@ -18,7 +18,7 @@ To follow the steps in this guide, you'll need:
 
 A basic schedule is defined by a `JobDefinition` and a `cron_schedule` using the `ScheduleDefinition` class. A job can be thought of as a selection of assets or operations executed together.
 
-<CodeExample filePath="guides/automation/simple-schedule-example.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/simple-schedule-example.py" language="python" />
 
 ## Run schedules in a different timezone
 
@@ -33,6 +33,8 @@ daily_schedule = ScheduleDefinition(
 )
 ```
 
+For more information, see "[Customizing a schedule's execution timezone](customizing-execution-timezone)".
+
 ## Create schedules from partitions
 
 If using partitions and jobs, you can create a schedule using the partition with `build_schedule_from_partitioned_job`. The schedule will execute at the same cadence specified by the partition definition.
@@ -42,14 +44,14 @@ If using partitions and jobs, you can create a schedule using the partition with
 
 If you have a [partitioned asset](/guides/build/partitions-and-backfills) and job:
 
-<CodeExample filePath="guides/automation/schedule-with-partition.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/schedule-with-partition.py" language="python" />
 
 </TabItem>
 <TabItem value="ops" label="Ops">
 
 If you have a partitioned op job:
 
-<CodeExample filePath="guides/automation/schedule-with-partition-ops.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/schedule-with-partition-ops.py" language="python" />
 
 </TabItem>
 </Tabs>

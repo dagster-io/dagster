@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 import boto3
 import dagster._check as check
 from dagster import MetadataValue, PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -20,6 +20,7 @@ from dagster._core.pipes.client import (
 from dagster._core.pipes.utils import PipesEnvContextInjector, PipesSession, open_pipes_session
 
 from dagster_aws.emr.emr import EMR_CLUSTER_TERMINATED_STATES
+from dagster_aws.pipes.clients.utils import emr_inject_pipes_env_vars
 from dagster_aws.pipes.message_readers import (
     PipesS3LogReader,
     PipesS3MessageReader,
@@ -37,40 +38,7 @@ if TYPE_CHECKING:
     )
 
 
-def add_configuration(
-    configurations: list["ConfigurationUnionTypeDef"],
-    configuration: "ConfigurationUnionTypeDef",
-):
-    """Add a configuration to a list of EMR configurations, merging configurations with the same classification.
-
-    This is necessary because EMR doesn't accept multiple configurations with the same classification.
-    """
-    for existing_configuration in configurations:
-        if existing_configuration.get("Classification") is not None and existing_configuration.get(
-            "Classification"
-        ) == configuration.get("Classification"):
-            properties = {**existing_configuration.get("Properties", {})}
-            properties.update(properties)
-
-            inner_configurations = cast(
-                list["ConfigurationUnionTypeDef"], existing_configuration.get("Configurations", [])
-            )
-
-            for inner_configuration in cast(
-                list["ConfigurationUnionTypeDef"], configuration.get("Configurations", [])
-            ):
-                add_configuration(inner_configurations, inner_configuration)
-
-            existing_configuration["Properties"] = properties
-            existing_configuration["Configurations"] = inner_configurations  # type: ignore
-
-            break
-    else:
-        configurations.append(configuration)
-
-
 @public
-@experimental
 class PipesEMRClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running jobs on AWS EMR.
 
@@ -82,21 +50,25 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
             context into AWS EMR job. Defaults to :py:class:`PipesEnvContextInjector`.
         forward_termination (bool): Whether to cancel the EMR job if the Dagster process receives a termination signal.
         wait_for_s3_logs_seconds (int): The number of seconds to wait for S3 logs to be written after execution completes.
+        s3_application_logs_prefix (str): The prefix to use when looking for application logs in S3.
+            Defaults to `containers`. Another common value is `steps` (for non-yarn clusters).
     """
 
     def __init__(
         self,
         message_reader: PipesMessageReader,
-        client=None,
+        client: Optional["EMRClient"] = None,
         context_injector: Optional[PipesContextInjector] = None,
         forward_termination: bool = True,
         wait_for_s3_logs_seconds: int = 10,
+        s3_application_logs_prefix: str = "containers",
     ):
-        self._client = client or boto3.client("emr")
+        self._client: EMRClient = cast("EMRClient", client or boto3.client("emr"))
         self._message_reader = message_reader
         self._context_injector = context_injector or PipesEnvContextInjector()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
         self.wait_for_s3_logs_seconds = wait_for_s3_logs_seconds
+        self.s3_application_logs_prefix = s3_application_logs_prefix
 
     @property
     def client(self) -> "EMRClient":
@@ -162,38 +134,11 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
     def _enrich_params(
         self, session: PipesSession, params: "RunJobFlowInputRequestTypeDef"
     ) -> "RunJobFlowInputRequestTypeDef":
-        # add Pipes env variables
-        pipes_env_vars = session.get_bootstrap_env_vars()
-
-        configurations = cast(list["ConfigurationUnionTypeDef"], params.get("Configurations", []))
-
-        # add all possible env vars to spark-defaults, spark-env, yarn-env, hadoop-env
-        # since we can't be sure which one will be used by the job
-        add_configuration(
-            configurations,
-            {
-                "Classification": "spark-defaults",
-                "Properties": {
-                    f"spark.yarn.appMasterEnv.{var}": value for var, value in pipes_env_vars.items()
-                },
-            },
+        params["Configurations"] = emr_inject_pipes_env_vars(
+            session,
+            cast(list["ConfigurationUnionTypeDef"], params.get("Configurations", [])),
+            emr_flavor="standard",
         )
-
-        for classification in ["spark-env", "yarn-env", "hadoop-env"]:
-            add_configuration(
-                configurations,
-                {
-                    "Classification": classification,
-                    "Configurations": [
-                        {
-                            "Classification": "export",
-                            "Properties": pipes_env_vars,
-                        }
-                    ],
-                },
-            )
-
-        params["Configurations"] = configurations
 
         tags = list(params.get("Tags", []))
 
@@ -232,7 +177,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
 
         cluster = self._client.describe_cluster(ClusterId=cluster_id)
 
-        state: ClusterStateType = cluster["Cluster"]["Status"]["State"]
+        state: ClusterStateType = cluster["Cluster"]["Status"]["State"]  # type: ignore
 
         context.log.info(f"[pipes] EMR cluster {cluster_id} completed with state: {state}")
 
@@ -308,9 +253,12 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
             bucket = logs_uri.split("/")[2]
             prefix = "/".join(logs_uri.split("/")[3:])
 
-            # discover container (application) logs (e.g. Python logs) and forward all of them
-            # ex. /containers/application_1727881613116_0001/container_1727881613116_0001_01_000001/stdout.gz
-            containers_prefix = os.path.join(prefix, f"{cluster_id}/containers/")
+            # discover application logs (e.g. Python logs) and forward all of them
+            # ex. /containers/application_1727881613116_0001/container_1727881613116_0001_01_000001/stdout.gz for Yarn
+            # or /steps/... for EMR steps
+            application_logs_prefix = os.path.join(
+                prefix, f"{cluster_id}/{self.s3_application_logs_prefix}/"
+            )
 
             context.log.debug(
                 f"[pipes] Waiting for {self.wait_for_s3_logs_seconds} seconds to allow EMR to dump all logs to S3. "
@@ -320,13 +268,13 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
             time.sleep(self.wait_for_s3_logs_seconds)  # give EMR a chance to dump all logs to S3
 
             context.log.debug(
-                f"[pipes] Looking for application logs in s3://{os.path.join(bucket, containers_prefix)}"
+                f"[pipes] Looking for application logs in s3://{os.path.join(bucket, application_logs_prefix)}"
             )
 
             all_keys = [
                 obj["Key"]
                 for obj in self.message_reader.client.list_objects_v2(
-                    Bucket=bucket, Prefix=containers_prefix
+                    Bucket=bucket, Prefix=application_logs_prefix
                 )["Contents"]
             ]
 

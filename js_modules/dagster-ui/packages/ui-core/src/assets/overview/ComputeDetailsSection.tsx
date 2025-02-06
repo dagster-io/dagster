@@ -5,26 +5,30 @@ import {Link} from 'react-router-dom';
 import {metadataForAssetNode} from '../AssetMetadata';
 import {AttributeAndValue, SectionSkeleton} from './Common';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
+import {useFeatureFlags} from '../../app/Flags';
 import {COMMON_COLLATOR} from '../../app/Util';
 import {DagsterTypeSummary} from '../../dagstertype/DagsterType';
+import {PoolTag} from '../../instance/PoolTag';
 import {RepoAddress} from '../../workspace/types';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {UnderlyingOpsOrGraph} from '../UnderlyingOpsOrGraph';
-import {AssetNodeDefinitionFragment} from '../types/AssetNodeDefinition.types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 export const ComputeDetailsSection = ({
   repoAddress,
   assetNode,
 }: {
   repoAddress: RepoAddress | null;
-  assetNode: AssetNodeDefinitionFragment | null | undefined;
+  assetNode: AssetViewDefinitionNodeFragment | null | undefined;
 }) => {
+  const {flagPoolUI} = useFeatureFlags();
   if (!assetNode) {
     return <SectionSkeleton />;
   }
   const {assetType} = metadataForAssetNode(assetNode);
   const configType = assetNode?.configField?.configType;
   const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
+  const pools = assetNode.pools || [];
 
   return (
     <Box flex={{direction: 'column', gap: 12}}>
@@ -36,6 +40,16 @@ export const ComputeDetailsSection = ({
             hideIfRedundant={false}
           />
         </Tag>
+      </AttributeAndValue>
+
+      <AttributeAndValue label={pools.length > 1 ? 'Pools' : 'Pool'}>
+        {flagPoolUI && pools.length > 0 ? (
+          <Box flex={{gap: 4}}>
+            {pools.map((pool, idx) => (
+              <PoolTag key={idx} pool={pool} />
+            ))}
+          </Box>
+        ) : null}
       </AttributeAndValue>
 
       <AttributeAndValue label="Code version">{assetNode.opVersion}</AttributeAndValue>

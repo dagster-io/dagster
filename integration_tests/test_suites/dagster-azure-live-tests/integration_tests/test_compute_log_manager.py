@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+from typing import Callable
 
 import pytest
 from azure.identity import ClientSecretCredential
@@ -11,6 +12,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.event_api import EventLogRecord
+from dagster._core.events import ComputeLogsCaptureData
 
 YAMLS_NOT_CAPTURED = ["default-capture-behavior.yaml"]
 
@@ -59,12 +61,66 @@ def test_compute_log_manager(
     assert stderr.count("Logging using context") == 10
 
 
+@pytest.mark.parametrize(
+    "dagster_yaml",
+    [
+        "secret-credential.yaml",
+    ],
+    indirect=True,
+)
+def test_compute_log_manager_shell_cmd(
+    dagster_dev: subprocess.Popen,
+    container_client: ContainerClient,
+    prefix_env: str,
+    credentials: ClientSecretCredential,
+    dagster_yaml: Path,
+    call_azure_cli: Callable[[list[str]], subprocess.CompletedProcess[str]],
+) -> None:
+    subprocess.run(
+        ["dagster", "asset", "materialize", "--select", "my_asset", "-m", "azure_test_proj.defs"],
+        check=True,
+    )
+    logs_captured_record = DagsterInstance.get().get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.LOGS_CAPTURED,
+        )
+    )[0]
+
+    logs_captured_data = get_logs_captured_data(logs_captured_record)
+    (stdout_filename, stderr_filename) = get_filenames_from_log_data(logs_captured_data)
+    assert (
+        logs_captured_data.shell_cmd
+        and logs_captured_data.shell_cmd.stdout
+        and logs_captured_data.shell_cmd.stderr
+    )
+    assert logs_captured_data.shell_cmd.stdout.endswith(stdout_filename)
+    assert logs_captured_data.shell_cmd.stderr.endswith(stderr_filename)
+
+    stdout_result = call_azure_cli(logs_captured_data.shell_cmd.stdout.split())
+    assert stdout_result.stdout.count("Printing without context") == 10
+
+    stderr_result = call_azure_cli(logs_captured_data.shell_cmd.stderr.split())
+    assert stderr_result.stdout.count("Logging using context") == 10
+
+
+def get_logs_captured_data(log_record: EventLogRecord) -> ComputeLogsCaptureData:
+    return check.not_none(log_record.event_log_entry.dagster_event).logs_captured_data
+
+
+def get_filenames_from_log_data(logs_captured_data: ComputeLogsCaptureData) -> tuple[str, str]:
+    assert logs_captured_data.external_stdout_url is not None
+    assert logs_captured_data.external_stderr_url is not None
+
+    return (
+        logs_captured_data.external_stdout_url.split("/")[-1],
+        logs_captured_data.external_stderr_url.split("/")[-1],
+    )
+
+
 def get_captured_logs_from_urls(
     captured_logs_event: EventLogRecord, credentials: ClientSecretCredential
 ) -> tuple[str, str]:
-    logs_captured_data = check.not_none(
-        captured_logs_event.event_log_entry.dagster_event
-    ).logs_captured_data
+    logs_captured_data = get_logs_captured_data(captured_logs_event)
 
     assert logs_captured_data.external_stderr_url is not None
     assert logs_captured_data.external_stdout_url is not None

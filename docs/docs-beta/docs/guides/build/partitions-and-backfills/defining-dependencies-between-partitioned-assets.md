@@ -12,21 +12,45 @@ Partitioned assets in Dagster can have dependencies on other partitioned assets,
 - A downstream asset can depend on one or more partitions of an upstream asset
 - The partitioning schemes don't need to be identical, but they should be compatible
 
-:::note
+## Default partition dependency rules
 
-This article assumes familiarity with [assets](/guides/build/assets/) and [partitions](partitioning-assets).
+A few rules govern default partition-to-partition dependencies:
 
-:::
+- When the upstream asset and downstream asset have the same <PyObject section="partitions" module="dagster" object="PartitionsDefinition" />, each partition in the downstream asset will depend on the same partition in the upstream asset.
+- When the upstream asset and downstream asset are both [time window-partitioned](partitioning-assets#time-based), each partition in the downstream asset will depend on all partitions in the upstream asset that intersect its time window.
 
+For example, if an asset with a <PyObject section="partitions" module="dagster" object="DailyPartitionsDefinition" /> depends on an asset with an <PyObject section="partitions" module="dagster" object="HourlyPartitionsDefinition" />, then partition `2024-04-12` of the daily asset would depend on 24 partitions of the hourly asset: `2024-04-12-00:00` through `2024-04-12-23:00`.
 
-## Dependencies between different time-based partitions \{#different-time-dependencies}
+## Overriding default dependency rules
+
+Default partition dependency rules can be overridden by providing a <PyObject section="partitions" module="dagster" object="PartitionMapping" /> when specifying a dependency on an asset. How this is accomplished depends on the type of dependency the asset has.
+
+### Basic asset dependencies
+
+To override partition dependency rules for basic asset dependencies, you can use <PyObject section="assets" module="dagster" object="AssetDep" /> to specify the partition dependency on an upstream asset:
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_asset_mappings.py" />
+
+### Managed-loading asset dependencies
+
+To override partition dependency rules for managed-loading asset dependencies, you can use a <PyObject section="partitions" module="dagster" object="PartitionMapping" /> to specify that each partition of an asset should depend on a partition in an upstream asset.
+
+In the following code, we use a <PyObject section="partitions" module="dagster" object="TimeWindowPartitionMapping" /> to specify that each partition of a daily-partitioned asset should depend on the prior day's partition in an upstream asset:
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_mapping.py" />
+
+For a list of available `PartitionMappings`, see the [API docs](/api/python-api/partitions#dagster.PartitionMapping).
+
+## Examples
+
+### Dependencies between different time-based partitions \{#different-time-dependencies}
 
 The following example creates two partitions: `daily_sales_data` and `daily_sales_summary`, which can be executed at the same time in a single schedule.
 
 <details>
 <summary>Show example</summary>
 
-<CodeExample filePath="guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
 
 </details>
 
@@ -34,7 +58,7 @@ However, sometimes you might want to define dependencies between different time-
 
 Consider the following example:
 
-<CodeExample filePath="guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" />
 
 In this example:
 
@@ -48,26 +72,32 @@ In this example:
   - First, we specify `automation_condition=AutomationCondition.eager()` to the `weekly_sales_summary` asset. This ensures it runs weekly after all seven daily partitions of `daily_sales_data` are up-to-date.
   - Second, we specify `automation_condition=AutomationCondition.cron(cron_schedule="0 1 * * *")` to the `daily_sales_data` asset. This ensures it runs daily.
 
-Note: In a simpler example above, we manually set up a daily schedule for asset execution. For more complex dependency logic, it's recommended to use automation conditions instead of schedules. Automation conditions specify when an asset should run, which allows you to define execution criteria without custom scheduling logic. For more details, see [Declarative Automation](/guides/automate/declarative-automation).
 
-## Dependencies between time-based partitions and un-partitioned assets
+:::tip
 
-TODO
+We recommend using [automation conditions](/guides/automate/declarative-automation/) instead of [schedules](/guides/automate/schedules) for code with complex dependency logic, such as the example above. Automation conditions specify when an asset should run, which allows you to define execution criteria without needing to add custom scheduling logic.
 
-## Dependencies between time-based and static partitions
+:::
 
-Combining time-based and static partitions allows you to analyze data across both temporal and categorical dimensions. This is particularly useful for scenarios like regional time series analysis.
 
-{/* TODO */}
-
-## Dependencies between time-based and dynamic partitions
+{/* ## Dependencies between time-based partitions and un-partitioned assets */}
 
 {/* TODO */}
 
-## Dependencies between time-based partitions and un-partitioned assets
+{/* ## Dependencies between time-based and static partitions */}
+
+{/* Combining time-based and static partitions allows you to analyze data across both temporal and categorical dimensions. This is particularly useful for scenarios like regional time series analysis. */}
 
 {/* TODO */}
 
-## Integrating Dagster partitions with external systems: incremental models and dbt
+{/* ## Dependencies between time-based and dynamic partitions */}
+
+{/* TODO */}
+
+{/* ## Dependencies between time-based partitions and un-partitioned assets */}
+
+{/* TODO */}
+
+{/* ## Integrating Dagster partitions with external systems: incremental models and dbt */}
 
 {/* TODO */}

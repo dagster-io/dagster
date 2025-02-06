@@ -1,0 +1,7 @@
+cd my-deployment && tree
+
+.
+├── code_locations
+└── pyproject.toml
+
+2 directories, 1 file

@@ -8,31 +8,32 @@ from dagster_components.core.component import (
     get_registered_component_types_in_module,
 )
 from dagster_components.core.component_defs_builder import build_defs_from_component_path
-from dagster_components.core.deployment import CodeLocationProjectContext
+from dagster_components.core.component_key import GlobalComponentKey
 
 
 def load_test_component_defs(name: str) -> Definitions:
-    context = load_test_component_project_context()
+    registry = load_test_component_project_registry()
     return build_defs_from_component_path(
         path=Path(__file__).parent / "components" / name,
-        registry=context.component_registry,
+        registry=registry,
         resources={},
     )
 
 
-def load_test_component_project_context() -> CodeLocationProjectContext:
-    package_name = "dagster_components.lib"
-    dc_module = importlib.import_module(package_name)
-
+def load_test_component_project_registry(include_test: bool = False) -> ComponentTypeRegistry:
     components = {}
-    for component in get_registered_component_types_in_module(dc_module):
-        key = f"dagster_components.{get_component_type_name(component)}"
-        components[key] = component
+    package_name = "dagster_components.lib"
 
-    return CodeLocationProjectContext(
-        root_path=str(Path(__file__).parent),
-        name="test",
-        component_registry=ComponentTypeRegistry(components),
-        components_path=Path(__file__).parent / "components",
-        components_package_name="dagster_components_tests.integration_tests.components",
+    packages = ["dagster_components.lib"] + (
+        ["dagster_components.lib.test"] if include_test else []
     )
+    for package_name in packages:
+        dc_module = importlib.import_module(package_name)
+
+        for component in get_registered_component_types_in_module(dc_module):
+            key = GlobalComponentKey(
+                name=get_component_type_name(component),
+                namespace=f"dagster_components{'.test' if package_name.endswith('test') else ''}",
+            )
+            components[key] = component
+    return ComponentTypeRegistry(components)

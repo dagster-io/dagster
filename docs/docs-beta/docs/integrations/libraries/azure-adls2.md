@@ -5,7 +5,7 @@ title: Dagster &  Azure Data Lake Storage Gen 2
 sidebar_label: Azure Data Lake Storage Gen 2
 excerpt: Get utilities for ADLS2 and Blob Storage.
 date: 2022-11-07
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-azure
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-azure
 docslink:
 partnerlink: https://azure.microsoft.com/
 logo: /integrations/Azure.svg
@@ -26,9 +26,9 @@ Dagster helps you use Azure Storage Accounts as part of your data pipeline. Azur
 pip install dagster-azure
 ```
 
-### Examples
+### Example
 
-<CodeExample filePath="integrations/azure-adls2.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/azure-adls2.py" language="python" />
 
 In this updated code, we use `ADLS2Resource` directly instead of `adls2_resource`. The configuration is passed to `ADLS2Resource` during its instantiation.
 

@@ -7,6 +7,7 @@ export type RunFragment = {
   id: string;
   runConfigYaml: string;
   canTerminate: boolean;
+  allPools: Array<string> | null;
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
   hasDeletePermission: boolean;
@@ -1534,6 +1535,11 @@ export type RunDagsterRunEventFragment_LogsCapturedEvent = {
   externalStderrUrl: string | null;
   eventType: Types.DagsterEventType | null;
   externalUrl: string | null;
+  shellCmd: {
+    __typename: 'LogRetrievalShellCommand';
+    stdout: string | null;
+    stderr: string | null;
+  } | null;
 };
 
 export type RunDagsterRunEventFragment_MaterializationEvent = {
@@ -3135,6 +3141,7 @@ export type RunPageFragment = {
   parentPipelineSnapshotId: string | null;
   runConfigYaml: string;
   canTerminate: boolean;
+  allPools: Array<string> | null;
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
   hasDeletePermission: boolean;

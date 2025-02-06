@@ -81,6 +81,10 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.metadata
 
     @property
+    def pools(self) -> Optional[set[str]]:
+        return self.resolve_to_singular_repo_scoped_node().pools
+
+    @property
     def tags(self) -> Mapping[str, str]:
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.tags or {}
 
@@ -187,6 +191,10 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
     def auto_observe_interval_minutes(self) -> Optional[float]:
         return self.asset_node_snap.auto_observe_interval_minutes
 
+    @property
+    def pools(self) -> Optional[set[str]]:
+        return self.asset_node_snap.pools
+
 
 @whitelist_for_serdes
 @record
@@ -267,6 +275,13 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @cached_property
     def is_executable(self) -> bool:
         return any(node.asset_node.is_executable for node in self.repo_scoped_asset_infos)
+
+    @cached_property
+    def pools(self) -> Optional[set[str]]:
+        pools = set()
+        for info in self.repo_scoped_asset_infos:
+            pools.update(info.asset_node.pools or set())
+        return pools
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:

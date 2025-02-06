@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 import boto3
 import dagster._check as check
 from dagster import DagsterInvariantViolationError, PipesClient
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterExecutionInterruptedError
@@ -36,7 +36,6 @@ AWS_SERVICE_NAME = "EMR Serverless"
 
 
 @public
-@experimental
 class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
     """A pipes client for running workloads on AWS EMR Serverless.
 
@@ -60,7 +59,9 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         forward_termination: bool = True,
         poll_interval: float = 5.0,
     ):
-        self._client = client or boto3.client("emr-serverless")
+        self._client: EMRServerlessClient = cast(
+            "EMRServerlessClient", client or boto3.client("emr-serverless")
+        )
         self._context_injector = context_injector or PipesEnvContextInjector()
         self._message_reader = message_reader or PipesCloudWatchMessageReader()
         self.forward_termination = check.bool_param(forward_termination, "forward_termination")
@@ -219,7 +220,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
                     f"[pipes] {self.AWS_SERVICE_NAME} job {job_run_id} completed with state: {state}"
                 )
                 return response
-            elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING"]:
+            elif state in ["PENDING", "SUBMITTED", "SCHEDULED", "RUNNING", "QUEUED"]:
                 time.sleep(self.poll_interval)
                 continue
             else:

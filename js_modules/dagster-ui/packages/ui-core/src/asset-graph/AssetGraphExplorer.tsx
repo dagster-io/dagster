@@ -101,9 +101,7 @@ export const GROUPS_ONLY_SCALE = 0.15;
 const DEFAULT_SET_HIDE_NODES_MATCH = (_node: AssetNodeForGraphQueryFragment) => true;
 
 export const AssetGraphExplorer = (props: Props) => {
-  const {fullAssetGraphData, loading: fullAssetGraphDataLoading} = useFullAssetGraphData(
-    props.fetchOptions,
-  );
+  const {fullAssetGraphData} = useFullAssetGraphData(props.fetchOptions);
   const [hideNodesMatching, setHideNodesMatching] = useState(() => DEFAULT_SET_HIDE_NODES_MATCH);
 
   const {
@@ -154,10 +152,10 @@ export const AssetGraphExplorer = (props: Props) => {
   return (
     <Loading allowStaleData queryResult={fetchResult}>
       {() => {
-        if (graphDataLoading || filteredAssetsLoading || fullAssetGraphDataLoading) {
+        if (graphDataLoading || filteredAssetsLoading) {
           return <LoadingSpinner purpose="page" />;
         }
-        if (!assetGraphData || !allAssetKeys || !fullAssetGraphData) {
+        if (!assetGraphData || !allAssetKeys) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
@@ -176,7 +174,7 @@ export const AssetGraphExplorer = (props: Props) => {
           <AssetGraphExplorerWithData
             key={props.explorerPath.pipelineName}
             assetGraphData={assetGraphData}
-            fullAssetGraphData={fullAssetGraphData}
+            fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
             allAssetKeys={allAssetKeys}
             graphQueryItems={graphQueryItems}
             filterBar={filterBar}
@@ -754,7 +752,9 @@ const AssetGraphExplorerWithData = ({
                       />
                     </Tooltip>
                   )}
-                  <div>{filterButton}</div>
+                  {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (
+                    <div>{filterButton}</div>
+                  )}
                   <GraphQueryInputFlexWrap>
                     {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
                       <AssetSelectionInput
@@ -782,7 +782,7 @@ const AssetGraphExplorerWithData = ({
                     }
                   />
                 </Box>
-                {filterBar}
+                {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterBar}
               </Box>
             </TopbarWrapper>
           </ErrorBoundary>

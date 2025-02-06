@@ -6,7 +6,7 @@ title: Dagster & PagerDuty
 sidebar_label: PagerDuty
 excerpt: Centralize your monitoring with the dagster-pagerduty integration.
 date: 2024-08-30
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-pagerduty
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-pagerduty
 docslink:
 partnerlink: https://www.pagerduty.com/
 categories:
@@ -23,12 +23,12 @@ This library provides an integration between Dagster and PagerDuty to support cr
 ### Installation
 
 ```bash
-pip install dagster_pagerduty
+pip install dagster-pagerduty
 ```
 
 ### Example
 
-<CodeExample filePath="integrations/pagerduty.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/pagerduty.py" language="python" />
 
 ### About PagerDuty
 

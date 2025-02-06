@@ -1,24 +1,25 @@
 ---
-title: Customizing agent settings in dagster.yaml
-sidebar_position: 80
-unlisted: true
+title: "Customizing Dagster+ agent settings in dagster.yaml"
+sidebar_position: 300
 ---
 
 :::note
 This guide is applicable to Dagster+.
 :::
 
-{/* /deployment/dagster-instance */}
-The Dagster+ Agent is a special variant of the Dagster instance used in [Dagster Open Source](/todo.md) and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.
+The Dagster+ Agent is a special variant of the Dagster instance used in Dagster Open Source and is configured through the same `dagster.yaml` file. You can customize your agent with these settings.
 
 :::note
-{/* /dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent */}
-For [Kubernetes agents](/todo.md) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
+
+For [Kubernetes agents](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/) deployed with the Dagster+ Helm chart, you'll need to refer to the Helm chart's config map for customizing the agent.
+
 :::
 
 ## Enabling user code server TTL
 
 User code servers support a configurable time-to-live (TTL). The agent will spin down any user code servers that haven't served requests recently and will spin them back up the next time they're needed. Configuring TTL can save compute cost because user code servers will spend less time sitting idle.
+
+TTL is disabled by default for full deployments, and can be configured separately for full and [branch deployments](/dagster-plus/features/ci-cd/branch-deployments/setting-up-branch-deployments). TTL defaults to 24 hours for both full and branch deployments.
 
 To configure TTL:
 ```yaml
@@ -37,8 +38,11 @@ user_code_launcher:
   class: DockerUserCodeLauncher
   config:
     server_ttl:
-      enabled: true
-      ttl_seconds: 7200 #2 hours
+      full_deployments:
+        enabled: true # Disabled by default for full deployments
+        ttl_seconds: 7200 # 2 hours
+      branch_deployments:
+        ttl_seconds: 3600 # 1 hour
 ```
 
 ## Streaming compute logs
@@ -94,7 +98,7 @@ compute_logs:
 ## Writing compute logs to AWS S3
 
 {/* /api/python-api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager */}
-You can write compute logs to an AWS S3 bucket by configuring the [dagster_aws.s3.compute_log_manager](/todo.md) module.
+You can write compute logs to an AWS S3 bucket by configuring the <PyObject section="libraries" module="dagster_aws" object="s3.S3ComputeLogManager" /> module.
 
 You are also able to stream partial compute log files by configuring the log upload interval (in seconds) using the `upload_interval` parameter.
 

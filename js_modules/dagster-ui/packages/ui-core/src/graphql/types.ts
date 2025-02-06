@@ -482,6 +482,7 @@ export type AssetNode = {
   partitionKeys: Array<Scalars['String']['output']>;
   partitionKeysByDimension: Array<DimensionPartitionKeys>;
   partitionStats: Maybe<PartitionStats>;
+  pools: Array<Scalars['String']['output']>;
   repository: Repository;
   requiredResources: Array<ResourceRequirement>;
   staleCauses: Array<StaleCause>;
@@ -596,6 +597,7 @@ export type AssetPartitionsStatusCounts = {
 
 export type AssetSelection = {
   __typename: 'AssetSelection';
+  assetChecks: Array<AssetCheckhandle>;
   assetKeys: Array<AssetKey>;
   assetSelectionString: Maybe<Scalars['String']['output']>;
   assets: Array<Asset>;
@@ -823,6 +825,7 @@ export type CompositeSolidDefinition = ISolidDefinition &
     name: Scalars['String']['output'];
     outputDefinitions: Array<OutputDefinition>;
     outputMappings: Array<OutputMapping>;
+    pools: Array<Scalars['String']['output']>;
     solidHandle: Maybe<SolidHandle>;
     solidHandles: Array<SolidHandle>;
     solids: Array<Solid>;
@@ -844,10 +847,12 @@ export type ConcurrencyKeyInfo = {
   assignedStepRunIds: Array<Scalars['String']['output']>;
   claimedSlots: Array<ClaimedConcurrencySlot>;
   concurrencyKey: Scalars['String']['output'];
+  limit: Maybe<Scalars['Int']['output']>;
   pendingStepCount: Scalars['Int']['output'];
   pendingStepRunIds: Array<Scalars['String']['output']>;
   pendingSteps: Array<PendingConcurrencyStep>;
   slotCount: Scalars['Int']['output'];
+  usingDefaultLimit: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type ConfigType = {
@@ -1838,6 +1843,7 @@ export type ISolidDefinition = {
   metadata: Array<MetadataItemDefinition>;
   name: Scalars['String']['output'];
   outputDefinitions: Array<OutputDefinition>;
+  pools: Array<Scalars['String']['output']>;
 };
 
 export type Input = {
@@ -1894,6 +1900,7 @@ export type Instance = {
   info: Maybe<Scalars['String']['output']>;
   maxConcurrencyLimitValue: Scalars['Int']['output'];
   minConcurrencyLimitValue: Scalars['Int']['output'];
+  poolConfig: Maybe<PoolConfig>;
   runLauncher: Maybe<RunLauncher>;
   runQueueConfig: Maybe<RunQueueConfig>;
   runQueuingSupported: Scalars['Boolean']['output'];
@@ -2408,6 +2415,12 @@ export type LogMessageEvent = MessageEvent & {
   timestamp: Scalars['String']['output'];
 };
 
+export type LogRetrievalShellCommand = {
+  __typename: 'LogRetrievalShellCommand';
+  stderr: Maybe<Scalars['String']['output']>;
+  stdout: Maybe<Scalars['String']['output']>;
+};
+
 export type LogTelemetryMutationResult = LogTelemetrySuccess | PythonError;
 
 export type LogTelemetrySuccess = {
@@ -2434,6 +2447,7 @@ export type LogsCapturedEvent = MessageEvent & {
   message: Scalars['String']['output'];
   pid: Maybe<Scalars['Int']['output']>;
   runId: Scalars['String']['output'];
+  shellCmd: Maybe<LogRetrievalShellCommand>;
   solidHandleID: Maybe<Scalars['String']['output']>;
   stepKey: Maybe<Scalars['String']['output']>;
   stepKeys: Maybe<Array<Scalars['String']['output']>>;
@@ -3711,6 +3725,13 @@ export type PipelineTagAndValues = {
   values: Array<Scalars['String']['output']>;
 };
 
+export type PoolConfig = {
+  __typename: 'PoolConfig';
+  defaultPoolLimit: Maybe<Scalars['Int']['output']>;
+  opGranularityRunBuffer: Maybe<Scalars['Int']['output']>;
+  poolGranularity: Maybe<Scalars['String']['output']>;
+};
+
 export type PresetNotFoundError = Error & {
   __typename: 'PresetNotFoundError';
   message: Scalars['String']['output'];
@@ -4472,6 +4493,7 @@ export type ResumeBackfillSuccess = {
 export type Run = PipelineRun &
   RunsFeedEntry & {
     __typename: 'Run';
+    allPools: Maybe<Array<Scalars['String']['output']>>;
     assetCheckSelection: Maybe<Array<AssetCheckhandle>>;
     assetChecks: Maybe<Array<AssetCheckhandle>>;
     assetMaterializations: Array<MaterializationEvent>;
@@ -5192,6 +5214,8 @@ export type SolidDefinition = ISolidDefinition & {
   metadata: Array<MetadataItemDefinition>;
   name: Scalars['String']['output'];
   outputDefinitions: Array<OutputDefinition>;
+  pool: Maybe<Scalars['String']['output']>;
+  pools: Array<Scalars['String']['output']>;
   requiredResources: Array<ResourceRequirement>;
 };
 
@@ -6726,6 +6750,7 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('PartitionStats')
           ? ({} as PartitionStats)
           : buildPartitionStats({}, relationshipsToOmit),
+    pools: overrides && overrides.hasOwnProperty('pools') ? overrides.pools! : [],
     repository:
       overrides && overrides.hasOwnProperty('repository')
         ? overrides.repository!
@@ -6887,6 +6912,7 @@ export const buildAssetSelection = (
   relationshipsToOmit.add('AssetSelection');
   return {
     __typename: 'AssetSelection',
+    assetChecks: overrides && overrides.hasOwnProperty('assetChecks') ? overrides.assetChecks! : [],
     assetKeys: overrides && overrides.hasOwnProperty('assetKeys') ? overrides.assetKeys! : [],
     assetSelectionString:
       overrides && overrides.hasOwnProperty('assetSelectionString')
@@ -7305,6 +7331,7 @@ export const buildCompositeSolidDefinition = (
         : [],
     outputMappings:
       overrides && overrides.hasOwnProperty('outputMappings') ? overrides.outputMappings! : [],
+    pools: overrides && overrides.hasOwnProperty('pools') ? overrides.pools! : [],
     solidHandle:
       overrides && overrides.hasOwnProperty('solidHandle')
         ? overrides.solidHandle!
@@ -7341,6 +7368,7 @@ export const buildConcurrencyKeyInfo = (
       overrides && overrides.hasOwnProperty('claimedSlots') ? overrides.claimedSlots! : [],
     concurrencyKey:
       overrides && overrides.hasOwnProperty('concurrencyKey') ? overrides.concurrencyKey! : 'quasi',
+    limit: overrides && overrides.hasOwnProperty('limit') ? overrides.limit! : 703,
     pendingStepCount:
       overrides && overrides.hasOwnProperty('pendingStepCount') ? overrides.pendingStepCount! : 370,
     pendingStepRunIds:
@@ -7350,6 +7378,10 @@ export const buildConcurrencyKeyInfo = (
     pendingSteps:
       overrides && overrides.hasOwnProperty('pendingSteps') ? overrides.pendingSteps! : [],
     slotCount: overrides && overrides.hasOwnProperty('slotCount') ? overrides.slotCount! : 455,
+    usingDefaultLimit:
+      overrides && overrides.hasOwnProperty('usingDefaultLimit')
+        ? overrides.usingDefaultLimit!
+        : true,
   };
 };
 
@@ -8825,6 +8857,7 @@ export const buildISolidDefinition = (
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
         : [],
+    pools: overrides && overrides.hasOwnProperty('pools') ? overrides.pools! : [],
   };
 };
 
@@ -8948,6 +8981,12 @@ export const buildInstance = (
       overrides && overrides.hasOwnProperty('minConcurrencyLimitValue')
         ? overrides.minConcurrencyLimitValue!
         : 4538,
+    poolConfig:
+      overrides && overrides.hasOwnProperty('poolConfig')
+        ? overrides.poolConfig!
+        : relationshipsToOmit.has('PoolConfig')
+          ? ({} as PoolConfig)
+          : buildPoolConfig({}, relationshipsToOmit),
     runLauncher:
       overrides && overrides.hasOwnProperty('runLauncher')
         ? overrides.runLauncher!
@@ -9781,6 +9820,19 @@ export const buildLogMessageEvent = (
   };
 };
 
+export const buildLogRetrievalShellCommand = (
+  overrides?: Partial<LogRetrievalShellCommand>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LogRetrievalShellCommand'} & LogRetrievalShellCommand => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LogRetrievalShellCommand');
+  return {
+    __typename: 'LogRetrievalShellCommand',
+    stderr: overrides && overrides.hasOwnProperty('stderr') ? overrides.stderr! : 'adipisci',
+    stdout: overrides && overrides.hasOwnProperty('stdout') ? overrides.stdout! : 'voluptas',
+  };
+};
+
 export const buildLogTelemetrySuccess = (
   overrides?: Partial<LogTelemetrySuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9841,6 +9893,12 @@ export const buildLogsCapturedEvent = (
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'ex',
     pid: overrides && overrides.hasOwnProperty('pid') ? overrides.pid! : 7623,
     runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'modi',
+    shellCmd:
+      overrides && overrides.hasOwnProperty('shellCmd')
+        ? overrides.shellCmd!
+        : relationshipsToOmit.has('LogRetrievalShellCommand')
+          ? ({} as LogRetrievalShellCommand)
+          : buildLogRetrievalShellCommand({}, relationshipsToOmit),
     solidHandleID:
       overrides && overrides.hasOwnProperty('solidHandleID')
         ? overrides.solidHandleID!
@@ -12041,6 +12099,29 @@ export const buildPipelineTagAndValues = (
   };
 };
 
+export const buildPoolConfig = (
+  overrides?: Partial<PoolConfig>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PoolConfig'} & PoolConfig => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PoolConfig');
+  return {
+    __typename: 'PoolConfig',
+    defaultPoolLimit:
+      overrides && overrides.hasOwnProperty('defaultPoolLimit')
+        ? overrides.defaultPoolLimit!
+        : 2648,
+    opGranularityRunBuffer:
+      overrides && overrides.hasOwnProperty('opGranularityRunBuffer')
+        ? overrides.opGranularityRunBuffer!
+        : 3091,
+    poolGranularity:
+      overrides && overrides.hasOwnProperty('poolGranularity')
+        ? overrides.poolGranularity!
+        : 'enim',
+  };
+};
+
 export const buildPresetNotFoundError = (
   overrides?: Partial<PresetNotFoundError>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -13104,6 +13185,7 @@ export const buildRun = (
   relationshipsToOmit.add('Run');
   return {
     __typename: 'Run',
+    allPools: overrides && overrides.hasOwnProperty('allPools') ? overrides.allPools! : [],
     assetCheckSelection:
       overrides && overrides.hasOwnProperty('assetCheckSelection')
         ? overrides.assetCheckSelection!
@@ -14459,6 +14541,8 @@ export const buildSolidDefinition = (
       overrides && overrides.hasOwnProperty('outputDefinitions')
         ? overrides.outputDefinitions!
         : [],
+    pool: overrides && overrides.hasOwnProperty('pool') ? overrides.pool! : 'voluptates',
+    pools: overrides && overrides.hasOwnProperty('pools') ? overrides.pools! : [],
     requiredResources:
       overrides && overrides.hasOwnProperty('requiredResources')
         ? overrides.requiredResources!

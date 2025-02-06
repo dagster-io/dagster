@@ -120,6 +120,7 @@ SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
         "job_datas": "external_pipeline_datas",
         "job_refs": "external_job_refs",
     },
+    skip_when_empty_fields={"pools"},
 )
 @record_custom
 class RepositorySnap(IHaveNew):
@@ -1288,7 +1289,7 @@ class ResourceSnap(IHaveNew):
             resource_snapshot=build_resource_def_snap(name, resource_def),
             configured_values=configured_values,
             config_field_snaps=unconfigured_config_type_snap.fields or [],
-            config_schema_snap=config_type.get_schema_snapshot(),
+            config_schema_snap=config_type.schema_snapshot,
             nested_resources=nested_resources,
             parent_resources=parent_resources,
             is_top_level=True,
@@ -1395,6 +1396,7 @@ class AssetNodeSnap(IHaveNew):
     parent_edges: Sequence[AssetParentEdgeSnap]
     child_edges: Sequence[AssetChildEdgeSnap]
     execution_type: AssetExecutionType
+    pools: set[str]
     compute_kind: Optional[str]
     op_name: Optional[str]
     op_names: Sequence[str]
@@ -1428,6 +1430,7 @@ class AssetNodeSnap(IHaveNew):
         parent_edges: Sequence[AssetParentEdgeSnap],
         child_edges: Sequence[AssetChildEdgeSnap],
         execution_type: Optional[AssetExecutionType] = None,
+        pools: Optional[set[str]] = None,
         compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_names: Optional[Sequence[str]] = None,
@@ -1503,6 +1506,7 @@ class AssetNodeSnap(IHaveNew):
             parent_edges=parent_edges or [],
             child_edges=child_edges or [],
             compute_kind=compute_kind,
+            pools=pools or set(),
             op_name=op_name,
             op_names=op_names or [],
             code_version=code_version,
@@ -1663,6 +1667,12 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
             graph_name = (
                 root_node_handle.name if root_node_handle != output_handle.node_handle else None
             )
+            op_defs = [
+                cast(OpDefinition, job_def.graph.get_node(node_handle).definition)
+                for node_handle in node_handles
+                if isinstance(job_def.graph.get_node(node_handle).definition, OpDefinition)
+            ]
+            pools = {op_def.pool for op_def in op_defs if op_def.pool}
             op_names = sorted([str(handle) for handle in node_handles])
             op_name = graph_name or next(iter(op_names), None) or node_def.name
             job_names = sorted([jd.name for jd in job_defs_by_asset_key[key]])
@@ -1680,6 +1690,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
 
         else:
             graph_name = None
+            pools = set()
             op_names = []
             op_name = None
             job_names = []
@@ -1718,6 +1729,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 ],
                 execution_type=asset_node.execution_type,
                 compute_kind=compute_kind,
+                pools=pools,
                 op_name=op_name,
                 op_names=op_names,
                 code_version=asset_node.code_version,

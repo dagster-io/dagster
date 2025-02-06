@@ -18,7 +18,7 @@ def test_empty():
 
     result = runner.invoke(asset_list_command, [])
     assert result.exit_code == 2
-    assert "Must specify a python file or module name" in result.output
+    assert "Invalid set of CLI arguments for loading repository/job" in result.output
 
 
 def test_no_selection():

@@ -37,8 +37,8 @@ import {AssetChecksStatusSummary} from '../asset-checks/AssetChecksStatusSummary
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 import {globalAssetGraphPathForAssetsAndDescendants} from '../globalAssetGraphPathToString';
 import {AssetKey} from '../types';
-import {AssetNodeDefinitionFragment} from '../types/AssetNodeDefinition.types';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 import {useLatestPartitionEvents} from '../useLatestPartitionEvents';
 import {useRecentAssetEvents} from '../useRecentAssetEvents';
 
@@ -52,7 +52,7 @@ export const AssetNodeOverview = ({
   dependsOnSelf,
 }: {
   assetKey: AssetKey;
-  assetNode: AssetNodeDefinitionFragment | undefined | null;
+  assetNode: AssetViewDefinitionNodeFragment | undefined | null;
   cachedAssetNode: AssetTableDefinitionFragment | undefined | null;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;

@@ -27,14 +27,13 @@ Refer to the following table for more information, including the pros and cons o
 ### Deployment configuration
 
 {/* Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/dagster-plus/getting-started#step-4-configure-cicd-for-your-project) and include only the code locations that are relevant to the repository in your CI/CD workflow. */}
-Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/todo) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/todo) and include only the code locations that are relevant to the repository in your CI/CD workflow.
+Whether you use a single repository or multiple, you can use a [`dagster_cloud.yaml` file](/dagster-plus/deployment/code-locations/dagster-cloud-yaml) to define the code locations to deploy. For each repository, follow the [steps appropriate to your CI/CD provider](/dagster-plus/features/ci-cd/configuring-ci-cd) and include only the code locations that are relevant to the repository in your CI/CD workflow.
 
 #### Example with GitHub CI/CD on Hybrid deployment
 
 1. **For each repository**, use the CI/CD workflow provided in [Dagster+ Hybrid quickstart repository](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml).
 
-{/* 2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml): */}
-2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/todo):
+2. **For each project in the repository**, configure a code location in the [`dagster_cloud.yaml` file](/dagster-plus/deployment/code-locations/dagster-cloud-yaml):
 
    ```yaml
    # dagster_cloud.yml
@@ -97,7 +96,7 @@ In order from least to most isolated, there are three levels of isolation:
 
 If you have no specific requirements for isolation beyond the ability to deploy and run multiple projects, you can use a single agent and deployment to manage all your projects as individual code locations.
 
-![Diagram of isolation at the code location level](/images/dagster-cloud/managing-deployments/isolation-level-code-locations.png)
+![Diagram of isolation at the code location level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-code-locations.png)
 
 | **Pros** | **Cons** |
 |----------|----------|
@@ -109,15 +108,14 @@ If you have no specific requirements for isolation beyond the ability to deploy 
 Agent queues are only available on [Hybrid deployment](/dagster-plus/deployment/deployment-types/hybrid/).
 :::
 
-{/* Using the [agent routing feature](/dagster-plus/deployment/agents/running-multiple-agents#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project. */}
-Using the [agent routing feature](/todo), you can effectively isolate execution environments between projects by using a separate agent for each project.
+Using the [agent routing feature](/dagster-plus/deployment/deployment-types/hybrid/multiple#routing-requests-to-specific-agents), you can effectively isolate execution environments between projects by using a separate agent for each project.
 
 Motivations for utilizing this approach could include:
 
 - Different compute requirements, such as different cloud providers or architectures
 - Optimizing for locality or access, such as running the data processing closer or in environment with access to the storage locations
 
-![Diagram of isolation at the agent level](/images/dagster-cloud/managing-deployments/isolation-level-agents.png)
+![Diagram of isolation at the agent level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-agents.png)
 
 | **Pros** | **Cons** |
 |----------|----------|
@@ -131,7 +129,7 @@ Multiple deployments are only available in Dagster+ Pro.
 
 Of the approaches outlined in this guide, multiple deployments are the most isolated solution. The typical motivation for this isolation level is to separate production and non-production environments.
 
-![Diagram of isolation at the Dagster+ deployment level](/images/dagster-cloud/managing-deployments/isolation-level-deployments.png)
+![Diagram of isolation at the Dagster+ deployment level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-deployments.png)
 
 | **Pros** | **Cons** |
 |----------|----------|

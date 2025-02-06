@@ -7,7 +7,6 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph_differ import AssetDefinitionChangeType, AssetGraphDiffer
-from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
     StaleCauseCategory,
@@ -39,7 +38,6 @@ from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from packaging import version
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -287,6 +285,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         startIdx=graphene.Int(),
         endIdx=graphene.Int(),
     )
+    pools = non_null_list(graphene.String)
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     required_resources = non_null_list(GrapheneResourceRequirement)
     staleStatus = graphene.Field(GrapheneAssetStaleStatus, partition=graphene.String())
@@ -547,15 +546,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             return []
 
         instance = graphene_info.context.instance
-        asset_graph = graphene_info.context.get_repository(self._repository_selector).asset_graph
+        asset_graph = graphene_info.context.asset_graph
         asset_key = self._asset_node_snap.asset_key
-
-        instance_queryer = CachingInstanceQueryer(
-            instance=graphene_info.context.instance,
-            asset_graph=asset_graph,
-            loading_context=graphene_info.context,
-        )
-        data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
         event_records = instance.fetch_materializations(
             AssetRecordsFilter(
                 asset_key=asset_key,
@@ -571,7 +563,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not asset_graph.has_materializable_parents(asset_key):
             return []
 
-        used_data_times = data_time_resolver.get_data_time_by_key_for_record(
+        used_data_times = graphene_info.context.data_time_resolver.get_data_time_by_key_for_record(
             record=next(iter(event_records)),
         )
 
@@ -816,20 +808,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetFreshnessInfo]:
         if self._asset_node_snap.freshness_policy:
-            asset_graph = graphene_info.context.get_repository(
-                self._repository_selector
-            ).asset_graph
             return get_freshness_info(
                 asset_key=self._asset_node_snap.asset_key,
-                # in the future, we can share this same CachingInstanceQueryer across all
-                # GrapheneAssetNodes which share an external repository for improved performance
-                data_time_resolver=CachingDataTimeResolver(
-                    instance_queryer=CachingInstanceQueryer(
-                        instance=graphene_info.context.instance,
-                        asset_graph=asset_graph,
-                        loading_context=graphene_info.context,
-                    ),
-                ),
+                data_time_resolver=graphene_info.context.data_time_resolver,
             )
         return None
 
@@ -1214,6 +1195,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         if partitions_snap:
             return GraphenePartitionDefinition(partitions_snap)
         return None
+
+    def resolve_pools(self, _graphene_info: ResolveInfo) -> Sequence[str]:
+        return sorted([pool for pool in self._asset_node_snap.pools or set()])
 
     def resolve_repository(self, graphene_info: ResolveInfo) -> "GrapheneRepository":
         return external.GrapheneRepository(self._repository_handle)

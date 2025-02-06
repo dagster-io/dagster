@@ -16,9 +16,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.dagster]
 module_name = "{{ project_name }}.definitions"
-project_name = "{{ project_name }}"
+code_location_name = "{{ code_location_name }}"
 
 [tool.dg]
+is_code_location = true
+is_component_lib = true
 
 [tool.setuptools.packages.find]
 exclude=["{{ project_name }}_tests"]

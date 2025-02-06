@@ -16,7 +16,7 @@ from dagster_dbt.core.dbt_cli_invocation import PARTIAL_PARSE_FILE_NAME
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_project import DbtProject
-from dagster_dbt.errors import DagsterDbtCliRuntimeError
+from dagster_dbt.errors import DagsterDbtCliRuntimeError, DagsterDbtProfilesDirectoryNotFoundError
 from dbt.version import __version__ as dbt_version
 from packaging import version
 from pydantic import ValidationError
@@ -232,6 +232,26 @@ def test_dbt_profile_configuration() -> None:
     ]
     assert dbt_cli_invocation.is_successful()
 
+    dbt_cli_invocation = (
+        DbtCliResource(
+            project_dir=DbtProject(
+                os.fspath(test_jaffle_shop_path), profile="jaffle_shop", target="dev"
+            )
+        )
+        .cli(["parse"])
+        .wait()
+    )
+
+    assert dbt_cli_invocation.process.args == [
+        "dbt",
+        "parse",
+        "--profile",
+        "jaffle_shop",
+        "--target",
+        "dev",
+    ]
+    assert dbt_cli_invocation.is_successful()
+
 
 @pytest.mark.parametrize(
     "profiles_dir", [None, test_jaffle_shop_path, os.fspath(test_jaffle_shop_path)]
@@ -246,15 +266,37 @@ def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
         .is_successful()
     )
 
+    assert (
+        DbtCliResource(
+            project_dir=DbtProject(os.fspath(test_jaffle_shop_path), profiles_dir=profiles_dir)
+        )
+        .cli(["parse"])
+        .is_successful()
+    )
+
     # profiles directory must exist
     with pytest.raises(ValidationError, match="does not exist"):
         DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), profiles_dir="nonexistent")
+
+    # Error is raised at the DbtProject level when a nonexistent directory is passed to a DbtProject object
+    with pytest.raises(DagsterDbtProfilesDirectoryNotFoundError, match="does not exist"):
+        DbtCliResource(
+            project_dir=DbtProject(os.fspath(test_jaffle_shop_path), profiles_dir="nonexistent")
+        )
 
     # profiles directory must contain profile configuration
     with pytest.raises(ValidationError, match="specify a valid path to a dbt profile directory"):
         DbtCliResource(
             project_dir=os.fspath(test_jaffle_shop_path),
             profiles_dir=f"{os.fspath(test_jaffle_shop_path)}/models",
+        )
+
+    with pytest.raises(ValidationError, match="specify a valid path to a dbt profile directory"):
+        DbtCliResource(
+            project_dir=DbtProject(
+                os.fspath(test_jaffle_shop_path),
+                profiles_dir=f"{os.fspath(test_jaffle_shop_path)}/models",
+            )
         )
 
 

@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
 from typing import Optional, Union
 
@@ -147,7 +147,7 @@ def build_output_def_snap(output_def: OutputDefinition) -> OutputDefSnap:
     )
 
 
-@whitelist_for_serdes(storage_name="CompositeSolidDefSnap")
+@whitelist_for_serdes(storage_name="CompositeSolidDefSnap", skip_when_empty_fields={"pools"})
 @record
 class GraphDefSnap:
     name: str
@@ -159,6 +159,7 @@ class GraphDefSnap:
     dep_structure_snapshot: DependencyStructureSnapshot
     input_mapping_snaps: Sequence[InputMappingSnap]
     output_mapping_snaps: Sequence[OutputMappingSnap]
+    pools: Set[str] = set()
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -175,7 +176,7 @@ class GraphDefSnap:
         return _get_output_snap(self, name)
 
 
-@whitelist_for_serdes(storage_name="SolidDefSnap")
+@whitelist_for_serdes(storage_name="SolidDefSnap", skip_when_none_fields={"pool"})
 @record
 class OpDefSnap:
     name: str
@@ -185,6 +186,7 @@ class OpDefSnap:
     tags: Mapping[str, str]
     required_resource_keys: Sequence[str]
     config_field_snap: Optional[ConfigFieldSnap]
+    pool: Optional[str] = None
 
     @cached_property
     def input_def_map(self) -> Mapping[str, InputDefSnap]:
@@ -257,6 +259,7 @@ def build_graph_def_snap(graph_def: GraphDefinition) -> GraphDefSnap:
         dep_structure_snapshot=build_dep_structure_snapshot_from_graph_def(graph_def),
         input_mapping_snaps=list(map(build_input_mapping_snap, graph_def.input_mappings)),
         output_mapping_snaps=list(map(build_output_mapping_snap, graph_def.output_mappings)),
+        pools=graph_def.pools,
     )
 
 
@@ -274,6 +277,7 @@ def build_op_def_snap(op_def: OpDefinition) -> OpDefSnap:
             if op_def.has_config_field
             else None
         ),
+        pool=op_def.pool,
     )
 
 

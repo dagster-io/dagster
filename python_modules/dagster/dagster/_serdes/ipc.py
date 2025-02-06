@@ -184,7 +184,7 @@ def ipc_read_event_stream(
             message = _process_line(file_pointer)
 
 
-# Windows subprocess termination utilities
+# Windows subprocess termination utilities. See here for why we send CTRL_BREAK_EVENT on Windows:
 # https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 
 
@@ -212,7 +212,7 @@ def interrupt_ipc_subprocess(proc: "Popen[Any]") -> None:
 
 
 def interrupt_ipc_subprocess_pid(pid: int) -> None:
-    """Send CTRL_BREAK on Windows, SIGINT on other platforms."""
+    """Send CTRL_BREAK_EVENT on Windows, SIGINT on other platforms."""
     check.int_param(pid, "pid")
 
     if sys.platform == "win32":

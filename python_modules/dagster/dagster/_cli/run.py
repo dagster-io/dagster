@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import get_instance_for_cli
-from dagster._cli.workspace.cli_target import get_remote_job_from_kwargs, job_target_argument
+from dagster._cli.workspace.cli_target import get_remote_job_from_kwargs, job_options
 
 
 @click.group(name="run")
@@ -85,7 +85,7 @@ def run_wipe_command(force: bool) -> None:
     "from_label",
     help="The repository from which to migrate (format: <repository_name>@<location_name>)",
 )
-@job_target_argument
+@job_options
 def run_migrate_command(from_label: str, **kwargs: Any) -> None:
     from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage

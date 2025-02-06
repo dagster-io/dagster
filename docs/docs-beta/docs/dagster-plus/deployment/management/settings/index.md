@@ -1,6 +1,6 @@
 ---
 title: Settings
-sidebar_position: 70
+sidebar_position: 10
 ---
 
 import DocCardList from '@theme/DocCardList';

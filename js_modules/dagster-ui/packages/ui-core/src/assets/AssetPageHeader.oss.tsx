@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import {BreadcrumbProps, Breadcrumbs2 as Breadcrumbs} from '@blueprintjs/popover2';
+import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
 import {
   Box,
   Colors,
@@ -77,20 +77,16 @@ export const AssetPageHeader = ({
             <BreadcrumbsWithSlashes
               items={breadcrumbs}
               currentBreadcrumbRenderer={({text, href}) => (
-                <span key={href}>
-                  <TruncatedHeading>
-                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                  </TruncatedHeading>
-                </span>
+                <TruncatedHeading key={href}>
+                  {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                </TruncatedHeading>
               )}
               breadcrumbRenderer={({text, href}) => (
-                <span key={href}>
-                  <TruncatedHeading>
-                    <BreadcrumbLink to={href || '#'}>
-                      {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                    </BreadcrumbLink>
-                  </TruncatedHeading>
-                </span>
+                <TruncatedHeading key={href}>
+                  <BreadcrumbLink to={href || '#'}>
+                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                  </BreadcrumbLink>
+                </TruncatedHeading>
               )}
               $numHeaderBreadcrumbs={headerBreadcrumbs.length}
               popoverProps={{

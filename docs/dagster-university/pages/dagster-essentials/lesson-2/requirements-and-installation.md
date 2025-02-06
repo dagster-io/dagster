@@ -32,5 +32,5 @@ pip --version
 To install Dagster into your current Python environment:
 
 ```shell
-pip install 'dagster~=1.9'
+pip install dagster~=1.9
 ```

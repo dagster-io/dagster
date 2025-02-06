@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Radio} from '@blueprintjs/core';
 import {
   Alert,
   Box,
@@ -11,6 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   Icon,
+  Radio,
   RadioContainer,
   Subheading,
   Tooltip,

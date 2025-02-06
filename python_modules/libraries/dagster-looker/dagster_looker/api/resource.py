@@ -9,7 +9,7 @@ from dagster import (
     Definitions,
     _check as check,
 )
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import beta, deprecated, public
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
@@ -55,7 +55,7 @@ class LookerFilter:
     only_fetch_explores_used_in_dashboards: bool = False
 
 
-@experimental
+@beta
 class LookerResource(ConfigurableResource):
     """Represents a connection to a Looker instance and provides methods
     to interact with the Looker API.
@@ -123,7 +123,7 @@ class LookerResource(ConfigurableResource):
         )
 
 
-@experimental
+@beta
 def load_looker_asset_specs(
     looker_resource: LookerResource,
     dagster_looker_translator: Optional[

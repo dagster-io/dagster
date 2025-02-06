@@ -3762,7 +3762,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@docusaurus/plugin-google-gtag@npm:3.7.0":
+"@docusaurus/plugin-google-gtag@npm:3.7.0, @docusaurus/plugin-google-gtag@npm:^3.7.0":
   version: 3.7.0
   resolution: "@docusaurus/plugin-google-gtag@npm:3.7.0"
   dependencies:
@@ -8375,6 +8375,7 @@ __metadata:
     "@docusaurus/core": "npm:^3.7.0"
     "@docusaurus/eslint-plugin": "npm:^3.7.0"
     "@docusaurus/module-type-aliases": "npm:^3.7.0"
+    "@docusaurus/plugin-google-gtag": "npm:^3.7.0"
     "@docusaurus/plugin-ideal-image": "npm:^3.7.0"
     "@docusaurus/preset-classic": "npm:^3.7.0"
     "@docusaurus/theme-classic": "npm:^3.7.0"
@@ -11825,13 +11826,13 @@ __metadata:
   linkType: hard
 
 "katex@npm:^0.16.9":
-  version: 0.16.11
-  resolution: "katex@npm:0.16.11"
+  version: 0.16.21
+  resolution: "katex@npm:0.16.21"
   dependencies:
     commander: "npm:^8.3.0"
   bin:
     katex: cli.js
-  checksum: 10c0/be405d45d7228bbfeecd491e0f74d9da0066b5e7b457e3f1dc833de5b63f9e98e40d2ef6b46e1cbe577490a43338c043851da032c45aeec0cc03ad431ef6fd83
+  checksum: 10c0/e2e4139ba72a13f2393308fbb2b4c5511611a19a40a6e39d956cf775e553af3517dbfd0a54477faaf401c923e4654e32296347846b8ff15dfa579f88ff8579bb
   languageName: node
   linkType: hard
 

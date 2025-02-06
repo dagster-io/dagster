@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 import dagster._check as check
 from dagster import ResourceDefinition
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import beta, deprecated
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster_managed_elements import ManagedElementCheckResult, ManagedElementDiff
 from dagster_managed_elements.types import ManagedElementReconciler, is_key_secret
@@ -332,7 +332,7 @@ def reconcile_config(
     return ManagedElementDiff().join(dests_diff).join(connectors_diff)  # type: ignore
 
 
-@experimental
+@beta
 @deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class FivetranManagedElementReconciler(ManagedElementReconciler):
     def __init__(

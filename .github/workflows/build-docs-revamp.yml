@@ -15,6 +15,11 @@ on:
       - examples/docs_beta_snippets/**
       - .github/workflows/build-docs-revamp.yml
       - docs/sphinx/**
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 concurrency:
   group: ${{ github.workflow}}-${{github.ref}}
@@ -22,6 +27,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     # Deploy to Vercel Previews on pull request, push to master branch
     steps:
@@ -30,7 +36,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
         if: |
-          github.event_name == 'pull_request' || 
+          github.event_name == 'pull_request' ||
           (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
         run: |
           BRANCH_PREVIEW_SUBDOMAIN=$(echo "${HEAD_REF:-$REF_NAME}" | sed -e 's/[^a-zA-Z0-9-]/-/g; s/^-*//; s/-*$//' | cut -c1-63)
@@ -70,7 +76,7 @@ jobs:
           git fetch origin $GITHUB_HEAD_SHA
           # Compare the commit the branch is based on to its head to list changed files
           CHANGED_MD_FILES=$(git diff --name-only HEAD~${{ github.event.pull_request.commits }} "$GITHUB_HEAD_SHA" -- '*.md' '*.mdx')
-          CHANGES_ENTRY=$(echo "$CHANGED_MD_FILES" | sed 's/\.mdx*$//' | sed 's/^docs\/docs-beta\/docs/- {{deploymentUrl}}/')
+          CHANGES_ENTRY=$(echo "$CHANGED_MD_FILES" | sed 's/\(index\)*\.mdx*$//' | sed 's/^docs\/docs-beta\/docs/- {{deploymentUrl}}/')
           CHANGES_ENTRY=$(echo -e "Preview available at {{deploymentUrl}}\n\nDirect link to changed pages:\n$CHANGES_ENTRY")
           echo "$CHANGES_ENTRY"
           # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
@@ -84,7 +90,7 @@ jobs:
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
         if: |
-          github.event_name == 'pull_request' || 
+          github.event_name == 'pull_request' ||
           (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}

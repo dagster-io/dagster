@@ -34,7 +34,7 @@ setup(
         f"dagster{pin}",
         f"dagster-pandas{pin}",
         "pandas",
-        "great_expectations >=0.17.15",
+        "great_expectations>=0.17.15,<1.0.0",  # need to migrate from DataContext
     ],
     zip_safe=False,
 )

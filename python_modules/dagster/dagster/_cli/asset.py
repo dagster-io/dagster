@@ -1,14 +1,19 @@
-from collections.abc import Mapping
+from typing import Optional
 
 import click
 
 import dagster._check as check
-from dagster._cli.job import get_config_from_args
-from dagster._cli.utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
+from dagster._cli.job import get_run_config_from_cli_opts
+from dagster._cli.utils import (
+    assert_no_remaining_opts,
+    get_instance_for_cli,
+    get_possibly_temporary_instance_for_cli,
+)
 from dagster._cli.workspace.cli_target import (
-    get_repository_python_origin_from_kwargs,
-    python_job_config_argument,
-    python_origin_target_argument,
+    PythonPointerOpts,
+    get_repository_python_origin_from_cli_opts,
+    python_pointer_options,
+    run_config_option,
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
@@ -32,7 +37,6 @@ def asset_cli():
 
 
 @asset_cli.command(name="materialize", help="Execute a run to materialize a selection of assets")
-@python_origin_target_argument
 @click.option("--select", help="Comma-separated Asset selection to target", required=True)
 @click.option("--partition", help="Asset partition to target", required=False)
 @click.option(
@@ -40,29 +44,57 @@ def asset_cli():
     help="Asset partition range to target i.e. <start>...<end>",
     required=False,
 )
-@python_job_config_argument("materialize")
 @click.option(
     "--config-json",
     type=click.STRING,
     help="JSON string of run config to use for this job run. Cannot be used with -c / --config.",
 )
-def asset_materialize_command(**kwargs):
+@run_config_option(name="config", command_name="materialize")
+@python_pointer_options
+def asset_materialize_command(
+    select: str,
+    partition: Optional[str],
+    partition_range: Optional[str],
+    config: tuple[str, ...],
+    config_json: Optional[str],
+    **other_opts: object,
+) -> None:
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     with capture_interrupts():
         with get_possibly_temporary_instance_for_cli(
             "``dagster asset materialize``",
         ) as instance:
-            execute_materialize_command(instance, kwargs)
+            execute_materialize_command(
+                instance=instance,
+                select=select,
+                partition=partition,
+                partition_range=partition_range,
+                config=config,
+                config_json=config_json,
+                python_pointer_opts=python_pointer_opts,
+            )
 
 
 @telemetry_wrapper
-def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, str]) -> None:
-    config = get_config_from_args(kwargs)
-    repository_origin = get_repository_python_origin_from_kwargs(kwargs)
+def execute_materialize_command(
+    *,
+    instance: DagsterInstance,
+    select: str,
+    partition: Optional[str],
+    partition_range: Optional[str],
+    config: tuple[str, ...],
+    config_json: Optional[str],
+    python_pointer_opts: PythonPointerOpts,
+) -> None:
+    run_config = get_run_config_from_cli_opts(config, config_json)
+    repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
 
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_def = recon_repo.get_definition()
 
-    asset_selection = AssetSelection.from_coercible(kwargs["select"].split(","))
+    asset_selection = AssetSelection.from_coercible(select.split(","))
     asset_keys = asset_selection.resolve(repo_def.asset_graph)
 
     implicit_job_def = repo_def.get_implicit_job_def_for_assets(asset_keys)
@@ -77,8 +109,6 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     reconstructable_job = recon_job_from_origin(
         JobPythonOrigin(implicit_job_def.name, repository_origin=repository_origin)
     )
-    partition = kwargs.get("partition")
-    partition_range = kwargs.get("partition_range")
 
     if partition and partition_range:
         check.failed("Cannot specify both --partition and --partition-range options. Use only one.")
@@ -150,23 +180,25 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
         asset_selection=list(asset_keys),
         instance=instance,
         tags=tags,
-        run_config=config,
+        run_config=run_config,
     )
     if not result.success:
         raise click.ClickException("Materialization failed.")
 
 
 @asset_cli.command(name="list", help="List assets")
-@python_origin_target_argument
 @click.option("--select", help="Asset selection to target", required=False)
-def asset_list_command(**kwargs):
-    repository_origin = get_repository_python_origin_from_kwargs(kwargs)
+@python_pointer_options
+def asset_list_command(select: Optional[str], **other_opts):
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
+    repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
     recon_repo = recon_repository_from_origin(repository_origin)
     repo_def = recon_repo.get_definition()
 
-    select = kwargs.get("select")
     if select is not None:
-        asset_selection = AssetSelection.from_coercible(kwargs["select"].split(","))
+        asset_selection = AssetSelection.from_coercible(select.split(","))
     else:
         asset_selection = AssetSelection.all()
 

@@ -14,10 +14,10 @@ To complete the steps in this guide, you'll need:
 - **The following in PingOne:**
   - An existing PingOne account
   - Organization admin permissions
-- **To install the [`dagster-cloud` CLI](/todo)**
+- **To install the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
-  - [Access to a user token](/todo)
+  - [Access to a user token](/dagster-plus/deployment/management/tokens/user-tokens)
   - [Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) in your organization
 
 </details>
@@ -27,13 +27,13 @@ To complete the steps in this guide, you'll need:
 1. Sign into your PingOne Console.
 2. Using the sidebar, click **Connections > Applications**.
 
-   ![PingOne Sidebar](/img/placeholder.svg)
+   ![PingOne Sidebar](/images/dagster-plus/features/authentication-and-access-control/pingone/sidebar.png)
 
 3. On the **Applications** page, add an application.
 4. In **Select an application type**, click **Web app**.
 5. Click **SAML > Configure**:
 
-   ![Add App](/img/placeholder.svg)
+   ![Add App](/images/dagster-plus/features/authentication-and-access-control/pingone/add-app.png)
 
 ## Step 2: Configure SSO in PingOne \{#configure-sso}
 
@@ -41,7 +41,7 @@ To complete the steps in this guide, you'll need:
 
     1. Add an application name, description, and icon:
 
-       ![Application Details](/img/placeholder.svg)
+       ![Application Details](/images/dagster-plus/features/authentication-and-access-control/pingone/application-details.png)
 
     2. When finished, click **Save and Continue.**
 
@@ -58,7 +58,7 @@ To complete the steps in this guide, you'll need:
         - **Assertion Validity Duration**: Type `60`.
           In the following example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
 
-        ![Service Provider Details](/img/placeholder.svg)
+        ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/pingone/service-provider-details.png)
 
     2.  When finished, click **Save and Continue.**
 
@@ -74,7 +74,7 @@ To complete the steps in this guide, you'll need:
 
        The page should look similar to the following:
 
-       ![Attribute Mapping](/img/placeholder.svg)
+       ![Attribute Mapping](/images/dagster-plus/features/authentication-and-access-control/pingone/attribute-mapping.png)
 
     2. When finished, click **Save and Continue.**
 
@@ -86,7 +86,7 @@ Next, you'll save and upload the application's SAML metadata to Dagster+. This w
 2. Click the **Configuration** tab.
 3. In the **Connection Details** section, click **Download Metadata**:
 
-   ![SAML Metadata](/img/placeholder.svg)
+   ![SAML Metadata](/images/dagster-plus/features/authentication-and-access-control/pingone/saml-metadata.png)
 
 4. When prompted, save the file to your computer.
 5. After you've downloaded the SAML metadata file, upload it to Dagster+ using the `dagster-cloud` CLI:
@@ -104,7 +104,7 @@ Next, you'll assign users to the Dagster+ application in PingOne. This will allo
 1. In the Dagster+ application, click the **Access** tab.
 2. Click the **pencil icon** to edit the **Group membership policy**:
 
-   ![Assign New Login](/img/placeholder.svg)
+   ![Assign New Login](/images/dagster-plus/features/authentication-and-access-control/pingone/new-login.png)
 
 3. Edit the policy as needed to grant users access to the application.
 
@@ -114,6 +114,6 @@ import TestSSO from '../../../../partials/\_TestSSO.md';
 
 In the PingOne application portal, click the **Dagster+** icon:
 
-![Identity Provider Login](/img/placeholder.svg)
+![Identity Provider Login](/images/dagster-plus/features/authentication-and-access-control/pingone/identity-provider-login.png)
 
 If successful, you'll be automatically signed in to your Dagster+ organization.

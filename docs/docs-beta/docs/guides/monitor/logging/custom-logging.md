@@ -1,9 +1,15 @@
 ---
-title: "Custom loggers"
-sidebar_position: 200
+title: "Customizing Dagster's built-in loggers"
+sidebar_position: 100
 ---
 
-Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems.
+Custom loggers are used to alter the structure of the logs being produced by your Dagster pipelines. For example, JSON logs can be produced to more easily be processed by log management systems. For a list of all built-in loggers, see the [API documentation](/api/python-api/loggers#built-in-loggers).
+
+:::note Limitations
+
+It's not currently possible to globally configure the logger for all jobs in a repository.
+
+:::
 
 <details>
   <summary>Prerequisites</summary>
@@ -15,25 +21,22 @@ To follow the steps in this guide, you'll need:
 
 </details>
 
-
 ## Step 1: Add a prebuilt custom logger to your jobs
 
-This step shows how to add an existing custom logger, the `json_console_logger`, to your jobs. This will
-override the default `colored_console_logger` and produce logs in JSON format.
-
+This step shows how to add an existing custom logger, the <PyObject section="loggers" module="dagster" object="_loggers.json_console_logger" />, to your jobs. This will override the default <PyObject section="loggers" module="dagster" object="_loggers.colored_console_logger" /> and produce logs in JSON format.
 
 ### Add the custom logger to your asset jobs
 
 The following example shows how to add the custom logger to your code location definitions and configure an asset job to use it.
 
-<CodeExample filePath="guides/monitor-alert/custom-logging/asset-job-example.py" language="python" title="Add custom logger to asset job" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/monitor-alert/custom-logging/asset-job-example.py" language="python" title="Add custom logger to asset job" />
 
 
 ### Add the custom logger to your ops-based jobs
 
 Configuring a ops job to use the custom logger slightly differs from the asset job example. The following example shows how:
 
-<CodeExample filePath="guides/monitor-alert/custom-logging/ops-job-example.py" language="python" title="Add custom logger to ops job" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/monitor-alert/custom-logging/ops-job-example.py" language="python" title="Add custom logger to ops job" />
 
 
 ### Expected `json_console_logger` output
@@ -87,7 +90,7 @@ Here's an example of the output for reference, formatted for readability:
 
 ### Changing the logger configuration in the Dagster UI
 
-You can also change the logger configuration in the Dagster UI. This is useful if you want to change the logger configuration without changing the code, to use the custom logger on a manual asset materialization launch, or change the verbosity of the logs.
+You can also change the logger configuration in the Dagster UI. This is useful if you want to change the logger configuration without changing the code, to use the custom logger on a manual asset materialization launch, or change the verbosity of the logs. Add the following lines to your `config.yaml`:
 
 ```yaml
 loggers:
@@ -101,7 +104,7 @@ loggers:
 In this example, we'll create a logger implementation that produces comma separated values from selected fields in the
 log record. Other examples can be found in the codebase, in the built-in loggers such as `json_console_logger`.
 
-<CodeExample filePath="guides/monitor-alert/custom-logging/customlogger.py" language="python" title="Example custom logger" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/monitor-alert/custom-logging/customlogger.py" language="python" title="Example custom logger" />
 
 Sample output:
 
@@ -124,11 +127,3 @@ It contains the following fields:
 - `op_name`: string
 - `run_id`: string
 - `step_key`: string
-
-## Next steps
-
-Import your own custom logger by modifying the example provided in step 1.
-
-## Limitations
-
-It's not currently possible to globally configure the logger for all jobs in a repository.

@@ -4,14 +4,16 @@ sidebar_position: 400
 ---
 
 :::note
+
 This guide is applicable to Dagster+.
+
 :::
 
 This reference describes the various configuration options Dagster+ currently supports for [Amazon ECS agents](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs).
 
 ## Per-location configuration
 
-When [adding a code location](/dagster-plus/deployment/code-locations) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
+When [adding a code location](/dagster-plus/deployment/code-locations/) to Dagster+ with an Amazon ECS agent, you can use the `container_context` key on the location configuration to add additional ECS-specific configuration that will be applied to any ECS tasks associated with that code location.
 
 **Note**: If you're using the Dagster+ Github action, the `container_context` key can also be set for each location in your `dagster_cloud.yaml` file.
 
@@ -109,7 +111,7 @@ locations:
 Refer to the following guides for more info about environment variables:
 
 - [Dagster+ environment variables and secrets](/dagster-plus/deployment/management/environment-variables/)
-- [Using environment variables and secrets in Dagster code](/guides/deploy/secrets)
+- [Using environment variables and secrets in Dagster code](/guides/deploy/using-environment-variables-and-secrets)
 
 ## Per-job configuration: Resource limits
 
@@ -237,6 +239,8 @@ agent_queues:
 | config.server_ecs_tags | Additional ECS tags to include in the service for each code location. If set, must be a list of dictionaries, each with a `key` key and optional `value` key. |
 | config.run_ecs_tags | AAdditional ECS tags to include in the task for each run. If set, must be a list of dictionaries, each with a `key` key and optional `value` key. |
 | config.repository_credentials | Optional arn of the secret to authenticate into your private container registry. This does not apply if you are leveraging ECR for your images, see the [AWS private auth guide.](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/private-auth.html) |
+| config.enable_ecs_exec | Boolean that determines whether tasks created by the agent should be configured with the needed linuxParameters and permissions to use [ECS Exec](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html) to shell into the task. Also grants the `SYS_PTRACE` linux capability to enable running tools like py-spy to debug slow or hanging tasks. Defaults to false. **Note**: For ECS Exec to work, the task IAM role must be granted [certain permissions](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html#ecs-exec-required-iam-permissions). |
+
 
 ### isolated_agents properties
 

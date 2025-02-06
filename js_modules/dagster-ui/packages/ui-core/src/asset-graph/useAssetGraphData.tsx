@@ -3,6 +3,8 @@ import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
+import {Worker} from 'shared/workers/Worker.oss';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
 import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from './Utils';
@@ -79,7 +81,6 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     const requestId = ++currentRequestRef.current;
     buildGraphData({
       nodes: queryItems,
-      flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -93,7 +94,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
       });
   }, [options.loading, queryItems]);
 
-  return {fullAssetGraphData, loading: fetchResult.loading || options.loading};
+  return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
 }
 
 export type GraphDataState = {
@@ -160,8 +161,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const lastProcessedRequestRef = useRef(0);
   const currentRequestRef = useRef(0);
 
+  const {loading: supplementaryDataLoading, data: supplementaryData} =
+    useAssetGraphSupplementaryData(opsQuery);
+
   useEffect(() => {
-    if (options.loading) {
+    if (options.loading || supplementaryDataLoading) {
       return;
     }
     const requestId = ++currentRequestRef.current;
@@ -172,7 +176,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       opsQuery,
       kinds,
       hideEdgesToNodesOutsideQuery,
-      flagSelectionSyntax: featureEnabled(FeatureFlag.flagSelectionSyntax),
+      supplementaryData,
     })
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -197,6 +201,8 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     kinds,
     hideEdgesToNodesOutsideQuery,
     options.loading,
+    supplementaryData,
+    supplementaryDataLoading,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading;
@@ -345,8 +351,15 @@ const computeGraphData = throttleLatest(
 );
 
 const getWorker = memoize(
-  (_key: string = '') => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
+  (_key: 'computeGraphWorker' | 'buildGraphWorker') =>
+    new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
 );
+
+if (typeof jest === 'undefined') {
+  // Pre-warm workers
+  getWorker('computeGraphWorker');
+  getWorker('buildGraphWorker');
+}
 
 let _id = 0;
 async function computeGraphDataWrapper(
@@ -356,14 +369,13 @@ async function computeGraphDataWrapper(
     const worker = getWorker('computeGraphWorker');
     return new Promise<GraphDataState>((resolve) => {
       const id = ++_id;
-      const callback = (event: MessageEvent) => {
+      const removeMessageListener = worker.onMessage((event: MessageEvent) => {
         const data = event.data as GraphDataState & {id: number};
         if (data.id === id) {
           resolve(data);
-          worker.removeEventListener('message', callback);
+          removeMessageListener();
         }
-      };
-      worker.addEventListener('message', callback);
+      });
       const message: ComputeGraphDataMessageType = {
         type: 'computeGraphData',
         id,
@@ -392,14 +404,13 @@ async function buildGraphDataWrapper(
     const worker = getWorker('buildGraphWorker');
     return new Promise<GraphData>((resolve) => {
       const id = ++_id;
-      const callback = (event: MessageEvent) => {
+      const removeMessageListener = worker.onMessage((event: MessageEvent) => {
         const data = event.data as GraphData & {id: number};
         if (data.id === id) {
           resolve(data);
-          worker.removeEventListener('message', callback);
+          removeMessageListener();
         }
-      };
-      worker.addEventListener('message', callback);
+      });
       const message: BuildGraphDataMessageType = {
         type: 'buildGraphData',
         id,

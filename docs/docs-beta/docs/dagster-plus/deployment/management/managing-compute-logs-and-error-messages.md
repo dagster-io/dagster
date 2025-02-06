@@ -1,22 +1,21 @@
 ---
 title: Managing compute logs and error messages
-unlisted: true
+sidebar_position: 200
 ---
 
 import ThemedImage from '@theme/ThemedImage';
 
 :::note
+
 This guide is applicable to Dagster+.
+
 :::
 
 In this guide, we'll cover how to adjust where Dagster+ compute logs are stored and manage masking of error messages in the Dagster+ UI.
 
-{/* By default, Dagster+ ingests [structured event logs and compute logs](/concepts/logging#log-types) from runs and surfaces error messages from [code locations](/guides/deploy/code-locations/) in the UI. */}
-By default, Dagster+ ingests [structured event logs and compute logs](/todo) from runs and surfaces error messages from [code locations](/todo) in the UI.
+By default, Dagster+ ingests [structured event logs and compute logs](/guides/monitor/logging/index.md#log-types) from runs and surfaces error messages from [code locations](/dagster-plus/deployment/code-locations/) in the UI.
 
 Depending on your organization's needs, you may want to retain these logs in your own infrastructure or mask error message contents.
-
----
 
 ## Modifying compute log storage
 
@@ -26,8 +25,7 @@ Dagster's compute logs are handled by the configured [`ComputeLogManager`](/api/
 
 If using the Kubernetes agent, you can instead forward logs to your own S3 bucket by using the [`S3ComputeLogManager`](/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager).
 
-{/* You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/agents/customizing-configuration): */}
-You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/todo):
+You can configure the `S3ComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/management/settings/customizing-agent-settings):
 
 ```yaml
 compute_logs:
@@ -57,8 +55,7 @@ computeLogs:
 
 If your organization has its own logging solution which ingests `stdout` and `stderr` from your compute environment, you may want to disable compute log upload entirely. You can do this with the <PyObject section="internals" module="dagster._core.storage.noop_compute_log_manager" object="NoOpComputeLogManager" />.
 
-{/* You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/agents/customizing-configuration): */}
-You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/todo):
+You can configure the `NoOpComputeLogManager` in your [`dagster.yaml` file](/dagster-plus/deployment/management/settings/customizing-agent-settings):
 
 ```yaml
 compute_logs:
@@ -75,10 +72,7 @@ computeLogs:
 
 ### Other compute log storage options
 
-{/* For a full list of available compute log storage options, refer to the [Compute log storage docs](/deployment/dagster-instance#compute-log-storage). */}
-For a full list of available compute log storage options, refer to the [Compute log storage docs](/todo).
-
----
+For a full list of available compute log storage options, see "[Dagster instance configuration](/guides/deploy/dagster-instance-configuration#compute-log-storage)".
 
 ## Masking error messages
 
@@ -90,8 +84,8 @@ To mask error messages in a Dagster+ Deployment, set the environment variable `D
   alt="Environment variable UI showing DAGSTER_REDACT_USER_CODE_ERRORS set to 1"
   style={{width:'100%', height: 'auto'}}
   sources={{
-    light: '/images/dagster-cloud/logs-error-messages/configure-redact-env-var.png',
-    dark: '/images/dagster-cloud/logs-error-messages/configure-redact-env-var.png',
+    light: '/images/dagster-plus/management/configure-redact-env-var.png',
+    dark: '/images/dagster-plus/management/configure-redact-env-var.png',
   }}
 />
 
@@ -102,7 +96,7 @@ Once set, error messages from your code locations will be masked in the UI. A un
   alt="Error message in Dagster event logs showing unique error ID"
   style={{width:'100%', height: 'auto'}}
   sources={{
-    light: '/images/dagster-cloud/logs-error-messages/masked-err-message.png',
-    dark: '/images/dagster-cloud/logs-error-messages/masked-err-message.png',
+    light: '/images/dagster-plus/management/masked-err-message.png',
+    dark: '/images/dagster-plus/management/masked-err-message.png',
   }}
 />

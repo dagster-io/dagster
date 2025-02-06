@@ -36,9 +36,9 @@ parenthesizedExpr:
 		ParenthesizedExpression;
 
 incompleteExpr:
-	attributeName colonToken attributeValueWhitespace							# IncompleteAttributeExpressionMissingValue
-	| attributeName colonToken attributeValue EQUAL attributeValueWhitespace	#
+	attributeName colonToken attributeValue EQUAL attributeValueWhitespace #
 		IncompleteAttributeExpressionMissingSecondValue
+	| attributeName colonToken attributeValueWhitespace			# IncompleteAttributeExpressionMissingValue
 	| functionName expressionLessParenthesizedExpr				# ExpressionlessFunctionExpression
 	| functionName leftParenToken postLogicalOperatorWhitespace	#
 		UnclosedExpressionlessFunctionExpression
@@ -46,7 +46,7 @@ incompleteExpr:
 	| leftParenToken postLogicalOperatorWhitespace expr		# UnclosedParenthesizedExpression
 	| expressionLessParenthesizedExpr						# ExpressionlessParenthesizedExpressionWrapper
 	| leftParenToken postLogicalOperatorWhitespace			# UnclosedExpressionlessParenthesizedExpression
-	| PLUS+ postNeighborTraversalWhitespace					# IncompletePlusTraversalExpression
+	| PLUS postNeighborTraversalWhitespace					# IncompletePlusTraversalExpression
 	| colonToken attributeValue postExpressionWhitespace	# IncompleteAttributeExpressionMissingKey;
 
 expressionLessParenthesizedExpr:

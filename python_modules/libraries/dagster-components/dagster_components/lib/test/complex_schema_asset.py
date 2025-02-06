@@ -1,70 +1,56 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Annotated, Optional
+from typing import Annotated, Optional
 
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster_components import (
+from dagster_components import Component, ComponentLoadContext, registered_component_type
+from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
+from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.objects import (
+    AssetAttributesModel,
     AssetSpecTransformModel,
-    Component,
-    ComponentLoadContext,
-    ResolvableFieldInfo,
-    component_type,
+    OpSpecModel,
 )
-from dagster_components.core.component_decl_builder import YamlComponentDecl
-from dagster_components.core.component_generator import (
-    ComponentGenerator,
-    DefaultComponentGenerator,
-)
-from dagster_components.core.schema.objects import AssetAttributesModel, OpSpecBaseModel
-
-if TYPE_CHECKING:
-    from dagster_components.core.component import ComponentDeclNode
 
 
 class ComplexAssetParams(BaseModel):
     value: str
-    op: Optional[OpSpecBaseModel] = None
+    op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvableFieldInfo(additional_scope={"node"})
+        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
     ] = None
     asset_transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
 
-@component_type(name="complex_schema_asset")
+@registered_component_type(name="complex_schema_asset")
 class ComplexSchemaAsset(Component):
     """An asset that has a complex params schema."""
 
     @classmethod
-    def get_params_schema_type(cls):
+    def get_schema(cls):
         return ComplexAssetParams
 
     @classmethod
-    def get_generator(cls) -> ComponentGenerator:
-        return DefaultComponentGenerator()
+    def get_scaffolder(cls) -> DefaultComponentScaffolder:
+        return DefaultComponentScaffolder()
 
     @classmethod
-    def from_decl_node(
-        cls, context: "ComponentLoadContext", decl_node: "ComponentDeclNode"
-    ) -> Self:
-        assert isinstance(decl_node, YamlComponentDecl)
-        loaded_params = TypeAdapter(cls.get_params_schema_type()).validate_python(
-            decl_node.component_file_model.params
-        )
+    def load(cls, params: ComplexAssetParams, context: "ComponentLoadContext") -> Self:
         return cls(
-            value=loaded_params.value,
-            op_spec=loaded_params.op,
-            asset_attributes=loaded_params.asset_attributes,
-            asset_transforms=loaded_params.asset_transforms or [],
+            value=params.value,
+            op_spec=params.op,
+            asset_attributes=params.asset_attributes,
+            asset_transforms=params.asset_transforms or [],
         )
 
     def __init__(
         self,
         value: str,
-        op_spec: Optional[OpSpecBaseModel],
+        op_spec: Optional[OpSpecModel],
         asset_attributes: Optional[AssetAttributesModel],
         asset_transforms: Sequence[AssetSpecTransformModel],
     ):

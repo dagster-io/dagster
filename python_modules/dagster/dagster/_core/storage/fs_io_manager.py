@@ -274,9 +274,9 @@ class PickledObjectFilesystemIOManager(UPathIOManager):
                 "io manager to continue using this output. For example, you can use the "
                 "mem_io_manager with the in_process_executor.\n"
                 "For more information on io managers, visit "
-                "https://docs.dagster.io/concepts/io-management/io-managers \n"
+                "https://docs.dagster.io/guides/build/io-managers/ \n"
                 "For more information on executors, vist "
-                "https://docs.dagster.io/deployment/executors#overview"
+                "https://docs.dagster.io/guides/operate/run-executors"
             ) from e
 
     def load_from_path(self, context: InputContext, path: "UPath") -> Any:

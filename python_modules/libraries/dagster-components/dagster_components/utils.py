@@ -4,8 +4,10 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Optional
 
+import click
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -27,6 +29,11 @@ def ensure_dagster_components_tests_import() -> None:
         dagster_components_package_root / "dagster_components_tests"
     ).exists(), "Could not find dagster_components_tests where expected"
     sys.path.append(dagster_components_package_root.as_posix())
+
+
+def exit_with_error(error_message: str) -> None:
+    click.echo(click.style(error_message, fg="red"))
+    sys.exit(1)
 
 
 # Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
@@ -59,8 +66,8 @@ class ResolvingInfo:
     value_resolver: TemplatedValueResolver
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        renderer = self.value_resolver.with_context(**{self.obj_name: obj})
-        rendered_attributes = self.asset_attributes.render_properties(renderer)
+        renderer = self.value_resolver.with_scope(**{self.obj_name: obj})
+        rendered_attributes = self.asset_attributes.resolve(renderer)
         return (
             rendered_attributes[attribute]
             if attribute in rendered_attributes
@@ -85,8 +92,8 @@ class ResolvingInfo:
 
         ```
         """
-        resolver = self.value_resolver.with_context(**context)
-        resolved_attributes = self.asset_attributes.render_properties(resolver)
+        resolver = self.value_resolver.with_scope(**context)
+        resolved_attributes = self.asset_attributes.resolve(resolver)
         return base_spec.replace_attributes(**resolved_attributes)
 
 
@@ -96,24 +103,41 @@ def get_wrapped_translator_class(translator_type: type):
     """
 
     class WrappedTranslator(translator_type):
-        def __init__(self, *, base_translator, resolving_info: ResolvingInfo):
-            self.base_translator = base_translator
+        def __init__(self, *, resolving_info: ResolvingInfo):
+            self.base_translator = translator_type()
             self.resolving_info = resolving_info
 
         def get_asset_key(self, obj: Any) -> AssetKey:
-            return self.resolving_info.get_resolved_attribute("key", obj, super().get_asset_key)
+            return self.resolving_info.get_resolved_attribute(
+                "key", obj, self.base_translator.get_asset_key
+            )
 
         def get_group_name(self, obj: Any) -> Optional[str]:
             return self.resolving_info.get_resolved_attribute(
-                "group_name", obj, super().get_group_name
+                "group_name", obj, self.base_translator.get_group_name
             )
 
         def get_tags(self, obj: Any) -> Mapping[str, str]:
-            return self.resolving_info.get_resolved_attribute("tags", obj, super().get_tags)
+            return self.resolving_info.get_resolved_attribute(
+                "tags", obj, self.base_translator.get_tags
+            )
 
         def get_automation_condition(self, obj: Any) -> Optional[AutomationCondition]:
             return self.resolving_info.get_resolved_attribute(
-                "automation_condition", obj, super().get_automation_condition
+                "automation_condition", obj, self.base_translator.get_automation_condition
             )
 
     return WrappedTranslator
+
+
+def load_module_from_path(module_name, path) -> ModuleType:
+    # Create a spec from the file path
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    if spec is None:
+        raise ImportError(f"Cannot create a module spec from path: {path}")
+
+    # Create and load the module
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader, "Must have a loader"
+    spec.loader.exec_module(module)
+    return module

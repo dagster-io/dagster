@@ -3,7 +3,7 @@ title: Create a sensor asset
 description: Use sensors to create event driven pipelines
 last_update:
   author: Alex Noonan
-sidebar_position: 70
+sidebar_position: 60
 ---
 
 [Sensors](/guides/automate/sensors) allow you to automate workflows based on external events or conditions, making them useful for event-driven automation, especially in situations where jobs occur at irregular cadences or in rapid succession.
@@ -26,7 +26,7 @@ For this asset, we need to define the structure of the request that it is expect
 
 Other than that, defining this asset is the same as our previous assets. Copy the following code beneath `product_performance`.
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="275" lineEnd="312"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="275" lineEnd="312"/>
 
 ## 2. Build the sensor
 
@@ -37,21 +37,21 @@ Sensors include the following elements:
 - **Job**: The job that the sensor will trigger when the conditions are met.
 - **RunRequest**: An object that specifies the configuration for the job run. It includes a `run_key` to ensure idempotency and a `run_config` for job-specific settings.
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="314" lineEnd="355"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="314" lineEnd="355"/>
 
 ## 3. Materialize the sensor asset
 
 1. Update your Definitions object to the following:
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="357" lineEnd="373"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="357" lineEnd="373"/>
 
 2. Reload your Definitions.
 
 3. Navigate to the Automation page.
 
-4. Turn on the `automation_request_sensor`.
+4. Turn on the `adhoc_request_sensor`.
 
-5. Click on the `automation_request_sensor` details.
+5. Click on the `adhoc_request_sensor` details.
 
    ![2048 resolution](/images/tutorial/etl-tutorial/sensor-evaluation.png)
 

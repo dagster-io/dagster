@@ -1,11 +1,32 @@
-from dagster import AssetDep, Definitions, IdentityPartitionMapping, asset
+from typing import cast
+
+import pytest
+from dagster import (
+    AssetDep,
+    DailyPartitionsDefinition,
+    Definitions,
+    IdentityPartitionMapping,
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+    asset,
+)
+from dagster._check.functions import CheckError
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    DEFAULT_DATE_FORMAT,
+    AllPartitionsSubset,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.partition_mapping import LastPartitionMapping, StaticPartitionMapping
+from dagster._core.definitions.time_window_partitions import (
+    PersistedTimeWindow,
+    TimeWindowPartitionsSubset,
+)
 from dagster._core.instance import DagsterInstance
-from dagster._time import create_datetime
+from dagster._time import create_datetime, get_current_datetime
 
 
 def test_basic_construction_and_identity() -> None:
@@ -65,6 +86,235 @@ def test_upstream_non_existent_partitions():
         )
         assert parent_subset.is_empty
         assert required_but_nonexistent_subset.is_empty
+
+
+current_partitions_def = DailyPartitionsDefinition(start_date="2022-01-01")
+
+
+@asset(partitions_def=current_partitions_def)
+def asset0(): ...
+
+
+defs = Definitions([asset0])
+
+
+def test_partitions_definition_valid_subset():
+    # partition subset that is still valid because it is a subset of the current one
+    old_partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
+    old_partitions_subset = TimeWindowPartitionsSubset(
+        partitions_def=old_partitions_def,
+        num_partitions=None,
+        included_time_windows=[
+            PersistedTimeWindow.from_public_time_window(
+                TimeWindow(start=create_datetime(2023, 1, 1), end=create_datetime(2023, 3, 1)),
+                "UTC",
+            )
+        ],
+    )
+    old_asset_graph_subset = AssetGraphSubset(
+        partitions_subsets_by_asset_key={asset0.key: old_partitions_subset}
+    )
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+        entity_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
+            old_asset_graph_subset,
+            asset0.key,
+        )
+
+        subset = cast(TimeWindowPartitionsSubset, entity_subset.get_internal_subset_value())
+        assert subset.included_time_windows == old_partitions_subset.included_time_windows
+        assert subset.partitions_def == current_partitions_def
+
+
+@pytest.mark.parametrize(
+    "invalid_asset_graph_subset, error_match",
+    [
+        (
+            AssetGraphSubset(
+                partitions_subsets_by_asset_key={
+                    asset0.key: TimeWindowPartitionsSubset(
+                        partitions_def=DailyPartitionsDefinition(start_date="2021-01-01"),
+                        num_partitions=None,
+                        included_time_windows=[
+                            PersistedTimeWindow.from_public_time_window(
+                                TimeWindow(
+                                    start=create_datetime(2021, 1, 1),
+                                    end=create_datetime(2021, 3, 1),
+                                ),
+                                "UTC",
+                            )
+                        ],
+                    )
+                }
+            ),
+            "that are no longer present",
+        ),
+        (
+            AssetGraphSubset(non_partitioned_asset_keys={asset0.key}),
+            "was un-partitioned when originally stored, but is now partitioned.",
+        ),
+        (
+            AssetGraphSubset(
+                partitions_subsets_by_asset_key={
+                    asset0.key: TimeWindowPartitionsSubset(
+                        partitions_def=DailyPartitionsDefinition(
+                            start_date="2021-01-01", timezone="US/Pacific"
+                        ),
+                        num_partitions=None,
+                        included_time_windows=[],
+                    )
+                }
+            ),
+            "is no longer compatible with the latest partitions definition",
+        ),
+        (
+            AssetGraphSubset(
+                partitions_subsets_by_asset_key={
+                    asset0.key: TimeWindowPartitionsSubset(
+                        partitions_def=TimeWindowPartitionsDefinition(
+                            start="2021-01-01",
+                            fmt=DEFAULT_DATE_FORMAT,
+                            cron_schedule="* * * * *",
+                        ),
+                        num_partitions=None,
+                        included_time_windows=[],
+                    )
+                }
+            ),
+            "is no longer compatible with the latest partitions definition",
+        ),
+        (
+            AssetGraphSubset(
+                partitions_subsets_by_asset_key={
+                    asset0.key: TimeWindowPartitionsSubset(
+                        partitions_def=TimeWindowPartitionsDefinition(
+                            start="2021-01-01-UTC",
+                            cron_schedule="0 0 * * *",
+                            fmt="%Y-%m-%d-%Z",
+                        ),
+                        num_partitions=None,
+                        included_time_windows=[],
+                    )
+                }
+            ),
+            "is no longer compatible with the latest partitions definition",
+        ),
+    ],
+)
+def test_partitions_definition_invalid_subset(invalid_asset_graph_subset, error_match):
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(defs, instance)
+
+        with pytest.raises(CheckError, match=error_match):
+            asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                invalid_asset_graph_subset,
+                asset0.key,
+            )
+
+
+def test_all_partitions_subset_changes():
+    current_partitions_def = StaticPartitionsDefinition(["FOO", "BAR"])
+
+    @asset(partitions_def=current_partitions_def)
+    def asset1(): ...
+
+    defs = Definitions([asset1])
+    effective_dt = get_current_datetime()
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(defs, instance, effective_dt)
+
+        stored_partitions_subset = AllPartitionsSubset(
+            current_partitions_def,
+            dynamic_partitions_store=instance,
+            current_time=asset_graph_view.effective_dt,
+        )
+        assert (
+            asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                AssetGraphSubset(
+                    partitions_subsets_by_asset_key={
+                        asset1.key: stored_partitions_subset,
+                    }
+                ),
+                asset1.key,
+            ).get_internal_subset_value()
+            == stored_partitions_subset
+        )
+
+        # fails if the underlying partitions def for an AllPartitionsSubset changes at all
+
+        old_partitions_def = StaticPartitionsDefinition(["FOO", "BAR", "BAZ"])
+        old_partitions_subset = AllPartitionsSubset(
+            old_partitions_def,
+            dynamic_partitions_store=instance,
+            current_time=asset_graph_view.effective_dt,
+        )
+
+        with pytest.raises(
+            CheckError,
+            match="Partitions definition for asset1 has an AllPartitionsSubset and no longer matches the stored partitions definition",
+        ):
+            asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                AssetGraphSubset(
+                    partitions_subsets_by_asset_key={
+                        asset1.key: old_partitions_subset,
+                    }
+                ),
+                asset1.key,
+            )
+
+
+def test_partitions_def_changes():
+    static_partitions_def = StaticPartitionsDefinition(["FOO", "BAR"])
+
+    @asset(partitions_def=static_partitions_def)
+    def asset1(): ...
+
+    @asset
+    def unpartitioned_asset():
+        pass
+
+    defs = Definitions([asset1, unpartitioned_asset])
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(defs, instance)
+        old_partitions_def = DailyPartitionsDefinition(start_date="2023-01-01")
+        old_partitions_subset = TimeWindowPartitionsSubset(
+            partitions_def=old_partitions_def,
+            num_partitions=None,
+            included_time_windows=[
+                PersistedTimeWindow.from_public_time_window(
+                    TimeWindow(start=create_datetime(2023, 1, 1), end=create_datetime(2023, 3, 1)),
+                    "UTC",
+                )
+            ],
+        )
+        # Changed to a StaticPartitionsDefinition
+        with pytest.raises(
+            CheckError, match="is no longer compatible with the latest partitions definition"
+        ):
+            asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                AssetGraphSubset(
+                    partitions_subsets_by_asset_key={
+                        asset1.key: old_partitions_subset,
+                    }
+                ),
+                asset1.key,
+            )
+
+        # Changed to an unpartitioned asset
+        with pytest.raises(
+            CheckError,
+            match="was partitioned when originally stored, but is no longer partitioned.",
+        ):
+            asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                AssetGraphSubset(
+                    partitions_subsets_by_asset_key={
+                        unpartitioned_asset.key: old_partitions_subset,
+                    }
+                ),
+                unpartitioned_asset.key,
+            )
 
 
 def test_subset_traversal_static_partitions() -> None:

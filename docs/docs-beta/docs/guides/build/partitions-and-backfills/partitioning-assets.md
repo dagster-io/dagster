@@ -15,7 +15,7 @@ There are several ways to partition your data in Dagster:
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/).
+We recommend limiting the number of partitions for each asset to 25,000 or fewer. Assets with partition counts exceeding this limit will likely have slower load times in the UI.
 
 :::
 
@@ -23,13 +23,13 @@ This article assumes familiarity with [assets](/guides/build/assets/).
 
 A common use case for partitioning is to process data that can be divided into time intervals, such as daily logs or monthly reports.
 
-<CodeExample filePath="guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
 
 ## Partitions with predefined categories \{#static-partitions}
 
 Sometimes you have a set of predefined categories for your data. For instance, you might want to process data separately for different regions.
 
-<CodeExample filePath="guides/data-modeling/partitioning/static_partitioning.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/static_partitioning.py" language="python" />
 
 {/* TODO: Link to Backfill page to explain how to backfill regional sales data */}
 
@@ -37,7 +37,7 @@ Sometimes you have a set of predefined categories for your data. For instance, y
 
 Two-dimensional partitioning allows you to partition data along two different axes simultaneously. This is useful when you need to process data that can be categorized in multiple ways. For example:
 
-<CodeExample filePath="guides/data-modeling/partitioning/two_dimensional_partitioning.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/two_dimensional_partitioning.py" language="python" />
 
 In this example:
 
@@ -52,7 +52,7 @@ Sometimes you don't know the partitions in advance. For example, you might want 
 
 Consider this example:
 
-<CodeExample filePath="guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="Dynamic partitioning" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/dynamic_partitioning.py" language="python" title="Dynamic partitioning" />
 
 Because the partition values are unknown in advance, `DynamicPartitionsDefinition` is used to define the partition. Then, the `all_regions_sensor` TODO: incomplete sentence
 
@@ -61,6 +61,26 @@ In this example:
 - Because the partition values are unknown in advance, `DynamicPartitionsDefinition` is used to define `region_partitions`
 - When triggered, the `all_regions_sensor` will dynamically add all regions to the partition set. Once it kicks off runs, it will dynamically kick off runs for all regions. In this example, that would be six times; one for each region.
 
-## Next steps
+## Materializing partitioned assets
 
-- TODO: Partition dependencies
+When you materialize a partitioned asset, you choose which partitions to materialize and Dagster will launch a run for each partition. 
+
+:::note
+
+If you choose more than one partition, the [Dagster daemon](/guides/deploy/execution/dagster-daemon) needs to be running to queue the multiple runs.
+
+:::
+
+The following image shows the **Launch runs** dialog on an asset's **Details** page, where you'll be prompted to select a partition to materialize:
+
+![Rematerialize partition](/images/guides/build/partitions-and-backfills/rematerialize-partition.png)
+
+After a partition has been successfully materialized, it will display as green in the partitions bar:
+
+![Successfully materialized partition](/images/guides/build/partitions-and-backfills/materialized-partitioned-asset.png)
+
+## Viewing materializations by partition
+
+To view materializations by partition for a specific asset, navigate to the **Activity** tab of the asset's **Details** page:
+
+![Asset activity section of asset details page](/images/guides/build/partitions-and-backfills/materialized-partitioned-asset-activity.png)

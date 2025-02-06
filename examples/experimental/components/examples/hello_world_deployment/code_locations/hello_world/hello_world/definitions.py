@@ -2,14 +2,19 @@ from pathlib import Path
 
 import dagster as dg
 from dagster_components import ComponentTypeRegistry, build_component_defs
+from dagster_components.core.component_key import GlobalComponentKey
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollection,
 )
 
 defs = build_component_defs(
-    code_location_root=Path(__file__).parent.parent,
+    Path(__file__).parent / "components",
     registry=ComponentTypeRegistry(
-        {"pipes_subprocess_script_collection": PipesSubprocessScriptCollection}
+        {
+            GlobalComponentKey.from_typename(
+                "pipes_subprocess_script_collection@here"
+            ): PipesSubprocessScriptCollection
+        }
     ),
 )
 

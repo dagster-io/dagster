@@ -3,7 +3,7 @@ title: Automate your pipeline
 description: Set schedules and utilize asset based automation
 last_update:
   author: Alex Noonan
-sidebar_position: 60
+sidebar_position: 50
 ---
 
 There are several ways to automate pipelines and assets [in Dagster](/guides/automate). 
@@ -19,11 +19,11 @@ Ideally, the reporting assets created in the last step should refresh whenever t
 
 Update the `monthly_sales_performance` asset to add the automation condition to the decorator:
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="155" lineEnd="209"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="155" lineEnd="209"/>
 
 Do the same thing for `product_performance`:
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="216" lineEnd="267"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="216" lineEnd="267"/>
 
 ## 2. Scheduled jobs
 
@@ -31,7 +31,7 @@ Cron-based schedules are common in data orchestration. For our pipeline, assume 
 
 Copy the following code underneath the `product performance` asset:
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="268" lineEnd="273"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="268" lineEnd="273"/>
 
 ## 3. Enable and test automations
 

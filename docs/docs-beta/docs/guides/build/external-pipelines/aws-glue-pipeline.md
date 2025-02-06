@@ -40,60 +40,19 @@ Provide the `dagster-pipes` module to the AWS Glue job either by installing it i
 
 Call `open_dagster_pipes` in the Glue job script to create a context that can be used to send messages to Dagster:
 
-```python file=/guides/dagster/dagster_pipes/glue/glue_script.py
-import boto3
-from dagster_pipes import (
-    PipesCliArgsParamsLoader,
-    PipesS3ContextLoader,
-    open_dagster_pipes,
-)
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/glue/glue_script.py" />
 
-client = boto3.client("s3")
-context_loader = PipesS3ContextLoader(client)
-params_loader = PipesCliArgsParamsLoader()
+:::tip
 
+The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
 
-def main():
-    with open_dagster_pipes(
-        context_loader=context_loader,
-        params_loader=params_loader,
-    ) as pipes:
-        pipes.log.info("Hello from AWS Glue job!")
-        pipes.report_asset_materialization(
-            metadata={"some_metric": {"raw_value": 0, "type": "int"}},
-            data_version="alpha",
-        )
-
-
-if __name__ == "__main__":
-    main()
-```
+:::
 
 ## Step 3: Add the PipesGlueClient to Dagster code
 
 In the Dagster asset/op code, use the `PipesGlueClient` resource to launch the job:
 
-```python file=/guides/dagster/dagster_pipes/glue/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
-import os
-
-import boto3
-from dagster_aws.pipes import PipesGlueClient
-
-from dagster import AssetExecutionContext, asset
-
-
-@asset
-def glue_pipes_asset(
-    context: AssetExecutionContext, pipes_glue_client: PipesGlueClient
-):
-    return pipes_glue_client.run(
-        context=context,
-        start_job_run_params={
-            "JobName": "Example Job",
-            "Arguments": {"some_parameter": "some_value"},
-        },
-    ).get_materialize_result()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/glue/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
 
 This will launch the AWS Glue job and monitor its status until it either fails or succeeds. A job failure will also cause the Dagster run to fail with an exception.
 
@@ -101,28 +60,7 @@ This will launch the AWS Glue job and monitor its status until it either fails o
 
 Next, add the `PipesGlueClient` resource to your project's <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-```python file=/guides/dagster/dagster_pipes/glue/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
-from dagster import Definitions  # noqa
-from dagster_aws.pipes import PipesS3ContextInjector, PipesCloudWatchMessageReader
-
-
-bucket = os.environ["DAGSTER_GLUE_S3_CONTEXT_BUCKET"]
-
-
-defs = Definitions(
-    assets=[glue_pipes_asset],
-    resources={
-        "pipes_glue_client": PipesGlueClient(
-            client=boto3.client("glue"),
-            context_injector=PipesS3ContextInjector(
-                client=boto3.client("s3"),
-                bucket=bucket,
-            ),
-            message_reader=PipesCloudWatchMessageReader(client=boto3.client("logs")),
-        )
-    },
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/glue/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
 
 Dagster will now be able to launch the AWS Glue job from the `glue_pipes_asset` asset.
 

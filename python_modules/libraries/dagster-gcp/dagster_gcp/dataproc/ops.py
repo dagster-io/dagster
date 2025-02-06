@@ -7,6 +7,7 @@ from dagster import (
     Int,
     op,
 )
+from dagster._annotations import beta
 from dagster._seven import json
 from pydantic import Field
 
@@ -33,6 +34,7 @@ DATAPROC_CONFIG_SCHEMA = {
 }
 
 
+@beta
 class DataprocOpConfig(Config):
     job_timeout_in_seconds: int = Field(
         default=TWENTY_MINUTES,
@@ -92,11 +94,13 @@ def dataproc_solid(context):
 
 
 @op(required_resource_keys={"dataproc"}, config_schema=DATAPROC_CONFIG_SCHEMA)
+@beta
 def dataproc_op(context):
     return _dataproc_compute(context)
 
 
 @op
+@beta
 def configurable_dataproc_op(context, dataproc: DataprocResource, config: DataprocOpConfig):
     job_config = {"projectId": config.project_id, "region": config.region, "job": config.job_config}
     job_timeout = config.job_timeout_in_seconds

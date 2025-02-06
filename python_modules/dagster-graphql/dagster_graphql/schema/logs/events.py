@@ -299,6 +299,14 @@ class GrapheneHookErroredEvent(graphene.ObjectType):
         name = "HookErroredEvent"
 
 
+class GrapheneLogRetrievalShellCommand(graphene.ObjectType):
+    class Meta:
+        name = "LogRetrievalShellCommand"
+
+    stdout = graphene.String()
+    stderr = graphene.String()
+
+
 class GrapheneLogsCapturedEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent,)
@@ -309,6 +317,7 @@ class GrapheneLogsCapturedEvent(graphene.ObjectType):
     externalUrl = graphene.String()
     externalStdoutUrl = graphene.String()
     externalStderrUrl = graphene.String()
+    shellCmd = graphene.Field(GrapheneLogRetrievalShellCommand)
     pid = graphene.Int()
     # legacy name for compute log file key... required for back-compat reasons, but has been
     # renamed to fileKey for newer versions of the Dagster UI

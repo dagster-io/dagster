@@ -17,7 +17,7 @@ Branch Deployments compare asset definitions in the branch deployment against th
 You can also apply filters to show only new and changed assets in the UI. This makes it easy to understand which assets will be impacted by the changes in the pull request associated with the branch deployment.
 
 {/* **Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments) and specify it using the optional `--base-deployment-name` parameter. */}
-**Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](/todo) and specify it using the optional `--base-deployment-name` parameter.
+**Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](using-branch-deployments-with-the-cli) and specify it using the optional `--base-deployment-name` parameter.
 
 ## Supported change types
 
@@ -34,14 +34,13 @@ Change Tracking can detect the following changes to assets:
 
 If an asset is new in the branch deployment, the asset will have a **New in branch** label in the asset graph:
 
-![Change tracking new](/images/dagster-cloud/managing-deployments/change-tracking-new.png)
+![Change tracking new](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-new.png)
 
 ### Code versions
 
 If using the `code_version` argument on the asset decorator, Change Tracking can detect when this value changes.
 
-{/* Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, refer to the [Code versioning guide](/guides/dagster/asset-versioning-and-caching). */}
-Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, refer to the [Code versioning guide](/todo).
+Some Dagster integrations, like `dagster-dbt`, automatically compute code versions for you. For more information on code versions, refer to the [Code versioning guide](/guides/build/assets/asset-versioning-and-caching).
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">
@@ -50,7 +49,7 @@ In this example, the `customers` asset has a **Changed in branch** label indicat
 
 Click the **Asset definition** tab to see the code change that created this label.
 
-![Change tracking code version](/images/dagster-cloud/managing-deployments/change-tracking-code-version.png)
+![Change tracking code version](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-code-version.png)
 
 </TabItem>
 <TabItem value="Asset definition">
@@ -85,7 +84,7 @@ In this example, the `returns` asset has a **Changed in branch** label indicatin
 
 Click the **Asset definition** tab to see the code change that created this label.
 
-![Change tracking dependencies](/images/dagster-cloud/managing-deployments/change-tracking-dependencies.png)
+![Change tracking dependencies](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-dependencies.png)
 
 ```python file=/dagster_cloud/branch_deployments/change_tracking_dependencies.py startafter=start_branch_deployment endbefore=end_branch_deployment dedent=4
 @asset(deps=[orders, customers])
@@ -106,7 +105,7 @@ In this example, the `weekly_orders` asset has a **Changed in branch** label ind
 
 Click the **Asset definition** tab to see the code change that created this label.
 
-![Change tracking partitions](/images/dagster-cloud/managing-deployments/change-tracking-partitions.png)
+![Change tracking partitions](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-partitions.png)
 
 </TabItem>
 <TabItem value="Asset definition">
@@ -131,7 +130,7 @@ def weekly_orders(): ...
 ### Tags
 
 {/* Change Tracking can detect when an [asset's tags](/concepts/metadata-tags/tags) have changed, whether they've been added, modified, or removed. */}
-Change Tracking can detect when an [asset's tags](/todo) have changed, whether they've been added, modified, or removed.
+Change Tracking can detect when an [asset's tags](/guides/build/assets/metadata-and-tags/tags) have changed, whether they've been added, modified, or removed.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">
@@ -140,7 +139,7 @@ In this example, the `fruits_in_stock` asset has a **Changed in branch** label i
 
 Click the **Asset definition** tab to see the code change that created this label.
 
-![Change tracking tags](/images/dagster-cloud/managing-deployments/change-tracking-tags.png)
+![Change tracking tags](/images/dagster-plus/deployment/management/managing-deployments/change-tracking-tags.png)
 
 </TabItem>
 <TabItem value="Asset definition">
@@ -165,7 +164,7 @@ def fruits_in_stock(): ...
 ### Metadata
 
 {/* Change Tracking can detect when an [asset's definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) has changed, whether it's been added, modified, or removed. */}
-Change Tracking can detect when an [asset's definition metadata](/todo) has changed, whether it's been added, modified, or removed.
+Change Tracking can detect when an [asset's definition metadata](/guides/build/assets/metadata-and-tags/) has changed, whether it's been added, modified, or removed.
 
 <Tabs>
 <TabItem value="Asset in the Dagster UI">
@@ -173,8 +172,7 @@ Change Tracking can detect when an [asset's definition metadata](/todo) has chan
 In this example, the `produtcs` asset has a **Changed in branch** label indicating it has changed metadata.
 
 Click the **Asset definition** tab to see the code change that created this label.
-
-![Change tracking metadata](/images/dagster-cloud/managing-deployments/change-tracking-metadata.png)
+/images/dagster-plus/management/managing-deployments/change-tracking-metadata.png)
 
 </TabItem>
 <TabItem value="Asset definition">

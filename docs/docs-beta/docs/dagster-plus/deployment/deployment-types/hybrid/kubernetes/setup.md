@@ -3,7 +3,7 @@ title: Kubernetes agent setup
 sidebar_position: 100
 ---
 
-This page provides instructions for running the [Dagster+ agent](/todo) on a [Kubernetes](https://kubernetes.io) cluster.
+This page provides instructions for running the Dagster+ agent on a [Kubernetes](https://kubernetes.io) cluster.
 
 ## Installation
 
@@ -82,7 +82,7 @@ kubectl --namespace dagster-cloud logs -l deployment=agent
 There are three places to customize how Dagster interacts with Kubernetes:
 - **Per Deployment** by configuring the Dagster+ agent using [Helm values](https://artifacthub.io/packages/helm/dagster-cloud/dagster-cloud-agent?modal=values)
 - **Per Project** by configuring the `dagster_cloud.yaml` file for your [code location](/dagster-plus/deployment/code-locations)
-- **Per Asset or Job** by adding tags to the [asset](/todo), [job](/todo), or [customizing the Kubernetes pipes invocation](/todo)
+- **Per Asset or Job** by adding tags to the [asset](/guides/build/assets/defining-assets), [job](/guides/build/assets/asset-jobs), or [customizing the Kubernetes pipes invocation](/guides/build/external-pipelines/kubernetes-pipeline)
 
 Changes apply in a hierarchy, for example, a customization for an asset will override a default set globally in the agent configuration. Attributes that are not customized will use the global defaults.
 
@@ -252,7 +252,7 @@ helm --namespace dagster-cloud upgrade agent \
 
 <TabItem value="code-location-secrets" label="Single code location">
 
-Modify the [`dagster_cloud.yaml` file](/todo) in your project's Git repository:
+Modify the [`dagster_cloud.yaml` file](/dagster-plus/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
 location:
@@ -279,7 +279,7 @@ If you need to request secrets from a secret manager like AWS Secrets Manager or
 
 ### Use a different service account for a specific code location
 
-Modify the [`dagster_cloud.yaml` file](/todo) in your project's Git repository:
+Modify the [`dagster_cloud.yaml` file](/dagster-plus/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
 locations:
@@ -385,7 +385,8 @@ If you want completely separate environments with their own asset graph, run his
 ### Request resources such as CPU, memory, or GPU
 
 :::tip
-Dagster+ makes it easy to monitor CPU and memory used by code location servers and individual runs. Follow [this guide](/todo) for details.
+
+Dagster+ makes it easy to monitor CPU and memory used by code location servers and individual runs. For more information, see the [run monitoring documentation](/guides/deploy/execution/run-monitoring).
 :::
 
 First determine if you want to change the requested resource for everything in a code location, or for a specific job or asset.
@@ -394,7 +395,7 @@ First determine if you want to change the requested resource for everything in a
 
 <TabItem value="code-location-resource" label="Resources for everything in a code location">
 
-Modify the [`dagster_cloud.yaml` file](/todo) in your project's Git repository:
+Modify the [`dagster_cloud.yaml` file](/dagster-plus/deployment/code-locations/dagster-cloud-yaml) in your project's Git repository:
 
 ```yaml file=dagster_cloud.yaml
 locations:
@@ -432,11 +433,11 @@ The units for CPU and memory resources are described [in this document](https://
 
 The default behavior in Dagster+ is to create one pod for a run. Each asset targeted by that run is executed in subprocess within the pod. Use a job tag to request resources for this pod, which in turn makes those resources available to the targeted assets.
 
-<CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_job.py" language="python" title="Request resources for a job" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_job.py" language="python" title="Request resources for a job" />
 
 Another option is to launch a pod for each asset by telling Dagster to use the Kubernetes job executor. In this case, you can specify resources for each individual asset.
 
-<CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_asset.py" language="python" title="Request resources for an asset" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_asset.py" language="python" title="Request resources for an asset" />
 
 </TabItem>
 
@@ -444,7 +445,7 @@ Another option is to launch a pod for each asset by telling Dagster to use the K
 
 Dagster can launch and manage existing Docker images as Kubernetes jobs using the [Dagster kubernetes pipes integration](/integrations/libraries/kubernetes). To request resources for these jobs by supplying the appropriate Kubernetes pod spec.
 
-<CodeExample filePath="dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_pipes.py" language="python" title="Request resources for a k8s pipes asset" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_pipes.py" language="python" title="Request resources for a k8s pipes asset" />
 
 
 

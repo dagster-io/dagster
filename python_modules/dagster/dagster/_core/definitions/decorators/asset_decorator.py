@@ -93,6 +93,7 @@ def asset(
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[Sequence[str]] = ...,
     kinds: Optional[AbstractSet[str]] = ...,
+    pool: Optional[str] = ...,
     **kwargs,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
@@ -170,6 +171,7 @@ def asset(
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
+    pool: Optional[str] = None,
     **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
@@ -246,6 +248,7 @@ def asset(
             e.g. `team:finops`.
         kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
             will be made visible in the Dagster UI.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this asset's execution.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
             Hidden parameter not exposed in the decorator signature, but passed in kwargs.
@@ -254,8 +257,25 @@ def asset(
         .. code-block:: python
 
             @asset
+            def my_upstream_asset() -> int:
+                return 5
+
+            @asset
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
+
+            should_materialize = True
+
+            @asset(output_required=False)
+            def conditional_asset():
+                if should_materialize:
+                    yield Output(5)  # you must `yield`, not `return`, the result
+
+            # Will also only materialize if `should_materialize` is `True`
+            @asset
+            def downstream_asset(conditional_asset):
+                return conditional_asset + 1
+
     """
     compute_kind = check.opt_str_param(kwargs.get("compute_kind"), "compute_kind")
     required_resource_keys = check.opt_set_param(required_resource_keys, "required_resource_keys")
@@ -306,6 +326,7 @@ def asset(
         check_specs=check_specs,
         key=key,
         owners=owners,
+        pool=pool,
     )
 
     if compute_fn is not None:
@@ -378,6 +399,7 @@ class AssetDecoratorArgs(NamedTuple):
     key: Optional[CoercibleToAssetKey]
     check_specs: Optional[Sequence[AssetCheckSpec]]
     owners: Optional[Sequence[str]]
+    pool: Optional[str]
 
 
 class ResourceRelatedState(NamedTuple):
@@ -502,6 +524,7 @@ def create_assets_def_from_fn_and_decorator_args(
             can_subset=False,
             decorator_name="@asset",
             execution_type=AssetExecutionType.MATERIALIZATION,
+            pool=args.pool,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
@@ -548,6 +571,7 @@ def multi_asset(
     code_version: Optional[str] = None,
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    pool: Optional[str] = None,
     **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
@@ -602,6 +626,8 @@ def multi_asset(
             by this function.
         check_specs (Optional[Sequence[AssetCheckSpec]]): Specs for asset checks that
             execute in the decorated function after materializing the assets.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs this
+            multi-asset's execution.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the
             multi_asset.
@@ -677,6 +703,7 @@ def multi_asset(
         backfill_policy=backfill_policy,
         decorator_name="@multi_asset",
         execution_type=AssetExecutionType.MATERIALIZATION,
+        pool=pool,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

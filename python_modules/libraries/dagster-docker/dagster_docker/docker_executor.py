@@ -5,7 +5,7 @@ import dagster._check as check
 import docker
 import docker.errors
 from dagster import Field, IntSource, executor
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.retries import RetryMode, get_retries_config
@@ -46,7 +46,7 @@ from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, v
     ),
     requirements=multiple_process_executor_requirements(),
 )
-@experimental
+@beta
 def docker_executor(init_context: InitExecutorContext) -> Executor:
     """Executor which launches steps as Docker containers.
 

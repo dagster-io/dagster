@@ -1,15 +1,24 @@
+import hashlib
 import shutil
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Final, Literal, Optional
+from typing import Final, Literal, Optional, Union
 
 from typing_extensions import Self, TypeAlias
 
 from dagster_dg.config import DgConfig
+from dagster_dg.utils import (
+    DEFAULT_FILE_EXCLUDE_PATTERNS,
+    hash_directory_metadata,
+    hash_file_metadata,
+)
 
 _CACHE_CONTAINER_DIR_NAME: Final = "dg-cache"
 
-CachableDataType: TypeAlias = Literal["component_registry_data"]
+CachableDataType: TypeAlias = Union[
+    Literal["component_registry_data"], Literal["all_components_schema"]
+]
 
 
 def get_default_cache_dir() -> Path:
@@ -19,6 +28,20 @@ def get_default_cache_dir() -> Path:
         return Path.home() / "Library" / "Caches" / "dg"
     else:
         return Path.home() / ".cache" / "dg"
+
+
+def hash_paths(
+    paths: Sequence[Path],
+    includes: Optional[Sequence[str]] = None,
+    excludes: Sequence[str] = DEFAULT_FILE_EXCLUDE_PATTERNS,
+) -> str:
+    hasher = hashlib.md5()
+    for path in paths:
+        if path.is_dir():
+            hash_directory_metadata(hasher, path, includes=includes, excludes=excludes)
+        else:
+            hash_file_metadata(hasher, path)
+    return hasher.hexdigest()
 
 
 class DgCache:

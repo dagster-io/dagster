@@ -2,6 +2,7 @@ from typing import Any, Optional
 
 import boto3
 import requests
+from dagster._annotations import beta
 
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend
 
@@ -29,6 +30,7 @@ def get_session_info(mwaa: Any, env_name: str) -> tuple[str, str]:
         raise Exception(f"Failed to get session info: {response.text}")
 
 
+@beta
 class MwaaSessionAuthBackend(AirflowAuthBackend):
     """A :py:class:`dagster_airlift.core.AirflowAuthBackend` that authenticates to AWS MWAA.
 

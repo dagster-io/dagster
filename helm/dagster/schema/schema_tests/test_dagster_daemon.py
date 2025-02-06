@@ -300,6 +300,23 @@ def test_run_monitoring_set_max_resume_run_attempts(
     assert instance["run_monitoring"]["max_resume_run_attempts"] == 2
 
 
+def test_run_monitoring_set_max_runtime_seconds(
+    instance_template: HelmTemplate,
+):
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(runMonitoring={"enabled": True, "maxRuntimeSeconds": 2})
+    )
+
+    configmaps = instance_template.render(helm_values)
+
+    assert len(configmaps) == 1
+
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+
+    assert instance["run_monitoring"]["enabled"] is True
+    assert instance["run_monitoring"]["max_runtime_seconds"] == 2
+
+
 def test_sensor_schedule_threading_default(
     instance_template: HelmTemplate,
 ):

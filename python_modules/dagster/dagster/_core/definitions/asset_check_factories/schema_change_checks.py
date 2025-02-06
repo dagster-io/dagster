@@ -27,6 +27,18 @@ def build_column_schema_change_checks(
     """Returns asset checks that pass if the column schema of the asset's latest materialization
     is the same as the column schema of the asset's previous materialization.
 
+    The underlying materializations are expected to have a metadata entry with key `dagster/column_schema` and type :py:class:`TableSchema`.
+    To learn more about how to add column schema metadata and other forms of tabular metadata to assets, see
+    https://docs.dagster.io/guides/build/assets/metadata-and-tags/table-metadata#attaching-column-schema.
+
+    The resulting checks will fail if any changes are detected in the column schema between
+    materializations, including:
+    - Added columns
+    - Removed columns
+    - Changes to column types
+
+    The check failure message will detail exactly what changed in the schema.
+
     Args:
         assets (Sequence[Union[AssetKey, str, AssetsDefinition, SourceAsset]]): The assets to create
             asset checks for.
@@ -34,6 +46,40 @@ def build_column_schema_change_checks(
 
     Returns:
         Sequence[AssetsChecksDefinition]
+
+    Examples:
+        First, define an asset with column schema metadata. You can attach schema metadata either as
+        definition metadata (when schema is known at definition time) or as materialization metadata
+        (when schema is only known at runtime):
+
+        .. code-block:: python
+
+            import dagster as dg
+
+            # Using definition metadata when schema is known upfront
+            @dg.asset
+            def people_table():
+                column_names = ...
+                column_types = ...
+
+                columns = [
+                    dg.TableColumn(name, column_type)
+                    for name, column_type in zip(column_names, column_types)
+                ]
+
+                yield dg.MaterializeResult(
+                    metadata={"dagster/column_schema": dg.TableSchema(columns=columns)}
+                )
+
+        Once you have assets with column schema metadata, you can create schema change checks to monitor
+        for changes in the schema between materializations:
+
+        .. code-block:: python
+
+            # Create schema change checks for one or more assets
+            schema_checks = dg.build_column_schema_change_checks(
+                assets=[people_table]
+            )
     """
     asset_keys = set()
     for el in assets:

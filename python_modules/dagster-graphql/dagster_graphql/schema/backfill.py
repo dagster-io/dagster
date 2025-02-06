@@ -525,13 +525,21 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
 
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
+        if self._backfill_job.backfill_end_timestamp is not None:
+            return self._backfill_job.backfill_end_timestamp
         if self._backfill_job.status == BulkActionStatus.REQUESTED:
             # if it's still in progress then there is no end time
             return None
         records = self._get_records(graphene_info)
+        if len(records) == 0:
+            # backfill was moved to a terminal state before any runs were launched. We cannot
+            # reconstruct the time the backfill actually moved to a terminal state, so use the start
+            # time as an estimation
+            return self.creationTime
         max_end_time = 0
         for record in records:
             max_end_time = max(record.end_time or 0, max_end_time)
+
         return max_end_time
 
     def resolve_endTime(self, graphene_info: ResolveInfo) -> Optional[float]:

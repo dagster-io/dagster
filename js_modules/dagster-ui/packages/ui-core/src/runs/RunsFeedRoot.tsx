@@ -1,6 +1,5 @@
 import {Box, Checkbox, Colors, tokenToString} from '@dagster-io/ui-components';
-import partition from 'lodash/partition';
-import {useCallback, useMemo} from 'react';
+import {useCallback} from 'react';
 
 import {useQuery} from '../apollo-client';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
@@ -50,10 +49,6 @@ export const RunsFeedRoot = () => {
 
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
-  const [statusTokens, nonStatusTokens] = useMemo(
-    () => partition(filterTokens, (token) => token.token === 'status'),
-    [filterTokens],
-  );
 
   const [view, setView] = useQueryPersistedState<RunsFeedView>({
     encode: (v) => ({view: v && v !== RunsFeedView.ROOTS ? v.toLowerCase() : undefined}),
@@ -61,38 +56,26 @@ export const RunsFeedRoot = () => {
   });
 
   const currentTab = useSelectedRunsFeedTab(filterTokens, view);
-  const currentTabSpecifiesStatuses = !['all', 'backfills'].includes(currentTab);
 
   const setFilterTokensWithStatus = useCallback(
     (tokens: RunFilterToken[]) => {
-      if (currentTabSpecifiesStatuses) {
-        setFilterTokens([...statusTokens, ...tokens]);
-      } else {
-        setFilterTokens(tokens);
-      }
+      setFilterTokens(tokens);
     },
-    [setFilterTokens, currentTabSpecifiesStatuses, statusTokens],
+    [setFilterTokens],
   );
 
   const onAddTag = useCallback(
     (token: RunFilterToken) => {
       const tokenAsString = tokenToString(token);
-      if (!nonStatusTokens.some((token) => tokenToString(token) === tokenAsString)) {
-        setFilterTokensWithStatus([...nonStatusTokens, token]);
+      if (!filterTokens.some((token) => tokenToString(token) === tokenAsString)) {
+        setFilterTokensWithStatus([...filterTokens, token]);
       }
     },
-    [nonStatusTokens, setFilterTokensWithStatus],
+    [filterTokens, setFilterTokensWithStatus],
   );
 
-  const mutableTokens = useMemo(() => {
-    if (currentTabSpecifiesStatuses) {
-      return filterTokens.filter((token) => token.token !== 'status');
-    }
-    return filterTokens;
-  }, [filterTokens, currentTabSpecifiesStatuses]);
-
   const {button, activeFiltersJsx} = useRunsFilterInput({
-    tokens: mutableTokens,
+    tokens: filterTokens,
     onChange: setFilterTokensWithStatus,
     enabledFilters: filters,
   });

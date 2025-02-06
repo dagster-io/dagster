@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
 
 class CeleryRunLauncher(RunLauncher, ConfigurableClass):
-    """Dagster [Run Launcher](https://docs.dagster.io/deployment/run-launcher) which
+    """Dagster [Run Launcher](https://docs.dagster.io/guides/deploy/execution/run-launchers) which
     starts runs as Celery tasks.
     """
 

@@ -88,44 +88,24 @@ For simplicity, we're going to copy the contents of the single Dagster Pipes fil
 
 In this step, you'll add the code you want to execute to the function. Create another file in the AWS UI - or use the default `lambda_function.py` file created by the function - and paste in the following code:
 
-```python file=/guides/dagster/dagster_pipes/lambda/lambda_function.py
-from dagster_pipes import PipesMappingParamsLoader, open_dagster_pipes
+{/* TODO convert to <CodeExample> */}
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/lambda/lambda_function.py" />
 
+:::tip
 
-def lambda_handler(event, _context):
-    with open_dagster_pipes(
-        params_loader=PipesMappingParamsLoader(event),
-    ) as pipes:
-        # Get some_parameter_value from the event payload
-        some_parameter_value = event["some_parameter_value"]
+The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
 
-        # Stream log message back to Dagster
-        pipes.log.info(f"Using some_parameter value: {some_parameter_value}")
-
-        # ... your code that computes and persists the asset
-
-        # Stream asset materialization metadata and data version back to Dagster.
-        # This should be called after you've computed and stored the asset value. We
-        # omit the asset key here because there is only one asset in scope, but for
-        # multi-assets you can pass an `asset_key` parameter.
-
-        pipes.report_asset_materialization(
-            metadata={
-                "some_metric": {"raw_value": some_parameter_value + 1, "type": "int"}
-            },
-            data_version="alpha",
-        )
-```
+:::
 
 Let's review what this code does:
 
-- Imports <PyObject section="libraries" module="dagster_pipes" object="PipesMappingParamsLoader" /> and <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" /> from `dagster_pipes`
+- Imports [`PipesMappingParamsLoader`](/api/python-api/libraries/dagster-pipes#params-loaders) and <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" /> from `dagster_pipes`
 
 - **Defines a [Lambda function handler](https://docs.aws.amazon.com/lambda/latest/dg/python-handler.html), which is a method in function code that processes events**. This method accepts `event` and `context` arguments, which map to the `event` payload and `context` we'll define in our Dagster asset.
 
 - **Initializes the Dagster Pipes context (<PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" />), which yields an instance of <PyObject section="libraries" object="PipesContext" module="dagster_pipes" /> called `pipes`.**
 
-  On the orchestration side - which we'll discuss in the next section - we'll set up a Dagster asset that uses the <PyObject section="libraries" module="dagster_aws" object="pipes.PipesLambdaClient" /> to inject information needed for Pipes in an `event` payload. In this code on the AWS Lambda side, we're passing this payload to <PyObject section="libraries" module="dagster_pipes" object="PipesMappingParamsLoader" /> and using it in <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" />.
+  On the orchestration side - which we'll discuss in the next section - we'll set up a Dagster asset that uses the <PyObject section="libraries" module="dagster_aws" object="pipes.PipesLambdaClient" /> to inject information needed for Pipes in an `event` payload. In this code on the AWS Lambda side, we're passing this payload to [`PipesMappingParamsLoader`](/api/python-api/libraries/dagster-pipes#params-loaders) and using it in <PyObject section="libraries" object="open_dagster_pipes" module="dagster_pipes" />.
 
   We're using the default context loader (<PyObject section="libraries" object="PipesDefaultContextLoader" module="dagster_pipes" />) and message writer (<PyObject section="libraries" object="PipesDefaultMessageWriter" module="dagster_pipes" />) in this example. These objects establish communication between the orchestration and external process. On the orchestration end, these match a corresponding `PipesLambdaEventContextInjector` and `PipesLambdaLogsMessageReader`, which are instantiated inside the <PyObject section="libraries" module="dagster_aws" object="pipes.PipesLambdaClient" />.
 
@@ -145,25 +125,7 @@ In this step, you'll create a Dagster asset that, when materialized, opens a Dag
 
 In your Dagster project, create a file named `dagster_lambda_pipes.py` and paste in the following code:
 
-```python file=/guides/dagster/dagster_pipes/lambda/dagster_code.py startafter=start_asset_marker endbefore=end_asset_marker
-# dagster_lambda_pipes.py
-
-import boto3
-from dagster_aws.pipes import PipesLambdaClient
-
-from dagster import AssetExecutionContext, Definitions, asset
-
-
-@asset
-def lambda_pipes_asset(
-    context: AssetExecutionContext, lambda_pipes_client: PipesLambdaClient
-):
-    return lambda_pipes_client.run(
-        context=context,
-        function_name="dagster_pipes_function",
-        event={"some_parameter_value": 1},
-    ).get_materialize_result()
-```
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/lambda/dagster_code.py" startAfter="start_asset_marker" endBefore="end_asset_marker" />
 
 Here's what we did in this example:
 
@@ -190,16 +152,9 @@ Next, you'll add the asset and AWS Lambda resource to your project's code locati
 
 Copy and paste the following to the bottom of `dagster_lambda_pipes.py`:
 
-```python file=/guides/dagster/dagster_pipes/lambda/dagster_code.py startafter=start_definitions_marker endbefore=end_definitions_marker
-# dagster_lambda_pipes.py
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/lambda/dagster_code.py" startAfter="start_definitions_marker" endBefore="end_definitions_marker" />
 
-defs = Definitions(
-    assets=[lambda_pipes_asset],
-    resources={"lambda_pipes_client": PipesLambdaClient(client=boto3.client("lambda"))},
-)
-```
-
-Sometimes, you may want to transition data pipelines between development and production environments without minimal code changes. To do so, you can use the [Resources](/guides/build/external-resources) system to vary the Pipes clients based on different deployments. For example, you can specify different configured `boto3` clients. Or, you may handle the switch by swapping underlying AWS environment variables between deployments. For more info, check out detailed guides in [Transitioning Data Pipelines from Development to Production](/todo) and [Testing against production with Dagster+ Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/testing).
+Sometimes, you may want to transition data pipelines between development and production environments without minimal code changes. To do so, you can use the [Resources](/guides/build/external-resources) system to vary the Pipes clients based on different deployments. For example, you can specify different configured `boto3` clients. Or, you may handle the switch by swapping underlying AWS environment variables between deployments. For more info, check out detailed guides in [Transitioning Data Pipelines from Development to Production](/guides/deploy/dev-to-prod) and [Testing against production with Dagster+ Branch Deployments](/dagster-plus/features/ci-cd/branch-deployments/testing).
 
 ## Step 3: Invoke the AWS Lambda function from the Dagster UI
 

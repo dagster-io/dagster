@@ -6,7 +6,7 @@ title: Dagster & AWS Lambda
 sidebar_label: Lambda
 excerpt: Using the AWS Lambda integration with Dagster, you can leverage serverless functions to execute external code in your pipelines.
 date: 2024-06-21
-apireflink: https://docs.dagster.io/_apidocs/libraries/dagster-aws
+apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-aws
 docslink:
 partnerlink: https://aws.amazon.com/
 logo: /integrations/aws-lambda.svg
@@ -29,7 +29,7 @@ pip install dagster-aws
 
 ### Examples
 
-<CodeExample filePath="integrations/aws-lambda.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/aws-lambda.py" language="python" />
 
 ### About AWS Lambda
 

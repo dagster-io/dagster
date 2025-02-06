@@ -2,8 +2,12 @@ from collections.abc import Mapping
 from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster_components import Component, ComponentLoadContext, component_type
-from pydantic import BaseModel
+from dagster_components import (
+    AssetAttributesModel,
+    Component,
+    ComponentLoadContext,
+    registered_component_type,
+)
 
 
 def my_custom_fn(a: str, b: str) -> str:
@@ -14,14 +18,10 @@ def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
     return AutomationCondition.cron_tick_passed(cron_schedule) & ~AutomationCondition.in_progress()
 
 
-class CustomScopeParams(BaseModel):
-    attributes: Mapping[str, Any]
-
-
-@component_type(name="custom_scope_component")
+@registered_component_type(name="custom_scope_component")
 class HasCustomScope(Component):
     @classmethod
-    def get_rendering_scope(cls) -> Mapping[str, Any]:
+    def get_additional_scope(cls) -> Mapping[str, Any]:
         return {
             "custom_str": "xyz",
             "custom_dict": {"a": "b"},
@@ -33,13 +33,12 @@ class HasCustomScope(Component):
         self.attributes = attributes
 
     @classmethod
-    def get_component_schema_type(cls):
-        return CustomScopeParams
+    def get_schema(cls):
+        return AssetAttributesModel
 
     @classmethod
-    def load(cls, context: ComponentLoadContext):
-        loaded_params = context.load_params(cls.get_component_schema_type())
-        return cls(attributes=loaded_params.attributes)
+    def load(cls, params: AssetAttributesModel, context: ComponentLoadContext):
+        return cls(attributes=params.resolve(context.templated_value_resolver))
 
     def build_defs(self, context: ComponentLoadContext):
         return Definitions(assets=[AssetSpec(key="key", **self.attributes)])

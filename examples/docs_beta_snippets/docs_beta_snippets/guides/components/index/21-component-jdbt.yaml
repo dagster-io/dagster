@@ -1,0 +1,5 @@
+type: dbt_project@dagster_components
+
+params:
+  dbt:
+    project_dir: ../../../dbt/jdbt

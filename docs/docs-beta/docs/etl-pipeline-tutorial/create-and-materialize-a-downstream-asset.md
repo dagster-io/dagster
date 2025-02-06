@@ -3,7 +3,7 @@ title: Create and materialize a downstream asset
 description: Reference Assets as dependencies to other assets
 last_update:
   author: Alex Noonan
-sidebar_position: 30
+sidebar_position: 20
 ---
 
 Now that we have the raw data loaded into DuckDB, we need to create a [downstream asset](/guides/build/assets/defining-assets-with-asset-dependencies) that combines the upstream assets together. In this step, you will:
@@ -19,7 +19,7 @@ To accomplish this in SQL, we will bring in our `sales_data` table and then left
 
 As you can see, the new `joined_data` asset looks a lot like our previous ones, with a few small changes. We put this asset into a different group. To make this asset dependent on the raw tables, we add the asset keys to the `deps` parameter in the asset definition.
 
-<CodeExample filePath="guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="89" lineEnd="132"/>
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="89" lineEnd="132"/>
 
 ## 2. Materialize the asset
 

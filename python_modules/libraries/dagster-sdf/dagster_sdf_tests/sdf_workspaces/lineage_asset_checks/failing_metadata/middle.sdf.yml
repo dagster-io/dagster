@@ -1,9 +1,0 @@
-table:
-  name: middle
-  tests:
-    - expect: unique_columns(["user_id", "user_id"])
-  columns:
-    - name: phone
-      tests:
-        - expect: like('non_existent_%')
-        - expect: in_accepted_values(['non_existent'])

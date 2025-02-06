@@ -197,7 +197,9 @@ def execute_core_compute(
                 or step_context.job_def.asset_layer.asset_key_for_node(step_context.node_handle)
             )
             emitted_result_names.add(
-                step_context.job_def.asset_layer.node_output_handle_for_asset(asset_key).output_name
+                step_context.job_def.asset_layer.asset_graph.get(
+                    asset_key
+                ).assets_def.get_output_name_for_asset_key(asset_key)
             )
             # Check results embedded in MaterializeResult are counted
             for check_result in step_output.check_results or []:

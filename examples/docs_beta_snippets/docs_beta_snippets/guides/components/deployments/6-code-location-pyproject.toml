@@ -1,0 +1,9 @@
+...
+[tool.dagster]
+module_name = "code_location_1.definitions"
+code_location_name = "code-location-1"
+
+[tool.dg]
+is_code_location = true
+is_component_lib = true
+...

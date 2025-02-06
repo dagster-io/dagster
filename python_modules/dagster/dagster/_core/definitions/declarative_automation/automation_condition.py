@@ -2,7 +2,7 @@ import datetime
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Generic, Optional
+from typing import TYPE_CHECKING, Generic, Optional, Union
 
 from typing_extensions import Self
 
@@ -254,6 +254,21 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
             )
 
     @public
+    def replace(
+        self, old: Union["AutomationCondition", str], new: "AutomationCondition"
+    ) -> "AutomationCondition":
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return new if old in [self, self.get_label()] else self
+
+    @public
     @staticmethod
     def asset_matches(
         key: "CoercibleToAssetKey", condition: "AutomationCondition[AssetKey]"
@@ -480,6 +495,18 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         return CodeVersionChangedCondition()
+
+    @public
+    @staticmethod
+    def data_version_changed() -> "BuiltinAutomationCondition[AssetKey]":
+        """Returns an AutomationCondition that is true if the target's data version has been changed
+        since the previous tick.
+        """
+        from dagster._core.definitions.declarative_automation.operands.operands import (
+            DataVersionChangedCondition,
+        )
+
+        return DataVersionChangedCondition()
 
     @public
     @staticmethod

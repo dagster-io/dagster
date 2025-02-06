@@ -700,6 +700,42 @@ class TestEventLogStorage:
             assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[2]))) == 1
             assert len(storage.get_logs_for_run(test_run_id, _cursor(storage_ids[3]))) == 0
 
+            event_type_result = storage.get_records_for_run(
+                test_run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=True
+            )
+            assert [r.event_log_entry.user_message for r in event_type_result.records] == [
+                "A",
+                "B",
+                "C",
+                "D",
+            ]
+
+            event_type_result = storage.get_records_for_run(
+                test_run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=True, limit=2
+            )
+            assert [r.event_log_entry.user_message for r in event_type_result.records] == [
+                "A",
+                "B",
+            ]
+
+            event_type_result = storage.get_records_for_run(
+                test_run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=False
+            )
+            assert [r.event_log_entry.user_message for r in event_type_result.records] == [
+                "D",
+                "C",
+                "B",
+                "A",
+            ]
+
+            event_type_result = storage.get_records_for_run(
+                test_run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=False, limit=2
+            )
+            assert [r.event_log_entry.user_message for r in event_type_result.records] == [
+                "D",
+                "C",
+            ]
+
     def test_event_log_storage_offset_pagination(
         self,
         test_run_id: str,
@@ -5259,6 +5295,37 @@ class TestEventLogStorage:
         # initially there are no concurrency limited keys
         assert storage.get_concurrency_keys() == set(["foo"])
         assert storage.get_concurrency_info("foo").slot_count == 1
+
+    def test_changing_default_concurrency_key(
+        self, storage: EventLogStorage, instance: DagsterInstance
+    ):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        if not self.can_set_concurrency_defaults():
+            pytest.skip("storage does not support setting global op concurrency defaults")
+
+        self.set_default_op_concurrency(instance, storage, 1)
+        assert instance.global_op_concurrency_default_limit == 1
+        assert storage.get_pool_config().default_pool_limit == 1
+
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 1
+
+        self.set_default_op_concurrency(instance, storage, 2)
+        assert instance.global_op_concurrency_default_limit == 2
+        assert storage.get_pool_config().default_pool_limit == 2
+
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 2
+
+        self.set_default_op_concurrency(instance, storage, None)
+        assert instance.global_op_concurrency_default_limit is None
+        assert storage.get_pool_config().default_pool_limit is None
+
+        assert storage.initialize_concurrency_limit_to_default("foo")
+        assert storage.get_concurrency_info("foo").slot_count == 0
 
     def test_asset_checks(
         self,

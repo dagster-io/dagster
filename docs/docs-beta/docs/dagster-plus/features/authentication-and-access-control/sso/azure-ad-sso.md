@@ -12,10 +12,10 @@ In this guide, you'll configure Azure Active Directory (AD) to use single sign-o
 To complete the steps in this guide, you'll need:
 
 - **An existing Azure AD account**
-- **To install the [`dagster-cloud` CLI](/todo)**
+- **To install the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/installing-and-configuring)**
 - **The following in Dagster+:**
   - A Pro plan
-  - [Access to a user token](/todo)
+  - [Access to a user token](/dagster-plus/deployment/management/tokens/user-tokens)
   - [Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) in your organization
 
 </details>
@@ -38,7 +38,8 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 1.  On the **Dagster+** application integration page, locate the **Manage** section and select **single sign-on**.
 2.  On the **Select a single sign-on method** page, select **SAML**.
 3.  On the **Set up single sign-on with SAML** page, click the pencil icon for **Basic SAML Configuration** to edit the settings.
-    ![Settings Dropdown](/img/placeholder.svg)
+
+    ![Settings Dropdown](/images/dagster-plus/features/authentication-and-access-control/azure/set-up-single-sign-on.png)
 4.  In the **Basic SAML Configuration** section, fill in the **Identifier** and **Reply URL** fields as follows:
 
     Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
@@ -60,7 +61,7 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
     1. Locate the **SAML Signing Certificate** section.
     2. Next to **Federation Metadata XML**, click **Download**:
 
-       ![Download SAML Certificate](/img/placeholder.svg)
+       ![Download SAML Certificate](/images/dagster-plus/features/authentication-and-access-control/azure/download.png)
 
     When prompted, save the SAML metadata file to your computer.
 

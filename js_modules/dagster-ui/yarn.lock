@@ -3868,7 +3868,6 @@ __metadata:
     graphql-config: "npm:^5.0.3"
     graphql-tag: "npm:^2.10.1"
     highlight.js: "npm:11.6.0"
-    idb-lru-cache: "npm:^0.1.0"
     identity-obj-proxy: "npm:^3.0.0"
     jest: "npm:^29.7.0"
     jest-canvas-mock: "npm:^2.4.0"
@@ -14856,22 +14855,6 @@ __metadata:
   peerDependencies:
     postcss: ^8.1.0
   checksum: 10/5c324d283552b1269cfc13a503aaaa172a280f914e5b81544f3803bc6f06a3b585fb79f66f7c771a2c052db7982c18bf92d001e3b47282e3abbbb4c4cc488d68
-  languageName: node
-  linkType: hard
-
-"idb-lru-cache@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "idb-lru-cache@npm:0.1.0"
-  dependencies:
-    idb: "npm:^7.0.1"
-  checksum: 10/16a4ba5162e9dadf79955c1a4ba74cb26d419db836f4b63fc6a22286bdcceadd38b5930b6a7df0db7dbcd28b1dd17a188a212a682ce1893388247e1f2342f6f8
-  languageName: node
-  linkType: hard
-
-"idb@npm:^7.0.1":
-  version: 7.1.1
-  resolution: "idb@npm:7.1.1"
-  checksum: 10/8e33eaebf21055129864acb89932e0739b8c96788e559df24c253ce114d8c6deb977a3b30ea47a9bb8a2ae8a55964861c3df65f360d95745e341cee40d5c17f4
   languageName: node
   linkType: hard
 

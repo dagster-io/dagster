@@ -1018,6 +1018,17 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             and self.end_offset == other.end_offset
         )
 
+    def get_partition_key(self, key: Union[str, date, datetime]) -> str:
+        if isinstance(key, date) or isinstance(key, datetime):
+            key = key.strftime(self.fmt)
+
+        # now should have str
+        check.str_param(key, "key")
+        if not self.has_partition_key(key):
+            raise ValueError(f"Got invalid partition key {key!r}")
+
+        return key
+
     @property
     def is_basic_daily(self) -> bool:
         return is_basic_daily(self.cron_schedule)

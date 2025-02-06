@@ -169,7 +169,7 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         " call `configured` on either an OpDefinition and GraphDefinition. To fix"
         " this error, make sure to call `configured` on the definition object *before* using"
         " the `tag` or `alias` methods. For usage examples, see"
-        " https://docs.dagster.io/concepts/configuration/configured",
+        " https://legacy-docs.dagster.io/concepts/configuration/configured",
     )
     from dagster._config.pythonic_config import ConfigurableResourceFactory, safe_is_subclass
 
@@ -183,7 +183,7 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
             "Only the following types can be used with the `configured` method: ResourceDefinition,"
             " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
             " For usage examples of `configured`, see"
-            " https://docs.dagster.io/concepts/configuration/configured",
+            " https://legacy-docs.dagster.io/concepts/configuration/configured",
         )
 
 

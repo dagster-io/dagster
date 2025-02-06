@@ -26,6 +26,7 @@ from dagster._core.execution.stats import (
     build_run_step_stats_from_events,
 )
 from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance.config import PoolConfig
 from dagster._core.loader import LoadableBy, LoadingContext
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
@@ -35,6 +36,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+from dagster._record import record
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 from dagster._utils.warnings import deprecation_warning
@@ -183,6 +185,13 @@ class PlannedMaterializationInfo(NamedTuple):
 
     storage_id: int
     run_id: str
+
+
+@record
+class PoolLimit:
+    name: str
+    limit: int
+    from_default: bool
 
 
 class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
@@ -561,6 +570,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_pool_limits(self) -> Sequence[PoolLimit]:
+        """Get the set of concurrency limited keys and limits."""
+        raise NotImplementedError()
+
+    @abstractmethod
     def claim_concurrency_slot(
         self,
         concurrency_key: str,
@@ -684,3 +698,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
                 )
             )
         return values
+
+    def get_pool_config(self) -> PoolConfig:
+        # Base implementation of fetching pool config.  To be overriden for remote storage
+        # implementations where the local instance might not match the remote instance.
+        return self._instance.get_concurrency_config().pool_config

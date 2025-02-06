@@ -17,6 +17,7 @@ enables:
 tags: [community-supported]
 sidebar_custom_props: 
   logo: images/integrations/cube.svg
+  community: true
 ---
 
 With the `dagster_cube` integration you can setup Cube and Dagster to work together so that Dagster can push changes from upstream data sources to Cube using its integration API.
@@ -29,7 +30,7 @@ pip install dagster_cube
 
 ### Example
 
-<CodeExample filePath="integrations/cube.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/cube.py" language="python" />
 
 ### About Cube
 

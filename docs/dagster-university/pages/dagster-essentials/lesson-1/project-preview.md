@@ -15,4 +15,4 @@ Using data from [NYC OpenData,](https://opendata.cityofnewyork.us/) you’ll bui
 - Transforms and prepares it for analysis
 - Creates a visualization using the transformed data
 
-If you get stuck or want to jump ahead, check out the [finished project here on GitHub](https://github.com/dagster-io/project-dagster-university).
+If you get stuck or want to jump ahead, check out the [finished project here on GitHub](https://github.com/dagster-io/project-dagster-university/tree/main/dagster_university/dagster_essentials).

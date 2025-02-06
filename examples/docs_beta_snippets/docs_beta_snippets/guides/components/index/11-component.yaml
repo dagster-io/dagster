@@ -1,0 +1,5 @@
+type: sling_replication_collection@dagster_components
+
+params:
+  replications:
+  - path: replication.yaml

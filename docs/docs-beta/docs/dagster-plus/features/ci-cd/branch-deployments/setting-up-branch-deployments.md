@@ -29,7 +29,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use **GitHub** for version control
 - You want Dagster to fully automate Branch Deployments
 
-This approach is simplified if you use the [GitHub integration](/todo) to import your project into Dagster+.
+This approach is simplified if you use the [GitHub integration](/integrations/libraries/github) to import your project into Dagster+.
 
   </TabItem>
   <TabItem value="gitlab" label="GitLab">
@@ -90,7 +90,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
   In the list, locate the repository and its **URI**:
 
-  ![Show this in the UI](/img/placeholder.svg)
+  ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-ecr-uri.png)
 
   Keep this around, as you'll need it in a later step.
 
@@ -101,7 +101,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
      After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
 
-     ![Show this in the UI](/img/placeholder.svg)
+     ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
 
   </TabItem>
   <TabItem value="docker" label="Docker">
@@ -114,7 +114,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
      For example:
 
-<CodeExample filePath="dagster-plus/deployment/branch-deployments/dagster.yaml" language="yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml" language="yaml" />
 
   </TabItem>
   <TabItem value="k8s" label="Kubernetes" default>
@@ -123,7 +123,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
   2. After the agent is set up, modify your Helm values file to include the following:
 
-<CodeExample filePath="dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
 
   </TabItem>
 </Tabs>
@@ -156,7 +156,7 @@ In the `dagster_cloud.yaml` file, replace `build.registry` with the registry use
 
 For example:
 
-<CodeExample filePath="dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
 
 ### Step 4.3: Configure GitHub Action secrets
 
@@ -235,7 +235,7 @@ The last step is to verify that the GitHub Action runs successfully.
 1. In the repository, click the **Actions** tab.
 2. In the list of workflows, locate the latest branch deployment run. For example:
 
-![Show this in the UI](/img/placeholder.svg)
+![Show this in the UI](/images/dagster-plus/features/branch-deployments/github-verify-run.png)
 
   </TabItem>
   <TabItem value="gitlab" label="GitLab">
@@ -265,7 +265,7 @@ In the `dagster_cloud.yaml` file, replace `build.registry` with the registry use
 
 For example:
 
-<CodeExample filePath="dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
 
 ### Step 4.3: configure GitLab CI/CD variables
 
@@ -348,14 +348,14 @@ The last step is to verify that the GitLab pipeline runs successfully.
 1. On the project page, click the **CI/CD** tab.
 2. In the list of pipelines, locate the latest branch deployment run. For example:
 
-![Show this in the UI](/img/placeholder.svg)
+![Show this in the UI](/images/dagster-plus/features/branch-deployments/gitlab-verify-run.png)
 
   </TabItem>
   <TabItem value="cli" label="dagster-cloud CLI">
 
 Whenever the state of your branch is updated, Dagster+ expects the following steps to occur:
 
-1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/todo) to learn more.
+1. A new image containing your code and requirements is built on the branch. Refer to [Managing code locations](/dagster-plus/deployment/code-locations/) to learn more.
 
 2. The new image is pushed to a Docker registry accessible to your agent.
 

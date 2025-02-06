@@ -670,6 +670,7 @@ type AssetNode {
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
+  pools: [String!]!
   repository: Repository!
   requiredResources: [ResourceRequirement!]!
   staleStatus(partition: String): StaleStatus
@@ -1240,8 +1241,14 @@ type LogsCapturedEvent implements MessageEvent {
   externalUrl: String
   externalStdoutUrl: String
   externalStderrUrl: String
+  shellCmd: LogRetrievalShellCommand
   pid: Int
   logKey: String!
+}
+
+type LogRetrievalShellCommand {
+  stdout: String
+  stderr: String
 }
 
 type AlertStartEvent implements MessageEvent & RunEvent {
@@ -1440,6 +1447,7 @@ type Run implements PipelineRun & RunsFeedEntry {
   hasDeletePermission: Boolean!
   hasConcurrencyKeySlots: Boolean!
   rootConcurrencyKeys: [String!]
+  allPools: [String!]
   hasUnconstrainedRootNodes: Boolean!
   hasRunMetricsEnabled: Boolean!
 }
@@ -1660,6 +1668,7 @@ enum InstigationStatus {
 type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
+  assetChecks: [AssetCheckhandle!]!
   assets: [Asset!]!
   assetsOrError: AssetsOrError!
 }
@@ -2477,6 +2486,7 @@ type Instance {
   concurrencyLimits: [ConcurrencyKeyInfo!]!
   concurrencyLimit(concurrencyKey: String): ConcurrencyKeyInfo!
   useAutoMaterializeSensors: Boolean!
+  poolConfig: PoolConfig
 }
 
 type RunQueueConfig {
@@ -2496,6 +2506,8 @@ type ConcurrencyKeyInfo {
   pendingStepRunIds: [String!]!
   assignedStepCount: Int!
   assignedStepRunIds: [String!]!
+  limit: Int
+  usingDefaultLimit: Boolean
 }
 
 type ClaimedConcurrencySlot {
@@ -2509,6 +2521,12 @@ type PendingConcurrencyStep {
   enqueuedTimestamp: Float!
   assignedTimestamp: Float
   priority: Int
+}
+
+type PoolConfig {
+  poolGranularity: String
+  defaultPoolLimit: Int
+  opGranularityRunBuffer: Int
 }
 
 type RunLauncher {
@@ -3097,6 +3115,7 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
   id: ID!
   solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle
@@ -3132,6 +3151,7 @@ interface ISolidDefinition {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
 }
 
 type Output {
@@ -3182,8 +3202,10 @@ type SolidDefinition implements ISolidDefinition {
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   assetNodes: [AssetNode!]!
+  pools: [String!]!
   configField: ConfigTypeField
   requiredResources: [ResourceRequirement!]!
+  pool: String
 }
 
 type SolidHandle {
