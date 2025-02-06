@@ -1,5 +1,51 @@
 # Changelog
 
+## 1.9.12 (core) / 0.25.12 (libraries)
+
+### New
+
+- Adds a top-level argument `pool` to asset/op definitions to replace the use of op tags to specify concurrency conditions.
+- The `dagster definitions validate` command now loads locations in-process by default, which speeds up runtime.
+- All published dagster libraries now include a `py.typed` file, which means their type annotations will be used by static analyzers. Previously a few libraries were missing this file.
+- Adds concurrency pool information in the UI for asset / op definitions that use concurrency pools.
+- Optional data migration to improve performance of the Runs page. Run `dagster instance migrate` to run the data migration. The migration will update serialized backfill objects in the database with an end timestamp attribute computed by querying the runs launched by that backfill to determine when the last run completed.
+- Added the ability to distinguish between explicitly set concurrency pool limits and default-set pool limits. Requires a schema migration using `dagster instance migrate`.
+- Moves run queue configuration from its standalone deployment setting into the `concurrency` deployment setting, along with new settings for concurrency pools.
+- Enabled run granularity concurrency enforcement of concurrency pool limits.
+- [dagster-dbt] Specifying a dbt profiles directory and profile is now supported in `DbtProject`.
+- [dagster-dlt] `DagsterDltTranslator.get_*` methods have been superseded in favor of `DagsterDltTranslator.get_asset_spec`.
+- [dagster-gcp] Added `PipesDataprocJobClient`, a Pipes client for running workloads on GCP Dataproc in Job mode.
+- [dagster-looker] `DagsterLookerLkmlTranslator.get_*` methods have been superseded in favor of `DagsterLookerLkmlTranslator.get_asset_spec`.
+- [dagster-pipes] Dagster Pipes now support passing messages and Dagster context via Google Cloud Storage.
+- [ui] Created a standalone view for concurrency pools under the Deployment tab.
+- [ui] When launching partitioned assets in the launchpad from the global graph, Dagster will now warn you if you have not made a partition selection.
+- [ui] When viewing Runs, allow freeform search for filtering to view runs launched by schedules and sensors.
+- [ui] Remove misleading run status dot from the asset events list.
+- [ui] Introduce a stepped workflow for creating new Alerts.
+
+### Bugfixes
+
+- Fixed an issue where querying for Asset Materialization events from multi-partition runs would assign incorrect partition keys to the events.
+- Fixed an issue where partition keys could be dropped when converting a list of partition keys for a `MultiPartitionsDefinition` to a `PartitionSubset`.
+- Fixed an issue where the "Reload definitions" button didn't work when using `dagster dev` on Windows, starting in the 1.9.10 release.
+- Fixed an issue where dagster could not be imported alongside some other libraries using gRPC with an 'api.proto' file.
+- Fixed an issue where assets using ProcessPoolExecutor or multiprocessing with a spawn context sometimes failed to work with a ModuleNotFoundError.
+- [ui] Fixed an issue where non-`None` default config fields weren't being displayed in the Launchpad view.
+- [ui] Fixed an issue with the search bar on the Asset partitions page incorrectly filtering partitions when combined with a status filter.
+- [ui] Fixed Asset page header display of long key values.
+- [ui] Fixed Slack tag in alert creation review step for orgs that have Slack workspaces connected.
+- [dagster-dbt] Fixed a bug introduced in `dagster-dbt` 0.25.7 which would cause execution to fail when using the `@dbt_assets` decorator with an `io_manager_key` specified.
+- [dagster-databricks] Fixed an issue with Dagster Pipes log capturing when running on Databricks.
+
+### Documentation
+
+- Fixed a mistake in the docs concerning configuring asset concurrency tags in Dagster+.
+- Added a tutorial for using GCP Dataproc with Dagster Pipes.
+
+### Dagster Plus
+
+- Relaxed pins on the 'opentelemetry-api' dependency in the 'dagster-cloud' package to `>=1.27.0` to allow using `dagster-cloud` with `protobuf` versions 3 and 4.
+
 ## 1.9.11 (core) / 0.25.11 (libraries)
 
 ### Bugfixes
