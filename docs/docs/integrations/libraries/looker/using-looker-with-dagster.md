@@ -3,12 +3,9 @@ title: "Using Looker with Dagster"
 description: Represent your Looker assets in Dagster
 ---
 
-:::
+import Beta from '../../../partials/\_Beta.md';
 
-This feature is considered **experimental**
-
-:::
-
+<Beta />
 
 This guide provides instructions for using Dagster with Looker using the `dagster-looker` library. Your Looker assets, such as views, explores, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Looker assets. You can also use Dagster to orchestrate Looker PDTs, allowing you to trigger refreshes of these materialized tables on a cadence or based on upstream data changes.
 

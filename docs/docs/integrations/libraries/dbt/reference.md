@@ -434,8 +434,6 @@ Dagster supports fetching additional metadata at dbt execution time to attach as
 
 :::note
 
-**Emitting row count data for dbt models is currently an experimental feature.**
-
 To use this feature, you'll need to be on at least `dagster>=0.17.6` and `dagster-dbt>=0.23.6`.
 
 :::
@@ -451,8 +449,6 @@ Once your dbt models have been materialized, you can view the row count data in 
 ### Fetching column-level metadata
 
 :::note
-
-**Emitting column-level metadata for dbt models is currently an experimental feature.**
 
 To use this feature, you'll need to be on at least `dagster>=1.8.0` and `dagster-dbt>=0.24.0`.
 

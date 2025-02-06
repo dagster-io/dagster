@@ -21,12 +21,6 @@ sidebar_custom_props:
 
 This integration allows you to use [dlt](https://dlthub.com/) to easily ingest and replicate data between systems through Dagster.
 
-:::note
-
-This integration is currently **experimental**.
-
-:::
-
 ### Installation
 
 ```bash

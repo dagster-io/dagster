@@ -18,6 +18,10 @@ sidebar_custom_props:
   logo: images/integrations/gcp-dataproc.svg
 ---
 
+import Beta from '../../../partials/\_Beta.md';
+
+<Beta />
+
 Using this integration, you can manage and interact with Google Cloud Platform's Dataproc service directly from Dagster. This integration allows you to create, manage, and delete Dataproc clusters, and submit and monitor jobs on these clusters.
 
 ### Installation

@@ -18,6 +18,10 @@ sidebar_custom_props:
   logo: images/integrations/github.svg
 ---
 
+import Deprecated from '../../partials/\_Deprecated.md';
+
+<Deprecated />
+
 This library provides an integration with _[GitHub Apps](https://docs.github.com/en/developers/apps/getting-started-with-apps/about-apps)_ by providing a thin wrapper on the GitHub v4 GraphQL API. This allows for automating operations within your GitHub repositories and with the tighter permissions scopes that GitHub Apps allow for vs using a personal token.
 
 ### Installation

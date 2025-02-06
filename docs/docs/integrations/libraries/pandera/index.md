@@ -18,6 +18,10 @@ sidebar_custom_props:
   logo: images/integrations/pandera.svg
 ---
 
+import Beta from '../../../partials/\_Beta.md';
+
+<Beta />
+
 The `dagster-pandera` integration library provides an API for generating Dagster Types from [Pandera DataFrame schemas](https://pandera.readthedocs.io/en/stable/dataframe_schemas.html).
 
 Like all Dagster types, Dagster-Pandera-generated types can be used to annotate op inputs and outputs. This provides runtime type-checking with rich error reporting and allows Dagster UI to display information about a DataFrame's structure.

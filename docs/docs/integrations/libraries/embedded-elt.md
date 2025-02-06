@@ -24,11 +24,6 @@ This package includes two integrations:
 - [Sling](https://slingdata.io) provides a simple way to sync data between databases and file systems.
 - [data Load Tool (dlt)](https://dlthub.com) easily loads data from external systems and APIs.
 
-:::note
-
-This integration is currently **experimental**.
-
-:::
 
 ## Installation
 

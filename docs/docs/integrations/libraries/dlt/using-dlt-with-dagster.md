@@ -3,12 +3,6 @@ title: "Using dlt with Dagster"
 description: Ingest data with ease using Dagster and dlt
 ---
 
-:::
-
-This feature is considered **experimental**
-
-:::
-
 The [data load tool (dlt)](https://dlthub.com/) open-source library defines a standardized approach for creating data pipelines that load often messy data sources into well-structured data sets. It offers many advanced features, such as:
 
 - Handling connection secrets
@@ -244,7 +238,7 @@ For example, let's say we have defined a set of dlt assets named `thinkific_asse
 
 ### Using partitions in your dlt assets
 
-While still an experimental feature, it is possible to use partitions within your dlt assets. However, it should be noted that this may result in concurrency related issues as state is managed by dlt. For this reason, it is recommended to set concurrency limits for your partitioned dlt assets. See the [Limiting concurrency in data pipelines](/guides/operate/managing-concurrency) guide for more details.
+It is possible to use partitions within your dlt assets. However, it should be noted that this may result in concurrency related issues as state is managed by dlt. For this reason, it is recommended to set concurrency limits for your partitioned dlt assets. See the [Limiting concurrency in data pipelines](/guides/operate/managing-concurrency) guide for more details.
 
 That said, here is an example of using static named partitions from a dlt source.
 
