@@ -131,10 +131,10 @@ def step_context_to_step_run_ref(
             recon_job = ReconstructableJob(
                 repository=ReconstructableRepository(
                     pointer=ModuleCodePointer(
-                        _module_in_package_dir(
+                        module=_module_in_package_dir(
                             recon_job.repository.pointer.python_file, package_dir
                         ),
-                        recon_job.repository.pointer.fn_name,
+                        fn_name=recon_job.repository.pointer.fn_name,
                         working_directory=os.getcwd(),
                     ),
                     container_image=recon_job.repository.container_image,

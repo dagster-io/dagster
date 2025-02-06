@@ -125,7 +125,11 @@ class ReconstructableRepository(
         if not working_directory:
             working_directory = os.getcwd()
         return cls(
-            FileCodePointer(file, fn_name, working_directory),
+            FileCodePointer(
+                python_file=file,
+                fn_name=fn_name,
+                working_directory=working_directory,
+            ),
             container_image=container_image,
             container_context=container_context,
         )
@@ -140,7 +144,11 @@ class ReconstructableRepository(
         container_context: Optional[Mapping[str, Any]] = None,
     ) -> "ReconstructableRepository":
         return cls(
-            ModuleCodePointer(module, fn_name, working_directory),
+            ModuleCodePointer(
+                module=module,
+                fn_name=fn_name,
+                working_directory=working_directory,
+            ),
             container_image=container_image,
             container_context=container_context,
         )
@@ -290,11 +298,23 @@ class ReconstructableJob(
 
     @staticmethod
     def for_file(python_file: str, fn_name: str) -> "ReconstructableJob":
-        return bootstrap_standalone_recon_job(FileCodePointer(python_file, fn_name, os.getcwd()))
+        return bootstrap_standalone_recon_job(
+            FileCodePointer(
+                python_file=python_file,
+                fn_name=fn_name,
+                working_directory=os.getcwd(),
+            )
+        )
 
     @staticmethod
     def for_module(module: str, fn_name: str) -> "ReconstructableJob":
-        return bootstrap_standalone_recon_job(ModuleCodePointer(module, fn_name, os.getcwd()))
+        return bootstrap_standalone_recon_job(
+            ModuleCodePointer(
+                module=module,
+                fn_name=fn_name,
+                working_directory=os.getcwd(),
+            )
+        )
 
     def to_dict(self) -> Mapping[str, object]:
         return pack_value(self)
@@ -531,8 +551,8 @@ def build_reconstructable_job(
     )
 
     reconstructor_pointer = ModuleCodePointer(
-        reconstructor_module_name,
-        reconstructor_function_name,
+        module=reconstructor_module_name,
+        fn_name=reconstructor_function_name,
         working_directory=reconstructor_working_directory,
     )
 
@@ -655,7 +675,7 @@ def def_from_pointer(
             "Reconstructable target must be callable with no arguments"
         )
 
-    return _check_is_loadable(target())
+    return _check_is_loadable(target())  # type: ignore
 
 
 def job_def_from_pointer(pointer: CodePointer) -> "JobDefinition":
