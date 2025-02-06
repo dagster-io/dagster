@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional
 
 from airflow import DAG
 from airflow.models import BaseOperator
+from dagster._annotations import beta
 
 from dagster_airlift.in_airflow.dag_proxy_operator import (
     BaseProxyDAGToDagsterOperator,
@@ -15,6 +16,7 @@ from dagster_airlift.in_airflow.task_proxy_operator import (
 )
 
 
+@beta
 def proxying_to_dagster(
     *,
     global_vars: dict[str, Any],

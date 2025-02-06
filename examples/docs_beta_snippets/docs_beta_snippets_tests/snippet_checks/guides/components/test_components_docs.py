@@ -4,9 +4,13 @@ import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from dagster._utils.env import environ
 from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
+    EDITABLE_DIR,
+    MASK_EDITABLE_DAGSTER,
     MASK_JAFFLE_PLATFORM,
     MASK_SLING_DOWNLOAD_DUCKDB,
     MASK_SLING_PROMO,
@@ -16,6 +20,7 @@ from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
+    compare_tree_output,
     create_file,
     re_ignore_after,
     re_ignore_before,
@@ -48,11 +53,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 "COLUMNS": "90",
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
+                "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
             }
         ),
     ):
         os.chdir(tempdir)
-        subprocess.check_call(["uv", "pip", "install", "dg"])
 
         run_command_and_snippet_output(
             cmd="dg --help",
@@ -62,10 +67,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
         # Scaffold code location
         run_command_and_snippet_output(
-            cmd="dg code-location scaffold jaffle-platform",
+            cmd="dg code-location scaffold jaffle-platform --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
+                MASK_EDITABLE_DAGSTER,
                 MASK_JAFFLE_PLATFORM,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
@@ -74,12 +80,10 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # Validate scaffolded files
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="cd jaffle-platform && tree --sort size",
+            cmd="cd jaffle-platform && tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
-            # Remove --sort size from tree output, sadly OSX and Linux tree
-            # sort differently when using alpha sort
-            snippet_replace_regex=[(" --sort size", "")],
+            custom_comparison_fn=compare_tree_output,
         )
         check_file(
             "pyproject.toml",
@@ -113,12 +117,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
             / f"{next_snip_no()}-dg-list-component-types.txt",
             update_snippets=update_snippets,
         )
-        components_dir = str(
-            DAGSTER_ROOT / "python_modules" / "libraries" / "dagster-components"
-        )
+
         _run_command(
-            f"uv add sling_mac_arm64 && uv add --editable '{components_dir}[sling]'"
+            f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[sling]'"
         )
+        _run_command("uv tree")
         run_command_and_snippet_output(
             cmd="dg component-type list",
             snippet_path=COMPONENTS_SNIPPETS_DIR
@@ -128,7 +131,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
         # Scaffold new ingestion, validate new files
         run_command_and_snippet_output(
-            cmd="dg component scaffold dagster_components.sling_replication_collection ingest_files",
+            cmd="dg component scaffold 'sling_replication_collection@dagster_components' ingest_files",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
             update_snippets=update_snippets,
@@ -137,13 +140,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # Cleanup __pycache__ directories
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="tree jaffle_platform --sort size",
+            cmd="tree jaffle_platform",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-tree-jaffle-platform.txt",
             update_snippets=update_snippets,
-            # Remove --sort size from tree output, sadly OSX and Linux tree
-            # sort differently when using alpha sort
-            snippet_replace_regex=[(" --sort size", "")],
+            custom_comparison_fn=compare_tree_output,
         )
         check_file(
             Path("jaffle_platform") / "components" / "ingest_files" / "component.yaml",
@@ -240,7 +241,7 @@ streams:
                 ignore_output=True,
             )
             _run_command(
-                f"uv add --editable '{components_dir}[dbt]'; uv add dbt-duckdb"
+                f"uv add --editable '{EDITABLE_DIR / 'dagster-dbt'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[dbt]'; uv add dbt-duckdb"
             )
             run_command_and_snippet_output(
                 cmd="dg component-type list",
@@ -249,7 +250,7 @@ streams:
                 update_snippets=update_snippets,
             )
             run_command_and_snippet_output(
-                cmd="dg component-type info dagster_components.dbt_project",
+                cmd="dg component-type info 'dbt_project@dagster_components'",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-type-info.txt",
                 update_snippets=update_snippets,
@@ -258,7 +259,7 @@ streams:
 
             # Scaffold dbt project components
             run_command_and_snippet_output(
-                cmd="dg component scaffold dagster_components.dbt_project jdbt --project-path dbt/jdbt",
+                cmd="dg component scaffold dbt_project@dagster_components jdbt --project-path dbt/jdbt",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-scaffold-jdbt.txt",
                 update_snippets=update_snippets,
@@ -273,7 +274,7 @@ streams:
                 Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
-                contents="""type: dagster_components.dbt_project
+                contents="""type: dbt_project@dagster_components
 
 params:
   dbt:

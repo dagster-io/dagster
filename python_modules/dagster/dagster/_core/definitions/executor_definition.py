@@ -459,7 +459,7 @@ def _check_non_ephemeral_instance(instance: "DagsterInstance") -> None:
             " multiple processes. You can configure your default instance via $DAGSTER_HOME or"
             " ensure a valid one is passed when invoking the python APIs. You can learn more about"
             " setting up a persistent DagsterInstance from the DagsterInstance docs here:"
-            " https://docs.dagster.io/deployment/dagster-instance#default-local-behavior"
+            " https://docs.dagster.io/guides/deploy/dagster-instance-configuration#default-local-behavior"
         )
 
 

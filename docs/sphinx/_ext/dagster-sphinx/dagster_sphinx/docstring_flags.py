@@ -10,7 +10,6 @@ from dagster._annotations import (
     PreviewInfo,
     SupersededInfo,
 )
-
 from sphinx.util.docutils import SphinxDirective
 
 # ########################

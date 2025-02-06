@@ -18,6 +18,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
@@ -587,10 +588,12 @@ class DbtCloudClient:
         )
 
 
+@beta
 class DbtCloudResource(DbtCloudClient):
     pass
 
 
+@beta
 class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
     """This resource helps interact with dbt Cloud connectors."""
 
@@ -656,6 +659,7 @@ class DbtCloudClientResource(ConfigurableResource, IAttachDifferentObjectToOpCon
         return self.get_dbt_client()
 
 
+@beta
 @dagster_maintained_resource
 @resource(
     config_schema=DbtCloudClientResource.to_config_schema(),
@@ -670,7 +674,7 @@ def dbt_cloud_resource(context) -> DbtCloudResource:
     response JSON schemae, see the `dbt Cloud API Docs <https://docs.getdbt.com/dbt-cloud/api-v2>`_.
 
     To configure this resource, we recommend using the `configured
-    <https://docs.dagster.io/concepts/configuration/configured>`_ method.
+    <https://legacy-docs.dagster.io/concepts/configuration/configured>`_ method.
 
     **Examples:**
 

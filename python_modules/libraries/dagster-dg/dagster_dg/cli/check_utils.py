@@ -5,6 +5,7 @@ import click
 import typer
 from jsonschema import ValidationError
 
+from dagster_dg.component_key import ComponentKey
 from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
 
@@ -48,11 +49,23 @@ OFFSET_LINES_AFTER = 3
 
 
 def error_dict_to_formatted_error(
-    component_name: Optional[str],
+    component_key: Optional[ComponentKey],
     error_details: ValidationError,
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),
 ) -> str:
+    """Convert a ValidationError to a formatted error message, including
+    a code snippet of the offending YAML file.
+
+    Args:
+        component_name: The name of the component that the error occurred in, e.g. "my_component".
+        error_details: The JSON Schema ValidationError object.
+        source_position_tree: The SourcePositionTree object, which contains the source position of
+            each line in the YAML file.
+        prefix: A prefix to the JSON path of the location of the error in the YAML file. Used because
+            we validate params separately from the top-level component YAML fields, so this is often
+            set to e.g. ["params"] when validating the internal params of a component.
+    """
     source_position, source_position_path = source_position_tree.lookup_closest_and_path(
         [*prefix, *error_details.absolute_path], trace=None
     )
@@ -109,5 +122,7 @@ def error_dict_to_formatted_error(
         f":{typer.style(source_position.start.line, fg=typer.colors.GREEN)}"
     )
     fmt_location = typer.style(location, fg=typer.colors.BRIGHT_WHITE)
-    fmt_name = typer.style(f"{component_name} " if component_name else "", fg=typer.colors.RED)
+    fmt_name = typer.style(
+        f"{component_key.to_typename()} " if component_key else "", fg=typer.colors.RED
+    )
     return f"{fmt_filename} - {fmt_name}{fmt_location} {error_details.message}\n{code_snippet}\n"

@@ -172,7 +172,7 @@ def render_markdown_in_browser(markdown_content: str) -> None:
 
 
 def markdown_for_component_type(remote_component_type: RemoteComponentType) -> str:
-    component_type_name = f"{remote_component_type.package}.{remote_component_type.name}"
+    component_type_name = f"{remote_component_type.namespace}.{remote_component_type.name}"
     sample_yaml = generate_sample_yaml(
         component_type_name, remote_component_type.component_params_schema or {}
     )

@@ -16,9 +16,9 @@ install:
 	uv pip install -e _ext/sphinx-mdx-builder
 
 mdx_copy:
-	rm -rf ../docs-beta/docs/api/python-api/libraries
-	find ../docs-beta/docs/api/python-api/*.mdx ! -name index.mdx -exec rm {} +
-	cp -rf _build/mdx/sections/api/apidocs/* ../docs-beta/docs/api/python-api/
+	rm -rf ../docs/api/python-api/libraries
+	find ../docs/api/python-api/*.mdx ! -name index.mdx -exec rm {} +
+	cp -rf _build/mdx/sections/api/apidocs/* ../docs/api/python-api/
 	
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

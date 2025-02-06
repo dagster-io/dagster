@@ -1,4 +1,4 @@
-type: dagster_components.definitions
+type: definitions@dagster_components
 
 params:
   definitions_path: {}

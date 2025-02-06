@@ -19,12 +19,18 @@ from dagster._utils import snakecase
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from dagster_components.core.component_key import (
+    ComponentKey,
+    GlobalComponentKey,
+    LocalComponentKey,
+)
 from dagster_components.core.component_scaffolder import (
     ComponentScaffolder,
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
 from dagster_components.core.schema.resolver import TemplatedValueResolver
+from dagster_components.utils import load_module_from_path
 
 
 class ComponentDeclNode(ABC):
@@ -110,7 +116,7 @@ class ComponentTypeInternalMetadata(TypedDict):
 
 class ComponentTypeMetadata(ComponentTypeInternalMetadata):
     name: str
-    package: str
+    namespace: str
 
 
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
@@ -145,7 +151,7 @@ class ComponentTypeRegistry:
             `dagster_components*`. Only one built-in  component library can be loaded at a time.
             Defaults to `dagster_components`, the standard set of published component types.
         """
-        component_types: dict[str, type[Component]] = {}
+        component_types: dict[ComponentKey, type[Component]] = {}
         for entry_point in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP):
             # Skip built-in entry points that are not the specified builtin component library.
             if (
@@ -161,33 +167,43 @@ class ComponentTypeRegistry:
                     f"Value expected to be a module, got {root_module}."
                 )
             for component_type in get_registered_component_types_in_module(root_module):
-                key = f"{entry_point.name}.{get_component_type_name(component_type)}"
+                key = GlobalComponentKey(
+                    name=get_component_type_name(component_type), namespace=entry_point.name
+                )
                 component_types[key] = component_type
 
         return cls(component_types)
 
-    def __init__(self, component_types: dict[str, type[Component]]):
-        self._component_types: dict[str, type[Component]] = copy.copy(component_types)
+    def __init__(self, component_types: dict[ComponentKey, type[Component]]):
+        self._component_types: dict[ComponentKey, type[Component]] = copy.copy(component_types)
 
     @staticmethod
     def empty() -> "ComponentTypeRegistry":
         return ComponentTypeRegistry({})
 
-    def register(self, name: str, component_type: type[Component]) -> None:
-        if name in self._component_types:
-            raise DagsterError(f"There is an existing component registered under {name}")
-        self._component_types[name] = component_type
+    def register(self, key: ComponentKey, component_type: type[Component]) -> None:
+        if key in self._component_types:
+            raise DagsterError(f"There is an existing component registered under {key}")
+        self._component_types[key] = component_type
 
-    def has(self, name: str) -> bool:
-        return name in self._component_types
+    def has(self, key: ComponentKey) -> bool:
+        return key in self._component_types
 
-    def get(self, name: str) -> type[Component]:
-        return self._component_types[name]
+    def get(self, key: ComponentKey) -> type[Component]:
+        if isinstance(key, LocalComponentKey):
+            for component_type in find_component_types_in_file(key.python_file):
+                if get_component_type_name(component_type) == key.name:
+                    return component_type
+            raise ValueError(
+                f"Could not find component type {key.to_typename()} in {key.python_file}"
+            )
+        else:
+            return self._component_types[key]
 
-    def keys(self) -> Iterable[str]:
+    def keys(self) -> Iterable[ComponentKey]:
         return self._component_types.keys()
 
-    def items(self) -> Iterable[tuple[str, type[Component]]]:
+    def items(self) -> Iterable[tuple[ComponentKey, type[Component]]]:
         return self._component_types.items()
 
     def __repr__(self) -> str:
@@ -311,3 +327,30 @@ def component_loader(
 
 def is_component_loader(obj: Any) -> bool:
     return getattr(obj, COMPONENT_LOADER_FN_ATTR, False)
+
+
+def find_component_types_in_file(file_path: Path) -> list[type[Component]]:
+    """Find all component types defined in a specific file."""
+    component_types = []
+    for _name, obj in inspect.getmembers(
+        load_module_from_path(file_path.stem, file_path), inspect.isclass
+    ):
+        assert isinstance(obj, type)
+        if is_registered_component_type(obj):
+            component_types.append(obj)
+    return component_types
+
+
+def find_local_component_types(component_path: Path) -> Mapping[LocalComponentKey, type[Component]]:
+    """Find all component types defined in a component directory, and their respective paths."""
+    component_types = {}
+    for py_file in component_path.glob("*.py"):
+        for component_type in find_component_types_in_file(py_file):
+            component_types[
+                LocalComponentKey(
+                    name=get_component_type_name(component_type),
+                    namespace=py_file.name,
+                    dirpath=py_file.parent,
+                )
+            ] = component_type
+    return component_types

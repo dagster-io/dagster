@@ -6,6 +6,8 @@ import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 export const DAGSTER_FLAGS_KEY = 'DAGSTER_FLAGS';
 
+export const WEB_WORKER_FEATURE_FLAGS_KEY = '__featureFlags';
+
 /**
  * Type representing the mapping of feature flags to their boolean states.
  */
@@ -61,6 +63,10 @@ export const getFeatureFlagsWithoutDefaultValues = (): FeatureFlagMap => {
 
 export const getFeatureFlagDefaults = (): FeatureFlagMap => {
   return DEFAULT_FEATURE_FLAG_VALUES;
+};
+
+export const getFeatureFlagsWithDefaults = (): FeatureFlagMap => {
+  return {...DEFAULT_FEATURE_FLAG_VALUES, ...currentFeatureFlags};
 };
 
 /**

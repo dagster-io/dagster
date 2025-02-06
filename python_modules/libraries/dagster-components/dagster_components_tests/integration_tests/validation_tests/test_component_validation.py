@@ -5,6 +5,7 @@ from dagster_components.test.test_cases import (
 )
 from dagster_components.utils import ensure_dagster_components_tests_import
 from pydantic import ValidationError
+from yaml.scanner import ScannerError
 
 from dagster_components_tests.integration_tests.validation_tests.utils import (
     load_test_component_defs_inject_component,
@@ -23,7 +24,7 @@ def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
     errors.
     """
     if test_case.should_error:
-        with pytest.raises(ValidationError) as e:
+        with pytest.raises((ValidationError, ScannerError)) as e:
             load_test_component_defs_inject_component(
                 str(test_case.component_path),
                 test_case.component_type_filepath,

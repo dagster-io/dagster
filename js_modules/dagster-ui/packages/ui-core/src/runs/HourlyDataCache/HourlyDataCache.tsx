@@ -1,14 +1,10 @@
-import {cache} from 'idb-lru-cache';
+import {cache} from '../../util/idb-lru-cache';
 
 type TimeWindow<T> = {start: number; end: number; data: T[]};
 
 export const ONE_HOUR_S = 60 * 60;
 
 type Subscription<T> = (data: T[]) => void;
-
-export const defaultOptions = {
-  expiry: new Date('3030-01-01'), // never expire,
-};
 
 type CacheType<T> = {
   version: string | number;
@@ -18,7 +14,7 @@ type CacheType<T> = {
 export class HourlyDataCache<T> {
   private cache: Map<number, Array<TimeWindow<T>>> = new Map();
   private subscriptions: Array<{hour: number; callback: Subscription<T>}> = [];
-  private indexedDBCache?: ReturnType<typeof cache<string, CacheType<T>>>;
+  private indexedDBCache?: ReturnType<typeof cache<CacheType<T>>>;
   private indexedDBKey: string;
   private version: string | number;
 
@@ -42,7 +38,7 @@ export class HourlyDataCache<T> {
 
     if (id) {
       try {
-        this.indexedDBCache = cache<string, CacheType<T>>({
+        this.indexedDBCache = cache<CacheType<T>>({
           dbName: `HourlyDataCache:${id}`,
           maxCount: keyMaxCount,
         });
@@ -85,11 +81,7 @@ export class HourlyDataCache<T> {
       if (!this.indexedDBCache) {
         return;
       }
-      this.indexedDBCache.set(
-        this.indexedDBKey,
-        {version: this.version, cache: this.cache},
-        defaultOptions,
-      );
+      this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
       return;
     }
     clearTimeout(this.saveTimeout);
@@ -97,11 +89,7 @@ export class HourlyDataCache<T> {
       if (!this.indexedDBCache) {
         return;
       }
-      this.indexedDBCache.set(
-        this.indexedDBKey,
-        {version: this.version, cache: this.cache},
-        defaultOptions,
-      );
+      this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
     }, 10000);
     if (!this.registeredUnload) {
       this.registeredUnload = true;
@@ -109,11 +97,7 @@ export class HourlyDataCache<T> {
         if (!this.indexedDBCache) {
           return;
         }
-        this.indexedDBCache.set(
-          this.indexedDBKey,
-          {version: this.version, cache: this.cache},
-          defaultOptions,
-        );
+        this.indexedDBCache.set(this.indexedDBKey, {version: this.version, cache: this.cache});
       });
     }
   }

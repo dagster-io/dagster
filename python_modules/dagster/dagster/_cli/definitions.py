@@ -5,16 +5,11 @@ import sys
 import click
 
 from dagster import __version__ as dagster_version
-from dagster._cli.utils import (
-    ClickArgValue,
-    apply_click_params,
-    get_possibly_temporary_instance_for_cli,
-)
+from dagster._cli.utils import ClickArgValue, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import (
-    generate_module_name_option,
-    generate_python_file_option,
-    generate_workspace_option,
+    get_auto_determined_workspace_from_kwargs,
     get_workspace_from_kwargs,
+    workspace_options,
 )
 from dagster._utils.log import configure_loggers
 
@@ -24,16 +19,7 @@ def definitions_cli():
     """Commands for working with Dagster definitions."""
 
 
-def validate_command_options(f):
-    return apply_click_params(
-        f,
-        generate_workspace_option(),
-        generate_python_file_option(allow_multiple=True),
-        generate_module_name_option(allow_multiple=True),
-    )
-
-
-@validate_command_options
+@workspace_options
 @click.option(
     "--log-level",
     help="Set the log level for dagster services.",
@@ -49,47 +35,66 @@ def validate_command_options(f):
     default="colored",
     help="Format of the logs for dagster services",
 )
+@click.option(
+    "--load-with-grpc",
+    flag_value=True,
+    default=False,
+    help="Load the code locations using a gRPC server, instead of in-process.",
+)
 @definitions_cli.command(
     name="validate",
     help="""
     The `dagster definitions validate` command loads and validate your Dagster definitions using a Dagster instance.
 
-    This command indicates which code locations contain errors, and which ones can be successfully loaded. 
+    This command indicates which code locations contain errors, and which ones can be successfully loaded.
     Code locations containing errors are considered invalid, otherwise valid.
-    
-    When running, this command sets the environment variable `DAGSTER_IS_DEFS_VALIDATION_CLI=1`. 
+
+    When running, this command sets the environment variable `DAGSTER_IS_DEFS_VALIDATION_CLI=1`.
     This environment variable can be used to control the behavior of your code in validation mode.
-    
+
     This command returns an exit code 1 when errors are found, otherwise an exit code 0.
-    
+
     This command should be run in a Python environment where the `dagster` package is installed.
     """,
 )
-def definitions_validate_command(log_level: str, log_format: str, **kwargs: ClickArgValue):
+def definitions_validate_command(
+    log_level: str, log_format: str, load_with_grpc: bool, **kwargs: ClickArgValue
+):
     os.environ["DAGSTER_IS_DEFS_VALIDATION_CLI"] = "1"
 
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
+    logging.captureWarnings(True)
 
-    logger.info("Starting validation...")
     with get_possibly_temporary_instance_for_cli(
         "dagster definitions validate", logger=logger
     ) as instance:
-        with get_workspace_from_kwargs(
-            instance=instance, version=dagster_version, kwargs=kwargs
+        with (
+            get_workspace_from_kwargs(instance=instance, version=dagster_version, kwargs=kwargs)
+            if load_with_grpc
+            else get_auto_determined_workspace_from_kwargs(
+                instance=instance, version=dagster_version, kwargs=kwargs
+            )
         ) as workspace:
-            invalid = any(
+            if logger.parent:
+                logger.parent.handlers.clear()
+            invalid_locations = [
                 entry
                 for entry in workspace.get_code_location_entries().values()
                 if entry.load_error
-            )
+            ]
             for code_location, entry in workspace.get_code_location_entries().items():
                 if entry.load_error:
                     logger.error(
-                        f"Validation failed for code location {code_location} with exception: "
-                        f"{entry.load_error.message}."
+                        f"Validation failed for code location {code_location}:\n\n"
+                        f"{entry.load_error.to_string()}"
                     )
+                    pass
                 else:
                     logger.info(f"Validation successful for code location {code_location}.")
-    logger.info("Ending validation...")
-    sys.exit(0) if not invalid else sys.exit(1)
+
+    if invalid_locations:
+        logger.error(f"Validation for {len(invalid_locations)} code locations failed.")
+        sys.exit(1)
+    else:
+        logger.info("All code locations passed validation.")

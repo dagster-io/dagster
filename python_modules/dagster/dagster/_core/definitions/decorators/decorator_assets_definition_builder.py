@@ -13,6 +13,7 @@ from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_DAGSTER_TYPE,
     SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
     AssetExecutionType,
     AssetSpec,
@@ -344,12 +345,16 @@ class DecoratorAssetsDefinitionBuilder:
         named_outs_by_asset_key: Mapping[AssetKey, NamedOut] = {}
         for asset_spec in asset_specs:
             output_name = asset_spec.key.to_python_identifier()
+            if SYSTEM_METADATA_KEY_DAGSTER_TYPE in asset_spec.metadata:
+                dagster_type = asset_spec.metadata[SYSTEM_METADATA_KEY_DAGSTER_TYPE]
+            elif asset_spec.metadata.get(SYSTEM_METADATA_KEY_IO_MANAGER_KEY):
+                dagster_type = DagsterAny
+            else:
+                dagster_type = Nothing
             named_outs_by_asset_key[asset_spec.key] = NamedOut(
                 output_name,
                 Out(
-                    DagsterAny
-                    if asset_spec.metadata.get(SYSTEM_METADATA_KEY_IO_MANAGER_KEY)
-                    else Nothing,
+                    dagster_type=dagster_type,
                     is_required=not (can_subset or asset_spec.skippable),
                     description=asset_spec.description,
                     code_version=asset_spec.code_version,

@@ -2,9 +2,11 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 
 from dagster import AssetExecutionContext, AssetSpec, Definitions, multi_asset
+from dagster._annotations import beta
 from dagster_k8s import PipesK8sClient
 
 
+@beta
 def k8s_pod_defs(
     specs: Sequence[AssetSpec],
     pod_spec: Mapping[str, Any],

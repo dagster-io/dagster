@@ -68,6 +68,19 @@ class AssetGraphSubset(NamedTuple):
         AssetGraphSubset contains.
         """
         partitions_def = asset_graph.get(asset_key).partitions_def
+        if asset_key in self.non_partitioned_asset_keys:
+            return SerializableEntitySubset(key=asset_key, value=True)
+        elif asset_key in self.partitions_subsets_by_asset_key:
+            return SerializableEntitySubset(
+                key=asset_key, value=self.partitions_subsets_by_asset_key[asset_key]
+            )
+        else:
+            return SerializableEntitySubset(
+                key=asset_key,
+                value=partitions_def.empty_subset() if partitions_def else False,
+            )
+
+        partitions_def = asset_graph.get(asset_key).partitions_def
         if partitions_def is None:
             return SerializableEntitySubset(
                 key=asset_key, value=asset_key in self.non_partitioned_asset_keys

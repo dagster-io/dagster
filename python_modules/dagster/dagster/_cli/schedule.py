@@ -11,10 +11,7 @@ from dagster import (
     __version__ as dagster_version,
 )
 from dagster._cli.utils import get_instance_for_cli
-from dagster._cli.workspace.cli_target import (
-    get_remote_repository_from_kwargs,
-    repository_target_options,
-)
+from dagster._cli.workspace.cli_target import get_remote_repository_from_kwargs, repository_options
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteRepository
@@ -140,7 +137,7 @@ def check_repo_and_scheduler(repository: RemoteRepository, instance: DagsterInst
 @schedule_cli.command(
     name="preview", help="Preview changes that will be performed by `dagster schedule up`."
 )
-@repository_target_options
+@repository_options
 def schedule_preview_command(**kwargs):
     return execute_preview_command(kwargs, click.echo)
 
@@ -159,7 +156,7 @@ def execute_preview_command(cli_args, print_fn):
     name="list",
     help="List all schedules that correspond to a repository.",
 )
-@repository_target_options
+@repository_options
 @click.option("--running", help="Filter for running schedules", is_flag=True, default=False)
 @click.option("--stopped", help="Filter for stopped schedules", is_flag=True, default=False)
 @click.option("--name", help="Only display schedule schedule names", is_flag=True, default=False)
@@ -230,7 +227,7 @@ def extract_schedule_name(schedule_name: Optional[Union[str, Sequence[str]]]) ->
 @schedule_cli.command(name="start", help="Start an existing schedule.")
 @click.argument("schedule_name", nargs=-1)  # , required=True)
 @click.option("--start-all", help="start all schedules", is_flag=True, default=False)
-@repository_target_options
+@repository_options
 def schedule_start_command(schedule_name, start_all, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     if schedule_name is None and start_all is False:
@@ -270,7 +267,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
 
 @schedule_cli.command(name="stop", help="Stop an existing schedule.")
 @click.argument("schedule_name", nargs=-1)
-@repository_target_options
+@repository_options
 def schedule_stop_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     return execute_stop_command(schedule_name, kwargs, click.echo)
@@ -298,7 +295,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
 
 @schedule_cli.command(name="logs", help="Get logs for a schedule.")
 @click.argument("schedule_name", nargs=-1)
-@repository_target_options
+@repository_options
 def schedule_logs_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     if schedule_name is None:
@@ -322,7 +319,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
                     "This command is deprecated for the DagsterDaemonScheduler. "
                     "Logs for the DagsterDaemonScheduler written to the process output. "
                     "For help troubleshooting the Daemon Scheduler, see "
-                    "https://docs.dagster.io/troubleshooting/schedules"
+                    "https://docs.dagster.io/guides/automate/schedules/troubleshooting-schedules"
                 )
 
             logs_path = os.path.join(
@@ -370,7 +367,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
     is_flag=True,
     default=False,
 )
-@repository_target_options
+@repository_options
 def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     return execute_restart_command(schedule_name, restart_all_running, kwargs, click.echo)

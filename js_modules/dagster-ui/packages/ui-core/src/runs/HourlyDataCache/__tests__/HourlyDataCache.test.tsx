@@ -8,7 +8,7 @@ const mockedCache = {
   set: jest.fn<any, any, any>(),
 };
 let mockShouldThrowError = false;
-jest.mock('idb-lru-cache', () => {
+jest.mock('../../../util/idb-lru-cache', () => {
   return {
     cache: jest.fn(() => {
       if (mockShouldThrowError) {

@@ -163,4 +163,32 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "'asdfasdf' is not of type 'object'",
         ),
     ),
+    ComponentValidationTestCase(
+        component_path="validation/invalid_yaml_missing_quote",
+        component_type_filepath=None,
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "line 2",
+            "found unexpected end of stream",
+        ),
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:2",
+            "Unable to parse YAML",
+            "found unexpected end of stream",
+        ),
+    ),
+    ComponentValidationTestCase(
+        component_path="validation/invalid_yaml_invalid_char",
+        component_type_filepath=None,
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "line 1",
+            "found character '@' that cannot start any token",
+        ),
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:1",
+            "Unable to parse YAML",
+            "found character '@' that cannot start any token",
+        ),
+    ),
 ]

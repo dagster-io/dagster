@@ -102,7 +102,7 @@ BuildkiteStep: TypeAlias = Union[
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
-UV_PIN = "uv==0.4.30"
+UV_PIN = "uv==0.5.27"
 
 
 def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
@@ -317,6 +317,14 @@ def has_helm_changes():
 @functools.lru_cache(maxsize=None)
 def has_dagster_airlift_changes():
     return any("dagster-airlift" in str(path) for path in ChangedFiles.all)
+
+
+@functools.lru_cache(maxsize=None)
+def has_dg_or_components_changes():
+    return any(
+        "dagster-dg" in str(path) or "dagster-components" in str(path)
+        for path in ChangedFiles.all
+    )
 
 
 @functools.lru_cache(maxsize=None)

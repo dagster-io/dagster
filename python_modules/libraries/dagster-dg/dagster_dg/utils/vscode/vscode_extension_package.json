@@ -1,0 +1,13 @@
+{
+  "name": "dagster-components-schema",
+  "publisher": "dagster",
+  "displayName": "Dagster Components Schema",
+  "description": "Provides schema validation for Dagster Components YAML files",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "extensionDependencies": ["redhat.vscode-yaml"],
+  "categories": ["Programming Languages", "Data Science"],
+  "contributes": {}
+}

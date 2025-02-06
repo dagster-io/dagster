@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 import packaging.version
 import polars as pl
 from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext
-from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.upath_io_manager import is_dict_type
 
@@ -38,7 +37,6 @@ class DeltaWriteMode(str, Enum):
     ignore = "ignore"
 
 
-@experimental
 class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     """Implements writing and reading DeltaLake tables.
 

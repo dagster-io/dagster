@@ -38,7 +38,7 @@ def test_missing_origin():
 
         result = runner.invoke(asset_materialize_command, ["--select", "asset1"])
         assert result.exit_code == 2
-        assert "Must specify a python file or module name" in result.output
+        assert "Invalid set of CLI arguments for loading repository/job" in result.output
 
 
 def test_single_asset():

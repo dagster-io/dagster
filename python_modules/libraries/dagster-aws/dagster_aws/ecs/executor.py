@@ -13,7 +13,6 @@ from dagster import (
     _check as check,
     executor,
 )
-from dagster._annotations import experimental
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.events import DagsterEvent, EngineEventData
@@ -77,7 +76,6 @@ _ECS_EXECUTOR_CONFIG_SCHEMA = {
     config_schema=_ECS_EXECUTOR_CONFIG_SCHEMA,
     requirements=multiple_process_executor_requirements(),
 )
-@experimental
 def ecs_executor(init_context: InitExecutorContext) -> Executor:
     """Executor which launches steps as ECS tasks.
 
@@ -139,7 +137,6 @@ def ecs_executor(init_context: InitExecutorContext) -> Executor:
     )
 
 
-@experimental
 class EcsStepHandler(StepHandler):
     @property
     def name(self):

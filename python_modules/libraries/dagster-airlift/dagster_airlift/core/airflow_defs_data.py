@@ -4,7 +4,7 @@ from functools import cached_property
 from typing import AbstractSet, Union  # noqa: UP035
 
 from dagster import AssetKey, AssetsDefinition, AssetSpec
-from dagster._annotations import public
+from dagster._annotations import beta, public
 from dagster._record import record
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -26,6 +26,7 @@ from dagster_airlift.core.utils import (
 MappedAsset = Union[AssetSpec, AssetsDefinition]
 
 
+@beta
 @record
 class AirflowDefinitionsData:
     """A class that holds data about the assets that are mapped to Airflow dags and tasks, and

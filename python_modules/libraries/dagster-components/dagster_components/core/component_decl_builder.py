@@ -19,10 +19,9 @@ from dagster_components.core.component import (
     ComponentDeclNode,
     ComponentLoadContext,
     ComponentTypeRegistry,
-    get_component_type_name,
     is_component_loader,
-    is_registered_component_type,
 )
+from dagster_components.core.component_key import ComponentKey
 from dagster_components.utils import load_module_from_path
 
 
@@ -32,21 +31,6 @@ class ComponentFileModel(BaseModel):
 
 
 T = TypeVar("T", bound=BaseModel)
-
-
-def find_local_component_types(component_path: Path) -> list[type[Component]]:
-    """Find all component types defined in a component directory."""
-    component_types = []
-    for py_file in component_path.glob("*.py"):
-        module_name = py_file.stem
-
-        module = load_module_from_path(module_name, component_path / f"{module_name}.py")
-
-        for _name, obj in inspect.getmembers(module, inspect.isclass):
-            assert isinstance(obj, type)
-            if is_registered_component_type(obj):
-                component_types.append(obj)
-    return component_types
 
 
 @record
@@ -115,18 +99,8 @@ class YamlComponentDecl(ComponentDeclNode):
 
     def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
         parsed_defs = self.component_file_model
-        if parsed_defs.type.startswith("."):
-            component_registry_key = parsed_defs.type[1:]
-
-            for component_type in find_local_component_types(self.path):
-                if get_component_type_name(component_type) == component_registry_key:
-                    return component_type
-
-            raise Exception(
-                f"Could not find component type {component_registry_key} in {self.path}"
-            )
-
-        return registry.get(parsed_defs.type)
+        key = ComponentKey.from_typename(parsed_defs.type, self.path)
+        return registry.get(key)
 
     def get_params(self, context: ComponentLoadContext, params_schema: type[T]) -> T:
         with pushd(str(self.path)):

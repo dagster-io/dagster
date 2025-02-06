@@ -202,18 +202,19 @@ def test_dynamic_subcommand_help_message():
             result = runner.invoke(
                 "component",
                 "scaffold",
-                "dagster_components.test.simple_pipes_script_asset",
+                "simple_pipes_script_asset@dagster_components.test",
                 "--help",
             )
         assert _match_output(
             result.output.strip(),
             textwrap.dedent("""
 
-                 Usage: dg component scaffold [GLOBAL OPTIONS] dagster_components.test.simple_pipes_script_asset [OPTIONS]
-                 COMPONENT_NAME                                                                                                         
+                 Usage: dg component scaffold [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
+                 COMPONENT_INSTANCE_NAM
+                 E                                                                                                         
                                                                                                                                         
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ *    component_name      TEXT  [required]                                                                            │
+                │ *    component_instance_name      TEXT  [required]                                                                   │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ --json-params          TEXT  JSON string of component parameters.                                                    │

@@ -24,11 +24,13 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/components/existing-project/definitions-after.py",
     # there are no components defined in the snippets and so it would fail to load
     f"{snippets_folder}/guides/components/index/5-definitions.py",
+    f"{snippets_folder}/guides/components/existing-project/6-initial-definitions.py",
+    f"{snippets_folder}/guides/components/existing-project/7-updated-definitions.py",
 }
 
 EXCLUDED_DIRS = {
-    # integrations are excluded because they have external dependencies that
-    # are easier to manage in a separate tox environment
+    # integrations are excluded because they have external dependencies that are easier to manage in
+    # a separate tox environment
     f"{snippets_folder}/integrations",
 }
 

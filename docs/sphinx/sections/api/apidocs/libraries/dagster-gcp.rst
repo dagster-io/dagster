@@ -8,8 +8,8 @@ BigQuery
 
 Related Guides:
 
-* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/bigquery>`_
-* `BigQuery I/O manager reference <https://docs.dagster.io/integrations/bigquery/reference>`_
+* `Using Dagster with BigQuery <https://docs.dagster.io/integrations/libraries/gcp/bigquery/>`_
+* `BigQuery I/O manager reference <https://docs.dagster.io/integrations/libraries/gcp/bigquery/reference>`_
 
 
 BigQuery Resource
@@ -42,7 +42,7 @@ BigQuery Ops
 .. autofunction:: import_gcs_paths_to_bq
 
 
-Data Freshness 
+Data Freshness
 ^^^^^^^^^^^^^^
 
 .. autofunction:: fetch_last_updated_timestamps
@@ -102,6 +102,27 @@ Dataproc Ops
 
 .. autoconfigurable:: dataproc_op
 
+.. currentmodule:: dagster_gcp.pipes
+
+Pipes
+--------------
+
+Clients
+^^^^^^^
+
+.. autoclass:: dagster_gcp.pipes.PipesDataprocJobClient
+
+Context Injectors
+^^^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_gcp.pipes.PipesGCSContextInjector
+
+Message Readers
+^^^^^^^^^^^^^^^
+
+.. autoclass:: dagster_gcp.pipes.PipesGCSMessageReader
+
+.. currentmodule:: dagster_gcp
 
 Legacy
 ------

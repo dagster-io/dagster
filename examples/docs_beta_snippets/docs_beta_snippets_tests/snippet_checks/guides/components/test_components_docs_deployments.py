@@ -3,11 +3,18 @@ import re
 import subprocess
 from tempfile import TemporaryDirectory
 
+import pytest
+
 from dagster._utils.env import environ
-from docs_beta_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
+from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
+    DAGSTER_ROOT,
+    EDITABLE_DIR,
+    MASK_EDITABLE_DAGSTER,
+)
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
+    compare_tree_output,
     create_file,
     re_ignore_after,
     re_ignore_before,
@@ -41,11 +48,11 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
                 "COLUMNS": "90",
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
+                "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
             }
         ),
     ):
         os.chdir(tempdir)
-        subprocess.check_call(["uv", "pip", "install", "dg"])
 
         # Scaffold deployment
         run_command_and_snippet_output(
@@ -62,6 +69,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             cmd="cd my-deployment && tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
+            custom_comparison_fn=compare_tree_output,
         )
         check_file(
             "pyproject.toml",
@@ -75,11 +83,12 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Scaffold code location
         run_command_and_snippet_output(
-            cmd="dg code-location scaffold code-location-1",
+            cmd="dg code-location scaffold code-location-1 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-code-location-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
+                MASK_EDITABLE_DAGSTER,
                 MASK_MY_DEPLOYMENT,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
@@ -89,15 +98,15 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(r"find . -type d -name code_location_1.egg-info -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="tree --sort size --dirsfirst",
+            cmd="tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
             # Remove --sort size from tree output, sadly OSX and Linux tree
             # sort differently when using alpha sort
             snippet_replace_regex=[
-                ("--sort size --dirsfirst", ""),
                 (r"\d+ directories, \d+ files", "..."),
             ],
+            custom_comparison_fn=compare_tree_output,
         )
 
         # Validate code location toml
@@ -118,11 +127,8 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
         )
-        components_dir = str(
-            DAGSTER_ROOT / "python_modules" / "libraries" / "dagster-components"
-        )
         _run_command(
-            f"uv add sling_mac_arm64 && uv add --editable '{components_dir}[sling]'"
+            f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[sling]'"
         )
         run_command_and_snippet_output(
             cmd="dg component-type list",
@@ -133,11 +139,12 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Scaffold new code location
         run_command_and_snippet_output(
-            cmd="cd ../.. && dg code-location scaffold code-location-2",
+            cmd="cd ../.. && dg code-location scaffold code-location-2 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-code-location-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
+                MASK_EDITABLE_DAGSTER,
                 MASK_MY_DEPLOYMENT,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
