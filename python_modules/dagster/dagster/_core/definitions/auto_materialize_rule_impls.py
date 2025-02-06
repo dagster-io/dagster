@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
-from dagster._annotations import experimental
+from dagster._annotations import deprecated
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
@@ -211,7 +211,7 @@ class MaterializeOnCronRule(
 
 
 @whitelist_for_serdes
-@experimental
+@deprecated(breaking_version="1.10.0")
 class AutoMaterializeAssetPartitionsFilter(
     NamedTuple(
         "_AutoMaterializeAssetPartitionsFilter",
