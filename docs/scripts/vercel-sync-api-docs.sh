@@ -5,8 +5,6 @@
 
 set -e
 
-cd ..
-
 # only set local when running in Vercel, not local execution
 if ! [[ "$OSTYPE" =~ "darwin"* ]]; then
     export LC_ALL=C.UTF-8
