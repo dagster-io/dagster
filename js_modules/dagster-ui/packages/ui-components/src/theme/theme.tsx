@@ -4,6 +4,7 @@ export enum DagsterTheme {
   System = 'System',
   LightHighContrast = 'LightHighContrast',
   DarkHighContrast = 'DarkHighContrast',
+  SystemHighContrast = 'SystemHighContrast',
 }
 
 export const themeToClassName = {
@@ -12,6 +13,7 @@ export const themeToClassName = {
   [DagsterTheme.Dark]: 'themeDark',
   [DagsterTheme.LightHighContrast]: 'themeLightHighContrast',
   [DagsterTheme.DarkHighContrast]: 'themeDarkHighContrast',
+  [DagsterTheme.SystemHighContrast]: 'themeSystemHighContrast',
 };
 
 export const DAGSTER_THEME_KEY = 'dagster-theme';
