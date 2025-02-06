@@ -361,6 +361,7 @@ def verify_step(
                 f"Attempted to run {step_key} again even though it was already started. "
                 "Exiting to prevent re-running the step.",
                 dagster_run,
+                step_key=step_key,
             )
             return False
         elif current_attempt > 1 and step_stat_for_key:
@@ -373,6 +374,7 @@ def verify_step(
                     "even though it was already started. Exiting to prevent re-running "
                     "the step.",
                     dagster_run,
+                    step_key=step_key,
                 )
                 return False
         elif current_attempt > 1 and not step_stat_for_key:
@@ -380,6 +382,7 @@ def verify_step(
                 f"Attempting to retry attempt {current_attempt} for step {step_key} "
                 "but there is no record of the original attempt",
                 dagster_run,
+                step_key=step_key,
             )
             return False
 
