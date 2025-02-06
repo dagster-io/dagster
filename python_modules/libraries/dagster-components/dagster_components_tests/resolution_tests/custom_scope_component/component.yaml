@@ -1,4 +1,4 @@
-type: custom_scope_component@component.py
+type: custom_scope_component@file:component.py
 
 params:
   asset_attributes:
