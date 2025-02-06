@@ -35,29 +35,7 @@ Refer to the following tabs for examples of asset and op-based jobs using <PyObj
 
 Asset jobs are defined using <PyObject section="assets" module="dagster" object="define_asset_job" />. In this example, we created an asset job named `partitioned_job` and then constructed `asset_partitioned_schedule` by using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
-from dagster import (
-    asset,
-    build_schedule_from_partitioned_job,
-    define_asset_job,
-    DailyPartitionsDefinition,
-)
-
-daily_partition = DailyPartitionsDefinition(start_date="2024-05-20")
-
-
-@asset(partitions_def=daily_partition)
-def daily_asset(): ...
-
-
-partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
-
-
-asset_partitioned_schedule = build_schedule_from_partitioned_job(
-    partitioned_asset_job,
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py" startAfter="start_partitioned_asset_schedule" endBefore="end_partitioned_asset_schedule" />
 
 </TabItem>
 <TabItem value="Op jobs">
@@ -66,19 +44,7 @@ asset_partitioned_schedule = build_schedule_from_partitioned_job(
 
 Op jobs are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
-from dagster import build_schedule_from_partitioned_job, job
-
-
-@job(config=partitioned_config)
-def partitioned_op_job(): ...
-
-
-partitioned_op_schedule = build_schedule_from_partitioned_job(
-    partitioned_op_job,
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py" startAfter="start_marker" endBefore="end_marker" />
 
 </TabItem>
 </Tabs>
@@ -89,14 +55,7 @@ The `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameter
 
 Consider the following job:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_schedule_with_offset endbefore=end_partitioned_schedule_with_offset
-from dagster import build_schedule_from_partitioned_job
-
-asset_partitioned_schedule = build_schedule_from_partitioned_job(
-    partitioned_asset_job, hour_of_day=1, minute_of_hour=30
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py" startAfter="start_partitioned_schedule_with_offset" endBefore="end_partitioned_schedule_with_offset" />
 
 On May 20, 2024, the schedule will evaluate at 1:30 AM UTC and then start a run for the partition key of the previous day, `2024-05-19`.
 
@@ -127,14 +86,7 @@ After `2024-05-20 23:59:59` passes, the time window is complete and Dagster will
 
 If you need to customize the ending, or most recent partition in a set, use the `end_offset` parameter in the partition's config:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_offset_partition endbefore=end_offset_partition
-from dagster import DailyPartitionsDefinition
-
-daily_partition_with_offset = DailyPartitionsDefinition(
-    start_date="2024-05-20", end_offset=-1
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py" startAfter="start_offset_partition" endBefore="end_offset_partition" />
 
 Setting this parameter changes the partition that will be filled in at each schedule tick. Positive and negative integers are accepted, which will have the following effects:
 
@@ -161,70 +113,15 @@ Next, we'll demonstrate how to create a schedule for a job with a static partiti
 
 In this example, the job is partitioned by continent:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py startafter=start_job endbefore=end_job
-from dagster import (
-    AssetExecutionContext,
-    Config,
-    asset,
-    define_asset_job,
-    static_partitioned_config,
-)
-
-CONTINENTS = [
-    "Africa",
-    "Antarctica",
-    "Asia",
-    "Europe",
-    "North America",
-    "Oceania",
-    "South America",
-]
-
-
-@static_partitioned_config(partition_keys=CONTINENTS)
-def continent_config(partition_key: str):
-    return {"ops": {"continents": {"config": {"continent_name": partition_key}}}}
-
-
-class ContinentOpConfig(Config):
-    continent_name: str
-
-
-@asset
-def continents(context: AssetExecutionContext, config: ContinentOpConfig):
-    context.log.info(config.continent_name)
-
-
-continent_job = define_asset_job(
-    name="continent_job", selection=[continents], config=continent_config
-)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py" startAfter="start_job" endBefore="end_job" />
 
 Using the <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator /> decorator, we'll write a schedule that targets each partition, or `continent`:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py startafter=start_schedule_all_partitions endbefore=end_schedule_all_partitions
-from dagster import RunRequest, schedule
-
-
-@schedule(cron_schedule="0 0 * * *", job=continent_job)
-def continent_schedule():
-    for c in CONTINENTS:
-        yield RunRequest(run_key=c, partition_key=c)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py" startAfter="start_schedule_all_partitions" endBefore="end_schedule_all_partitions" />
 
 If we only want to target the `Antarctica` partition, we can create a schedule like the following:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py startafter=start_single_partition endbefore=end_single_partition
-from dagster import RunRequest, schedule
-
-
-@schedule(cron_schedule="0 0 * * *", job=continent_job)
-def antarctica_schedule():
-    return RunRequest(partition_key="Antarctica")
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py" startAfter="start_single_partition" endBefore="end_single_partition" />
 
 ## APIs in this guide
 

@@ -12,14 +12,7 @@ The following examples demonstrate how to define some basic schedules.
 
 This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> that will run a job every day at midnight. While this example uses op jobs, the same approach will work with [asset jobs](/guides/build/assets/asset-jobs).
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
-@job
-def my_job(): ...
-
-
-basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py" startAfter="start_basic_schedule" endBefore="end_basic_schedule" />
 
 :::note
 
@@ -53,13 +46,7 @@ The `cron_schedule` argument accepts standard [cron expressions](https://en.wiki
 
 This example demonstrates how to emit log messages from a schedule during its evaluation function. These logs will be visible in the UI when you inspect a tick in the schedule's tick history.
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
-@schedule(job=my_job, cron_schedule="* * * * *")
-def logs_then_skips(context):
-    context.log.info("Logging from a schedule!")
-    return SkipReason("Nothing to do")
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py" startAfter="start_schedule_logging" endBefore="end_schedule_logging" />
 
 :::note
 

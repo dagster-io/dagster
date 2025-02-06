@@ -38,44 +38,11 @@ To test a function decorated by the <PyObject section="schedules-sensors" module
 
 Let's say we want to test the `configurable_job_schedule` in this example:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
-@op(config_schema={"scheduled_date": str})
-def configurable_op(context: OpExecutionContext):
-    context.log.info(context.op_config["scheduled_date"])
-
-
-@job
-def configurable_job():
-    configurable_op()
-
-
-@schedule(job=configurable_job, cron_schedule="0 0 * * *")
-def configurable_job_schedule(context: ScheduleEvaluationContext):
-    scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return RunRequest(
-        run_key=None,
-        run_config={
-            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
-        },
-        tags={"date": scheduled_date},
-    )
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py" startAfter="start_run_config_schedule" endBefore="end_run_config_schedule" />
 
 To test this schedule, we used <PyObject section="schedules-sensors" module="dagster" object="build_schedule_context" /> to construct a <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> to provide to the `context` parameter:
 
-{/* TODO convert to <CodeExample> */}
-```python file=concepts/partitions_schedules_sensors/schedules/schedule_examples.py startafter=start_test_cron_schedule_context endbefore=end_test_cron_schedule_context
-from dagster import build_schedule_context, validate_run_config
-
-
-def test_configurable_job_schedule():
-    context = build_schedule_context(
-        scheduled_execution_time=datetime.datetime(2020, 1, 1)
-    )
-    run_request = configurable_job_schedule(context)
-    assert validate_run_config(configurable_job, run_request.run_config)
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedule_examples.py" startAfter="start_test_cron_schedule_context" endBefore="end_test_cron_schedule_context" />
 
 If your <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
 
@@ -85,66 +52,13 @@ For schedules that utilize [resources](/guides/build/external-resources), you ca
 
 Let's say we want to test the `process_data_schedule` in this example:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/resources/pythonic_resources.py startafter=start_new_resource_on_schedule endbefore=end_new_resource_on_schedule dedent=4
-from dagster import (
-    schedule,
-    ScheduleEvaluationContext,
-    ConfigurableResource,
-    job,
-    RunRequest,
-    RunConfig,
-    Definitions,
-)
-from datetime import datetime
-from typing import List
-
-class DateFormatter(ConfigurableResource):
-    format: str
-
-    def strftime(self, dt: datetime) -> str:
-        return dt.strftime(self.format)
-
-@job
-def process_data(): ...
-
-@schedule(job=process_data, cron_schedule="* * * * *")
-def process_data_schedule(
-    context: ScheduleEvaluationContext,
-    date_formatter: DateFormatter,
-):
-    formatted_date = date_formatter.strftime(context.scheduled_execution_time)
-
-    return RunRequest(
-        run_key=None,
-        tags={"date": formatted_date},
-    )
-
-defs = Definitions(
-    jobs=[process_data],
-    schedules=[process_data_schedule],
-    resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
-)
-```
+{/* TODO add dedent=4 prop to CodeExample below when implemented */}
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" />
 
 In the test for this schedule, we provided the `date_formatter` resource to the schedule when we invoked its function:
 
-{/* TODO convert to <CodeExample> */}
-```python file=/concepts/resources/pythonic_resources.py startafter=start_test_resource_on_schedule endbefore=end_test_resource_on_schedule dedent=4
-from dagster import build_schedule_context, validate_run_config
-
-def test_process_data_schedule():
-    context = build_schedule_context(
-        scheduled_execution_time=datetime.datetime(2020, 1, 1)
-    )
-    run_request = process_data_schedule(
-        context, date_formatter=DateFormatter(format="%Y-%m-%d")
-    )
-    assert (
-        run_request.run_config["ops"]["fetch_data"]["config"]["date"]
-        == "2020-01-01"
-    )
-```
+{/* TODO add dedent=4 prop to CodeExample below when implemented */}
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_schedule" endBefore="end_test_resource_on_schedule" />
 
 ## APIs in this guide
 
