@@ -56,7 +56,7 @@ Now, the asset body will be as follows:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/migrations/from_step_launchers_to_pipes/new_code.py" endBefore="after_upstream_marker" />
 
-Since the asset now returns the Parquet file path, it will be saved by the `IOManager`, and the downstream asset will be abe to access it.
+Since the asset now returns the Parquet file path, it will be saved by the `IOManager`, and the downstream asset will be able to access it.
 
 Let's continue to migrating the second `downstream` asset.
 
