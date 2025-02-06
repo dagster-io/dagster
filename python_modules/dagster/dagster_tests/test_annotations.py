@@ -15,17 +15,20 @@ from dagster._annotations import (
     experimental_param,
     get_deprecated_info,
     get_experimental_info,
+    get_preview_info,
     hidden_param,
     is_deprecated,
     is_deprecated_param,
     is_experimental,
     is_experimental_param,
+    is_preview,
     is_public,
     only_allow_hidden_params_in_kwargs,
+    preview,
     public,
 )
 from dagster._check import CheckError
-from dagster._utils.warnings import ExperimentalWarning
+from dagster._utils.warnings import ExperimentalWarning, PreviewWarning
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
@@ -737,6 +740,207 @@ def test_invalid_experimental_param():
             pass
 
 
+########################
+##### PREVIEW
+########################
+
+
+def test_preview_method():
+    class Foo:
+        @preview(additional_warn_text="baz")
+        def bar(self):
+            pass
+
+    assert is_preview(Foo.bar)
+    assert get_preview_info(Foo.bar).additional_warn_text == "baz"
+
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo.bar` is currently in preview") as warning:
+        Foo().bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (preview, property),
+        (property, preview),
+    ],
+    ids=[
+        "preview-property",
+        "property-preview",
+    ],
+)
+def test_preview_property(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self):
+            return 1
+
+    assert is_preview(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo.bar` is currently in preview") as warning:
+        assert Foo().bar
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (preview, staticmethod),
+        (staticmethod, preview),
+    ],
+    ids=[
+        "preview-staticmethod",
+        "staticmethod-preview",
+    ],
+)
+def test_preview_staticmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar():
+            pass
+
+    assert is_preview(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo.bar` is currently in preview") as warning:
+        Foo.bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (preview, classmethod),
+        (classmethod, preview),
+    ],
+    ids=[
+        "preview-classmethod",
+        "classmethod-preview",
+    ],
+)
+def test_preview_classmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(cls):
+            pass
+
+    assert is_preview(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo.bar` is currently in preview") as warning:
+        Foo.bar()  # pyright: ignore[reportCallIssue]
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (preview, abstractmethod),
+        (abstractmethod, preview),
+    ],
+    ids=[
+        "preview-abstractmethod",
+        "abstractmethod-preview",
+    ],
+)
+def test_preview_abstractmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self): ...
+
+    assert is_preview(Foo.bar)
+
+
+def test_preview_class():
+    @preview
+    class Foo:
+        def bar(self): ...
+
+    assert is_preview(Foo)
+
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo` is currently in preview") as warning:
+        Foo()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_preview_class_with_methods():
+    @preview
+    class PreviewClass:
+        def __init__(self, salutation="hello"):
+            self.salutation = salutation
+
+        def hello(self, name):
+            return f"{self.salutation} {name}"
+
+    @preview
+    class PreviewClassWithPreviewFunction(PreviewClass):
+        def __init__(self, sendoff="goodbye", **kwargs):
+            self.sendoff = sendoff
+            super().__init__(**kwargs)
+
+        @preview
+        def goodbye(self, name):
+            return f"{self.sendoff} {name}"
+
+    with pytest.warns(
+        PreviewWarning,
+        match=r"`[^`]+PreviewClass` is currently in preview",
+    ):
+        preview_class = PreviewClass(salutation="howdy")
+
+    with assert_no_warnings():
+        assert preview_class.hello("dagster") == "howdy dagster"
+
+    with pytest.warns(
+        PreviewWarning,
+        match=r"Class `[^`]+PreviewClassWithPreviewFunction` is currently in preview",
+    ):
+        preview_class_with_preview_function = PreviewClassWithPreviewFunction()
+
+    with assert_no_warnings():
+        assert preview_class_with_preview_function.hello("dagster") == "hello dagster"
+
+    with pytest.warns(
+        PreviewWarning,
+        match=r"Function `[^`]+goodbye` currently in preview",
+    ):
+        assert preview_class_with_preview_function.goodbye("dagster") == "goodbye dagster"
+
+    @preview
+    class PreviewNamedTupleClass(NamedTuple("_", [("salutation", str)])):
+        pass
+
+    with pytest.warns(
+        PreviewWarning,
+        match=r"`[^`]+PreviewNamedTupleClass` is currently in preview",
+    ):
+        assert PreviewNamedTupleClass(salutation="howdy").salutation == "howdy"
+
+
+def test_preview_namedtuple_class():
+    @preview
+    class Foo(NamedTuple("_", [("bar", str)])):
+        pass
+
+    with pytest.warns(PreviewWarning, match=r"Class `[^`]+Foo` is currently in preview") as warning:
+        Foo(bar="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_preview_resource():
+    @preview
+    @resource
+    def foo(): ...
+
+    assert is_preview(foo)
+
+    with pytest.warns(
+        PreviewWarning,
+        match=r"Dagster resource `[^`]+foo` is currently in preview",
+    ) as warning:
+        foo()
+        assert warning[0].filename.endswith("test_annotations.py")
+
+
 # ########################
 # ##### OTHER
 # ########################
@@ -746,16 +950,21 @@ def test_all_annotations():
     @public
     @deprecated(breaking_version="2.0", additional_warn_text="foo")
     @experimental
+    @preview
     def foo():
         pass
 
     assert is_public(foo)
     assert is_deprecated(foo)
     assert is_experimental(foo)
+    assert is_preview(foo)
 
     with warnings.catch_warnings(record=True) as all_warnings:
         warnings.simplefilter("always")
         foo()
+
+    exp = next(warning for warning in all_warnings if warning.category == PreviewWarning)
+    assert re.search(r"`[^`]+foo`", str(exp.message))
 
     exp = next(warning for warning in all_warnings if warning.category == ExperimentalWarning)
     assert re.search(r"`[^`]+foo`", str(exp.message))
