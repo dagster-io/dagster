@@ -11,7 +11,7 @@ from dagster._vendored.dateutil import parser
 from dagster_fivetran import FivetranOutput, FivetranWorkspace, fivetran_assets
 from dagster_fivetran.translator import MIN_TIME_STR
 
-from dagster_fivetran_tests.experimental.conftest import (
+from dagster_fivetran_tests.beta.conftest import (
     SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
     SAMPLE_SUCCESS_MESSAGE,
     TEST_ACCOUNT_ID,
