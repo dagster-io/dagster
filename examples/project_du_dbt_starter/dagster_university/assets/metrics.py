@@ -119,7 +119,6 @@ def manhattan_map() -> MaterializeResult:
         image_data = file.read()
 
     # Convert the image data to base64
-    image_data = fig.to_image()
     base64_data = base64.b64encode(image_data).decode("utf-8")
     md_content = f"![Image](data:image/jpeg;base64,{base64_data})"
 

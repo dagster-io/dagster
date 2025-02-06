@@ -108,9 +108,6 @@ In this section, you’ll create an asset that depends on `manhattan_stats`, loa
        # Save the image
        plt.savefig(constants.MANHATTAN_MAP_FILE_PATH, format="png", bbox_inches="tight")
        plt.close(fig)
-
-       with open(constants.MANHATTAN_MAP_FILE_PATH, "rb") as file:
-           image_data = file.read()
    ```
 
    The code above does the following:
