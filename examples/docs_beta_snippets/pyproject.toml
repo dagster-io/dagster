@@ -6,6 +6,9 @@ extend = "../pyproject.toml"
 # Shorter line length for docs snippets for better browser formatting.
 line-length = 88
 
+# Ignore a specific file
+extend-exclude = ["docs_beta_snippets/guides/components/existing-project/6-initial-definitions.py"]
+
 [tool.ruff.lint]
 
 # Use extend-ignore so that we ignore all the same codes ignored in root.

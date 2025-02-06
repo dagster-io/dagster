@@ -70,12 +70,6 @@ def build_library_packages_steps() -> List[BuildkiteStep]:
     )
 
 
-def build_dagster_ui_screenshot_steps() -> List[BuildkiteStep]:
-    return build_steps_from_package_specs(
-        [PackageSpec("docs/dagster-ui-screenshot", run_pytest=False)]
-    )
-
-
 def build_steps_from_package_specs(
     package_specs: List[PackageSpec],
 ) -> List[BuildkiteStep]:
