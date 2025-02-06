@@ -93,7 +93,7 @@ def get_test_project_recon_job(
     filename: Optional[str] = None,
 ) -> "ReOriginatedReconstructableJobForTest":
     filename = filename or "repo.py"
-    return ReOriginatedReconstructableJobForTest(  # type: ignore # ignored for update, fix me!
+    return ReOriginatedReconstructableJobForTest(
         ReconstructableRepository.for_file(
             file_relative_path(__file__, f"test_jobs/{filename}"),
             "define_demo_execution_repo",
@@ -126,8 +126,8 @@ class ReOriginatedReconstructableJobForTest(ReconstructableJob):
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
-                    "/dagster_test/test_project/test_jobs/repo.py",
-                    "define_demo_execution_repo",
+                    python_file="/dagster_test/test_project/test_jobs/repo.py",
+                    fn_name="define_demo_execution_repo",
                 ),
                 container_image=self.repository.container_image,
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
@@ -159,8 +159,8 @@ class ReOriginatedExternalJobForTest(RemoteJob):
             RepositoryPythonOrigin(
                 executable_path="python",
                 code_pointer=FileCodePointer(
-                    f"/dagster_test/test_project/test_jobs/{self._filename}",
-                    "define_demo_execution_repo",
+                    python_file=f"/dagster_test/test_project/test_jobs/{self._filename}",
+                    fn_name="define_demo_execution_repo",
                 ),
                 container_image=self._container_image,
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
