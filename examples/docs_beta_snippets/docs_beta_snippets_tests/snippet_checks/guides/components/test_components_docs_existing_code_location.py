@@ -57,7 +57,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # tempdir = Path("/tmp/test-components-docs-existing-code-location")
         # tempdir.mkdir(parents=True, exist_ok=True)
         os.chdir(tempdir)
-        subprocess.check_call(["uv", "pip", "install", "dg"])
 
         _run_command(f"cp -r {MY_EXISTING_PROJECT} . && cd my-existing-project")
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
