@@ -6,12 +6,12 @@ on:
       - docs-prod
     paths:
       - .github/workflows/build-docs-revamp.yml
-      - docs/docs-beta/**
+      - docs/**
       - examples/docs_beta_snippets/**
       - docs/sphinx/**
   pull_request:
     paths:
-      - docs/docs-beta/**
+      - docs/**
       - examples/docs_beta_snippets/**
       - .github/workflows/build-docs-revamp.yml
       - docs/sphinx/**
@@ -64,19 +64,19 @@ jobs:
 
       - name: Lint Docs
         run: |
-          cd docs/docs-beta
+          cd docs
           yarn install
           yarn run lint
 
       - name: Get changed docs files for PR comment
         if: ${{ github.event.pull_request }}
         run: |
-          cd docs/docs-beta/docs
+          cd docs/docs
           echo "Head ref is $GITHUB_HEAD_SHA"
           git fetch origin $GITHUB_HEAD_SHA
           # Compare the commit the branch is based on to its head to list changed files
           CHANGED_MD_FILES=$(git diff --name-only HEAD~${{ github.event.pull_request.commits }} "$GITHUB_HEAD_SHA" -- '*.md' '*.mdx')
-          CHANGES_ENTRY=$(echo "$CHANGED_MD_FILES" | sed 's/\(index\)*\.mdx*$//' | sed 's/^docs\/docs-beta\/docs/- {{deploymentUrl}}/')
+          CHANGES_ENTRY=$(echo "$CHANGED_MD_FILES" | sed 's/\(index\)*\.mdx*$//' | sed 's/^docs\/docs/- {{deploymentUrl}}/')
           CHANGES_ENTRY=$(echo -e "Preview available at {{deploymentUrl}}\n\nDirect link to changed pages:\n$CHANGES_ENTRY")
           echo "$CHANGES_ENTRY"
           # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings

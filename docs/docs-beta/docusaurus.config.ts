@@ -165,7 +165,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
-          editUrl: 'https://github.com/dagster-io/dagster/tree/master/docs/docs-beta',
+          editUrl: 'https://github.com/dagster-io/dagster/tree/master/docs',
         },
         blog: false,
         theme: {
