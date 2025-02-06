@@ -8,7 +8,7 @@ from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, experimental_param, public
+from dagster._annotations import deprecated, experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_key import (
@@ -241,7 +241,7 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @experimental
+    @experimental_param(param="include_sources")
     def tag(key: str, value: str, include_sources: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
