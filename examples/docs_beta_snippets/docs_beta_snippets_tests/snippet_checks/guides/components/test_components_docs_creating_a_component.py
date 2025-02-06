@@ -139,7 +139,6 @@ def test_components_docs_index(update_snippets: bool, get_selenium_driver) -> No
             "file://" + str(Path("docs.html").absolute()),
             DAGSTER_ROOT
             / "docs"
-            / "docs-beta"
             / "static"
             / "images"
             / "guides"
