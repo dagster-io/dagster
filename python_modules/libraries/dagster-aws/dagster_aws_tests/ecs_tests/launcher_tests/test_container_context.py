@@ -115,6 +115,8 @@ def test_merge(
         },
     ]
 
+    assert merged.readonly_root_filesystem == None
+
     assert merged.repository_credentials == "fake-secret-arn"
 
     assert merged.volumes == [

@@ -73,6 +73,7 @@ locations:
             value: MyEcsTagValue
         run_ecs_tags:
           - key: MyEcsTagKeyWithoutValue
+        readonly_root_filesystem: true
         repository_credentials: MyRepositoryCredentialsSecretArn
 ```
 
@@ -171,6 +172,7 @@ user_code_launcher:
         value: MyEcsTagValue
     run_ecs_tags:
       - key: MyEcsTagKeyWithoutValue
+    readonly_root_filesystem: true
     repository_credentials: MyRepositoryCredentialsSecretArn
 
 isolated_agents:
@@ -306,6 +308,11 @@ agent_queues:
   <ReferenceTableItem
   propertyName="config.run_ecs_tags">
   Additional ECS tags to include in the task for each run. If set, must be a list of dictionaries, each with a <code>key</code> key and optional <code>value</code> key.
+  </ReferenceTableItem>
+  <ReferenceTableItem
+  propertyName="config.readonly_root_filesystem">
+  Optional. When this parameter is true, the container is given read-only access to its root file system. This parameter maps to ReadonlyRootfs in the docker container create command and the --read-only option to docker run.
+  <a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ecs-taskdefinition-containerdefinition.html#cfn-ecs-taskdefinition-containerdefinition-readonlyrootfilesystem">See AWS ECS docs.</a>.
   </ReferenceTableItem>
   <ReferenceTableItem
   propertyName="config.repository_credentials">

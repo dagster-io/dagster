@@ -43,6 +43,7 @@ class DagsterEcsTaskDefinitionConfig(
             ("runtime_platform", Mapping[str, Any]),
             ("mount_points", Sequence[Mapping[str, Any]]),
             ("volumes", Sequence[Mapping[str, Any]]),
+            ("readonly_root_filesystem", Optional[bool]),
             ("repository_credentials", Optional[str]),
             ("linux_parameters", Optional[Mapping[str, Any]]),
             ("health_check", Optional[Mapping[str, Any]]),
@@ -72,6 +73,7 @@ class DagsterEcsTaskDefinitionConfig(
         runtime_platform: Optional[Mapping[str, Any]] = None,
         mount_points: Optional[Sequence[Mapping[str, Any]]] = None,
         volumes: Optional[Sequence[Mapping[str, Any]]] = None,
+        readonly_root_filesystem: Optional[bool] = None,
         repository_credentials: Optional[str] = None,
         linux_parameters: Optional[Mapping[str, Any]] = None,
         health_check: Optional[Mapping[str, Any]] = None,
@@ -95,6 +97,7 @@ class DagsterEcsTaskDefinitionConfig(
             check.opt_mapping_param(runtime_platform, "runtime_platform"),
             check.opt_sequence_param(mount_points, "mount_points"),
             check.opt_sequence_param(volumes, "volumes"),
+            check.opt_bool_param(readonly_root_filesystem, "readonly_root_filesystem"),
             check.opt_str_param(repository_credentials, "repository_credentials"),
             check.opt_mapping_param(linux_parameters, "linux_parameters"),
             check.opt_mapping_param(health_check, "health_check"),
@@ -130,6 +133,11 @@ class DagsterEcsTaskDefinitionConfig(
                         else {}
                     ),
                     ({"linuxParameters": self.linux_parameters} if self.linux_parameters else {}),
+                    (
+                        {"readonlyRootFilesystem": self.readonly_root_filesystem}
+                        if self.readonly_root_filesystem is not None
+                        else {}
+                    ),
                     ({"healthCheck": self.health_check} if self.health_check else {}),
                 ),
                 *self.sidecars,
@@ -232,6 +240,7 @@ class DagsterEcsTaskDefinitionConfig(
             runtime_platform=task_definition_dict.get("runtimePlatform"),
             mount_points=container_definition.get("mountPoints"),
             volumes=task_definition_dict.get("volumes"),
+            readonly_root_filesystem=container_definition.get("readonlyRootFilesystem"),
             repository_credentials=container_definition.get("repositoryCredentials", {}).get(
                 "credentialsParameter"
             ),
@@ -274,6 +283,7 @@ def get_task_definition_dict_from_current_task(
     mount_points=None,
     volumes=None,
     additional_sidecars=None,
+    readonly_root_filesystem=None,
     repository_credentials=None,
 ):
     current_container_name = current_ecs_container_name()
@@ -331,6 +341,11 @@ def get_task_definition_dict_from_current_task(
         ),
         **({"secrets": secrets} if secrets else {}),
         **({} if include_sidecars else {"dependsOn": []}),
+        **(
+            {"readonlyRootFilesystem": readonly_root_filesystem}
+            if readonly_root_filesystem is not None
+            else {}
+        ),
     }
     if environment:
         new_container_definition["environment"] = [
