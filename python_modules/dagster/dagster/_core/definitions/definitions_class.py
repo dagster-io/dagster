@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -685,13 +685,13 @@ class Definitions(IHaveNew):
         )
 
     @public
-    @experimental
+    @preview
     def get_all_asset_specs(self) -> Sequence[AssetSpec]:
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
 
-    @experimental
+    @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
         """Add reconstruction metadata to the Definitions object. This is typically used to cache data
         loaded from some external API that is computed during initialization of a code server.
