@@ -70,7 +70,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     found_end = False
     ignore = False
     changelog_category = None
-    raw_changelog_entry = ""
+    raw_changelog_entry_lines: list[str] = []
     for line in str(commit.message).split("\n"):
         if found_start and line.strip():
             if line.startswith(IGNORE_TOKEN):
@@ -78,12 +78,12 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
                 break
             if INTERNAL_DEFAULT_STR in line:
                 # ignore changelog entry if it has not been updated
-                raw_changelog_entry = ""
+                raw_changelog_entry_lines = []
                 break
             if line.lower().startswith("- ["):
                 found_end = True
             if not found_end:
-                raw_changelog_entry += " " + line.strip()
+                raw_changelog_entry_lines.append(line.strip())
         if found_end:
             if line.lower().startswith("- [x]"):
                 bt1 = line.find("`")
@@ -95,7 +95,7 @@ def _get_parsed_commit(commit: git.Commit) -> ParsedCommit:
     return ParsedCommit(
         issue_link=issue_link,
         changelog_category=CATEGORIES.get(changelog_category, "Invalid"),
-        raw_changelog_entry=raw_changelog_entry,
+        raw_changelog_entry=" ".join(raw_changelog_entry_lines),
         raw_title=title,
         author=str(commit.author.name),
         repo_name=repo_name,
@@ -112,7 +112,7 @@ def _get_documented_section(documented: Sequence[ParsedCommit]) -> str:
     for category in CATEGORIES.values():
         documented_text += f"\n\n### {category}\n"
         for commit in grouped_commits.get(category, []):
-            documented_text += f"\n* {commit.raw_changelog_entry} {commit.issue_link}"
+            documented_text += f"\n- {commit.raw_changelog_entry} {commit.issue_link}"
     return documented_text
 
 
