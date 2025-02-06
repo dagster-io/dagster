@@ -19,8 +19,7 @@ Having all of your assets in one file becomes difficult to manage. Let’s separ
    ```python
    from dagster import asset
 
-   import plotly.express as px
-   import plotly.io as pio
+   import matplotlib.pyplot as plt
    import geopandas as gpd
 
    import duckdb
@@ -99,26 +98,26 @@ In this section, you’ll create an asset that depends on `manhattan_stats`, loa
    def manhattan_map() -> None:
        trips_by_zone = gpd.read_file(constants.MANHATTAN_STATS_FILE_PATH)
 
-       fig = px.choropleth_mapbox(trips_by_zone,
-           geojson=trips_by_zone.geometry.__geo_interface__,
-           locations=trips_by_zone.index,
-           color='num_trips',
-           color_continuous_scale='Plasma',
-           mapbox_style='carto-positron',
-           center={'lat': 40.758, 'lon': -73.985},
-           zoom=11,
-           opacity=0.7,
-           labels={'num_trips': 'Number of Trips'}
-       )
+       fig, ax = plt.subplots(figsize=(10, 10))
+       trips_by_zone.plot(column="num_trips", cmap="plasma", legend=True, ax=ax, edgecolor="black")
+       ax.set_title("Number of Trips per Taxi Zone in Manhattan")
 
-       pio.write_image(fig, constants.MANHATTAN_MAP_FILE_PATH)
+       ax.set_xlim([-74.05, -73.90])  # Adjust longitude range
+       ax.set_ylim([40.70, 40.82])  # Adjust latitude range
+       
+       # Save the image
+       plt.savefig(constants.MANHATTAN_MAP_FILE_PATH, format="png", bbox_inches="tight")
+       plt.close(fig)
+
+       with open(constants.MANHATTAN_MAP_FILE_PATH, "rb") as file:
+           image_data = file.read()
    ```
 
    The code above does the following:
 
    1. Defines a new asset called `manhattan_map`, which is dependent on `manhattan_stats`.
    2. Reads the GeoJSON file back into memory.
-   3. Creates a map as a data visualization using the [Plotly](https://plotly.com/python/) visualization library.
+   3. Creates a map as a data visualization using the [Matplotlib](https://matplotlib.org/) visualization library.
    4. Saves the visualization as a PNG.
 
 2. In the UI, click **Reload Definitions** to allow Dagster to detect the new asset.

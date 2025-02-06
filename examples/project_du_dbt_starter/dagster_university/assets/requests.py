@@ -1,12 +1,10 @@
 import base64
 
-import plotly.express as px
-import plotly.io as pio
+import matplotlib.pyplot as plt
 from dagster import Config, MaterializeResult, MetadataValue, asset
 from dagster_duckdb import DuckDBResource
 from smart_open import open
 
-from ..resources import smart_open_config
 from . import constants
 
 
@@ -61,22 +59,27 @@ def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource) -> Mater
     with database.get_connection() as conn:
         results = conn.execute(query).fetch_df()
 
-    fig = px.bar(
-        results,
-        x="hour_of_day",
-        y="num_trips",
-        color="day_of_week",
-        barmode="stack",
-        title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
-        labels={
-            "hour_of_day": "Hour of Day",
-            "day_of_week": "Day of Week",
-            "num_trips": "Number of Trips",
-        },
-    )
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    with open(file_path, "wb", transport_params=smart_open_config) as output_file:
-        pio.write_image(fig, output_file)
+    # Pivot data for stacked bar chart
+    results_pivot = results.pivot(index="hour_of_day", columns="day_of_week", values="num_trips")
+    results_pivot.plot(kind="bar", stacked=True, ax=ax, colormap="viridis")
+
+    ax.set_title(
+        f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}"
+    )
+    ax.set_xlabel("Hour of Day")
+    ax.set_ylabel("Number of Trips")
+    ax.legend(title="Day of Week")
+
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    plt.savefig(file_path)
+    plt.close(fig)
+
+    with open(file_path, "rb") as file:
+        image_data = file.read()
 
     # Convert the image data to base64
     image_data = fig.to_image()

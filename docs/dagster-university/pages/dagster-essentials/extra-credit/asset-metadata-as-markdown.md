@@ -20,8 +20,7 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
    from dagster import Config, asset
    from dagster_duckdb import DuckDBResource
 
-   import plotly.express as px
-   import plotly.io as pio
+   import matplotlib.pyplot as plt
 
    from . import constants
 
@@ -72,21 +71,22 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
        with database.get_connection() as conn:
            results = conn.execute(query).fetch_df()
 
-       fig = px.bar(
-           results,
-           x="hour_of_day",
-           y="num_trips",
-           color="day_of_week",
-           barmode="stack",
-           title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
-           labels={
-               "hour_of_day": "Hour of Day",
-               "day_of_week": "Day of Week",
-               "num_trips": "Number of Trips"
-           }
-       )
+       fig, ax = plt.subplots(figsize=(10, 6))
+        
+       # Pivot data for stacked bar chart
+       results_pivot = results.pivot(index="hour_of_day", columns="day_of_week", values="num_trips")
+       results_pivot.plot(kind="bar", stacked=True, ax=ax, colormap="viridis")
 
-       pio.write_image(fig, file_path)
+       ax.set_title(f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}")
+       ax.set_xlabel("Hour of Day")
+       ax.set_ylabel("Number of Trips")
+       ax.legend(title="Day of Week")
+
+       plt.xticks(rotation=45)
+       plt.tight_layout()
+
+       plt.savefig(file_path)
+       plt.close(fig)
    ```
 
 3. Add the `base64` and `MaterializeResult` imports to the top of the file:
@@ -135,8 +135,7 @@ At this point, the code for the `adhoc_request` asset should look like this:
 from dagster import Config, asset, MaterializeResult, MetadataValue
 from dagster_duckdb import DuckDBResource
 
-import plotly.express as px
-import plotly.io as pio
+import matplotlib.pyplot as plt
 import base64
 
 from . import constants
@@ -185,26 +184,24 @@ def adhoc_request(config: AdhocRequestConfig, taxi_zones, taxi_trips, database: 
         order by 1, 2 asc
     """
 
-    with database.get_connection() as conn:
-        results = conn.execute(query).fetch_df()
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Pivot data for stacked bar chart
+    results_pivot = results.pivot(index="hour_of_day", columns="day_of_week", values="num_trips")
+    results_pivot.plot(kind="bar", stacked=True, ax=ax, colormap="viridis")
+    
+    ax.set_title(f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}")
+    ax.set_xlabel("Hour of Day")
+    ax.set_ylabel("Number of Trips")
+    ax.legend(title="Day of Week")
+    
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    plt.savefig(file_path)
+    plt.close(fig)
 
-    fig = px.bar(
-        results,
-        x="hour_of_day",
-        y="num_trips",
-        color="day_of_week",
-        barmode="stack",
-        title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
-        labels={
-          "hour_of_day": "Hour of Day",
-          "day_of_week": "Day of Week",
-          "num_trips": "Number of Trips"
-        }
-    )
-
-    pio.write_image(fig, file_path)
-
-    with open(file_path, 'rb') as file:
+    with open(file_path, "rb") as file:
         image_data = file.read()
 
     base64_data = base64.b64encode(image_data).decode('utf-8')
