@@ -291,6 +291,7 @@ def add_data_quality_warning_fixture():
     name="workspace_data",
 )
 def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
+    SAMPLE_EMBEDDED_DATA_SOURCE["luid"] = SAMPLE_EMBEDDED_DATA_SOURCE["id"]
     return TableauWorkspaceData(
         site_name=site_name,
         workbooks_by_id={
@@ -301,6 +302,9 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
         sheets_by_id={
             SAMPLE_SHEET["luid"]: TableauContentData(
                 content_type=TableauContentType.SHEET, properties=SAMPLE_SHEET
+            ),
+            SAMPLE_SHEET_2["luid"]: TableauContentData(
+                content_type=TableauContentType.SHEET, properties=SAMPLE_SHEET_2
             )
         },
         dashboards_by_id={
@@ -311,6 +315,9 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
         data_sources_by_id={
             SAMPLE_DATA_SOURCE["luid"]: TableauContentData(
                 content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_DATA_SOURCE
+            ),
+            SAMPLE_EMBEDDED_DATA_SOURCE["luid"]: TableauContentData(
+                content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_EMBEDDED_DATA_SOURCE
             )
         },
     )

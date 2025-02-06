@@ -119,7 +119,6 @@ def test_fetch_tableau_workspace_data(
         workbook_id: str,
         get_workbooks: MagicMock,
         get_workbook: MagicMock,
-        workspace_data: MagicMock
 ) -> None:
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
