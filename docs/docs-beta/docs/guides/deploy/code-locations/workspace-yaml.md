@@ -4,7 +4,9 @@ sidebar_position: 200
 ---
 
 :::info
-    This reference is only applicable to Dagster OSS. For Dagster Cloud see [the Dagster Cloud Code Locations documentation](/dagster-plus/deployment/code-locations)
+
+This reference is only applicable to Dagster OSS. For Dagster+, see [the Dagster+ code locations documentation](/dagster-plus/deployment/code-locations).
+
 :::
 
 The `workspace.yaml` file is used to configure code locations in Dagster. It tells Dagster where to find your code and how to load it.
