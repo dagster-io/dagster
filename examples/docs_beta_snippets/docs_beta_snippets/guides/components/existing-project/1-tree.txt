@@ -9,8 +9,6 @@ tree
 ├── my_existing_project_tests
 │   ├── __init__.py
 │   └── test_assets.py
-├── pyproject.toml
-├── setup.cfg
-└── setup.py
+└── pyproject.toml
 
-3 directories, 9 files
+3 directories, 7 files

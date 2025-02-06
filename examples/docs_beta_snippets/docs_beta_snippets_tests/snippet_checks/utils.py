@@ -65,7 +65,7 @@ def _run_command(
         print(f"Ran command {cmd}")  # noqa: T201
         print("Got output:")  # noqa: T201
         print(e.output.decode("utf-8").strip())  # noqa: T201
-        raise e
+        raise
 
     pwd = PWD_REGEX.search(actual_output).group(1)
     actual_output = PWD_REGEX.sub("", actual_output)
