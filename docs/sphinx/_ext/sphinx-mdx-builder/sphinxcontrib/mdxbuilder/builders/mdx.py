@@ -3,7 +3,6 @@ from os import path
 
 from docutils import nodes
 from docutils.io import StringOutput
-
 from sphinx.builders import Builder
 from sphinx.util import logging
 from sphinx.util.osutil import ensuredir

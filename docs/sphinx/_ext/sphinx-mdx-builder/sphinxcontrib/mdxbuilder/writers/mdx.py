@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any
 from docutils import nodes, writers
 from docutils.nodes import Element
 from docutils.utils import column_width
-
 from sphinx import addnodes
 from sphinx.locale import admonitionlabels
 from sphinx.util.docutils import SphinxTranslator
