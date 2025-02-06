@@ -1,7 +1,9 @@
 from pathlib import Path
-import dagster as dg
+
 import dagster_components as dg_components
 from my_existing_project import assets
+
+import dagster as dg
 
 all_assets = dg.load_assets_from_modules([assets])
 
