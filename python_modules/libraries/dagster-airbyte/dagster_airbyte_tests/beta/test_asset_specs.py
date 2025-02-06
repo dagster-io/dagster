@@ -14,7 +14,7 @@ from dagster_airbyte.translator import (
     DagsterAirbyteTranslator,
 )
 
-from dagster_airbyte_tests.experimental.conftest import (
+from dagster_airbyte_tests.beta.conftest import (
     TEST_ANOTHER_WORKSPACE_ID,
     TEST_CLIENT_ID,
     TEST_CLIENT_SECRET,
