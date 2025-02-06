@@ -14,8 +14,7 @@ Now that you’ve defined how the asset can be materialized, let’s create the 
    from dagster import asset, Config
    from dagster_duckdb import DuckDBResource
 
-   import plotly.express as px
-   import plotly.io as pio
+   import matplotlib.pyplot as plt
 
    from . import constants
    ```
@@ -86,28 +85,29 @@ Now that you’ve defined how the asset can be materialized, let’s create the 
        results = conn.execute(query).fetch_df()
    ```
 
-6. Now that the query data is stored as a DataFrame in the `results` variable, use the Plotly library to visualize the frequency of trips at each time of the day for the borough, stratified by the day of the week:
+6. Now that the query data is stored as a DataFrame in the `results` variable, use the Matplotlib library to visualize the frequency of trips at each time of the day for the borough, stratified by the day of the week:
 
    ```python
-   fig = px.bar(
-       results,
-       x="hour_of_day",
-       y="num_trips",
-       color="day_of_week",
-       barmode="stack",
-       title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
-       labels={
-           "hour_of_day": "Hour of Day",
-           "day_of_week": "Day of Week",
-           "num_trips": "Number of Trips"
-       }
-   )
+   fig, ax = plt.subplots(figsize=(10, 6))
+
+   # Pivot data for stacked bar chart
+   results_pivot = results.pivot(index="hour_of_day", columns="day_of_week", values="num_trips")
+   results_pivot.plot(kind="bar", stacked=True, ax=ax, colormap="viridis")
+
+   ax.set_title(f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}")
+   ax.set_xlabel("Hour of Day")
+   ax.set_ylabel("Number of Trips")
+   ax.legend(title="Day of Week")
+
+   plt.xticks(rotation=45)
+   plt.tight_layout()
    ```
 
 7. Lastly, save the report to the destination file specified by the `file_path` variable you declared earlier:
 
    ```python
-   pio.write_image(fig, file_path)
+   plt.savefig(file_path)
+   plt.close(fig)
    ```
 
 Verify that `requests.py` file looks like the code below:
@@ -116,8 +116,7 @@ Verify that `requests.py` file looks like the code below:
 from dagster import Config, asset
 from dagster_duckdb import DuckDBResource
 
-import plotly.express as px
-import plotly.io as pio
+import matplotlib.pyplot as plt
 
 from . import constants
 
@@ -170,19 +169,20 @@ def adhoc_request(config: AdhocRequestConfig, database: DuckDBResource) -> None:
     with database.get_connection() as conn:
         results = conn.execute(query).fetch_df()
 
-    fig = px.bar(
-        results,
-        x="hour_of_day",
-        y="num_trips",
-        color="day_of_week",
-        barmode="stack",
-        title=f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}",
-        labels={
-            "hour_of_day": "Hour of Day",
-            "day_of_week": "Day of Week",
-            "num_trips": "Number of Trips"
-        }
-    )
-
-    pio.write_image(fig, file_path)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Pivot data for stacked bar chart
+    results_pivot = results.pivot(index="hour_of_day", columns="day_of_week", values="num_trips")
+    results_pivot.plot(kind="bar", stacked=True, ax=ax, colormap="viridis")
+    
+    ax.set_title(f"Number of trips by hour of day in {config.borough}, from {config.start_date} to {config.end_date}")
+    ax.set_xlabel("Hour of Day")
+    ax.set_ylabel("Number of Trips")
+    ax.legend(title="Day of Week")
+    
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    plt.savefig(file_path)
+    plt.close(fig)
 ```

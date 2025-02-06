@@ -126,22 +126,26 @@ Now we’re ready to create the asset!
        with database.get_connection() as conn:
            airport_trips = conn.execute(query).fetch_df()
 
-       fig = px.bar(
-           airport_trips,
-           x="zone",
-           y="trips",
-           color="destination_borough",
-           barmode="relative",
-           labels={
-               "zone": "Zone",
-               "trips": "Number of Trips",
-               "destination_borough": "Destination Borough"
-           },
+       # Plot bars
+       fig, ax = plt.subplots(figsize=(10, 6))
+
+       # Group data by destination_borough and plot the bar chart
+       airport_trips.groupby(['zone', 'destination_borough']).sum()['trips'].unstack().plot(
+           kind='bar', stacked=True, ax=ax
        )
 
-       pio.write_image(fig, constants.AIRPORT_TRIPS_FILE_PATH)
+       # Customize the plot
+       ax.set_xlabel("Zone")
+       ax.set_ylabel("Number of Trips")
+       ax.set_title("Trips from Airport by Destination Borough")
+       ax.legend(title="Destination Borough")
 
-       with open(constants.AIRPORT_TRIPS_FILE_PATH, 'rb') as file:
+       # Save the image
+       plt.savefig(constants.AIRPORT_TRIPS_FILE_PATH, format="png", bbox_inches="tight")
+       plt.close(fig)
+
+       # Convert the image data to base64
+       with open(constants.AIRPORT_TRIPS_FILE_PATH, "rb") as file:
            image_data = file.read()
 
         # Convert the image data to base64
