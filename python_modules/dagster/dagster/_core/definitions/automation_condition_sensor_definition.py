@@ -3,7 +3,7 @@ from functools import partial
 from typing import Any, Optional, cast
 
 import dagster._check as check
-from dagster._annotations import alpha_param, beta_param
+from dagster._annotations import beta_param
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -76,7 +76,7 @@ def not_supported(context) -> None:
 
 
 @beta_param(param="use_user_code_server")
-@alpha_param(param="default_condition")
+@beta_param(param="default_condition")
 class AutomationConditionSensorDefinition(SensorDefinition):
     """Targets a set of assets and repeatedly evaluates all the AutomationConditions on all of
     those assets to determine which to request runs for.
