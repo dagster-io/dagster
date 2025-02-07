@@ -9,7 +9,6 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._record import record
 from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
 from dagster_sling.resources import AssetExecutionContext
-from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
@@ -111,10 +110,6 @@ class SlingReplicationCollection(Component):
     @classmethod
     def get_schema(cls) -> type[SlingReplicationCollectionParams]:
         return SlingReplicationCollectionParams
-
-    @classmethod
-    def load(cls, params: SlingReplicationCollectionParams, context: ComponentLoadContext) -> Self:
-        return context.resolve(params, as_type=cls)
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec

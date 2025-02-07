@@ -18,9 +18,5 @@ class MyNewComponent(Component):
     def get_schema(cls):
         return MyNewComponentSchema
 
-    @classmethod
-    def load(cls, params: MyNewComponentSchema, context: ComponentLoadContext) -> Self:
-        return cls()
-
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions()
