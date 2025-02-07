@@ -14,6 +14,7 @@ from dagster._annotations import (
     deprecated_param,
     experimental,
     experimental_param,
+    beta_param,
     get_beta_info,
     get_deprecated_info,
     get_experimental_info,
@@ -25,6 +26,7 @@ from dagster._annotations import (
     is_deprecated_param,
     is_experimental,
     is_experimental_param,
+    is_beta_param,
     is_preview,
     is_public,
     is_superseded,
@@ -1151,6 +1153,133 @@ def test_beta_resource():
     ) as warning:
         foo()
         assert warning[0].filename.endswith("test_annotations.py")
+
+
+# ########################
+# ##### BETA PARAM
+# ########################
+
+
+def test_beta_param_method():
+    class Foo:
+        @beta_param(param="baz")
+        def bar(self, baz=None):
+            pass
+
+    assert is_beta_param(Foo.bar, "baz")
+
+    with pytest.warns(
+            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
+    ) as warning:
+        Foo().bar(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta_param(param="baz"), staticmethod),
+        (staticmethod, beta_param(param="baz")),
+    ],
+    ids=[
+        "beta_param-staticmethod",
+        "staticmethod-beta_param",
+    ],
+)
+def test_beta_param_staticmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(baz=None):
+            pass
+
+    assert is_beta_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
+
+    with pytest.warns(
+            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
+    ) as warning:
+        Foo.bar(baz="ok")  # pyright: ignore[reportArgumentType]
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta_param(param="baz"), classmethod),
+        (classmethod, beta_param(param="baz")),
+    ],
+    ids=[
+        "beta_param-classmethod",
+        "classmethod-beta_param",
+    ],
+)
+def test_beta_param_classmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(cls, baz=None):
+            pass
+
+    assert is_beta_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
+
+    with pytest.warns(
+            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
+    ) as warning:
+        Foo.bar(baz="ok")  # pyright: ignore[reportCallIssue]
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta_param(param="baz"), abstractmethod),
+        (abstractmethod, beta_param(param="baz")),
+    ],
+    ids=[
+        "beta-abstractmethod",
+        "abstractmethod-beta",
+    ],
+)
+def test_beta_param_abstractmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self, baz=None): ...
+
+    assert is_beta_param(Foo.bar, "baz")
+
+
+def test_beta_param_class():
+    @beta_param(param="baz")
+    class Foo:
+        def __init__(self, baz=None): ...
+
+    assert is_beta_param(Foo, "baz")
+
+    with pytest.warns(
+            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is currently in beta"
+    ) as warning:
+        Foo(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_beta_param_named_tuple_class():
+    @beta_param(param="baz")
+    class Foo(NamedTuple("_", [("baz", str)])):
+        def __new__(cls, baz=None): ...
+
+    assert is_beta_param(Foo, "baz")
+
+    with pytest.warns(
+            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is currently in beta"
+    ) as warning:
+        Foo(baz="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_invalid_beta_param():
+    with pytest.raises(CheckError, match="undefined parameter"):
+
+        @beta_param(param="baz")
+        def foo():
+            pass
 
 
 ########################
