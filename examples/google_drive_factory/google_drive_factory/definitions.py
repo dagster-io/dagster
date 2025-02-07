@@ -133,7 +133,8 @@ def realtor_asset_factory(
         assets=[read_csv_from_drive],
         jobs=[file_job],
         sensors=[file_sensor],
-        resources={"google_drive": google_drive},  
+        resources={"google_drive": google_drive,
+                   "duckdb": DuckDBResource(database="db.duckdb")},  
     )
 
 
