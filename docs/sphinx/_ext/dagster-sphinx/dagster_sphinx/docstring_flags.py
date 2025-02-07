@@ -61,7 +61,7 @@ def inject_object_flag(
 def inject_param_flag(
     lines: list[str],
     param: str,
-    info: Union[DeprecatedInfo, ExperimentalInfo],
+    info: Union[BetaInfo, DeprecatedInfo, ExperimentalInfo],
 ):
     additional_text = f" {info.additional_warn_text}" if info.additional_warn_text else ""
     if isinstance(info, DeprecatedInfo):
@@ -74,6 +74,12 @@ def inject_param_flag(
         message = (
             "(This parameter may break in future versions, even between dot"
             f" releases.{additional_text})"
+        )
+    elif isinstance(info, BetaInfo):
+        flag = ":inline-flag:`beta`"
+        message = (
+            f"(This parameter is currently in beta, and may have breaking changes in minor version releases, "
+            f"with behavior changes in patch releases.{additional_text})"
         )
     else:
         check.failed(f"Unexpected info type {type(info)}")
