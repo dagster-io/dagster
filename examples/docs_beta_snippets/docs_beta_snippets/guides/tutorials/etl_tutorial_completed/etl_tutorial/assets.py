@@ -150,7 +150,7 @@ def missing_dimension_check(duckdb: DuckDBResource) -> dg.AssetCheckResult:
     compute_kind="duckdb",
     group_name="analysis",
     deps=[joined_data],
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.on_cron("59 23 L * *"),
 )
 def monthly_sales_performance(
     context: dg.AssetExecutionContext, duckdb: DuckDBResource
@@ -205,7 +205,7 @@ def monthly_sales_performance(
     partitions_def=product_category_partition,
     group_name="analysis",
     compute_kind="duckdb",
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.on_cron("59 23 L * *"),
 )
 def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
     product_category_str = context.partition_key

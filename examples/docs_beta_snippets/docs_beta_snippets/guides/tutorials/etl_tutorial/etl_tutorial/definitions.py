@@ -158,7 +158,7 @@ monthly_partition = dg.MonthlyPartitionsDefinition(start_date="2024-01-01")
     compute_kind="duckdb",
     group_name="analysis",
     deps=[joined_data],
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.on_cron("59 23 L * *"),
 )
 def monthly_sales_performance(
     context: dg.AssetExecutionContext, duckdb: DuckDBResource
@@ -219,7 +219,7 @@ product_category_partition = dg.StaticPartitionsDefinition(
     partitions_def=product_category_partition,
     group_name="analysis",
     compute_kind="duckdb",
-    automation_condition=dg.AutomationCondition.eager(),
+    automation_condition=dg.AutomationCondition.on_cron("59 23 L * *"),
 )
 def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResource):
     product_category_str = context.partition_key

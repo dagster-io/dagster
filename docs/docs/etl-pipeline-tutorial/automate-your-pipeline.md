@@ -13,11 +13,19 @@ In this step you will:
 - Add automation to assets to run when upstream assets are materialized.
 - Create a schedule to run a set of assets on a cron schedule.
 
-## 1. Automate asset materialization 
+## 1. Scheduled jobs
 
-Ideally, the reporting assets created in the last step should refresh whenever the upstream data is updated. Dagster's [declarative automation](/guides/automate/declarative-automation) framework allows you do this by adding an automation condition to the asset definition.
+Cron-based schedules are common in data orchestration. For our pipeline, assume that updated CSVs are uploaded to a file location at a specific time every week by an external process.
 
-Update the `monthly_sales_performance` asset to add the automation condition to the decorator:
+Copy the following code underneath the `product performance` asset:
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="268" lineEnd="273"/>
+
+## 2. Automate asset materialization 
+
+Now `monthly_sales_performance` should be executed once a month, but setting up an independent monthly schedule for this asset isn't exactly what we want -- if we do it naively, then this asset will execute exactly on the month boundary, before the last week's data has had a chance to complete. We could delay the monthly schedule by a couple of hours to give the upstream assets a chance to finish, but what if the upstream computation fails or takes too long to complete? this is where we can use [declarative automation](/guides/automate/declarative-automation), which understands the status of an asset and all of its dependencies. 
+
+For `monthly_sales_performance` we want it to update on a monthly basis when all the dependencies are updated. To accomplish this we will use the `on_cron` automation condition. Update the `monthly_sales_performance` asset to add the automation condition to the decorator:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="155" lineEnd="209"/>
 
@@ -25,13 +33,7 @@ Do the same thing for `product_performance`:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="216" lineEnd="267"/>
 
-## 2. Scheduled jobs
 
-Cron-based schedules are common in data orchestration. For our pipeline, assume that updated CSVs are uploaded to a file location at a specific time every week by an external process.
-
-Copy the following code underneath the `product performance` asset:
-
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="268" lineEnd="273"/>
 
 ## 3. Enable and test automations
 
