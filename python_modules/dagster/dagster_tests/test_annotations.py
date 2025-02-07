@@ -9,14 +9,17 @@ from dagster import resource
 from dagster._annotations import (
     PUBLIC,
     PublicAttr,
+    beta,
     deprecated,
     deprecated_param,
     experimental,
     experimental_param,
+    get_beta_info,
     get_deprecated_info,
     get_experimental_info,
     get_preview_info,
     hidden_param,
+    is_beta,
     is_deprecated,
     is_deprecated_param,
     is_experimental,
@@ -28,7 +31,7 @@ from dagster._annotations import (
     public,
 )
 from dagster._check import CheckError
-from dagster._utils.warnings import ExperimentalWarning, PreviewWarning
+from dagster._utils.warnings import BetaWarning, ExperimentalWarning, PreviewWarning
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
@@ -941,6 +944,207 @@ def test_preview_resource():
         assert warning[0].filename.endswith("test_annotations.py")
 
 
+########################
+##### BETA
+########################
+
+
+def test_beta_method():
+    class Foo:
+        @beta(additional_warn_text="baz")
+        def bar(self):
+            pass
+
+    assert is_beta(Foo.bar)
+    assert get_beta_info(Foo.bar).additional_warn_text == "baz"
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo.bar` is currently in beta") as warning:
+        Foo().bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta, property),
+        (property, beta),
+    ],
+    ids=[
+        "beta-property",
+        "property-beta",
+    ],
+)
+def test_beta_property(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self):
+            return 1
+
+    assert is_beta(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo.bar` is currently in beta") as warning:
+        assert Foo().bar
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta, staticmethod),
+        (staticmethod, beta),
+    ],
+    ids=[
+        "beta-staticmethod",
+        "staticmethod-beta",
+    ],
+)
+def test_beta_staticmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar():
+            pass
+
+    assert is_beta(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo.bar` is currently in beta") as warning:
+        Foo.bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta, classmethod),
+        (classmethod, beta),
+    ],
+    ids=[
+        "beta-classmethod",
+        "classmethod-beta",
+    ],
+)
+def test_beta_classmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(cls):
+            pass
+
+    assert is_beta(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo.bar` is currently in beta") as warning:
+        Foo.bar()  # pyright: ignore[reportCallIssue]
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta, abstractmethod),
+        (abstractmethod, beta),
+    ],
+    ids=[
+        "beta-abstractmethod",
+        "abstractmethod-beta",
+    ],
+)
+def test_beta_abstractmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self): ...
+
+    assert is_beta(Foo.bar)
+
+
+def test_beta_class():
+    @beta
+    class Foo:
+        def bar(self): ...
+
+    assert is_beta(Foo)
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo` is currently in beta") as warning:
+        Foo()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_beta_class_with_methods():
+    @beta
+    class BetaClass:
+        def __init__(self, salutation="hello"):
+            self.salutation = salutation
+
+        def hello(self, name):
+            return f"{self.salutation} {name}"
+
+    @beta
+    class BetaClassWithBetaFunction(BetaClass):
+        def __init__(self, sendoff="goodbye", **kwargs):
+            self.sendoff = sendoff
+            super().__init__(**kwargs)
+
+        @beta
+        def goodbye(self, name):
+            return f"{self.sendoff} {name}"
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"`[^`]+BetaClass` is currently in beta",
+    ):
+        beta_class = BetaClass(salutation="howdy")
+
+    with assert_no_warnings():
+        assert beta_class.hello("dagster") == "howdy dagster"
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"Class `[^`]+BetaClassWithBetaFunction` is currently in beta",
+    ):
+        beta_class_with_beta_function = BetaClassWithBetaFunction()
+
+    with assert_no_warnings():
+        assert beta_class_with_beta_function.hello("dagster") == "hello dagster"
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"Function `[^`]+goodbye` is currently in beta",
+    ):
+        assert beta_class_with_beta_function.goodbye("dagster") == "goodbye dagster"
+
+    @beta
+    class BetaNamedTupleClass(NamedTuple("_", [("salutation", str)])):
+        pass
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"`[^`]+BetaNamedTupleClass` is currently in beta",
+    ):
+        assert BetaNamedTupleClass(salutation="howdy").salutation == "howdy"
+
+
+def test_beta_namedtuple_class():
+    @beta
+    class Foo(NamedTuple("_", [("bar", str)])):
+        pass
+
+    with pytest.warns(BetaWarning, match=r"Class `[^`]+Foo` is currently in beta") as warning:
+        Foo(bar="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_beta_resource():
+    @beta
+    @resource
+    def foo(): ...
+
+    assert is_beta(foo)
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"Dagster resource `[^`]+foo` is currently in beta",
+    ) as warning:
+        foo()
+        assert warning[0].filename.endswith("test_annotations.py")
+
+
 # ########################
 # ##### OTHER
 # ########################
@@ -950,6 +1154,7 @@ def test_all_annotations():
     @public
     @deprecated(breaking_version="2.0", additional_warn_text="foo")
     @experimental
+    @beta
     @preview
     def foo():
         pass
@@ -958,12 +1163,16 @@ def test_all_annotations():
     assert is_deprecated(foo)
     assert is_experimental(foo)
     assert is_preview(foo)
+    assert is_beta(foo)
 
     with warnings.catch_warnings(record=True) as all_warnings:
         warnings.simplefilter("always")
         foo()
 
     exp = next(warning for warning in all_warnings if warning.category == PreviewWarning)
+    assert re.search(r"`[^`]+foo`", str(exp.message))
+
+    exp = next(warning for warning in all_warnings if warning.category == BetaWarning)
     assert re.search(r"`[^`]+foo`", str(exp.message))
 
     exp = next(warning for warning in all_warnings if warning.category == ExperimentalWarning)
