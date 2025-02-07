@@ -90,6 +90,15 @@ class InstanceConcurrencyContext:
         if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
 
+        if step_key in self._pending_claims:
+            if time.time() > self._pending_timeouts[step_key]:
+                del self._pending_timeouts[step_key]
+                self._sync_pools()
+            else:
+                return False
+        else:
+            self._pending_claims.add(step_key)
+
         pool_info = self.get_pool_info(concurrency_key)
         if (pool_info is None and self._default_limit is not None) or (
             pool_info is not None
@@ -104,15 +113,9 @@ class InstanceConcurrencyContext:
             pool_info = self.get_pool_info(concurrency_key)
 
         if pool_info is None:
+            if step_key in self._pending_claims:
+                self._pending_claims.remove(step_key)
             return True
-
-        if step_key in self._pending_claims:
-            if time.time() > self._pending_timeouts[step_key]:
-                del self._pending_timeouts[step_key]
-            else:
-                return False
-        else:
-            self._pending_claims.add(step_key)
 
         priority = self._run_priority + step_priority
 
