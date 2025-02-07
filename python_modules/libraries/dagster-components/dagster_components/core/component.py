@@ -325,9 +325,9 @@ def get_component_type_name(component_type: type[Component]) -> str:
 T_Component = TypeVar("T_Component", bound=Component)
 
 
-def component_loader(
-    fn: Callable[[ComponentLoadContext], T],
-) -> Callable[[ComponentLoadContext], T]:
+def component(
+    fn: Callable[[ComponentLoadContext], T_Component],
+) -> Callable[[ComponentLoadContext], T_Component]:
     setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
     return fn
 
