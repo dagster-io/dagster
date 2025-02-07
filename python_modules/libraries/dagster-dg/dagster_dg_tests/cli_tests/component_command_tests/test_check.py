@@ -14,7 +14,7 @@ from dagster_components.test.test_cases import (
     ComponentValidationTestCase,
     msg_includes_all_of,
 )
-from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
+from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd, set_toml_value
 
 ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
@@ -85,8 +85,8 @@ def test_component_check_succeeds_non_default_component_package() -> None:
             runner,
         ),
     ):
-        with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["component_package"] = "foo_bar._components"
+        with modify_pyproject_toml() as toml:
+            set_toml_value(toml, ("tool", "dg", "component_package"), "foo_bar._components")
 
         # We need to do all of this copying here rather than relying on the code location setup
         # fixture because that fixture assumes a default component package.

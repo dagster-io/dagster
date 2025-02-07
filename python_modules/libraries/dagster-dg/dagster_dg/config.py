@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import Any, Callable, Optional, TypedDict, TypeVar, cast
 
 import click
-import tomli
+import tomlkit
 from click.core import ParameterSource
 
 from dagster_dg.error import DgError, DgValidationError
+from dagster_dg.utils import get_toml_value
 
 T = TypeVar("T")
 
@@ -198,13 +199,15 @@ def _validate_dg_partial_file_config(
 def is_dg_config_file(
     path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
 ) -> bool:
-    toml = tomli.loads(path.read_text())
-    return "dg" in toml.get("tool", {}) and (predicate(toml["tool"]["dg"]) if predicate else True)
+    toml = tomlkit.parse(path.read_text())
+    return "dg" in toml.get("tool", {}) and (
+        predicate(get_toml_value(toml, ["tool", "dg"], dict)) if predicate else True
+    )
 
 
 def load_dg_config_file(path: Path) -> DgPartialFileConfig:
-    toml = tomli.loads(path.read_text())
-    return _validate_dg_partial_file_config(toml["tool"]["dg"], path)
+    toml = tomlkit.parse(path.read_text())
+    return _validate_dg_partial_file_config(get_toml_value(toml, ["tool", "dg"], dict), path)
 
 
 def _raise_file_config_validation_error(message: str, file_path: Path) -> None:

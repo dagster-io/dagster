@@ -11,14 +11,13 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Optional, Union
 
-import tomli
-import tomli_w
+import tomlkit
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
     cli as dg_cli,
 )
-from dagster_dg.utils import discover_git_root, pushd
+from dagster_dg.utils import discover_git_root, pushd, set_toml_value
 from typing_extensions import Self
 
 
@@ -115,15 +114,17 @@ def isolated_example_component_library_foo_bar(
             shutil.rmtree("foo_bar/components")
 
             # Make it not a code location
-            with modify_pyproject_toml() as pyproject_toml:
-                pyproject_toml["tool"]["dg"]["is_code_location"] = False
+            with modify_pyproject_toml() as toml:
+                set_toml_value(toml, ("tool", "dg", "is_code_location"), False)
 
                 # We need to set any alternative lib package name _before_ we install into the
                 # environment, since it affects entry points which are set at install time.
                 if lib_package_name:
-                    pyproject_toml["tool"]["dg"]["component_lib_package"] = lib_package_name
-                    pyproject_toml["project"]["entry-points"]["dagster.components"]["foo_bar"] = (
-                        lib_package_name
+                    set_toml_value(toml, ("tool", "dg", "component_lib_package"), lib_package_name)
+                    set_toml_value(
+                        toml,
+                        ("project", "entry-points", "dagster.components", "foo_bar"),
+                        lib_package_name,
                     )
                     Path(*lib_package_name.split(".")).mkdir(exist_ok=True)
 
@@ -245,9 +246,9 @@ def print_exception_info(
 
 
 @contextmanager
-def modify_pyproject_toml() -> Iterator[dict[str, Any]]:
+def modify_pyproject_toml() -> Iterator[tomlkit.TOMLDocument]:
     with open("pyproject.toml") as f:
-        toml = tomli.loads(f.read())
+        toml = tomlkit.parse(f.read())
     yield toml
     with open("pyproject.toml", "w") as f:
-        f.write(tomli_w.dumps(toml))
+        f.write(tomlkit.dumps(toml))
