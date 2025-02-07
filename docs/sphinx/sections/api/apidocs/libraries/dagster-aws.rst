@@ -34,8 +34,8 @@ S3
 
 
 
-File Manager (Experimental)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File Manager
+^^^^^^^^^^^^
 
 .. autoclass:: dagster_aws.s3.S3FileHandle
   :members:
