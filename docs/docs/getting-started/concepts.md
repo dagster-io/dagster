@@ -372,7 +372,7 @@ A `graph` connects multiple `ops` together to form a DAG. If you are using `asse
 
     style Definitions fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
 
-    IOManager --> Asset
+    IOManager -.-> Asset
     IOManager ==> Definitions
 ```
 
@@ -423,7 +423,7 @@ A `job` is a subset of `assets` or the `graph` of `ops`. Jobs are the main form 
 | Concept | Relationship | Required |
 | --- | --- | --- |
 | [asset](concepts#asset) | `job` may contain a selection of `assets` | No |
-| [config](concepts#config) | `job` may contain use `config` | No |
+| [config](concepts#config) | `job` may use a `config` | No |
 | [graph](concepts#graph) | `job` may contain a `graph` | No |
 | [schedule](concepts#schedule) | `job` may be used by a `schedule` | No |
 | [sensor](concepts#sensor) | `job` may be used by a `sensor` | No |
