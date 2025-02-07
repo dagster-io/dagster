@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict
 if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
 
+FIELD_RESOLVER_PREFIX = "resolve_"
 
 T_ResolverType = TypeVar("T_ResolverType", bound=type["Resolver"])
 T_ResolvableModel = TypeVar("T_ResolvableModel", bound="ResolvableModel")
@@ -21,10 +22,15 @@ class _ResolverData:
 
     resolved_type: Optional[type]
     exclude_fields: Set[str]
-    additional_fields: Set[str]
 
-    def fields(self, model: "ResolvableModel") -> Set[str]:
-        return set(model.model_fields.keys()) - self.exclude_fields | self.additional_fields
+    def fields(self, model: "ResolvableModel", resolver: "Resolver") -> Set[str]:
+        model_fields = set(model.model_fields.keys())
+        resolver_fields = {
+            attr[len(FIELD_RESOLVER_PREFIX) :]
+            for attr in dir(resolver)
+            if attr.startswith(FIELD_RESOLVER_PREFIX)
+        }
+        return (model_fields | resolver_fields) - self.exclude_fields - {"as"}
 
 
 class Resolver(Generic[T_ResolvableModel]):
@@ -47,10 +53,7 @@ class Resolver(Generic[T_ResolvableModel]):
                 def __init__(self, str_val: str, int_val_doubled: int): ...
 
             @resolver(
-                fromtype=MyModel,
-                totype=TargetType,
-                exclude_fields={"int_val"},
-                additional_fields={"int_val_doubled"},
+                fromtype=MyModel, totype=TargetType, exclude_fields={"int_val"}
             )
             class MyModelResolver(Resolver):
                 def resolve_int_val_doubled(self, context: ResolutionContext) -> int:
@@ -59,7 +62,7 @@ class Resolver(Generic[T_ResolvableModel]):
     """
 
     __resolver_data__: ClassVar[_ResolverData] = _ResolverData(
-        resolved_type=None, exclude_fields=set(), additional_fields=set()
+        resolved_type=None, exclude_fields=set()
     )
 
     def __init__(self, model: T_ResolvableModel):
@@ -76,7 +79,7 @@ class Resolver(Generic[T_ResolvableModel]):
         """Returns a mapping of field names to resolved values for those fields."""
         return {
             field: self._resolve_field(context, field)
-            for field in self.__resolver_data__.fields(self.model)
+            for field in self.__resolver_data__.fields(self.model, self)
         }
 
     def resolve_as(self, as_type: type[T_ResolveAs], context: "ResolutionContext") -> T_ResolveAs:
@@ -111,13 +114,10 @@ def resolver(
     fromtype: type[ResolvableModel],
     totype: Optional[type] = None,
     exclude_fields: Optional[Set[str]] = None,
-    additional_fields: Optional[Set[str]] = None,
 ) -> Callable[[T_ResolverType], T_ResolverType]:
     def inner(resolver_type: T_ResolverType) -> T_ResolverType:
         resolver_type.__resolver_data__ = _ResolverData(
-            resolved_type=totype,
-            exclude_fields=exclude_fields or set(),
-            additional_fields=additional_fields or set(),
+            resolved_type=totype, exclude_fields=exclude_fields or set()
         )
         fromtype.__dagster_resolver__ = resolver_type
         return resolver_type

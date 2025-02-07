@@ -52,7 +52,6 @@ class SlingReplicationCollectionParams(ResolvableModel):
     fromtype=SlingReplicationParams,
     totype=SlingReplicationSpec,
     exclude_fields={"asset_attributes"},
-    additional_fields={"translator"},
 )
 class SlingReplicationResolver(Resolver):
     def resolve_translator(self, resolver: ResolutionContext) -> DagsterSlingTranslator:
