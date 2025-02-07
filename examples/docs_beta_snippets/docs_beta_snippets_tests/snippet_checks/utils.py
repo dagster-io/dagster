@@ -47,9 +47,7 @@ def re_ignore_after(match_str: str) -> tuple[str, str]:
 PWD_REGEX = re.compile(r"PWD=(.*?);")
 
 
-def _run_command(
-    cmd: Union[str, Sequence[str]],
-) -> str:
+def _run_command(cmd: Union[str, Sequence[str]], expect_error: bool = False) -> str:
     if not isinstance(cmd, str):
         cmd = " ".join(cmd)
 
@@ -61,18 +59,26 @@ def _run_command(
             .decode("utf-8")
             .strip()
         )
+        if expect_error:
+            print(f"Ran command {cmd}")  # noqa: T201
+            print("Got output:")  # noqa: T201
+            print(actual_output)  # noqa: T201
+            raise Exception("Expected command to fail")
     except subprocess.CalledProcessError as e:
-        print(f"Ran command {cmd}")  # noqa: T201
-        print("Got output:")  # noqa: T201
-        print(e.output.decode("utf-8").strip())  # noqa: T201
-        raise
+        if expect_error:
+            actual_output = e.output.decode("utf-8").strip()
+        else:
+            print(f"Ran command {cmd}")  # noqa: T201
+            print("Got output:")  # noqa: T201
+            print(e.output.decode("utf-8").strip())  # noqa: T201
+            raise
 
-    pwd = PWD_REGEX.search(actual_output).group(1)
-    actual_output = PWD_REGEX.sub("", actual_output)
+    pwd = PWD_REGEX.search(actual_output)
+    if pwd:
+        actual_output = PWD_REGEX.sub("", actual_output)
+        os.chdir(pwd.group(1))
 
     actual_output = ANSI_ESCAPE.sub("", actual_output)
-
-    os.chdir(pwd)
 
     return actual_output
 
@@ -233,6 +239,7 @@ def run_command_and_snippet_output(
     snippet_replace_regex: Optional[Sequence[tuple[str, str]]] = None,
     custom_comparison_fn: Optional[Callable[[str, str], bool]] = None,
     ignore_output: bool = False,
+    expect_error: bool = False,
 ):
     """Run the given command and check that the output matches the contents of the snippet
     at `snippet_path`. If `update_snippets` is `True`, updates the snippet file with the
@@ -253,7 +260,7 @@ def run_command_and_snippet_output(
     """
     assert update_snippets is not None or snippet_path is None
 
-    output = _run_command(cmd)
+    output = _run_command(cmd, expect_error=expect_error)
 
     if snippet_path:
         assert update_snippets is not None
