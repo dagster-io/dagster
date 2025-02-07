@@ -5,14 +5,10 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional
+from typing import Any
 
 import click
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-)
 from dagster._core.errors import DagsterError
 
 from dagster_components.core.schema.objects import AssetAttributesModel
@@ -65,15 +61,6 @@ class ResolvingInfo:
     asset_attributes: AssetAttributesModel
     value_resolver: TemplatedValueResolver
 
-    def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        renderer = self.value_resolver.with_scope(**{self.obj_name: obj})
-        rendered_attributes = self.asset_attributes.resolve(renderer)
-        return (
-            rendered_attributes[attribute]
-            if attribute in rendered_attributes
-            else default_method(obj)
-        )
-
     def get_asset_spec(self, base_spec: AssetSpec, context: Mapping[str, Any]) -> AssetSpec:
         """Returns an AssetSpec that combines the base spec with attributes resolved using the provided context.
 
@@ -107,24 +94,9 @@ def get_wrapped_translator_class(translator_type: type):
             self.base_translator = translator_type()
             self.resolving_info = resolving_info
 
-        def get_asset_key(self, obj: Any) -> AssetKey:
-            return self.resolving_info.get_resolved_attribute(
-                "key", obj, self.base_translator.get_asset_key
-            )
-
-        def get_group_name(self, obj: Any) -> Optional[str]:
-            return self.resolving_info.get_resolved_attribute(
-                "group_name", obj, self.base_translator.get_group_name
-            )
-
-        def get_tags(self, obj: Any) -> Mapping[str, str]:
-            return self.resolving_info.get_resolved_attribute(
-                "tags", obj, self.base_translator.get_tags
-            )
-
-        def get_automation_condition(self, obj: Any) -> Optional[AutomationCondition]:
-            return self.resolving_info.get_resolved_attribute(
-                "automation_condition", obj, self.base_translator.get_automation_condition
+        def get_asset_spec(self, obj: Any) -> AssetSpec:
+            return self.resolving_info.get_asset_spec(
+                self.base_translator.get_asset_spec(obj), {"obj": obj}
             )
 
     return WrappedTranslator
