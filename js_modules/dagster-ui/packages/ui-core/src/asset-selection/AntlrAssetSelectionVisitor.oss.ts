@@ -1,9 +1,13 @@
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
+
+import {getFunctionName, getTraversalDepth, getValue} from './util';
+import {GraphTraverser} from '../app/GraphQueryImpl';
+import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {
   AllExpressionContext,
   AndExpressionContext,
-  AssetSelectionVisitor,
   AttributeExpressionContext,
   CodeLocationAttributeExprContext,
   DownTraversalExpressionContext,
@@ -21,12 +25,8 @@ import {
   TraversalAllowedExpressionContext,
   UpAndDownTraversalExpressionContext,
   UpTraversalExpressionContext,
-} from 'shared/asset-selection/AssetSelectionAntlr.oss';
-
-import {getFunctionName, getTraversalDepth, getValue} from './util';
-import {GraphTraverser} from '../app/GraphQueryImpl';
-import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
-import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
+} from './generated/AssetSelectionParser';
+import {AssetSelectionVisitor} from './generated/AssetSelectionVisitor';
 
 export class AntlrAssetSelectionVisitor
   extends AbstractParseTreeVisitor<Set<AssetGraphQueryItem>>
