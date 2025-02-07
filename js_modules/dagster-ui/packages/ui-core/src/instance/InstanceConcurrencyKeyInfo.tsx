@@ -199,7 +199,7 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
             )}
           </Box>
         ) : (
-          <Box padding={{vertical: 64}}>
+          <Box flex={{direction: 'column', alignItems: 'center'}} padding={{vertical: 64}}>
             <SpinnerWithText label="Loading…" />
           </Box>
         )}
@@ -278,14 +278,16 @@ const EditConcurrencyLimitDialog = ({
     onClose();
   };
 
-  const title = (
-    <>
-      Edit <Mono>{concurrencyKey}</Mono>
-    </>
-  );
-
   return (
-    <Dialog isOpen={open} title={title} onClose={onClose}>
+    <Dialog
+      isOpen={open}
+      title={
+        <span>
+          Edit <Mono>{concurrencyKey}</Mono>
+        </span>
+      }
+      onClose={onClose}
+    >
       <DialogBody>
         <Box margin={{bottom: 4}}>{flagPoolUI ? 'Pool' : 'Concurrency key'}:</Box>
         <Box margin={{bottom: 16}}>

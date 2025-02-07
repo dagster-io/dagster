@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with AWS Lambda
 description: "Learn to integrate Dagster Pipes with AWS Lambda to launch external code from Dagster assets."
-sidebar_position: 500
+sidebar_position: 600
 ---
 
 :::note
@@ -92,7 +92,7 @@ In this step, you'll add the code you want to execute to the function. Create an
 
 :::tip
 
-The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
+The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](/guides/build/external-pipelines/using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
 
 :::
 

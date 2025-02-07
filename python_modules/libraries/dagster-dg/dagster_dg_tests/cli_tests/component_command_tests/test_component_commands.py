@@ -135,9 +135,25 @@ def test_component_scaffold_undefined_component_type_fails() -> None:
 
 def test_component_scaffold_outside_code_location_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("component", "scaffold", "bar.baz", "qux")
+        result = runner.invoke("component", "scaffold", "bar@baz", "qux")
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster code location directory" in result.output
+
+
+def test_scaffold_component_command_with_non_matching_package_name():
+    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+        #  move the module from foo_bar to module_not_same_as_code_location
+        python_module = Path("foo_bar")
+        python_module.rename("module_not_same_as_code_location")
+
+        result = runner.invoke(
+            "component", "scaffold", "all_metadata_empty_asset@dagster_components.test", "qux"
+        )
+        assert_runner_result(result, exit_0=False)
+        assert (
+            "Could not find expected package `foo_bar` in the current environment. Components expects the package name to match the directory name of the code location."
+            in str(result.exception)
+        )
 
 
 def test_component_scaffold_with_no_dagster_components_fails() -> None:

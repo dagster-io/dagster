@@ -12,15 +12,15 @@ import {
   NonIdealState,
   Page,
   PageHeader,
-  Spinner,
+  SpinnerWithText,
   Subheading,
-  Tag,
   TextInput,
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {ConcurrencyTab, ConcurrencyTabs} from './ConcurrencyTabs';
 import {InstanceConcurrencyKeyInfo, isValidLimit} from './InstanceConcurrencyKeyInfo';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
@@ -61,49 +61,48 @@ export const InstanceConcurrencyIndexContent = React.memo(() => {
   >(INSTANCE_CONCURRENCY_LIMITS_QUERY, {
     notifyOnNetworkStatusChange: true,
   });
-  const {flagPoolUI} = useFeatureFlags();
+  const [activeTab, setActiveTab] = React.useState<ConcurrencyTab>('run-concurrency');
 
   const {data} = queryResult;
-  const poolsContent = data ? (
-    <ConcurrencyLimits
-      concurrencyKeys={data.instance.concurrencyLimits.map((limit) => limit.concurrencyKey)}
-      hasSupport={data.instance.supportsConcurrencyLimits}
-      refetch={queryResult.refetch}
-      minValue={data.instance.minConcurrencyLimitValue}
-      maxValue={data.instance.maxConcurrencyLimitValue}
-    />
-  ) : null;
-  const runTagsContent = (
-    <RunConcurrencyContent
-      hasRunQueue={!!data?.instance.runQueuingSupported}
-      runQueueConfig={data?.instance.runQueueConfig}
-    />
-  );
+
+  const content = () => {
+    if (!data) {
+      return (
+        <Box padding={{vertical: 64}} flex={{direction: 'column', alignItems: 'center'}}>
+          <SpinnerWithText label="Loading concurrency information…" />
+        </Box>
+      );
+    }
+
+    if (activeTab === 'run-concurrency') {
+      return (
+        <div style={{overflowY: 'auto'}}>
+          <RunConcurrencyContent
+            hasRunQueue={!!data?.instance.runQueuingSupported}
+            runQueueConfig={data?.instance.runQueueConfig}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div style={{overflowY: 'hidden'}}>
+        <ConcurrencyLimits
+          concurrencyKeys={data.instance.concurrencyLimits.map((limit) => limit.concurrencyKey)}
+          hasSupport={data.instance.supportsConcurrencyLimits}
+          refetch={queryResult.refetch}
+          minValue={data.instance.minConcurrencyLimitValue}
+          maxValue={data.instance.maxConcurrencyLimitValue}
+        />
+      </div>
+    );
+  };
 
   return (
-    <div style={{overflowY: 'auto'}}>
-      {data ? (
-        <>
-          <Box flex={{direction: 'column', gap: 64}}>
-            {flagPoolUI ? (
-              <>
-                {poolsContent}
-                {runTagsContent}
-              </>
-            ) : (
-              <>
-                {runTagsContent}
-                {poolsContent}
-              </>
-            )}
-          </Box>
-        </>
-      ) : (
-        <Box padding={{vertical: 64}}>
-          <Spinner purpose="section" />
-        </Box>
-      )}
-    </div>
+    <>
+      <RunConcurrencyLimitHeader activeTab={activeTab} onChange={setActiveTab} />
+      {content()}
+    </>
   );
 });
 
@@ -127,12 +126,10 @@ export default InstanceConcurrencyPage;
 export const RunConcurrencyContent = ({
   hasRunQueue,
   runQueueConfig,
-  onEdit,
 }: {
   hasRunQueue: boolean;
   runQueueConfig: RunQueueConfigFragment | null | undefined;
   refreshState?: QueryRefreshState;
-  onEdit?: () => void;
 }) => {
   if (!hasRunQueue) {
     return (
@@ -175,7 +172,7 @@ export const RunConcurrencyContent = ({
     </Box>
   );
 
-  const settings_content = runQueueConfig ? (
+  const settingsContent = runQueueConfig ? (
     <MetadataTableWIP style={{marginLeft: -1}}>
       <tbody>
         <tr>
@@ -201,29 +198,29 @@ export const RunConcurrencyContent = ({
 
   return (
     <Box>
-      <RunConcurrencyLimitHeader onEdit={onEdit} />
       {infoContent}
-      {settings_content}
+      {settingsContent}
     </Box>
   );
 };
 
-const RunConcurrencyLimitHeader = ({onEdit}: {onEdit?: () => void}) => (
-  <Box
-    flex={{justifyContent: 'space-between', alignItems: 'center'}}
-    padding={{vertical: 16, horizontal: 24}}
-    border="bottom"
-  >
-    <Subheading>Run concurrency</Subheading>
-    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-      {onEdit ? (
-        <Button icon={<Icon name="edit" />} onClick={() => onEdit()}>
-          Edit configuration
-        </Button>
-      ) : null}
+const RunConcurrencyLimitHeader = ({
+  activeTab,
+  onChange,
+}: {
+  activeTab: ConcurrencyTab;
+  onChange: (tab: ConcurrencyTab) => void;
+}) => {
+  return (
+    <Box
+      flex={{justifyContent: 'space-between', alignItems: 'center'}}
+      padding={{horizontal: 24}}
+      border="bottom"
+    >
+      <ConcurrencyTabs activeTab={activeTab} onChange={onChange} />
     </Box>
-  </Box>
-);
+  );
+};
 
 export const ConcurrencyLimits = ({
   hasSupport,
@@ -337,29 +334,23 @@ const ConcurrencyLimitHeader = ({
   const {flagPoolUI} = useFeatureFlags();
   return (
     <Box flex={{direction: 'column'}}>
-      <Box
-        flex={{justifyContent: 'space-between', alignItems: 'center'}}
-        padding={{vertical: 16, horizontal: 24}}
-        border="top-and-bottom"
-      >
-        <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
-          <Subheading>{flagPoolUI ? 'Pools' : 'Global op/asset concurrency'}</Subheading>
-          {flagPoolUI ? null : <Tag>Experimental</Tag>}
-        </Box>
-        {onAdd ? (
-          <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
-            {flagPoolUI ? 'Add pool limit' : 'Add concurrency limit'}
-          </Button>
-        ) : null}
-      </Box>
       {setSearch ? (
-        <Box flex={{direction: 'row'}} padding={{vertical: 16, horizontal: 24}} border="bottom">
+        <Box
+          flex={{direction: 'row', justifyContent: 'space-between'}}
+          padding={{vertical: 16, horizontal: 24}}
+          border="bottom"
+        >
           <TextInput
             value={search || ''}
             style={{width: '30vw', minWidth: 150, maxWidth: 400}}
             placeholder={flagPoolUI ? 'Filter pools' : 'Filter concurrency keys'}
             onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
           />
+          {onAdd ? (
+            <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
+              {flagPoolUI ? 'Add pool limit' : 'Add concurrency limit'}
+            </Button>
+          ) : null}
         </Box>
       ) : null}
     </Box>

@@ -228,6 +228,10 @@ class DgContext:
         if not self.is_code_location:
             raise DgError("`components_path` is only available in a code location context")
         with ensure_loadable_path(self.root_path):
+            if not is_package_installed(self.root_package_name):
+                raise DgError(
+                    f"Could not find expected package `{self.root_package_name}` in the current environment. Components expects the package name to match the directory name of the code location."
+                )
             if not is_package_installed(self.components_package_name):
                 raise DgError(
                     f"Components package `{self.components_package_name}` is not installed in the current environment."
@@ -279,6 +283,10 @@ class DgContext:
         if not self.is_component_library:
             raise DgError("`components_lib_path` is only available in a component library context")
         with ensure_loadable_path(self.root_path):
+            if not is_package_installed(self.root_package_name):
+                raise DgError(
+                    f"Could not find expected package `{self.root_package_name}` in the current environment. Components expects the package name to match the directory name of the code location."
+                )
             if not is_package_installed(self.components_lib_package_name):
                 raise DgError(
                     f"Components lib package `{self.components_lib_package_name}` is not installed in the current environment."

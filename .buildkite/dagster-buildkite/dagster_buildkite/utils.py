@@ -322,7 +322,9 @@ def has_dagster_airlift_changes():
 @functools.lru_cache(maxsize=None)
 def has_dg_or_components_changes():
     return any(
-        "dagster-dg" in str(path) or "dagster-components" in str(path)
+        "dagster-dg" in str(path)
+        or "dagster-components" in str(path)
+        or "docs_beta_snippets" in str(path)
         for path in ChangedFiles.all
     )
 
