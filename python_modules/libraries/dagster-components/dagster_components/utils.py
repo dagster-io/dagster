@@ -16,7 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.errors import DagsterError
 
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetAttributesModel
+from dagster_components.core.schema.objects import AssetAttributesSchema
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
 
@@ -62,7 +62,7 @@ def get_path_for_package(package_name: str) -> str:
 @dataclass
 class TranslatorResolvingInfo:
     obj_name: str
-    asset_attributes: AssetAttributesModel
+    asset_attributes: AssetAttributesSchema
     resolution_context: ResolutionContext
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:

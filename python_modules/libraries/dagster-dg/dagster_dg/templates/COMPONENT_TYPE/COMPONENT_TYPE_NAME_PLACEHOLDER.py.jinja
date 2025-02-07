@@ -3,11 +3,11 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
-    ResolvableModel,
+    ComponentSchema,
     registered_component_type,
 )
 
-class {{ component_type_class_name }}Params(ResolvableModel):
+class {{ component_type_class_name }}Params(ComponentSchema):
     ...
 
 @registered_component_type(name="{{ name }}")

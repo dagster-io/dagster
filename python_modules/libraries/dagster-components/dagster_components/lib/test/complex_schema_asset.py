@@ -7,22 +7,22 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 
 from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
-from dagster_components.core.schema.base import ResolvableModel
+from dagster_components.core.schema.base import ComponentSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
-    AssetAttributesModel,
-    AssetSpecTransformModel,
-    OpSpecModel,
+    AssetAttributesSchema,
+    AssetSpecTransformSchema,
+    OpSpecSchema,
 )
 
 
-class ComplexAssetParams(ResolvableModel):
+class ComplexAssetParams(ComponentSchema):
     value: str
-    op: Optional[OpSpecModel] = None
+    op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
+        Optional[AssetAttributesSchema], ResolvableFieldInfo(required_scope={"node"})
     ] = None
-    asset_transforms: Optional[Sequence[AssetSpecTransformModel]] = None
+    asset_transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 
 
 @registered_component_type(name="complex_schema_asset")
@@ -40,9 +40,9 @@ class ComplexSchemaAsset(Component):
     def __init__(
         self,
         value: str,
-        op_spec: Optional[OpSpecModel],
-        asset_attributes: Optional[AssetAttributesModel],
-        asset_transforms: Sequence[AssetSpecTransformModel],
+        op_spec: Optional[OpSpecSchema],
+        asset_attributes: Optional[AssetAttributesSchema],
+        asset_transforms: Sequence[AssetSpecTransformSchema],
     ):
         self._value = value
         self._op_spec = op_spec

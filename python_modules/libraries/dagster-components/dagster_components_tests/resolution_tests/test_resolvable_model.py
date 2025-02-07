@@ -4,7 +4,7 @@ from typing import Optional
 import pytest
 from dagster._check.functions import ParameterCheckError
 from dagster._record import record
-from dagster_components import ResolutionContext, ResolvableModel
+from dagster_components import ComponentSchema, ResolutionContext
 from dagster_components.core.schema.base import Resolver, resolver
 
 
@@ -21,12 +21,12 @@ class TargetObject:
     inners: Optional[Sequence[InnerObject]]
 
 
-class InnerParams(ResolvableModel):
+class InnerParams(ComponentSchema):
     val1: str
     val2: Optional[str]
 
 
-class TargetParams(ResolvableModel):
+class TargetParams(ComponentSchema):
     int_val: str
     str_val: str
     inners: Optional[Sequence[InnerParams]] = None
@@ -35,7 +35,7 @@ class TargetParams(ResolvableModel):
 @resolver(fromtype=InnerParams, totype=InnerObject, exclude_fields={"val1"})
 class InnerParamsResolver(Resolver[InnerParams]):
     def resolve_val1_renamed(self, context: ResolutionContext) -> int:
-        return context.resolve_value(self.model.val1) + 20
+        return context.resolve_value(self.schema.val1) + 20
 
 
 @resolver(fromtype=TargetParams, totype=TargetObject)
