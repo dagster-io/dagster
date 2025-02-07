@@ -11,10 +11,10 @@ We're curious what you're up to, happy to help, excited for new community contri
 to make the system as easy to work with as possible -- including for teams who are looking to
 customize it.
 
-Executors (Experimental)
-------------------------
+Executors
+---------
 
-APIs for constructing custom executors. This is considered advanced experimental usage. Please note that using Dagster-provided executors is considered stable, common usage.
+APIs for constructing custom executors. This is considered advanced usage. Please note that using Dagster-provided executors is considered stable, common usage.
 
 .. autodecorator:: executor
 
@@ -27,8 +27,8 @@ APIs for constructing custom executors. This is considered advanced experimental
 
 ----
 
-File Manager (Experimental)
----------------------------
+File Manager
+------------
 
 .. currentmodule:: dagster._core.storage.file_manager
 
