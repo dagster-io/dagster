@@ -7,10 +7,12 @@ from dagster._annotations import (
     get_deprecated_params,
     get_experimental_info,
     get_experimental_params,
+    get_beta_params,
     get_preview_info,
     get_superseded_info,
     has_deprecated_params,
     has_experimental_params,
+    has_beta_params,
     is_beta,
     is_deprecated,
     is_experimental,
@@ -150,6 +152,11 @@ def process_docstring(
 
     if is_beta(obj):
         inject_object_flag(obj, get_beta_info(obj), lines)
+
+    if has_beta_params(obj):
+        params = get_beta_params(obj)
+        for param, info in params.items():
+            inject_param_flag(lines, param, info)
 
     if has_deprecated_params(obj):
         params = get_deprecated_params(obj)
