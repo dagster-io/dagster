@@ -1,5 +1,6 @@
 import math
 import tempfile
+import time
 from collections import defaultdict
 
 import pytest
@@ -367,3 +368,74 @@ def test_active_concurrency_sleep(use_tags):
             )
             assert math.isclose(active_execution.sleep_interval(), 2.0, abs_tol=0.1)
             active_execution.mark_interrupted()
+
+
+@pytest.mark.parametrize("use_tags", [True, False])
+def test_active_concurrency_changing_default(use_tags):
+    foo_job = define_concurrency_job(use_tags)
+    run_id = make_new_run_id()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+            }
+        ) as instance:
+            assert instance.event_log_storage.supports_global_concurrency_limits
+
+            instance.event_log_storage.set_concurrency_slots("foo", 0)
+            run = instance.create_run_for_job(foo_job, run_id=run_id)
+
+            with InstanceConcurrencyContext(instance, run) as instance_concurrency_context:
+                with create_execution_plan(foo_job).start(
+                    RetryMode.DISABLED,
+                    instance_concurrency_context=instance_concurrency_context,
+                ) as active_execution:
+                    steps = active_execution.get_steps_to_execute()
+                    assert len(steps) == 0
+
+                    assert instance_concurrency_context.has_pending_claims()
+                    instance.event_log_storage.delete_concurrency_limit("foo")
+
+                    time.sleep(1)
+
+                    steps = active_execution.get_steps_to_execute()
+                    assert len(steps) == 2
+
+                    assert not instance_concurrency_context.has_pending_claims()
+
+                    step_1, step_2 = steps
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_START.value,
+                            job_name=foo_job.name,
+                            step_key=step_1.key,
+                        )
+                    )
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_SUCCESS.value,
+                            job_name=foo_job.name,
+                            step_key=step_1.key,
+                            event_specific_data=StepSuccessData(duration_ms=1.0),
+                        )
+                    )
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_START.value,
+                            job_name=foo_job.name,
+                            step_key=step_2.key,
+                        )
+                    )
+                    active_execution.handle_event(
+                        DagsterEvent(
+                            DagsterEventType.STEP_SUCCESS.value,
+                            job_name=foo_job.name,
+                            step_key=step_2.key,
+                            event_specific_data=StepSuccessData(duration_ms=1.0),
+                        )
+                    )
