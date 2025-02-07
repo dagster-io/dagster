@@ -27,13 +27,17 @@ functionName: SINKS | ROOTS;
 
 // Attribute expressions for specific attributes
 attributeExpr:
-	KEY COLON value						# KeyExpr
-	| KEY_SUBSTRING COLON value			# KeySubstringExpr
-	| TAG COLON value (EQUAL value)?	# TagAttributeExpr
-	| OWNER COLON value					# OwnerAttributeExpr
-	| GROUP COLON value					# GroupAttributeExpr
-	| KIND COLON value					# KindAttributeExpr
-	| CODE_LOCATION COLON value			# CodeLocationAttributeExpr;
+	KEY COLON value							# KeyExpr
+	| KEY_SUBSTRING COLON value				# KeySubstringExpr
+	| TAG COLON value (EQUAL value)?		# TagAttributeExpr
+	| OWNER COLON value						# OwnerAttributeExpr
+	| GROUP COLON value						# GroupAttributeExpr
+	| KIND COLON value						# KindAttributeExpr
+	| COLUMN COLON value					# ColumnAttributeExpr
+	| TABLE_NAME COLON value				# TableNameAttributeExpr
+	| COLUMN_TAG COLON value (EQUAL value)?	# ColumnTagAttributeExpr
+	| CODE_LOCATION COLON value				# CodeLocationAttributeExpr
+	| CHANGED_IN_BRANCH COLON value			# ChangedInBranchAttributeExpr;
 
 // Define EQUAL token for tag:value=value syntax
 EQUAL: '=';
@@ -66,6 +70,10 @@ GROUP: 'group';
 TAG: 'tag';
 KIND: 'kind';
 CODE_LOCATION: 'code_location';
+COLUMN: 'column';
+TABLE_NAME: 'table_name';
+COLUMN_TAG: 'column_tag';
+CHANGED_IN_BRANCH: 'changed_in_branch';
 
 // Function names
 SINKS: 'sinks';

@@ -5,7 +5,14 @@ from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection impor
 from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionParser import (
     AssetSelectionParser,
 )
-from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
+from dagster._core.definitions.asset_selection import (
+    AssetSelection,
+    ChangedInBranchAssetSelection,
+    CodeLocationAssetSelection,
+    ColumnAssetSelection,
+    ColumnTagAssetSelection,
+    TableNameAssetSelection,
+)
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.storage.tags import KIND_PREFIX
 
@@ -153,6 +160,10 @@ def test_antlr_tree_invalid(selection_str):
             "code_location:my_location",
             CodeLocationAssetSelection(selected_code_location="my_location"),
         ),
+        ("column:my_column", ColumnAssetSelection(selected_column="my_column")),
+        ("table_name:my_table", TableNameAssetSelection(selected_table_name="my_table")),
+        ("column_tag:my_key=my_value", ColumnTagAssetSelection(key="my_key", value="my_value")),
+        ("changed_in_branch:any", ChangedInBranchAssetSelection(selected_changed_in_branch="any")),
     ],
 )
 def test_antlr_visit_basic(selection_str, expected_assets) -> None:

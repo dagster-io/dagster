@@ -962,7 +962,10 @@ class TagAssetSelection(AssetSelection):
         return {key for key in base_set if asset_graph.get(key).tags.get(self.key) == self.value}
 
     def to_selection_str(self) -> str:
-        return f'tag:"{self.key}"="{self.value}"'
+        if self.value:
+            return f'tag:"{self.key}"="{self.value}"'
+        else:
+            return f'tag:"{self.key}"'
 
 
 @whitelist_for_serdes
@@ -1000,6 +1003,86 @@ class CodeLocationAssetSelection(AssetSelection):
 
     def to_selection_str(self) -> str:
         return f'code_location:"{self.selected_code_location}"'
+
+
+@whitelist_for_serdes
+@record
+class ColumnAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by column. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_column: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f'column:"{self.selected_column}"'
+
+
+@whitelist_for_serdes
+@record
+class TableNameAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by table name. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_table_name: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f'table_name:"{self.selected_table_name}"'
+
+
+@whitelist_for_serdes
+@record
+class ColumnTagAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by column tag. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    key: str
+    value: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        if self.value:
+            return f'column_tag:"{self.key}"="{self.value}"'
+        else:
+            return f'column_tag:"{self.key}"'
+
+
+@whitelist_for_serdes
+@record
+class ChangedInBranchAssetSelection(AssetSelection):
+    """Used to represent a UI asset selection by changed in branch metadata. This should not be resolved against
+    an in-process asset graph.
+    """
+
+    selected_changed_in_branch: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        """This should not be invoked in user code."""
+        raise NotImplementedError
+
+    def to_selection_str(self) -> str:
+        return f'changed_in_branch:"{self.selected_changed_in_branch}"'
 
 
 @whitelist_for_serdes

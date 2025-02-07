@@ -39,11 +39,15 @@ export class AssetSelectionParser extends Parser {
   public static readonly TAG = 16;
   public static readonly KIND = 17;
   public static readonly CODE_LOCATION = 18;
-  public static readonly SINKS = 19;
-  public static readonly ROOTS = 20;
-  public static readonly QUOTED_STRING = 21;
-  public static readonly UNQUOTED_STRING = 22;
-  public static readonly WS = 23;
+  public static readonly COLUMN = 19;
+  public static readonly TABLE_NAME = 20;
+  public static readonly COLUMN_TAG = 21;
+  public static readonly CHANGED_IN_BRANCH = 22;
+  public static readonly SINKS = 23;
+  public static readonly ROOTS = 24;
+  public static readonly QUOTED_STRING = 25;
+  public static readonly UNQUOTED_STRING = 26;
+  public static readonly WS = 27;
   public static readonly RULE_start = 0;
   public static readonly RULE_expr = 1;
   public static readonly RULE_traversalAllowedExpr = 2;
@@ -84,6 +88,10 @@ export class AssetSelectionParser extends Parser {
     "'tag'",
     "'kind'",
     "'code_location'",
+    "'column'",
+    "'table_name'",
+    "'column_tag'",
+    "'changed_in_branch'",
     "'sinks'",
     "'roots'",
   ];
@@ -107,6 +115,10 @@ export class AssetSelectionParser extends Parser {
     'TAG',
     'KIND',
     'CODE_LOCATION',
+    'COLUMN',
+    'TABLE_NAME',
+    'COLUMN_TAG',
+    'CHANGED_IN_BRANCH',
     'SINKS',
     'ROOTS',
     'QUOTED_STRING',
@@ -360,6 +372,10 @@ export class AssetSelectionParser extends Parser {
         case AssetSelectionParser.TAG:
         case AssetSelectionParser.KIND:
         case AssetSelectionParser.CODE_LOCATION:
+        case AssetSelectionParser.COLUMN:
+        case AssetSelectionParser.TABLE_NAME:
+        case AssetSelectionParser.COLUMN_TAG:
+        case AssetSelectionParser.CHANGED_IN_BRANCH:
           _localctx = new AttributeExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
@@ -516,7 +532,7 @@ export class AssetSelectionParser extends Parser {
     let _localctx: AttributeExprContext = new AttributeExprContext(this._ctx, this.state);
     this.enterRule(_localctx, 12, AssetSelectionParser.RULE_attributeExpr);
     try {
-      this.state = 95;
+      this.state = 111;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case AssetSelectionParser.KEY:
@@ -603,15 +619,75 @@ export class AssetSelectionParser extends Parser {
             this.value();
           }
           break;
-        case AssetSelectionParser.CODE_LOCATION:
-          _localctx = new CodeLocationAttributeExprContext(_localctx);
+        case AssetSelectionParser.COLUMN:
+          _localctx = new ColumnAttributeExprContext(_localctx);
           this.enterOuterAlt(_localctx, 7);
           {
             this.state = 92;
-            this.match(AssetSelectionParser.CODE_LOCATION);
+            this.match(AssetSelectionParser.COLUMN);
             this.state = 93;
             this.match(AssetSelectionParser.COLON);
             this.state = 94;
+            this.value();
+          }
+          break;
+        case AssetSelectionParser.TABLE_NAME:
+          _localctx = new TableNameAttributeExprContext(_localctx);
+          this.enterOuterAlt(_localctx, 8);
+          {
+            this.state = 95;
+            this.match(AssetSelectionParser.TABLE_NAME);
+            this.state = 96;
+            this.match(AssetSelectionParser.COLON);
+            this.state = 97;
+            this.value();
+          }
+          break;
+        case AssetSelectionParser.COLUMN_TAG:
+          _localctx = new ColumnTagAttributeExprContext(_localctx);
+          this.enterOuterAlt(_localctx, 9);
+          {
+            this.state = 98;
+            this.match(AssetSelectionParser.COLUMN_TAG);
+            this.state = 99;
+            this.match(AssetSelectionParser.COLON);
+            this.state = 100;
+            this.value();
+            this.state = 103;
+            this._errHandler.sync(this);
+            switch (this.interpreter.adaptivePredict(this._input, 7, this._ctx)) {
+              case 1:
+                {
+                  this.state = 101;
+                  this.match(AssetSelectionParser.EQUAL);
+                  this.state = 102;
+                  this.value();
+                }
+                break;
+            }
+          }
+          break;
+        case AssetSelectionParser.CODE_LOCATION:
+          _localctx = new CodeLocationAttributeExprContext(_localctx);
+          this.enterOuterAlt(_localctx, 10);
+          {
+            this.state = 105;
+            this.match(AssetSelectionParser.CODE_LOCATION);
+            this.state = 106;
+            this.match(AssetSelectionParser.COLON);
+            this.state = 107;
+            this.value();
+          }
+          break;
+        case AssetSelectionParser.CHANGED_IN_BRANCH:
+          _localctx = new ChangedInBranchAttributeExprContext(_localctx);
+          this.enterOuterAlt(_localctx, 11);
+          {
+            this.state = 108;
+            this.match(AssetSelectionParser.CHANGED_IN_BRANCH);
+            this.state = 109;
+            this.match(AssetSelectionParser.COLON);
+            this.state = 110;
             this.value();
           }
           break;
@@ -639,7 +715,7 @@ export class AssetSelectionParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 97;
+        this.state = 113;
         _la = this._input.LA(1);
         if (
           !(
@@ -690,7 +766,7 @@ export class AssetSelectionParser extends Parser {
   }
 
   public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x19f\x04\x02' +
+    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x1Dv\x04\x02' +
     '\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07' +
     '\t\x07\x04\b\t\b\x04\t\t\t\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03' +
     '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
@@ -700,38 +776,44 @@ export class AssetSelectionParser extends Parser {
     '<\n\x04\x03\x05\x05\x05?\n\x05\x03\x05\x03\x05\x03\x06\x03\x06\x05\x06' +
     'E\n\x06\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03' +
     '\b\x03\b\x03\b\x03\b\x05\bT\n\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03' +
-    '\b\x03\b\x03\b\x03\b\x03\b\x03\b\x05\bb\n\b\x03\t\x03\t\x03\t\x02\x02' +
-    '\x03\x04\n\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x02' +
-    '\x04\x03\x02\x15\x16\x03\x02\x17\x18\x02o\x02\x12\x03\x02\x02\x02\x04' +
-    '$\x03\x02\x02\x02\x06;\x03\x02\x02\x02\b>\x03\x02\x02\x02\nB\x03\x02\x02' +
-    '\x02\fF\x03\x02\x02\x02\x0Ea\x03\x02\x02\x02\x10c\x03\x02\x02\x02\x12' +
-    '\x13\x05\x04\x03\x02\x13\x14\x07\x02\x02\x03\x14\x03\x03\x02\x02\x02\x15' +
-    '\x16\b\x03\x01\x02\x16%\x05\x06\x04\x02\x17\x18\x05\b\x05\x02\x18\x19' +
-    '\x05\x06\x04\x02\x19\x1A\x05\n\x06\x02\x1A%\x03\x02\x02\x02\x1B\x1C\x05' +
-    '\b\x05\x02\x1C\x1D\x05\x06\x04\x02\x1D%\x03\x02\x02\x02\x1E\x1F\x05\x06' +
-    '\x04\x02\x1F \x05\n\x06\x02 %\x03\x02\x02\x02!"\x07\x06\x02\x02"%\x05' +
-    '\x04\x03\x06#%\x07\x07\x02\x02$\x15\x03\x02\x02\x02$\x17\x03\x02\x02\x02' +
-    '$\x1B\x03\x02\x02\x02$\x1E\x03\x02\x02\x02$!\x03\x02\x02\x02$#\x03\x02' +
-    "\x02\x02%.\x03\x02\x02\x02&'\f\x05\x02\x02'(\x07\x04\x02\x02(-\x05\x04" +
-    '\x03\x06)*\f\x04\x02\x02*+\x07\x05\x02\x02+-\x05\x04\x03\x05,&\x03\x02' +
-    '\x02\x02,)\x03\x02\x02\x02-0\x03\x02\x02\x02.,\x03\x02\x02\x02./\x03\x02' +
-    '\x02\x02/\x05\x03\x02\x02\x020.\x03\x02\x02\x021<\x05\x0E\b\x0223\x05' +
-    '\f\x07\x0234\x07\v\x02\x0245\x05\x04\x03\x0256\x07\f\x02\x026<\x03\x02' +
-    '\x02\x0278\x07\v\x02\x0289\x05\x04\x03\x029:\x07\f\x02\x02:<\x03\x02\x02' +
-    '\x02;1\x03\x02\x02\x02;2\x03\x02\x02\x02;7\x03\x02\x02\x02<\x07\x03\x02' +
-    '\x02\x02=?\x07\t\x02\x02>=\x03\x02\x02\x02>?\x03\x02\x02\x02?@\x03\x02' +
-    '\x02\x02@A\x07\b\x02\x02A\t\x03\x02\x02\x02BD\x07\b\x02\x02CE\x07\t\x02' +
-    '\x02DC\x03\x02\x02\x02DE\x03\x02\x02\x02E\v\x03\x02\x02\x02FG\t\x02\x02' +
-    '\x02G\r\x03\x02\x02\x02HI\x07\x0E\x02\x02IJ\x07\n\x02\x02Jb\x05\x10\t' +
-    '\x02KL\x07\x0F\x02\x02LM\x07\n\x02\x02Mb\x05\x10\t\x02NO\x07\x12\x02\x02' +
-    'OP\x07\n\x02\x02PS\x05\x10\t\x02QR\x07\x03\x02\x02RT\x05\x10\t\x02SQ\x03' +
-    '\x02\x02\x02ST\x03\x02\x02\x02Tb\x03\x02\x02\x02UV\x07\x10\x02\x02VW\x07' +
-    '\n\x02\x02Wb\x05\x10\t\x02XY\x07\x11\x02\x02YZ\x07\n\x02\x02Zb\x05\x10' +
-    '\t\x02[\\\x07\x13\x02\x02\\]\x07\n\x02\x02]b\x05\x10\t\x02^_\x07\x14\x02' +
-    '\x02_`\x07\n\x02\x02`b\x05\x10\t\x02aH\x03\x02\x02\x02aK\x03\x02\x02\x02' +
-    'aN\x03\x02\x02\x02aU\x03\x02\x02\x02aX\x03\x02\x02\x02a[\x03\x02\x02\x02' +
-    'a^\x03\x02\x02\x02b\x0F\x03\x02\x02\x02cd\t\x03\x02\x02d\x11\x03\x02\x02' +
-    '\x02\n$,.;>DSa';
+    '\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03' +
+    '\b\x03\b\x05\bj\n\b\x03\b\x03\b\x03\b\x03\b\x03\b\x03\b\x05\br\n\b\x03' +
+    '\t\x03\t\x03\t\x02\x02\x03\x04\n\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f' +
+    '\x02\x0E\x02\x10\x02\x02\x04\x03\x02\x19\x1A\x03\x02\x1B\x1C\x02\x84\x02' +
+    '\x12\x03\x02\x02\x02\x04$\x03\x02\x02\x02\x06;\x03\x02\x02\x02\b>\x03' +
+    '\x02\x02\x02\nB\x03\x02\x02\x02\fF\x03\x02\x02\x02\x0Eq\x03\x02\x02\x02' +
+    '\x10s\x03\x02\x02\x02\x12\x13\x05\x04\x03\x02\x13\x14\x07\x02\x02\x03' +
+    '\x14\x03\x03\x02\x02\x02\x15\x16\b\x03\x01\x02\x16%\x05\x06\x04\x02\x17' +
+    '\x18\x05\b\x05\x02\x18\x19\x05\x06\x04\x02\x19\x1A\x05\n\x06\x02\x1A%' +
+    '\x03\x02\x02\x02\x1B\x1C\x05\b\x05\x02\x1C\x1D\x05\x06\x04\x02\x1D%\x03' +
+    '\x02\x02\x02\x1E\x1F\x05\x06\x04\x02\x1F \x05\n\x06\x02 %\x03\x02\x02' +
+    '\x02!"\x07\x06\x02\x02"%\x05\x04\x03\x06#%\x07\x07\x02\x02$\x15\x03' +
+    '\x02\x02\x02$\x17\x03\x02\x02\x02$\x1B\x03\x02\x02\x02$\x1E\x03\x02\x02' +
+    "\x02$!\x03\x02\x02\x02$#\x03\x02\x02\x02%.\x03\x02\x02\x02&'\f\x05\x02" +
+    "\x02'(\x07\x04\x02\x02(-\x05\x04\x03\x06)*\f\x04\x02\x02*+\x07\x05\x02" +
+    '\x02+-\x05\x04\x03\x05,&\x03\x02\x02\x02,)\x03\x02\x02\x02-0\x03\x02\x02' +
+    '\x02.,\x03\x02\x02\x02./\x03\x02\x02\x02/\x05\x03\x02\x02\x020.\x03\x02' +
+    '\x02\x021<\x05\x0E\b\x0223\x05\f\x07\x0234\x07\v\x02\x0245\x05\x04\x03' +
+    '\x0256\x07\f\x02\x026<\x03\x02\x02\x0278\x07\v\x02\x0289\x05\x04\x03\x02' +
+    '9:\x07\f\x02\x02:<\x03\x02\x02\x02;1\x03\x02\x02\x02;2\x03\x02\x02\x02' +
+    ';7\x03\x02\x02\x02<\x07\x03\x02\x02\x02=?\x07\t\x02\x02>=\x03\x02\x02' +
+    '\x02>?\x03\x02\x02\x02?@\x03\x02\x02\x02@A\x07\b\x02\x02A\t\x03\x02\x02' +
+    '\x02BD\x07\b\x02\x02CE\x07\t\x02\x02DC\x03\x02\x02\x02DE\x03\x02\x02\x02' +
+    'E\v\x03\x02\x02\x02FG\t\x02\x02\x02G\r\x03\x02\x02\x02HI\x07\x0E\x02\x02' +
+    'IJ\x07\n\x02\x02Jr\x05\x10\t\x02KL\x07\x0F\x02\x02LM\x07\n\x02\x02Mr\x05' +
+    '\x10\t\x02NO\x07\x12\x02\x02OP\x07\n\x02\x02PS\x05\x10\t\x02QR\x07\x03' +
+    '\x02\x02RT\x05\x10\t\x02SQ\x03\x02\x02\x02ST\x03\x02\x02\x02Tr\x03\x02' +
+    '\x02\x02UV\x07\x10\x02\x02VW\x07\n\x02\x02Wr\x05\x10\t\x02XY\x07\x11\x02' +
+    '\x02YZ\x07\n\x02\x02Zr\x05\x10\t\x02[\\\x07\x13\x02\x02\\]\x07\n\x02\x02' +
+    ']r\x05\x10\t\x02^_\x07\x15\x02\x02_`\x07\n\x02\x02`r\x05\x10\t\x02ab\x07' +
+    '\x16\x02\x02bc\x07\n\x02\x02cr\x05\x10\t\x02de\x07\x17\x02\x02ef\x07\n' +
+    '\x02\x02fi\x05\x10\t\x02gh\x07\x03\x02\x02hj\x05\x10\t\x02ig\x03\x02\x02' +
+    '\x02ij\x03\x02\x02\x02jr\x03\x02\x02\x02kl\x07\x14\x02\x02lm\x07\n\x02' +
+    '\x02mr\x05\x10\t\x02no\x07\x18\x02\x02op\x07\n\x02\x02pr\x05\x10\t\x02' +
+    'qH\x03\x02\x02\x02qK\x03\x02\x02\x02qN\x03\x02\x02\x02qU\x03\x02\x02\x02' +
+    'qX\x03\x02\x02\x02q[\x03\x02\x02\x02q^\x03\x02\x02\x02qa\x03\x02\x02\x02' +
+    'qd\x03\x02\x02\x02qk\x03\x02\x02\x02qn\x03\x02\x02\x02r\x0F\x03\x02\x02' +
+    '\x02st\t\x03\x02\x02t\x11\x03\x02\x02\x02\v$,.;>DSiq';
   public static __ATN: ATN;
   public static get _ATN(): ATN {
     if (!AssetSelectionParser.__ATN) {
@@ -1512,6 +1594,120 @@ export class KindAttributeExprContext extends AttributeExprContext {
     }
   }
 }
+export class ColumnAttributeExprContext extends AttributeExprContext {
+  public COLUMN(): TerminalNode {
+    return this.getToken(AssetSelectionParser.COLUMN, 0);
+  }
+  public COLON(): TerminalNode {
+    return this.getToken(AssetSelectionParser.COLON, 0);
+  }
+  public value(): ValueContext {
+    return this.getRuleContext(0, ValueContext);
+  }
+  constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterColumnAttributeExpr) {
+      listener.enterColumnAttributeExpr(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitColumnAttributeExpr) {
+      listener.exitColumnAttributeExpr(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitColumnAttributeExpr) {
+      return visitor.visitColumnAttributeExpr(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class TableNameAttributeExprContext extends AttributeExprContext {
+  public TABLE_NAME(): TerminalNode {
+    return this.getToken(AssetSelectionParser.TABLE_NAME, 0);
+  }
+  public COLON(): TerminalNode {
+    return this.getToken(AssetSelectionParser.COLON, 0);
+  }
+  public value(): ValueContext {
+    return this.getRuleContext(0, ValueContext);
+  }
+  constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterTableNameAttributeExpr) {
+      listener.enterTableNameAttributeExpr(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitTableNameAttributeExpr) {
+      listener.exitTableNameAttributeExpr(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitTableNameAttributeExpr) {
+      return visitor.visitTableNameAttributeExpr(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class ColumnTagAttributeExprContext extends AttributeExprContext {
+  public COLUMN_TAG(): TerminalNode {
+    return this.getToken(AssetSelectionParser.COLUMN_TAG, 0);
+  }
+  public COLON(): TerminalNode {
+    return this.getToken(AssetSelectionParser.COLON, 0);
+  }
+  public value(): ValueContext[];
+  public value(i: number): ValueContext;
+  public value(i?: number): ValueContext | ValueContext[] {
+    if (i === undefined) {
+      return this.getRuleContexts(ValueContext);
+    } else {
+      return this.getRuleContext(i, ValueContext);
+    }
+  }
+  public EQUAL(): TerminalNode | undefined {
+    return this.tryGetToken(AssetSelectionParser.EQUAL, 0);
+  }
+  constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterColumnTagAttributeExpr) {
+      listener.enterColumnTagAttributeExpr(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitColumnTagAttributeExpr) {
+      listener.exitColumnTagAttributeExpr(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitColumnTagAttributeExpr) {
+      return visitor.visitColumnTagAttributeExpr(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
 export class CodeLocationAttributeExprContext extends AttributeExprContext {
   public CODE_LOCATION(): TerminalNode {
     return this.getToken(AssetSelectionParser.CODE_LOCATION, 0);
@@ -1542,6 +1738,41 @@ export class CodeLocationAttributeExprContext extends AttributeExprContext {
   public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
     if (visitor.visitCodeLocationAttributeExpr) {
       return visitor.visitCodeLocationAttributeExpr(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class ChangedInBranchAttributeExprContext extends AttributeExprContext {
+  public CHANGED_IN_BRANCH(): TerminalNode {
+    return this.getToken(AssetSelectionParser.CHANGED_IN_BRANCH, 0);
+  }
+  public COLON(): TerminalNode {
+    return this.getToken(AssetSelectionParser.COLON, 0);
+  }
+  public value(): ValueContext {
+    return this.getRuleContext(0, ValueContext);
+  }
+  constructor(ctx: AttributeExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: AssetSelectionListener): void {
+    if (listener.enterChangedInBranchAttributeExpr) {
+      listener.enterChangedInBranchAttributeExpr(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: AssetSelectionListener): void {
+    if (listener.exitChangedInBranchAttributeExpr) {
+      listener.exitChangedInBranchAttributeExpr(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: AssetSelectionVisitor<Result>): Result {
+    if (visitor.visitChangedInBranchAttributeExpr) {
+      return visitor.visitChangedInBranchAttributeExpr(this);
     } else {
       return visitor.visitChildren(this);
     }
