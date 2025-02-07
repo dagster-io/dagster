@@ -3,16 +3,16 @@ from typing import List, Tuple, Type, TypeVar  # noqa: F401, UP035
 import docutils.nodes as nodes
 from dagster._annotations import (
     get_beta_info,
+    get_beta_params,
     get_deprecated_info,
     get_deprecated_params,
     get_experimental_info,
     get_experimental_params,
-    get_beta_params,
     get_preview_info,
     get_superseded_info,
+    has_beta_params,
     has_deprecated_params,
     has_experimental_params,
-    has_beta_params,
     is_beta,
     is_deprecated,
     is_experimental,
