@@ -43,21 +43,20 @@ class TargetParamsResolver(Resolver): ...
 
 
 def test_valid_resolution_simple() -> None:
-    resolved = InnerParams(val1="{{ some_int }}", val2="{{ some_str }}_b").resolve(
-        ResolutionContext(scope={"some_int": 1, "some_str": "a"})
-    )
-
-    assert resolved == InnerObject(val1_renamed=21, val2="a_b")
+    context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
+    params = InnerParams(val1="{{ some_int }}", val2="{{ some_str }}_b")
+    assert context.resolve_value(params) == InnerObject(val1_renamed=21, val2="a_b")
 
 
 def test_valid_resolution_nested() -> None:
-    resolved = TargetParams(
+    context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
+    params = TargetParams(
         int_val="{{ some_int }}",
         str_val="{{ some_str }}_x",
         inners=[InnerParams(val1="{{ some_int }}", val2="{{ some_str }}_y")],
-    ).resolve(ResolutionContext(scope={"some_int": 1, "some_str": "a"}))
+    )
 
-    assert resolved == TargetObject(
+    assert context.resolve_value(params) == TargetObject(
         int_val=1,
         str_val="a_x",
         inners=[InnerObject(val1_renamed=21, val2="a_y")],
@@ -67,6 +66,5 @@ def test_valid_resolution_nested() -> None:
 @pytest.mark.skip("Figure out better way of handling type issues")
 def test_invalid_resolution_simple() -> None:
     with pytest.raises(ParameterCheckError):
-        InnerParams(val1="{{ some_int }}", val2="abc").resolve(
-            ResolutionContext(scope={"some_int": "NOT_AN_INT"})
-        )
+        context = ResolutionContext(scope={"some_int": "NOT_AN_INT"})
+        context.resolve_value(InnerParams(val1="{{ some_int }}", val2="abc"))

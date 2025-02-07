@@ -3,11 +3,11 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
+    ResolvableModel,
     registered_component_type,
 )
-from pydantic import BaseModel
 
-class {{ component_type_class_name }}Params(BaseModel):
+class {{ component_type_class_name }}Params(ResolvableModel):
     ...
 
 @registered_component_type(name="{{ name }}")

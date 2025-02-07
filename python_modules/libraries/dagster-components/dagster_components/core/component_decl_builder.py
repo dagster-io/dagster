@@ -102,7 +102,7 @@ class YamlComponentDecl(ComponentDeclNode):
         key = ComponentKey.from_typename(parsed_defs.type, self.path)
         return registry.get(key)
 
-    def get_params(self, context: ComponentLoadContext, params_schema: type[T]) -> T:
+    def get_params(self, params_schema: type[T]) -> T:
         with pushd(str(self.path)):
             if self.source_position_tree:
                 source_position_tree_of_params = self.source_position_tree.children["params"]
@@ -119,7 +119,7 @@ class YamlComponentDecl(ComponentDeclNode):
         component_type = self.get_component_type(context.registry)
         component_schema = component_type.get_schema()
         context = context.with_rendering_scope(component_type.get_additional_scope())
-        loaded_params = self.get_params(context, component_schema) if component_schema else None
+        loaded_params = self.get_params(component_schema) if component_schema else None
         return [component_type.load(loaded_params, context)]
 
 

@@ -64,7 +64,7 @@ class PipesSubprocessScriptCollection(Component):
     def load(
         cls, params: PipesSubprocessScriptCollectionParams, context: ComponentLoadContext
     ) -> "PipesSubprocessScriptCollection":
-        return params.resolve_as(cls, context.resolution_context)
+        return context.resolve(params, as_type=cls)
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

@@ -22,7 +22,7 @@ from dagster_components.core.schema.objects import (
     ResolutionContext,
 )
 from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
+from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
 class DbtProjectParams(ResolvableModel):
@@ -38,7 +38,7 @@ class DbtProjectParams(ResolvableModel):
 class DbtProjectResolver(Resolver[DbtProjectParams]):
     def resolve_translator(self, context: ResolutionContext) -> DagsterDbtTranslator:
         return get_wrapped_translator_class(DagsterDbtTranslator)(
-            resolving_info=ResolvingInfo(
+            resolving_info=TranslatorResolvingInfo(
                 "node", self.model.asset_attributes or AssetAttributesModel(), context
             )
         )
@@ -71,7 +71,7 @@ class DbtProjectComponent(Component):
 
     @classmethod
     def load(cls, params: DbtProjectParams, context: ComponentLoadContext) -> "DbtProjectComponent":
-        return params.resolve_as(cls, context=context.resolution_context)
+        return context.resolve(params, as_type=cls)
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None
