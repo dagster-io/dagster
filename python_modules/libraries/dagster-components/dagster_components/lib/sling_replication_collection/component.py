@@ -23,7 +23,7 @@ from dagster_components.core.schema.objects import (
     OpSpecModel,
     ResolvableModel,
 )
-from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
+from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
 @record
@@ -43,7 +43,7 @@ class SlingReplicationParams(ResolvableModel):
 
 
 class SlingReplicationCollectionParams(ResolvableModel):
-    sling: SlingResource
+    sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationParams]
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
@@ -56,7 +56,7 @@ class SlingReplicationCollectionParams(ResolvableModel):
 class SlingReplicationResolver(Resolver):
     def resolve_translator(self, resolver: ResolutionContext) -> DagsterSlingTranslator:
         return get_wrapped_translator_class(DagsterSlingTranslator)(
-            resolving_info=ResolvingInfo(
+            resolving_info=TranslatorResolvingInfo(
                 "stream_definition",
                 self.model.asset_attributes or AssetAttributesModel(),
                 resolver,
@@ -67,7 +67,11 @@ class SlingReplicationResolver(Resolver):
 @resolver(fromtype=SlingReplicationCollectionParams)
 class SlingReplicationCollectionResolver(Resolver[SlingReplicationCollectionParams]):
     def resolve_sling(self, resolver: ResolutionContext) -> SlingResource:
-        return SlingResource(**resolver.resolve_value(self.model.sling.model_dump()))
+        return (
+            SlingResource(**resolver.resolve_value(self.model.sling.model_dump()))
+            if self.model.sling
+            else SlingResource()
+        )
 
     def resolve_replications(self, resolver: ResolutionContext) -> Sequence[SlingReplicationSpec]:
         return [resolver.resolve_value(replication) for replication in self.model.replications]
@@ -110,7 +114,7 @@ class SlingReplicationCollection(Component):
 
     @classmethod
     def load(cls, params: SlingReplicationCollectionParams, context: ComponentLoadContext) -> Self:
-        return params.resolve_as(cls, context.resolution_context)
+        return context.resolve(params, as_type=cls)
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec

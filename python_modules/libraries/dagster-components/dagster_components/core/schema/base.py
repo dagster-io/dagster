@@ -9,11 +9,9 @@ if TYPE_CHECKING:
 
 FIELD_RESOLVER_PREFIX = "resolve_"
 
+T_ResolveAs = TypeVar("T_ResolveAs")
 T_ResolverType = TypeVar("T_ResolverType", bound=type["Resolver"])
 T_ResolvableModel = TypeVar("T_ResolvableModel", bound="ResolvableModel")
-
-T = TypeVar("T")
-T_ResolveAs = TypeVar("T_ResolveAs")
 
 
 @record
@@ -93,20 +91,10 @@ class Resolver(Generic[T_ResolvableModel]):
         return self.resolve_as(resolved_type, context)
 
 
-class ResolvableModel(BaseModel, Generic[T]):
+class ResolvableModel(BaseModel):
     __dagster_resolver__: ClassVar[type[Resolver]] = Resolver
 
     model_config = ConfigDict(extra="forbid")
-
-    @property
-    def _resolver(self) -> Resolver:
-        return self.__dagster_resolver__(self)
-
-    def resolve_as(self, as_type: type[T_ResolveAs], context: "ResolutionContext") -> T_ResolveAs:
-        return self._resolver.resolve_as(as_type, context)
-
-    def resolve(self, context: "ResolutionContext") -> T:
-        return self._resolver.resolve(context)
 
 
 def resolver(

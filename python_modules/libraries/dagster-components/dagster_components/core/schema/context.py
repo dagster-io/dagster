@@ -42,10 +42,13 @@ class ResolutionContext:
 
     def _resolve_inner_value(self, val: Any) -> Any:
         """Resolves a single value, if it is a templated string."""
-        return NativeTemplate(val).render(**self.scope) if isinstance(val, str) else val
-
-    @overload
-    def resolve_value(self, val: ResolvableModel[T]) -> T: ...
+        if isinstance(val, ResolvableModel):
+            resolver = val.__dagster_resolver__(val)
+            return resolver.resolve(self)
+        elif isinstance(val, str):
+            return NativeTemplate(val).render(**self.scope)
+        else:
+            return val
 
     @overload
     def resolve_value(self, val: str) -> Any: ...
@@ -76,9 +79,7 @@ class ResolutionContext:
 
     def resolve_value(self, val: Any) -> Any:
         """Recursively resolves templated values in a nested object."""
-        if isinstance(val, ResolvableModel):
-            return val.resolve(self)
-        elif isinstance(val, dict):
+        if isinstance(val, dict):
             return {k: self.resolve_value(v) for k, v in val.items()}
         elif isinstance(val, tuple):
             return tuple(self.resolve_value(v) for v in val)

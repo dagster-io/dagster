@@ -20,7 +20,7 @@ class OpSpecModel(ResolvableModel):
     tags: Optional[dict[str, str]] = None
 
 
-class AssetDepModel(ResolvableModel[AssetDep]):
+class AssetDepModel(ResolvableModel):
     asset: str
     partition_mapping: Optional[str] = None
 
@@ -38,11 +38,11 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     automation_condition: Optional[str] = None
 
 
-class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel[Mapping[str, Any]]):
+class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
     key: Optional[str] = None
 
 
-class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel[AssetSpec]):
+class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel):
     key: str
 
 
@@ -56,7 +56,7 @@ class AssetSpecTransformModel(ResolvableModel):
 
     def apply_to_spec(self, spec: AssetSpec, context: ResolutionContext) -> AssetSpec:
         # add the original spec to the context and resolve values
-        attributes = self.attributes.resolve(context.with_scope(asset=spec))
+        attributes = context.with_scope(asset=spec).resolve_value(self.attributes)
 
         if self.operation == "merge":
             mergeable_attributes = {"metadata", "tags"}

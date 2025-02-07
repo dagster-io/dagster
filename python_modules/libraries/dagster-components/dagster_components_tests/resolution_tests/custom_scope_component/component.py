@@ -38,7 +38,7 @@ class HasCustomScope(Component):
 
     @classmethod
     def load(cls, params: AssetAttributesModel, context: ComponentLoadContext):
-        return cls(attributes=params.resolve(context.resolution_context))
+        return cls(attributes=context.resolve_value(params))
 
     def build_defs(self, context: ComponentLoadContext):
         return Definitions(assets=[AssetSpec(key="key", **self.attributes)])

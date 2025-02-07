@@ -73,7 +73,7 @@ def test_python_params(sling_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(context, SlingReplicationCollection.get_schema())
+    params = decl_node.get_params(SlingReplicationCollection.get_schema())
     component = SlingReplicationCollection.load(params, context)
 
     replications = component.replications
@@ -104,7 +104,7 @@ def test_python_params_op_name(sling_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(context, SlingReplicationCollection.get_schema())
+    params = decl_node.get_params(SlingReplicationCollection.get_schema())
     component = SlingReplicationCollection.load(params, context=context)
 
     replications = component.replications
@@ -134,7 +134,7 @@ def test_python_params_op_tags(sling_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(context, SlingReplicationCollection.get_schema())
+    params = decl_node.get_params(SlingReplicationCollection.get_schema())
     component = SlingReplicationCollection.load(params=params, context=context)
     replications = component.replications
     assert len(replications) == 1
@@ -184,7 +184,7 @@ def test_sling_subclass() -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(context, DebugSlingReplicationComponent.get_schema())
+    params = decl_node.get_params(DebugSlingReplicationComponent.get_schema())
     component_inst = DebugSlingReplicationComponent.load(params=params, context=context)
     assert component_inst.build_defs(context).get_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
