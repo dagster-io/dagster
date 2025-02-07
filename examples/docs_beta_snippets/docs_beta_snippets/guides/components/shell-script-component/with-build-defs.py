@@ -37,7 +37,7 @@ class ShellCommand(Component):
         return ShellScriptSchema
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
-        @dg.multi_asset(specs=self.specs, op_tags=self.op.tags, name=self.op.name)
+        @dg.multi_asset(name=self.op.name, op_tags=self.op.tags, specs=self.specs)
         def _asset(context: dg.AssetExecutionContext):
             self.execute(context)
 

@@ -9,7 +9,6 @@ from dagster_components import (
     OpSpecSchema,
     registered_component_type,
 )
-from pydantic import BaseModel
 
 import dagster as dg
 
@@ -36,4 +35,4 @@ class ShellCommand(Component):
     def get_schema(cls) -> type[ShellScriptSchema]:
         return ShellScriptSchema
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions: ...

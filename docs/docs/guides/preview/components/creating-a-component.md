@@ -57,15 +57,17 @@ The first step is to define a schema for the component. This means determining w
 In this case, we'll want to define a few things:
 
 - The path to the shell script that we'll want to run.
-- The attributes of the asset that we expect this script to produce.
+- The specs of the assets that we expect this script to produce.
 - Any tags or configuration related to the underlying compute.
+
+The user will be able to specify these parameters in the relevant `component.yaml` file to configure this component.
 
 To simplify common use cases, `dagster-components` provides schemas for common bits of configuration:
 
 - `AssetSpecSchema`: This contains attributes that are common to all assets, such as the key, description, tags, and dependencies.
 - `OpSpecSchema`: This contains attributes specific to an underlying operation, such as the name and tags.
 
-We can the schema for our component and add it to our class as follows:
+We can create the schema for our component and add it to our class as follows:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" />
 
@@ -75,14 +77,9 @@ Because the argument names in the schema match the names of the arguments in the
 
 Now that we've defined how the component is parameterized, we need to define how to turn those parameters into a `Definitions` object.
 
-To do so, there are two methods that need to be overridden:
+To do so, we'll want to override the `build_defs` method, which is responsible for returning a `Definitions` object containing all definitions related to the component.
 
-- `load`: This method is responsible for loading the configuration from the `component.yaml` file into the schema, from which it creates an instance of the component class.
-- `build_defs`: This method is responsible for returning a `Definitions` object containing all definitions related to the component.
-
-In our case, our `load` method will check the loaded parameters against our schema and then instantiate our class from those parameters.
-
-Our `build_defs` method will create a single `@asset` that executes the provided shell script. By convention, we'll put the code to actually execute this asset inside of a function called `execute`. This makes it easier for future developers to create subclasses of this component.
+Our `build_defs` method will create a single `@multi_asset` that executes the provided shell script. By convention, we'll put the code to actually execute this asset inside of a function called `execute`. This makes it easier for future developers to create subclasses of this component.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-build-defs.py" language="python" />
 
@@ -102,43 +99,7 @@ You can also view automatically generated documentation describing your new comp
 dg component-type docs your_library.shell_command
 ```
 
-## [Advanced] Custom templating
 
-The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file.
-
-When creating the schema for your component, you can specify custom output types that should be resolved at runtime. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
-
-### Defining a resolvable field
-
-When creating a schema for your component, if you have a field that should have some custom resolution logic, you can annotate that field with the `ResolvableFieldInfo` class. This allows you to specify:
-
-- The output type of the field
-- Any post-processing that should be done on the resolved value of that field
-- Any additional scope that will be available to use when resolving that field
-
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/defining-resolvable-field.py" language="python" />
-
-### Resolving fields
-
-Once you've defined a resolvable field, you'll need to implement the logic to actually resolve it into the desired Python value.
-
-The `ComponentSchemaBaseModel` class supports a `resolve_properties` method, which returns a dictionary of resolved properties for your component. This method accepts a `templated_value_resolver`, which holds any available scope that is available for use in the template.
-
-If your resolvable field requires additional scope to be available, you can do so by using the `with_scope` method on the `templated_value_resolver`. This scope can be anything, such as a dictionary of properties related to an asset, or a function that returns a complex object type.
-
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/resolving-resolvable-field.py" language="python" />
-
-The `ComponentSchemaBaseModel` class will ensure that the output type of the resolved field matches the type specified in the `ResolvableFieldInfo` annotation.
-
-When a user instantiates a component, they will be able to use your custom scope in their `component.yaml` file:
-
-```yaml
-component_type: my_component
-
-params:
-  script_path: script.sh
-  script_runner: "{{ get_script_runner('arg') }}"
-```
 
 ## Next steps
 
