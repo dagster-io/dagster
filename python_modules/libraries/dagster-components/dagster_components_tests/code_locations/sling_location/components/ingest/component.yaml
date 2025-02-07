@@ -10,3 +10,4 @@ params:
       - name: DUCKDB
         type: duckdb
         instance: <PLACEHOLDER>
+        password: "{{ env('SOME_PASSWORD') }}"

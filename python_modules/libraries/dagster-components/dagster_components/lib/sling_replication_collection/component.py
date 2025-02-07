@@ -65,7 +65,9 @@ class SlingReplicationCollectionParams(ResolvableModel[ResolvedSlingReplicationC
 
     def resolve(self, resolver: TemplatedValueResolver) -> ResolvedSlingReplicationCollectionParams:
         return (
-            self.sling if self.sling else SlingResource(),
+            SlingResource(**resolver.resolve_obj(self.sling.model_dump()))
+            if self.sling
+            else SlingResource(),
             [replication.resolve(resolver) for replication in self.replications],
             [transform.resolve(resolver) for transform in self.transforms]
             if self.transforms
