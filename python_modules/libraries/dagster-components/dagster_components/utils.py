@@ -15,8 +15,8 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.errors import DagsterError
 
+from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetAttributesModel
-from dagster_components.core.schema.resolver import TemplatedValueResolver
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
 
@@ -63,14 +63,14 @@ def get_path_for_package(package_name: str) -> str:
 class ResolvingInfo:
     obj_name: str
     asset_attributes: AssetAttributesModel
-    value_resolver: TemplatedValueResolver
+    resolution_context: ResolutionContext
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        renderer = self.value_resolver.with_scope(**{self.obj_name: obj})
-        rendered_attributes = self.asset_attributes.resolve(renderer)
+        context = self.resolution_context.with_scope(**{self.obj_name: obj})
+        resolved_attributes = self.asset_attributes.resolve(context)
         return (
-            rendered_attributes[attribute]
-            if attribute in rendered_attributes
+            resolved_attributes[attribute]
+            if attribute in resolved_attributes
             else default_method(obj)
         )
 
@@ -92,7 +92,7 @@ class ResolvingInfo:
 
         ```
         """
-        resolver = self.value_resolver.with_scope(**context)
+        resolver = self.resolution_context.with_scope(**context)
         resolved_attributes = self.asset_attributes.resolve(resolver)
         return base_spec.replace_attributes(**resolved_attributes)
 

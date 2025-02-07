@@ -96,7 +96,7 @@ class GraphenePythonError(graphene.ObjectType):
     def resolve_cause(self, _graphene_info):
         return GraphenePythonError(self._cause) if self._cause else None
 
-    def resolve_context(self, _graphene_info):
+    def resolution_context(self, _graphene_info):
         return GraphenePythonError(self._context) if self._context else None
 
     def resolve_className(self, _graphene_info):
