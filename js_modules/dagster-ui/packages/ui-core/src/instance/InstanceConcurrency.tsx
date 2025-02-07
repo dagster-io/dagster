@@ -48,7 +48,8 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
     return <InstanceConcurrencyIndexContent />;
   }
 
-  return <InstanceConcurrencyKeyInfo concurrencyKey={concurrencyKey} />;
+  const decodedKey = decodeURIComponent(concurrencyKey);
+  return <InstanceConcurrencyKeyInfo concurrencyKey={decodedKey} />;
 });
 
 export const InstanceConcurrencyIndexContent = React.memo(() => {

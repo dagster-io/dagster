@@ -11,6 +11,8 @@ import sqlalchemy
 import sqlalchemy as db
 from dagster import AssetKey, AssetMaterialization, DagsterInstance, Out, Output, RetryRequested, op
 from dagster._core.errors import DagsterEventLogInvalidForRun
+from dagster._core.events import DagsterEvent, EngineEventData, SerializableErrorInfo, StepRetryData
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import (
     StepEventStatus,
     build_run_stats_from_events,
@@ -383,3 +385,64 @@ def test_step_stats():
 
     assert incremental_snapshot
     assert incremental_snapshot.step_key_stats == step_stats
+
+
+def test_step_worker_failure_attempts():
+    run_id = "run_id"
+    step_key = "step_key"
+    job_name = "job_name"
+
+    STEP_EVENT_LOGS = [
+        EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738790993.7522137,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=DagsterEvent(
+                event_type_value="STEP_WORKER_STARTING",
+                job_name=job_name,
+                event_specific_data=EngineEventData(marker_start="step_process_start"),
+                step_key=step_key,
+            ),
+        ),
+        EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738791010.1940305,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=DagsterEvent(
+                event_type_value="STEP_UP_FOR_RETRY",
+                job_name=job_name,
+                event_specific_data=StepRetryData(
+                    error=SerializableErrorInfo(message="", stack=[], cls_name=None),
+                ),
+                step_key=step_key,
+            ),
+        ),
+        EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738791036.962399,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=DagsterEvent(
+                event_type_value="STEP_WORKER_STARTING",
+                job_name=job_name,
+                event_specific_data=EngineEventData(marker_start="step_process_start"),
+                step_key=step_key,
+            ),
+        ),
+    ]
+
+    run_step_stats = build_run_step_stats_from_events(run_id, STEP_EVENT_LOGS)
+    assert len(run_step_stats) == 1
+    step_stat = run_step_stats[0]
+    assert step_stat.attempts == 1

@@ -1,7 +1,7 @@
 import keyBy from 'lodash/keyBy';
 import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 import {Worker} from 'shared/workers/Worker.oss';
@@ -164,7 +164,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const {loading: supplementaryDataLoading, data: supplementaryData} =
     useAssetGraphSupplementaryData(opsQuery);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (options.loading || supplementaryDataLoading) {
       return;
     }
@@ -205,7 +205,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     supplementaryDataLoading,
   ]);
 
-  const loading = fetchResult.loading || graphDataLoading;
+  const loading = fetchResult.loading || graphDataLoading || supplementaryDataLoading;
   useBlockTraceUntilTrue('useAssetGraphData', !loading);
   return {
     loading,

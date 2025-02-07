@@ -53,7 +53,6 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
         ),
     ):
         os.chdir(tempdir)
-        subprocess.check_call(["uv", "pip", "install", "dg"])
 
         # Scaffold deployment
         run_command_and_snippet_output(

@@ -19,18 +19,6 @@ from dagster._annotations import (
     is_superseded,
 )
 from dagster._record import get_original_class, is_record
-from typing_extensions import Literal, TypeAlias
-
-from dagster_sphinx.configurable import ConfigurableDocumenter
-from dagster_sphinx.docstring_flags import (
-    FlagDirective,
-    depart_flag,
-    flag,
-    inline_flag,
-    inline_flag_role,
-    visit_flag,
-    visit_inline_flag,
-)
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
@@ -39,8 +27,20 @@ from sphinx.ext.autodoc import (
     Options as AutodocOptions,
 )
 from sphinx.util import logging
+from typing_extensions import Literal, TypeAlias
 
-from .docstring_flags import inject_object_flag, inject_param_flag
+from dagster_sphinx.configurable import ConfigurableDocumenter
+from dagster_sphinx.docstring_flags import (
+    FlagDirective,
+    depart_flag,
+    flag,
+    inject_object_flag,
+    inject_param_flag,
+    inline_flag,
+    inline_flag_role,
+    visit_flag,
+    visit_inline_flag,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +83,18 @@ def check_public_method_has_docstring(env: BuildEnvironment, name: str, obj: obj
         record_error(message)
 
 
+# Note that in our codebase docstrings with attributes will usually be written as:
+#
+#     Attributes:
+#         attr_name (type): Description
+#         ...
+#
+# Each entry get converted into the rst `..attribute::` directive during preprocessing of
+# docstrings, so that's what we check for.
+def has_attrs(docstring: list[str]) -> bool:
+    return any(line.startswith(".. attribute::") for line in docstring)
+
+
 class DagsterClassDocumenter(ClassDocumenter):
     """Overrides the default autodoc ClassDocumenter to adds some extra options."""
 
@@ -123,6 +135,9 @@ def process_docstring(
     lines: list[str],
 ) -> None:
     assert app.env is not None
+
+    if has_attrs(lines):
+        record_error(f'Object {name} has "Attributes:" in docstring. Use "Args:" insetad.')
 
     if is_deprecated(obj):
         inject_object_flag(obj, get_deprecated_info(obj), lines)

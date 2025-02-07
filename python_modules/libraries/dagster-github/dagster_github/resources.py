@@ -115,7 +115,7 @@ class GithubClient:
     This client handles authentication and provides methods for making requests
     to the GitHub API using an authenticated session.
 
-    Attributes:
+    Args:
         client (requests.Session): The HTTP session used for making requests.
         app_id (int): The GitHub App ID.
         app_private_rsa_key (str): The private RSA key for the GitHub App.
@@ -460,7 +460,7 @@ class GithubResource(ConfigurableResource):
     This class provides configuration fields for setting up a GitHub Application,
     including the application ID, private RSA key, installation ID, and hostname.
 
-    Attributes:
+    Args:
         github_app_id (int): The GitHub Application ID. For more information, see
             https://developer.github.com/apps/.
         github_app_private_rsa_key (str): The private RSA key text for the GitHub Application.

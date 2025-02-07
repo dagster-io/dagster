@@ -10,7 +10,7 @@ import {SelectionAutoCompleteProvider} from '../../selection/SelectionAutoComple
 import {SelectionAutoCompleteInput} from '../../selection/SelectionInput';
 import {createSelectionLinter} from '../../selection/createSelectionLinter';
 
-interface AssetSelectionInputProps {
+export interface AssetSelectionInputProps {
   assets: AssetGraphQueryItem[];
   value: string;
   onChange: (value: string) => void;

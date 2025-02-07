@@ -257,9 +257,16 @@ def build_run_step_stats_snapshot_from_events(
         by_step_key[step_key]["partial_attempt_start"] = event.timestamp
 
     def _close_attempt(step_key: str, event: EventLogEntry) -> None:
+        start_time = by_step_key[step_key].get("partial_attempt_start")
+
+        if start_time is None:
+            # this should only happen if the step was retried before starting (weird)
+            by_step_key[step_key]["attempts"] = int(by_step_key[step_key].get("attempts") or 0) + 1
+            start_time = event.timestamp
+
         attempts[step_key].append(
             RunStepMarker(
-                start_time=by_step_key[step_key].get("partial_attempt_start"),
+                start_time=start_time,
                 end_time=event.timestamp,
             )
         )

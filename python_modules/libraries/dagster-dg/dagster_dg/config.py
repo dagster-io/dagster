@@ -31,7 +31,7 @@ DEFAULT_CACHE_DIR = _get_default_cache_dir()
 class DgConfig:
     """Global configuration for Dg.
 
-    Attributes:
+    Args:
         disable_cache (bool): If True, disable caching. Defaults to False.
         cache_dir (Optional[str]): The directory to use for caching. If None, the default cache will
             be used.

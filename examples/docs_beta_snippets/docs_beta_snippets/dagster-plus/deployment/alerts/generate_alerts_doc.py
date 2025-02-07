@@ -28,7 +28,7 @@ class AlertType(NamedTuple):
 
 BASE_PATH = "dagster-plus/deployment/alerts"
 DOCS_PATH = Path(__file__).parent.parent.parent.parent.parent.parent.parent / "docs"
-OUTPUT_PATH = DOCS_PATH / "docs-beta" / "docs" / (BASE_PATH + ".md")
+OUTPUT_PATH = DOCS_PATH / "docs" / (BASE_PATH + ".md")
 
 NOTIFICATION_SERVICES = sorted(
     [
