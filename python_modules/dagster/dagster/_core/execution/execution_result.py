@@ -132,7 +132,7 @@ class ExecutionResult(ABC):
         return len(self.events_for_node(node_str)) == 0
 
     def get_run_failure_event(self) -> DagsterEvent:
-        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
+        """Returns a DagsterEvent with type DagsterEventType.RUN_FAILURE if it ocurred during
         execution.
         """
         events = self.filter_events(
@@ -145,7 +145,7 @@ class ExecutionResult(ABC):
         return events[0]
 
     def get_run_success_event(self) -> DagsterEvent:
-        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_SUCCESS if it ocurred during
+        """Returns a DagsterEvent with type DagsterEventType.RUN_SUCCESS if it ocurred during
         execution.
         """
         events = self.filter_events(
