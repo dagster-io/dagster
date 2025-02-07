@@ -1,5 +1,5 @@
 ---
-title: External pipelines
+title: External pipelines (Dagster Pipes)
 sidebar_position: 60
 ---
 

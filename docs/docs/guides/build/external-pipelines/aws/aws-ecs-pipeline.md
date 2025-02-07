@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with AWS ECS
 description: "Learn to integrate Dagster Pipes with AWS ECS to launch external code from Dagster assets."
-sidebar_position: 200
+sidebar_position: 100
 ---
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS ECS](https://aws.amazon.com/ecs/).
@@ -52,7 +52,7 @@ Call `open_dagster_pipes` in the ECS task script to create a context that can be
 
 :::tip
 
-The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
+The metadata format shown above (`{"raw_value": value, "type": type}`) is part of Dagster Pipes' special syntax for specifying rich Dagster metadata. For a complete reference of all supported metadata types and their formats, see the [Dagster Pipes metadata reference](/guides/build/external-pipelines/using-dagster-pipes/reference#passing-rich-metadata-to-dagster).
 
 :::
 

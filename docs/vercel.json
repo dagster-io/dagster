@@ -777,32 +777,62 @@
     },
     {
       "source": "/concepts/dagster-pipes/aws-ecs",
-      "destination": "/guides/build/external-pipelines/aws-ecs-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-ecs-pipeline",
       "permanent": false
     },
     {
       "source": "/concepts/dagster-pipes/aws-glue",
-      "destination": "/guides/build/external-pipelines/aws-glue-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-glue-pipeline",
       "permanent": false
     },
     {
       "source": "/concepts/dagster-pipes/aws-emr",
-      "destination": "/guides/build/external-pipelines/aws-emr-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline",
       "permanent": false
     },
     {
       "source": "/concepts/dagster-pipes/aws-emr-containers",
-      "destination": "guides/build/external-pipelines/aws-emr-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline",
       "permanent": false
     },
     {
       "source": "/concepts/dagster-pipes/aws-emr-serverless",
-      "destination": "/guides/build/external-pipelines/aws-emr-serverless-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-serverless-pipeline",
       "permanent": false
     },
     {
       "source": "/concepts/dagster-pipes/aws-lambda",
-      "destination": "/guides/build/external-pipelines/aws-lambda-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-lambda-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/external-pipelines/aws-ecs-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-ecs-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/external-pipelines/aws-glue-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-glue-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/external-pipelines/aws-emr-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/external-pipelines/aws-emr-serverless-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-serverless-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/guides/build/external-pipelines/aws-lambda-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-lambda-pipeline",
       "permanent": false
     },
     {
@@ -817,7 +847,7 @@
     },
     {
       "source": "/guides/migrations/from-step-launchers-to-pipes",
-      "destination": "/guides/build/external-pipelines/",
+      "destination": "/guides/build/external-pipelines/migrating-from-step-launchers-to-pipes",
       "permanent": false
     },
     {

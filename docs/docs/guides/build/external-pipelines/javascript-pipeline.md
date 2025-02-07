@@ -1,6 +1,6 @@
 ---
 title: "Build pipelines in JavaScript"
-sidebar_position: 100
+sidebar_position: 20
 ---
 
 This guide covers how to run JavaScript with Dagster using Pipes, however, the same principle will apply to other languages.

@@ -1,7 +1,7 @@
 ---
 title: "Build pipelines with PySpark"
 description: "Learn to integrate Dagster Pipes with PySpark to orchestrate PySpark jobs in a Dagster pipeline."
-sidebar_position: 900
+sidebar_position: 70
 ---
 
 This tutorial is focused on using Dagster Pipes to launch & monitor general PySpark jobs. The [Spark integration page](/integrations/libraries/spark) provides more information on using Pipes with specific Spark providers, such as AWS EMR or Databricks.
