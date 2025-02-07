@@ -294,6 +294,7 @@ params:
                     ("--no-use-dg-managed-environment", ""),
                     MASK_JAFFLE_PLATFORM,
                 ],
+                expect_error=True,
             )
 
             create_file(
