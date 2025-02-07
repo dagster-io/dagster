@@ -43,7 +43,7 @@ def sling_path() -> Iterator[Path]:
     the proper temp path.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
-        with environ({"HOME": temp_dir}):
+        with environ({"HOME": temp_dir, "SOME_PASSWORD": "password"}):
             shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
 
             # update the replication yaml to reference a CSV file in the tempdir
@@ -154,10 +154,20 @@ def test_load_from_path(sling_path: Path) -> None:
         script_load_context(), sling_path / "components"
     )
     assert len(components) == 1
-    assert get_asset_keys(components[0]) == {
+    component = components[0]
+    assert isinstance(component, SlingReplicationCollection)
+
+    assert get_asset_keys(component) == {
         AssetKey("input_csv"),
         AssetKey(["foo", "input_duckdb"]),
     }
+
+    resource = getattr(component, "resource")
+    assert isinstance(resource, SlingResource)
+    assert len(resource.connections) == 1
+    assert resource.connections[0].name == "DUCKDB"
+    assert resource.connections[0].type == "duckdb"
+    assert resource.connections[0].password == "password"
 
     assert_assets(components[0], 2)
 
