@@ -24,4 +24,6 @@ Serverless code will make requests from one of the following IP addresses. You m
 54.71.18.84
 ```
 
-**Note**: Additional IP addresses may be added over time. This list was last updated on **October 24, 2024**.
+:::note
+Additional IP addresses may be added over time. This list was last updated on **October 24, 2024**.
+:::

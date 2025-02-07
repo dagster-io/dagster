@@ -7,14 +7,18 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 )
 from dagster._seven import import_uncached_module_from_path
 from dagster._utils import pushd
-from pydantic import BaseModel
 from typing_extensions import Self
 
-from dagster_components import Component, ComponentLoadContext, registered_component_type
+from dagster_components import (
+    Component,
+    ComponentLoadContext,
+    ResolvableModel,
+    registered_component_type,
+)
 from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
 
 
-class DefinitionsParamSchema(BaseModel):
+class DefinitionsParamSchema(ResolvableModel):
     definitions_path: Optional[str] = None
 
 

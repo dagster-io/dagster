@@ -13,19 +13,19 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
-from dagster_components.core.schema.base import ResolvableModel
+from dagster_components.core.schema.base import ResolvableModel, Resolver, resolver
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
     AssetSpecTransformModel,
     OpSpecModel,
-    TemplatedValueResolver,
+    ResolutionContext,
 )
 from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectParams(ResolvableModel["DbtProjectComponent"]):
+class DbtProjectParams(ResolvableModel):
     dbt: DbtCliResource
     op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
@@ -33,16 +33,16 @@ class DbtProjectParams(ResolvableModel["DbtProjectComponent"]):
     ] = None
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
-    def resolve(self, resolver: TemplatedValueResolver) -> "DbtProjectComponent":
-        return DbtProjectComponent(
-            resource=self.dbt,
-            op_spec=self.op.resolve(resolver) if self.op else None,
-            translator=get_wrapped_translator_class(DagsterDbtTranslator)(
-                resolving_info=ResolvingInfo(
-                    "node", self.asset_attributes or AssetAttributesModel(), resolver
-                )
-            ),
-            transforms=[transform.resolve(resolver) for transform in (self.transforms or [])],
+
+@resolver(
+    fromtype=DbtProjectParams, exclude_fields={"asset_attributes"}, additional_fields={"translator"}
+)
+class DbtProjectResolver(Resolver[DbtProjectParams]):
+    def resolve_translator(self, context: ResolutionContext) -> DagsterDbtTranslator:
+        return get_wrapped_translator_class(DagsterDbtTranslator)(
+            resolving_info=ResolvingInfo(
+                "node", self.model.asset_attributes or AssetAttributesModel(), context
+            )
         )
 
 
@@ -52,15 +52,15 @@ class DbtProjectComponent(Component):
 
     def __init__(
         self,
-        resource: DbtCliResource,
-        op_spec: Optional[OpSpecModel],
+        dbt: DbtCliResource,
+        op: Optional[OpSpecModel],
         translator: DagsterDbtTranslator,
-        transforms: Sequence[Callable[[Definitions], Definitions]],
+        transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None,
     ):
-        self.resource = resource
-        self.project = DbtProject(resource.project_dir)
-        self.op_spec = op_spec
-        self.transforms = transforms
+        self.resource = dbt
+        self.project = DbtProject(dbt.project_dir)
+        self.op_spec = op
+        self.transforms = transforms or []
         self.translator = translator
 
     @classmethod
@@ -73,7 +73,7 @@ class DbtProjectComponent(Component):
 
     @classmethod
     def load(cls, params: DbtProjectParams, context: ComponentLoadContext) -> "DbtProjectComponent":
-        return params.resolve(context.templated_value_resolver)
+        return params.resolve_as(cls, context=context.resolution_context)
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None

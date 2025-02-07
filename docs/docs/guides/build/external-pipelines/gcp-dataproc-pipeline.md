@@ -1,7 +1,7 @@
 ---
 title: Build pipelines with GCP Dataproc
 description: "Learn to integrate Dagster Pipes with GCP Dataproc to launch external code from Dagster assets."
-sidebar_position: 300
+sidebar_position: 40
 ---
 
 This article covers how to use [Dagster Pipes](/guides/build/external-pipelines/) to [submit jobs](https://cloud.google.com/dataproc/docs/guides/submit-job) to [GCP Dataproc](https://cloud.google.com/dataproc).

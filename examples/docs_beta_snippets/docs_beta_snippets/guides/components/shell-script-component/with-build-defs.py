@@ -38,11 +38,13 @@ class ShellCommand(Component):
         return cls(params=params)
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
-        resolved_asset_attributes = self.params.asset_attributes.resolve_properties(
-            load_context.templated_value_resolver
+        resolved_asset_attributes = (
+            self.params.asset_attributes.get_resolved_properties(
+                load_context.resolution_context
+            )
         )
         resolved_op_properties = (
-            self.params.op.resolve_properties(load_context.templated_value_resolver)
+            self.params.op.get_resolved_properties(load_context.resolution_context)
             if self.params.op
             else {}
         )
