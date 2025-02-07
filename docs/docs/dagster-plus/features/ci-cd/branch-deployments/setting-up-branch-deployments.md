@@ -29,8 +29,6 @@ Using this approach to branch deployments may be a good fit if:
 - You use **GitHub** for version control
 - You want Dagster to fully automate Branch Deployments
 
-This approach is simplified if you use the [GitHub integration](/integrations/libraries/github) to import your project into Dagster+.
-
   </TabItem>
   <TabItem value="gitlab" label="GitLab">
 
@@ -40,8 +38,6 @@ Using this approach to branch deployments may be a good fit if:
 
 - You use **GitLab** for version control
 - You want Dagster to fully automate Branch Deployments
-
-This approach is simplified if you use the [GitLab integration](/todo) to import your project into Dagster+.
 
   </TabItem>
   <TabItem value="cli" label="dagster-cloud CLI">
@@ -71,10 +67,12 @@ In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent
 
 Keep the token somewhere handy - you'll need it to complete the setup.
 
-## Step 3: Create and configure an agent
+## Step 3: Create and configure a branch deployment agent
 
 :::note
+
 If using [Serverless deployment](/dagster-plus/deployment/deployment-types/serverless), this step can be skipped.
+
 :::
 
 While you can use your existing production agent, we recommend creating a dedicated branch deployment agent. This ensures that your production instance isn't negatively impacted by the workload associated with branch deployments.
