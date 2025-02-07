@@ -1007,8 +1007,6 @@ class MdxTranslator(SphinxTranslator):
     def _flag_to_level(self, flag_type: str) -> str:
         """Maps flag type to style that will be using in CSS and admonitions."""
         level = "info"
-        if flag_type == "experimental":
-            level = "warning"
         if flag_type == "preview":
             level = "warning"
         if flag_type == "beta":
