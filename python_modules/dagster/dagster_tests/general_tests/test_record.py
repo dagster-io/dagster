@@ -6,9 +6,9 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
+from dagster._check.builder import INJECTED_DEFAULT_VALS_LOCAL_VAR
 from dagster._check.functions import CheckError
 from dagster._record import (
-    _INJECTED_DEFAULT_VALS_LOCAL_VAR,
     IHaveNew,
     ImportFrom,
     LegacyNamedTupleMixin,
@@ -305,7 +305,7 @@ def test_sentinel():
     "fields, defaults, expected",
     [
         (
-            {"name": str},
+            ["name"],
             {},
             (
                 ", *, name",
@@ -315,7 +315,7 @@ def test_sentinel():
         # defaults dont need to be in certain order since we force kwargs
         # None handled directly by arg default
         (
-            {"name": str, "age": int, "f": float},
+            ["name", "age", "f"],
             {"age": None},
             (
                 ", *, name, age = None, f",
@@ -324,7 +324,7 @@ def test_sentinel():
         ),
         # empty container defaults get fresh copies via assignments
         (
-            {"things": list},
+            ["things"],
             {"things": []},
             (
                 ", *, things = None",
@@ -332,7 +332,7 @@ def test_sentinel():
             ),
         ),
         (
-            {"map": dict},
+            ["map"],
             {"map": {}},
             (
                 ", *, map = None",
@@ -341,10 +341,10 @@ def test_sentinel():
         ),
         # base case - default values resolved by reference to injected local
         (
-            {"val": Any},
+            ["val"],
             {"val": object()},
             (
-                f", *, val = {_INJECTED_DEFAULT_VALS_LOCAL_VAR}['val']",
+                f", *, val = {INJECTED_DEFAULT_VALS_LOCAL_VAR}['val']",
                 "",
             ),
         ),
@@ -353,7 +353,14 @@ def test_sentinel():
 def test_build_args_and_assign(fields, defaults, expected):
     # tests / documents shared utility fn
     # don't hesitate to delete this upon refactor
-    assert build_args_and_assignment_strs(fields, defaults, kw_only=True) == expected
+    assert (
+        build_args_and_assignment_strs(
+            fields,
+            defaults,
+            kw_only=True,
+        )
+        == expected
+    )
 
 
 @record
