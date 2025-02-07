@@ -10,11 +10,11 @@ from dagster._annotations import (
     PUBLIC,
     PublicAttr,
     beta,
+    beta_param,
     deprecated,
     deprecated_param,
     experimental,
     experimental_param,
-    beta_param,
     get_beta_info,
     get_deprecated_info,
     get_experimental_info,
@@ -22,11 +22,11 @@ from dagster._annotations import (
     get_superseded_info,
     hidden_param,
     is_beta,
+    is_beta_param,
     is_deprecated,
     is_deprecated_param,
     is_experimental,
     is_experimental_param,
-    is_beta_param,
     is_preview,
     is_public,
     is_superseded,
@@ -1169,7 +1169,7 @@ def test_beta_param_method():
     assert is_beta_param(Foo.bar, "baz")
 
     with pytest.warns(
-            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
     ) as warning:
         Foo().bar(baz="ok")
     assert warning[0].filename.endswith("test_annotations.py")
@@ -1195,7 +1195,7 @@ def test_beta_param_staticmethod(decorators):
     assert is_beta_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
 
     with pytest.warns(
-            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
     ) as warning:
         Foo.bar(baz="ok")  # pyright: ignore[reportArgumentType]
     assert warning[0].filename.endswith("test_annotations.py")
@@ -1221,7 +1221,7 @@ def test_beta_param_classmethod(decorators):
     assert is_beta_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
 
     with pytest.warns(
-            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
     ) as warning:
         Foo.bar(baz="ok")  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
@@ -1254,7 +1254,7 @@ def test_beta_param_class():
     assert is_beta_param(Foo, "baz")
 
     with pytest.warns(
-            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is currently in beta"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is currently in beta"
     ) as warning:
         Foo(baz="ok")
     assert warning[0].filename.endswith("test_annotations.py")
@@ -1268,7 +1268,7 @@ def test_beta_param_named_tuple_class():
     assert is_beta_param(Foo, "baz")
 
     with pytest.warns(
-            BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is currently in beta"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is currently in beta"
     ) as warning:
         Foo(baz="ok")
     assert warning[0].filename.endswith("test_annotations.py")
