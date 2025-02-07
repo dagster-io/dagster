@@ -27,8 +27,8 @@ I/O Manager
 
 
 
-File Manager (Experimental)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File Manager
+^^^^^^^^^^^^
 
 .. autoconfigurable:: dagster_azure.adls2.adls2_file_manager
   :annotation: ResourceDefinition
