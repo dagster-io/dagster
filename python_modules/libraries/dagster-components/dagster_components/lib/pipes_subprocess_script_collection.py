@@ -34,11 +34,7 @@ class PipesSubprocessScriptCollectionParams(ResolvableModel):
     scripts: Sequence[PipesSubprocessScriptParams]
 
 
-@resolver(
-    fromtype=PipesSubprocessScriptCollectionParams,
-    exclude_fields={"scripts"},
-    additional_fields={"specs_by_path"},
-)
+@resolver(fromtype=PipesSubprocessScriptCollectionParams, exclude_fields={"scripts"})
 class PipesSubprocessScriptCollectionResolver(Resolver[PipesSubprocessScriptCollectionParams]):
     def resolve_specs_by_path(
         self, context: ResolutionContext

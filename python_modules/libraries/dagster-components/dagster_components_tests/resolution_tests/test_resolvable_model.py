@@ -32,12 +32,7 @@ class TargetParams(ResolvableModel):
     inners: Optional[Sequence[InnerParams]] = None
 
 
-@resolver(
-    fromtype=InnerParams,
-    totype=InnerObject,
-    exclude_fields={"val1"},
-    additional_fields={"val1_renamed"},
-)
+@resolver(fromtype=InnerParams, totype=InnerObject, exclude_fields={"val1"})
 class InnerParamsResolver(Resolver[InnerParams]):
     def resolve_val1_renamed(self, context: ResolutionContext) -> int:
         return context.resolve_value(self.model.val1) + 20
