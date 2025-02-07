@@ -46,7 +46,6 @@ class GoogleDriveClient:
         return self.service.files().get(fileId=file_id, fields=fields).execute()
 
 
-
 class GoogleDriveResource(dg.ConfigurableResource):
     """Resource configuration for Google Drive credentials."""
 
@@ -70,7 +69,6 @@ class GoogleDriveResource(dg.ConfigurableResource):
     def get_file_metadata(self, file_id: str, fields: str = "modifiedTime"):
         """Delegates to the client to get file metadata."""
         return self._client.get_file_metadata(file_id, fields)
-
 
 
 def realtor_asset_factory(
@@ -133,8 +131,7 @@ def realtor_asset_factory(
         assets=[read_csv_from_drive],
         jobs=[file_job],
         sensors=[file_sensor],
-        resources={"google_drive": google_drive,
-                   "duckdb": DuckDBResource(database="db.duckdb")},  
+        resources={"google_drive": google_drive, "duckdb": DuckDBResource(database="db.duckdb")},
     )
 
 
