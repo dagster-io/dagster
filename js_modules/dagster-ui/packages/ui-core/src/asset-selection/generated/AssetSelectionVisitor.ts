@@ -7,7 +7,10 @@ import {
   AndExpressionContext,
   AttributeExprContext,
   AttributeExpressionContext,
+  ChangedInBranchAttributeExprContext,
   CodeLocationAttributeExprContext,
+  ColumnAttributeExprContext,
+  ColumnTagAttributeExprContext,
   DownTraversalContext,
   DownTraversalExpressionContext,
   ExprContext,
@@ -22,6 +25,7 @@ import {
   OwnerAttributeExprContext,
   ParenthesizedExpressionContext,
   StartContext,
+  TableNameAttributeExprContext,
   TagAttributeExprContext,
   TraversalAllowedExprContext,
   TraversalAllowedExpressionContext,
@@ -152,12 +156,44 @@ export interface AssetSelectionVisitor<Result> extends ParseTreeVisitor<Result> 
   visitKindAttributeExpr?: (ctx: KindAttributeExprContext) => Result;
 
   /**
+   * Visit a parse tree produced by the `ColumnAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitColumnAttributeExpr?: (ctx: ColumnAttributeExprContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `TableNameAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitTableNameAttributeExpr?: (ctx: TableNameAttributeExprContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `ColumnTagAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitColumnTagAttributeExpr?: (ctx: ColumnTagAttributeExprContext) => Result;
+
+  /**
    * Visit a parse tree produced by the `CodeLocationAttributeExpr`
    * labeled alternative in `AssetSelectionParser.attributeExpr`.
    * @param ctx the parse tree
    * @return the visitor result
    */
   visitCodeLocationAttributeExpr?: (ctx: CodeLocationAttributeExprContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `ChangedInBranchAttributeExpr`
+   * labeled alternative in `AssetSelectionParser.attributeExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitChangedInBranchAttributeExpr?: (ctx: ChangedInBranchAttributeExprContext) => Result;
 
   /**
    * Visit a parse tree produced by the `AttributeExpression`

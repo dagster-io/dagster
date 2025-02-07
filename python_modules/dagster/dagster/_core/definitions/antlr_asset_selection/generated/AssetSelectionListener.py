@@ -187,6 +187,30 @@ class AssetSelectionListener(ParseTreeListener):
     def exitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         pass
 
+    # Enter a parse tree produced by AssetSelectionParser#ColumnAttributeExpr.
+    def enterColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#ColumnAttributeExpr.
+    def exitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#TableNameAttributeExpr.
+    def enterTableNameAttributeExpr(self, ctx: AssetSelectionParser.TableNameAttributeExprContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#TableNameAttributeExpr.
+    def exitTableNameAttributeExpr(self, ctx: AssetSelectionParser.TableNameAttributeExprContext):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#ColumnTagAttributeExpr.
+    def enterColumnTagAttributeExpr(self, ctx: AssetSelectionParser.ColumnTagAttributeExprContext):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#ColumnTagAttributeExpr.
+    def exitColumnTagAttributeExpr(self, ctx: AssetSelectionParser.ColumnTagAttributeExprContext):
+        pass
+
     # Enter a parse tree produced by AssetSelectionParser#CodeLocationAttributeExpr.
     def enterCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
@@ -196,6 +220,18 @@ class AssetSelectionListener(ParseTreeListener):
     # Exit a parse tree produced by AssetSelectionParser#CodeLocationAttributeExpr.
     def exitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
+    ):
+        pass
+
+    # Enter a parse tree produced by AssetSelectionParser#ChangedInBranchAttributeExpr.
+    def enterChangedInBranchAttributeExpr(
+        self, ctx: AssetSelectionParser.ChangedInBranchAttributeExprContext
+    ):
+        pass
+
+    # Exit a parse tree produced by AssetSelectionParser#ChangedInBranchAttributeExpr.
+    def exitChangedInBranchAttributeExpr(
+        self, ctx: AssetSelectionParser.ChangedInBranchAttributeExprContext
     ):
         pass
 

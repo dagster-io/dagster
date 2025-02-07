@@ -10,7 +10,14 @@ from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionPar
 from dagster._core.definitions.antlr_asset_selection.generated.AssetSelectionVisitor import (
     AssetSelectionVisitor,
 )
-from dagster._core.definitions.asset_selection import AssetSelection, CodeLocationAssetSelection
+from dagster._core.definitions.asset_selection import (
+    AssetSelection,
+    ChangedInBranchAssetSelection,
+    CodeLocationAssetSelection,
+    ColumnAssetSelection,
+    ColumnTagAssetSelection,
+    TableNameAssetSelection,
+)
 from dagster._core.storage.tags import KIND_PREFIX
 
 
@@ -141,6 +148,25 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
             return ctx.QUOTED_STRING().getText().strip('"')
         elif ctx.UNQUOTED_STRING():
             return ctx.UNQUOTED_STRING().getText()
+
+    def visitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
+        column = self.visit(ctx.value())
+        return ColumnAssetSelection(selected_column=column)
+
+    def visitTableNameAttributeExpr(self, ctx: AssetSelectionParser.TableNameAttributeExprContext):
+        table_name = self.visit(ctx.value())
+        return TableNameAssetSelection(selected_table_name=table_name)
+
+    def visitColumnTagAttributeExpr(self, ctx: AssetSelectionParser.ColumnTagAttributeExprContext):
+        key = self.visit(ctx.value(0))
+        value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
+        return ColumnTagAssetSelection(key=key, value=value)
+
+    def visitChangedInBranchAttributeExpr(
+        self, ctx: AssetSelectionParser.ChangedInBranchAttributeExprContext
+    ):
+        branch = self.visit(ctx.value())
+        return ChangedInBranchAssetSelection(selected_changed_in_branch=branch)
 
 
 class AntlrAssetSelectionParser:

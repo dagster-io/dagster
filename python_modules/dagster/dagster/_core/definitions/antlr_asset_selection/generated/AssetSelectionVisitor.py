@@ -99,9 +99,27 @@ class AssetSelectionVisitor(ParseTreeVisitor):
     def visitKindAttributeExpr(self, ctx: AssetSelectionParser.KindAttributeExprContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by AssetSelectionParser#ColumnAttributeExpr.
+    def visitColumnAttributeExpr(self, ctx: AssetSelectionParser.ColumnAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#TableNameAttributeExpr.
+    def visitTableNameAttributeExpr(self, ctx: AssetSelectionParser.TableNameAttributeExprContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#ColumnTagAttributeExpr.
+    def visitColumnTagAttributeExpr(self, ctx: AssetSelectionParser.ColumnTagAttributeExprContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by AssetSelectionParser#CodeLocationAttributeExpr.
     def visitCodeLocationAttributeExpr(
         self, ctx: AssetSelectionParser.CodeLocationAttributeExprContext
+    ):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by AssetSelectionParser#ChangedInBranchAttributeExpr.
+    def visitChangedInBranchAttributeExpr(
+        self, ctx: AssetSelectionParser.ChangedInBranchAttributeExprContext
     ):
         return self.visitChildren(ctx)
 
