@@ -863,7 +863,18 @@ def copy_annotations(dest: Annotatable, src: Annotatable) -> None:
             _DEPRECATED_PARAM_ATTR_NAME,
             getattr(src_target, _DEPRECATED_PARAM_ATTR_NAME),
         )
-
+    if hasattr(src_target, _SUPERSEDED_ATTR_NAME):
+        setattr(dest_target, _SUPERSEDED_ATTR_NAME, getattr(src_target, _SUPERSEDED_ATTR_NAME))
+    if hasattr(src_target, _PREVIEW_ATTR_NAME):
+        setattr(dest_target, _PREVIEW_ATTR_NAME, getattr(src_target, _PREVIEW_ATTR_NAME))
+    if hasattr(src_target, _BETA_ATTR_NAME):
+        setattr(dest_target, _BETA_ATTR_NAME, getattr(src_target, _BETA_ATTR_NAME))
+    if hasattr(src_target, _BETA_PARAM_ATTR_NAME):
+        setattr(
+            dest_target,
+            _BETA_PARAM_ATTR_NAME,
+            getattr(src_target, _BETA_PARAM_ATTR_NAME),
+        )
 
 def _get_annotation_target(obj: Annotatable) -> object:
     """Given an object to be annotated, return the underlying object that will actually store the annotations.
