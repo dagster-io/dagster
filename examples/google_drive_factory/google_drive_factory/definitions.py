@@ -41,6 +41,11 @@ class GoogleDriveClient:
         request = self.service.files().get_media(fileId=file_id)
         return request.execute()
 
+    def get_file_metadata(self, file_id: str, fields: str = "modifiedTime"):
+        """Get metadata for a specific file."""
+        return self.service.files().get(fileId=file_id, fields=fields).execute()
+
+
 
 class GoogleDriveResource(dg.ConfigurableResource):
     """Resource configuration for Google Drive credentials."""
@@ -62,6 +67,11 @@ class GoogleDriveResource(dg.ConfigurableResource):
         """Delegates to the client to fetch content."""
         return self._client.request_content(file_id)
 
+    def get_file_metadata(self, file_id: str, fields: str = "modifiedTime"):
+        """Delegates to the client to get file metadata."""
+        return self._client.get_file_metadata(file_id, fields)
+
+
 
 def realtor_asset_factory(
     file_definition: DriveFile, google_drive: GoogleDriveResource
@@ -76,7 +86,7 @@ def realtor_asset_factory(
         description=f"Reads {file_name} from Google Drive folder and saves to duckdb database",
     )
     def read_csv_from_drive(
-        context: dg.AssetExecutionContext, duckdb: DuckDBResource
+        context: dg.AssetExecutionContext, duckdb: DuckDBResource, google_drive: GoogleDriveResource
     ) -> dg.MaterializeResult:
         context.log.info(f"Reading file {file_name} from Google Drive")
         request = google_drive.request_content(file_id)
@@ -106,9 +116,7 @@ def realtor_asset_factory(
         last_mtime = float(context.cursor) if context.cursor else 0
 
         # Get file details from Drive
-        file_metadata = (
-            google_drive.service.files().get(fileId=file_id, fields="modifiedTime").execute()
-        )
+        file_metadata = google_drive.get_file_metadata(file_id)
 
         current_mtime = datetime.strptime(
             file_metadata["modifiedTime"], "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -125,6 +133,7 @@ def realtor_asset_factory(
         assets=[read_csv_from_drive],
         jobs=[file_job],
         sensors=[file_sensor],
+        resources={"google_drive": google_drive},  
     )
 
 

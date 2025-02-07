@@ -9,7 +9,9 @@ dependencies = [
     "dagster-cloud",
     "dagster-duckdb",
     "polars",
+    "pyarrow",
     "google-api-core",
+    "google-api-python-client",
     "google-auth",
     "duckdb",
 ]
