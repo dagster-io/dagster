@@ -18,6 +18,7 @@ from dagster._annotations import (
     get_deprecated_info,
     get_experimental_info,
     get_preview_info,
+    get_superseded_info,
     hidden_param,
     is_beta,
     is_deprecated,
@@ -26,12 +27,19 @@ from dagster._annotations import (
     is_experimental_param,
     is_preview,
     is_public,
+    is_superseded,
     only_allow_hidden_params_in_kwargs,
     preview,
     public,
+    superseded,
 )
 from dagster._check import CheckError
-from dagster._utils.warnings import BetaWarning, ExperimentalWarning, PreviewWarning
+from dagster._utils.warnings import (
+    BetaWarning,
+    ExperimentalWarning,
+    PreviewWarning,
+    SupersessionWarning,
+)
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
@@ -1145,6 +1153,207 @@ def test_beta_resource():
         assert warning[0].filename.endswith("test_annotations.py")
 
 
+########################
+##### SUPERSEDED
+########################
+
+
+def test_superseded_method():
+    class Foo:
+        @superseded(additional_warn_text="baz")
+        def bar(self):
+            pass
+
+    assert is_superseded(Foo.bar)
+    assert get_superseded_info(Foo.bar).additional_warn_text == "baz"
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo.bar` is superseded") as warning:
+        Foo().bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (superseded, property),
+        (property, superseded),
+    ],
+    ids=[
+        "superseded-property",
+        "property-superseded",
+    ],
+)
+def test_superseded_property(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self):
+            return 1
+
+    assert is_superseded(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo.bar` is superseded") as warning:
+        assert Foo().bar
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (superseded, staticmethod),
+        (staticmethod, superseded),
+    ],
+    ids=[
+        "superseded-staticmethod",
+        "staticmethod-superseded",
+    ],
+)
+def test_superseded_staticmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar():
+            pass
+
+    assert is_superseded(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo.bar` is superseded") as warning:
+        Foo.bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (superseded, classmethod),
+        (classmethod, superseded),
+    ],
+    ids=[
+        "superseded-classmethod",
+        "classmethod-superseded",
+    ],
+)
+def test_superseded_classmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(cls):
+            pass
+
+    assert is_superseded(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo.bar` is superseded") as warning:
+        Foo.bar()  # pyright: ignore[reportCallIssue]
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (superseded, abstractmethod),
+        (abstractmethod, superseded),
+    ],
+    ids=[
+        "superseded-abstractmethod",
+        "abstractmethod-superseded",
+    ],
+)
+def test_superseded_abstractmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self): ...
+
+    assert is_superseded(Foo.bar)
+
+
+def test_superseded_class():
+    @superseded
+    class Foo:
+        def bar(self): ...
+
+    assert is_superseded(Foo)
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo` is superseded") as warning:
+        Foo()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_superseded_class_with_methods():
+    @superseded
+    class SupersededClass:
+        def __init__(self, salutation="hello"):
+            self.salutation = salutation
+
+        def hello(self, name):
+            return f"{self.salutation} {name}"
+
+    @superseded
+    class SupersededClassWithSupersededFunction(SupersededClass):
+        def __init__(self, sendoff="goodbye", **kwargs):
+            self.sendoff = sendoff
+            super().__init__(**kwargs)
+
+        @superseded
+        def goodbye(self, name):
+            return f"{self.sendoff} {name}"
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"`[^`]+SupersededClass` is superseded",
+    ):
+        superseded_class = SupersededClass(salutation="howdy")
+
+    with assert_no_warnings():
+        assert superseded_class.hello("dagster") == "howdy dagster"
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"Class `[^`]+SupersededClassWithSupersededFunction` is superseded",
+    ):
+        superseded_class_with_superseded_function = SupersededClassWithSupersededFunction()
+
+    with assert_no_warnings():
+        assert superseded_class_with_superseded_function.hello("dagster") == "hello dagster"
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"Function `[^`]+goodbye` is superseded",
+    ):
+        assert superseded_class_with_superseded_function.goodbye("dagster") == "goodbye dagster"
+
+    @superseded
+    class SupersededNamedTupleClass(NamedTuple("_", [("salutation", str)])):
+        pass
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"`[^`]+SupersededNamedTupleClass` is superseded",
+    ):
+        assert SupersededNamedTupleClass(salutation="howdy").salutation == "howdy"
+
+
+def test_superseded_namedtuple_class():
+    @superseded
+    class Foo(NamedTuple("_", [("bar", str)])):
+        pass
+
+    with pytest.warns(SupersessionWarning, match=r"Class `[^`]+Foo` is superseded") as warning:
+        Foo(bar="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_superseded_resource():
+    @superseded
+    @resource
+    def foo(): ...
+
+    assert is_superseded(foo)
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"Dagster resource `[^`]+foo` is superseded",
+    ) as warning:
+        foo()
+        assert warning[0].filename.endswith("test_annotations.py")
+
+
 # ########################
 # ##### OTHER
 # ########################
@@ -1153,6 +1362,7 @@ def test_beta_resource():
 def test_all_annotations():
     @public
     @deprecated(breaking_version="2.0", additional_warn_text="foo")
+    @superseded
     @experimental
     @beta
     @preview
@@ -1164,6 +1374,7 @@ def test_all_annotations():
     assert is_experimental(foo)
     assert is_preview(foo)
     assert is_beta(foo)
+    assert is_superseded(foo)
 
     with warnings.catch_warnings(record=True) as all_warnings:
         warnings.simplefilter("always")
@@ -1177,6 +1388,9 @@ def test_all_annotations():
 
     exp = next(warning for warning in all_warnings if warning.category == ExperimentalWarning)
     assert re.search(r"`[^`]+foo`", str(exp.message))
+
+    dep = next(warning for warning in all_warnings if warning.category == SupersessionWarning)
+    assert re.search(r"`[^`]+foo` is superseded", str(dep.message))
 
     dep = next(warning for warning in all_warnings if warning.category == DeprecationWarning)
     assert re.search(r"`[^`]+foo` is deprecated", str(dep.message))
