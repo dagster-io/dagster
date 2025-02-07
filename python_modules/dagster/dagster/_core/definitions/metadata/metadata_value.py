@@ -8,7 +8,7 @@ from typing_extensions import Self, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, experimental, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.table import (
     TableColumn as TableColumn,
@@ -402,7 +402,6 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    @experimental
     def table(
         records: Sequence[TableRecord], schema: Optional[TableSchema] = None
     ) -> "TableMetadataValue":
@@ -883,7 +882,6 @@ class DagsterAssetMetadataValue(
 
 
 # This should be deprecated or fixed so that `value` does not return itself.
-@experimental
 @whitelist_for_serdes(storage_name="TableMetadataEntryData")
 class TableMetadataValue(
     NamedTuple(

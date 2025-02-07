@@ -117,7 +117,9 @@ def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors
     assert auto_materialize_sensor.name == "default_automation_condition_sensor"
     assert remote_repo.has_sensor(auto_materialize_sensor.name)
 
-    assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=True)
+    assert auto_materialize_sensor.asset_selection == AssetSelection.all(
+        include_external_assets=True
+    )
 
 
 def test_default_auto_materialize_sensors_without_observable(
@@ -147,7 +149,9 @@ def test_default_auto_materialize_sensors_without_observable(
     assert auto_materialize_sensor.name == "default_automation_condition_sensor"
     assert remote_repo.has_sensor(auto_materialize_sensor.name)
 
-    assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=False)
+    assert auto_materialize_sensor.asset_selection == AssetSelection.all(
+        include_external_assets=False
+    )
 
 
 def test_opt_out_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
