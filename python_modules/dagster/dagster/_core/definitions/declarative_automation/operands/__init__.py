@@ -7,6 +7,7 @@ from dagster._core.definitions.declarative_automation.operands.operands import (
     InitialEvaluationCondition as InitialEvaluationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     LatestRunExecutedWithRootTargetCondition as LatestRunExecutedWithRootTargetCondition,
+    LatestRunExecutedWithTagsCondition as LatestRunExecutedWithTagsCondition,
     MissingAutomationCondition as MissingAutomationCondition,
     NewlyRequestedCondition as NewlyRequestedCondition,
     NewlyUpdatedCondition as NewlyUpdatedCondition,
