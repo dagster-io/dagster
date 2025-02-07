@@ -131,8 +131,8 @@ class ExecutionResult(ABC):
     def is_node_untouched(self, node_str: str) -> bool:
         return len(self.events_for_node(node_str)) == 0
 
-    def get_job_failure_event(self) -> DagsterEvent:
-        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
+    def get_run_failure_event(self) -> DagsterEvent:
+        """Returns a DagsterEvent with type DagsterEventType.RUN_FAILURE if it ocurred during
         execution.
         """
         events = self.filter_events(
@@ -144,8 +144,8 @@ class ExecutionResult(ABC):
 
         return events[0]
 
-    def get_job_success_event(self) -> DagsterEvent:
-        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_SUCCESS if it ocurred during
+    def get_run_success_event(self) -> DagsterEvent:
+        """Returns a DagsterEvent with type DagsterEventType.RUN_SUCCESS if it ocurred during
         execution.
         """
         events = self.filter_events(

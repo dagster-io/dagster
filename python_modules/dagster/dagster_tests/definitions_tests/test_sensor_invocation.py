@@ -435,7 +435,7 @@ def test_run_status_sensor_invocation_resources() -> None:
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -474,7 +474,7 @@ def test_run_status_sensor_invocation_resources_direct() -> None:
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -512,7 +512,7 @@ def test_run_failure_sensor_invocation_resources() -> None:
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="failure_sensor",
@@ -715,7 +715,7 @@ def test_run_status_sensor():
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -744,7 +744,7 @@ def test_run_failure_sensor():
     result = my_job.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_failure_event()
+    dagster_event = result.get_run_failure_event()
 
     context = build_run_status_sensor_context(
         sensor_name="failure_sensor",
@@ -769,7 +769,7 @@ def test_run_status_sensor_run_request():
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -806,7 +806,7 @@ def test_run_failure_w_run_request():
     result = my_job.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_failure_event()
+    dagster_event = result.get_run_failure_event()
 
     context = build_run_status_sensor_context(
         sensor_name="failure_sensor",

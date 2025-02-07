@@ -248,7 +248,7 @@ def test_earliest_step_failure_on_failed_job():
             job=reconstructable(failing_job_concurrent_events),
             instance=instance,
         )
-        failure_event = result.get_job_failure_event()
+        failure_event = result.get_run_failure_event()
         step_failure = failure_event.job_failure_data.first_step_failure_event
         assert step_failure
         assert step_failure.step_key == "mapped_op[0]"
