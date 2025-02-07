@@ -113,13 +113,13 @@ def test_add_data_quality_warning(
     ],
 )
 def test_fetch_tableau_workspace_data(
-        clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
-        host_key: str,
-        host_value: str,
-        site_name: str,
-        workbook_id: str,
-        get_workbooks: MagicMock,
-        get_workbook: MagicMock,
+    clazz: Union[type[TableauCloudWorkspace], type[TableauServerWorkspace]],
+    host_key: str,
+    host_value: str,
+    site_name: str,
+    workbook_id: str,
+    get_workbooks: MagicMock,
+    get_workbook: MagicMock,
 ) -> None:
     connected_app_client_id = uuid.uuid4().hex
     connected_app_secret_id = uuid.uuid4().hex
@@ -134,14 +134,22 @@ def test_fetch_tableau_workspace_data(
         "site_name": site_name,
         host_key: host_value,
     }
-    resource = clazz(**resource_args)
+    resource = clazz(**resource_args)  # type: ignore
 
     response = resource.fetch_tableau_workspace_data()
 
     assert get_workbooks.call_count == 1
     assert get_workbook.call_count == 1
     assert response.data_sources_by_id.__len__() == 2
-    assert response.data_sources_by_id.get("0f5660c7-2b05-4ff0-90ce-3199226956c6").properties.get(
-        "name") == "Superstore Datasource"
-    assert response.data_sources_by_id.get("1f5660c7-3b05-5ff0-90ce-4199226956c6").properties.get(
-        "name") == "Embedded Superstore Datasource"
+    assert (
+        response.data_sources_by_id.get("0f5660c7-2b05-4ff0-90ce-3199226956c6").properties.get(  # type: ignore
+            "name"
+        )
+        == "Superstore Datasource"
+    )
+    assert (
+        response.data_sources_by_id.get("1f5660c7-3b05-5ff0-90ce-4199226956c6").properties.get(  # type: ignore
+            "name"
+        )
+        == "Embedded Superstore Datasource"
+    )

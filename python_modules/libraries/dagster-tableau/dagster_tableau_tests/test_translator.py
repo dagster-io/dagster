@@ -4,9 +4,7 @@ from dagster_tableau import DagsterTableauTranslator
 from dagster_tableau.translator import TableauTranslatorData, TableauWorkspaceData
 
 
-def test_translator_sheet_spec(
-    workspace_data: TableauWorkspaceData, workbook_id: str
-) -> None:
+def test_translator_sheet_spec(workspace_data: TableauWorkspaceData, workbook_id: str) -> None:
     translator = DagsterTableauTranslator()
     asset_key_list = ["superstore_datasource", "embedded_superstore_datasource"]
     index = 0
@@ -14,7 +12,11 @@ def test_translator_sheet_spec(
         asset_spec = translator.get_asset_spec(
             TableauTranslatorData(content_data=sheet, workspace_data=workspace_data)
         )
-        assert asset_spec.key.path == ["test_workbook", "sheet", sheet.properties.get("name").lower()]
+        assert asset_spec.key.path == [
+            "test_workbook",
+            "sheet",
+            sheet.properties.get("name").lower(),  # type: ignore
+        ]
         assert asset_spec.metadata == {
             "dagster-tableau/id": sheet.properties.get("luid"),
             "dagster-tableau/workbook_id": workbook_id,
@@ -27,6 +29,7 @@ def test_translator_sheet_spec(
         assert len(deps) == 1
         assert deps[0].asset_key == AssetKey([asset_key_list[index]])
         index += 1
+
 
 def test_translator_dashboard_spec(
     workspace_data: TableauWorkspaceData, dashboard_id: str, workbook_id: str

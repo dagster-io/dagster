@@ -49,11 +49,7 @@ SAMPLE_SHEET_2 = {
     "updatedAt": "2024-09-14T01:15:23Z",
     "path": "TestWorkbook/Account",
     "parentEmbeddedDatasources": [
-        {
-            **SAMPLE_EMBEDDED_DATA_SOURCE,
-            "parentPublishedDatasources": [
-            ]
-        }
+        {**SAMPLE_EMBEDDED_DATA_SOURCE, "parentPublishedDatasources": []}
     ],
     "workbook": {"luid": "b75fc023-a7ca-4115-857b-4342028640d0"},
 }
@@ -305,7 +301,7 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
             ),
             SAMPLE_SHEET_2["luid"]: TableauContentData(
                 content_type=TableauContentType.SHEET, properties=SAMPLE_SHEET_2
-            )
+            ),
         },
         dashboards_by_id={
             SAMPLE_DASHBOARD["luid"]: TableauContentData(
@@ -318,6 +314,6 @@ def workspace_data_fixture(site_name: str) -> TableauWorkspaceData:
             ),
             SAMPLE_EMBEDDED_DATA_SOURCE["luid"]: TableauContentData(
                 content_type=TableauContentType.DATA_SOURCE, properties=SAMPLE_EMBEDDED_DATA_SOURCE
-            )
+            ),
         },
     )
