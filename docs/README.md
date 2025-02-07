@@ -93,7 +93,7 @@ yarn build
 
 This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.
 
-**NOTE:** the `make sphinx_objects_inv` command needs to be run before creating a new release, there are plans to automate this procedure.
+**NOTE:** the `make sphinx_objects_inv` command needs to be run before creating a new release. We plan to automate this procedure in the future.
 
 ---
 
