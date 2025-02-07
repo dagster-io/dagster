@@ -27,14 +27,14 @@ For formatting guidelines, see the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 ## Installation
 
-The site uses [yarn](https://yarnpkg.com/) for package management. Do not install yarn using `npm`.
-The latest instructions for installing yarn can be found [here](https://yarnpkg.com/getting-started/install).
-
-This is a recommended setup:
+The site uses `node` and [yarn](https://yarnpkg.com/) for package management. We recommend using `nvm` to install the long-term-support version of Node.
 
 ```
-brew upgrade node
-corepack enable
+brew install nvm yarn
+nvm install --lts
+```
+
+```
 yarn install
 ```
 
@@ -44,12 +44,6 @@ Install Vale with:
 
 ```bash
 brew install vale
-```
-
-or
-
-```bash
-pip install vale
 ```
 
 ---
@@ -86,10 +80,20 @@ yarn vale --no-wrap          ## remove wrapping from output
 To build the site for production:
 
 ```bash
+# build and copy API markdown files
+make mdx
+make mdx_copy
+
+# build and copy the Sphinx objects.inv
+make sphinx_objects_inv
+
+# build the static site
 yarn build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation. Note that you will need to store Algolia credentials in local environment variables to build the site for production.
+This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.
+
+**NOTE:** the `make sphinx_objects_inv` command needs to be run before creating a new release, there are plans to automate this procedure.
 
 ---
 
