@@ -436,7 +436,7 @@ class DagsterEvent(
 
     Users should not instantiate this class.
 
-    Attributes:
+    Args:
         event_type_value (str): Value for a DagsterEventType.
         job_name (str)
         node_handle (NodeHandle)
