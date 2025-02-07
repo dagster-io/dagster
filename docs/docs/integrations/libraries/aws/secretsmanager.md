@@ -18,6 +18,10 @@ sidebar_custom_props:
   logo: images/integrations/aws-secretsmanager.svg
 ---
 
+import Beta from '../../../partials/\_Beta.md';
+
+<Beta />
+
 This integration allows you to manage, retrieve, and rotate credentials, API keys, and other secrets using [AWS Secrets Manager](https://aws.amazon.com/secrets-manager/).
 
 ### Installation

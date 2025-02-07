@@ -18,14 +18,11 @@ sidebar_custom_props:
   logo: images/integrations/tableau.svg
 ---
 
-:::note
+import Beta from '../../partials/\_Beta.md';
 
-This integration is currently **experimental**.
-
-:::
+<Beta />
 
 This guide provides instructions for using Dagster with Tableau using the `dagster-tableau` library. Your Tableau assets, such as data sources, sheets, and dashboards, can be represented in the Dagster asset graph, allowing you to track lineage and dependencies between Tableau assets and upstream data assets you are already modeling in Dagster.
-
 
 ## What you'll learn
 

@@ -4,6 +4,10 @@ description: Store your Dagster assets in BigQuery
 sidebar_position: 100
 ---
 
+import Beta from '../../../../partials/\_Beta.md';
+
+<Beta />
+
 This tutorial focuses on creating and interacting with BigQuery tables using Dagster's [asset definitions](/guides/build/assets/defining-assets).
 
 The `dagster-gcp` library provides two ways to interact with BigQuery tables:

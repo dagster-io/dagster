@@ -4,6 +4,10 @@ description: "Learn to integrate Dagster Pipes with AWS EMR Containers to launch
 sidebar_position: 300
 ---
 
+import Preview from '../../../partials/\_Preview.md';
+
+<Preview />
+
 This tutorial gives a short overview on how to use [Dagster Pipes](/guides/build/external-pipelines/) with [AWS EMR on EKS](https://aws.amazon.com/emr/features/eks/) (the corresponding AWS API is called `emr-containers`).
 
 The [dagster-aws](/api/python-api/libraries/dagster-aws) integration library provides the <PyObject section="libraries" object="pipes.PipesEMRContainersClient" module="dagster_aws" /> resource, which can be used to launch EMR jobs from Dagster assets and ops. Dagster can receive regular events such as logs, asset checks, or asset materializations from jobs launched with this client. Using it requires minimal code changes to your EMR jobs.

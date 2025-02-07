@@ -18,6 +18,10 @@ sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 ---
 
+import Beta from '../../../partials/\_Beta.md';
+
+<Beta />
+
 Dagster allows you to run dbt Cloud jobs alongside other technologies. You can schedule them to run as a step in a larger pipeline and manage them as a data asset.
 
 ### Installation
