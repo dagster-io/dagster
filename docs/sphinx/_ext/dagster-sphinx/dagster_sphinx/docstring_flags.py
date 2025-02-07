@@ -79,7 +79,7 @@ def inject_param_flag(
         flag = ":inline-flag:`beta`"
         message = (
             f"(This parameter is currently in beta, and may have breaking changes in minor version releases, "
-            f"with behavior changes in patch releases.\n{additional_text})"
+            f"with behavior changes in patch releases.{additional_text})"
         )
     else:
         check.failed(f"Unexpected info type {type(info)}")
