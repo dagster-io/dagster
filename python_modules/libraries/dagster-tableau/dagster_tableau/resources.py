@@ -476,7 +476,9 @@ class BaseTableauWorkspace(ConfigurableResource):
                     for embedded_data_source_data in sheet_data.get(
                         "parentEmbeddedDatasources", []
                     ):
-                        published_data_source_list = embedded_data_source_data.get("parentPublishedDatasources", [])
+                        published_data_source_list = embedded_data_source_data.get(
+                            "parentPublishedDatasources", []
+                        )
                         for published_data_source_data in published_data_source_list:
                             data_source_id = published_data_source_data["luid"]
                             if data_source_id and data_source_id not in data_source_ids:
