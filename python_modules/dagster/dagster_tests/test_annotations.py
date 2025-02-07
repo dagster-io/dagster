@@ -1296,7 +1296,7 @@ def test_superseded_class_with_methods():
 
     with pytest.warns(
         SupersessionWarning,
-        match=r"`[^`]+BetaClass` is superseded",
+        match=r"`[^`]+SupersededClass` is superseded",
     ):
         superseded_class = SupersededClass(salutation="howdy")
 
@@ -1344,7 +1344,7 @@ def test_superseded_resource():
     @resource
     def foo(): ...
 
-    assert is_beta(foo)
+    assert is_superseded(foo)
 
     with pytest.warns(
         SupersessionWarning,
