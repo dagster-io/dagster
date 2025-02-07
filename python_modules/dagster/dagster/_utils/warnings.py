@@ -149,37 +149,6 @@ def deprecation_warning(
 
 
 # ########################
-# ##### EXPERIMENTAL
-# ########################
-
-EXPERIMENTAL_WARNING_HELP = (
-    "To mute warnings for experimental functionality, invoke"
-    ' warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning) or use'
-    " one of the other methods described at"
-    " https://docs.python.org/3/library/warnings.html#describing-warning-filters."
-)
-
-
-class ExperimentalWarning(Warning):
-    pass
-
-
-def experimental_warning(
-    subject: str, additional_warn_text: Optional[str] = None, stacklevel: int = 3
-) -> None:
-    if not _warnings_on.get():
-        return
-
-    extra_text = f" {additional_warn_text}" if additional_warn_text else ""
-    warnings.warn(
-        f"{subject} is experimental. It may break in future versions, even between dot"
-        f" releases.{extra_text} {EXPERIMENTAL_WARNING_HELP}",
-        ExperimentalWarning,
-        stacklevel=stacklevel,
-    )
-
-
-# ########################
 # ##### Config arg warning
 # ########################
 
@@ -224,7 +193,6 @@ def disable_dagster_warnings() -> Iterator[None]:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=DeprecationWarning)
                 warnings.simplefilter("ignore", category=SupersessionWarning)
-                warnings.simplefilter("ignore", category=ExperimentalWarning)
                 yield
         finally:
             if token is not None:
@@ -236,14 +204,14 @@ T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)
 
 def suppress_dagster_warnings(__obj: T_Decoratable) -> T_Decoratable:
     """Mark a method/function as ignoring Dagster-generated warnings. This suppresses any
-    `ExperimentalWarnings` or `DeprecationWarnings` when the function is called.
+    `SupersessionWarnings` or `DeprecationWarnings` when the function is called.
 
     Usage:
 
         .. code-block:: python
 
             @suppress_dagster_warnings
-            def invokes_some_experimental_stuff(my_arg):
-                my_experimental_function(my_arg)
+            def invokes_some_deprecated_stuff(my_arg):
+                my_deprecated_function(my_arg)
     """
     return apply_context_manager_decorator(__obj, disable_dagster_warnings)
