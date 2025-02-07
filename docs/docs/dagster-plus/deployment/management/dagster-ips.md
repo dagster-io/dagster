@@ -19,4 +19,6 @@ The Dagster+ agent interacts with the following IP addresses:
 54.188.126.120
 ```
 
-**Note**: Additional IP addresses may be added over time. This list was last updated on **February 7, 2025**.
+:::note
+Additional IP addresses may be added over time. This list was last updated on **February 7, 2025**.
+:::
