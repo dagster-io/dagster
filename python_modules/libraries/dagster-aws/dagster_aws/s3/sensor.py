@@ -60,13 +60,14 @@ def get_objects(
         for idx, obj in enumerate(sorted_objects):
             if obj.get("Key") == since_key:
                 return sorted_objects[idx + 1 :]
+            else:
+                return []
 
     if since_last_modified:
         for idx, obj in enumerate(sorted_objects):
             if obj.get("LastModified") > since_last_modified:
                 return sorted_objects[idx:]
             else:
-                # if TS are same then no results are reported, otherwise we fall into the trap of returning all objects
                 return []
 
     return sorted_objects
