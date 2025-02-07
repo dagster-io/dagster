@@ -357,6 +357,20 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
 
 
+def _get_execution_type(
+    node: Union[AssetNode, "RemoteWorkspaceAssetNode", AssetCheckNode],
+) -> Optional[AssetExecutionType]:
+    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetNode
+
+    if isinstance(node, AssetNode):
+        return node.execution_type
+    elif isinstance(node, RemoteWorkspaceAssetNode):
+        return node.repo_scoped_asset_infos[0].asset_node.asset_node_snap.execution_type
+    else:
+        # there's no way to define a AssetCheck that doesn't include a way to execute it
+        return AssetExecutionType.MATERIALIZATION
+
+
 def executable_in_same_run(
     asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
 ):
@@ -377,6 +391,10 @@ def executable_in_same_run(
 
     # partitions definitions must match
     if child_node.partitions_def != parent_node.partitions_def:
+        return False
+
+    # execution types must match
+    if _get_execution_type(child_node) != _get_execution_type(parent_node):
         return False
 
     # unpartitioned assets can always execute together
