@@ -17,6 +17,7 @@ metadata:
     {{- end }}
 spec:
   replicas: {{ $_.Values.dagsterWebserver.replicaCount }}
+  revisionHistoryLimit: {{ $_.Values.dagsterWebserver.revisionHistoryLimit }}
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" . | nindent 6 }}
