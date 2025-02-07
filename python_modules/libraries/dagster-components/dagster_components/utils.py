@@ -15,8 +15,8 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.errors import DagsterError
 
+from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetAttributesModel
-from dagster_components.core.schema.resolver import ResolutionContext
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
 

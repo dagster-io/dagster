@@ -1,26 +1,13 @@
 from pathlib import Path
 
 from dagster import AssetKey
+from dagster_components import build_component_defs
 from dagster_components.core.component_decl_builder import PythonComponentDecl
-from dagster_components.core.component_defs_builder import (
-    build_components_from_component_folder,
-    build_defs_from_component_path,
-    defs_from_components,
-)
-from dagster_components.lib.pipes_subprocess_script_collection import (
-    PipesSubprocessScriptCollection,
-)
+from dagster_components.core.component_defs_builder import build_defs_from_component_path
 
-from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
+from dagster_components_tests.utils import script_load_context
 
 LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
-
-
-def test_python_native() -> None:
-    component = PipesSubprocessScriptCollection.introspect_from_path(
-        LOCATION_PATH / "components" / "scripts"
-    )
-    assert_assets(component, 3)
 
 
 def test_python_params() -> None:
@@ -30,20 +17,13 @@ def test_python_params() -> None:
     assert len(components) == 1
     component = components[0]
 
-    assert get_asset_keys(component) == {AssetKey("cool_script")}
+    assert component.build_defs(context).get_asset_graph().get_all_asset_keys() == {
+        AssetKey("cool_script")
+    }
 
 
 def test_load_from_path() -> None:
-    components = build_components_from_component_folder(
-        script_load_context(), LOCATION_PATH / "components"
-    )
-    assert len(components) == 2
-
-    defs = defs_from_components(
-        context=script_load_context(),
-        components=components,
-        resources={},
-    )
+    defs = build_component_defs(LOCATION_PATH / "components")
 
     assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),

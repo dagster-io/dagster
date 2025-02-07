@@ -1,92 +1,118 @@
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, get_args
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional, TypeVar
 
-from dagster._core.errors import DagsterInvariantViolationError
-from pydantic import BaseModel
-from typing_extensions import Self
+from dagster._record import record
+from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
-    from dagster_components.core.schema.resolver import ResolutionContext
+    from dagster_components.core.schema.context import ResolutionContext
 
-T_Model = TypeVar("T_Model", bound=BaseModel)
-T_Resolved = TypeVar("T_Resolved")
+
+T_ResolverType = TypeVar("T_ResolverType", bound=type["Resolver"])
+T_ResolvableModel = TypeVar("T_ResolvableModel", bound="ResolvableModel")
+
 T = TypeVar("T")
-
-FieldResolver = Callable[["ResolutionContext", T_Model], Any]
-
-RESOLVE_METHOD_PREFIX = "resolve_"
+T_ResolveAs = TypeVar("T_ResolveAs")
 
 
-class Resolver(Generic[T_Model, T_Resolved]):
-    __ignored_fields__ = set()
+@record
+class _ResolverData:
+    """Container for configuration of a Resolver that is set when using the @resolver decorator."""
 
-    @property
-    def resolved_type(self) -> type[T_Resolved]:
-        generic_base = getattr(self.__class__, "__orig_bases__")[0]
-        return get_args(generic_base)[1]
-
-    def _get_default_resolver(self, model: T_Model, field_name: str) -> FieldResolver:
-        return lambda context, model: context.resolve_value(getattr(model, field_name))
-
-    def _get_field_resolvers(self, model: T_Model) -> Mapping[str, FieldResolver]:
-        field_resolvers = {
-            k: self._get_default_resolver(model, k)
-            for k in model.model_fields.keys()
-            if k not in self.__ignored_fields__
-        }
-        for attr in dir(self):
-            if attr == "resolve_as":
-                continue
-            if attr.startswith(RESOLVE_METHOD_PREFIX):
-                field_name = attr.split(RESOLVE_METHOD_PREFIX)[1]
-                field_resolvers[field_name] = getattr(self, attr)
-        return field_resolvers
-
-    def get_resolved_properties(
-        self, context: "ResolutionContext", model: T_Model
-    ) -> Mapping[str, Any]:
-        return {
-            field_name: field_resolver(context, model)
-            for field_name, field_resolver in self._get_field_resolvers(model).items()
-        }
-
-    def resolve_as(self, as_type: type[T], context: "ResolutionContext", model: T_Model) -> T:
-        return as_type(**self.get_resolved_properties(context, model))
-
-    def resolve(self, context: "ResolutionContext", model: T_Model) -> T_Resolved:
-        return self.resolve_as(self.resolved_type, context, model)
+    resolved_type: Optional[type]
+    renamed_fields: Mapping[str, str]
 
 
-class DefaultResolver(Resolver[Any, T_Resolved], Generic[T_Resolved]):
-    def __init__(self, resolved_type: type[T_Resolved]):
-        self._resolved_type = resolved_type
+class Resolver(Generic[T_ResolvableModel]):
+    """A Resolver is a class that can convert data contained within a ResolvableModel into an
+    arbitrary output type.
 
-    @property
-    def resolved_type(self) -> type[T_Resolved]:
-        return self._resolved_type
+    Methods on the Resolver class should be named `resolve_{fieldname}` and should return the
+    resolved value for that field.
 
 
-class ResolvableModel(BaseModel, Generic[T_Resolved]):
-    @property
-    def _resolved_type(self) -> type[T_Resolved]:
-        resolvable_model_base_class = next(
-            base for base in self.__class__.__bases__ if issubclass(base, ResolvableModel)
+    Usage:
+
+        .. code-block:: python
+
+            class MyModel(ResolvableModel):
+                str_val: str
+                int_val: int
+
+            class TargetType:
+                def __init__(self, str_val: str, int_val_doubled: int): ...
+
+            @resolver(fromtype=MyModel, totype=TargetType, renamed_fields={"int_val": "int_val_doubled"})
+            class MyModelResolver(Resolver):
+                def resolve_int_val_doubled(self, context: ResolutionContext) -> int:
+                    return self.model.int_val * 2
+
+    """
+
+    __resolver_data__: ClassVar[_ResolverData] = _ResolverData(
+        resolved_type=None, renamed_fields={}
+    )
+
+    def __init__(self, model: T_ResolvableModel):
+        self.model: T_ResolvableModel = model
+
+    def _get_resolved_fieldname(self, fieldname: str) -> str:
+        return self.__resolver_data__.renamed_fields.get(fieldname, fieldname)
+
+    def _get_resolved_field(self, context: "ResolutionContext", fieldname: str) -> tuple[str, Any]:
+        resolved_fieldname = self._get_resolved_fieldname(fieldname)
+        field_resolver = getattr(self, f"resolve_{resolved_fieldname}", None)
+        if field_resolver:
+            resolved_value = field_resolver(context)
+        else:
+            resolved_value = context.resolve_value(getattr(self.model, fieldname))
+        return resolved_fieldname, resolved_value
+
+    def get_resolved_fields(self, context: "ResolutionContext") -> Mapping[str, Any]:
+        """Returns a mapping of field names to resolved values for those fields."""
+        return dict(
+            self._get_resolved_field(context, fieldname)
+            for fieldname in self.model.model_fields.keys()
         )
-        generic_args = resolvable_model_base_class.__pydantic_generic_metadata__["args"]
-        if len(generic_args) != 1:
-            raise DagsterInvariantViolationError(
-                "Subclasses of `ResolvableModel` must have exactly one generic type argument. "
-                "Make sure to specify subclasses as `class MyModel(ResolvableModel[<type>])` or "
-                "override `get_resolver()` in the subclass."
-            )
-        return generic_args[0]
 
-    def get_resolver(self) -> Resolver[Self, T_Resolved]:
-        return DefaultResolver[T_Resolved](self._resolved_type)
+    def resolve_as(self, as_type: type[T_ResolveAs], context: "ResolutionContext") -> T_ResolveAs:
+        """Returns an instance of `as_type` instantiated with the resolved data contained within
+        this Resolver's model.
+        """
+        return as_type(**self.get_resolved_fields(context))
 
-    def resolve(self, context: "ResolutionContext") -> T_Resolved:
-        return self.get_resolver().resolve(context, self)
+    def resolve(self, context: "ResolutionContext") -> Any:
+        resolved_type = self.__resolver_data__.resolved_type or self.model.__class__
+        return self.resolve_as(resolved_type, context)
 
-    def resolve_as(self, as_type: type[T_Resolved], context: "ResolutionContext") -> T_Resolved:
-        print(self.get_resolver())
-        return self.get_resolver().resolve_as(as_type, context, self)
+
+class ResolvableModel(BaseModel, Generic[T]):
+    __dagster_resolver__: ClassVar[type[Resolver]] = Resolver
+
+    model_config = ConfigDict(extra="forbid")
+
+    @property
+    def _resolver(self) -> Resolver:
+        return self.__dagster_resolver__(self)
+
+    def resolve_as(self, as_type: type[T_ResolveAs], context: "ResolutionContext") -> T_ResolveAs:
+        return self._resolver.resolve_as(as_type, context)
+
+    def resolve(self, context: "ResolutionContext") -> T:
+        return self._resolver.resolve(context)
+
+
+def resolver(
+    *,
+    fromtype: type[ResolvableModel],
+    totype: Optional[type] = None,
+    renamed_fields: Optional[Mapping[str, str]] = None,
+) -> Callable[[T_ResolverType], T_ResolverType]:
+    def inner(resolver_type: T_ResolverType) -> T_ResolverType:
+        resolver_type.__resolver_data__ = _ResolverData(
+            resolved_type=totype, renamed_fields=renamed_fields or {}
+        )
+        fromtype.__dagster_resolver__ = resolver_type
+        return resolver_type
+
+    return inner

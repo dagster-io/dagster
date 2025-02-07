@@ -1,6 +1,6 @@
 import os
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -9,6 +9,8 @@ from dagster._record import record
 from jinja2.nativetypes import NativeTemplate
 
 from dagster_components.core.schema.base import ResolvableModel
+
+T = TypeVar("T")
 
 
 def env_scope(key: str) -> Optional[str]:

@@ -29,7 +29,7 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.resolver import ResolutionContext
+from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.utils import load_module_from_path
 
 

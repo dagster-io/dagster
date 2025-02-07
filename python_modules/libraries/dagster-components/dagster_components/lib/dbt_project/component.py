@@ -13,7 +13,7 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
-from dagster_components.core.schema.base import ResolvableModel, Resolver
+from dagster_components.core.schema.base import ResolvableModel, Resolver, resolver
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
@@ -25,7 +25,7 @@ from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentSca
 from dagster_components.utils import ResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectParams(ResolvableModel["DbtProjectComponent"]):
+class DbtProjectParams(ResolvableModel):
     dbt: DbtCliResource
     op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
@@ -33,24 +33,15 @@ class DbtProjectParams(ResolvableModel["DbtProjectComponent"]):
     ] = None
     transforms: Optional[Sequence[AssetSpecTransformModel]] = None
 
-    def get_resolver(self):
-        return DbtProjectResolver()
 
-
-class DbtProjectResolver(Resolver[DbtProjectParams, "DbtProjectComponent"]):
-    __ignored_fields__ = {"asset_attributes"}
-
-    def resolve_translator(
-        self, context: ResolutionContext, model: DbtProjectParams
-    ) -> DagsterDbtTranslator:
+@resolver(fromtype=DbtProjectParams, renamed_fields={"asset_attributes": "translator"})
+class DbtProjectResolver(Resolver[DbtProjectParams]):
+    def resolve_translator(self, context: ResolutionContext) -> DagsterDbtTranslator:
         return get_wrapped_translator_class(DagsterDbtTranslator)(
             resolving_info=ResolvingInfo(
-                "node", model.asset_attributes or AssetAttributesModel(), context
+                "node", self.model.asset_attributes or AssetAttributesModel(), context
             )
         )
-
-    def resolve(self, context: ResolutionContext, model: DbtProjectParams) -> "DbtProjectComponent":
-        return self.resolve_as(DbtProjectComponent, context, model)
 
 
 @registered_component_type(name="dbt_project")
