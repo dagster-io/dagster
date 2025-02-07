@@ -53,7 +53,7 @@ class TimeWindowPartitionMapping(
     the upstream is hourly, then each daily partition in the downstream asset will map to the 24
     hourly partitions in the upstream that occur on that day.
 
-    Attributes:
+    Args:
         start_offset (int): If not 0, then the starts of the upstream windows are shifted by this
             offset relative to the starts of the downstream windows. For example, if start_offset=-1
             and end_offset=0, then the downstream partition "2022-07-04" would map to the upstream

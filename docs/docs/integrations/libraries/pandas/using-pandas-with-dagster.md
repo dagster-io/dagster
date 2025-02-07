@@ -5,6 +5,10 @@ description: "The dagster-pandas library provides the ability to perform data va
 
 # Pandas & Dagster
 
+import Beta from '../../../partials/\_Beta.md';
+
+<Beta />
+
 :::note
 
 This page describes the `dagster-pandas` library, which is used for performing data validation. To simply use pandas with Dagster, start with the [Dagster Quickstart](/getting-started/quickstart)

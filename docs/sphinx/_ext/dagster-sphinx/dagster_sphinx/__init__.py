@@ -83,6 +83,18 @@ def check_public_method_has_docstring(env: BuildEnvironment, name: str, obj: obj
         record_error(message)
 
 
+# Note that in our codebase docstrings with attributes will usually be written as:
+#
+#     Attributes:
+#         attr_name (type): Description
+#         ...
+#
+# Each entry get converted into the rst `..attribute::` directive during preprocessing of
+# docstrings, so that's what we check for.
+def has_attrs(docstring: list[str]) -> bool:
+    return any(line.startswith(".. attribute::") for line in docstring)
+
+
 class DagsterClassDocumenter(ClassDocumenter):
     """Overrides the default autodoc ClassDocumenter to adds some extra options."""
 
@@ -123,6 +135,9 @@ def process_docstring(
     lines: list[str],
 ) -> None:
     assert app.env is not None
+
+    if has_attrs(lines):
+        record_error(f'Object {name} has "Attributes:" in docstring. Use "Args:" insetad.')
 
     if is_deprecated(obj):
         inject_object_flag(obj, get_deprecated_info(obj), lines)

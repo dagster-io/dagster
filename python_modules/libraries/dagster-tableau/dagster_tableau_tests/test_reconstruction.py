@@ -136,7 +136,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         assert cancel_job.call_count == 0
 
         # 1 Tableau external assets and 2 Tableau materializable assets
-        assert len(init_repository_def.assets_defs_by_key) == 1 + 2
+        assert len(init_repository_def.assets_defs_by_key) == 2 + 3
 
         repository_load_data = init_repository_def.repository_load_data
 
@@ -145,7 +145,7 @@ def test_load_assets_workspace_data_refreshable_workbooks(
             pointer,
             repository_load_data,
         )
-        assert len(recon_repository_def.assets_defs_by_key) == 1 + 2
+        assert len(recon_repository_def.assets_defs_by_key) == 2 + 3
 
         # no additional calls after a fresh load
         assert sign_in.call_count == 1
@@ -180,11 +180,11 @@ def test_load_assets_workspace_data_refreshable_workbooks(
         ), "Expected one successful step"
 
         # 3 calls to create the defs + 5 calls to materialize the Tableau assets
-        # with 1 workbook to refresh, 1 sheet and 1 dashboard
+        # with 1 workbook to refresh, 2 sheet and 1 dashboard
         assert sign_in.call_count == 2
         assert get_workbooks.call_count == 1
         assert get_workbook.call_count == 1
-        assert get_view.call_count == 2
+        assert get_view.call_count == 3
         assert refresh_workbook.call_count == 1
         assert get_job.call_count == 1
         # The finish_code of the mocked get_job is 0, so no cancel_job is not called
@@ -209,7 +209,7 @@ def test_load_assets_workspace_data_translator(
             )
         )
 
-        assert len(repository_def.assets_defs_by_key) == 3
+        assert len(repository_def.assets_defs_by_key) == 5
         assert all(
             key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
         ), repository_def.assets_defs_by_key
@@ -233,7 +233,7 @@ def test_load_assets_workspace_data_translator_legacy(
             )
         )
 
-        assert len(repository_def.assets_defs_by_key) == 3
+        assert len(repository_def.assets_defs_by_key) == 5
         assert all(
             key.path[0] == "my_prefix" for key in repository_def.assets_defs_by_key.keys()
         ), repository_def.assets_defs_by_key

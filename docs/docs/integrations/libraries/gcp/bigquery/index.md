@@ -18,6 +18,10 @@ sidebar_custom_props:
   logo: images/integrations/gcp-bigquery.svg
 ---
 
+import Beta from '../../../../partials/\_Beta.md';
+
+<Beta />
+
 The Google Cloud Platform BigQuery integration allows data engineers to easily query and store data in the BigQuery data warehouse through the use of the `BigQueryResource`.
 
 ### Installation

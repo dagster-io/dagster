@@ -29,7 +29,7 @@ class AssetIn(
 ):
     """Defines an asset dependency.
 
-    Attributes:
+    Args:
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the input name. Only one of the "key_prefix" and
             "key" arguments should be provided.

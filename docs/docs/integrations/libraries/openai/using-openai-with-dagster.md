@@ -3,12 +3,6 @@ title: "OpenAI & Dagster"
 description: "The dagster-openai library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights."
 ---
 
-:::note
-
-This feature is considered **experimental**
-
-:::
-
 The `dagster-openai` library allows you to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in [Dagster Insights](/dagster-plus/features/insights).
 
 Using this library's <PyObject section="libraries" module="dagster_openai" object="OpenAIResource" />, you can easily interact with the [OpenAI REST API](https://platform.openai.com/docs/introduction) via the [OpenAI Python API](https://github.com/openai/openai-python).

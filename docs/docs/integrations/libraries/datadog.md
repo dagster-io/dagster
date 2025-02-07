@@ -19,6 +19,10 @@ sidebar_custom_props:
   logo: images/integrations/datadog.svg
 ---
 
+import Beta from '../../partials/\_Beta.md';
+
+<Beta />
+
 While Dagster provides comprehensive monitoring and observability of the pipelines it orchestrates, many teams look to centralize all their monitoring across apps, processes and infrastructure using Datadog's 'Cloud Monitoring as a Service'. The `dagster-datadog` integration allows you to publish metrics to Datadog from within Dagster ops.
 
 ### Installation

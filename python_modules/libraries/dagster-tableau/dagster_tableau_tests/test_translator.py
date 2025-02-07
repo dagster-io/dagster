@@ -4,28 +4,31 @@ from dagster_tableau import DagsterTableauTranslator
 from dagster_tableau.translator import TableauTranslatorData, TableauWorkspaceData
 
 
-def test_translator_sheet_spec(
-    workspace_data: TableauWorkspaceData, sheet_id: str, workbook_id: str
-) -> None:
-    sheet = next(iter(workspace_data.sheets_by_id.values()))
-
+def test_translator_sheet_spec(workspace_data: TableauWorkspaceData, workbook_id: str) -> None:
     translator = DagsterTableauTranslator()
-    asset_spec = translator.get_asset_spec(
-        TableauTranslatorData(content_data=sheet, workspace_data=workspace_data)
-    )
-
-    assert asset_spec.key.path == ["test_workbook", "sheet", "sales"]
-    assert asset_spec.metadata == {
-        "dagster-tableau/id": sheet_id,
-        "dagster-tableau/workbook_id": workbook_id,
-    }
-    assert asset_spec.tags == {
-        "dagster/storage_kind": "tableau",
-        "dagster-tableau/asset_type": "sheet",
-    }
-    deps = list(asset_spec.deps)
-    assert len(deps) == 1
-    assert deps[0].asset_key == AssetKey(["superstore_datasource"])
+    asset_key_list = ["superstore_datasource", "embedded_superstore_datasource"]
+    index = 0
+    for sheet in workspace_data.sheets_by_id.values():
+        asset_spec = translator.get_asset_spec(
+            TableauTranslatorData(content_data=sheet, workspace_data=workspace_data)
+        )
+        assert asset_spec.key.path == [
+            "test_workbook",
+            "sheet",
+            sheet.properties.get("name").lower(),  # type: ignore
+        ]
+        assert asset_spec.metadata == {
+            "dagster-tableau/id": sheet.properties.get("luid"),
+            "dagster-tableau/workbook_id": workbook_id,
+        }
+        assert asset_spec.tags == {
+            "dagster/storage_kind": "tableau",
+            "dagster-tableau/asset_type": "sheet",
+        }
+        deps = list(asset_spec.deps)
+        assert len(deps) == 1
+        assert deps[0].asset_key == AssetKey([asset_key_list[index]])
+        index += 1
 
 
 def test_translator_dashboard_spec(

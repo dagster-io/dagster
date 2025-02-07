@@ -18,6 +18,10 @@ sidebar_custom_props:
   logo: images/integrations/prometheus.svg
 ---
 
+import Beta from '../../partials/\_Beta.md';
+
+<Beta />
+
 This integration allows you to push metrics to the Prometheus gateway from within a Dagster pipeline.
 
 ### Installation
