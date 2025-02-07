@@ -13,7 +13,6 @@ from dagster._annotations import (
     beta_param,
     deprecated,
     deprecated_param,
-    beta_param,
     get_beta_info,
     get_deprecated_info,
     get_preview_info,
@@ -23,7 +22,6 @@ from dagster._annotations import (
     is_beta_param,
     is_deprecated,
     is_deprecated_param,
-    is_beta_param,
     is_preview,
     is_public,
     is_superseded,
@@ -33,11 +31,7 @@ from dagster._annotations import (
     superseded,
 )
 from dagster._check import CheckError
-from dagster._utils.warnings import (
-    BetaWarning,
-    PreviewWarning,
-    SupersessionWarning,
-)
+from dagster._utils.warnings import BetaWarning, PreviewWarning, SupersessionWarning
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
@@ -1180,7 +1174,6 @@ def test_all_annotations():
 
     exp = next(warning for warning in all_warnings if warning.category == BetaWarning)
     assert re.search(r"`[^`]+foo`", str(exp.message))
-
 
     dep = next(warning for warning in all_warnings if warning.category == SupersessionWarning)
     assert re.search(r"`[^`]+foo` is superseded", str(dep.message))
