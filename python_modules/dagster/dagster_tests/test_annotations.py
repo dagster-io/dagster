@@ -1374,6 +1374,7 @@ def test_all_annotations():
     assert is_experimental(foo)
     assert is_preview(foo)
     assert is_beta(foo)
+    assert is_superseded(foo)
 
     with warnings.catch_warnings(record=True) as all_warnings:
         warnings.simplefilter("always")
