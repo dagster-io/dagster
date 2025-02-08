@@ -4,13 +4,12 @@ in integration_tests/components/validation.
 
 from dagster._core.definitions.definitions_class import Definitions
 from pydantic import BaseModel, ConfigDict
-from typing_extensions import Self
 
-from dagster_components import Component, registered_component_type
+from dagster_components import Component, ResolvableModel, registered_component_type
 from dagster_components.core.component import ComponentLoadContext
 
 
-class MyComponentSchema(BaseModel):
+class MyComponentSchema(ResolvableModel):
     a_string: str
     an_int: int
 
@@ -21,13 +20,13 @@ class MyComponentSchema(BaseModel):
 class MyComponent(Component):
     name = "my_component"
 
+    def __init__(self, a_string: str, an_int: int):
+        self.a_string = a_string
+        self.an_int = an_int
+
     @classmethod
     def get_schema(cls) -> type[MyComponentSchema]:
         return MyComponentSchema
-
-    @classmethod
-    def load(cls, params: MyComponentSchema, context: ComponentLoadContext) -> Self:
-        return cls()
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions()
@@ -53,10 +52,6 @@ class MyNestedComponent(Component):
     @classmethod
     def get_schema(cls) -> type[MyNestedComponentSchema]:
         return MyNestedComponentSchema
-
-    @classmethod
-    def load(cls, params: MyComponentSchema, context: ComponentLoadContext) -> Self:
-        return cls()
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions()

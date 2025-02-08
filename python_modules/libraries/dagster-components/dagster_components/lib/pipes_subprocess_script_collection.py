@@ -60,12 +60,6 @@ class PipesSubprocessScriptCollection(Component):
     def get_schema(cls) -> type[PipesSubprocessScriptCollectionParams]:
         return PipesSubprocessScriptCollectionParams
 
-    @classmethod
-    def load(
-        cls, params: PipesSubprocessScriptCollectionParams, context: ComponentLoadContext
-    ) -> "PipesSubprocessScriptCollection":
-        return context.resolve(params, as_type=cls)
-
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
 

@@ -1,7 +1,6 @@
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
@@ -9,10 +8,6 @@ from dagster_components.core.component_scaffolder import DefaultComponentScaffol
 
 @registered_component_type(name="all_metadata_empty_asset")
 class AllMetadataEmptyAsset(Component):
-    @classmethod
-    def load(cls, context: "ComponentLoadContext") -> Self:
-        return cls()
-
     @classmethod
     def get_scaffolder(cls) -> DefaultComponentScaffolder:
         return DefaultComponentScaffolder()

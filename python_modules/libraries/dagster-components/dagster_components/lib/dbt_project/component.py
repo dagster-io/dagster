@@ -69,10 +69,6 @@ class DbtProjectComponent(Component):
     def get_schema(cls) -> type[DbtProjectParams]:
         return DbtProjectParams
 
-    @classmethod
-    def load(cls, params: DbtProjectParams, context: ComponentLoadContext) -> "DbtProjectComponent":
-        return context.resolve(params, as_type=cls)
-
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None
     ) -> DbtManifestAssetSelection:

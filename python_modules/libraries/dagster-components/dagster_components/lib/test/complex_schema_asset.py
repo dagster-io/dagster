@@ -4,11 +4,10 @@ from typing import Annotated, Optional
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from pydantic import BaseModel
-from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
+from dagster_components.core.schema.base import ResolvableModel
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
@@ -17,7 +16,7 @@ from dagster_components.core.schema.objects import (
 )
 
 
-class ComplexAssetParams(BaseModel):
+class ComplexAssetParams(ResolvableModel):
     value: str
     op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
@@ -37,15 +36,6 @@ class ComplexSchemaAsset(Component):
     @classmethod
     def get_scaffolder(cls) -> DefaultComponentScaffolder:
         return DefaultComponentScaffolder()
-
-    @classmethod
-    def load(cls, params: ComplexAssetParams, context: "ComponentLoadContext") -> Self:
-        return cls(
-            value=params.value,
-            op_spec=params.op,
-            asset_attributes=params.asset_attributes,
-            asset_transforms=params.asset_transforms or [],
-        )
 
     def __init__(
         self,
