@@ -198,6 +198,9 @@ def test_active_concurrency(use_tags):
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },
+                "concurrency": {
+                    "pools": {"granularity": "op"},
+                },
             }
         ) as instance:
             assert instance.event_log_storage.supports_global_concurrency_limits
@@ -249,7 +252,9 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
     def global_concurrency_keys(self) -> set[str]:
         return {"foo"}
 
-    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
+    def claim(
+        self, concurrency_key: str, step_key: str, priority: int = 0, is_legacy_tag: bool = False
+    ):
         self._pending_claims.add(step_key)
         return False
 
@@ -376,15 +381,18 @@ def test_active_concurrency_changing_default(use_tags):
     run_id = make_new_run_id()
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
-            overrides={
-                "event_log_storage": {
-                    "module": "dagster.utils.test",
-                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
-                    "config": {"base_dir": temp_dir},
-                },
-            }
-        ) as instance:
+        overrides = {
+            "event_log_storage": {
+                "module": "dagster.utils.test",
+                "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                "config": {"base_dir": temp_dir},
+            },
+        }
+        if not use_tags:
+            # pools will use run granularity if the granularity is not specified, so test that
+            # by specifying it
+            overrides["concurrency"] = {"pools": {"granularity": "op"}}
+        with instance_for_test(overrides=overrides) as instance:
             assert instance.event_log_storage.supports_global_concurrency_limits
 
             instance.event_log_storage.set_concurrency_slots("foo", 0)

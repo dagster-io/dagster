@@ -507,6 +507,18 @@ def simple_job():
     simple_op()
 
 
+@op(pool="foo")
+def simple_legacy_op(context):
+    time.sleep(0.1)
+    foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
+    return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
+
+
+@job(executor_def=test_step_delegating_executor)
+def simple_legacy_job():
+    simple_legacy_op()
+
+
 def test_blocked_concurrency_limits():
     TestStepHandler.reset()
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -517,7 +529,51 @@ def test_blocked_concurrency_limits():
                     "module": "dagster.utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
-                }
+                },
+                "concurrency": {
+                    "pools": {"granularity": "op"},
+                },
+            },
+        ) as instance:
+            instance.event_log_storage.set_concurrency_slots("foo", 0)
+
+            def _unblock_concurrency_key(instance, timeout):
+                time.sleep(timeout)
+                instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+            TIMEOUT = 3
+            threading.Thread(
+                target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True
+            ).start()
+            with execute_job(reconstructable(simple_job), instance=instance) as result:
+                TestStepHandler.wait_for_processes()
+                assert result.success
+                assert any(
+                    [
+                        "blocked by concurrency limit for key foo" in (event.message or "")
+                        for event in result.all_events
+                    ]
+                )
+                # the executor loop sleeps every second, so there should be at least a call per
+                # second that the steps are blocked, in addition to the processing of any step
+                # events
+                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_blocked_concurrency_limits_legacy_keys():
+    TestStepHandler.reset()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            temp_dir=temp_dir,
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+                "concurrency": {
+                    "pools": {"granularity": "op"},
+                },
             },
         ) as instance:
             instance.event_log_storage.set_concurrency_slots("foo", 0)
