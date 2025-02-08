@@ -99,7 +99,50 @@ You can also view automatically generated documentation describing your new comp
 dg component-type docs your_library.shell_command
 ```
 
+## [Advanced] Customizing component resolution
 
+By default, the component system will resolve all fields of your component schema directly into arguments of your Component's `__init__` function.
+
+If you want to customize this behavior, you can do so by defining an `@resolver` for your schema.
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/defining-a-resolver.py" language="python" />
+
+
+The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file.
+
+When creating the schema for your component, you can specify custom output types that should be resolved at runtime. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
+
+### Defining a resolvable field
+
+When creating a schema for your component, if you have a field that should have some custom resolution logic, you can annotate that field with the `ResolvableFieldInfo` class. This allows you to specify:
+
+- The output type of the field
+- Any post-processing that should be done on the resolved value of that field
+- Any additional scope that will be available to use when resolving that field
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/defining-resolvable-field.py" language="python" />
+
+### Resolving fields
+
+Once you've defined a resolvable field, you'll need to implement the logic to actually resolve it into the desired Python value.
+
+The `ComponentSchemaBaseModel` class supports a `resolve_properties` method, which returns a dictionary of resolved properties for your component. This method accepts a `templated_value_resolver`, which holds any available scope that is available for use in the template.
+
+If your resolvable field requires additional scope to be available, you can do so by using the `with_scope` method on the `templated_value_resolver`. This scope can be anything, such as a dictionary of properties related to an asset, or a function that returns a complex object type.
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/resolving-resolvable-field.py" language="python" />
+
+The `ComponentSchemaBaseModel` class will ensure that the output type of the resolved field matches the type specified in the `ResolvableFieldInfo` annotation.
+
+When a user instantiates a component, they will be able to use your custom scope in their `component.yaml` file:
+
+```yaml
+component_type: my_component
+
+params:
+  script_path: script.sh
+  script_runner: "{{ get_script_runner('arg') }}"
+```
 
 ## Next steps
 

@@ -1,9 +1,8 @@
 from collections.abc import Sequence
-from typing import Annotated, Optional
+from typing import Optional
 
 from dagster_components import ComponentSchema, ResolutionContext, Resolver, resolver
 from dagster_components.core.schema.objects import AssetAttributesSchema, OpSpecSchema
-from pydantic import BaseModel
 
 
 class ShellScriptSchema(ComponentSchema):
