@@ -17,7 +17,7 @@ from typing import (  # noqa: UP035
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, beta_param, deprecated, public
+from dagster._annotations import PublicAttr, deprecated, experimental_param, public
 from dagster._core.definitions.asset_key import (
     AssetKey as AssetKey,
     CoercibleToAssetKey as CoercibleToAssetKey,
@@ -89,7 +89,7 @@ class EventWithMetadata(ABC):
 T = TypeVar("T")
 
 
-@beta_param(param="data_version")
+@experimental_param(param="data_version")
 class Output(Generic[T], EventWithMetadata):
     """Event corresponding to one of an op's outputs.
 
