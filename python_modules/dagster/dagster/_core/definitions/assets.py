@@ -16,7 +16,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster._check as check
-from dagster._annotations import beta_param, public
+from dagster._annotations import beta_param, experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph_computation import AssetGraphComputation

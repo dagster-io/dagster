@@ -8,7 +8,7 @@ from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster._annotations import beta_param, deprecated, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_key import (
@@ -94,7 +94,6 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @beta_param(param="include_external_assets")
     def all(include_external_assets: bool = False) -> "AllSelection":
         """Returns a selection that includes all assets and their asset checks.
 
@@ -177,7 +176,6 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @beta_param(param="include_external_assets")
     def key_prefixes(
         *key_prefixes: CoercibleToAssetKeyPrefix, include_external_assets: bool = False
     ) -> "KeyPrefixesAssetSelection":
@@ -204,7 +202,6 @@ class AssetSelection(ABC):
         )
 
     @staticmethod
-    @beta_param(param="include_external_assets")
     def key_substring(
         key_substring: str, include_external_assets: bool = False
     ) -> "KeySubstringAssetSelection":
@@ -231,7 +228,6 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @beta_param(param="include_external_assets")
     def groups(*group_strs, include_external_assets: bool = False) -> "GroupsAssetSelection":
         """Returns a selection that includes materializable assets that belong to any of the
         provided groups and all the asset checks that target them.
@@ -247,7 +243,6 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @beta_param(param="include_external_assets")
     def tag(key: str, value: str, include_external_assets: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
@@ -262,7 +257,6 @@ class AssetSelection(ABC):
         )
 
     @staticmethod
-    @beta_param(param="include_external_assets")
     def tag_string(string: str, include_external_assets: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
@@ -508,7 +502,6 @@ class AssetSelection(ABC):
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
 
     @classmethod
-    @beta_param(param="include_external_assets")
     def from_string(cls, string: str, include_external_assets=False) -> "AssetSelection":
         from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
             AntlrAssetSelectionParser,
