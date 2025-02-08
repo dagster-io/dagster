@@ -3,7 +3,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -1211,6 +1211,7 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         return self._step_execution_context.asset_partitions_time_window_for_input(input_name)
 
     @public
+    @experimental
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
         """Return the provenance information for the most recent materialization of an asset.
 
