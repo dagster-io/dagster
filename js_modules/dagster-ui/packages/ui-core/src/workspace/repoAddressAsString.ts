@@ -1,5 +1,6 @@
 import {buildRepoPathForHuman, buildRepoPathForURL} from './buildRepoAddress';
 import {RepoAddress} from './types';
+import {RepositorySelector} from '../graphql/types';
 
 // Note: These are not memoized because the result is a primitive value and
 // there are scenarios where the repoAddress argument is a temporary object,
@@ -19,4 +20,17 @@ export const repoAddressAsURLString = (repoAddress: RepoAddress) => {
 // Unencoded, dunder repo visible.
 export const repoAddressAsTag = (repoAddress: RepoAddress) => {
   return `${repoAddress.name}@${repoAddress.location}`;
+};
+
+export const repositorySelectorAsHumanString = (sel: RepositorySelector) => {
+  return buildRepoPathForHuman(sel.repositoryName, sel.repositoryLocationName);
+};
+
+export const repositorySelectorAsURLString = (sel: RepositorySelector) => {
+  return buildRepoPathForURL(sel.repositoryName, sel.repositoryLocationName);
+};
+
+// Unencoded, dunder repo visible.
+export const repositorySelectorAsTag = (sel: RepositorySelector) => {
+  return `${sel.repositoryName}@${sel.repositoryLocationName}`;
 };

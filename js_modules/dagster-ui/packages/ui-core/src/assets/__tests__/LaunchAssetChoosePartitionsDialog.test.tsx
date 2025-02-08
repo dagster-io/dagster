@@ -13,6 +13,7 @@ import {
   buildDimensionPartitionKeys,
   buildMultiPartitionStatuses,
   buildPartitionDefinition,
+  buildRepositorySelector,
 } from '../../graphql/types';
 import {CREATE_PARTITION_MUTATION} from '../../partitions/CreatePartitionDialog';
 import {
@@ -22,7 +23,6 @@ import {
 import {buildMutationMock, buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
-import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
 import {
   PartitionHealthQuery,
@@ -100,7 +100,10 @@ describe('launchAssetChoosePartitionsDialog', () => {
             <LaunchAssetChoosePartitionsDialog
               open={true}
               setOpen={(_open: boolean) => {}}
-              repoAddress={buildRepoAddress('test', 'test')}
+              repositorySelector={buildRepositorySelector({
+                repositoryLocationName: 'test',
+                repositoryName: 'test',
+              })}
               target={{
                 jobName: '__ASSET_JOB',
                 assetKeys: [assetA.assetKey, assetB.assetKey],

@@ -22,9 +22,8 @@ import {
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {invalidatePartitions} from '../assets/PartitionSubscribers';
+import {RepositorySelector} from '../graphql/types';
 import {testId} from '../testing/testId';
-import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
-import {RepoAddress} from '../workspace/types';
 
 // Keep in sync with the backend which currently has 2 definitions:
 // INVALID_PARTITION_SUBSTRINGS and INVALID_STATIC_PARTITIONS_KEY_CHARACTERS
@@ -66,14 +65,14 @@ export const CreatePartitionDialog = ({
   isOpen,
   dynamicPartitionsDefinitionName,
   close,
-  repoAddress,
+  repositorySelector,
   refetch,
   onCreated,
 }: {
   isOpen: boolean;
   dynamicPartitionsDefinitionName?: string | null;
   close: () => void;
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   refetch?: () => Promise<void>;
   onCreated: (partitionName: string) => void;
 }) => {
@@ -116,7 +115,7 @@ export const CreatePartitionDialog = ({
     setIsSaving(true);
     const result = await createPartition({
       variables: {
-        repositorySelector: repoAddressToSelector(repoAddress),
+        repositorySelector,
         partitionsDefName: dynamicPartitionsDefinitionName || '',
         partitionKey: partitionName,
       },

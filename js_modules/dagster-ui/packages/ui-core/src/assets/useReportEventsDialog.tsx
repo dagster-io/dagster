@@ -33,15 +33,19 @@ import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {AssetEventType, AssetKeyInput, PartitionDefinitionType} from '../graphql/types';
+import {
+  AssetEventType,
+  AssetKeyInput,
+  PartitionDefinitionType,
+  RepositorySelector,
+} from '../graphql/types';
 import {DimensionRangeWizards} from '../partitions/DimensionRangeWizards';
 import {ToggleableSection} from '../ui/ToggleableSection';
-import {RepoAddress} from '../workspace/types';
 
 type Asset = {
   isPartitioned: boolean;
   assetKey: AssetKeyInput;
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   hasReportRunlessAssetEventPermission: boolean;
 };
 
@@ -71,7 +75,7 @@ export function useReportEventsDialog(asset: Asset | null, onEventReported?: () 
       asset={asset}
       isOpen={isOpen}
       setIsOpen={setIsOpen}
-      repoAddress={asset.repoAddress}
+      repositorySelector={asset.repositorySelector}
       onEventReported={onEventReported}
     />
   ) : undefined;
@@ -84,13 +88,13 @@ export function useReportEventsDialog(asset: Asset | null, onEventReported?: () 
 
 const ReportEventsDialog = ({
   asset,
-  repoAddress,
+  repositorySelector,
   isOpen,
   setIsOpen,
   onEventReported,
 }: {
   asset: Asset;
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   onEventReported?: () => void;
@@ -106,7 +110,7 @@ const ReportEventsDialog = ({
       <ReportEventDialogBody
         asset={asset}
         setIsOpen={setIsOpen}
-        repoAddress={repoAddress}
+        repositorySelector={repositorySelector}
         onEventReported={onEventReported}
       />
     </Dialog>
@@ -115,12 +119,12 @@ const ReportEventsDialog = ({
 
 const ReportEventDialogBody = ({
   asset,
-  repoAddress,
+  repositorySelector,
   setIsOpen,
   onEventReported,
 }: {
   asset: Asset;
-  repoAddress: RepoAddress;
+  repositorySelector: RepositorySelector;
   setIsOpen: (open: boolean) => void;
   onEventReported?: () => void;
 }) => {
@@ -241,7 +245,7 @@ const ReportEventDialogBody = ({
           }
         >
           <DimensionRangeWizards
-            repoAddress={repoAddress}
+            repositorySelector={repositorySelector}
             refetch={async () => setLastRefresh(Date.now())}
             selections={selections}
             setSelections={setSelections}
