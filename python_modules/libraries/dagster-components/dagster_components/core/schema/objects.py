@@ -11,8 +11,9 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel
 
-from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
-from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.resolution_engine.context import ResolutionContext
+from dagster_components.core.resolution_engine.resolver import Resolver, resolver
+from dagster_components.core.schema.base import ComponentSchema
 
 
 class OpSpecSchema(ComponentSchema):

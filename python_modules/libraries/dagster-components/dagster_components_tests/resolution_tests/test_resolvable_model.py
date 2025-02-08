@@ -4,8 +4,7 @@ from typing import Optional
 import pytest
 from dagster._check.functions import ParameterCheckError
 from dagster._record import record
-from dagster_components import ComponentSchema, ResolutionContext
-from dagster_components.core.schema.base import Resolver, resolver
+from dagster_components import ComponentSchema, ResolutionContext, Resolver, resolver
 
 
 @record
