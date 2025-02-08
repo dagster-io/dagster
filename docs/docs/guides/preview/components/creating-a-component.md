@@ -108,19 +108,15 @@ The components system supports a rich templating syntax that allows you to load 
 
 When creating the schema for your component, you can specify custom output types that should be resolved at runtime. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
 
-### Defining a resolvable field
+### Defining a schema field
 
-When creating a schema for your component, if you have a field that should have some custom resolution logic, you can annotate that field with the `ResolvableFieldInfo` class. This allows you to specify:
-
-- The output type of the field
-- Any post-processing that should be done on the resolved value of that field
-- Any additional scope that will be available to use when resolving that field
+When creating a schema for your component, if you have a field that where you, the component author, has injected variables into scope for that field you can annotate field with the `SchemaFieldInfo` class. This allows you to specify any additional scope that will be available to use when resolving that field
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/defining-resolvable-field.py" language="python" />
 
 ### Resolving fields
 
-Once you've defined a resolvable field, you'll need to implement the logic to actually resolve it into the desired Python value.
+You'll need to implement the logic to actually resolve it into the desired Python value.
 
 The `ComponentSchemaBaseModel` class supports a `resolve_properties` method, which returns a dictionary of resolved properties for your component. This method accepts a `templated_value_resolver`, which holds any available scope that is available for use in the template.
 

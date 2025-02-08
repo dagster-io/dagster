@@ -14,7 +14,7 @@ from dagster_dbt import (
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
 from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
-from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.metadata import SchemaFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
     AssetSpecTransformSchema,
@@ -29,7 +29,7 @@ class DbtProjectParams(ComponentSchema):
     dbt: DbtCliResource
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesSchema], ResolvableFieldInfo(required_scope={"node"})
+        Optional[AssetAttributesSchema], SchemaFieldInfo(required_scope={"node"})
     ] = None
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 

@@ -15,7 +15,7 @@ from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_scaffolder import ComponentScaffolder
 from dagster_components.core.schema.base import Resolver, resolver
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.metadata import SchemaFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
     AssetSpecTransformSchema,
@@ -37,7 +37,7 @@ class SlingReplicationParams(ComponentSchema):
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
         Optional[AssetAttributesSchema],
-        ResolvableFieldInfo(required_scope={"stream_definition"}),
+        SchemaFieldInfo(required_scope={"stream_definition"}),
     ] = None
 
 
