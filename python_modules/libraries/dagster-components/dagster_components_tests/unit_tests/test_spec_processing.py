@@ -2,7 +2,7 @@ from collections.abc import Sequence
 
 import pytest
 from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
-from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.resolution_engine.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetAttributesSchema, AssetSpecTransformSchema
 from pydantic import BaseModel, TypeAdapter
 

@@ -8,7 +8,8 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._record import record
 from jinja2.nativetypes import NativeTemplate
 
-from dagster_components.core.schema.base import ComponentSchema, get_resolver_type_of_schema
+from dagster_components.core.resolution_engine.resolver import get_resolver_type_of_schema
+from dagster_components.core.schema.base import ComponentSchema
 
 T = TypeVar("T")
 

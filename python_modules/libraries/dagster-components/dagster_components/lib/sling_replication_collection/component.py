@@ -13,8 +13,8 @@ from dagster_sling.resources import AssetExecutionContext
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_scaffolder import ComponentScaffolder
-from dagster_components.core.schema.base import Resolver, resolver
-from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.resolution_engine.context import ResolutionContext
+from dagster_components.core.resolution_engine.resolver import Resolver, resolver
 from dagster_components.core.schema.metadata import SchemaFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,

@@ -14,8 +14,9 @@ from dagster_components.core.component import (
     ComponentLoadContext,
     registered_component_type,
 )
-from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
-from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.resolution_engine.context import ResolutionContext
+from dagster_components.core.resolution_engine.resolver import Resolver, resolver
+from dagster_components.core.schema.base import ComponentSchema
 from dagster_components.core.schema.objects import AssetSpecSchema
 
 if TYPE_CHECKING:

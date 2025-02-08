@@ -28,8 +28,9 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.base import ComponentSchema, get_resolver_type_of_schema
-from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.resolution_engine.context import ResolutionContext
+from dagster_components.core.resolution_engine.resolver import get_resolver_type_of_schema
+from dagster_components.core.schema.base import ComponentSchema
 from dagster_components.utils import load_module_from_path
 
 

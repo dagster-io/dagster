@@ -13,7 +13,8 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
-from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
+from dagster_components.core.resolution_engine.resolver import Resolver, resolver
+from dagster_components.core.schema.base import ComponentSchema
 from dagster_components.core.schema.metadata import SchemaFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
