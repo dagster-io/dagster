@@ -15,7 +15,7 @@ from dagster_components.core.component_scaffolder import (
 )
 from dagster_components.core.schema.base import ComponentSchema as ComponentSchema
 from dagster_components.core.schema.context import ResolutionContext as ResolutionContext
-from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
+from dagster_components.core.schema.metadata import SchemaFieldInfo as SchemaFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema as AssetAttributesSchema,
     AssetSpecSchema as AssetSpecSchema,

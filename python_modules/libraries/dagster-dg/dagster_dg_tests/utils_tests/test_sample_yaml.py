@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from dagster_components import ComponentSchema, ResolvableFieldInfo
+from dagster_components import ComponentSchema, SchemaFieldInfo
 from dagster_dg.docs import generate_sample_yaml
 from pydantic import BaseModel
 
@@ -12,7 +12,7 @@ class SampleSubSchema(BaseModel):
 
 
 class SampleSchema(ComponentSchema):
-    sub_scoped: Annotated[SampleSubSchema, ResolvableFieldInfo(required_scope={"outer_scope"})]
+    sub_scoped: Annotated[SampleSubSchema, SchemaFieldInfo(required_scope={"outer_scope"})]
     sub_optional: SampleSubSchema
     sub_list: Sequence[SampleSubSchema]
 

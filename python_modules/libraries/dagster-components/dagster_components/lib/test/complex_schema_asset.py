@@ -8,7 +8,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.base import ComponentSchema
-from dagster_components.core.schema.metadata import ResolvableFieldInfo
+from dagster_components.core.schema.metadata import SchemaFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
     AssetSpecTransformSchema,
@@ -20,7 +20,7 @@ class ComplexAssetParams(ComponentSchema):
     value: str
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesSchema], ResolvableFieldInfo(required_scope={"node"})
+        Optional[AssetAttributesSchema], SchemaFieldInfo(required_scope={"node"})
     ] = None
     asset_transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 

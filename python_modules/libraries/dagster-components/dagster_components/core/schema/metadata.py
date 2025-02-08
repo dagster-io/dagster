@@ -9,13 +9,13 @@ REF_TEMPLATE = f"{REF_BASE}{{model}}"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
 
 
-class ResolvableFieldInfo(FieldInfo):
-    """Wrapper class that stores additional resolution metadata within a pydantic FieldInfo object.
+class SchemaFieldInfo(FieldInfo):
+    """Wrapper class that stores additional components schema metadata within a pydantic FieldInfo object.
 
     Examples:
     ```python
     class MyModel(ComponentSchema):
-        resolvable_obj: Annotated[str, ResolvableFieldInfo(required_scope={"some_field"})]
+        some_obj: Annotated[str, SchemaFieldInfo(required_scope={"some_field"})]
     ```
     """
 
