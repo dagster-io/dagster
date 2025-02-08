@@ -9,6 +9,7 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
+from dagster_components.core.common.schema import AssetSpecSchema
 from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
@@ -17,7 +18,6 @@ from dagster_components.core.component import (
 from dagster_components.core.resolution_engine.context import ResolutionContext
 from dagster_components.core.resolution_engine.resolver import Resolver, resolver
 from dagster_components.core.schema.base import ComponentSchema
-from dagster_components.core.schema.objects import AssetSpecSchema
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions

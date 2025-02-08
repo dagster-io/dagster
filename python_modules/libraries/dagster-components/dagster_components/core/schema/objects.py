@@ -1,50 +1,16 @@
-from collections.abc import Mapping, Sequence
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Callable, Literal
 
 import dagster._check as check
-from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
-from pydantic import BaseModel
 
+from dagster_components.core.common.schema import AssetAttributesSchema
 from dagster_components.core.resolution_engine.context import ResolutionContext
 from dagster_components.core.resolution_engine.resolver import Resolver, resolver
 from dagster_components.core.schema.base import ComponentSchema
-
-
-class OpSpecSchema(ComponentSchema):
-    name: Optional[str] = None
-    tags: Optional[dict[str, str]] = None
-
-
-class AssetDepSchema(ComponentSchema):
-    asset: str
-    partition_mapping: Optional[str] = None
-
-
-class _ResolvableAssetAttributesMixin(BaseModel):
-    deps: Sequence[str] = []
-    description: Optional[str] = None
-    metadata: Union[str, Mapping[str, Any]] = {}
-    group_name: Optional[str] = None
-    skippable: bool = False
-    code_version: Optional[str] = None
-    owners: Sequence[str] = []
-    tags: Union[str, Mapping[str, str]] = {}
-    kinds: Optional[Sequence[str]] = None
-    automation_condition: Optional[str] = None
-
-
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ComponentSchema):
-    key: Optional[str] = None
-
-
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ComponentSchema):
-    key: str
 
 
 class AssetSpecTransformSchema(ComponentSchema):
@@ -88,36 +54,6 @@ class AssetSpecTransformSchema(ComponentSchema):
             *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
         ]
         return replace(defs, assets=assets)
-
-
-def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
-    resolved_val = context.resolve_value(key)
-    return (
-        AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
-    )
-
-
-@resolver(fromtype=AssetDepSchema, totype=AssetDep)
-class AssetDepResolver(Resolver[AssetDepSchema]):
-    def resolve_asset(self, context: ResolutionContext) -> AssetKey:
-        return _resolve_asset_key(self.schema.asset, context)
-
-
-@resolver(fromtype=AssetSpecSchema, totype=AssetSpec)
-class AssetSpecResolver(Resolver[AssetSpecSchema]):
-    def resolve_key(self, context: ResolutionContext) -> AssetKey:
-        return _resolve_asset_key(self.schema.key, context)
-
-
-@resolver(fromtype=AssetAttributesSchema)
-class AssetAttributesResolver(Resolver[AssetAttributesSchema]):
-    def resolve_key(self, context: ResolutionContext) -> Optional[AssetKey]:
-        return _resolve_asset_key(self.schema.key, context) if self.schema.key else None
-
-    def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        # only include fields that are explcitly set
-        set_fields = self.schema.model_dump(exclude_unset=True).keys()
-        return {k: v for k, v in self.get_resolved_fields(context).items() if k in set_fields}
 
 
 @resolver(fromtype=AssetSpecTransformSchema)
