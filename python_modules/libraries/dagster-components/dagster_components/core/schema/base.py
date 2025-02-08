@@ -92,19 +92,20 @@ class Resolver(Generic[T_ComponentSchema]):
 
 
 class ComponentSchema(BaseModel):
-    __dagster_resolver__: ClassVar[Optional[type[Resolver]]] = None
-
     model_config = ConfigDict(extra="forbid")
+
+
+RESOLVER_REGISTRY = {}
 
 
 def set_resolver_type_of_schema(
     schema_type: type[ComponentSchema], resolver_type: type[Resolver]
 ) -> None:
-    schema_type.__dagster_resolver__ = resolver_type
+    RESOLVER_REGISTRY[schema_type] = resolver_type
 
 
 def get_resolver_type_of_schema(schema_type: type[ComponentSchema]) -> type[Resolver]:
-    return schema_type.__dagster_resolver__ or Resolver
+    return RESOLVER_REGISTRY.get(schema_type, Resolver)
 
 
 def resolver(
