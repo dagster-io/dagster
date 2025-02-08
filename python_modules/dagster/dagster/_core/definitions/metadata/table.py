@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import NamedTuple, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, public
+from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -11,6 +11,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 # ########################
 
 
+@experimental
 @whitelist_for_serdes
 class TableRecord(
     NamedTuple(
@@ -267,6 +268,7 @@ class TableSchema(
 # ###########################
 
 
+@experimental(emit_runtime_warning=False)
 @whitelist_for_serdes
 class TableColumnDep(
     NamedTuple(
@@ -291,6 +293,7 @@ class TableColumnDep(
         )
 
 
+@experimental
 @whitelist_for_serdes
 class TableColumnLineage(
     NamedTuple(
