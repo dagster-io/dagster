@@ -62,7 +62,7 @@ from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
-from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
+from dagster._utils.warnings import disable_dagster_warnings, beta_warning
 
 
 class AssetResultOutput(Output):
@@ -792,7 +792,7 @@ def _store_output(
             elif isinstance(elt, AssetMaterialization):
                 manager_materializations.append(elt)
             elif isinstance(elt, dict):  # should remove this?
-                experimental_warning(
+                beta_warning(
                     "Yielding metadata from an IOManager's handle_output() function"
                 )
                 manager_metadata = {**manager_metadata, **normalize_metadata(elt)}

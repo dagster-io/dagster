@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, Callable, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import beta, hidden_param
+from dagster._annotations import beta, hidden_param, beta_param
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -54,6 +54,8 @@ def observable_source_asset(
 ) -> "_ObservableSourceAsset": ...
 
 
+@beta_param(param="io_manager_def")
+@beta_param(param="resource_defs")
 @hidden_param(
     param="auto_observe_interval_minutes",
     breaking_version="1.10.0",
@@ -102,13 +104,13 @@ def observable_source_asset(
         metadata (Mapping[str, RawMetadataValue]): Metadata associated with the asset.
         io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
             the source asset when it's used as an input to other assets inside a job.
-        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
+        io_manager_def (Optional[IOManagerDefinition]): (Beta) The definition of the IOManager that will be used to load the contents of
             the source asset when it's used as an input to other assets inside a job.
         description (Optional[str]): The description of the asset.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         required_resource_keys (Optional[Set[str]]): Set of resource keys required by the observe op.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Beta) resource
             definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in
             the `io_manager_def` argument.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
@@ -225,6 +227,7 @@ class _ObservableSourceAsset:
             )
 
 
+@beta_param(param="resources_defs")
 @beta
 def multi_observable_source_asset(
     *,
@@ -249,14 +252,14 @@ def multi_observable_source_asset(
         can_subset (bool): If this asset's computation can emit a subset of the asset
             keys based on the context.selected_assets argument. Defaults to False.
         resource_defs (Optional[Mapping[str, object]]):
-            (Experimental) A mapping of resource keys to resources. These resources
+            (Beta) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
-        specs (Optional[Sequence[AssetSpec]]): (Experimental) The specifications for the assets
+        specs (Optional[Sequence[AssetSpec]]): The specifications for the assets
             observed by this function.
-        check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
+        check_specs (Optional[Sequence[AssetCheckSpec]]): Specs for asset checks that
             execute in the decorated function after observing the assets.
 
     Examples:

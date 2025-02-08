@@ -14,7 +14,6 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     Definitions,
-    ExperimentalWarning,
     FreshnessPolicy,
     GraphOut,
     IdentityPartitionMapping,
@@ -2374,8 +2373,7 @@ def test_construct_assets_definition_no_args() -> None:
 
 def test_construct_assets_definition_without_node_def() -> None:
     spec = AssetSpec("asset1", tags={"foo": "bar"}, group_name="hello")
-    with pytest.warns(ExperimentalWarning):
-        assets_def = AssetsDefinition(specs=[spec])
+    assets_def = AssetsDefinition(specs=[spec])
     assert not assets_def.is_executable
     assert list(assets_def.specs) == [spec]
 

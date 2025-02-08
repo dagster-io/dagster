@@ -98,12 +98,12 @@ class AutomationConditionSensorDefinition(SensorDefinition):
         description (Optional[str]): A human-readable description of the sensor.
         emit_backfills (bool): If set to True, will emit a backfill on any tick where more than one partition
             of any single asset is requested, rather than individual runs. Defaults to True.
-        use_user_code_server (bool): (experimental) If set to True, this sensor will be evaluated in the user
+        use_user_code_server (bool): (Beta) If set to True, this sensor will be evaluated in the user
             code server, rather than the AssetDaemon. This enables evaluating custom AutomationCondition
             subclasses, and ensures that the condition definitions will remain in sync with your user code
             version, eliminating version skew. Note: currently a maximum of 500 assets or checks may be
             targeted at a time by a sensor that has this value set.
-        default_condition (Optional[AutomationCondition]): (experimental) If provided, this condition will
+        default_condition (Optional[AutomationCondition]): (Beta) If provided, this condition will
             be used for any selected assets or asset checks which do not have an automation condition defined.
             Requires `use_user_code_server` to be set to `True`.
 

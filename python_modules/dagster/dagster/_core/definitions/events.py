@@ -108,9 +108,9 @@ class Output(Generic[T], EventWithMetadata):
             Arbitrary metadata about the output.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
-        data_version (Optional[DataVersion]): (Experimental) A data version to manually set
+        data_version (Optional[DataVersion]): (Beta) A data version to manually set
             for the asset.
-        tags (Optional[Mapping[str, str]]): (Experimental) Tags that will be attached to the asset
+        tags (Optional[Mapping[str, str]]): Tags that will be attached to the asset
             materialization event corresponding to this output, if there is one.
     """
 
@@ -675,7 +675,7 @@ class ObjectStoreOperation(
         object_store_name (Optional[str]): The name of the object store that performed the
             operation.
         value_name (Optional[str]): The name of the input/output
-        version (Optional[str]): (Experimental) The version of the stored data.
+        version (Optional[str]): The version of the stored data.
         mapping_key (Optional[str]): The mapping key when a dynamic output is used.
     """
 

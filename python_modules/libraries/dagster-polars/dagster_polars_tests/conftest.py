@@ -10,9 +10,11 @@ import pytest_cases
 from _pytest.tmpdir import TempPathFactory
 from dagster import DagsterInstance
 from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
+from dagster._utils.warnings import BetaWarning, PreviewWarning
 
 logging.getLogger("alembic.runtime.migration").setLevel(logging.WARNING)
-warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning)
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 
 @pytest.fixture

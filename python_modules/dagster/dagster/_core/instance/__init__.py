@@ -85,7 +85,7 @@ from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
+from dagster._utils.warnings import disable_dagster_warnings, beta_warning
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
@@ -2388,7 +2388,7 @@ class DagsterInstance(DynamicPartitionsStore):
             logging_config = self.get_settings("python_logs").get("dagster_handler_config", {})
 
             if logging_config:
-                experimental_warning("Handling yaml-defined logging configuration")
+                beta_warning("Handling yaml-defined logging configuration")
 
             # Handlers can only be retrieved from dictConfig configuration if they are attached
             # to a logger. We add a dummy logger to the configuration that allows us to access user

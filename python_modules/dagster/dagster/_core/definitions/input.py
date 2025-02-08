@@ -65,13 +65,13 @@ class InputDefinition:
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
         metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
-        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
+        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
             with this InputDefinition. Used for tracking lineage information through Dagster.
-        asset_partitions (Optional[Union[AbstractSet[str], InputContext -> AbstractSet[str]]]): (Experimental) A
+        asset_partitions (Optional[Union[AbstractSet[str], InputContext -> AbstractSet[str]]]): A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this InputDefinition.
-        input_manager_key (Optional[str]): (Experimental) The resource key for the
+        input_manager_key (Optional[str]): The resource key for the
             :py:class:`InputManager` used for loading this input when it is not connected to an
             upstream output.
     """
@@ -439,13 +439,13 @@ class In(
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
         metadata (Optional[Dict[str, RawMetadataValue]]): A dict of metadata for the input.
-        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): (Experimental) An AssetKey
+        asset_key (Optional[Union[AssetKey, InputContext -> AssetKey]]): An AssetKey
             (or function that produces an AssetKey from the InputContext) which should be associated
             with this In. Used for tracking lineage information through Dagster.
-        asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): (Experimental) A
+        asset_partitions (Optional[Union[Set[str], InputContext -> Set[str]]]): A
             set of partitions of the given asset_key (or a function that produces this list of
             partitions from the InputContext) which should be associated with this In.
-        input_manager_key (Optional[str]): (Experimental) The resource key for the
+        input_manager_key (Optional[str]): The resource key for the
             :py:class:`InputManager` used for loading this input when it is not connected to an
             upstream output.
     """

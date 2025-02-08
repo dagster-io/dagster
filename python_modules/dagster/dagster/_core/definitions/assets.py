@@ -70,7 +70,7 @@ from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts, reverse_dict
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.tags import normalize_tags
-from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
+from dagster._utils.warnings import disable_dagster_warnings, PreviewWarning, BetaWarning
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -369,7 +369,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         execution_type: Optional[AssetExecutionType],
     ) -> "AssetsDefinition":
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            warnings.simplefilter("ignore", category=PreviewWarning)
+            warnings.simplefilter("ignore", category=BetaWarning)
             return AssetsDefinition(
                 keys_by_input_name=keys_by_input_name,
                 keys_by_output_name=keys_by_output_name,
@@ -458,7 +459,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
             resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-                (Experimental) A mapping of resource keys to resource definitions. These resources
+                (Beta) A mapping of resource keys to resource definitions. These resources
                 will be initialized during execution, and can be accessed from the
                 body of ops in the graph during execution.
             group_name (Optional[str]): A group name for the constructed asset. Assets without a

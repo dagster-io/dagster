@@ -80,7 +80,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
         required_resource_keys: (Optional[Set[str]]) Keys for the resources required by this
             resource. A DagsterInvariantViolationError will be raised during initialization if
             dependencies are cyclic.
-        version (Optional[str]): (Experimental) The version of the resource's definition fn. Two
+        version (Optional[str]): (Beta) The version of the resource's definition fn. Two
             wrapped resource functions should only have the same version if they produce the same
             resource definition when provided with the same inputs.
     """
@@ -372,6 +372,7 @@ def resource(
 ) -> Callable[[ResourceFunction], "ResourceDefinition"]: ...
 
 
+@beta_param(param="version")
 def resource(
     config_schema: Union[ResourceFunction, CoercableToConfigSchema] = None,
     description: Optional[str] = None,
@@ -393,7 +394,7 @@ def resource(
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.resource_config`. If not set, Dagster will accept any config provided.
         description(Optional[str]): A human-readable description of the resource.
-        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+        version (Optional[str]): (Beta) The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
             definition when provided with the same inputs.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by this resource.
