@@ -97,6 +97,16 @@ class ComponentSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+def set_resolver_type_of_schema(
+    schema_type: type[ComponentSchema], resolver_type: type[Resolver]
+) -> None:
+    schema_type.__dagster_resolver__ = resolver_type
+
+
+def get_resolver_type_of_schema(schema_type: type[ComponentSchema]) -> type[Resolver]:
+    return schema_type.__dagster_resolver__ or Resolver
+
+
 def resolver(
     *,
     fromtype: type[ComponentSchema],
@@ -107,7 +117,7 @@ def resolver(
         resolver_type.__resolver_data__ = _ResolverData(
             resolved_type=totype, exclude_fields=exclude_fields or set()
         )
-        fromtype.__dagster_resolver__ = resolver_type
+        set_resolver_type_of_schema(fromtype, resolver_type)
         return resolver_type
 
     return inner

@@ -28,7 +28,7 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.base import ComponentSchema
+from dagster_components.core.schema.base import ComponentSchema, get_resolver_type_of_schema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.utils import load_module_from_path
 
@@ -266,7 +266,8 @@ class ComponentLoadContext:
         return dataclasses.replace(self, decl_node=decl_node)
 
     def resolve(self, value: ComponentSchema, as_type: type[T]) -> T:
-        return value.__dagster_resolver__(value).resolve_as(as_type, self.resolution_context)
+        resolver_type = get_resolver_type_of_schema(type(value))
+        return resolver_type(value).resolve_as(as_type, self.resolution_context)
 
     def resolve_value(self, value: Any) -> Any:
         return self.resolution_context.resolve_value(value)
