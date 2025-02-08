@@ -897,7 +897,6 @@ def test_pipes_subprocess_client_no_beta_warning():
         )
 
     beta_warnings = [w for w in record if issubclass(w.category, BetaWarning)]
-    print(len(beta_warnings))
 
     if beta_warnings:
         for warning in beta_warnings:

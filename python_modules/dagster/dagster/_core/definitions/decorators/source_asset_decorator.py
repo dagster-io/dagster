@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, Callable, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import beta, hidden_param, beta_param
+from dagster._annotations import beta, beta_param, hidden_param
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
