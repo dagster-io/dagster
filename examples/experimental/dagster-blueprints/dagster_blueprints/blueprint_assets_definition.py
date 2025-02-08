@@ -13,7 +13,7 @@ from dagster._model import DagsterModel
 from dagster_blueprints.blueprint import Blueprint
 
 
-class AssetSpecModel(DagsterModel):
+class AssetSpecSchema(DagsterModel):
     key: str
     deps: Sequence[str] = []
     description: Optional[str] = None
@@ -36,7 +36,7 @@ class AssetSpecModel(DagsterModel):
 class BlueprintAssetsDefinition(Blueprint):
     """A blueprint that produces an AssetsDefinition."""
 
-    assets: Sequence[AssetSpecModel]
+    assets: Sequence[AssetSpecSchema]
 
     def build_defs(self) -> Definitions:
         specs = [spec_model.to_asset_spec() for spec_model in self.assets]
