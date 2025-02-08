@@ -136,6 +136,19 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     version: AssetGraphQueryVersion,
   });
 
+  const computeGraphData = useMemo(() => {
+    return throttleLatest(
+      indexedDBAsyncMemoize<
+        Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+        GraphDataState,
+        typeof computeGraphDataWrapper
+      >(computeGraphDataWrapper, (props) => {
+        return JSON.stringify(props);
+      }),
+      2000,
+    );
+  }, []);
+
   const nodes = fetchResult.data?.assetNodes;
 
   const repoFilteredNodes = useMemo(() => {
@@ -168,7 +181,15 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     if (options.loading || supplementaryDataLoading) {
       return;
     }
+
     const requestId = ++currentRequestRef.current;
+
+    if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
+      lastProcessedRequestRef.current = requestId;
+      setState({allAssetKeys: [], graphAssetKeys: [], assetGraphData: null});
+      return;
+    }
+
     setGraphDataLoading(true);
     computeGraphData({
       repoFilteredNodes,
@@ -203,6 +224,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     options.loading,
     supplementaryData,
     supplementaryDataLoading,
+    computeGraphData,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading || supplementaryDataLoading;
@@ -338,17 +360,6 @@ export const ASSET_GRAPH_QUERY = gql`
 
   ${ASSET_NODE_FRAGMENT}
 `;
-
-const computeGraphData = throttleLatest(
-  indexedDBAsyncMemoize<
-    Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
-    GraphDataState,
-    typeof computeGraphDataWrapper
-  >(computeGraphDataWrapper, (props) => {
-    return JSON.stringify(props);
-  }),
-  2000,
-);
 
 const getWorker = memoize(
   (_key: 'computeGraphWorker' | 'buildGraphWorker') =>

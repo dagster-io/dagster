@@ -308,7 +308,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
         }
         right={
           <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
-            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 && upstream ? (
+            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 ? (
               <LaunchAssetExecutionButton
                 scope={{all: [cachedOrLiveDefinition]}}
                 showChangedAndMissingOption={false}
