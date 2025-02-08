@@ -30,6 +30,7 @@ import {
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
 } from './types/AssetView.types';
+import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
@@ -47,7 +48,6 @@ import {
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -59,7 +59,7 @@ interface Props {
 }
 
 export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
-  const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const [params, setParams] = useAssetViewParams();
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
   // Load the asset definition
