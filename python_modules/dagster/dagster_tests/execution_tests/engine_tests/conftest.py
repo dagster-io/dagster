@@ -31,6 +31,9 @@ def instance():
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir, "sleep_interval": 0.01},
                 },
+                "concurrency": {
+                    "pools": {"granularity": "op"},
+                },
             }
         ) as _instance:
             yield _instance
