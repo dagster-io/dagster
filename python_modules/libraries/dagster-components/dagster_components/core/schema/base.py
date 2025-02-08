@@ -92,7 +92,7 @@ class Resolver(Generic[T_ComponentSchema]):
 
 
 class ComponentSchema(BaseModel):
-    __dagster_resolver__: ClassVar[type[Resolver]] = Resolver
+    __dagster_resolver__: ClassVar[Optional[type[Resolver]]] = None
 
     model_config = ConfigDict(extra="forbid")
 
