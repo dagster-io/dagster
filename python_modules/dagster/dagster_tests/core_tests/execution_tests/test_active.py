@@ -381,15 +381,18 @@ def test_active_concurrency_changing_default(use_tags):
     run_id = make_new_run_id()
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(
-            overrides={
-                "event_log_storage": {
-                    "module": "dagster.utils.test",
-                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
-                    "config": {"base_dir": temp_dir},
-                },
-            }
-        ) as instance:
+        overrides = {
+            "event_log_storage": {
+                "module": "dagster.utils.test",
+                "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                "config": {"base_dir": temp_dir},
+            },
+        }
+        if not use_tags:
+            # pools will use run granularity if the granularity is not specified, so test that
+            # by specifying it
+            overrides["concurrency"] = {"pools": {"granularity": "op"}}
+        with instance_for_test(overrides=overrides) as instance:
             assert instance.event_log_storage.supports_global_concurrency_limits
 
             instance.event_log_storage.set_concurrency_slots("foo", 0)
