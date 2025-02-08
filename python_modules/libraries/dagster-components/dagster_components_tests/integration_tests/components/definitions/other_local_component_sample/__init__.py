@@ -2,7 +2,6 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster_components import Component, registered_component_type
 from dagster_components.core.component import ComponentLoadContext
 from pydantic import BaseModel
-from typing_extensions import Self
 
 
 class MyNewComponentSchema(BaseModel):
