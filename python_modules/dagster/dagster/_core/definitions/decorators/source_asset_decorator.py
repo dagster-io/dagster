@@ -227,7 +227,7 @@ class _ObservableSourceAsset:
             )
 
 
-@beta_param(param="resources_defs")
+@beta_param(param="resource_defs")
 @beta
 def multi_observable_source_asset(
     *,
