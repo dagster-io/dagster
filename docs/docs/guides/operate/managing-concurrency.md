@@ -31,11 +31,15 @@ You can assign assets and ops to concurrency pools which allow you to limit the 
 
 <CodeExample filePath="guides/tbd/concurrency-pool-api.py" language="python" title="Specifying pools on assets and ops" />
 
+You should be able to verify that you have set the pool correctly by viewing the details pane for the asset or op in the Dagster UI.
+
+![Viewing the pool tag](/images/guides/operate/managing-concurrency/asset-pool-tag.png)
+
 Once you have assigned your assets and ops to a concurrency pool, you can configure a pool limit for that pool in your deployment by using the Dagster UI or by using the Dagster CLI.
 
 To specify a limit for the pool "database" using the UI, navigate to the `Deployments` &rarr; `Concurrency` settings page and click the `Add pool limit` button:
 
-Need screenshot here
+![Setting the pool limit](/images/guides/operate/managing-concurrency/add-pool-ui.png)
 
 To specify a limit for the pool "database" using the CLI, use:
 
