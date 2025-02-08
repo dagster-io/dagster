@@ -148,6 +148,7 @@ def test_schedules_restart(gen_schedule_args):
                 schedule_start_command,
                 cli_args + ["foo_schedule"],
             )
+            assert result.exit_code == 0
 
             result = runner.invoke(
                 schedule_restart_command,

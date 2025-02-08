@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Callable
+from typing import Callable, Optional
 
 import click
 
@@ -24,6 +24,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorStatus,
     SensorInstigatorData,
 )
+from dagster._utils import PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
@@ -106,19 +107,6 @@ def check_repo_and_scheduler(repository: RemoteRepository, instance: DagsterInst
         )
 
 
-def extract_sensor_name(sensor_name):
-    if not sensor_name:
-        raise click.UsageError("Missing sensor name argument")
-
-    if isinstance(sensor_name, str):
-        return sensor_name
-
-    if len(sensor_name) == 1:
-        return sensor_name[0]
-
-    raise click.UsageError("Missing sensor name argument")
-
-
 @sensor_cli.command(
     name="list",
     help="List all sensors that correspond to a repository.",
@@ -181,16 +169,14 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 
 
 @sensor_cli.command(name="start", help="Start an existing sensor.")
-@click.argument("sensor_name", nargs=-1)  # , required=True)
+@click.argument("sensor_name", required=False)
 @click.option("--start-all", help="start all sensors", is_flag=True, default=False)
 @repository_options
-def sensor_start_command(sensor_name, start_all, **kwargs):
-    if not start_all:
-        sensor_name = extract_sensor_name(sensor_name)
+def sensor_start_command(sensor_name: Optional[str], start_all: bool, **kwargs):
     return execute_start_command(sensor_name, start_all, kwargs, click.echo)
 
 
-def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
+def execute_start_command(sensor_name: Optional[str], all_flag: bool, cli_args, print_fn: PrintFn):
     with get_instance_for_cli() as instance:
         with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
@@ -206,6 +192,8 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)  # pyright: ignore[reportArgumentType]
             else:
+                if not sensor_name:
+                    raise click.UsageError("Missing sensor name argument")
                 try:
                     sensor = repo.get_sensor(sensor_name)
                     instance.start_sensor(sensor)
@@ -216,14 +204,13 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
 
 
 @sensor_cli.command(name="stop", help="Stop an existing sensor.")
-@click.argument("sensor_name", nargs=-1)
+@click.argument("sensor_name")
 @repository_options
-def sensor_stop_command(sensor_name, **kwargs):
-    sensor_name = extract_sensor_name(sensor_name)
+def sensor_stop_command(sensor_name: str, **kwargs):
     return execute_stop_command(sensor_name, kwargs, click.echo)
 
 
-def execute_stop_command(sensor_name, cli_args, print_fn):
+def execute_stop_command(sensor_name: str, cli_args, print_fn: PrintFn):
     with get_instance_for_cli() as instance:
         with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
@@ -243,9 +230,10 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
 
 
 @sensor_cli.command(name="preview", help="Preview an existing sensor execution.")
-@click.argument("sensor_name", nargs=-1)
+@click.argument("sensor_name")
 @click.option(
     "--since",
+    type=float,
     help="Set the last_tick_completion_time value as a timestamp float for the sensor context",
     default=None,
 )
@@ -260,15 +248,24 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
     default=None,
 )
 @repository_options
-def sensor_preview_command(sensor_name, since, last_run_key, cursor, **kwargs):
-    sensor_name = extract_sensor_name(sensor_name)
-    if since:
-        since = float(since)
+def sensor_preview_command(
+    sensor_name: str,
+    since: Optional[float],
+    last_run_key: Optional[str],
+    cursor: Optional[str],
+    **kwargs,
+):
     return execute_preview_command(sensor_name, since, last_run_key, cursor, kwargs, click.echo)
 
 
 def execute_preview_command(
-    sensor_name, since, last_run_key, cursor, cli_args, print_fn, instance=None
+    sensor_name: str,
+    since: Optional[float],
+    last_run_key: Optional[str],
+    cursor: Optional[str],
+    cli_args,
+    print_fn: PrintFn,
+    instance: Optional[DagsterInstance] = None,
 ):
     with get_instance_for_cli() as instance:
         with get_code_location_from_kwargs(
@@ -323,7 +320,7 @@ def execute_preview_command(
 
 
 @sensor_cli.command(name="cursor", help="Set the cursor value for an existing sensor.")
-@click.argument("sensor_name", nargs=-1)
+@click.argument("sensor_name")
 @click.option(
     "--set",
     help="Set the cursor value for the sensor context",
@@ -333,12 +330,11 @@ def execute_preview_command(
     "--delete", help="Delete the existing cursor value for the sensor context", is_flag=True
 )
 @repository_options
-def sensor_cursor_command(sensor_name, **kwargs):
-    sensor_name = extract_sensor_name(sensor_name)
+def sensor_cursor_command(sensor_name: str, **kwargs):
     return execute_cursor_command(sensor_name, kwargs, click.echo)
 
 
-def execute_cursor_command(sensor_name, cli_args, print_fn):
+def execute_cursor_command(sensor_name: str, cli_args, print_fn: PrintFn):
     with get_instance_for_cli() as instance:
         with get_code_location_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args

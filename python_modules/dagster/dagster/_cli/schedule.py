@@ -1,7 +1,6 @@
 import glob
 import os
-from collections.abc import Sequence
-from typing import Callable, Optional, Union
+from typing import Callable, Optional
 
 import click
 
@@ -17,6 +16,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteRepository
 from dagster._core.scheduler.instigation import InstigatorStatus
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
+from dagster._utils import PrintFn
 
 
 @click.group(name="schedule")
@@ -215,21 +215,11 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 print_fn(f"Cron Schedule: {schedule.cron_schedule}")
 
 
-def extract_schedule_name(schedule_name: Optional[Union[str, Sequence[str]]]) -> Optional[str]:
-    if schedule_name and not isinstance(schedule_name, str):
-        if len(schedule_name) == 1:
-            return schedule_name[0]
-        else:
-            check.failed(f"Can only handle zero or one schedule args. Got {schedule_name!r}")
-    return None
-
-
 @schedule_cli.command(name="start", help="Start an existing schedule.")
-@click.argument("schedule_name", nargs=-1)  # , required=True)
+@click.argument("schedule_name", required=False)
 @click.option("--start-all", help="start all schedules", is_flag=True, default=False)
 @repository_options
-def schedule_start_command(schedule_name, start_all, **kwargs):
-    schedule_name = extract_schedule_name(schedule_name)
+def schedule_start_command(schedule_name: Optional[str], start_all: bool, **kwargs):
     if schedule_name is None and start_all is False:
         print(  # noqa: T201
             "Noop: dagster schedule start was called without any arguments specifying which "
@@ -239,7 +229,9 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
     return execute_start_command(schedule_name, start_all, kwargs, click.echo)
 
 
-def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
+def execute_start_command(
+    schedule_name: Optional[str], all_flag: bool, cli_args, print_fn: PrintFn
+):
     with get_instance_for_cli() as instance:
         with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
@@ -257,6 +249,8 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
 
                 print_fn(f"Started all schedules for repository {repository_name}")
             else:
+                if not schedule_name:
+                    raise click.UsageError("Missing schedule name")
                 try:
                     instance.start_schedule(repo.get_schedule(schedule_name))
                 except DagsterInvariantViolationError as ex:
@@ -266,14 +260,15 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
 
 
 @schedule_cli.command(name="stop", help="Stop an existing schedule.")
-@click.argument("schedule_name", nargs=-1)
+@click.argument("schedule_name")
 @repository_options
-def schedule_stop_command(schedule_name, **kwargs):
-    schedule_name = extract_schedule_name(schedule_name)
+def schedule_stop_command(schedule_name: str, **kwargs):
     return execute_stop_command(schedule_name, kwargs, click.echo)
 
 
-def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
+def execute_stop_command(
+    schedule_name: str, cli_args, print_fn: PrintFn, instance: Optional[DagsterInstance] = None
+):
     with get_instance_for_cli() as instance:
         with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
@@ -294,10 +289,9 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
 
 
 @schedule_cli.command(name="logs", help="Get logs for a schedule.")
-@click.argument("schedule_name", nargs=-1)
+@click.argument("schedule_name", required=False)
 @repository_options
-def schedule_logs_command(schedule_name, **kwargs):
-    schedule_name = extract_schedule_name(schedule_name)
+def schedule_logs_command(schedule_name: Optional[str], **kwargs):
     if schedule_name is None:
         print(  # noqa: T201
             "Noop: dagster schedule logs was called without any arguments specifying which "
@@ -307,7 +301,9 @@ def schedule_logs_command(schedule_name, **kwargs):
     return execute_logs_command(schedule_name, kwargs, click.echo)
 
 
-def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
+def execute_logs_command(
+    schedule_name: str, cli_args, print_fn: PrintFn, instance: Optional[DagsterInstance] = None
+):
     with get_instance_for_cli() as instance:
         with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
@@ -360,7 +356,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
 
 
 @schedule_cli.command(name="restart", help="Restart a running schedule.")
-@click.argument("schedule_name", nargs=-1)
+@click.argument("schedule_name", required=False)
 @click.option(
     "--restart-all-running",
     help="restart previously running schedules",
@@ -368,12 +364,13 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
     default=False,
 )
 @repository_options
-def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
-    schedule_name = extract_schedule_name(schedule_name)
+def schedule_restart_command(schedule_name: Optional[str], restart_all_running: bool, **kwargs):
     return execute_restart_command(schedule_name, restart_all_running, kwargs, click.echo)
 
 
-def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
+def execute_restart_command(
+    schedule_name: Optional[str], all_running_flag: bool, cli_args, print_fn: PrintFn
+):
     with get_instance_for_cli() as instance:
         with get_remote_repository_from_kwargs(
             instance, version=dagster_version, kwargs=cli_args
@@ -402,6 +399,8 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
 
                 print_fn(f"Restarted all running schedules for repository {repository_name}")
             else:
+                if not schedule_name:
+                    raise click.UsageError("Missing schedule name")
                 remote_schedule = repo.get_schedule(schedule_name)
                 schedule_state = instance.get_instigator_state(
                     remote_schedule.get_remote_origin_id(),
@@ -430,7 +429,7 @@ def schedule_wipe_command():
     return execute_wipe_command(click.echo)
 
 
-def execute_wipe_command(print_fn):
+def execute_wipe_command(print_fn: PrintFn):
     with get_instance_for_cli() as instance:
         confirmation = click.prompt(
             "Are you sure you want to turn off all schedules and delete all schedule history? Type"
@@ -448,7 +447,7 @@ def schedule_debug_command():
     return execute_debug_command(click.echo)
 
 
-def execute_debug_command(print_fn):
+def execute_debug_command(print_fn: PrintFn):
     with get_instance_for_cli() as instance:
         debug_info = instance.scheduler_debug_info()
 
