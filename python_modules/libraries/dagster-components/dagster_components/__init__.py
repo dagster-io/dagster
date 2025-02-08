@@ -1,3 +1,8 @@
+from dagster_components.core.common.schema import (
+    AssetAttributesSchema as AssetAttributesSchema,
+    AssetSpecSchema as AssetSpecSchema,
+    OpSpecSchema as OpSpecSchema,
+)
 from dagster_components.core.component import (
     Component as Component,
     ComponentLoadContext as ComponentLoadContext,
@@ -21,9 +26,6 @@ from dagster_components.core.resolution_engine.resolver import (
 from dagster_components.core.schema.base import ComponentSchema as ComponentSchema
 from dagster_components.core.schema.metadata import SchemaFieldInfo as SchemaFieldInfo
 from dagster_components.core.schema.objects import (
-    AssetAttributesSchema as AssetAttributesSchema,
-    AssetSpecSchema as AssetSpecSchema,
     AssetSpecTransformSchema as AssetSpecTransformSchema,
-    OpSpecSchema as OpSpecSchema,
 )
 from dagster_components.version import __version__ as __version__

@@ -6,14 +6,11 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 
 from dagster_components import Component, ComponentLoadContext, registered_component_type
+from dagster_components.core.common.schema import OpSpecSchema
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.base import ComponentSchema
 from dagster_components.core.schema.metadata import SchemaFieldInfo
-from dagster_components.core.schema.objects import (
-    AssetAttributesSchema,
-    AssetSpecTransformSchema,
-    OpSpecSchema,
-)
+from dagster_components.core.schema.objects import AssetAttributesSchema, AssetSpecTransformSchema
 
 
 class ComplexAssetParams(ComponentSchema):
