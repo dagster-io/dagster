@@ -9,21 +9,13 @@ This is the 1.10.0 version of the asset selection syntax. For the 1.9.11 version
 
 :::
 
-The Asset Selection Syntax allows you to query and visualize assets within your data lineage graph. Whether you're looking to view the entire graph, specific layers, or apply filters to narrow down your search, this syntax provides a flexible and powerful way to achieve your goals.
+Dagster's asset selection syntax allows you to query and view assets within your data lineage graph. You can select upstream and downstream layers of the graph, use filters to narrow down your selection, and use functions to return the root or sink assets of a given selection.
 
-TODO link to API docs / talk about methods on `AssetSelection` Python object: `AssetSelection.from_string("new syntax here")`
-
-TODO old docs `selection` field will now accept new syntax.
-
-TODO will old syntax continue to work?
-
-This reference contains information about the syntax for asset selections, including a variety of examples for selecting assets and their downstream and upstream dependencies.
-
-Asset selection may be used to:
+With asset selection, you can:
 
 - Select a set of assets to view in the Dagster UI
-- Define a job that targets a selection of assets
-- Select a set of assets for an adhoc run
+- Define a job in Python that targets a selection of assets
+- List or materialize a set of assets using the [Dagster CLI](/api/python-api/cli#dagster-asset)
 
 
 ## Basic syntax
@@ -39,9 +31,6 @@ An **asset** is an entity within your data lineage graph, such as a table, datas
 To display the entire asset graph, you can use the `*` syntax. However, this is not a common use case, and we recommend refining your asset selection with the other syntax described in this reference.
 
 :::
-
-TODO can you do `*key:"my_asset"` to get all assets upstream of a specific asset?
-
 
 ## Upstream and downstream layers
 
@@ -80,15 +69,7 @@ You can display both upstream and downstream layers simultaneously to get a comp
 
 ## Filters
 
-Filters allow you to narrow your asset selection based on specific criteria.
-
-TODO verify that "tagged" can/should link to metadata-and-tags/tags.md
-
-TODO verify that "kind" should link to "kind tags" doc
-
-TODO document asset groups and link here
-
-TODO link to code location docs
+Filters allow you to narrow your asset selection using specific criteria.
 
 | Filter | Syntax | Description |
 |--------|--------|-------------|
@@ -118,16 +99,12 @@ Functions allow you to perform specific operations on your asset selection. You 
 - **Sink assets** are assets without any downstream dependencies (leaf nodes), which means they don't provide input to any other assets.
 - **Root assets** are assets without any upstream dependencies (root nodes), which means no assets provide input to them.
 
-TODO what expression goes in there? An asset selection query? How do you format the query? Is it a string? If so, how do you escape strings inside it?
-
 | Function | Description |
 |--------|-------------|
 | `sinks(expr)` | Selects only "sink" assets from the specified expression. |
 |  `roots(expr)` | Selects only "root" assets from the specified expression. |
 
 ## Example queries
-
-TODO maybe incorporate these queries into reference above?
 
 Here are some practical examples of the Dagster asset selection syntax to help you understand how to use it effectively.
 
