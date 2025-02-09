@@ -86,7 +86,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             SqlEventLogStorageMetadata.create_all(conn)
             stamp_alembic_rev(mysql_alembic_config(__file__), conn)
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         # When running in dagster-webserver, hold an open connection
         # https://github.com/dagster-io/dagster/issues/3719
         self._engine = create_engine(
@@ -94,6 +96,7 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             isolation_level=mysql_isolation_level(),
             pool_size=1,
             pool_recycle=pool_recycle,
+            max_overflow=max_overflow,
         )
 
     def upgrade(self) -> None:

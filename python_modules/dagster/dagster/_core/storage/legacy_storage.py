@@ -302,8 +302,12 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def dispose(self) -> None:
         return self._storage.run_storage.dispose()
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        return self._storage.run_storage.optimize_for_webserver(statement_timeout, pool_recycle)
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
+        return self._storage.run_storage.optimize_for_webserver(
+            statement_timeout, pool_recycle, max_overflow
+        )
 
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
         return self._storage.run_storage.add_daemon_heartbeat(daemon_heartbeat)
@@ -459,9 +463,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def dispose(self) -> None:
         return self._storage.event_log_storage.dispose()
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         return self._storage.event_log_storage.optimize_for_webserver(
-            statement_timeout, pool_recycle
+            statement_timeout,
+            pool_recycle,
+            max_overflow,
         )
 
     def get_event_records(
@@ -863,9 +871,13 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.schedule_storage.optimize(print_fn, force_rebuild_all)
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         return self._storage.schedule_storage.optimize_for_webserver(
-            statement_timeout, pool_recycle
+            statement_timeout,
+            pool_recycle,
+            max_overflow,
         )
 
     def dispose(self) -> None:
