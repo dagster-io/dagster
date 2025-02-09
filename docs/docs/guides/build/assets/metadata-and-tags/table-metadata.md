@@ -1,7 +1,7 @@
 ---
 title: "Table metadata"
 description: "Table metadata can be used to provide additional context about a tabular asset, such as its schema, row count, and more."
-sidebar_position: 300
+sidebar_position: 3000
 ---
 
 Table metadata provides additional context about a tabular asset, such as its schema, row count, and more. This metadata can be used to improve collaboration, debugging, and data quality in your data platform.

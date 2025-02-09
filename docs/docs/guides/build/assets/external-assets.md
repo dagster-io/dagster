@@ -1,6 +1,6 @@
 ---
 title: External assets
-sidebar_position: 500
+sidebar_position: 700
 ---
 
 One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization, even if those assets are orchestrated by systems other than Dagster.

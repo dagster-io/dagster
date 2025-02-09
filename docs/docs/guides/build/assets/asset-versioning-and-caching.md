@@ -1,5 +1,6 @@
 ---
 title: "Asset versioning and caching"
+sidebar_position: 1300
 ---
 
 

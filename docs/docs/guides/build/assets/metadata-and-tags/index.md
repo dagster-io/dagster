@@ -1,5 +1,6 @@
 ---
-title: "Asset metadata"
+title: "Asset metadata and tags"
+sidebar_position: 800
 ---
 
 [Assets](/guides/build/assets/) feature prominently in the Dagster UI. Attaching information to assets allows you to understand where they're stored, what they contain, and how they should be organized.
