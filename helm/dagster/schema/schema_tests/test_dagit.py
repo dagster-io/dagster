@@ -300,6 +300,18 @@ def test_webserver_db_pool_recycle(deployment_template: HelmTemplate):
     assert f"--db-pool-recycle {pool_recycle_s}" in command
 
 
+def test_webserver_db_pool_max_overflow(deployment_template: HelmTemplate):
+    pool_max_overflow_s = 30
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(dbPoolMaxOverflow=pool_max_overflow_s)
+    )
+
+    webserver_deployments = deployment_template.render(helm_values)
+    command = " ".join(webserver_deployments[0].spec.template.spec.containers[0].command)
+
+    assert f"--db-pool-max-overflow {pool_max_overflow_s}" in command
+
+
 def test_webserver_log_level(deployment_template: HelmTemplate):
     log_level = "trace"
     helm_values = DagsterHelmValues.construct(
