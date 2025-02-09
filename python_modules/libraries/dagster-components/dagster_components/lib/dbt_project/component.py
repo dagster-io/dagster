@@ -26,7 +26,7 @@ from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentSca
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectParams(ComponentSchema):
+class DbtProjectSchema(ComponentSchema):
     dbt: DbtCliResource
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
@@ -35,8 +35,8 @@ class DbtProjectParams(ComponentSchema):
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 
 
-@resolver(fromtype=DbtProjectParams, exclude_fields={"asset_attributes"})
-class DbtProjectResolver(Resolver[DbtProjectParams]):
+@resolver(fromtype=DbtProjectSchema, exclude_fields={"asset_attributes"})
+class DbtProjectResolver(Resolver[DbtProjectSchema]):
     def resolve_translator(self, context: ResolutionContext) -> DagsterDbtTranslator:
         return get_wrapped_translator_class(DagsterDbtTranslator)(
             resolving_info=TranslatorResolvingInfo(
@@ -67,8 +67,8 @@ class DbtProjectComponent(Component):
         return DbtProjectComponentScaffolder()
 
     @classmethod
-    def get_schema(cls) -> type[DbtProjectParams]:
-        return DbtProjectParams
+    def get_schema(cls) -> type[DbtProjectSchema]:
+        return DbtProjectSchema
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None
