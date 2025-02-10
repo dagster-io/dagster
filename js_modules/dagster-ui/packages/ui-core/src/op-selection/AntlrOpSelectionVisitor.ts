@@ -1,4 +1,5 @@
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import escapeRegExp from 'lodash/escapeRegExp';
 
 import {GraphQueryItem, GraphTraverser} from '../app/GraphQueryImpl';
 import {
@@ -8,7 +9,6 @@ import {
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
   NameExprContext,
-  NameSubstringExprContext,
   NotExpressionContext,
   OrExpressionContext,
   ParenthesizedExpressionContext,
@@ -19,7 +19,6 @@ import {
 } from './generated/OpSelectionParser';
 import {OpSelectionVisitor} from './generated/OpSelectionVisitor';
 import {getFunctionName, getTraversalDepth, getValue} from '../asset-selection/util';
-
 export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   extends AbstractParseTreeVisitor<Set<T>>
   implements OpSelectionVisitor<Set<T>>
@@ -139,15 +138,9 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
   }
 
   visitNameExpr(ctx: NameExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = [...this.all_ops].filter((i) => i.name === value);
-    selection.forEach((i) => this.focus_ops.add(i));
-    return new Set(selection);
-  }
-
-  visitNameSubstringExpr(ctx: NameSubstringExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = [...this.all_ops].filter((i) => i.name.includes(value));
+    const value: string = getValue(ctx.keyValue());
+    const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
+    const selection = [...this.all_ops].filter((i) => regex.test(i.name));
     selection.forEach((i) => this.focus_ops.add(i));
     return new Set(selection);
   }

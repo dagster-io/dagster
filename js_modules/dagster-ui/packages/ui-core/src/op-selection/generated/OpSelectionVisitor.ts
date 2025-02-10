@@ -12,8 +12,8 @@ import {
   ExprContext,
   FunctionCallExpressionContext,
   FunctionNameContext,
+  KeyValueContext,
   NameExprContext,
-  NameSubstringExprContext,
   NotExpressionContext,
   OrExpressionContext,
   ParenthesizedExpressionContext,
@@ -107,14 +107,6 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
   visitNameExpr?: (ctx: NameExprContext) => Result;
 
   /**
-   * Visit a parse tree produced by the `NameSubstringExpr`
-   * labeled alternative in `OpSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitNameSubstringExpr?: (ctx: NameSubstringExprContext) => Result;
-
-  /**
    * Visit a parse tree produced by the `AttributeExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
    * @param ctx the parse tree
@@ -193,4 +185,11 @@ export interface OpSelectionVisitor<Result> extends ParseTreeVisitor<Result> {
    * @return the visitor result
    */
   visitValue?: (ctx: ValueContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `OpSelectionParser.keyValue`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitKeyValue?: (ctx: KeyValueContext) => Result;
 }
