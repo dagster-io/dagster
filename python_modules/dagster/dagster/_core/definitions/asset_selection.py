@@ -1,5 +1,6 @@
 import collections.abc
 import operator
+import re
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from functools import reduce
@@ -1180,6 +1181,23 @@ class KeySubstringAssetSelection(AssetSelection):
 
     def to_selection_str(self) -> str:
         return f'key_substring:"{self.selected_key_substring}"'
+
+
+@whitelist_for_serdes
+@record
+class KeyWildCardAssetSelection(AssetSelection):
+    selected_key_wildcard: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        regex = re.compile("^" + re.escape(self.selected_key_wildcard).replace("\\*", ".*") + "$")
+        return {
+            key for key in asset_graph.get_all_asset_keys() if regex.match(key.to_user_string())
+        }
+
+    def to_selection_str(self) -> str:
+        return f'key:"{self.selected_key_wildcard}"'
 
 
 def _fetch_all_upstream(

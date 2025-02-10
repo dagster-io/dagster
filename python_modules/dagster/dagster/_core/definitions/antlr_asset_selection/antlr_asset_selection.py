@@ -16,6 +16,7 @@ from dagster._core.definitions.asset_selection import (
     CodeLocationAssetSelection,
     ColumnAssetSelection,
     ColumnTagAssetSelection,
+    KeyWildCardAssetSelection,
     TableNameAssetSelection,
 )
 from dagster._core.storage.tags import KIND_PREFIX
@@ -113,12 +114,8 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
             return "roots"
 
     def visitKeyExpr(self, ctx: AssetSelectionParser.KeyExprContext):
-        value = self.visit(ctx.value())
-        return AssetSelection.assets(value)
-
-    def visitKeySubstringExpr(self, ctx: AssetSelectionParser.KeySubstringExprContext):
-        value = self.visit(ctx.value())
-        return AssetSelection.key_substring(value)
+        value = self.visit(ctx.keyValue())
+        return KeyWildCardAssetSelection(selected_key_wildcard=value)
 
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))
@@ -142,6 +139,14 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     ):
         code_location = self.visit(ctx.value())
         return CodeLocationAssetSelection(selected_code_location=code_location)
+
+    def visitKeyValue(self, ctx: AssetSelectionParser.KeyValueContext):
+        if ctx.QUOTED_STRING():
+            return ctx.QUOTED_STRING().getText().strip('"')
+        elif ctx.UNQUOTED_REGEX_STRING():
+            return ctx.UNQUOTED_REGEX_STRING().getText()
+        elif ctx.UNQUOTED_STRING():
+            return ctx.UNQUOTED_STRING().getText()
 
     def visitValue(self, ctx: AssetSelectionParser.ValueContext):
         if ctx.QUOTED_STRING():
