@@ -11,7 +11,7 @@ from dagster_graphql.test.utils import (
 
 
 def test_execute_hammer_through_webserver():
-    with instance_for_test() as instance:
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         with WorkspaceProcessContext(
             instance,
             version="",
