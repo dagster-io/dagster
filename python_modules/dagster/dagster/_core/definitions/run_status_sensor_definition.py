@@ -515,7 +515,7 @@ def run_failure_sensor(
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): The job a RunRequest should
             execute if yielded from the sensor.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]]):
             A list of jobs to be executed if RunRequests are yielded from the sensor.
         monitor_all_repositories (bool): (deprecated in favor of monitor_all_code_locations) If set to True,
             the sensor will monitor all runs in the Dagster instance. If set to True, an error will be raised if you also specify
@@ -604,7 +604,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             be used for searching and filtering in the UI.
         metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
             sensor. Values will be normalized to typed `MetadataValue` objects.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]):
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
@@ -1103,7 +1103,7 @@ def run_status_sensor(
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job that should be
             executed if a RunRequest is yielded from the sensor.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             A list of jobs to be executed if RunRequests are yielded from the sensor.
         monitor_all_repositories (Optional[bool]): (deprecated in favor of monitor_all_code_locations) If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.

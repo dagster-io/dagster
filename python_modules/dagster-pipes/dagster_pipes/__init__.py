@@ -1045,7 +1045,7 @@ class PipesDefaultLogWriterChannel(PipesStdioLogWriterChannel):
 
 
 class PipesDefaultLogWriter(PipesStdioLogWriter):
-    """[Experimental] A log writer that writes stdout and stderr via the message writer channel."""
+    """A log writer that writes stdout and stderr via the message writer channel."""
 
     def __init__(self, message_channel: PipesMessageWriterChannel, interval: float = 1):
         self.interval = interval

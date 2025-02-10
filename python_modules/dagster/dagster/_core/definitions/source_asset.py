@@ -174,9 +174,9 @@ class SourceAsset(ResourceAddable, IHasInternalInit):
         metadata (Mapping[str, MetadataValue]): Metadata associated with the asset.
         io_manager_key (Optional[str]): The key for the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
-        io_manager_def (Optional[IOManagerDefinition]): (Experimental) The definition of the IOManager that will be used to load the contents of
+        io_manager_def (Optional[IOManagerDefinition]): (Beta) The definition of the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Experimental) resource definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in the `io_manager_def` argument.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): (Beta) resource definitions that may be required by the :py:class:`dagster.IOManagerDefinition` provided in the `io_manager_def` argument.
         description (Optional[str]): The description of the asset.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.

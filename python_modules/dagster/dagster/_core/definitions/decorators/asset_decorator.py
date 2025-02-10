@@ -207,7 +207,7 @@ def asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used
             for storing the output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager"). Only one of io_manager_key and io_manager_def can be provided.
-        io_manager_def (Optional[object]): (Experimental) The IOManager used for
+        io_manager_def (Optional[object]): (Beta) The IOManager used for
             storing the output of the op as an asset,  and for loading it in
             downstream ops. Only one of io_manager_def and io_manager_key can be provided.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
@@ -221,7 +221,7 @@ def asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         resource_defs (Optional[Mapping[str, object]]):
-            (Experimental) A mapping of resource keys to resources. These resources
+            (Beta) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         output_required (bool): Whether the decorated function will always materialize an asset.
@@ -229,7 +229,7 @@ def asset(
             no result is yielded, no output will be materialized to storage and downstream
             assets will not be materialized.
         automation_condition (AutomationCondition): A condition describing when Dagster should materialize this asset.
-        backfill_policy (BackfillPolicy): (Experimental) Configure Dagster to backfill this asset according to its
+        backfill_policy (BackfillPolicy): (Beta) Configure Dagster to backfill this asset according to its
             BackfillPolicy.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
         code_version (Optional[str]): Version of the code that generates this asset. In
@@ -609,7 +609,7 @@ def multi_asset(
         can_subset (bool): If this asset's computation can emit a subset of the asset
             keys based on the context.selected_asset_keys argument. Defaults to False.
         resource_defs (Optional[Mapping[str, object]]):
-            (Experimental) A mapping of resource keys to resources. These resources
+            (Beta) A mapping of resource keys to resources. These resources
             will be initialized during execution, and can be accessed from the
             context within the body of the function.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
@@ -815,9 +815,9 @@ def graph_asset(
             compose the asset.
         metadata (Optional[RawMetadataMapping]): Dictionary of metadata to be associated with
             the asset.
-        tags (Optional[Mapping[str, str]]): (Experimental) Tags for filtering and organizing. These tags are not
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
-        owners (Optional[Sequence[str]]): (Experimental) A list of strings representing owners of the asset. Each
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
         kinds (Optional[Set[str]]): A list of strings representing the kinds of the asset. These

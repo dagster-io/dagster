@@ -17,7 +17,7 @@ from dagster import (
     SourceAsset,
     asset,
 )
-from dagster._annotations import beta
+from dagster._annotations import beta, beta_param
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -71,6 +71,7 @@ def _make_dagstermill_asset_compute_fn(
 
 
 @beta
+@beta_param(param="resource_defs")
 def define_dagstermill_asset(
     name: str,
     notebook_path: str,
@@ -119,7 +120,7 @@ def define_dagstermill_asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-            (Experimental) A mapping of resource keys to resource definitions. These resources
+            (Beta) A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the notebook.
         io_manager_key (Optional[str]): A string key for the IO manager used to store the output notebook.

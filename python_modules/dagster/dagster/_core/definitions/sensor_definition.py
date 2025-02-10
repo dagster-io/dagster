@@ -568,11 +568,11 @@ class SensorDefinition(IHasInternalInit):
             between sensor evaluations.
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[GraphDefinition, JobDefinition, UnresolvedAssetJob]): The job to execute when this sensor fires.
-        jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): (experimental) A list of jobs to execute when this sensor fires.
+        jobs (Optional[Sequence[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): A list of jobs to execute when this sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
         asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
-            (Experimental) an asset selection to launch a run for if the sensor condition is met.
+            An asset selection to launch a run for if the sensor condition is met.
             This can be provided instead of specifying a job.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
@@ -584,7 +584,7 @@ class SensorDefinition(IHasInternalInit):
             The target that the sensor will execute.
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
-            This is an experimental parameter that will replace `job`, `jobs`, and `asset_selection`.
+            This is a parameter that will replace `job`, `jobs`, and `asset_selection`.
     """
 
     def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":

@@ -8,7 +8,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.warnings import experimental_warning
+from dagster._utils.warnings import beta_warning
 
 
 class ResolvedAssetDependencies:
@@ -175,7 +175,7 @@ def resolve_assets_def_deps(
                 resolved_keys_by_unresolved_key[upstream_key] = resolved_key
 
                 if not warned:
-                    experimental_warning(
+                    beta_warning(
                         f"Asset {next(iter(assets_def.keys)).to_string()}'s dependency"
                         f" '{upstream_key.path[-1]}' was resolved to upstream asset"
                         f" {resolved_key.to_string()}, because the name matches and they're in the"

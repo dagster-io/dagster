@@ -36,7 +36,7 @@ class DataVersion(
         [("value", str)],
     )
 ):
-    """(Experimental) Represents a data version for an asset.
+    """Represents a data version for an asset.
 
     Args:
         value (str): An arbitrary string representing a data version.
@@ -94,7 +94,7 @@ class DataProvenance(
         ],
     )
 ):
-    """(Experimental) Provenance information for an asset materialization.
+    """Provenance information for an asset materialization.
 
     Args:
         code_version (str): The code version of the op that generated a materialization.

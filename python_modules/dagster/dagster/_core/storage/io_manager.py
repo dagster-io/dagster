@@ -207,7 +207,7 @@ def io_manager(
             Dagster will accept any config provided.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the object
             manager.
-        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+        version (Optional[str]): The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
             definition when provided with the same inputs.
 

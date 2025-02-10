@@ -295,7 +295,7 @@ class OutputContext:
     @public
     @property
     def version(self) -> Optional[str]:
-        """(Experimental) The version of the output."""
+        """The version of the output."""
         return self._version
 
     @public
@@ -850,7 +850,7 @@ def build_output_context(
         mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         config (Optional[Any]): The configuration for the output.
         dagster_type (Optional[DagsterType]): The type of this output.
-        version (Optional[str]): (Experimental) The version of the output.
+        version (Optional[str]): The version of the output.
         resource_config (Optional[Mapping[str, Any]]): The resource config to make available from the
             input context. This usually corresponds to the config provided to the resource that
             loads the output manager.
