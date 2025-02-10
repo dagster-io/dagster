@@ -481,6 +481,31 @@
       "permanent": false
     },
     {
+      "source": "/tutorials",
+      "destination": "/examples",
+      "permanent": false
+    },
+    {
+      "source": "/tutorials/llm-fine-tuning",
+      "destination": "/examples/llm-fine-tuning",
+      "permanent": false
+    },
+    {
+      "source": "/tutorials/modal",
+      "destination": "/examples/modal",
+      "permanent": false
+    },
+    {
+      "source": "/tutorials/prompt-engineering",
+      "destination": "/examples/prompt-engineering",
+      "permanent": false
+    },
+    {
+      "source": "/tutorials/rag",
+      "destination": "/examples/rag",
+      "permanent": false
+    },
+    {
       "source": "/concepts",
       "destination": "/",
       "permanent": false

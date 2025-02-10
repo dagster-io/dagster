@@ -38,14 +38,10 @@ AVAILABLE_EXAMPLES = [
     "getting_started_etl_tutorial",
     "google_drive_factory",
     "project_analytics",
-    "project_ask_ai_dagster",
     "project_atproto_dashboard",
-    "project_dagster_modal_pipes",
     "project_dagster_university_start",
     "project_du_dbt_starter",
     "project_fully_featured",
-    "project_llm_fine_tune",
-    "project_prompt_eng",
     "quickstart_aws",
     "quickstart_etl",
     "quickstart_gcp",
@@ -59,6 +55,10 @@ AVAILABLE_EXAMPLES = [
     "with_wandb",
     "airlift-federation-tutorial",
     "airlift-migration-tutorial",
+    "docs_projects/project_ask_ai_dagster",
+    "docs_projects/project_dagster_modal_pipes",
+    "docs_projects/project_llm_fine_tune",
+    "docs_projects/project_prompt_eng",
 ]
 
 

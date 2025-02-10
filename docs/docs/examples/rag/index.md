@@ -38,7 +38,7 @@ First, set up a new Dagster project.
 1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
-   cd examples/examples_section/project_ask_ai_dagster
+   cd examples/docs_projects/project_ask_ai_dagster
    ```
 
 2. Create and activate a virtual environment:

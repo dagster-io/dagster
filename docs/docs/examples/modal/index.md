@@ -35,7 +35,7 @@ First, set up a new Dagster project.
 1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
-   cd examples/examples_section/project_dagster_modal_pipes
+   cd examples/docs_projects/project_dagster_modal_pipes
    ```
 
 2. Create and activate a virtual environment:
