@@ -29,13 +29,13 @@ concurrency:
 
 You can assign assets and ops to concurrency pools which allow you to limit the number of in progress runs containing those assets or ops.  You first assign your asset or op to a concurrency pool using the `pool` keyword argument.
 
-<CodeExample filePath="guides/tbd/concurrency-pool-api.py" language="python" title="Specifying pools on assets and ops" />
+<CodeExample filePath="docs_beta_snippets/docs_beta_snippets/guides/operate/concurrency-pool-api.py" language="python" title="Specifying pools on assets and ops" />
 
 You should be able to verify that you have set the pool correctly by viewing the details pane for the asset or op in the Dagster UI.
 
 ![Viewing the pool tag](/images/guides/operate/managing-concurrency/asset-pool-tag.png)
 
-Once you have assigned your assets and ops to a concurrency pool, you can configure a pool limit for that pool in your deployment by using the Dagster UI or by using the Dagster CLI.
+Once you have assigned your assets and ops to a concurrency pool, you can configure a pool limit for that pool in your deployment by using the Dagster UI or the Dagster CLI.
 
 To specify a limit for the pool "database" using the UI, navigate to the `Deployments` &rarr; `Concurrency` settings page and click the `Add pool limit` button:
 
@@ -76,7 +76,7 @@ concurrency:
 
 ### Limit the number of runs that can be in progress by unique tag value
 
-To apply separate limits to each unique value of a run tag, set a limit for each unique value using applyLimitPerUniqueValue. For example, instead of limiting the number of backfill runs across all backfills, you may want to limit the number of runs for each backfill in progress:
+To apply separate limits to each unique value of a run tag, set a limit for each unique value using `applyLimitPerUniqueValue`. For example, instead of limiting the number of backfill runs across all backfills, you may want to limit the number of runs for each backfill in progress:
 
 ```yaml
 concurrency:
@@ -88,9 +88,9 @@ concurrency:
         limit: 10
 ```
 
-## [Advanced] Limit the number of assets/ops actively in execution across a large set of runs
+## [Advanced] Limit the number of assets or ops actively in execution across a large set of runs
 
-For deployments with complex jobs containing many ops, blocking entire runs for a small number of concurrency-limited ops may be too coarse-grained for your requirements.  Instead of enforcing concurrency limits at the run level, Dagster will ensure that the concurrency limit will be applied at the individual op/asset execution level.  This means that if one run completes its materialization of a pool's asset, a materialization of another pool asset in a different run may begin even if the first run is still in progress.
+For deployments with complex jobs containing many ops, blocking entire runs for a small number of concurrency-limited ops may be too coarse-grained for your requirements.  Instead of enforcing concurrency limits at the run level, Dagster will ensure that the concurrency limit will be applied at the individual asset or op execution level.  This means that if one run completes its materialization of a pool's asset, a materialization of another pool asset in a different run may begin even if the first run is still in progress.
 
 You can set the granularity of the concurrency limit enforcement to be at the op level instead of at the run level:
 
@@ -104,7 +104,7 @@ concurrency:
 
 You can use Dagster's rich metadata to use a schedule or a sensor to only start a run when there are no currently running jobs.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/concurrency-no-more-than-1-job.py" language="python" title="No more than 1 running job from a schedule" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/operate/concurrency-no-more-than-1-job.py" language="python" title="No more than 1 running job from a schedule" />
 
 
 ## Troubleshooting
@@ -117,7 +117,7 @@ When limiting concurrency, you might run into some issues until you get the conf
 This only applies to Dagster Open Source.
 :::
 
-The `run_queue` key may not be set in your instance's settings. In the Dagster UI, navigate to Deployment > Configuration and verify that the `run_queue` key is set.
+The `run_queue` key may not be set in your instance's settings. In the Dagster UI, navigate to **Deployment > Configuration** and verify that the `run_queue` key is set.
 
 ### Runs remaining in QUEUED status
 
@@ -141,7 +141,7 @@ The possible causes for runs remaining in `QUEUED` status depend on whether you'
   **Troubleshoot the run queue configuration**
     If the daemon is running, runs may intentionally be left in the queue due to concurrency rules. To investigate:
     * **Check the output logged from the daemon process**, as this will include skipped runs.
-    * **Check the max_concurrent_runs setting in your instance's dagster.yaml**. If set to 0, this may block the queue. You can check this setting in the Dagster UI by navigating to Deployment > Configuration and locating the concurrency.runs.max_concurrent_runs setting. Refer to the Limiting overall runs section for more info.
+    * **Check the max_concurrent_runs setting in your instance's dagster.yaml**. If set to 0, this may block the queue. You can check this setting in the Dagster UI by navigating to Deployment > Configuration and locating the concurrency.runs.max_concurrent_runs setting. Refer to the [Limit the number of total runs that can be in progress at the same time](#limit-the-number-of-total-runs-that-can-be-in-progress-at-the-same-time) section for more info.
     * **Check the state of your run queue**. In some cases, the queue may be blocked by some number of in-progress runs. To view the status of your run queue, click **Runs** in the top navigation of the Dagster UI and then open the **Queued** and **In Progress** tabs.
     
     If there are queued or in-progress runs blocking the queue, you can terminate them to allow other runs to proceed.
