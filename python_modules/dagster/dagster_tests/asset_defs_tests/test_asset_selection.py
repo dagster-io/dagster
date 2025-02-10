@@ -23,6 +23,9 @@ from dagster import (
 )
 from dagster._check.functions import CheckError
 from dagster._core.definitions import AssetSelection, asset
+from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
+    string_with_wildcard_to_regex,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import (
@@ -805,8 +808,12 @@ def test_from_string():
     assert AssetSelection.from_string("*my_asset*") == AssetSelection.assets("my_asset").downstream(
         depth=MAX_NUM, include_self=True
     ) | AssetSelection.assets("my_asset").upstream(depth=MAX_NUM, include_self=True)
-    assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag("foo", "bar")
-    assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", "")
+    assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag(
+        string_with_wildcard_to_regex("foo"), string_with_wildcard_to_regex("bar")
+    )
+    assert AssetSelection.from_string("tag:foo") == AssetSelection.tag(
+        string_with_wildcard_to_regex("foo"), string_with_wildcard_to_regex("")
+    )
 
 
 def test_tag():
@@ -823,6 +830,33 @@ def test_tag():
     assert AssetSelection.tag("foo", "fooval").resolve([assets]) == {
         AssetKey(k) for k in ["asset1", "asset3"]
     }
+
+
+def test_tag_regex():
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1", tags={"foo": "fooval"}),
+            AssetSpec("asset2", tags={"foo": "fooval2"}),
+            AssetSpec("asset3", tags={"foo": "fooval", "bar": "barval"}),
+            AssetSpec("asset4", tags={"bar": "barval"}),
+        ]
+    )
+    def assets(): ...
+
+    # Key doesn't match, so no assets are selected
+    assert AssetSelection.tag(
+        string_with_wildcard_to_regex("o*"), string_with_wildcard_to_regex("fooval*")
+    ).resolve([assets]) == {AssetKey(k) for k in []}
+
+    # Key matches, but value doesn't
+    assert AssetSelection.tag(
+        string_with_wildcard_to_regex("foo"), string_with_wildcard_to_regex("fooval3")
+    ).resolve([assets]) == {AssetKey(k) for k in []}
+
+    # Prefix and suffix match on both key and value
+    assert AssetSelection.tag(
+        string_with_wildcard_to_regex("*o*"), string_with_wildcard_to_regex("*ov*")
+    ).resolve([assets]) == {AssetKey(k) for k in ["asset1", "asset2", "asset3"]}
 
 
 def test_tag_string():

@@ -28,7 +28,6 @@ functionName: SINKS | ROOTS;
 // Attribute expressions for specific attributes
 attributeExpr:
 	KEY COLON value							# KeyExpr
-	| KEY_SUBSTRING COLON value				# KeySubstringExpr
 	| TAG COLON value (EQUAL value)?		# TagAttributeExpr
 	| OWNER COLON value						# OwnerAttributeExpr
 	| GROUP COLON value						# GroupAttributeExpr
@@ -64,7 +63,6 @@ COMMA: ',';
 
 // Attributes
 KEY: 'key';
-KEY_SUBSTRING: 'key_substring';
 OWNER: 'owner';
 GROUP: 'group';
 TAG: 'tag';
@@ -81,7 +79,7 @@ ROOTS: 'roots';
 
 // String tokens
 QUOTED_STRING: '"' (~["\\\r\n])* '"';
-UNQUOTED_STRING: [a-zA-Z_][a-zA-Z0-9_]*;
+UNQUOTED_STRING: [a-zA-Z_*][a-zA-Z0-9_*]*;
 
 // Whitespace
 WS: [ \t\r\n]+ -> skip;

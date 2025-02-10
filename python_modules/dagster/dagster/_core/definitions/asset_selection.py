@@ -3,7 +3,8 @@ import operator
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from functools import reduce
-from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
+from re import Pattern
+from typing import AbstractSet, Mapping, Optional, Union, cast  # noqa: UP035
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -242,7 +243,9 @@ class AssetSelection(ABC):
     @public
     @staticmethod
     @experimental
-    def tag(key: str, value: str, include_sources: bool = False) -> "AssetSelection":
+    def tag(
+        key: Union[str, Pattern], value: Union[str, Pattern], include_sources: bool = False
+    ) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
@@ -946,8 +949,8 @@ class GroupsAssetSelection(AssetSelection):
 @whitelist_for_serdes
 @record
 class TagAssetSelection(AssetSelection):
-    key: str
-    value: str
+    key: Union[str, Pattern]
+    value: Union[str, Pattern]
     include_sources: bool
 
     def resolve_inner(
@@ -959,7 +962,29 @@ class TagAssetSelection(AssetSelection):
             else asset_graph.materializable_asset_keys
         )
 
-        return {key for key in base_set if asset_graph.get(key).tags.get(self.key) == self.value}
+        def matches_key_and_value(tags: Mapping[str, str]) -> bool:
+            if not tags:
+                return False
+
+            key = self.key
+            value = self.value
+
+            # Check if any tag value matches for the matching keys
+            if isinstance(key, Pattern):
+                # If key is a pattern, find all matching keys
+                matching_keys = [tag_key for tag_key in tags.keys() if key.match(tag_key)]
+                if isinstance(value, Pattern):
+                    is_match = any(value.match(tags[k]) for k in matching_keys)
+                else:
+                    is_match = any(value == tags[k] for k in matching_keys)
+            elif isinstance(value, Pattern):
+                is_match = any(value.match(tags[k]) for k in tags.keys())
+            else:
+                is_match = key in tags and tags.get(key) == value
+
+            return is_match
+
+        return {key for key in base_set if matches_key_and_value(asset_graph.get(key).tags or {})}
 
     def to_selection_str(self) -> str:
         if self.value:

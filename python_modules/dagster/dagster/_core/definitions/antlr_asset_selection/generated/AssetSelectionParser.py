@@ -12,8 +12,8 @@ def serializedATN():
     return [
         4,
         1,
-        27,
-        116,
+        26,
+        113,
         2,
         0,
         7,
@@ -176,15 +176,9 @@ def serializedATN():
         6,
         1,
         6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
         3,
         6,
-        82,
+        79,
         8,
         6,
         1,
@@ -229,7 +223,7 @@ def serializedATN():
         6,
         3,
         6,
-        104,
+        101,
         8,
         6,
         1,
@@ -246,7 +240,7 @@ def serializedATN():
         6,
         3,
         6,
-        112,
+        109,
         8,
         6,
         1,
@@ -271,13 +265,13 @@ def serializedATN():
         2,
         1,
         0,
+        22,
         23,
-        24,
         1,
         0,
+        24,
         25,
-        26,
-        130,
+        126,
         0,
         16,
         1,
@@ -315,13 +309,13 @@ def serializedATN():
         0,
         0,
         12,
-        111,
+        108,
         1,
         0,
         0,
         0,
         14,
-        113,
+        110,
         1,
         0,
         0,
@@ -729,7 +723,7 @@ def serializedATN():
         0,
         0,
         72,
-        112,
+        109,
         3,
         14,
         7,
@@ -737,7 +731,7 @@ def serializedATN():
         73,
         74,
         5,
-        13,
+        15,
         0,
         0,
         74,
@@ -747,7 +741,7 @@ def serializedATN():
         0,
         0,
         75,
-        112,
+        78,
         3,
         14,
         7,
@@ -755,50 +749,50 @@ def serializedATN():
         76,
         77,
         5,
-        16,
+        1,
         0,
         0,
         77,
+        79,
+        3,
+        14,
+        7,
+        0,
         78,
+        76,
+        1,
+        0,
+        0,
+        0,
+        78,
+        79,
+        1,
+        0,
+        0,
+        0,
+        79,
+        109,
+        1,
+        0,
+        0,
+        0,
+        80,
+        81,
+        5,
+        13,
+        0,
+        0,
+        81,
+        82,
         5,
         8,
         0,
         0,
-        78,
-        81,
+        82,
+        109,
         3,
         14,
         7,
-        0,
-        79,
-        80,
-        5,
-        1,
-        0,
-        0,
-        80,
-        82,
-        3,
-        14,
-        7,
-        0,
-        81,
-        79,
-        1,
-        0,
-        0,
-        0,
-        81,
-        82,
-        1,
-        0,
-        0,
-        0,
-        82,
-        112,
-        1,
-        0,
-        0,
         0,
         83,
         84,
@@ -813,7 +807,7 @@ def serializedATN():
         0,
         0,
         85,
-        112,
+        109,
         3,
         14,
         7,
@@ -821,7 +815,7 @@ def serializedATN():
         86,
         87,
         5,
-        15,
+        16,
         0,
         0,
         87,
@@ -831,7 +825,7 @@ def serializedATN():
         0,
         0,
         88,
-        112,
+        109,
         3,
         14,
         7,
@@ -839,7 +833,7 @@ def serializedATN():
         89,
         90,
         5,
-        17,
+        18,
         0,
         0,
         90,
@@ -849,7 +843,7 @@ def serializedATN():
         0,
         0,
         91,
-        112,
+        109,
         3,
         14,
         7,
@@ -867,7 +861,7 @@ def serializedATN():
         0,
         0,
         94,
-        112,
+        109,
         3,
         14,
         7,
@@ -885,7 +879,7 @@ def serializedATN():
         0,
         0,
         97,
-        112,
+        100,
         3,
         14,
         7,
@@ -893,55 +887,55 @@ def serializedATN():
         98,
         99,
         5,
-        21,
+        1,
         0,
         0,
         99,
+        101,
+        3,
+        14,
+        7,
+        0,
         100,
+        98,
+        1,
+        0,
+        0,
+        0,
+        100,
+        101,
+        1,
+        0,
+        0,
+        0,
+        101,
+        109,
+        1,
+        0,
+        0,
+        0,
+        102,
+        103,
+        5,
+        17,
+        0,
+        0,
+        103,
+        104,
         5,
         8,
         0,
         0,
-        100,
-        103,
+        104,
+        109,
         3,
         14,
         7,
-        0,
-        101,
-        102,
-        5,
-        1,
-        0,
-        0,
-        102,
-        104,
-        3,
-        14,
-        7,
-        0,
-        103,
-        101,
-        1,
-        0,
-        0,
-        0,
-        103,
-        104,
-        1,
-        0,
-        0,
-        0,
-        104,
-        112,
-        1,
-        0,
-        0,
         0,
         105,
         106,
         5,
-        18,
+        21,
         0,
         0,
         106,
@@ -951,108 +945,84 @@ def serializedATN():
         0,
         0,
         107,
-        112,
+        109,
         3,
         14,
         7,
         0,
         108,
-        109,
-        5,
-        22,
-        0,
-        0,
-        109,
-        110,
-        5,
-        8,
-        0,
-        0,
-        110,
-        112,
-        3,
-        14,
-        7,
-        0,
-        111,
         70,
         1,
         0,
         0,
         0,
-        111,
+        108,
         73,
         1,
         0,
         0,
         0,
-        111,
-        76,
+        108,
+        80,
         1,
         0,
         0,
         0,
-        111,
+        108,
         83,
         1,
         0,
         0,
         0,
-        111,
+        108,
         86,
         1,
         0,
         0,
         0,
-        111,
+        108,
         89,
         1,
         0,
         0,
         0,
-        111,
+        108,
         92,
         1,
         0,
         0,
         0,
-        111,
+        108,
         95,
         1,
         0,
         0,
         0,
-        111,
-        98,
+        108,
+        102,
         1,
         0,
         0,
         0,
-        111,
+        108,
         105,
         1,
         0,
         0,
         0,
-        111,
-        108,
-        1,
-        0,
-        0,
-        0,
-        112,
+        109,
         13,
         1,
         0,
         0,
         0,
-        113,
-        114,
+        110,
+        111,
         7,
         1,
         0,
         0,
-        114,
+        111,
         15,
         1,
         0,
@@ -1065,9 +1035,9 @@ def serializedATN():
         57,
         60,
         66,
-        81,
-        103,
-        111,
+        78,
+        100,
+        108,
     ]
 
 
@@ -1094,7 +1064,6 @@ class AssetSelectionParser(Parser):
         "')'",
         "','",
         "'key'",
-        "'key_substring'",
         "'owner'",
         "'group'",
         "'tag'",
@@ -1122,7 +1091,6 @@ class AssetSelectionParser(Parser):
         "RPAREN",
         "COMMA",
         "KEY",
-        "KEY_SUBSTRING",
         "OWNER",
         "GROUP",
         "TAG",
@@ -1172,21 +1140,20 @@ class AssetSelectionParser(Parser):
     RPAREN = 10
     COMMA = 11
     KEY = 12
-    KEY_SUBSTRING = 13
-    OWNER = 14
-    GROUP = 15
-    TAG = 16
-    KIND = 17
-    CODE_LOCATION = 18
-    COLUMN = 19
-    TABLE_NAME = 20
-    COLUMN_TAG = 21
-    CHANGED_IN_BRANCH = 22
-    SINKS = 23
-    ROOTS = 24
-    QUOTED_STRING = 25
-    UNQUOTED_STRING = 26
-    WS = 27
+    OWNER = 13
+    GROUP = 14
+    TAG = 15
+    KIND = 16
+    CODE_LOCATION = 17
+    COLUMN = 18
+    TABLE_NAME = 19
+    COLUMN_TAG = 20
+    CHANGED_IN_BRANCH = 21
+    SINKS = 22
+    ROOTS = 23
+    QUOTED_STRING = 24
+    UNQUOTED_STRING = 25
+    WS = 26
 
     def __init__(self, input: TokenStream, output: TextIO = sys.stdout):
         super().__init__(input, output)
@@ -1709,13 +1676,13 @@ class AssetSelectionParser(Parser):
             self.state = 57
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]:
+            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21]:
                 localctx = AssetSelectionParser.AttributeExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 47
                 self.attributeExpr()
                 pass
-            elif token in [23, 24]:
+            elif token in [22, 23]:
                 localctx = AssetSelectionParser.FunctionCallExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 48
@@ -1891,7 +1858,7 @@ class AssetSelectionParser(Parser):
             self.enterOuterAlt(localctx, 1)
             self.state = 68
             _la = self._input.LA(1)
-            if not (_la == 23 or _la == 24):
+            if not (_la == 22 or _la == 23):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -2103,36 +2070,6 @@ class AssetSelectionParser(Parser):
             else:
                 return visitor.visitChildren(self)
 
-    class KeySubstringExprContext(AttributeExprContext):
-        def __init__(
-            self, parser, ctx: ParserRuleContext
-        ):  # actually a AssetSelectionParser.AttributeExprContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def KEY_SUBSTRING(self):
-            return self.getToken(AssetSelectionParser.KEY_SUBSTRING, 0)
-
-        def COLON(self):
-            return self.getToken(AssetSelectionParser.COLON, 0)
-
-        def value(self):
-            return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
-
-        def enterRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "enterKeySubstringExpr"):
-                listener.enterKeySubstringExpr(self)
-
-        def exitRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "exitKeySubstringExpr"):
-                listener.exitKeySubstringExpr(self)
-
-        def accept(self, visitor: ParseTreeVisitor):
-            if hasattr(visitor, "visitKeySubstringExpr"):
-                return visitor.visitKeySubstringExpr(self)
-            else:
-                return visitor.visitChildren(self)
-
     class OwnerAttributeExprContext(AttributeExprContext):
         def __init__(
             self, parser, ctx: ParserRuleContext
@@ -2263,7 +2200,7 @@ class AssetSelectionParser(Parser):
         localctx = AssetSelectionParser.AttributeExprContext(self, self._ctx, self.state)
         self.enterRule(localctx, 12, self.RULE_attributeExpr)
         try:
-            self.state = 111
+            self.state = 108
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [12]:
@@ -2276,122 +2213,112 @@ class AssetSelectionParser(Parser):
                 self.state = 72
                 self.value()
                 pass
-            elif token in [13]:
-                localctx = AssetSelectionParser.KeySubstringExprContext(self, localctx)
+            elif token in [15]:
+                localctx = AssetSelectionParser.TagAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 73
-                self.match(AssetSelectionParser.KEY_SUBSTRING)
+                self.match(AssetSelectionParser.TAG)
                 self.state = 74
                 self.match(AssetSelectionParser.COLON)
                 self.state = 75
                 self.value()
-                pass
-            elif token in [16]:
-                localctx = AssetSelectionParser.TagAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 3)
-                self.state = 76
-                self.match(AssetSelectionParser.TAG)
-                self.state = 77
-                self.match(AssetSelectionParser.COLON)
                 self.state = 78
-                self.value()
-                self.state = 81
                 self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input, 6, self._ctx)
                 if la_ == 1:
-                    self.state = 79
+                    self.state = 76
                     self.match(AssetSelectionParser.EQUAL)
-                    self.state = 80
+                    self.state = 77
                     self.value()
 
                 pass
-            elif token in [14]:
+            elif token in [13]:
                 localctx = AssetSelectionParser.OwnerAttributeExprContext(self, localctx)
+                self.enterOuterAlt(localctx, 3)
+                self.state = 80
+                self.match(AssetSelectionParser.OWNER)
+                self.state = 81
+                self.match(AssetSelectionParser.COLON)
+                self.state = 82
+                self.value()
+                pass
+            elif token in [14]:
+                localctx = AssetSelectionParser.GroupAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 4)
                 self.state = 83
-                self.match(AssetSelectionParser.OWNER)
+                self.match(AssetSelectionParser.GROUP)
                 self.state = 84
                 self.match(AssetSelectionParser.COLON)
                 self.state = 85
                 self.value()
                 pass
-            elif token in [15]:
-                localctx = AssetSelectionParser.GroupAttributeExprContext(self, localctx)
+            elif token in [16]:
+                localctx = AssetSelectionParser.KindAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 5)
                 self.state = 86
-                self.match(AssetSelectionParser.GROUP)
+                self.match(AssetSelectionParser.KIND)
                 self.state = 87
                 self.match(AssetSelectionParser.COLON)
                 self.state = 88
                 self.value()
                 pass
-            elif token in [17]:
-                localctx = AssetSelectionParser.KindAttributeExprContext(self, localctx)
+            elif token in [18]:
+                localctx = AssetSelectionParser.ColumnAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 6)
                 self.state = 89
-                self.match(AssetSelectionParser.KIND)
+                self.match(AssetSelectionParser.COLUMN)
                 self.state = 90
                 self.match(AssetSelectionParser.COLON)
                 self.state = 91
                 self.value()
                 pass
             elif token in [19]:
-                localctx = AssetSelectionParser.ColumnAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.TableNameAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 7)
                 self.state = 92
-                self.match(AssetSelectionParser.COLUMN)
+                self.match(AssetSelectionParser.TABLE_NAME)
                 self.state = 93
                 self.match(AssetSelectionParser.COLON)
                 self.state = 94
                 self.value()
                 pass
             elif token in [20]:
-                localctx = AssetSelectionParser.TableNameAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.ColumnTagAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 8)
                 self.state = 95
-                self.match(AssetSelectionParser.TABLE_NAME)
+                self.match(AssetSelectionParser.COLUMN_TAG)
                 self.state = 96
                 self.match(AssetSelectionParser.COLON)
                 self.state = 97
                 self.value()
-                pass
-            elif token in [21]:
-                localctx = AssetSelectionParser.ColumnTagAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 9)
-                self.state = 98
-                self.match(AssetSelectionParser.COLUMN_TAG)
-                self.state = 99
-                self.match(AssetSelectionParser.COLON)
                 self.state = 100
-                self.value()
-                self.state = 103
                 self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input, 7, self._ctx)
                 if la_ == 1:
-                    self.state = 101
+                    self.state = 98
                     self.match(AssetSelectionParser.EQUAL)
-                    self.state = 102
+                    self.state = 99
                     self.value()
 
                 pass
-            elif token in [18]:
+            elif token in [17]:
                 localctx = AssetSelectionParser.CodeLocationAttributeExprContext(self, localctx)
+                self.enterOuterAlt(localctx, 9)
+                self.state = 102
+                self.match(AssetSelectionParser.CODE_LOCATION)
+                self.state = 103
+                self.match(AssetSelectionParser.COLON)
+                self.state = 104
+                self.value()
+                pass
+            elif token in [21]:
+                localctx = AssetSelectionParser.ChangedInBranchAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 10)
                 self.state = 105
-                self.match(AssetSelectionParser.CODE_LOCATION)
+                self.match(AssetSelectionParser.CHANGED_IN_BRANCH)
                 self.state = 106
                 self.match(AssetSelectionParser.COLON)
                 self.state = 107
-                self.value()
-                pass
-            elif token in [22]:
-                localctx = AssetSelectionParser.ChangedInBranchAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 11)
-                self.state = 108
-                self.match(AssetSelectionParser.CHANGED_IN_BRANCH)
-                self.state = 109
-                self.match(AssetSelectionParser.COLON)
-                self.state = 110
                 self.value()
                 pass
             else:
@@ -2441,9 +2368,9 @@ class AssetSelectionParser(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 113
+            self.state = 110
             _la = self._input.LA(1)
-            if not (_la == 25 or _la == 26):
+            if not (_la == 24 or _la == 25):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)

@@ -147,14 +147,6 @@ class AssetSelectionListener(ParseTreeListener):
     def exitKeyExpr(self, ctx: AssetSelectionParser.KeyExprContext):
         pass
 
-    # Enter a parse tree produced by AssetSelectionParser#KeySubstringExpr.
-    def enterKeySubstringExpr(self, ctx: AssetSelectionParser.KeySubstringExprContext):
-        pass
-
-    # Exit a parse tree produced by AssetSelectionParser#KeySubstringExpr.
-    def exitKeySubstringExpr(self, ctx: AssetSelectionParser.KeySubstringExprContext):
-        pass
-
     # Enter a parse tree produced by AssetSelectionParser#TagAttributeExpr.
     def enterTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         pass

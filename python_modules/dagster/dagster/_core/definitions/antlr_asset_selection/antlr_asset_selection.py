@@ -1,3 +1,5 @@
+import re
+
 from antlr4 import CommonTokenStream, InputStream
 from antlr4.error.ErrorListener import ErrorListener
 
@@ -31,6 +33,11 @@ def parse_traversal_depth(optional_digits):
     if optional_digits is None:
         return None
     return int(optional_digits.getText())
+
+
+def string_with_wildcard_to_regex(pattern: str) -> re.Pattern[str]:
+    # Escape special regex characters except * which becomes .*
+    return re.compile("^" + re.escape(pattern).replace("\\*", ".*") + "$")
 
 
 class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
@@ -116,14 +123,14 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
         value = self.visit(ctx.value())
         return AssetSelection.assets(value)
 
-    def visitKeySubstringExpr(self, ctx: AssetSelectionParser.KeySubstringExprContext):
-        value = self.visit(ctx.value())
-        return AssetSelection.key_substring(value)
-
     def visitTagAttributeExpr(self, ctx: AssetSelectionParser.TagAttributeExprContext):
         key = self.visit(ctx.value(0))
         value = self.visit(ctx.value(1)) if ctx.EQUAL() else ""
-        return AssetSelection.tag(key, value, include_sources=self.include_sources)
+
+        regex_key = string_with_wildcard_to_regex(key)
+        regex_value = string_with_wildcard_to_regex(value)
+
+        return AssetSelection.tag(regex_key, regex_value, include_sources=self.include_sources)
 
     def visitOwnerAttributeExpr(self, ctx: AssetSelectionParser.OwnerAttributeExprContext):
         owner = self.visit(ctx.value())

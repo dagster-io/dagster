@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
     AntlrAssetSelectionParser,
@@ -23,16 +25,8 @@ from dagster._core.storage.tags import KIND_PREFIX
         ("*", "(start (expr *) <EOF>)"),
         ("key:a", "(start (expr (traversalAllowedExpr (attributeExpr key : (value a)))) <EOF>)"),
         (
-            "key_substring:a",
-            "(start (expr (traversalAllowedExpr (attributeExpr key_substring : (value a)))) <EOF>)",
-        ),
-        (
             'key:"*/a+"',
             '(start (expr (traversalAllowedExpr (attributeExpr key : (value "*/a+")))) <EOF>)',
-        ),
-        (
-            'key_substring:"*/a+"',
-            '(start (expr (traversalAllowedExpr (attributeExpr key_substring : (value "*/a+")))) <EOF>)',
         ),
         (
             "sinks(key:a)",
@@ -120,8 +114,6 @@ def test_antlr_tree_invalid(selection_str):
     [
         ("key:a", AssetSelection.assets("a")),
         ('key:"*/a+"', AssetSelection.assets("*/a+")),
-        ("key_substring:a", AssetSelection.key_substring("a")),
-        ('key_substring:"*/a+"', AssetSelection.key_substring("*/a+")),
         ("not key:a", AssetSelection.all(include_sources=True) - AssetSelection.assets("a")),
         ("key:a and key:b", AssetSelection.assets("a") & AssetSelection.assets("b")),
         ("key:a or key:b", AssetSelection.assets("a") | AssetSelection.assets("b")),
@@ -156,6 +148,7 @@ def test_antlr_tree_invalid(selection_str):
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
         ("group:my_group", AssetSelection.groups("my_group", include_sources=True)),
         ("kind:my_kind", AssetSelection.tag(f"{KIND_PREFIX}my_kind", "", include_sources=True)),
+        ("tag:foo*", AssetSelection.tag(re.compile(r"foo.*"), "", include_sources=True)),
         (
             "code_location:my_location",
             CodeLocationAssetSelection(selected_code_location="my_location"),
