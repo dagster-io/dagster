@@ -592,7 +592,7 @@ A `type` is a way to define and validate the data passed between <PyObject secti
     Schedule ==> Definitions
 ```
 
-A <PyObject section="schedules-sensors" object="ScheduleEvaluationContext" /> is a way to automate <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="assets" module="dagster" object="asset" decorator /> to occur on a specified interval. In the cases that a job or asset is parameterized, the schedule can also be set with a run configuration (<PyObject section="config" module="dagster" object="RunConfig" />) to match.
+A <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> is a way to automate <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="assets" module="dagster" object="asset" decorator /> to occur on a specified interval. In the cases that a job or asset is parameterized, the schedule can also be set with a run configuration (<PyObject section="config" module="dagster" object="RunConfig" />) to match.
 
 | Concept | Relationship |
 | --- | --- |
