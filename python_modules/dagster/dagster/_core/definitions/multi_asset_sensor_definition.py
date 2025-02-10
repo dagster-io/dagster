@@ -1126,10 +1126,10 @@ class MultiAssetSensorDefinition(SensorDefinition):
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
             object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
-            (experimental) A list of jobs to be executed when the sensor fires.
+            A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
-        request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
+        request_assets (Optional[AssetSelection]): an asset selection to launch a run
             for if the sensor condition is met. This can be provided instead of specifying a job.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.

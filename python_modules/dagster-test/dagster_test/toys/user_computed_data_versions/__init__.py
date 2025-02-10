@@ -28,7 +28,6 @@ from dagster import (
     DataProvenance,
     DataVersion,
     Definitions,
-    ExperimentalWarning,
     In,
     Nothing,
     OpDefinition,
@@ -38,6 +37,7 @@ from dagster import (
     SourceAsset,
     define_asset_job,
 )
+from dagster._utils.warnings import BetaWarning, PreviewWarning
 from typing_extensions import TypedDict
 
 from dagster_test.toys.user_computed_data_versions.external_system import (
@@ -47,7 +47,8 @@ from dagster_test.toys.user_computed_data_versions.external_system import (
     SourceAssetInfo,
 )
 
-warnings.filterwarnings("ignore", category=ExperimentalWarning)
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 
 def external_asset(asset_spec: AssetInfo):

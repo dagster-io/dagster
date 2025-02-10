@@ -2,12 +2,13 @@ import warnings
 from collections.abc import Sequence
 from typing import cast
 
-from dagster import ExperimentalWarning
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._time import get_current_timestamp
+from dagster._utils.warnings import BetaWarning, PreviewWarning
 
-# squelch experimental warnings since we often include experimental things in toys for development
-warnings.filterwarnings("ignore", category=ExperimentalWarning)
+# squelch preview and beta warnings since we often include preview and beta things in toys for development
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
 

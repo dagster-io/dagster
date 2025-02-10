@@ -86,7 +86,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             provided by it.
         tags (Optional[Dict[str, Any]]): A dictionary of tags (string key-value pairs) to attach
             to the launched run.
-        job_name (Optional[str]): (Experimental) The name of the job this run request will launch.
+        job_name (Optional[str]): The name of the job this run request will launch.
             Required for sensors that target multiple jobs.
         asset_selection (Optional[Sequence[AssetKey]]): A subselection of assets that should be
             launched with this run. If the sensor or schedule targets a job, then by default a
@@ -94,7 +94,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             targets an asset selection, then by default a RunRequest returned from it will launch
             all the assets in the selection. This argument is used to specify that only a subset of
             these assets should be launched, instead of all of them.
-        asset_check_keys (Optional[Sequence[AssetCheckKey]]): (Experimental) A subselection of asset checks that
+        asset_check_keys (Optional[Sequence[AssetCheckKey]]): A subselection of asset checks that
             should be launched with this run. This is currently only supported on sensors. If the
             sensor targets a job, then by default a RunRequest returned from it will launch all of
             the asset checks in the job. If the sensor targets an asset selection, then by default a
@@ -380,7 +380,7 @@ class SensorResult(
             partitions with these changes applied. We recommend limiting partition additions
             and deletions to a maximum of 25K partitions per sensor evaluation, as this is the maximum
             recommended partition limit per asset.
-        asset_events (Optional[Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]]):  (Experimental) A
+        asset_events (Optional[Sequence[Union[AssetObservation, AssetMaterialization, AssetCheckEvaluation]]]): A
             list of materializations, observations, and asset check evaluations that the system
             will persist on your behalf at the end of sensor evaluation. These events will be not
             be associated with any particular run, but will be queryable and viewable in the asset catalog.
