@@ -1,0 +1,3 @@
+dg component scaffold 'definitions@dagster_components' elt-definitions
+
+Creating a Dagster component instance folder at /.../my-existing-project/my_existing_project/components/elt-definitions.

@@ -81,5 +81,6 @@ Now, your code location is ready to use components! `dg` can be used to scaffold
 
 ## Next steps
 
+- [Migrate existing definitions to components](./migrating-definitions)
 - [Add a new component to your code location](./using-a-component)
 - [Create a new component type](./creating-a-component)

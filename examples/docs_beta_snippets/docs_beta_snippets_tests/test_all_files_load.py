@@ -26,6 +26,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/components/index/5-definitions.py",
     f"{snippets_folder}/guides/components/existing-project/6-initial-definitions.py",
     f"{snippets_folder}/guides/components/existing-project/7-updated-definitions.py",
+    f"{snippets_folder}/guides/components/migrating-definitions/2-definitions-before.py",
+    f"{snippets_folder}/guides/components/migrating-definitions/3-inner-definitions-before.py",
+    f"{snippets_folder}/guides/components/migrating-definitions/7-definitions-after.py",
 }
 
 EXCLUDED_DIRS = {
