@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.10.0 (core) / 0.26.0 (libraries)
+
+### New
+
+- Added a new `AutomationCondition.data_version_changed()` condition.
+- [dagster-msteams] Added support for sending messages to PowerAutomate flows using AdaptiveCard formatting.
+- `dagster definitions validate` is now less verbose, primarily highlighting load errors.
+- [ui] Made defunct code locations removable when editing environment variables.
+- [ui] Added a warning icon to the Agents item in Deployment settings, indicating when there are no active agents.
+- [dagster-tableau] Changed logic to show embedded data sources in case published data sources are not present. Also, pulled more metadata from Tableau. (Thanks [@VenkyRules](https://github.com/VenkyRules)!)
+
+### Bugfixes
+
+- [ui] Fixed persistence of the group-by setting in the run timeline view.
+- [ui] Fixed timestamped links to asset pages from asset check evaluations in run logs.
+- [ui] Fixed excessive rendering and querying on the Concurrency configuration page.
+- Fixed the step stats calculations for steps that fail and request a retry before the step starts. This happened if a failure occurred in the step worker before the compute function began execution. This should help with sporadic hanging of step retries.
+- Fixed an issue where the Concurrency UI was broken for keys with slashes.
+- Fixed an issue with emitting `AssetResult` with ops or multi-assets that are triggered multiple times in the same run.
+- [dagster-dbt] Fixed a bug introduced in dagster-dbt 0.25.7 that would cause execution to fail when using the `@dbt_assets` decorator with an `io_manager_key` specified.
+- [dagster-dbt] Refactored `UnitTestDefinition` instantiation to address failure to initialize dbt models with unit tests. (Thanks [@kang8](https://github.com/kang8)!)
+
+### Documentation
+
+- Corrected docs on managing concurrency.
+- Fixed a Markdown link to "assets metadata." (Thanks [@rchrand](https://github.com/rchrand)!)
+- Fixed a `pip install` command for Zsh. (Thanks [@aimeecodes](https://github.com/aimeecodes)!)
+
+### Breaking Changes
+
+### Deprecations
+
+- [dagster-sdf] Moved the `dagster-sdf` library to the community-supported repo.
+
+### Dagster Plus
+
 ## 1.9.12 (core) / 0.25.12 (libraries)
 
 ### New
