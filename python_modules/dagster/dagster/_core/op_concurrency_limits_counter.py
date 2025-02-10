@@ -158,6 +158,8 @@ class GlobalOpConcurrencyLimitsCounter:
         if time_elapsed < self._started_run_pools_allotted_seconds:
             return True
 
+        return False
+
     def _slot_counts_for_run(self, run: DagsterRun) -> Mapping[str, int]:
         if not run.run_op_concurrency:
             return {}
@@ -200,14 +202,9 @@ class GlobalOpConcurrencyLimitsCounter:
                     return False
 
                 key_info = self._concurrency_info_by_key[pool]
-                unaccounted_occupied_slots = [
-                    pending_step
-                    for pending_step in key_info.pending_steps
-                    if pending_step.run_id not in self._in_progress_run_ids
-                ]
                 available_count = (
                     key_info.slot_count
-                    - len(unaccounted_occupied_slots)
+                    - len(key_info.pending_steps)
                     - self._launched_pool_counts[pool]
                     - self._in_progress_pool_counts[pool]
                 )
