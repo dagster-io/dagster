@@ -1,6 +1,6 @@
 ---
-title: 'Creating a New Component Type'
-sidebar_position: 100
+title: 'Creating a new component type'
+sidebar_position: 90
 ---
 
 :::note
@@ -142,4 +142,4 @@ params:
 
 ## Next steps
 
-- Add a new component to your project
+- [Add a new component to your project](./using-a-component)

@@ -1,6 +1,6 @@
 ---
 title: "Adding a component to a project"
-sidebar_position: 200
+sidebar_position: 50
 ---
 
 
@@ -112,3 +112,8 @@ params:
         - attributes:
             automation_condition: "{{ custom_cron('@daily') }}"
 ```
+
+
+## Next steps
+
+- [Create a new component type](./creating-a-component)
