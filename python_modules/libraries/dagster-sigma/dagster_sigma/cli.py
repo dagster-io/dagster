@@ -14,7 +14,7 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._serdes.utils import serialize_value
 from dagster._utils.env import environ
 from dagster._utils.hosted_user_process import recon_repository_from_origin
-from dagster._utils.warnings import experimental_warning
+from dagster._utils.warnings import beta_warning
 
 SNAPSHOT_ENV_VAR_NAME = "DAGSTER_SIGMA_IS_GENERATING_SNAPSHOT"
 SIGMA_RECON_DATA_PREFIX = "sigma_"
@@ -32,7 +32,7 @@ def sigma_snapshot_command(output_path: str, **other_opts: object) -> None:
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
-    experimental_warning("The `dagster-sigma snapshot` command")
+    beta_warning("The `dagster-sigma snapshot` command")
     with environ({SNAPSHOT_ENV_VAR_NAME: "1"}):
         DefinitionsLoadContext.set(
             DefinitionsLoadContext(
