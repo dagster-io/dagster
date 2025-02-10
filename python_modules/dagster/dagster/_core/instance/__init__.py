@@ -30,7 +30,7 @@ import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
@@ -3267,7 +3267,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return result
 
-    @experimental
     @public
     def report_runless_asset_event(
         self,

@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, Callable, Optional, Union, overload  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import experimental, hidden_param
+from dagster._annotations import beta, hidden_param
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -64,7 +64,7 @@ def observable_source_asset(
     breaking_version="1.10.0",
     additional_warn_text="use freshness checks instead.",
 )
-@experimental
+@beta
 def observable_source_asset(
     observe_fn: Optional[SourceAssetObserveFunction] = None,
     *,
@@ -225,7 +225,7 @@ class _ObservableSourceAsset:
             )
 
 
-@experimental
+@beta
 def multi_observable_source_asset(
     *,
     specs: Sequence[AssetSpec],
