@@ -70,6 +70,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         _run_command(
             r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
         )
+        _run_command("mkdir -p my_existing_project/components")
 
         run_command_and_snippet_output(
             cmd="tree",
