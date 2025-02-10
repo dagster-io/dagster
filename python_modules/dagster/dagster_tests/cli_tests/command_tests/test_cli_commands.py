@@ -460,7 +460,6 @@ def valid_job_python_origin_target_args():
             "job_name": job_name,
             "python_pointer_opts": PythonPointerOpts(
                 python_file=file_relative_path(__file__, "test_cli_commands.py"),
-                module_name=None,
                 attribute="bar",
             ),
         },
@@ -468,7 +467,6 @@ def valid_job_python_origin_target_args():
             "job_name": job_name,
             "python_pointer_opts": PythonPointerOpts(
                 python_file=file_relative_path(__file__, "test_cli_commands.py"),
-                module_name=None,
                 attribute="bar",
                 working_directory=os.path.dirname(__file__),
             ),
@@ -476,7 +474,6 @@ def valid_job_python_origin_target_args():
         {
             "job_name": job_name,
             "python_pointer_opts": PythonPointerOpts(
-                python_file=None,
                 module_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
                 attribute="bar",
             ),
@@ -484,8 +481,7 @@ def valid_job_python_origin_target_args():
         {
             "job_name": job_name,
             "python_pointer_opts": PythonPointerOpts(
-                python_file=None,
-                module_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                module_name="test_cli_commands",
                 attribute="bar",
                 working_directory=os.path.dirname(__file__),
             ),
@@ -493,7 +489,6 @@ def valid_job_python_origin_target_args():
         {
             "job_name": job_name,
             "python_pointer_opts": PythonPointerOpts(
-                python_file=None,
                 package_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
                 attribute="bar",
             ),
@@ -501,8 +496,7 @@ def valid_job_python_origin_target_args():
         {
             "job_name": job_name,
             "python_pointer_opts": PythonPointerOpts(
-                python_file=None,
-                package_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
+                package_name="test_cli_commands",
                 attribute="bar",
                 working_directory=os.path.dirname(__file__),
             ),
@@ -510,7 +504,6 @@ def valid_job_python_origin_target_args():
         {
             "job_name": None,
             "python_pointer_opts": PythonPointerOpts(
-                python_file=None,
                 module_name="dagster_tests.cli_tests.command_tests.test_cli_commands",
                 attribute=job_fn_name,
             ),
