@@ -1315,9 +1315,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
 
             if not self._run_storage.has_job_snapshot(parent_snapshot_id):
-                self._run_storage.add_job_snapshot(
-                    check.not_none(parent_job_snapshot), parent_snapshot_id
-                )
+                self._run_storage.add_job_snapshot(check.not_none(parent_job_snapshot))
 
         job_snapshot_id = job_snapshot.snapshot_id
         if not self._run_storage.has_job_snapshot(job_snapshot_id):
@@ -1804,9 +1802,8 @@ class DagsterInstance(DynamicPartitionsStore):
     def add_snapshot(
         self,
         snapshot: Union["JobSnap", "ExecutionPlanSnapshot"],
-        snapshot_id: Optional[str] = None,
     ) -> None:
-        return self._run_storage.add_snapshot(snapshot, snapshot_id)
+        return self._run_storage.add_snapshot(snapshot)
 
     @traced
     def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:

@@ -257,9 +257,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def add_snapshot(
         self,
         snapshot: Union["JobSnap", "ExecutionPlanSnapshot"],
-        snapshot_id: Optional[str] = None,
     ) -> None:
-        return self._storage.run_storage.add_snapshot(snapshot, snapshot_id)
+        return self._storage.run_storage.add_snapshot(snapshot)
 
     def has_snapshot(self, snapshot_id: str) -> bool:
         return self._storage.run_storage.has_snapshot(snapshot_id)
@@ -267,8 +266,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         return self._storage.run_storage.has_job_snapshot(job_snapshot_id)
 
-    def add_job_snapshot(self, job_snapshot: "JobSnap", snapshot_id: Optional[str] = None) -> str:
-        return self._storage.run_storage.add_job_snapshot(job_snapshot, snapshot_id)
+    def add_job_snapshot(self, job_snapshot: "JobSnap") -> str:
+        return self._storage.run_storage.add_job_snapshot(job_snapshot)
 
     def get_job_snapshot(self, job_snapshot_id: str) -> "JobSnap":
         return self._storage.run_storage.get_job_snapshot(job_snapshot_id)
@@ -276,12 +275,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         return self._storage.run_storage.has_execution_plan_snapshot(execution_plan_snapshot_id)
 
-    def add_execution_plan_snapshot(
-        self, execution_plan_snapshot: "ExecutionPlanSnapshot", snapshot_id: Optional[str] = None
-    ) -> str:
-        return self._storage.run_storage.add_execution_plan_snapshot(
-            execution_plan_snapshot, snapshot_id
-        )
+    def add_execution_plan_snapshot(self, execution_plan_snapshot: "ExecutionPlanSnapshot") -> str:
+        return self._storage.run_storage.add_execution_plan_snapshot(execution_plan_snapshot)
 
     def get_execution_plan_snapshot(
         self, execution_plan_snapshot_id: str
