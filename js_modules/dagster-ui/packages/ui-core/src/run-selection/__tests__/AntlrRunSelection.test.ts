@@ -79,9 +79,9 @@ describe('parseRunSelectionQuery', () => {
       assertQueryResult('name:A', ['A']);
     });
 
-    it('should parse name_substring query', () => {
-      assertQueryResult('name_substring:A', ['A']);
-      assertQueryResult('name_substring:B', ['B', 'B2']);
+    it('should handle name wildcard queries', () => {
+      assertQueryResult('name:*A*', ['A']);
+      assertQueryResult('name:B*', ['B', 'B2']);
     });
 
     it('should parse and query', () => {
