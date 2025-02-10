@@ -3,7 +3,7 @@ import string
 import sys
 import tempfile
 from contextlib import contextmanager
-from typing import Any, ContextManager, NoReturn, Optional  # noqa: UP035
+from typing import Any, ContextManager, Iterator, NoReturn, Optional  # noqa: UP035
 from unittest import mock
 
 import pytest
@@ -27,7 +27,7 @@ from dagster._cli.run import (
     run_migrate_command,
     run_wipe_command,
 )
-from dagster._cli.workspace.cli_target import ClickArgMapping, PythonPointerOpts
+from dagster._cli.workspace.cli_target import PythonPointerOpts, WorkspaceOpts
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
@@ -39,6 +39,8 @@ from dagster._utils import file_relative_path
 from dagster._utils.merger import merge_dicts
 from dagster.version import __version__
 from typing_extensions import TypeAlias
+
+ParsedCliArgs: TypeAlias = dict[str, Any]
 
 
 @op
@@ -292,7 +294,9 @@ def args_with_default_cli_test_instance(*args):
 
 
 @contextmanager
-def grpc_server_bar_kwargs(instance, job_name: Optional[str] = None):
+def grpc_server_bar_parsed_cli_args(
+    instance: DagsterInstance, job_name: Optional[str] = None
+) -> Iterator[ParsedCliArgs]:
     with GrpcServerProcess(
         instance_ref=instance.get_ref(),
         loadable_target_origin=LoadableTargetOrigin(
@@ -303,14 +307,14 @@ def grpc_server_bar_kwargs(instance, job_name: Optional[str] = None):
         wait_on_exit=True,
     ) as server_process:
         client = server_process.create_client()
-        args = {"grpc_host": client.host}
-        if job_name:
-            args["job_name"] = "foo"
-        if client.port:
-            args["grpc_port"] = client.port  # pyright: ignore[reportArgumentType]
-        if client.socket:
-            args["grpc_socket"] = client.socket
-        yield args
+        yield {
+            "job_name": job_name,
+            "workspace_opts": WorkspaceOpts(
+                grpc_host=client.host,
+                grpc_port=client.port,
+                grpc_socket=client.socket,
+            ),
+        }
 
 
 @contextmanager
@@ -354,17 +358,19 @@ def grpc_server_bar_cli_args(instance, job_name=None):
 
 
 @contextmanager
-def grpc_server_bar_pipeline_args():
-    with default_cli_test_instance() as instance:
-        with grpc_server_bar_kwargs(instance, job_name="foo") as kwargs:
-            yield kwargs, instance
+def grpc_server_bar_pipeline_args() -> Iterator[tuple[dict[str, Any], DagsterInstance]]:
+    with (
+        default_cli_test_instance() as instance,
+        grpc_server_bar_parsed_cli_args(instance, job_name="foo") as parsed_cli_args,
+    ):
+        yield parsed_cli_args, instance
 
 
 # This iterates over a list of contextmanagers that can be used to contruct
-# (cli_args, instance tuples)
+# (parsed_cli_args, instance tuples)
 def launch_command_contexts():
-    for pipeline_target_args in valid_external_pipeline_target_args():
-        yield args_with_default_cli_test_instance(pipeline_target_args)
+    for job_target_args in valid_remote_job_args():
+        yield args_with_default_cli_test_instance(job_target_args)
     yield pytest.param(grpc_server_bar_pipeline_args())
 
 
@@ -422,27 +428,7 @@ def sensor_command_contexts():
     ]
 
 
-BackfillCommandTestContext: TypeAlias = ContextManager[tuple[ClickArgMapping, DagsterInstance]]
-
-
-# This iterates over a list of contextmanagers that can be used to contruct
-# (cli_args, instance) tuples for backfill calls
-def backfill_command_contexts():
-    repo_args = {
-        "noprompt": True,
-        "workspace": (file_relative_path(__file__, "repository_file.yaml"),),
-    }
-    return [
-        args_with_instance(default_cli_test_instance(), repo_args),
-        grpc_server_backfill_args(),
-    ]
-
-
-@contextmanager
-def grpc_server_backfill_args():
-    with default_cli_test_instance() as instance:
-        with grpc_server_bar_kwargs(instance) as args:
-            yield merge_dicts(args, {"noprompt": True}), instance
+BackfillCommandTestContext: TypeAlias = ContextManager[tuple[ParsedCliArgs, DagsterInstance]]
 
 
 def non_existant_python_origin_target_args() -> dict[str, Any]:
@@ -457,11 +443,11 @@ def non_existant_python_origin_target_args() -> dict[str, Any]:
 
 def non_existant_python_file_workspace_args():
     return {
-        "workspace": None,
+        "workspace_opts": WorkspaceOpts(
+            python_file=(file_relative_path(__file__, "made_up_file.py"),),
+            attribute="bar",
+        ),
         "job_name": "foo",
-        "python_file": (file_relative_path(__file__, "made_up_file.py"),),
-        "module_name": None,
-        "attribute": "bar",
     }
 
 
@@ -565,47 +551,32 @@ def valid_job_python_origin_target_args():
     ]
 
 
-def job_python_args_to_workspace_args(job_python_arg_sets: list[dict[str, Any]]):
-    # Turn args expecting non-multiple files/modules into args allowing multiple
-    workspace_arg_sets: list[dict[str, Any]] = []
-    for arg_set in job_python_arg_sets:
-        python_pointer_opts = arg_set["python_pointer_opts"]
-        job_name = arg_set.get("job_name")
-        workspace_arg_sets.append(
-            {
-                "job_name": job_name,
-                "python_file": (python_pointer_opts.python_file,)
-                if python_pointer_opts.python_file
-                else None,
-                "module_name": (python_pointer_opts.module_name,)
-                if python_pointer_opts.module_name
-                else None,
-                "attribute": python_pointer_opts.attribute,
-                "package_name": python_pointer_opts.package_name
-                if python_pointer_opts.package_name
-                else None,
-            }
-        )
-    return workspace_arg_sets
+def python_pointer_to_workspace_cli_opts(cli_opts: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "workspace_opts": cli_opts["python_pointer_opts"].to_workspace_opts(),
+        **{k: v for k, v in cli_opts.items() if k != "python_pointer_opts"},
+    }
 
 
-def valid_external_pipeline_target_args():
+def valid_remote_job_args():
     return [
         {
-            "workspace": (file_relative_path(__file__, "repository_file.yaml"),),
+            "workspace_opts": WorkspaceOpts(
+                workspace=(file_relative_path(__file__, "repository_file.yaml"),)
+            ),
             "job_name": "foo",
-            "python_file": None,
-            "module_name": None,
-            "attribute": None,
         },
         {
-            "workspace": (file_relative_path(__file__, "repository_module.yaml"),),
+            "workspace_opts": WorkspaceOpts(
+                workspace=(file_relative_path(__file__, "repository_module.yaml"),)
+            ),
             "job_name": "foo",
-            "python_file": None,
-            "module_name": None,
-            "attribute": None,
         },
-    ] + job_python_args_to_workspace_args(valid_job_python_origin_target_args())
+        *(
+            python_pointer_to_workspace_cli_opts(args)
+            for args in valid_job_python_origin_target_args()
+        ),
+    ]
 
 
 def valid_pipeline_python_origin_target_cli_args():

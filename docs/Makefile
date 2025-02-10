@@ -10,6 +10,10 @@ ruff_snippets:  ## Ruff linting and fixing on /examples/docs_snippets
 rebuild_kind_tags: ## Add all kind tags to the kind tags page
 	python scripts/regen_kind_tags.py
 
+sphinx_objects_inv:
+	tox -e sphinx
+	cp sphinx/_build/json/objects.inv static/.
+
 mdx:
 	tox -e sphinx-mdx
 

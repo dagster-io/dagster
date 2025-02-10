@@ -1,11 +1,18 @@
-from typing import Any
+from typing import Optional
 
 import click
 from tqdm import tqdm
 
 from dagster import __version__ as dagster_version
-from dagster._cli.utils import get_instance_for_cli
-from dagster._cli.workspace.cli_target import get_remote_job_from_kwargs, job_options
+from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
+from dagster._cli.workspace.cli_target import (
+    RepositoryOpts,
+    WorkspaceOpts,
+    get_job_from_cli_opts,
+    job_name_option,
+    repository_options,
+    workspace_options,
+)
 
 
 @click.group(name="run")
@@ -85,11 +92,17 @@ def run_wipe_command(force: bool) -> None:
     "from_label",
     help="The repository from which to migrate (format: <repository_name>@<location_name>)",
 )
-@job_options
-def run_migrate_command(from_label: str, **kwargs: Any) -> None:
+@workspace_options
+@repository_options
+@job_name_option(name="job_name")
+def run_migrate_command(from_label: str, job_name: Optional[str], **other_opts: object) -> None:
     from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
+
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    repository_opts = RepositoryOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
 
     if not from_label:
         raise click.UsageError("Must specify a --from repository label")
@@ -100,8 +113,12 @@ def run_migrate_command(from_label: str, **kwargs: Any) -> None:
         )
 
     with get_instance_for_cli() as instance:
-        with get_remote_job_from_kwargs(
-            instance, version=dagster_version, kwargs=kwargs
+        with get_job_from_cli_opts(
+            instance,
+            version=dagster_version,
+            workspace_opts=workspace_opts,
+            repository_opts=repository_opts,
+            job_name=job_name,
         ) as remote_job:
             new_job_origin = remote_job.get_remote_origin()
             job_name = remote_job.name

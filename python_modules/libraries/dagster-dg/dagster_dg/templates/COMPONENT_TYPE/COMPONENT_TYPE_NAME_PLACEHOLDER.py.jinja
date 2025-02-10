@@ -3,11 +3,11 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
+    ComponentSchema,
     registered_component_type,
 )
-from pydantic import BaseModel
 
-class {{ component_type_class_name }}Params(BaseModel):
+class {{ component_type_class_name }}Params(ComponentSchema):
     ...
 
 @registered_component_type(name="{{ name }}")
@@ -17,6 +17,8 @@ class {{ component_type_class_name }}(Component):
     COMPONENT DESCRIPTION HERE.
     """
 
+    def __init__(self): ...
+
     @classmethod
     def get_schema(cls):
         return {{ component_type_class_name }}Params
@@ -24,15 +26,6 @@ class {{ component_type_class_name }}(Component):
     @classmethod
     def get_scaffolder(cls) -> DefaultComponentScaffolder:
         return DefaultComponentScaffolder()
-
-    @classmethod
-    def load(
-        cls,
-        params: {{ component_type_class_name }}Params,
-        context: ComponentLoadContext,
-    ) -> "{{ component_type_class_name }}":
-        # Add logic for mapping schema parameters to constructor args here.
-        return cls()
 
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         # Add definition construction logic here.

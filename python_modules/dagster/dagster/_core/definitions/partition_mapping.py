@@ -162,7 +162,8 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         upstream_partition_keys = set(upstream_partitions_subset.get_partition_keys())
         downstream_partition_keys = set(
             downstream_partitions_def.get_partition_keys(
-                dynamic_partitions_store=dynamic_partitions_store
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
         )
 

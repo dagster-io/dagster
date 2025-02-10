@@ -14,36 +14,32 @@ from dagster_components.core.component import (
     ComponentLoadContext,
     registered_component_type,
 )
-from dagster_components.core.schema.base import ResolvableModel, Resolver, resolver
+from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetSpecModel
+from dagster_components.core.schema.objects import AssetSpecSchema
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptParams(ResolvableModel):
+class PipesSubprocessScriptParams(ComponentSchema):
     path: str
-    assets: Sequence[AssetSpecModel]
+    assets: Sequence[AssetSpecSchema]
 
     def resolve(self, context: ResolutionContext):
         return context.resolve_value((self.path, self.assets))
 
 
-class PipesSubprocessScriptCollectionParams(ResolvableModel):
+class PipesSubprocessScriptCollectionParams(ComponentSchema):
     scripts: Sequence[PipesSubprocessScriptParams]
 
 
-@resolver(
-    fromtype=PipesSubprocessScriptCollectionParams,
-    exclude_fields={"scripts"},
-    additional_fields={"specs_by_path"},
-)
+@resolver(fromtype=PipesSubprocessScriptCollectionParams, exclude_fields={"scripts"})
 class PipesSubprocessScriptCollectionResolver(Resolver[PipesSubprocessScriptCollectionParams]):
     def resolve_specs_by_path(
         self, context: ResolutionContext
     ) -> Mapping[str, Sequence[AssetSpec]]:
-        return dict(script.resolve(context) for script in self.model.scripts)
+        return dict(script.resolve(context) for script in self.schema.scripts)
 
 
 @registered_component_type(name="pipes_subprocess_script_collection")
@@ -63,12 +59,6 @@ class PipesSubprocessScriptCollection(Component):
     @classmethod
     def get_schema(cls) -> type[PipesSubprocessScriptCollectionParams]:
         return PipesSubprocessScriptCollectionParams
-
-    @classmethod
-    def load(
-        cls, params: PipesSubprocessScriptCollectionParams, context: ComponentLoadContext
-    ) -> "PipesSubprocessScriptCollection":
-        return params.resolve_as(cls, context.resolution_context)
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

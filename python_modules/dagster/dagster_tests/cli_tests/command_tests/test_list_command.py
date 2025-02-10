@@ -6,6 +6,7 @@ from click import UsageError
 from click.testing import CliRunner
 from dagster import _seven
 from dagster._cli.job import execute_list_command, job_list_command
+from dagster._cli.workspace.cli_target import WorkspaceOpts
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
@@ -64,6 +65,11 @@ def assert_correct_extra_repository_output(result):
     )
 
 
+# ########################
+# ##### TESTS
+# ########################
+
+
 @pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_list_command_grpc_socket():
     with instance_for_test() as instance:
@@ -81,12 +87,14 @@ def test_list_command_grpc_socket():
             api_client = server_process.create_client()
 
             execute_list_command(
-                {"grpc_socket": api_client.socket},
-                no_print,
+                workspace_opts=WorkspaceOpts(grpc_socket=api_client.socket),
+                print_fn=no_print,
             )
             execute_list_command(
-                {"grpc_socket": api_client.socket, "grpc_host": api_client.host},
-                no_print,
+                workspace_opts=WorkspaceOpts(
+                    grpc_socket=api_client.socket, grpc_host=api_client.host
+                ),
+                print_fn=no_print,
             )
 
             result = runner.invoke(job_list_command, ["--grpc-socket", api_client.socket])  # pyright: ignore[reportArgumentType]
@@ -134,19 +142,21 @@ def test_list_command_deployed_grpc():
             assert result.exit_code != 0
 
             execute_list_command(
-                {"grpc_port": api_client.port},
-                no_print,
+                workspace_opts=WorkspaceOpts(grpc_port=api_client.port),
+                print_fn=no_print,
             )
 
             # Can't supply both port and socket
             with pytest.raises(UsageError):
                 execute_list_command(
-                    {"grpc_port": api_client.port, "grpc_socket": "foonamedsocket"},
-                    no_print,
+                    workspace_opts=WorkspaceOpts(
+                        grpc_port=api_client.port, grpc_socket="foonamedsocket"
+                    ),
+                    print_fn=no_print,
                 )
 
 
-def test_list_command_cli():
+def test_job_list_command_cli():
     with instance_for_test():
         runner = CliRunner()
 
@@ -219,43 +229,36 @@ def test_list_command_cli():
 def test_list_command():
     with instance_for_test():
         execute_list_command(
-            {
-                "repository_yaml": None,
-                "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
-                "module_name": None,
-                "fn_name": "bar",
-            },
-            no_print,
+            workspace_opts=WorkspaceOpts(
+                python_file=(file_relative_path(__file__, "test_cli_commands.py"),),
+                attribute="bar",
+            ),
+            print_fn=no_print,
         )
 
         execute_list_command(
-            {
-                "repository_yaml": None,
-                "python_file": (file_relative_path(__file__, "test_cli_commands.py"),),
-                "module_name": None,
-                "fn_name": "bar",
-                "working_directory": os.path.dirname(__file__),
-            },
-            no_print,
+            workspace_opts=WorkspaceOpts(
+                python_file=(file_relative_path(__file__, "test_cli_commands.py"),),
+                attribute="bar",
+                working_directory=os.path.dirname(__file__),
+            ),
+            print_fn=no_print,
         )
 
         execute_list_command(
-            {
-                "repository_yaml": None,
-                "python_file": None,
-                "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
-                "fn_name": "bar",
-            },
-            no_print,
+            workspace_opts=WorkspaceOpts(
+                module_name=("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+                attribute="bar",
+            ),
+            print_fn=no_print,
         )
 
         with pytest.raises(UsageError):
             execute_list_command(
-                {
-                    "repository_yaml": None,
-                    "python_file": ("foo.py",),
-                    "module_name": ("dagster_tests.cli_tests.command_tests.test_cli_commands",),
-                    "fn_name": "bar",
-                },
-                no_print,
+                workspace_opts=WorkspaceOpts(
+                    python_file=("foo.py",),
+                    module_name=("dagster_tests.cli_tests.command_tests.test_cli_commands",),
+                    attribute="bar",
+                ),
+                print_fn=no_print,
             )

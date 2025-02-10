@@ -10,7 +10,7 @@ from dagster import (
     materialize,
 )
 from dagster._core.pipes.client import PipesClientCompletedInvocation
-from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
+from dagster_blueprints.blueprint_assets_definition import AssetSpecSchema
 from dagster_blueprints.databricks_blueprint import DatabricksTaskBlueprint
 from databricks.sdk.service import jobs
 
@@ -57,7 +57,7 @@ class MockDatabricksClient(PipesClient):
 def test_single_databricks_task_blueprint() -> None:
     databricks_task_dict = make_submit_task_dict("/my/script/path.py", "/my/whl/path.whl", True)
     single_asset_blueprint = DatabricksTaskBlueprint(
-        assets=[AssetSpecModel(key="asset1")], task=databricks_task_dict
+        assets=[AssetSpecSchema(key="asset1")], task=databricks_task_dict
     )
     defs = single_asset_blueprint.build_defs()
     asset1 = cast(AssetsDefinition, next(iter(defs.assets or [])))
@@ -76,7 +76,7 @@ def test_single_databricks_task_blueprint() -> None:
 def test_single_databricks_task_blueprint_with_result() -> None:
     databricks_task_dict = make_submit_task_dict("/my/script/path.py", "/my/whl/path.whl", True)
     single_asset_blueprint = DatabricksTaskBlueprint(
-        assets=[AssetSpecModel(key="asset1")], task=databricks_task_dict
+        assets=[AssetSpecSchema(key="asset1")], task=databricks_task_dict
     )
     defs = single_asset_blueprint.build_defs()
     asset1 = cast(AssetsDefinition, next(iter(defs.assets or [])))
@@ -98,7 +98,7 @@ def test_single_databricks_task_blueprint_with_result() -> None:
 def test_multi_asset_databricks_task_blueprint() -> None:
     databricks_task_dict = make_submit_task_dict("/my/script/path.py", "/my/whl/path.whl", True)
     multi_asset_blueprint = DatabricksTaskBlueprint(
-        assets=[AssetSpecModel(key="asset1"), AssetSpecModel(key="asset2")],
+        assets=[AssetSpecSchema(key="asset1"), AssetSpecSchema(key="asset2")],
         task=databricks_task_dict,
     )
     defs = multi_asset_blueprint.build_defs()
@@ -118,7 +118,7 @@ def test_multi_asset_databricks_task_blueprint() -> None:
 def test_multi_asset_databricks_task_blueprint_with_results() -> None:
     databricks_task_dict = make_submit_task_dict("/my/script/path.py", "/my/whl/path.whl", True)
     multi_asset_blueprint = DatabricksTaskBlueprint(
-        assets=[AssetSpecModel(key="asset1"), AssetSpecModel(key="asset2")],
+        assets=[AssetSpecSchema(key="asset1"), AssetSpecSchema(key="asset2")],
         task=databricks_task_dict,
     )
     defs = multi_asset_blueprint.build_defs()
@@ -149,10 +149,10 @@ def test_multi_asset_databricks_task_blueprint_with_results() -> None:
 
 def test_op_name_collisions() -> None:
     single_asset_blueprint1 = DatabricksTaskBlueprint(
-        assets=[AssetSpecModel(key="asset1")], task={"placeholder": "placeholder"}
+        assets=[AssetSpecSchema(key="asset1")], task={"placeholder": "placeholder"}
     )
     single_asset_blueprint2 = DatabricksTaskBlueprint(
-        assets=[AssetSpecModel(key="asset2")], task={"placeholder": "placeholder"}
+        assets=[AssetSpecSchema(key="asset2")], task={"placeholder": "placeholder"}
     )
     resources = {"pipes_databricks_client": object()}
     blueprint_defs = Definitions.merge(
