@@ -876,6 +876,7 @@ def copy_annotations(dest: Annotatable, src: Annotatable) -> None:
             getattr(src_target, _BETA_PARAM_ATTR_NAME),
         )
 
+
 def _get_annotation_target(obj: Annotatable) -> object:
     """Given an object to be annotated, return the underlying object that will actually store the annotations.
     This is necessary because not all objects are mutable, and so can't be annotated directly.
