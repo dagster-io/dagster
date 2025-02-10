@@ -11,13 +11,16 @@ import click
 import dagster._check as check
 import uvicorn
 from dagster._annotations import deprecated
-from dagster._cli.utils import ClickArgValue, get_possibly_temporary_instance_for_cli
-from dagster._cli.workspace import get_workspace_process_context_from_kwargs, workspace_options
-from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
+from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
+from dagster._cli.workspace.cli_target import (
+    WORKSPACE_TARGET_WARNING,
+    WorkspaceOpts,
+    workspace_options,
+)
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
-from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers
@@ -72,7 +75,6 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     """
     ),
 )
-@workspace_options
 @click.option(
     "--host",
     "-h",
@@ -178,6 +180,7 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     show_default=True,
 )
 @click.version_option(version=__version__, prog_name="dagster-webserver")
+@workspace_options
 def dagster_webserver(
     host: str,
     port: int,
@@ -192,8 +195,11 @@ def dagster_webserver(
     code_server_log_level: str,
     instance_ref: Optional[str],
     live_data_poll_rate: int,
-    **kwargs: ClickArgValue,
+    **other_opts: object,
 ):
+    workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
@@ -214,11 +220,11 @@ def dagster_webserver(
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_webserver(db_statement_timeout, db_pool_recycle)
 
-        with get_workspace_process_context_from_kwargs(
+        with WorkspaceProcessContext(
             instance,
             version=__version__,
             read_only=read_only,
-            kwargs=kwargs,
+            workspace_load_target=workspace_opts.to_load_target(),
             code_server_log_level=code_server_log_level,
         ) as workspace_process_context:
             host_dagster_ui_with_workspace_process_context(

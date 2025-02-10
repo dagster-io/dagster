@@ -5,14 +5,13 @@ import click
 import pytest
 from click.testing import CliRunner
 from dagster._cli.sensor import (
-    check_repo_and_scheduler,
     sensor_cursor_command,
     sensor_list_command,
     sensor_preview_command,
     sensor_start_command,
     sensor_stop_command,
 )
-from dagster._core.instance import DagsterInstance
+from dagster._cli.utils import validate_dagster_home_is_set, validate_repo_has_defined_sensors
 from dagster._core.remote_representation import RemoteRepository
 from dagster._core.test_utils import environ
 
@@ -87,24 +86,19 @@ def test_sensors_start_all(gen_sensor_args):
             assert result.output == "Started all sensors for repository bar\n"
 
 
-def test_check_repo_and_sensorr_no_remote_sensors():
+def test_validate_repo_sensors():
     repository = mock.MagicMock(spec=RemoteRepository)
     repository.get_sensors.return_value = []
-    instance = mock.MagicMock(spec=DagsterInstance)
     with pytest.raises(click.UsageError, match="There are no sensors defined for repository"):
-        check_repo_and_scheduler(repository, instance)
+        validate_repo_has_defined_sensors(repository)
 
 
-def test_check_repo_and_scheduler_dagster_home_not_set():
+def test_validate_no_dagster_home():
     with environ({"DAGSTER_HOME": ""}):
-        repository = mock.MagicMock(spec=RemoteRepository)
-        repository.get_sensors.return_value = [mock.MagicMock()]
-        instance = mock.MagicMock(spec=DagsterInstance)
-
         with pytest.raises(
             click.UsageError, match=re.escape("The environment variable $DAGSTER_HOME is not set.")
         ):
-            check_repo_and_scheduler(repository, instance)
+            validate_dagster_home_is_set()
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
