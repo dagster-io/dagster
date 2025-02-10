@@ -1245,6 +1245,62 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1, run_id_2])
 
+    @pytest.mark.parametrize(
+        "run_coordinator_config",
+        [
+            {"block_op_concurrency_limited_runs": {"enabled": True}},
+        ],
+    )
+    def test_concurrency_pending_slot_accounting(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+    ):
+        run_id_1, run_id_2 = [make_new_run_id() for _ in range(2)]
+        workspace = concurrency_limited_workspace_context.create_request_context()
+        remote_job = self.get_concurrency_job(workspace)
+        foo_key = AssetKey(["prefix", "foo_limited_asset"])
+
+        self.submit_run(
+            instance, remote_job, workspace, run_id=run_id_1, asset_selection=set([foo_key])
+        )
+        self.submit_run(
+            instance, remote_job, workspace, run_id=run_id_2, asset_selection=set([foo_key])
+        )
+        instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+        # only 1 slot, so only one run should be dequeued
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+
+        # start the first run, have it claim the slot
+        freeze_datetime = create_datetime(year=2024, month=2, day=21)
+        with freeze_time(freeze_datetime):
+            assert instance.get_run_by_id(run_id_1).status == DagsterRunStatus.STARTING
+            instance.handle_run_event(
+                run_id_1,
+                DagsterEvent(
+                    event_type_value=DagsterEventType.RUN_START,
+                    job_name="concurrency_limited_asset_job",
+                    message="start that run",
+                ),
+            )
+            assert instance.get_run_by_id(run_id_1).status == DagsterRunStatus.STARTED
+            instance.event_log_storage.claim_concurrency_slot("foo", run_id_1, "foo_limited_asset")
+
+        freeze_datetime = freeze_datetime + datetime.timedelta(seconds=60)
+
+        with freeze_time(freeze_datetime):
+            # the slot is still claimed by the first run, so the second run is not dequeued
+            list(daemon.run_iteration(concurrency_limited_workspace_context))
+            assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+
+            # as soon as the first run frees that slot, the second run should be dequeued
+            instance.event_log_storage.free_concurrency_slot_for_step(run_id_1, "foo_limited_asset")
+            list(daemon.run_iteration(concurrency_limited_workspace_context))
+            assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1, run_id_2])
+
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture
