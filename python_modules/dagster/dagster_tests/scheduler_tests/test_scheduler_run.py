@@ -1322,6 +1322,7 @@ def test_launch_failure(
                 "class": "ExplodingRunLauncher",
             },
         },
+        synchronous_run_coordinator=True,
     ) as scheduler_instance:
         schedule = remote_repo.get_schedule("simple_schedule")
 
