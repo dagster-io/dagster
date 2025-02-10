@@ -211,6 +211,14 @@ def interrupt_ipc_subprocess(proc: "Popen[Any]") -> None:
         proc.send_signal(signal.SIGINT)
 
 
+def interrupt_then_kill_ipc_subprocess(proc: "Popen[Any]", wait_time: int = 10) -> None:
+    interrupt_ipc_subprocess(proc)
+    try:
+        proc.wait(timeout=wait_time)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+
+
 def interrupt_ipc_subprocess_pid(pid: int) -> None:
     """Send CTRL_BREAK_EVENT on Windows, SIGINT on other platforms."""
     check.int_param(pid, "pid")
