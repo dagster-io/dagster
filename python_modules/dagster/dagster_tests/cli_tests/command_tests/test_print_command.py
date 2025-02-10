@@ -18,9 +18,9 @@ def no_print(_):
 def test_print_command_verbose(gen_job_args):
     with gen_job_args as (cli_args, instance):
         execute_print_command(
+            **cli_args,
             instance=instance,
             verbose=True,
-            cli_args=cli_args,
             print_fn=no_print,
         )
 
@@ -29,9 +29,9 @@ def test_print_command_verbose(gen_job_args):
 def test_print_command(gen_job_args):
     with gen_job_args as (cli_args, instance):
         execute_print_command(
+            **cli_args,
             instance=instance,
             verbose=False,
-            cli_args=cli_args,
             print_fn=no_print,
         )
 

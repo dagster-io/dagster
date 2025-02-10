@@ -4,7 +4,7 @@ from pathlib import Path
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import GlobalComponentKey
 from dagster_dg.context import DgContext
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils import ensure_dagster_dg_tests_import, set_toml_value
 
 ensure_dagster_dg_tests_import()
 
@@ -86,8 +86,8 @@ def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        with modify_pyproject_toml() as pyproject_toml:
-            pyproject_toml["tool"]["dg"]["component_lib_package"] = "foo_bar._lib"
+        with modify_pyproject_toml() as toml:
+            set_toml_value(toml, ("tool", "dg", "component_lib_package"), "foo_bar._lib")
         result = runner.invoke(
             "component-type",
             "scaffold",

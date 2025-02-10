@@ -16,7 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.errors import DagsterError
 
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetAttributesModel
+from dagster_components.core.schema.objects import AssetAttributesSchema
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
 
@@ -60,14 +60,15 @@ def get_path_for_package(package_name: str) -> str:
 
 
 @dataclass
-class ResolvingInfo:
+class TranslatorResolvingInfo:
     obj_name: str
-    asset_attributes: AssetAttributesModel
+    asset_attributes: AssetAttributesSchema
     resolution_context: ResolutionContext
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        context = self.resolution_context.with_scope(**{self.obj_name: obj})
-        resolved_attributes = self.asset_attributes.resolve(context)
+        resolved_attributes = self.resolution_context.with_scope(
+            **{self.obj_name: obj}
+        ).resolve_value(self.asset_attributes)
         return (
             resolved_attributes[attribute]
             if attribute in resolved_attributes
@@ -81,7 +82,7 @@ class ResolvingInfo:
 
         ```python
         class WrappedDagsterXTranslator(DagsterXTranslator):
-            def __init__(self, *, base_translator, resolving_info: ResolvingInfo):
+            def __init__(self, *, base_translator, resolving_info: TranslatorResolvingInfo):
                 self.base_translator = base_translator
                 self.resolving_info = resolving_info
 
@@ -92,8 +93,9 @@ class ResolvingInfo:
 
         ```
         """
-        resolver = self.resolution_context.with_scope(**context)
-        resolved_attributes = self.asset_attributes.resolve(resolver)
+        resolved_attributes = self.resolution_context.with_scope(**context).resolve_value(
+            self.asset_attributes
+        )
         return base_spec.replace_attributes(**resolved_attributes)
 
 
@@ -103,7 +105,7 @@ def get_wrapped_translator_class(translator_type: type):
     """
 
     class WrappedTranslator(translator_type):
-        def __init__(self, *, resolving_info: ResolvingInfo):
+        def __init__(self, *, resolving_info: TranslatorResolvingInfo):
             self.base_translator = translator_type()
             self.resolving_info = resolving_info
 

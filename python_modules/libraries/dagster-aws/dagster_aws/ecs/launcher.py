@@ -53,6 +53,7 @@ from dagster_aws.ecs.utils import (
     RetryableEcsException,
     get_task_definition_family,
     get_task_logs,
+    is_transient_task_stopped_reason,
     run_ecs_task,
     task_definitions_match,
 )
@@ -830,27 +831,10 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     def include_cluster_info_in_failure_messages(self):
         return True
 
-    def _is_transient_stop_reason(self, stopped_reason: str):
-        if "Timeout waiting for network interface provisioning to complete" in stopped_reason:
-            return True
-
-        if "Timeout waiting for EphemeralStorage provisioning to complete" in stopped_reason:
-            return True
-
-        if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
-            return True
-
-        if "CannotPullContainerError" in stopped_reason and (
-            "invalid argument" in stopped_reason or "EOF" in stopped_reason
-        ):
-            return True
-
-        return False
-
     def _is_transient_startup_failure(self, run: DagsterRun, task: dict[str, Any]):
         if task.get("stoppedReason") is None:
             return False
-        return run.status == DagsterRunStatus.STARTING and self._is_transient_stop_reason(
+        return run.status == DagsterRunStatus.STARTING and is_transient_task_stopped_reason(
             task.get("stoppedReason", "")
         )
 

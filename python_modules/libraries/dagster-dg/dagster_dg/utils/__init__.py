@@ -7,7 +7,7 @@ import re
 import shutil
 import sys
 import textwrap
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from fnmatch import fnmatch
 from importlib.machinery import ModuleSpec
 from pathlib import Path
@@ -15,6 +15,8 @@ from typing import Any, Optional, TypeVar, Union
 
 import click
 import jinja2
+import tomlkit
+import tomlkit.items
 from typer.rich_utils import rich_format_help
 from typing_extensions import Never, TypeAlias
 
@@ -393,3 +395,37 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
         except json.JSONDecodeError:
             raise click.BadParameter(f"Invalid JSON string for '{param.name}'.")
     return value
+
+
+# ########################
+# ##### TOML MANIPULATION
+# ########################
+
+
+def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type: type[T]) -> T:
+    """Given a tomlkit-parsed document/table (`doc`),retrieve the nested value at `path` and ensure
+    it is of type `expected_type`. Returns the value if so, or raises a KeyError / TypeError if not.
+    """
+    current: Any = doc
+    for key in path:
+        # If current is not a table/dict or doesn't have the key, error out
+        if not isinstance(current, dict) or key not in current:
+            raise KeyError(f"Key '{key}' not found in path: {'.'.join(path)}")
+        current = current[key]
+
+    # Finally, ensure the found value is of the expected type
+    if not isinstance(current, expected_type):
+        raise TypeError(
+            f"Expected '{'.'.join(path)}' to be {expected_type.__name__}, "
+            f"but got {type(current).__name__} instead."
+        )
+    return current
+
+
+def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object) -> None:
+    """Given a tomlkit-parsed document/table (`doc`),set a nested value at `path` to `value`. Raises
+    an error if the leading keys do not already lead to a dictionary.
+    """
+    path_list = list(path)
+    inner_dict = get_toml_value(doc, path_list[:-1], dict)
+    inner_dict[path_list[-1]] = value

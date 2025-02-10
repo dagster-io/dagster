@@ -7,18 +7,17 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 )
 from dagster._seven import import_uncached_module_from_path
 from dagster._utils import pushd
-from typing_extensions import Self
 
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    ResolvableModel,
+    ComponentSchema,
     registered_component_type,
 )
 from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
 
 
-class DefinitionsParamSchema(ResolvableModel):
+class DefinitionsParamSchema(ComponentSchema):
     definitions_path: Optional[str] = None
 
 
@@ -26,8 +25,8 @@ class DefinitionsParamSchema(ResolvableModel):
 class DefinitionsComponent(Component):
     """Wraps an arbitrary set of Dagster definitions."""
 
-    def __init__(self, definitions_path: Path):
-        self.definitions_path = definitions_path
+    def __init__(self, definitions_path: Optional[Path]):
+        self.definitions_path = definitions_path or Path("definitions.py")
 
     @classmethod
     def get_scaffolder(cls) -> DefinitionsComponentScaffolder:
@@ -36,10 +35,6 @@ class DefinitionsComponent(Component):
     @classmethod
     def get_schema(cls) -> type[DefinitionsParamSchema]:
         return DefinitionsParamSchema
-
-    @classmethod
-    def load(cls, params: DefinitionsParamSchema, context: ComponentLoadContext) -> Self:
-        return cls(definitions_path=Path(params.definitions_path or "definitions.py"))
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         with pushd(str(context.path)):

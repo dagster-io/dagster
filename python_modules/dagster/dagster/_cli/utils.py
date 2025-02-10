@@ -3,28 +3,19 @@ import os
 import tempfile
 from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar
 
+import click
 import tomli
-from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import is_dagster_home_set
+from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.secrets.env_file import get_env_var_dict
 from dagster._utils.env import environ
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
-
-ClickArgValue: TypeAlias = Union[str, tuple[str]]
-ClickArgMapping: TypeAlias = Mapping[str, ClickArgValue]
-ClickOption: TypeAlias = Callable[[T_Callable], T_Callable]
-
-
-def apply_click_params(command: T_Callable, *click_params: ClickOption) -> T_Callable:
-    for click_param in click_params:
-        command = click_param(command)
-    return command
 
 
 def has_pyproject_dagster_block(path: str) -> bool:
@@ -145,3 +136,27 @@ def assert_no_remaining_opts(opts: Mapping[str, object]) -> None:
 
 def serialize_sorted_quoted(strings: Iterable[str]) -> str:
     return "[" + ", ".join([f"'{s}'" for s in sorted(list(strings))]) + "]"
+
+
+def validate_dagster_home_is_set() -> None:
+    if not is_dagster_home_set():
+        raise click.UsageError(
+            "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
+            "environment variable to be set to an existing directory in your filesystem "
+            "that contains your dagster instance configuration file (dagster.yaml).\n"
+            "You can resolve this error by exporting the environment variable."
+            "For example, you can run the following command in your shell or "
+            "include it in your shell configuration file:\n"
+            '\texport DAGSTER_HOME="~/dagster_home"'
+            "\n\n"
+        )
+
+
+def validate_repo_has_defined_sensors(repo: RemoteRepository) -> None:
+    if not repo.get_sensors():
+        raise click.UsageError(f"There are no sensors defined for repository {repo.name}.")
+
+
+def validate_repo_has_defined_schedules(repo: RemoteRepository) -> None:
+    if not repo.get_schedules():
+        raise click.UsageError(f"There are no schedules defined for repository {repo.name}.")
