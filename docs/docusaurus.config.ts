@@ -79,9 +79,9 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'Tutorials',
+          label: 'Examples',
           type: 'doc',
-          docId: 'tutorials/index',
+          docId: 'examples/index',
           position: 'left',
         },
         {
