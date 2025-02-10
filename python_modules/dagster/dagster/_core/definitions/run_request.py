@@ -5,7 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param
+from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -343,9 +343,6 @@ class DagsterRunReaction(
         )
 
 
-@experimental_param(
-    param="asset_events", additional_warn_text="Runless asset events are experimental"
-)
 class SensorResult(
     NamedTuple(
         "_SensorResult",
