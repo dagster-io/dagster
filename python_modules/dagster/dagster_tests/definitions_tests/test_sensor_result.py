@@ -12,7 +12,6 @@ from dagster import (
     op,
     sensor,
 )
-from dagster._annotations import get_beta_params
 from dagster._check import CheckError
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetObservation
