@@ -461,7 +461,7 @@ An <PyObject section="ops" module="dagster" object="op" decorator /> is a comput
 | Concept | Relationship |
 | --- | --- |
 | [type](concepts#type) | `op` may use a `type` |
-| [graph](concepts#type) | `op` must be contained in `graph` to execute |
+| [graph](concepts#graph) | `op` must be contained in `graph` to execute |
 
 ### Partition
 
@@ -528,8 +528,8 @@ A <PyObject section="resources" module="dagster" object="ConfigurableResource"/>
 | Concept | Relationship |
 | --- | --- |
 | [asset](concepts#asset) | `resource` may be used by an `asset` |
-| [schedule](concepts#schedule) | `resource` may be used by an `schedule` |
-| [sensor](concepts#sensor) | `resource` may be used by an `sensor` |
+| [schedule](concepts#schedule) | `resource` may be used by a `schedule` |
+| [sensor](concepts#sensor) | `resource` may be used by a `sensor` |
 | [definitions](concepts#definitions) | `resource` must be set in a `definitions` to be deployed |
 
 ### Type
