@@ -13,9 +13,6 @@ tree
 │   └── elt
 │       ├── __init__.py
 │       └── definitions.py
-├── my_existing_project_tests
-│   ├── __init__.py
-│   └── test_elt.py
 └── pyproject.toml
 
-6 directories, 11 files
+5 directories, 9 files

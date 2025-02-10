@@ -13,10 +13,7 @@ tree
 │   │       ├── component.yaml
 │   │       └── definitions.py
 │   └── definitions.py
-├── my_existing_project_tests
-│   ├── __init__.py
-│   └── test_elt.py
 ├── pyproject.toml
 └── uv.lock
 
-6 directories, 12 files
+5 directories, 10 files
