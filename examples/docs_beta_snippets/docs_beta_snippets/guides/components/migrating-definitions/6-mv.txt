@@ -1,0 +1,1 @@
+mv my_existing_project/elt/definitions.py my_existing_project/components/elt-definitions && rm -rf my_existing_project/elt

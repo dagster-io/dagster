@@ -1,0 +1,22 @@
+tree
+
+.
+├── README.md
+├── my_existing_project
+│   ├── __init__.py
+│   ├── analytics
+│   │   ├── __init__.py
+│   │   ├── assets.py
+│   │   └── definitions.py
+│   ├── components
+│   │   └── elt-definitions
+│   │       ├── component.yaml
+│   │       └── definitions.py
+│   └── definitions.py
+├── my_existing_project_tests
+│   ├── __init__.py
+│   └── test_assets.py
+├── pyproject.toml
+└── uv.lock
+
+6 directories, 12 files
