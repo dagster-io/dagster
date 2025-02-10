@@ -29,7 +29,6 @@
 - Fixed an issue where partition keys could be dropped when converting a list of partition keys for a `MultiPartitionsDefinition` to a `PartitionSubset`.
 - Fixed an issue where the "Reload definitions" button didn't work when using `dagster dev` on Windows, starting in the 1.9.10 release.
 - Fixed an issue where dagster could not be imported alongside some other libraries using gRPC with an 'api.proto' file.
-- Fixed an issue where assets using ProcessPoolExecutor or multiprocessing with a spawn context sometimes failed to work with a ModuleNotFoundError.
 - [ui] Fixed an issue where non-`None` default config fields weren't being displayed in the Launchpad view.
 - [ui] Fixed an issue with the search bar on the Asset partitions page incorrectly filtering partitions when combined with a status filter.
 - [ui] Fixed Asset page header display of long key values.
