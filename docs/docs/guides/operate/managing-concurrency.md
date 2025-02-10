@@ -29,7 +29,7 @@ concurrency:
 
 You can assign assets and ops to concurrency pools which allow you to limit the number of in progress runs containing those assets or ops.  You first assign your asset or op to a concurrency pool using the `pool` keyword argument.
 
-<CodeExample filePath="docs_beta_snippets/docs_beta_snippets/guides/operate/concurrency-pool-api.py" language="python" title="Specifying pools on assets and ops" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/operate/concurrency-pool-api.py" language="python" title="Specifying pools on assets and ops" />
 
 You should be able to verify that you have set the pool correctly by viewing the details pane for the asset or op in the Dagster UI.
 
