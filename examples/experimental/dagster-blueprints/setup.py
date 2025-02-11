@@ -11,9 +11,7 @@ def get_version() -> str:
     return version["__version__"]
 
 
-ver = get_version()
-# dont pin dev installs to avoid pip dep resolver issues
-pin = "" if ver == "1!0+dev" else f"=={ver}"
+ver = "1.9.13.post1"
 setup(
     name="dagster-blueprints",
     version=get_version(),
@@ -35,8 +33,8 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_blueprints_tests*", "examples*"]),
     install_requires=[
-        f"dagster{pin}",
-        f"dagster-databricks{pin}",
+        "dagster==1.9.13",
+        "dagster-databricks==1.9.13",
     ],
     zip_safe=False,
     entry_points={
