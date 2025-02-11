@@ -64,8 +64,8 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, params: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
-        return cls() if params is None else params.resolve_as(cls, context.resolution_context)
+    @abstractmethod
+    def load(cls, schema: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self: ...
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
