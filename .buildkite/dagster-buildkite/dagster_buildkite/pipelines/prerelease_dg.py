@@ -17,7 +17,6 @@ def build_prerelease_dg_steps() -> List[BuildkiteStep]:
                 "required": False,
                 "key": "version-to-release",
                 "default": None,
-                "hint": "Leave blank to auto-increment the minor version",
             },
         ],
     }
