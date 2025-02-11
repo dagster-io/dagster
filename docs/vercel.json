@@ -56,6 +56,36 @@
       "permanent": false
     },
     {
+      "source": "/_apidocs/:path*/",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/sections/api/apidocs/:path*/",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/sections/api/apidocs/:path*",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/docs/apidocs/:path*",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/master/_apidocs/:path*",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
       "source": "/deploying/celery",
       "destination": "/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery",
       "permanent": false
