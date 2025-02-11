@@ -13,7 +13,6 @@ import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {RecentAssetEvents} from './useRecentAssetEvents';
-import {useFeatureFlags} from '../app/Flags';
 import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {PoolTag} from '../instance/PoolTag';
@@ -45,7 +44,6 @@ export const AssetSidebarActivitySummary = ({
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
   const displayedEvent = isObservable ? observations[0] : materializations[0];
   const pools = asset.pools || [];
-  const {flagPoolUI} = useFeatureFlags();
 
   useEffect(() => {
     refetch();
@@ -64,7 +62,7 @@ export const AssetSidebarActivitySummary = ({
         </>
       )}
 
-      {flagPoolUI && pools.length ? (
+      {pools.length ? (
         <SidebarSection title={pools.length === 1 ? 'Pool' : 'Pools'}>
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 4}}>
             {pools.map((pool, idx) => (

@@ -5,7 +5,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
-import {useFeatureFlags} from '../app/Flags';
 import {
   SingleConcurrencyKeyQuery,
   SingleConcurrencyKeyQueryVariables,
@@ -15,7 +14,6 @@ import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/Virtu
 import {LoadingOrNone} from '../workspace/VirtualizedWorkspaceTable';
 
 const POOL_TEMPLATE_COLUMNS = '1fr 1fr';
-const TEMPLATE_COLUMNS = '1fr 150px 150px 150px 150px 150px';
 
 export const ConcurrencyTable = ({concurrencyKeys}: {concurrencyKeys: string[]}) => {
   const parentRef = useRef<HTMLDivElement | null>(null);
@@ -53,19 +51,10 @@ export const ConcurrencyTable = ({concurrencyKeys}: {concurrencyKeys: string[]})
 };
 
 const ConcurrencyHeader = () => {
-  const {flagPoolUI} = useFeatureFlags();
-  return flagPoolUI ? (
+  return (
     <HeaderRow templateColumns={POOL_TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Pool</HeaderCell>
       <HeaderCell>Limit</HeaderCell>
-    </HeaderRow>
-  ) : (
-    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
-      <HeaderCell>Concurrency key</HeaderCell>
-      <HeaderCell>Total slots</HeaderCell>
-      <HeaderCell>Assigned steps</HeaderCell>
-      <HeaderCell>Pending steps</HeaderCell>
-      <HeaderCell>All steps</HeaderCell>
     </HeaderRow>
   );
 };
@@ -87,7 +76,6 @@ const ConcurrencyRow = ({
       skip: !shouldQuery,
     },
   );
-  const {flagPoolUI} = useFeatureFlags();
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -95,21 +83,7 @@ const ConcurrencyRow = ({
   const limit = data?.instance.concurrencyLimit;
 
   const path = `/deployment/concurrency/${encodeURIComponent(concurrencyKey)}`;
-  return flagPoolUI ? (
-    <Row $height={height} $start={start}>
-      <NewRowGrid border="bottom">
-        <RowCell>
-          <Box flex={{gap: 4, alignItems: 'center'}}>
-            <Icon name="dynamic_feed" />
-            <Link to={path}>{concurrencyKey}</Link>
-          </Box>
-        </RowCell>
-        <RowCell>
-          {limit ? <div>{limit.slotCount}</div> : <LoadingOrNone queryResult={queryResult} />}
-        </RowCell>
-      </NewRowGrid>
-    </Row>
-  ) : (
+  return (
     <Row $height={height} $start={start}>
       <RowGrid border="bottom">
         <RowCell>
@@ -120,29 +94,6 @@ const ConcurrencyRow = ({
         </RowCell>
         <RowCell>
           {limit ? <div>{limit.slotCount}</div> : <LoadingOrNone queryResult={queryResult} />}
-        </RowCell>
-        <RowCell>
-          {limit ? (
-            <>{limit.pendingSteps.filter((x) => !!x.assignedTimestamp).length}</>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
-        </RowCell>
-        <RowCell>
-          {limit ? (
-            <>{limit.pendingSteps.filter((x) => !x.assignedTimestamp).length}</>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
-        </RowCell>
-        <RowCell>
-          {limit ? (
-            <Box flex={{direction: 'row', gap: 16, alignItems: 'center'}}>
-              <span>{limit.pendingSteps.length}</span>
-            </Box>
-          ) : (
-            <LoadingOrNone queryResult={queryResult} />
-          )}
         </RowCell>
       </RowGrid>
     </Row>
@@ -172,13 +123,8 @@ const SINGLE_CONCURRENCY_KEY_QUERY = gql`
   }
 `;
 
-const NewRowGrid = styled(Box)`
-  display: grid;
-  grid-template-columns: ${POOL_TEMPLATE_COLUMNS};
-  height: 100%;
-`;
 const RowGrid = styled(Box)`
   display: grid;
-  grid-template-columns: ${TEMPLATE_COLUMNS};
+  grid-template-columns: ${POOL_TEMPLATE_COLUMNS};
   height: 100%;
 `;

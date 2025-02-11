@@ -12,6 +12,7 @@ from dagster import (
 )
 from dagster._annotations import deprecated
 from dagster._config.pythonic_config import ConfigurableIOManager
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
 from dagster._utils import PICKLE_PROTOCOL
@@ -20,16 +21,21 @@ from pydantic import Field
 from upath import UPath
 
 from dagster_azure.adls2.resources import ADLS2Resource
-from dagster_azure.adls2.utils import ResourceNotFoundError
+from dagster_azure.adls2.utils import (
+    DataLakeLeaseClient,
+    DataLakeServiceClient,
+    ResourceNotFoundError,
+)
+from dagster_azure.blob.utils import BlobLeaseClient, BlobServiceClient
 
 
 class PickledObjectADLS2IOManager(UPathIOManager):
     def __init__(
         self,
-        file_system: Any,
-        adls2_client: Any,
-        blob_client: Any,
-        lease_client_constructor: Any,
+        file_system: str,
+        adls2_client: DataLakeServiceClient,
+        blob_client: BlobServiceClient,
+        lease_client_constructor: Union[type[DataLakeLeaseClient], type[BlobLeaseClient]],
         prefix: str = "dagster",
         lease_duration: int = 60,
     ):
@@ -83,7 +89,8 @@ class PickledObjectADLS2IOManager(UPathIOManager):
     def _acquire_lease(self, client: Any, is_rm: bool = False) -> Iterator[str]:
         lease_client = self.lease_client_constructor(client=client)
         try:
-            lease_client.acquire(lease_duration=self.lease_duration)
+            # Unclear why this needs to be type-ignored
+            lease_client.acquire(lease_duration=self.lease_duration)  # type: ignore
             yield lease_client.id
         finally:
             # cannot release a lease on a file that no longer exists, so need to check
@@ -229,7 +236,7 @@ class ConfigurablePickledObjectADLS2IOManager(ADLS2PickleIOManager):
     config_schema=ADLS2PickleIOManager.to_config_schema(),
     required_resource_keys={"adls2"},
 )
-def adls2_pickle_io_manager(init_context):
+def adls2_pickle_io_manager(init_context: InitResourceContext) -> PickledObjectADLS2IOManager:
     """Persistent IO manager using Azure Data Lake Storage Gen2 for storage.
 
     Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
@@ -297,7 +304,7 @@ def adls2_pickle_io_manager(init_context):
     adls2_client = adls_resource.adls2_client
     blob_client = adls_resource.blob_client
     lease_client = adls_resource.lease_client_constructor
-    pickled_io_manager = PickledObjectADLS2IOManager(
+    return PickledObjectADLS2IOManager(
         init_context.resource_config["adls2_file_system"],
         adls2_client,
         blob_client,
@@ -305,4 +312,3 @@ def adls2_pickle_io_manager(init_context):
         init_context.resource_config.get("adls2_prefix"),
         init_context.resource_config.get("lease_duration"),
     )
-    return pickled_io_manager

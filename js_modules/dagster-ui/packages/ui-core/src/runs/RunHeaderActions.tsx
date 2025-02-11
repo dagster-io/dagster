@@ -14,7 +14,6 @@ import {useMutation} from '../apollo-client';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {useFeatureFlags} from '../app/Flags';
 import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrencyKeyInfo';
@@ -47,7 +46,6 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   const copy = useCopyToClipboard();
   const history = useHistory();
 
-  const {flagPoolUI} = useFeatureFlags();
   const [freeSlots] = useMutation<
     FreeConcurrencySlotsMutation,
     FreeConcurrencySlotsMutationVariables
@@ -213,7 +211,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
           selectedRuns={{[run.id]: run.canTerminate}}
         />
       ) : null}
-      {flagPoolUI && run.allPools && run.allPools.length ? (
+      {run.allPools && run.allPools.length ? (
         <RunPoolsDialog
           isOpen={visibleDialog === 'pools'}
           pools={run.allPools}

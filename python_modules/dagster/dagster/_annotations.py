@@ -292,6 +292,11 @@ def get_beta_info(obj: Annotatable) -> BetaInfo:
     return getattr(target, _BETA_ATTR_NAME)
 
 
+# Temporary experimental decorator to fix docs snippets relying on dagster-cloud
+# dagster-cloud is pulled from pypi and uses experimental in latest
+# https://buildkite.com/dagster/dagster-dagster/builds/111921#0194f5ea-3aa6-4538-983c-a5e51e790686
+experimental = beta
+
 # ########################
 # ##### BETA PARAM
 # ########################

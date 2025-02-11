@@ -14,7 +14,7 @@ This is the home of the Dagster documentation. The documentation site is built u
 The docs are organized into the following sections:
 
 - Docs - includes content from [getting-started](./docs/getting-started/), [etl-pipeline-tutorial](./docs/etl-pipeline-tutorial/), [guides](./docs/guides/), and [about](./docs/about/)
-- [Tutorials](./docs/tutorials/)
+- [Examples](./docs/examples/)
 - [Integrations](./docs/integrations/)
 - [Dagster+](./docs/dagster-plus/)
 - [API reference](./docs/api/)

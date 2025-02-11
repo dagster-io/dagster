@@ -13,7 +13,6 @@ import {
   SidebarPipelineOpQuery,
   SidebarPipelineOpQueryVariables,
 } from './types/SidebarOp.types';
-import {useFeatureFlags} from '../app/Flags';
 import {PoolTag} from '../instance/PoolTag';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {LoadingSpinner} from '../ui/Loading';
@@ -98,7 +97,6 @@ export const SidebarOp = ({
   repoAddress,
   isGraph,
 }: SidebarOpProps) => {
-  const {flagPoolUI} = useFeatureFlags();
   const {error, solidContainer, isLoading} = useSidebarOpQuery(
     explorerPath.pipelineName,
     handleID,
@@ -137,7 +135,7 @@ export const SidebarOp = ({
         }
       />
 
-      {flagPoolUI && !!pools.length && (
+      {!!pools.length && (
         <SidebarSection title={isGraph ? 'Pools' : 'Pool'}>
           <Box margin={{horizontal: 24, vertical: 12}} flex={{gap: 4}}>
             {pools.map((pool) => (

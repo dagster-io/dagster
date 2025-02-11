@@ -35,6 +35,25 @@ Copy the following code underneath the `product performance` asset:
 
 ## 3. Enable and test automations
 
+Now that we have our schedule, let's add it to our Definitions object.
+
+Your Definitions object should look like this:
+
+  ```python
+  defs = dg.Definitions(
+      assets=[products,
+          sales_reps,
+          sales_data,
+          joined_data,
+          monthly_sales_performance,
+          product_performance,
+      ],
+      asset_checks=[missing_dimension_check],
+      schedules=[weekly_update_schedule],
+      resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
+  )
+  ```
+
 The final step is to enable the automations in the UI.
 
 To accomplish this:

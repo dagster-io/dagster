@@ -50,7 +50,7 @@ def observe(
 
     with disable_dagster_warnings():
         observation_job = define_asset_job(
-            "in_process_observation_job", selection=AssetSelection.all(include_external_assets=True)
+            "in_process_observation_job", selection=AssetSelection.all(include_sources=True)
         )
         defs = Definitions(
             assets=assets,
