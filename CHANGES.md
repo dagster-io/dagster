@@ -38,7 +38,7 @@
 ### Deprecations
 
 - [dagster-sdf] Moved the `dagster-sdf` library to the community-supported repo.
-- [dagster-blueprints] Removed the `dagster-blueprints` library.
+- [dagster-blueprints] Removed the `dagster-blueprints` package. We are actively developing a project, currently named Components, that has similar goals to Blueprints of increasing the accessibility of Dagster.
 - Removed the `@experimental` decorator in favor of the `@preview` and `@beta` decorators. Also removed annotations and warnings related to the `@experimental` decorator.
 
 ### Dagster Plus
