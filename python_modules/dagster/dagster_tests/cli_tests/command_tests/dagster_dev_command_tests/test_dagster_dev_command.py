@@ -17,9 +17,10 @@ from dagster._core.test_utils import environ
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import wait_for_grpc_server
 from dagster._serdes.ipc import (
-    interrupt_ipc_subprocess,
+    get_ipc_shutdown_pipe,
     interrupt_then_kill_ipc_subprocess,
     open_ipc_subprocess,
+    send_ipc_shutdown_message,
 )
 from dagster._utils import find_free_port, pushd
 from dagster_graphql import DagsterGraphQLClient
@@ -213,17 +214,19 @@ def test_dagster_dev_command_legacy_code_server_behavior():
 def _launch_dev_command(
     options: list[str], capture_output: bool = False
 ) -> Iterator[subprocess.Popen]:
+    read_fd, write_fd = get_ipc_shutdown_pipe()
     proc = open_ipc_subprocess(
-        ["dagster", "dev", *options],
+        ["dagster", "dev", *options, "--shutdown-pipe", str(read_fd)],
         stdout=subprocess.PIPE if capture_output else None,
         stderr=subprocess.PIPE if capture_output else None,
         cwd=os.getcwd(),
+        pass_fds=[read_fd],
     )
     try:
         yield proc
     finally:
         child_processes = _get_child_processes(proc.pid)
-        interrupt_ipc_subprocess(proc)
+        send_ipc_shutdown_message(write_fd)
         proc.wait(timeout=10)
         # The `dagster dev` command exits before the gRPC servers it spins up have shutdown. Wait
         # for the child processes to exit here to make sure we don't leave any hanging processes.

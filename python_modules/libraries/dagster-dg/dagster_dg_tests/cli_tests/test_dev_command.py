@@ -71,6 +71,7 @@ def test_dev_command_has_options_of_dagster_dev():
         "use_ssl",
         # Misc others to exclude
         "use_legacy_code_server_behavior",
+        "shutdown_pipe",
     }
 
     dg_dev_param_names = {param.name for param in dev_command.params}
