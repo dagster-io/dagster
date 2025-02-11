@@ -20,7 +20,7 @@ setup(
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
     license="Apache-2.0",
-    description="",  # TODO - fill out description
+    description="dagster-blueprints is no longer supported. Please consider using Dagster Components instead: https://docs.dagster.io/guides/preview/components/",
     url=(
         "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
         "dagster-blueprints"
