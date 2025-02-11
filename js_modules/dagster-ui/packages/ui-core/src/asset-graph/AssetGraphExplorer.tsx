@@ -322,9 +322,6 @@ const AssetGraphExplorerWithData = ({
         {
           ...explorerPath,
           opNames: [nextOpsNameSelection],
-          opsQuery: nodeIsInDisplayedGraph
-            ? explorerPath.opsQuery
-            : `${explorerPath.opsQuery},++"${token}"++`,
           pipelineName: explorerPath.pipelineName,
         },
         'replace',
