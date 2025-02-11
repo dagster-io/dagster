@@ -59,7 +59,7 @@ def _get_temporary_instance(cli_command: str, logger: logging.Logger) -> Iterato
     # have issues with FS notify-based event log watching
     # use a fixed prefix so that consumer projects can reliably manage,
     # e.g., add to .gitignore
-    with tempfile.TemporaryDirectory(prefix='.tmp_dagster_home_', dir=os.getcwd()) as tempdir:
+    with tempfile.TemporaryDirectory(prefix=".tmp_dagster_home_", dir=os.getcwd()) as tempdir:
         logger.info(
             f"Using temporary directory {tempdir} for storage. This will be removed when"
             f" {cli_command} exits."
