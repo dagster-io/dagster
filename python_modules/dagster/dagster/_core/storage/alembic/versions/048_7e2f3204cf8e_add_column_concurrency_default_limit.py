@@ -22,7 +22,13 @@ def upgrade():
         if not has_column("concurrency_limits", "using_default_limit"):
             op.add_column(
                 "concurrency_limits",
-                sa.Column("using_default_limit", sa.Boolean(), nullable=False, default=False),
+                sa.Column(
+                    "using_default_limit",
+                    sa.Boolean(),
+                    nullable=False,
+                    default=False,
+                    server_default=sa.false(),
+                ),
             )
 
 

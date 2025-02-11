@@ -30,6 +30,7 @@ COMPONENTS_SNIPPETS_DIR = (
 )
 
 MY_EXISTING_PROJECT = Path(__file__).parent / "my-existing-project"
+MASK_MY_EXISTING_PROJECT = (r"\/.*?\/my-existing-project", "/.../my-existing-project")
 
 
 def test_components_docs_index(update_snippets: bool) -> None:
@@ -153,4 +154,5 @@ defs = dg.Definitions.merge(
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-list-component-types.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_MY_EXISTING_PROJECT],
         )

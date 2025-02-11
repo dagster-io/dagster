@@ -17,7 +17,7 @@ from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
-from dagster_dg.utils import DgClickCommand, exit_with_error, pushd
+from dagster_dg.utils import DgClickCommand, exit_with_error, get_uv_run_executable_path, pushd
 
 T = TypeVar("T")
 
@@ -103,6 +103,7 @@ def dev_command(
     # code location's environment.
     if dg_context.is_code_location:
         cmd = ["uv", "run", "dagster", "dev", *forward_options]
+        cmd_location = get_uv_run_executable_path("dagster")
         temp_workspace_file_cm = nullcontext()
 
     # In a deployment context, dg dev will construct a temporary
@@ -125,11 +126,13 @@ def dev_command(
             "dev",
             *forward_options,
         ]
+        cmd_location = "ephemeral dagster dev"
         temp_workspace_file_cm = _temp_workspace_file(dg_context)
     else:
         exit_with_error("This command must be run inside a code location or deployment directory.")
 
     with pushd(dg_context.root_path), temp_workspace_file_cm as workspace_file:
+        print(f"Using {cmd_location}")  # noqa: T201
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
         uv_run_dagster_dev_process = _open_subprocess(cmd)

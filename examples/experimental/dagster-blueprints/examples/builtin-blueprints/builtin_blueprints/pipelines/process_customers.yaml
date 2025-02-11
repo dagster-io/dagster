@@ -1,8 +1,0 @@
-- command: "curl -o ../../data/customers.csv https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/assets/customers.csv"
-  assets:
-    - key: customers
-
-- command: "python customer_stats.py"
-  assets:
-    - key: customer_stats
-      deps: [customers]

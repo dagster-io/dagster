@@ -192,7 +192,7 @@ def test_component_type_info_all_metadata_success():
             "simple_pipes_script_asset@dagster_components.test",
         )
         assert_runner_result(result)
-        assert result.output.strip() == _EXPECTED_COMPONENT_TYPE_INFO_FULL
+        assert result.output.strip().endswith(_EXPECTED_COMPONENT_TYPE_INFO_FULL)
 
 
 def test_component_type_info_all_metadata_empty_success():
@@ -203,9 +203,8 @@ def test_component_type_info_all_metadata_empty_success():
             "all_metadata_empty_asset@dagster_components.test",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert result.output.strip().endswith(
+            textwrap.dedent("""
                 all_metadata_empty_asset@dagster_components.test
             """).strip()
         )
@@ -220,9 +219,8 @@ def test_component_type_info_flag_fields_success():
             "--description",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert result.output.strip().endswith(
+            textwrap.dedent("""
             A simple asset that runs a Python script with the Pipes subprocess client.
 
             Because it is a pipes asset, no value is returned.
@@ -236,9 +234,8 @@ def test_component_type_info_flag_fields_success():
             "--scaffold-params-schema",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert result.output.strip().endswith(
+            textwrap.dedent("""
                 {
                     "properties": {
                         "asset_key": {
@@ -267,9 +264,8 @@ def test_component_type_info_flag_fields_success():
             "--component-params-schema",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert result.output.strip().endswith(
+            textwrap.dedent("""
                 {
                     "properties": {
                         "asset_key": {
@@ -358,7 +354,7 @@ def test_list_component_types_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke("component-type", "list")
         assert_runner_result(result)
-        assert result.output.strip() == _EXPECTED_COMPONENT_TYPES
+        assert result.output.strip().endswith(_EXPECTED_COMPONENT_TYPES)
 
 
 def test_component_type_list_with_no_dagster_components_fails() -> None:

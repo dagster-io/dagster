@@ -3,7 +3,6 @@ import {memo, useContext} from 'react';
 import styled from 'styled-components';
 
 import {RepoNavItem} from './RepoNavItem';
-import {RepositoryLocationStateObserver} from './RepositoryLocationStateObserver';
 import {SectionedLeftNav} from '../ui/SectionedLeftNav';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
@@ -51,7 +50,6 @@ const LoadedRepositorySection = ({
   return (
     <Container>
       <ListContainer>{listContent()}</ListContainer>
-      <RepositoryLocationStateObserver />
       <RepoNavItem allRepos={allRepos} selected={visibleRepos} onToggle={toggleVisible} />
     </Container>
   );
