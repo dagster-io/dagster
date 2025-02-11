@@ -9,10 +9,10 @@ sidebar_custom_props:
 ---
 
 :::note
-To see [video of this tutorial](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s)
+To see [video of this example](https://www.youtube.com/watch?v=z_4KBYsyjks&t=50s)
 :::
 
-In this tutorial, you'll build a pipeline with Dagster that:
+In this example, you'll build a pipeline with Dagster that:
 
 - Automatically detects newly published podcasts
 - Transcribes them using the power of GPUs
@@ -43,14 +43,14 @@ First, set up a new Dagster project.
    <Tabs>
    <TabItem value="macos" label="MacOS">
    ```bash
-   uv venv dagster_tutorial
-   source dagster_tutorial/bin/activate
+   uv venv dagster_example
+   source dagster_example/bin/activate
    ```
    </TabItem>
    <TabItem value="windows" label="Windows">
    ```bash
-   uv venv dagster_tutorial
-   dagster_tutorial\Scripts\activate
+   uv venv dagster_example
+   dagster_example\Scripts\activate
    ```
    </TabItem>
    </Tabs>
@@ -72,4 +72,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this tutorial with [modal application](modal-application)
+- Continue this example with [modal application](modal-application)

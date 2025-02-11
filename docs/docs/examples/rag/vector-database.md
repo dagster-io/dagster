@@ -26,4 +26,4 @@ Between our sources and vector database resources, we can now extract data and u
 
 ## Next steps
 
-- Continue this tutorial with [embeddings](embeddings)
+- Continue this example with [embeddings](embeddings)

@@ -38,4 +38,4 @@ This looks like any other Python function, except it returns an `AssetCheckResul
 
 ## Next steps
 
-- Continue this tutorial with [OpenAI job](open-ai-job)
+- Continue this example with [OpenAI job](open-ai-job)

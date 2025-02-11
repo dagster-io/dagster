@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 20
 ---
 
-For this tutorial, we will create multiple pipelines that do the following:
+For this example, we will create multiple pipelines that do the following:
 
 - Download audio files
 - Transcribe the audio
@@ -43,4 +43,4 @@ With the Modal functions in place, we can define the entry point `main`. This is
 
 ## Next steps
 
-- Continue this tutorial with [rss assets](rss-assets)
+- Continue this example with [rss assets](rss-assets)

@@ -18,4 +18,4 @@ Now that the base tables are loaded, we can move on to working with the data.
 
 ## Next steps
 
-- Continue this tutorial with [feature engineering](feature-engineering)
+- Continue this example with [feature engineering](feature-engineering)

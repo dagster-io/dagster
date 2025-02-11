@@ -42,5 +42,5 @@ Dagster is now set to continuously ingest data from all of our configured source
 
 ## Next steps
 
-- Continue this tutorial with [retrieval](retrieval)
+- Continue this example with [retrieval](retrieval)
 

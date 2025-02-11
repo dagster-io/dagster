@@ -17,4 +17,4 @@ There is one problem with the `access_days_time` value: it is a free form string
 
 ## Next steps
 
-- Continue this tutorial with [additional prompt](additional-prompt)
+- Continue this example with [additional prompt](additional-prompt)
