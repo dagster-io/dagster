@@ -135,7 +135,7 @@ def process_docstring(
     assert app.env is not None
 
     if has_attrs(lines):
-        record_error(f'Object {name} has "Attributes:" in docstring. Use "Args:" insetad.')
+        record_error(f'Object {name} has "Attributes:" in docstring. Use "Args:" instead.')
 
     if is_deprecated(obj):
         inject_object_flag(obj, get_deprecated_info(obj), lines)

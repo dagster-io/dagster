@@ -782,8 +782,8 @@ const PartitionSelectionNotice = ({
 }) => {
   return (
     <Box padding={{horizontal: 16, top: 16, bottom: 8}} style={{position: 'relative'}} border="top">
-      <Alert intent="info" title={<Box style={{marginRight: 100, minHeight: 24}}>{text}</Box>} />
-      <div style={{position: 'absolute', top: 24, right: 24, zIndex: 4}}>
+      <Alert intent="info" title={<Box style={{marginRight: 100}}>{text}</Box>} />
+      <div style={{position: 'absolute', top: 20, right: 24, zIndex: 4}}>
         <Button
           data-testid={testId('backfill-preview-button')}
           intent="none"

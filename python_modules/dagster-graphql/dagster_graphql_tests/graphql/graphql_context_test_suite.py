@@ -44,7 +44,9 @@ def get_main_loadable_target_origin():
 
 
 @contextmanager
-def graphql_postgres_instance(overrides=None):
+def graphql_postgres_instance(
+    overrides=None, synchronous_run_launcher=False, synchronous_run_coordinator=False
+):
     with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(__file__, "docker-compose.yml"),
@@ -80,6 +82,8 @@ def graphql_postgres_instance(overrides=None):
                     },
                     overrides if overrides else {},
                 ),
+                synchronous_run_launcher=synchronous_run_launcher,
+                synchronous_run_coordinator=synchronous_run_coordinator,
             ) as instance:
                 yield instance
 
@@ -119,6 +123,7 @@ class InstanceManagers:
                             "class": "ExplodingRunLauncher",
                         },
                     },
+                    synchronous_run_coordinator=True,
                 ) as instance:
                     yield instance
 
@@ -135,8 +140,9 @@ class InstanceManagers:
                     "run_launcher": {
                         "module": "dagster._core.test_utils",
                         "class": "ExplodingRunLauncher",
-                    }
-                }
+                    },
+                },
+                synchronous_run_coordinator=True,
             ) as instance:
                 yield instance
 
@@ -158,11 +164,8 @@ class InstanceManagers:
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
-                        "run_launcher": {
-                            "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                            "class": "SyncInMemoryRunLauncher",
-                        },
                     },
+                    synchronous_run_launcher=True,
                 ) as instance:
                     yield instance
 
@@ -209,6 +212,7 @@ class InstanceManagers:
                             "config": {"base_dir": temp_dir},
                         },
                     },
+                    synchronous_run_coordinator=True,
                 ) as instance:
                     yield instance
 
@@ -222,12 +226,8 @@ class InstanceManagers:
         @contextmanager
         def _postgres_instance():
             with graphql_postgres_instance(
-                overrides={
-                    "run_launcher": {
-                        "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                        "class": "SyncInMemoryRunLauncher",
-                    }
-                }
+                synchronous_run_launcher=True,
+                synchronous_run_coordinator=True,
             ) as instance:
                 yield instance
 
@@ -240,7 +240,7 @@ class InstanceManagers:
     def postgres_instance_with_default_run_launcher():
         @contextmanager
         def _postgres_instance_with_default_hijack():
-            with graphql_postgres_instance() as instance:
+            with graphql_postgres_instance(synchronous_run_coordinator=True) as instance:
                 yield instance
 
         return MarkedManager(

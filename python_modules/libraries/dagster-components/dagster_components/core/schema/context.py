@@ -8,7 +8,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._record import record
 from jinja2.nativetypes import NativeTemplate
 
-from dagster_components.core.schema.base import ResolvableModel
+from dagster_components.core.schema.base import ComponentSchema
 
 T = TypeVar("T")
 
@@ -42,7 +42,7 @@ class ResolutionContext:
 
     def _resolve_inner_value(self, val: Any) -> Any:
         """Resolves a single value, if it is a templated string."""
-        if isinstance(val, ResolvableModel):
+        if isinstance(val, ComponentSchema):
             resolver = val.__dagster_resolver__(val)
             return resolver.resolve(self)
         elif isinstance(val, str):

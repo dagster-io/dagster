@@ -62,12 +62,14 @@ In this case, we'll want to define a few things:
 
 To simplify common use cases, `dagster-components` provides schemas for common bits of configuration:
 
-- `AssetAttributesModel`: This contains attributes that are common to all assets, such as the key, description, tags, and dependencies.
-- `OpSpecModel`: This contains attributes specific to an underlying operation, such as the name and tags.
+- `AssetSpecSchema`: This contains attributes that are common to all assets, such as the key, description, tags, and dependencies.
+- `OpSpecSchema`: This contains attributes specific to an underlying operation, such as the name and tags.
 
 We can the schema for our component and add it to our class as follows:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" />
+
+Because the argument names in the schema match the names of the arguments in the `ShellCommandComponent` class, the `load` method will automatically populate the class with the values from the schema, and will automatically resolve the `AssetSpecSchema`s into `AssetSpec` objects.
 
 ## Building definitions
 

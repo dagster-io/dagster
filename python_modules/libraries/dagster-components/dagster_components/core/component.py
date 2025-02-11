@@ -16,7 +16,6 @@ from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
-from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components.core.component_key import (
@@ -29,7 +28,7 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.base import ResolvableModel
+from dagster_components.core.schema.base import ComponentSchema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.utils import load_module_from_path
 
@@ -43,7 +42,7 @@ class Component(ABC):
     name: ClassVar[Optional[str]] = None
 
     @classmethod
-    def get_schema(cls) -> Optional[type[BaseModel]]:
+    def get_schema(cls) -> Optional[type[ComponentSchema]]:
         return None
 
     @classmethod
@@ -65,8 +64,8 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    @abstractmethod
-    def load(cls, params: Optional[BaseModel], context: "ComponentLoadContext") -> Self: ...
+    def load(cls, params: Optional[ComponentSchema], context: "ComponentLoadContext") -> Self:
+        return cls() if params is None else context.resolve(params, as_type=cls)
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
@@ -266,7 +265,7 @@ class ComponentLoadContext:
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
 
-    def resolve(self, value: ResolvableModel, as_type: type[T]) -> T:
+    def resolve(self, value: ComponentSchema, as_type: type[T]) -> T:
         return value.__dagster_resolver__(value).resolve_as(as_type, self.resolution_context)
 
     def resolve_value(self, value: Any) -> Any:

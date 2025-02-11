@@ -1,6 +1,6 @@
 import os
 
-from bar import foo_op  # requires working_directory
+from bar import foo_op  # requires working_directory  # type: ignore
 from dagster import DefaultSensorStatus, RunRequest, job, repository, sensor
 
 

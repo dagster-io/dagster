@@ -3,7 +3,7 @@ from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
 from dagster_components import (
-    AssetAttributesModel,
+    AssetAttributesSchema,
     Component,
     ComponentLoadContext,
     registered_component_type,
@@ -34,10 +34,10 @@ class HasCustomScope(Component):
 
     @classmethod
     def get_schema(cls):
-        return AssetAttributesModel
+        return AssetAttributesSchema
 
     @classmethod
-    def load(cls, params: AssetAttributesModel, context: ComponentLoadContext):
+    def load(cls, params: AssetAttributesSchema, context: ComponentLoadContext):
         return cls(attributes=context.resolve_value(params))
 
     def build_defs(self, context: ComponentLoadContext):

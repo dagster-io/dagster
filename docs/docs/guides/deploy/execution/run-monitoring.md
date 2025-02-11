@@ -62,9 +62,9 @@ It's possible for a run worker process to crash during a run. This can happen fo
 
 If a run worker crashes, the run it's managing can hang. The monitoring daemon can run health checks on run workers for all active runs to detect this. If a failed run worker is detected (e.g. by the K8s Job having a non-zero exit code), the run is either marked as failed or resumed (see below).
 
-## Resuming runs after run worker crashes (Experimental)
+## Resuming runs after run worker crashes
 
-This feature is experimental and currently only supported when using:
+This feature is currently only supported when using:
 
 - [`K8sRunLauncher`](/api/python-api/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher) with the [`k8s_job_executor`](/api/python-api/libraries/dagster-k8s#dagster_k8s.k8s_job_executor)
 - [`DockerRunLauncher`](/api/python-api/libraries/dagster-docker#dagster_docker.DockerRunLauncher) with the [`docker_executor`](/api/python-api/libraries/dagster-docker#dagster_docker.docker_executor)

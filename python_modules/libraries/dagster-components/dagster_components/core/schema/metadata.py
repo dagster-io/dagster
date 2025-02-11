@@ -14,7 +14,7 @@ class ResolvableFieldInfo(FieldInfo):
 
     Examples:
     ```python
-    class MyModel(ResolvableModel):
+    class MyModel(ComponentSchema):
         resolvable_obj: Annotated[str, ResolvableFieldInfo(required_scope={"some_field"})]
     ```
     """
