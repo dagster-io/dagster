@@ -6,12 +6,11 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
-from dagster._record import record
 from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
 from dagster_sling.resources import AssetExecutionContext
 from pydantic import BaseModel
 
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, ComponentLoadContext, field_resolver
 from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_scaffolder import ComponentScaffolder
 from dagster_components.core.schema.base import ResolvableSchema
@@ -25,11 +24,23 @@ from dagster_components.core.schema.objects import (
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
-@record
-class SlingReplicationSpec:
+class SlingReplicationSpec(BaseModel):
     path: str
     op: Optional[OpSpecSchema]
     translator: Optional[DagsterSlingTranslator]
+
+    @field_resolver("translator")
+    @staticmethod
+    def resolve_asset_attributes(
+        schema: "SlingReplicationParams", context: ResolutionContext
+    ) -> DagsterSlingTranslator:
+        return get_wrapped_translator_class(DagsterSlingTranslator)(
+            resolving_info=TranslatorResolvingInfo(
+                "stream_definition",
+                schema.asset_attributes or AssetAttributesSchema(),
+                context,
+            )
+        )
 
 
 class SlingReplicationParams(ResolvableSchema[SlingReplicationSpec]):
@@ -40,54 +51,31 @@ class SlingReplicationParams(ResolvableSchema[SlingReplicationSpec]):
         ResolvableFieldInfo(required_scope={"stream_definition"}),
     ] = None
 
-    def resolve(self, context: ResolutionContext) -> SlingReplicationSpec:
-        return SlingReplicationSpec(
-            path=context.resolve_value(self.path, as_type=str),
-            op=context.resolve_value(self.op),
-            translator=get_wrapped_translator_class(DagsterSlingTranslator)(
-                resolving_info=TranslatorResolvingInfo(
-                    "stream_definition",
-                    self.asset_attributes or AssetAttributesSchema(),
-                    context,
-                ),
-            ),
-        )
 
-
-class ResolvedSlingReplicationCollectionSchema(BaseModel):
-    sling: SlingResource
-    replications: Sequence[SlingReplicationSpec]
-    transforms: Sequence[Callable[[Definitions], Definitions]]
-
-
-class SlingReplicationCollectionParams(ResolvableSchema[ResolvedSlingReplicationCollectionSchema]):
+class SlingReplicationCollectionParams(ResolvableSchema["SlingReplicationCollectionParams"]):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationParams]
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
-
-    def resolve(self, context: ResolutionContext) -> ResolvedSlingReplicationCollectionSchema:
-        return ResolvedSlingReplicationCollectionSchema(
-            sling=SlingResource(**context.resolve_value(self.sling.model_dump()))
-            if self.sling
-            else SlingResource(),
-            replications=context.resolve_value(self.replications),
-            transforms=context.resolve_value(self.transforms or []),
-        )
 
 
 @registered_component_type
 class SlingReplicationCollection(Component):
     """Expose one or more Sling replications to Dagster as assets."""
 
-    def __init__(
-        self,
-        sling: SlingResource,
-        replications: Sequence[SlingReplicationSpec],
-        transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None,
-    ):
-        self.resource = sling
-        self.replications = replications
-        self.transforms = transforms or []
+    resource: SlingResource
+    replications: Sequence[SlingReplicationSpec]
+    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]]
+
+    @field_resolver("resource")
+    @staticmethod
+    def resolve_sling(
+        schema: SlingReplicationCollectionParams, context: ResolutionContext
+    ) -> SlingResource:
+        return (
+            SlingResource(**context.resolve_value(schema.sling.model_dump()))
+            if schema.sling
+            else SlingResource()
+        )
 
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:
@@ -100,17 +88,6 @@ class SlingReplicationCollection(Component):
     @classmethod
     def get_schema(cls) -> type[SlingReplicationCollectionParams]:
         return SlingReplicationCollectionParams
-
-    @classmethod
-    def load(
-        cls, context: ComponentLoadContext, schema: SlingReplicationCollectionParams
-    ) -> "SlingReplicationCollection":
-        resolved = context.resolution_context.resolve_value(schema)
-        return cls(
-            sling=resolved.sling,
-            replications=resolved.replications,
-            transforms=resolved.transforms,
-        )
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec
@@ -137,6 +114,6 @@ class SlingReplicationCollection(Component):
         defs = Definitions(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )
-        for transform in self.transforms:
+        for transform in self.transforms or []:
             defs = transform(defs)
         return defs

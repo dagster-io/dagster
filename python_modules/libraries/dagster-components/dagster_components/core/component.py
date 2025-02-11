@@ -16,6 +16,7 @@ from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
+from pydantic import BaseModel, ConfigDict
 from typing_extensions import Self
 
 from dagster_components.core.component_key import (
@@ -38,8 +39,10 @@ class ComponentDeclNode(ABC):
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
 
-class Component(ABC):
+class Component(ABC, BaseModel):
     name: ClassVar[Optional[str]] = None
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     @classmethod
     def get_schema(cls) -> Optional[type[ResolvableSchema]]:
@@ -64,8 +67,8 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    @abstractmethod
-    def load(cls, schema: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self: ...
+    def load(cls, params: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
+        return params.resolve_as(cls, context.resolution_context) if params else cls()
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":

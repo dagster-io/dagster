@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -25,8 +24,7 @@ class DefinitionsParamSchema(ResolvableSchema):
 class DefinitionsComponent(Component):
     """Wraps an arbitrary set of Dagster definitions."""
 
-    def __init__(self, definitions_path: Optional[Path]):
-        self.definitions_path = definitions_path or Path("definitions.py")
+    definitions_path: Optional[str]
 
     @classmethod
     def get_scaffolder(cls) -> DefinitionsComponentScaffolder:
@@ -38,6 +36,8 @@ class DefinitionsComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         with pushd(str(context.path)):
-            module = import_uncached_module_from_path("definitions", str(self.definitions_path))
+            module = import_uncached_module_from_path(
+                "definitions", self.definitions_path or "definitions.py"
+            )
 
         return load_definitions_from_module(module)

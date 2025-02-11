@@ -6,6 +6,7 @@ from dagster_components import (
     AssetAttributesSchema,
     Component,
     ComponentLoadContext,
+    ResolvableSchema,
     registered_component_type,
 )
 
@@ -18,8 +19,14 @@ def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
     return AutomationCondition.cron_tick_passed(cron_schedule) & ~AutomationCondition.in_progress()
 
 
+class CustomScopeSchema(ResolvableSchema):
+    asset_attributes: AssetAttributesSchema
+
+
 @registered_component_type(name="custom_scope_component")
 class HasCustomScope(Component):
+    asset_attributes: Mapping[str, Any]
+
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
         return {
@@ -29,16 +36,9 @@ class HasCustomScope(Component):
             "custom_automation_condition": my_custom_automation_condition,
         }
 
-    def __init__(self, attributes: Mapping[str, Any]):
-        self.attributes = attributes
-
     @classmethod
     def get_schema(cls):
-        return AssetAttributesSchema
-
-    @classmethod
-    def load(cls, params: AssetAttributesSchema, context: ComponentLoadContext):
-        return cls(attributes=context.resolve_value(params))
+        return CustomScopeSchema
 
     def build_defs(self, context: ComponentLoadContext):
-        return Definitions(assets=[AssetSpec(key="key", **self.attributes)])
+        return Definitions(assets=[AssetSpec(key="key", **self.asset_attributes)])

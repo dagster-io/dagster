@@ -10,9 +10,9 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
-from pydantic import BaseModel
+from pydantic import computed_field
 
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, ComponentLoadContext, field_resolver
 from dagster_components.core.component import registered_component_type
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
@@ -26,50 +26,45 @@ from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentSca
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
-class ResolvedDbtProjectSchema(BaseModel):
-    dbt: DbtCliResource
-    op: OpSpecSchema
-    translator: DagsterDbtTranslator
-    transforms: Sequence[Callable[[Definitions], Definitions]]
-
-
-class DbtProjectSchema(ResolvableSchema[ResolvedDbtProjectSchema]):
+class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
     dbt: DbtCliResource
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesSchema], ResolvableFieldInfo(required_scope={"node"})
+        Optional[AssetAttributesSchema],
+        ResolvableFieldInfo(required_scope={"node"}),
     ] = None
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
-
-    def resolve(self, context: ResolutionContext) -> ResolvedDbtProjectSchema:
-        return ResolvedDbtProjectSchema(
-            dbt=DbtCliResource(**context.resolve_value(self.dbt.model_dump())),
-            op=context.resolve_value(self.op) or OpSpecSchema(),
-            translator=get_wrapped_translator_class(DagsterDbtTranslator)(
-                resolving_info=TranslatorResolvingInfo(
-                    "node", self.asset_attributes or AssetAttributesSchema(), context
-                )
-            ),
-            transforms=context.resolve_value(self.transforms or []),
-        )
 
 
 @registered_component_type(name="dbt_project")
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
-    def __init__(
-        self,
-        dbt: DbtCliResource,
-        op: Optional[OpSpecSchema],
-        translator: DagsterDbtTranslator,
-        transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None,
-    ):
-        self.resource = dbt
-        self.project = DbtProject(dbt.project_dir)
-        self.op_spec = op
-        self.transforms = transforms or []
-        self.translator = translator
+    dbt: DbtCliResource
+    op: Optional[OpSpecSchema]
+    translator: DagsterDbtTranslator
+    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None
+
+    @field_resolver("dbt")
+    @staticmethod
+    def resolve_dbt(schema: DbtProjectSchema, context: ResolutionContext) -> DbtCliResource:
+        return DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
+
+    @field_resolver("translator")
+    @staticmethod
+    def resolve_asset_attributes(
+        schema: DbtProjectSchema, context: ResolutionContext
+    ) -> DagsterDbtTranslator:
+        return get_wrapped_translator_class(DagsterDbtTranslator)(
+            resolving_info=TranslatorResolvingInfo(
+                "node", schema.asset_attributes or AssetAttributesSchema(), context
+            )
+        )
+
+    @computed_field
+    @property
+    def project(self) -> DbtProject:
+        return DbtProject(self.dbt.project_dir)
 
     @classmethod
     def get_scaffolder(cls) -> "DbtProjectComponentScaffolder":
@@ -78,16 +73,6 @@ class DbtProjectComponent(Component):
     @classmethod
     def get_schema(cls) -> type[DbtProjectSchema]:
         return DbtProjectSchema
-
-    @classmethod
-    def load(cls, context: ComponentLoadContext, schema: DbtProjectSchema) -> "DbtProjectComponent":
-        resolved_schema = context.resolution_context.resolve_value(schema)
-        return cls(
-            dbt=resolved_schema.dbt,
-            op=resolved_schema.op,
-            translator=resolved_schema.translator,
-            transforms=resolved_schema.transforms,
-        )
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None
@@ -105,15 +90,15 @@ class DbtProjectComponent(Component):
         @dbt_assets(
             manifest=self.project.manifest_path,
             project=self.project,
-            name=self.op_spec.name if self.op_spec else self.project.name,
-            op_tags=self.op_spec.tags if self.op_spec else None,
+            name=self.op.name if self.op else self.project.name,
+            op_tags=self.op.tags if self.op else None,
             dagster_dbt_translator=self.translator,
         )
         def _fn(context: AssetExecutionContext):
-            yield from self.execute(context=context, dbt=self.resource)
+            yield from self.execute(context=context, dbt=self.dbt)
 
         defs = Definitions(assets=[_fn])
-        for transform in self.transforms:
+        for transform in self.transforms or []:
             defs = transform(defs)
         return defs
 
