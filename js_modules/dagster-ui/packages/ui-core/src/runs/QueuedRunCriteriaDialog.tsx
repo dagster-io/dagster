@@ -33,7 +33,8 @@ type TagConcurrencyLimit = {
   limit: number;
 };
 
-interface DialogProps extends ContentProps {
+interface DialogProps {
+  run: Pick<RunFragment, 'id' | 'tags'> | undefined;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -49,7 +50,7 @@ export const QueuedRunCriteriaDialog = (props: DialogProps) => {
       onClose={onClose}
       style={{width: 700}}
     >
-      <QueuedRunCriteriaDialogContent run={run} />
+      {run ? <QueuedRunCriteriaDialogContent run={run} /> : undefined}
       <DialogFooter topBorder>
         <Button intent="primary" onClick={onClose}>
           Close
