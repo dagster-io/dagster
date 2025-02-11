@@ -142,7 +142,7 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     Asset ==> Definitions
 ```
 
-An <PyObject section="assets" module="dagster" object="asset" decorator /> represents a logical unit of data such as a table, dataset, or machine learning model. Assets can have dependencies on other assets, forming the data lineage for your pipelines. As the core abstraction in Dagster, assets can interact with many other Dagster concepts to facilitate certain tasks.
+An <PyObject section="assets" module="dagster" object="asset" /> represents a logical unit of data such as a table, dataset, or machine learning model. Assets can have dependencies on other assets, forming the data lineage for your pipelines. As the core abstraction in Dagster, assets can interact with many other Dagster concepts to facilitate certain tasks.
 
 | Concept | Relationship |
 | --- | --- |
@@ -183,7 +183,7 @@ An <PyObject section="assets" module="dagster" object="asset" decorator /> repre
     AssetCheck ==> Definitions
 ```
 
-An <PyObject section="asset-checks" module="dagster" object="asset_check" decorator /> is associated with an <PyObject section="assets" module="dagster" object="asset" decorator /> to ensure it meets certain expectations around data quality, freshness or completeness. Asset checks run when the asset is executed and store metadata about the related run and if all the conditions of the check were met.
+An <PyObject section="asset-checks" module="dagster" object="asset_check" /> is associated with an <PyObject section="assets" module="dagster" object="asset" /> to ensure it meets certain expectations around data quality, freshness or completeness. Asset checks run when the asset is executed and store metadata about the related run and if all the conditions of the check were met.
 
 | Concept | Relationship |
 | --- | --- |
@@ -299,7 +299,7 @@ A <PyObject section="config" module="dagster" object="RunConfig" /> is a set sch
     Definitions ==> CodeLocation
 ```
 
-A <PyObject section="definitions" module="dagster" object="Definitions" /> is a top-level construct containing all the objects of a Dagster project, such as <PyObject section="assets" module="dagster" object="asset" decorator />, <PyObject section="jobs" module="dagster" object="job" decorator /> and <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" />. Only objects included in the definitions will be deployed and visible within the Dagster UI.
+<PyObject section="definitions" module="dagster" object="Definitions" /> is a top-level construct that contains references to all the objects of a Dagster project, such as <PyObject section="assets" module="dagster" object="asset" pluralize />, <PyObject section="jobs" module="dagster" object="job" pluralize /> and <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" pluralize />. Only objects included in the definitions will be deployed and visible within the Dagster UI.
 
 | Concept | Relationship |
 | --- | --- |
@@ -341,7 +341,7 @@ A <PyObject section="definitions" module="dagster" object="Definitions" /> is a 
     Graph ==> Job
 ```
 
-A <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" /> connects multiple <PyObject section="ops" module="dagster" object="op" decorator /> together to form a DAG. If you are using <PyObject section="assets" module="dagster" object="asset" decorator />, you will not need to use graphs.
+A <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" /> connects multiple <PyObject section="ops" module="dagster" object="op" pluralize /> together to form a DAG. If you are using <PyObject section="assets" module="dagster" object="asset" pluralize />, you will not need to use graphs directly.
 
 | Concept | Relationship |
 | --- | --- |
@@ -376,7 +376,7 @@ A <PyObject section="graphs" module="dagster" object="GraphDefinition" method="t
     IOManager ==> Definitions
 ```
 
-An <PyObject section="io-managers" module="dagster" object="IOManager" /> defines how data is stored and retrieved between the execution of <PyObject section="assets" module="dagster" object="asset" decorator /> and <PyObject section="ops" module="dagster" object="op" decorator />. This allows for a customizable storage and format at any interaction in a pipeline.
+An <PyObject section="io-managers" module="dagster" object="IOManager" /> defines how data is stored and retrieved between the execution of <PyObject section="assets" module="dagster" object="asset" pluralize /> and <PyObject section="ops" module="dagster" object="op" pluralize />. This allows for a customizable storage and format at any interaction in a pipeline.
 
 | Concept | Relationship |
 | --- | --- |
@@ -418,7 +418,7 @@ An <PyObject section="io-managers" module="dagster" object="IOManager" /> define
     Job ==> Definitions
 ```
 
-A <PyObject section="jobs" module="dagster" object="job" decorator /> is a subset of <PyObject section="assets" module="dagster" object="asset" decorator /> or the <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" /> of <PyObject section="ops" module="dagster" object="op" decorator />. Jobs are the main form of execution in Dagster.
+A <PyObject section="jobs" module="dagster" object="job" /> is a subset of <PyObject section="assets" module="dagster" object="asset" pluralize /> or the <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" /> of <PyObject section="ops" module="dagster" object="op" pluralize />. Jobs are the main form of execution in Dagster.
 
 | Concept | Relationship |
 | --- | --- |
@@ -456,7 +456,7 @@ A <PyObject section="jobs" module="dagster" object="job" decorator /> is a subse
     Op ==> Graph
 ```
 
-An <PyObject section="ops" module="dagster" object="op" decorator /> is a computational unit of work. Ops are arranged into a <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" /> to dictate their order. Ops have largely been replaced by <PyObject section="assets" module="dagster" object="asset" decorator />.
+An <PyObject section="ops" module="dagster" object="op" /> is a computational unit of work. Ops are arranged into a <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" /> to dictate their order. Ops have largely been replaced by <PyObject section="assets" module="dagster" object="asset" pluralize />.
 
 | Concept | Relationship |
 | --- | --- |
@@ -556,7 +556,7 @@ A <PyObject section="resources" module="dagster" object="ConfigurableResource"/>
     Type -.-> Op
 ```
 
-A `type` is a way to define and validate the data passed between <PyObject section="ops" module="dagster" object="op" decorator />.
+A `type` is a way to define and validate the data passed between <PyObject section="ops" module="dagster" object="op" pluralize />.
 
 | Concept | Relationship |
 | --- | --- |
@@ -592,7 +592,7 @@ A `type` is a way to define and validate the data passed between <PyObject secti
     Schedule ==> Definitions
 ```
 
-A <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> is a way to automate <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="assets" module="dagster" object="asset" decorator /> to occur on a specified interval. In the cases that a job or asset is parameterized, the schedule can also be set with a run configuration (<PyObject section="config" module="dagster" object="RunConfig" />) to match.
+A <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> is a way to automate <PyObject section="jobs" module="dagster" object="job" pluralize /> or <PyObject section="assets" module="dagster" object="asset" pluralize /> to occur on a specified interval. In the cases that a job or asset is parameterized, the schedule can also be set with a run configuration (<PyObject section="config" module="dagster" object="RunConfig" />) to match.
 
 | Concept | Relationship |
 | --- | --- |
@@ -631,7 +631,7 @@ A <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinit
     Sensor ==> Definitions
 ```
 
-A `sensor` is a way to trigger <PyObject section="jobs" module="dagster" object="job" decorator /> or <PyObject section="assets" module="dagster" object="asset" decorator /> when an event occurs, such as a file being uploaded or a push notification. In the cases that a job or asset is parameterized, the sensor can also be set with a run configuration (<PyObject section="config" module="dagster" object="RunConfig" />) to match.
+A `sensor` is a way to trigger <PyObject section="jobs" module="dagster" object="job" pluralize /> or <PyObject section="assets" module="dagster" object="asset" pluralize /> when an event occurs, such as a file being uploaded or a push notification. In the cases that a job or asset is parameterized, the sensor can also be set with a run configuration (<PyObject section="config" module="dagster" object="RunConfig" />) to match.
 
 | Concept | Relationship |
 | --- | --- |
