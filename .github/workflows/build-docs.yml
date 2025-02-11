@@ -1,20 +1,19 @@
-name: Deploy Docs Revamp
+name: Deploy Docs
 on:
   push:
     branches:
       - master
       - docs-prod
+      - 'release-*'
     paths:
-      - .github/workflows/build-docs-revamp.yml
       - docs/**
       - examples/docs_beta_snippets/**
-      - docs/sphinx/**
+      - .github/workflows/build-docs.yml
   pull_request:
     paths:
       - docs/**
       - examples/docs_beta_snippets/**
-      - .github/workflows/build-docs-revamp.yml
-      - docs/sphinx/**
+      - .github/workflows/build-docs.yml
     types:
       - opened
       - reopened
