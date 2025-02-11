@@ -35,6 +35,7 @@ import {
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {gql, useLazyQuery} from '../apollo-client';
+import {DagsterTag} from './RunTag';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
@@ -323,7 +324,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
   }, [selected]);
 
   const canDeleteAny = React.useMemo(() => {
-    return selected.some((run) => run.hasTerminatePermission);
+    return selected.some((run) => run.hasDeletePermission);
   }, [selected]);
 
   const canReexecuteAny = React.useMemo(() => {
@@ -333,47 +334,26 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
   const disabled = !canTerminateAny && !canDeleteAny;
 
   const terminatableRuns = selected.filter(
-    (r) => !doneStatuses.has(r?.status) && r.hasTerminatePermission,
+    (r) => !doneStatuses.has(r.status) && r.hasTerminatePermission,
   );
   const terminateableIDs = terminatableRuns.map((r) => r.id);
-  const terminateableMap = terminatableRuns.reduce(
-    (accum, run) => {
-      accum[run.id] = run.canTerminate;
-      return accum;
-    },
-    {} as Record<string, boolean>,
-  );
+  const terminateableMap = Object.fromEntries(terminatableRuns.map((r) => [r.id, r.canTerminate]));
 
   const deleteableIDs = selected.map((run) => run.id);
-  const deletionMap = selected.reduce(
-    (accum, run) => {
-      accum[run.id] = run.canTerminate;
-      return accum;
-    },
-    {} as Record<string, boolean>,
-  );
+  const deletionMap = Object.fromEntries(selected.map((r) => [r.id, r.canTerminate]));
 
   const reexecuteFromFailureRuns = selected.filter(
-    (r) => failedStatuses.has(r?.status) && r.hasReExecutePermission,
+    (r) => failedStatuses.has(r.status) && r.hasReExecutePermission,
   );
-  const reexecuteFromFailureMap = reexecuteFromFailureRuns.reduce(
-    (accum, run) => {
-      accum[run.id] = run.id;
-      return accum;
-    },
-    {} as Record<string, string>,
+  const reexecuteFromFailureMap = Object.fromEntries(
+    reexecuteFromFailureRuns.map((r) => [r.id, r.id]),
   );
+  const isPartOfBackfill = selected.some((r) => r.tags.some((t) => t.key === DagsterTag.Backfill));
 
   const reexecutableRuns = selected.filter(
-    (r) => doneStatuses.has(r?.status) && r.hasReExecutePermission,
+    (r) => doneStatuses.has(r.status) && r.hasReExecutePermission,
   );
-  const reexecutableMap = reexecutableRuns.reduce(
-    (accum, run) => {
-      accum[run.id] = run.id;
-      return accum;
-    },
-    {} as Record<string, string>,
-  );
+  const reexecutableMap = Object.fromEntries(reexecutableRuns.map((r) => [r.id, r.id]));
 
   const closeDialogs = () => {
     setVisibleDialog('none');
@@ -467,6 +447,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
       />
       <ReexecutionDialog
         isOpen={visibleDialog === 'reexecute-from-failure'}
+        isPartOfBackfill={isPartOfBackfill}
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={reexecuteFromFailureMap}
@@ -474,6 +455,7 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
       />
       <ReexecutionDialog
         isOpen={visibleDialog === 'reexecute'}
+        isPartOfBackfill={isPartOfBackfill}
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={reexecutableMap}

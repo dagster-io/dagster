@@ -23,6 +23,7 @@ import {ReexecutionStrategy} from '../graphql/types';
 
 interface Props {
   isOpen: boolean;
+  isPartOfBackfill: boolean;
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
   selectedRuns: {[id: string]: string};
@@ -130,7 +131,7 @@ const reexecutionDialogReducer = (
 };
 
 export const ReexecutionDialog = (props: Props) => {
-  const {isOpen, onClose, onComplete, reexecutionStrategy, selectedRuns} = props;
+  const {isOpen, isPartOfBackfill, onClose, onComplete, reexecutionStrategy, selectedRuns} = props;
 
   // Freeze the selected IDs, since the list may change as runs continue processing and
   // re-executing. We want to preserve the list we're given.
@@ -221,6 +222,13 @@ export const ReexecutionDialog = (props: Props) => {
         return (
           <Group direction="column" spacing={16}>
             <div>{message()}</div>
+            {isPartOfBackfill ? (
+              <div>
+                One or more of these runs is part of a backfill. If the backfill has completed,
+                re-executing these runs will not update the backfill status or launch runs of
+                downstream dependencies.
+              </div>
+            ) : undefined}
           </Group>
         );
       case 'reexecuting':
