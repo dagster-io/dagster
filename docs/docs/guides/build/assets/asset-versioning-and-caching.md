@@ -2,7 +2,7 @@
 title: "Asset versioning and caching"
 ---
 
-import Beta from '../../partials/\_Beta.md';
+import Beta from '../../../partials/\_Beta.md';
 
 <Beta />
 
