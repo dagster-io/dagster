@@ -3,6 +3,10 @@ title: "Data freshness checks"
 sidebar_position: 300
 ---
 
+import Beta from '../../partials/\_Beta.md';
+
+<Beta />
+
 Freshness checks provide a way to identify data assets that are overdue for an update. For example, you can use freshness checks to identify stale assets caused by:
 
 - The pipeline hitting an error and failing
