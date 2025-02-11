@@ -12,6 +12,7 @@ from dagster._generate.generate import _should_skip_file
 EXAMPLES_TO_IGNORE = [
     "deploy_k8s_beta",
     "docs_beta_snippets",
+    "docs_projects",
     "docs_snippets",
     "experimental",
     "use_case_repository",
@@ -55,10 +56,6 @@ AVAILABLE_EXAMPLES = [
     "with_wandb",
     "airlift-federation-tutorial",
     "airlift-migration-tutorial",
-    "docs_projects/project_ask_ai_dagster",
-    "docs_projects/project_dagster_modal_pipes",
-    "docs_projects/project_llm_fine_tune",
-    "docs_projects/project_prompt_eng",
 ]
 
 
