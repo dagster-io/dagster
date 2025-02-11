@@ -1,6 +1,6 @@
 import {css} from 'styled-components';
 
-export const lightHighContrastThemeColors = css`
+export const lightNoRedGreenThemeColors = css`
   --browser-color-scheme: light;
   --color-keyline-default: var(--color-translucent-gray20);
   --color-link-default: var(--color-core-blue700);

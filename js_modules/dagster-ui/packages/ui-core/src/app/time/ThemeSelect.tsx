@@ -19,23 +19,23 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
       icon: 'nightlight',
     },
     {
-      key: DagsterTheme.LightHighContrast,
-      label: 'Light (red/green deficiency)',
-      icon: 'sun',
-    },
-    {
-      key: DagsterTheme.DarkHighContrast,
-      label: 'Dark (red/green deficiency)',
-      icon: 'nightlight',
-    },
-    {
       key: DagsterTheme.System,
       label: 'Match system setting',
       icon: 'daemon',
     },
     {
-      key: DagsterTheme.SystemHighContrast,
-      label: 'Match system setting (red/green deficiency)',
+      key: DagsterTheme.LightNoRedGreen,
+      label: 'Light (no red or green)',
+      icon: 'sun',
+    },
+    {
+      key: DagsterTheme.DarkNoRedGreen,
+      label: 'Dark (no red or green)',
+      icon: 'nightlight',
+    },
+    {
+      key: DagsterTheme.SystemNoRedGreen,
+      label: 'Match system setting (no red or green)',
       icon: 'daemon',
     },
   ];
