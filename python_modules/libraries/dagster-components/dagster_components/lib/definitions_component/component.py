@@ -11,13 +11,13 @@ from dagster._utils import pushd
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    ComponentSchema,
+    ResolvableSchema,
     registered_component_type,
 )
 from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
 
 
-class DefinitionsParamSchema(ComponentSchema):
+class DefinitionsParamSchema(ResolvableSchema):
     definitions_path: Optional[str] = None
 
 

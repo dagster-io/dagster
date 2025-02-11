@@ -28,7 +28,7 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.base import ComponentSchema
+from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.utils import load_module_from_path
 
@@ -42,7 +42,7 @@ class Component(ABC):
     name: ClassVar[Optional[str]] = None
 
     @classmethod
-    def get_schema(cls) -> Optional[type[ComponentSchema]]:
+    def get_schema(cls) -> Optional[type[ResolvableSchema]]:
         return None
 
     @classmethod
@@ -64,8 +64,8 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, params: Optional[ComponentSchema], context: "ComponentLoadContext") -> Self:
-        return cls() if params is None else context.resolve(params, as_type=cls)
+    def load(cls, params: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
+        return cls() if params is None else params.resolve_as(cls, context.resolution_context)
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
@@ -265,11 +265,8 @@ class ComponentLoadContext:
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
 
-    def resolve(self, value: ComponentSchema, as_type: type[T]) -> T:
-        return value.__dagster_resolver__(value).resolve_as(as_type, self.resolution_context)
-
-    def resolve_value(self, value: Any) -> Any:
-        return self.resolution_context.resolve_value(value)
+    def resolve(self, value: ResolvableSchema, as_type: type[T]) -> T:
+        return self.resolution_context.resolve_value(value, as_type=as_type)
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"

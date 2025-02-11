@@ -6,15 +6,15 @@ from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    ComponentSchema,
     OpSpecSchema,
+    ResolvableSchema,
     registered_component_type,
 )
 
 import dagster as dg
 
 
-class ShellScriptSchema(ComponentSchema):
+class ShellScriptSchema(ResolvableSchema):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
     op: Optional[OpSpecSchema] = None

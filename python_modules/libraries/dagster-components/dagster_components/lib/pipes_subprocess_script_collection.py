@@ -14,7 +14,7 @@ from dagster_components.core.component import (
     ComponentLoadContext,
     registered_component_type,
 )
-from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
+from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecSchema
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptParams(ComponentSchema):
+class PipesSubprocessScriptParams(ResolvableSchema[tuple[str, Sequence[AssetSpec]]]):
     path: str
     assets: Sequence[AssetSpecSchema]
 
@@ -30,16 +30,11 @@ class PipesSubprocessScriptParams(ComponentSchema):
         return context.resolve_value((self.path, self.assets))
 
 
-class PipesSubprocessScriptCollectionParams(ComponentSchema):
+class PipesSubprocessScriptCollectionParams(ResolvableSchema):
     scripts: Sequence[PipesSubprocessScriptParams]
 
-
-@resolver(fromtype=PipesSubprocessScriptCollectionParams, exclude_fields={"scripts"})
-class PipesSubprocessScriptCollectionResolver(Resolver[PipesSubprocessScriptCollectionParams]):
-    def resolve_specs_by_path(
-        self, context: ResolutionContext
-    ) -> Mapping[str, Sequence[AssetSpec]]:
-        return dict(script.resolve(context) for script in self.schema.scripts)
+    def resolve_as(self, cls, context: ResolutionContext):
+        return cls(specs_by_path=dict(script.resolve(context) for script in self.scripts))
 
 
 @registered_component_type(name="pipes_subprocess_script_collection")
