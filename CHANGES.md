@@ -10,6 +10,7 @@
 - [ui] Made defunct code locations removable when editing environment variables.
 - [ui] Added a warning icon to the Agents item in Deployment settings, indicating when there are no active agents.
 - [dagster-tableau] Changed logic to show embedded data sources in case published data sources are not present. Also, pulled more metadata from Tableau. (Thanks [@VenkyRules](https://github.com/VenkyRules)!)
+- Added new decorators to reflect our [new API lifecycle](https://docs.dagster.io/api/api-lifecycle): `@preview`, `@beta` and `@superseded`. Also added new annotations and warnings to match these new stages.
 
 ### Bugfixes
 
@@ -21,6 +22,7 @@
 - Fixed an issue with emitting `AssetResult` with ops or multi-assets that are triggered multiple times in the same run.
 - [dagster-dbt] Fixed a bug introduced in dagster-dbt 0.25.7 that would cause execution to fail when using the `@dbt_assets` decorator with an `io_manager_key` specified.
 - [dagster-dbt] Refactored `UnitTestDefinition` instantiation to address failure to initialize dbt models with unit tests. (Thanks [@kang8](https://github.com/kang8)!)
+- Fixed issue where `dagster instance migrate` was failing for instances with tables having non-empty concurrency limits.
 
 ### Documentation
 
@@ -30,9 +32,14 @@
 
 ### Breaking Changes
 
+- The `include_sources` param on all `AssetSelection` APIs has been renamed to `include_external_assets`.
+- Disallowed invalid characters (i.e. anything other than letters, numbers, dashes, and underscores) in pool names.
+
 ### Deprecations
 
 - [dagster-sdf] Moved the `dagster-sdf` library to the community-supported repo.
+- [dagster-blueprints] Removed the `dagster-blueprints` library.
+- Removed the `@experimental` decorator in favor of the `@preview` and `@beta` decorators. Also removed annotations and warnings related to the `@experimental` decorator.
 
 ### Dagster Plus
 
