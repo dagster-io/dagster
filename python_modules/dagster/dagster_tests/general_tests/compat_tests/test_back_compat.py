@@ -1781,3 +1781,10 @@ def test_add_backfill_end_timestamp():
             no_runs_backfill = instance.get_backfill(no_runs_backfill.backfill_id)
             assert no_runs_backfill
             assert no_runs_backfill.backfill_end_timestamp == no_runs_backfill.backfill_timestamp
+
+
+def test_add_default_concurrency_limit_col():
+    src_dir = file_relative_path(__file__, "snapshot_1_9_11_add_concurrency_limits_default/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
