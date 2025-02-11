@@ -2,12 +2,9 @@
 title: "Asset versioning and caching"
 ---
 
+import Beta from '../../partials/\_Beta.md';
 
-:::note Experimental feature
-
-This feature is considered **experimental** and is under active development. This guide will be updated as we roll out new features.
-
-:::
+<Beta />
 
 This guide demonstrates how to build memoizable graphs of assets. Memoizable assets help avoid unnecessary recomputations, speed up the developer workflow, and save computational resources.
 

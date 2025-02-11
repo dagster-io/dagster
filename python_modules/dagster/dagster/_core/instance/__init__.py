@@ -3166,7 +3166,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def should_start_background_run_thread(self) -> bool:
-        """Gate on an experimental feature to start a thread that monitors for if the run should be canceled."""
+        """Gate on a feature to start a thread that monitors for if the run should be canceled."""
         return False
 
     def get_tick_retention_settings(
