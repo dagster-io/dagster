@@ -27,7 +27,7 @@ from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
 )
 from dagster._core.definitions.result import MaterializeResult, ObserveResult
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, check_valid_chars
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -603,15 +603,17 @@ def _is_result_object_type(ttype):
 
 def _validate_pool(pool, tags):
     check.opt_str_param(pool, "pool")
+    if not pool:
+        return None
+
+    check_valid_chars(pool)
+
     tags = check.opt_mapping_param(tags, "tags")
     tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
-    if pool and tag_concurrency_key and pool != tag_concurrency_key:
+    if tag_concurrency_key and pool != tag_concurrency_key:
         raise DagsterInvalidDefinitionError(
             f'Pool "{pool}" conflicts with the concurrency key tag "{tag_concurrency_key}".'
         )
 
-    if pool:
-        preview_warning("Pools")
-        return pool
-
-    return None
+    preview_warning("Pools")
+    return pool
