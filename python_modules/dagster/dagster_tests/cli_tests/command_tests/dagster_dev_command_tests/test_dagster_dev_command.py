@@ -10,6 +10,7 @@ from pathlib import Path
 import psutil
 import requests
 import yaml
+from dagster._cli.utils import TMP_DAGSTER_HOME_PREFIX
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ
@@ -261,7 +262,7 @@ def _wait_for_instance_dir_to_be_written(parent_dir: Path) -> Path:
         subfolders = [
             child
             for child in parent_dir.iterdir()
-            if child.name.startswith("tmp") and (child / "history").exists()
+            if child.name.startswith(TMP_DAGSTER_HOME_PREFIX) and (child / "history").exists()
         ]
 
         if len(subfolders):
