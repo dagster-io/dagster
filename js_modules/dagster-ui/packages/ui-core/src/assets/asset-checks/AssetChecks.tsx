@@ -12,7 +12,7 @@ import {
 } from '@dagster-io/ui-components';
 import {RowProps} from '@dagster-io/ui-components/src/components/VirtualizedTable';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 
 import {AssetCheckAutomationList} from './AssetCheckAutomationList';
@@ -108,7 +108,6 @@ export const AssetChecks = ({
   const {paginationProps, executions, executionsLoading} = useHistoricalCheckExecutions(
     selectedCheck ? {assetKey, checkName: selectedCheck.name} : null,
   );
-  const pastExecutions = useMemo(() => executions.slice(1), [executions]);
 
   if (!data) {
     return null;
@@ -258,10 +257,7 @@ export const AssetChecks = ({
             />
           ) : null}
           {activeTab === 'execution-history' ? (
-            <AssetCheckExecutionList
-              executions={pastExecutions}
-              paginationProps={paginationProps}
-            />
+            <AssetCheckExecutionList executions={executions} paginationProps={paginationProps} />
           ) : null}
           {activeTab === 'automation-history' ? (
             <AssetCheckAutomationList assetCheck={selectedCheck} checkName={selectedCheck.name} />
@@ -327,6 +323,7 @@ const CheckRow = styled(Row)<{$selected: boolean} & RowProps>`
   padding: 5px 8px 5px 12px;
   cursor: pointer;
   border-radius: 8px;
+  user-select: none;
   &:hover {
     background: ${Colors.backgroundLightHover()};
   }

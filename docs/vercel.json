@@ -616,7 +616,7 @@
     },
     {
       "source": "/concepts",
-      "destination": "/",
+      "destination": "/getting-started/concepts",
       "permanent": false
     },
     {

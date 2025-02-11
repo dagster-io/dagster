@@ -3,7 +3,7 @@ import warnings
 try:
     # Centralise Azure imports here so we only need to warn in one place
     from azure.core.exceptions import ResourceNotFoundError
-    from azure.storage.filedatalake import DataLakeServiceClient
+    from azure.storage.filedatalake import DataLakeLeaseClient, DataLakeServiceClient
 except ImportError:
     msg = (
         "Could not import required Azure objects. This probably means you have an old version "
@@ -16,7 +16,7 @@ except ImportError:
     raise
 
 
-def _create_url(storage_account, subdomain):
+def _create_url(storage_account: str, subdomain: str) -> str:
     return f"https://{storage_account}.{subdomain}.core.windows.net/"
 
 
@@ -26,4 +26,9 @@ def create_adls2_client(storage_account: str, credential) -> DataLakeServiceClie
     return DataLakeServiceClient(account_url, credential)
 
 
-__all__ = ["DataLakeServiceClient", "ResourceNotFoundError", "create_adls2_client"]
+__all__ = [
+    "DataLakeLeaseClient",
+    "DataLakeServiceClient",
+    "ResourceNotFoundError",
+    "create_adls2_client",
+]
