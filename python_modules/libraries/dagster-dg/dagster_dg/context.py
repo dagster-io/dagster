@@ -18,9 +18,11 @@ from dagster_dg.utils import (
     NOT_DEPLOYMENT_ERROR_MESSAGE,
     ensure_loadable_path,
     exit_with_error,
+    get_executable_path,
     get_path_for_module,
     get_path_for_package,
     get_uv_command_env,
+    get_uv_run_executable_path,
     is_executable_available,
     is_package_installed,
     pushd,
@@ -297,12 +299,14 @@ class DgContext:
     # ##### HELPERS
     # ########################
 
-    def external_components_command(self, command: list[str]) -> str:
+    def external_components_command(self, command: list[str], log: bool = True) -> str:
         if self.use_dg_managed_environment:
             code_location_command_prefix = ["uv", "run", "dagster-components"]
             env = get_uv_command_env()
+            executable_path = get_uv_run_executable_path("dagster-components")
         else:
             code_location_command_prefix = ["dagster-components"]
+            executable_path = get_executable_path("dagster-components")
             env = None
         full_command = [
             *code_location_command_prefix,
@@ -314,6 +318,8 @@ class DgContext:
             *command,
         ]
         with pushd(self.root_path):
+            if log:
+                print(f"Using {executable_path}")  # noqa: T201
             result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=True)
             return result.stdout.decode("utf-8")
 

@@ -1,4 +1,4 @@
-dg component check 
+dg component check
 
 /.../jaffle-platform/jaffle_platform/components/jdbt/component.yaml:8 -  Unable to parse YAML: while scanning a quoted scalar, found unexpected end of stream
      | 

@@ -30,7 +30,7 @@ COMPONENTS_SNIPPETS_DIR = (
     / "components"
     / "deployments"
 )
-MASK_MY_DEPLOYMENT = (r" \/.*?\/my-deployment", " /.../my-deployment")
+MASK_MY_DEPLOYMENT = (r"\/.*?\/my-deployment", "/.../my-deployment")
 
 
 def test_components_docs_deployments(update_snippets: bool) -> None:
@@ -49,6 +49,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
                 "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
+                "VIRTUAL_ENV": "",
             }
         ),
     ):
@@ -126,6 +127,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_MY_DEPLOYMENT],
         )
         _run_command(
             f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[sling]'"
@@ -135,6 +137,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_MY_DEPLOYMENT],
         )
 
         # Scaffold new code location
@@ -164,6 +167,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_MY_DEPLOYMENT],
         )
 
         # Create workspace.yaml file

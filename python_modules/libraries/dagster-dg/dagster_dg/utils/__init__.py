@@ -5,6 +5,7 @@ import os
 import posixpath
 import re
 import shutil
+import subprocess
 import sys
 import textwrap
 from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -81,7 +82,7 @@ def is_valid_json(value: str) -> bool:
 
 
 def is_executable_available(command: str) -> bool:
-    return bool(shutil.which(command))
+    return bool(shutil.which(command)) or bool(get_uv_run_executable_path(command))
 
 
 # uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
@@ -429,3 +430,15 @@ def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object
     path_list = list(path)
     inner_dict = get_toml_value(doc, path_list[:-1], dict)
     inner_dict[path_list[-1]] = value
+
+
+def get_executable_path(executable_name: str) -> Optional[str]:
+    return shutil.which(executable_name)
+
+
+def get_uv_run_executable_path(executable_name: str) -> Optional[str]:
+    uv_run_cmd = ["uv", "run", "which", executable_name]
+    try:
+        return subprocess.check_output(uv_run_cmd).decode("utf-8").strip()
+    except (subprocess.CalledProcessError, NotADirectoryError):
+        return None
