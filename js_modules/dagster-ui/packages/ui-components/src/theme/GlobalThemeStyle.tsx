@@ -34,7 +34,7 @@ const ThemeRoot = createGlobalStyle`
   }
 
   .themeLightHighContrast {
-   ${lightHighContrastThemeColors}
+    ${lightHighContrastThemeColors}
   }
 
   .themeDark {
