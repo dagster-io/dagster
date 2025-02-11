@@ -73,7 +73,7 @@ class AssetSpecTransformSchema(ComponentSchema):
             check.failed(f"Unsupported operation: {self.operation}")
 
     def apply(self, defs: Definitions, context: ResolutionContext) -> Definitions:
-        target_selection = AssetSelection.from_string(self.target, include_external_assets=True)
+        target_selection = AssetSelection.from_string(self.target, include_sources=True)
         target_keys = target_selection.resolve(defs.get_asset_graph())
 
         mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
