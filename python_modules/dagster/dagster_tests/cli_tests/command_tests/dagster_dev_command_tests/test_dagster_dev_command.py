@@ -228,16 +228,16 @@ def _launch_dev_command(
         # The `dagster dev` command exits before the gRPC servers it spins up have shutdown. Wait
         # for the child processes to exit here to make sure we don't leave any hanging processes.
         #
-        # We disable this check on Windows because interrupt signal propagation does not work in a
-        # CI environment. Interrupt propagation is dependent on processes sharing a console (which
-        # is the case in a user terminal session, but not in a CI environment). So on windows, we
-        # force kill the processes after a timeout.
-        _wait_for_child_processes_to_exit(
-            child_processes, timeout=30, force_kill=platform.system() == "Windows"
-        )
+        # In legacy code server mode, each of the webserver and daemon spin up a gRPC server. The webserver and
+        # daemon processes exit before the gRPC servers do, and do not directly shut down the
+        # servers. Instead, we rely on the servers to shut themselves down after not receiving a
+        # heartbeat from the parent process. The heartbeat timeout is configured at 45 seconds, but
+        # for some reason on windows the webserver (not daemon) gRPC server can take longer to shut
+        # down. We wait for up to 120 seconds here to be safe.
+        _wait_for_child_processes_to_exit(child_processes, timeout=120)
 
 
-def _wait_for_webserver_running(dagit_port):
+def _wait_for_webserver_running(dagit_port: int) -> None:
     start_time = time.time()
     while True:
         try:
@@ -273,7 +273,7 @@ def _wait_for_instance_dir_to_be_written(parent_dir: Path) -> Path:
     return subfolders[0]
 
 
-def _validate_job_available(port: int, job_name: str):
+def _validate_job_available(port: int, job_name: str) -> None:
     client = DagsterGraphQLClient(hostname="localhost", port_number=port)
     locations_and_names = client._get_repo_locations_and_names_with_pipeline(job_name)  # noqa: SLF001
     assert (
@@ -282,43 +282,56 @@ def _validate_job_available(port: int, job_name: str):
 
 
 def _validate_expected_child_processes(dev_process: subprocess.Popen, expected_count: int) -> None:
-    # Skip windows here-- it spawns a lot more processes than Unix when running through tox, due to
+    # Note that on Windows, each
     # tox shimming creating persistent processes. We are still checking that all child processes
     # shut down later.
-    if platform.system() != "Windows":
-        # 4 processes:
-        # - dagster-daemon
-        # - dagster-webserver
-        # - dagster code-server start
-        # - dagster api grpc (started by dagster code-server start)
-        #
-        # Some of the tests above execute jobs, which result in additional child processes that may
-        # or may not be running/cleaned up by the time we get here. We aren't interested in these,
-        # exclude them.
-        child_processes = _get_child_processes(dev_process.pid, exclude_job_processes=True)
-        if len(child_processes) != expected_count:
-            proc_info = "\n".join([_get_proc_repr(proc) for proc in child_processes])
-            raise Exception(
-                f"Expected {expected_count} child processes, found {len(child_processes)}:\n{proc_info}"
-            )
+
+    # 4 processes:
+    # - dagster-daemon
+    # - dagster-webserver
+    # - dagster code-server start
+    # - dagster api grpc (started by dagster code-server start)
+    #
+    # Some of the tests above execute jobs, which result in additional child processes that may
+    # or may not be running/cleaned up by the time we get here. These are identifiable because
+    # they are spawned by the Python multiprocessing module. We aren't interested in these,
+    # exclude them.
+    child_processes = _get_child_processes(dev_process.pid, exclude_multiprocessing_processes=True)
+
+    # On Windows, we make two adjustments:
+    # - Exclude any processes that are themselves `dagster dev` commands. This happens because
+    #   windows will sometimes return a PID as a child of itself.
+    # - Exclude any processes that are tox shims. When executing these tests through tox, each
+    #   launched process runs through a tox shim that is itself a persistent process.
+    if platform.system() == "Windows":
+        child_processes = [
+            proc
+            for proc in child_processes
+            if not ("dev" in proc.cmdline() or ".tox\\" in proc.cmdline()[0])
+        ]
+    if len(child_processes) != expected_count:
+        proc_info = "\n".join([_get_proc_repr(proc) for proc in child_processes])
+        raise Exception(
+            f"Expected {expected_count} child processes, found {len(child_processes)}:\n{proc_info}"
+        )
 
 
-def _get_child_processes(pid, exclude_job_processes: bool = False) -> list[psutil.Process]:
+def _get_child_processes(
+    pid, exclude_multiprocessing_processes: bool = False
+) -> list[psutil.Process]:
     parent = psutil.Process(pid)
     children = parent.children(recursive=True)
-    if exclude_job_processes:
-        return [c for c in children if not _is_job_execution_process(c)]
+    if exclude_multiprocessing_processes:
+        return [c for c in children if not _is_multiprocessing_process(c)]
     else:
         return children
 
 
-def _is_job_execution_process(proc: psutil.Process) -> bool:
+def _is_multiprocessing_process(proc: psutil.Process) -> bool:
     return any(x.startswith("from multiprocessing") for x in proc.cmdline())
 
 
-def _wait_for_child_processes_to_exit(
-    child_procs: list[psutil.Process], timeout: int, force_kill: bool = False
-) -> None:
+def _wait_for_child_processes_to_exit(child_procs: list[psutil.Process], timeout: int) -> None:
     start_time = time.time()
     while True:
         running_child_procs = [proc for proc in child_procs if proc.is_running()]
@@ -336,18 +349,9 @@ def _wait_for_child_processes_to_exit(
                     *running_proc_lines,
                 ]
             )
-            if force_kill:
-                for proc in running_child_procs:
-                    try:
-                        proc.kill()
-                    # Can happen if the process shut down from another shutting down in the
-                    # iteration.
-                    except psutil.NoSuchProcess:
-                        pass
-            else:
-                raise Exception(
-                    f"Timed out waiting for all child processes to exit. Remaining:\n{desc}"
-                )
+            raise Exception(
+                f"Timed out waiting for all child processes to exit. Remaining:\n{desc}"
+            )
         time.sleep(0.5)
 
 
