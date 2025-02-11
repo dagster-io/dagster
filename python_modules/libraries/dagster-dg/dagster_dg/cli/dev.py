@@ -168,7 +168,7 @@ def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
             code_location_root = dg_context.get_code_location_path(location)
             loc_context = dg_context.with_root_path(code_location_root)
             entry = {
-                "working_directory": str(dg_context.deployment_root_path),
+                "working_directory": str(code_location_root),
                 "relative_path": str(loc_context.definitions_path),
                 "location_name": loc_context.code_location_name,
             }

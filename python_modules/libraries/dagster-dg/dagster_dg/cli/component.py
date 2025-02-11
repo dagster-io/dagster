@@ -11,7 +11,12 @@ from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
-from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.component import (
+    RemoteComponentRegistry,
+    RemoteComponentType,
+    get_specified_env_var_deps,
+    get_used_env_vars,
+)
 from dagster_dg.component_key import ComponentKey, GlobalComponentKey, LocalComponentKey
 from dagster_dg.config import (
     get_config_from_cli_context,
@@ -316,6 +321,7 @@ def component_check_command(
 
     component_contents_by_key: dict[ComponentKey, Any] = {}
     local_component_dirs = set()
+    all_specified_env_vars = set()
     for component_dir in dg_context.components_path.iterdir():
         if resolved_paths and not any(
             path == component_dir or path in component_dir.parents for path in resolved_paths
@@ -343,6 +349,28 @@ def component_check_command(
                     )
                 )
                 continue
+
+            specified_env_var_deps = get_specified_env_var_deps(component_doc_tree.value)
+            used_env_vars = get_used_env_vars(component_doc_tree.value)
+            all_specified_env_vars.update(specified_env_var_deps)
+
+            if used_env_vars - specified_env_var_deps:
+                msg = (
+                    "Component uses environment variables that are not specified in the component file: "
+                    + ", ".join(used_env_vars - specified_env_var_deps)
+                )
+
+                validation_errors.append(
+                    ErrorInput(
+                        None,
+                        ValidationError(
+                            msg,
+                            path=["requires", "env"],
+                        ),
+                        component_doc_tree,
+                    )
+                )
+
             # First, validate the top-level structure of the component file
             # (type and params keys) before we try to validate the params themselves.
             top_level_errs = list(
@@ -384,6 +412,7 @@ def component_check_command(
                     component_doc_tree,
                 )
             )
+
     if validation_errors:
         for component_key, error, component_doc_tree in validation_errors:
             click.echo(
@@ -395,5 +424,17 @@ def component_check_command(
                 )
             )
         context.exit(1)
-    else:
-        click.echo("All components validated successfully.")
+
+    from dagster_dg.env import Env
+
+    env = Env.from_file(dg_context.env_file, dg_context.deployment_env_file)
+    import os
+
+    if (all_specified_env_vars - env.values.keys()) - os.environ.keys():
+        click.echo(
+            "The following environment variables are used in components but not specified in the environment file or the current shell environment:\n"
+            + "\n".join(all_specified_env_vars - env.values.keys())
+        )
+        context.exit(1)
+
+    click.echo("All components validated successfully.")

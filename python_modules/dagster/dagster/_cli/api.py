@@ -721,8 +721,10 @@ def grpc_command(
     enable_metrics: bool = False,
     **other_opts: Any,
 ) -> None:
+    print("INJECTING ENV VARS FROM INSTANCE", inject_env_vars_from_instance)
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
+    print(python_pointer_opts.working_directory)
 
     check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
 

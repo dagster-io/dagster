@@ -137,6 +137,9 @@ def dev_command(
             use_legacy_code_server_behavior=use_legacy_code_server_behavior,
             workspace_opts=workspace_opts,
             instance=instance,
+            env_paths=[
+                "/Users/ben/repos/components_demo/my-deployment/code_locations/jaffle-platform"
+            ],
         ) as workspace_args:
             logger.info("Launching Dagster services...")
 
@@ -228,6 +231,7 @@ def _optionally_create_temp_workspace(
     use_legacy_code_server_behavior: bool,
     workspace_opts: WorkspaceOpts,
     instance: DagsterInstance,
+    env_paths: Optional[Sequence[str]] = None,
 ) -> Iterator[Sequence[str]]:
     """If not in legacy mode, spin up grpc servers and write a workspace file pointing at them.
     If in legacy mode, do nothing and return the target args.
@@ -237,6 +241,7 @@ def _optionally_create_temp_workspace(
             instance=instance,
             workspace_load_target=workspace_opts.to_load_target(),
             server_command=GrpcServerCommand.CODE_SERVER_START,
+            env_paths=env_paths,
         ) as context:
             with _temp_grpc_socket_workspace_file(context) as workspace_file:
                 yield ["--workspace", str(workspace_file)]

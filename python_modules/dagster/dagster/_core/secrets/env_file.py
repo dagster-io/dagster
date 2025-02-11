@@ -13,6 +13,16 @@ from dagster._serdes.config_class import ConfigurableClassData
 
 
 def get_env_var_dict(base_dir: str) -> dict[str, str]:
+    # # print traceback
+    # import traceback
+
+    # traceback.print_exc()
+
+    # # open pdb
+    # import pdb
+
+    # pdb.set_trace()
+
     env_file_path = os.path.join(base_dir, ".env")
     if not os.path.exists(env_file_path):
         return {}

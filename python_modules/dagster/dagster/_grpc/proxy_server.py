@@ -2,6 +2,7 @@ import logging
 import sys
 import threading
 import time
+from collections.abc import Sequence
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Optional
 
@@ -52,6 +53,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         logger: logging.Logger,
         server_heartbeat: bool,
         server_heartbeat_timeout: int,
+        env_paths: Optional[Sequence[str]],
     ):
         super().__init__()
 
@@ -74,6 +76,8 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         self._reload_lock = threading.Lock()
 
+        self._env_paths = env_paths
+
         self._grpc_server_registry = self._exit_stack.enter_context(
             GrpcServerRegistry(
                 instance_ref=self._instance_ref,
@@ -86,6 +90,7 @@ class DagsterProxyApiServicer(DagsterApiServicer):
                 container_context=self._container_context,
                 wait_for_processes_on_shutdown=True,
                 additional_timeout_msg="Set from --startup-timeout command line argument. ",
+                env_paths=self._env_paths,
             )
         )
         self._origin = ManagedGrpcPythonEnvCodeLocationOrigin(

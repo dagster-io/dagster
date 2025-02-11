@@ -1,6 +1,7 @@
 import sys
 import threading
 import uuid
+from collections.abc import Sequence
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
@@ -81,7 +82,11 @@ class GrpcServerRegistry(AbstractContextManager):
         container_image: Optional[str] = None,
         container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
+        env_paths: Optional[Sequence[str]] = None,
     ):
+        import traceback
+
+        traceback.print_stack()
         self.instance_ref = instance_ref
         self.server_command = server_command
 
@@ -119,6 +124,8 @@ class GrpcServerRegistry(AbstractContextManager):
             daemon=True,
         )
         self._cleanup_thread.start()
+
+        self._env_paths = env_paths
 
     def supports_origin(
         self, code_location_origin: CodeLocationOrigin
@@ -201,6 +208,7 @@ class GrpcServerRegistry(AbstractContextManager):
                     container_image=self._container_image,
                     container_context=self._container_context,
                     additional_timeout_msg=self._additional_timeout_msg,
+                    env_paths=self._env_paths,
                 )
                 self._all_processes.append(server_process)
                 self._active_entries[origin_id] = ServerRegistryEntry(

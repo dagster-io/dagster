@@ -338,3 +338,13 @@ class DgContext:
         """
         if not is_executable_available("dagster-components"):
             exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)
+
+    @property
+    def env_file(self) -> Path:
+        if not self.is_code_location:
+            raise DgError("`env_file` is only available in a code location context")
+        return self.root_path / ".env"
+
+    @property
+    def deployment_env_file(self) -> Path:
+        return self.root_path.parent.parent / ".env"

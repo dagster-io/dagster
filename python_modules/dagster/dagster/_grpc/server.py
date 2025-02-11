@@ -43,6 +43,7 @@ from dagster._core.remote_representation.external_data import (
     SensorExecutionErrorSnap,
 )
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
+from dagster._core.secrets.env_file import get_env_var_dict
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
 from dagster._core.types.loadable_target_origin import (
     LoadableTargetOrigin,
@@ -102,6 +103,7 @@ from dagster._utils.container import (
     ContainerUtilizationMetrics,
     retrieve_containerized_utilization_metrics,
 )
+from dagster._utils.env import environ
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.typed_dict import init_optional_typeddict
 
@@ -348,6 +350,7 @@ class DagsterApiServer(DagsterApiServicer):
         instance_ref: Optional[InstanceRef] = None,
         location_name: Optional[str] = None,
         enable_metrics: bool = False,
+        env_paths: Optional[Sequence[str]] = None,
     ):
         super().__init__()
 
@@ -402,6 +405,13 @@ class DagsterApiServer(DagsterApiServicer):
 
         self._enable_metrics = check.bool_param(enable_metrics, "enable_metrics")
         self._server_threadpool_executor = server_threadpool_executor
+
+        if env_paths:
+            env_values = {}
+            for env_path in env_paths:
+                env_values.update(get_env_var_dict(env_path))
+            if env_values:
+                self._exit_stack.enter_context(environ(env_values))
 
         try:
             if inject_env_vars_from_instance:
@@ -1393,7 +1403,11 @@ def open_server_process(
     container_context: Optional[dict[str, Any]] = None,
     enable_metrics: bool = False,
     additional_timeout_msg: Optional[str] = None,
+    env_paths: Optional[Sequence[str]] = None,
 ):
+    import traceback
+
+    traceback.print_stack()
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.opt_int_param(max_workers, "max_workers")
@@ -1419,6 +1433,7 @@ def open_server_process(
         *(["--container-image", container_image] if container_image else []),
         *(["--container-context", json.dumps(container_context)] if container_context else []),
         *(["--enable-metrics"] if enable_metrics else []),
+        *(["--env-paths", ",".join(env_paths)] if env_paths else []),
     ]
 
     if loadable_target_origin:
@@ -1506,6 +1521,7 @@ class GrpcServerProcess:
         container_image: Optional[str] = None,
         container_context: Optional[dict[str, Any]] = None,
         additional_timeout_msg: Optional[str] = None,
+        env_paths: Optional[Sequence[str]] = None,
     ):
         self.port = None
         self.socket = None
@@ -1547,6 +1563,7 @@ class GrpcServerProcess:
         self._container_image = container_image
         self._container_context = container_context
         self._additional_timeout_msg = additional_timeout_msg
+        self._env_paths = env_paths
         self.socket = None
         self.port = None
         self.start_server_process()
@@ -1579,6 +1596,7 @@ class GrpcServerProcess:
             container_context=self._container_context,
             additional_timeout_msg=self._additional_timeout_msg,
             server_command=self._server_command,
+            env_paths=self._env_paths,
         )
 
         if (seven.IS_WINDOWS or self._force_port) and self.port is None:

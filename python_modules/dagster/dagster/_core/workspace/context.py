@@ -640,6 +640,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
         code_server_log_level: str = "INFO",
         server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
+        env_paths: Optional[Sequence[str]] = None,
     ):
         self._stack = ExitStack()
 
@@ -664,6 +665,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._state_subscriber_id_iter = count()
         self._state_subscribers: dict[int, LocationStateSubscriber] = {}
         self.add_state_subscriber(LocationStateSubscriber(self._location_state_events_handler))
+        print("WPC")
 
         if grpc_server_registry:
             self._grpc_server_registry: GrpcServerRegistry = check.inst_param(
@@ -679,6 +681,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     log_level=code_server_log_level,
                     wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
                     additional_timeout_msg=INCREASE_TIMEOUT_DAGSTER_YAML_MSG,
+                    env_paths=env_paths,
                 )
             )
 

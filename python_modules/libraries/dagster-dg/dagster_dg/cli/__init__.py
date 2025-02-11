@@ -7,6 +7,7 @@ from dagster_dg.cli.component import component_group
 from dagster_dg.cli.component_type import component_type_group
 from dagster_dg.cli.deployment import deployment_group
 from dagster_dg.cli.dev import dev_command
+from dagster_dg.cli.env import env_group
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
@@ -26,6 +27,7 @@ def create_dg_cli():
             "component-type": component_type_group,
             "deployment": deployment_group,
             "dev": dev_command,
+            "env": env_group,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,

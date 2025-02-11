@@ -1,9 +1,10 @@
 import copy
 import json
+import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster_dg.component_key import ComponentKey, GlobalComponentKey, LocalComponentKey
 from dagster_dg.utils import is_valid_json
@@ -152,3 +153,23 @@ class RemoteComponentRegistry:
 
     def __repr__(self) -> str:
         return f"<RemoteComponentRegistry {list(self._components.keys())}>"
+
+
+def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:
+    if "requires" not in component_data or "env" not in component_data["requires"]:
+        return set()
+    return set(component_data["requires"]["env"])
+
+
+env_var_regex = re.compile(r"\{\{\s*env\(\s*['\"]([^'\"]+)['\"]\)\s*\}\}")
+
+
+def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], Any]) -> set[str]:
+    if isinstance(data_structure, Mapping):
+        return set.union(*(get_used_env_vars(value) for value in data_structure.values()))
+    elif isinstance(data_structure, str):
+        return set(env_var_regex.findall(data_structure))
+    elif isinstance(data_structure, Sequence):
+        return set.union(*(get_used_env_vars(item) for item in data_structure))
+    else:
+        return set()

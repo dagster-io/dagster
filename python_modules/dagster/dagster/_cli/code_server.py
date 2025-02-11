@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import threading
+from collections.abc import Sequence
 from typing import Optional
 
 import click
@@ -182,6 +183,7 @@ def start_command(
     heartbeat: bool,
     heartbeat_timeout,
     instance_ref: Optional[str],
+    env_paths: Optional[Sequence[str]] = None,
     **other_opts,
 ):
     from dagster._grpc import DagsterGrpcServer
@@ -249,6 +251,7 @@ def start_command(
         logger=logger,
         server_heartbeat=heartbeat,
         server_heartbeat_timeout=heartbeat_timeout,
+        env_paths=env_paths,
     )
     server = DagsterGrpcServer(
         server_termination_event=server_termination_event,

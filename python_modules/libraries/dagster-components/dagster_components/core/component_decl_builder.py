@@ -25,9 +25,14 @@ from dagster_components.core.component_key import ComponentKey
 from dagster_components.utils import load_module_from_path
 
 
+class ComponentRequiresModel(BaseModel):
+    env: Optional[list[str]] = None
+
+
 class ComponentFileModel(BaseModel):
     type: str
     params: Optional[Mapping[str, Any]] = None
+    requires: Optional[ComponentRequiresModel] = None
 
 
 T = TypeVar("T", bound=BaseModel)
