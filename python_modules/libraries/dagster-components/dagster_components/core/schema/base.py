@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Set
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar, get_args
 
-from dagster._record import record
+from dagster._core.errors import DagsterInvalidDefinitionError
 from pydantic import BaseModel, ConfigDict
 
 if TYPE_CHECKING:
@@ -9,105 +9,45 @@ if TYPE_CHECKING:
 
 FIELD_RESOLVER_PREFIX = "resolve_"
 
-T_ResolveAs = TypeVar("T_ResolveAs")
-T_ResolverType = TypeVar("T_ResolverType", bound=type["Resolver"])
-T_ComponentSchema = TypeVar("T_ComponentSchema", bound="ComponentSchema")
+T = TypeVar("T")
 
 
-@record
-class _ResolverData:
-    """Container for configuration of a Resolver that is set when using the @resolver decorator."""
-
-    resolved_type: Optional[type]
-    exclude_fields: Set[str]
-
-    def fields(self, schema: "ComponentSchema", resolver: "Resolver") -> Set[str]:
-        model_fields = set(schema.model_fields.keys())
-        resolver_fields = {
-            attr[len(FIELD_RESOLVER_PREFIX) :]
-            for attr in dir(resolver)
-            if attr.startswith(FIELD_RESOLVER_PREFIX)
-        }
-        return (model_fields | resolver_fields) - self.exclude_fields - {"as"}
-
-
-class Resolver(Generic[T_ComponentSchema]):
-    """A Resolver is a class that can convert data contained within a ComponentSchema into an
-    arbitrary output type.
-
-    Methods on the Resolver class should be named `resolve_{fieldname}` and should return the
-    resolved value for that field.
-
-
-    Usage:
-
-        .. code-block:: python
-
-            class MyModel(ComponentSchema):
-                str_val: str
-                int_val: int
-
-            class TargetType:
-                def __init__(self, str_val: str, int_val_doubled: int): ...
-
-            @resolver(
-                fromtype=MyModel, totype=TargetType, exclude_fields={"int_val"}
-            )
-            class MyModelResolver(Resolver):
-                def resolve_int_val_doubled(self, context: ResolutionContext) -> int:
-                    return self.model.int_val * 2
-
-    """
-
-    __resolver_data__: ClassVar[_ResolverData] = _ResolverData(
-        resolved_type=None, exclude_fields=set()
-    )
-
-    def __init__(self, schema: T_ComponentSchema):
-        self.schema: T_ComponentSchema = schema
-
-    def _resolve_field(self, context: "ResolutionContext", field: str) -> Any:
-        field_resolver = getattr(self, f"resolve_{field}", None)
-        if field_resolver is not None:
-            return field_resolver(context)
-        else:
-            return context.resolve_value(getattr(self.schema, field))
-
-    def get_resolved_fields(self, context: "ResolutionContext") -> Mapping[str, Any]:
-        """Returns a mapping of field names to resolved values for those fields."""
-        return {
-            field: self._resolve_field(context, field)
-            for field in self.__resolver_data__.fields(self.schema, self)
-        }
-
-    def resolve_as(self, as_type: type[T_ResolveAs], context: "ResolutionContext") -> T_ResolveAs:
-        """Returns an instance of `as_type` instantiated with the resolved data contained within
-        this Resolver's schema.
-        """
-        return as_type(**self.get_resolved_fields(context))
-
-    def resolve(self, context: "ResolutionContext") -> Any:
-        resolved_type = self.__resolver_data__.resolved_type or self.schema.__class__
-        return self.resolve_as(resolved_type, context)
-
-
-class ComponentSchema(BaseModel):
-    __dagster_resolver__: ClassVar[type[Resolver]] = Resolver
-
+class ResolvableSchema(BaseModel, Generic[T]):
     model_config = ConfigDict(extra="forbid")
 
+    @property
+    def _resolved_type(self) -> type:
+        generic_args = get_args(self.__class__.__pydantic_generic_metadata__)
+        if len(generic_args) == 0:
+            # if no generic type is specified, resolve back to the base type
+            return self.__class__
+        elif len(generic_args) > 1:
+            raise DagsterInvalidDefinitionError(
+                f"Expected at most one generic argument for type: `{self.__class__}`"
+            )
+        resolved_type = generic_args[0]
+        if isinstance(resolved_type, str):
+            raise DagsterInvalidDefinitionError(
+                f"Attempted to directly resolve a `ResolvableSchema` ({self.__class__}) with a ForwardRef: `{resolved_type}`. "
+                "Use `resolve_as` instead."
+            )
+        return resolved_type
 
-def resolver(
-    *,
-    fromtype: type[ComponentSchema],
-    totype: Optional[type] = None,
-    exclude_fields: Optional[Set[str]] = None,
-) -> Callable[[T_ResolverType], T_ResolverType]:
-    def inner(resolver_type: T_ResolverType) -> T_ResolverType:
-        resolver_type.__resolver_data__ = _ResolverData(
-            resolved_type=totype, exclude_fields=exclude_fields or set()
-        )
-        fromtype.__dagster_resolver__ = resolver_type
-        return resolver_type
+    def _resolve_field(self, context: "ResolutionContext", field: str) -> Any:
+        return context.resolve_value(getattr(self, field))
 
-    return inner
+    def resolve_fields(
+        self, context: "ResolutionContext", exclude: Optional[Set[str]] = None
+    ) -> Mapping[str, Any]:
+        """Returns a mapping of field names to resolved values for those fields."""
+        return {
+            field: context.resolve_value(getattr(self, field))
+            for field in self.model_fields
+            if exclude is None or field not in exclude
+        }
+
+    def resolve_as(self, as_type: type[T], context: "ResolutionContext") -> T:
+        return as_type(**self.resolve_fields(context))
+
+    def resolve(self, context: "ResolutionContext") -> T:
+        return self.resolve_as(self._resolved_type, context)

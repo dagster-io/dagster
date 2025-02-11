@@ -1,12 +1,12 @@
 from collections.abc import Sequence
 from typing import Annotated, Optional
 
-from dagster_components import ComponentSchema, ResolutionContext, Resolver, resolver
+from dagster_components import ResolutionContext, ResolvableSchema, Resolver, resolver
 from dagster_components.core.schema.objects import AssetAttributesSchema, OpSpecSchema
 from pydantic import BaseModel
 
 
-class ShellScriptSchema(ComponentSchema):
+class ShellScriptSchema(ResolvableSchema):
     script_path: str
     asset_attributes: Sequence[AssetAttributesSchema]
     op: Optional[OpSpecSchema] = None

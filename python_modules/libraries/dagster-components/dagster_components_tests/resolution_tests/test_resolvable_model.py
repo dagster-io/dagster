@@ -4,8 +4,7 @@ from typing import Optional
 import pytest
 from dagster._check.functions import ParameterCheckError
 from dagster._record import record
-from dagster_components import ComponentSchema, ResolutionContext
-from dagster_components.core.schema.base import Resolver, resolver
+from dagster_components import ResolutionContext, ResolvableSchema
 
 
 @record
@@ -21,25 +20,21 @@ class TargetObject:
     inners: Optional[Sequence[InnerObject]]
 
 
-class InnerParams(ComponentSchema):
+class InnerParams(ResolvableSchema[InnerObject]):
     val1: str
     val2: Optional[str]
 
+    def resolve(self, context: ResolutionContext) -> InnerObject:
+        return InnerObject(
+            val1_renamed=context.resolve_value(self.val1, as_type=int) + 20,
+            val2=context.resolve_value(self.val2, as_type=Optional[str]),
+        )
 
-class TargetParams(ComponentSchema):
+
+class TargetParams(ResolvableSchema):
     int_val: str
     str_val: str
     inners: Optional[Sequence[InnerParams]] = None
-
-
-@resolver(fromtype=InnerParams, totype=InnerObject, exclude_fields={"val1"})
-class InnerParamsResolver(Resolver[InnerParams]):
-    def resolve_val1_renamed(self, context: ResolutionContext) -> int:
-        return context.resolve_value(self.schema.val1) + 20
-
-
-@resolver(fromtype=TargetParams, totype=TargetObject)
-class TargetParamsResolver(Resolver): ...
 
 
 def test_valid_resolution_simple() -> None:

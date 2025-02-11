@@ -13,7 +13,7 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
-from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
+from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
@@ -25,7 +25,7 @@ from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentSca
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectParams(ComponentSchema):
+class DbtProjectParams(ResolvableSchema["DbtProjectComponent"]):
     dbt: DbtCliResource
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
@@ -33,14 +33,18 @@ class DbtProjectParams(ComponentSchema):
     ] = None
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 
-
-@resolver(fromtype=DbtProjectParams, exclude_fields={"asset_attributes"})
-class DbtProjectResolver(Resolver[DbtProjectParams]):
-    def resolve_translator(self, context: ResolutionContext) -> DagsterDbtTranslator:
-        return get_wrapped_translator_class(DagsterDbtTranslator)(
-            resolving_info=TranslatorResolvingInfo(
-                "node", self.schema.asset_attributes or AssetAttributesSchema(), context
-            )
+    def resolve_as(
+        self, cls: type["DbtProjectComponent"], context: ResolutionContext
+    ) -> "DbtProjectComponent":
+        return cls(
+            dbt=DbtCliResource(**context.resolve_value(self.dbt.model_dump())),
+            op=context.resolve_value(self.op),
+            translator=get_wrapped_translator_class(DagsterDbtTranslator)(
+                resolving_info=TranslatorResolvingInfo(
+                    "node", self.asset_attributes or AssetAttributesSchema(), context
+                )
+            ),
+            transforms=context.resolve_value(self.transforms or []),
         )
 
 
