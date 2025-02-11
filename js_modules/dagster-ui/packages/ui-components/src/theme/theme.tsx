@@ -2,18 +2,18 @@ export enum DagsterTheme {
   Light = 'Light',
   Dark = 'Dark',
   System = 'System',
-  LightHighContrast = 'LightHighContrast',
-  DarkHighContrast = 'DarkHighContrast',
-  SystemHighContrast = 'SystemHighContrast',
+  LightNoRedGreen = 'LightNoRedGreen',
+  DarkNoRedGreen = 'DarkNoRedGreen',
+  SystemNoRedGreen = 'SystemNoRedGreen',
 }
 
 export const themeToClassName = {
   [DagsterTheme.System]: 'themeSystem',
   [DagsterTheme.Light]: 'themeLight',
   [DagsterTheme.Dark]: 'themeDark',
-  [DagsterTheme.LightHighContrast]: 'themeLightHighContrast',
-  [DagsterTheme.DarkHighContrast]: 'themeDarkHighContrast',
-  [DagsterTheme.SystemHighContrast]: 'themeSystemHighContrast',
+  [DagsterTheme.LightNoRedGreen]: 'themeLightNoRedGreen',
+  [DagsterTheme.DarkNoRedGreen]: 'themeDarkNoRedGreen',
+  [DagsterTheme.SystemNoRedGreen]: 'themeSystemNoRedGreen',
 };
 
 export const DAGSTER_THEME_KEY = 'dagster-theme';

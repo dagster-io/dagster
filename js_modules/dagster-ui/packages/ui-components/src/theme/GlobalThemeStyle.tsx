@@ -1,8 +1,8 @@
 import {createGlobalStyle} from 'styled-components';
 
-import {darkHighContrastThemeColors} from './darkHighContrastThemeColors';
+import {darktNoRedGreenThemeColors} from './darkNoRedGreenThemeColors';
 import {darkThemeColors} from './darkThemeColors';
-import {lightHighContrastThemeColors} from './lightHighContrastThemeColors';
+import {lightNoRedGreenThemeColors} from './lightNoRedGreenThemeColors';
 import {lightThemeColors} from './lightThemeColors';
 import {CoreColorStyles} from '../palettes/CoreColorStyles';
 import {DataVizColorStyles} from '../palettes/DataVizColorStyles';
@@ -14,8 +14,8 @@ const ThemeRoot = createGlobalStyle`
       ${lightThemeColors}
     }
 
-    .themeSystemHighContrast {
-      ${lightHighContrastThemeColors}
+    .themeSystemNoRedGreen {
+      ${lightNoRedGreenThemeColors}
     }
   }
 
@@ -24,8 +24,8 @@ const ThemeRoot = createGlobalStyle`
       ${darkThemeColors}
     }
 
-    .themeSystemHighContrast {
-      ${darkHighContrastThemeColors}
+    .themeSystemNoRedGreen {
+      ${darktNoRedGreenThemeColors}
     }
   }
 
@@ -33,16 +33,16 @@ const ThemeRoot = createGlobalStyle`
     ${lightThemeColors}
   }
 
-  .themeLightHighContrast {
-    ${lightHighContrastThemeColors}
+  .lightNoRedGreenThemeColors {
+    ${lightNoRedGreenThemeColors}
   }
 
   .themeDark {
     ${darkThemeColors}
   }
 
-  .themeDarkHighContrast {
-    ${darkHighContrastThemeColors}
+  .darktNoRedGreenThemeColors {
+    ${darktNoRedGreenThemeColors}
   }
 `;
 

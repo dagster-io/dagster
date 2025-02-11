@@ -5,9 +5,9 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 export const themeSet = new Set([
   DagsterTheme.Light,
   DagsterTheme.Dark,
-  DagsterTheme.LightHighContrast,
-  DagsterTheme.DarkHighContrast,
-  DagsterTheme.SystemHighContrast,
+  DagsterTheme.LightNoRedGreen,
+  DagsterTheme.DarkNoRedGreen,
+  DagsterTheme.SystemNoRedGreen,
 ]);
 
 export const useThemeState = () => {
