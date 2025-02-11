@@ -36,7 +36,7 @@ from dagster._core.errors import (
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._utils import IHasInternalInit
-from dagster._utils.warnings import normalize_renamed_param, preview_warning
+from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
@@ -611,7 +611,6 @@ def _validate_pool(pool, tags):
         )
 
     if pool:
-        preview_warning("Pools")
         return pool
 
     return None
