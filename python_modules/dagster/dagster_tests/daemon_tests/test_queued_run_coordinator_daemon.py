@@ -609,7 +609,6 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             host=None,
             port=None,
             socket=None,
-            server_id=None,
             heartbeat=False,
             watch_server=True,
             grpc_server_registry=None,
@@ -621,7 +620,6 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                 host,  # pyright: ignore[reportArgumentType]
                 port,
                 socket,
-                server_id,
                 heartbeat,  # pyright: ignore[reportArgumentType]
                 watch_server,
                 grpc_server_registry,
