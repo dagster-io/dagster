@@ -91,7 +91,7 @@ Now to pull these assets into our Definitions object. Adding them to the Definit
 ## 5. Materialize assets
 
 To materialize your assets:
-1. In a browser, navigate to the URL of the Dagster server that yous started earlier. 
+1. In a browser, navigate to the URL of the Dagster server that you started earlier.
 2. Navigate to **Deployment**.
 3. Click Reload definitions.
 4. Click **Assets**, then click "View global asset lineage" to see all of your assets.

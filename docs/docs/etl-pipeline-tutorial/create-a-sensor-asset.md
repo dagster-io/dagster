@@ -55,7 +55,7 @@ Sensors include the following elements:
 
    ![2048 resolution](/images/tutorial/etl-tutorial/sensor-evaluation.png)
 
-6. Add `request.json` from the `sample_request` folder to `requests` folder.
+6. Add `request.json` from the `data/sample_request` folder to `data/requests` folder.
 
 7. Click on the green tick to see the run for this request. 
 
@@ -64,6 +64,6 @@ Sensors include the following elements:
 
 ## Next steps
 
-Now that we have our complete project, the next step is to refactor the project into more a more manageable structure so we can add to it as needed. 
+Now that we have our complete project, the next step is to refactor the project into a more manageable structure so we can add to it as needed.
 
 Finish the tutorial by [refactoring your project](refactor-your-project).
