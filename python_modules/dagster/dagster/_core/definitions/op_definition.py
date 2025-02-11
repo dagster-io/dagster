@@ -1,4 +1,5 @@
 import inspect
+import re
 from collections.abc import Iterator, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
@@ -44,6 +45,8 @@ if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 OpComputeFunction: TypeAlias = Callable[..., Any]
+
+VALID_POOL_REGEX = r"^[a-zA-Z0-9_]+$"
 
 
 @deprecated_param(
@@ -603,15 +606,20 @@ def _is_result_object_type(ttype):
 
 def _validate_pool(pool, tags):
     check.opt_str_param(pool, "pool")
+    if not pool:
+        return None
+
     tags = check.opt_mapping_param(tags, "tags")
     tag_concurrency_key = tags.get(GLOBAL_CONCURRENCY_TAG)
-    if pool and tag_concurrency_key and pool != tag_concurrency_key:
+    if tag_concurrency_key and pool != tag_concurrency_key:
         raise DagsterInvalidDefinitionError(
             f'Pool "{pool}" conflicts with the concurrency key tag "{tag_concurrency_key}".'
         )
 
-    if pool:
-        preview_warning("Pools")
-        return pool
+    if not re.match(VALID_POOL_REGEX, pool):
+        raise DagsterInvalidDefinitionError(
+            f'Pool "{pool}" must match the pattern "{VALID_POOL_REGEX}".'
+        )
 
-    return None
+    preview_warning("Pools")
+    return pool
