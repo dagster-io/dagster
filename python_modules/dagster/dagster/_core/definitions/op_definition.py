@@ -80,7 +80,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             not set metadata directly. Values that are not strings will be json encoded and must meet
             the criteria that `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of resources handles required by this op.
-        code_version (Optional[str]): (Experimental) Version of the code encapsulated by the op. If set,
+        code_version (Optional[str]): Version of the code encapsulated by the op. If set,
             this is used as a default code version for all outputs.
         retry_policy (Optional[RetryPolicy]): The retry policy for this op.
         pool (Optional[str]): A string that identifies the pool that governs this op's execution.

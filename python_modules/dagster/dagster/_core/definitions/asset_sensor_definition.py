@@ -65,7 +65,7 @@ class AssetSensorDefinition(SensorDefinition):
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
             object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
-            (experimental) A list of jobs to be executed when the sensor fires.
+            A list of jobs to be executed when the sensor fires.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.
         metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the

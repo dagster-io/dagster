@@ -90,7 +90,7 @@ For example, you might use a sensor to trigger a job when an asset is materializ
 
 :::note
 
-The experimental `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system. For more information, see the [Declarative Automation documentation](/guides/automate/declarative-automation/).
+The `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system. For more information, see the [Declarative Automation documentation](/guides/automate/declarative-automation/).
 
 :::
 

@@ -518,7 +518,7 @@ class ScheduleDefinition(IHasInternalInit):
             The target that the schedule will execute.
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
-            This is an experimental parameter that will replace `job` and `job_name`.
+            This parameter will replace `job` and `job_name`.
         metadata (Optional[Mapping[str, Any]]): A set of metadata entries that annotate the
             schedule. Values will be normalized to typed `MetadataValue` objects. Not currently
             shown in the UI but available at runtime via
