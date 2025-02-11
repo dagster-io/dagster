@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.9.13 (core) / 0.25.13 (libraries)
+
+### Dagster Plus
+
+- Fixed a bug where runs using global op concurrency would raise an exception when claiming a concurrency slot.
+
 ## 1.9.12 (core) / 0.25.12 (libraries)
 
 ### New
