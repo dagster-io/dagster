@@ -37,25 +37,6 @@ describe('createAssetSelectionHint', () => {
     };
   }
 
-  it('should suggest asset names after typing key_substring:', () => {
-    // cursorIndex 14
-    expect(testAutocomplete('key_substring:|')).toEqual({
-      list: [
-        expect.objectContaining({
-          text: '"asset1"',
-        }),
-        expect.objectContaining({
-          text: '"asset2"',
-        }),
-        expect.objectContaining({
-          text: '"asset3"',
-        }),
-      ],
-      from: 14, // cursor location
-      to: 14, // cursor location
-    });
-  });
-
   it('should suggest owners after typing owner:', () => {
     expect(testAutocomplete('owner:|')).toEqual({
       list: [
@@ -198,7 +179,7 @@ describe('createAssetSelectionHint', () => {
     expect(testAutocomplete('o|')).toEqual({
       list: [
         expect.objectContaining({
-          text: 'key_substring:"o"',
+          text: 'key:"*o*"',
         }),
         expect.objectContaining({
           text: 'owner:',
@@ -485,9 +466,7 @@ describe('createAssetSelectionHint', () => {
   });
 
   it('should handle incomplete or expression within function', () => {
-    expect(
-      testAutocomplete('sinks(key_substring:"FIVETRAN/google_ads/ad_group_history" or |)'),
-    ).toEqual({
+    expect(testAutocomplete('sinks(key:"FIVETRAN/google_ads/ad_group_history" or |)')).toEqual({
       list: [
         expect.objectContaining({
           text: 'key:',
@@ -513,15 +492,13 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: '+'}),
         expect.objectContaining({text: '()'}),
       ],
-      from: 62, // cursor location
-      to: 62, // cursor location
+      from: 52, // cursor location
+      to: 52, // cursor location
     });
   });
 
   it('should handle incomplete or expression within function with cursor right after the "or"', () => {
-    expect(
-      testAutocomplete('sinks(key_substring:"FIVETRAN/google_ads/ad_group_history" or|)'),
-    ).toEqual({
+    expect(testAutocomplete('sinks(key:"FIVETRAN/google_ads/ad_group_history" or|)')).toEqual({
       list: [
         expect.objectContaining({
           text: ' key:',
@@ -547,17 +524,13 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: ' +'}),
         expect.objectContaining({text: ' ()'}),
       ],
-      from: 61, // cursor location
-      to: 61, // cursor location
+      from: 51, // cursor location
+      to: 51, // cursor location
     });
   });
 
   it('should suggest tag values to the right of colon of an attribute expression inside of an IncompleteAttributeExpression, OrExpression, and ParenthesizedExpression', () => {
-    expect(
-      testAutocomplete(
-        'sinks(key_substring:"FIVETRAN/google_ads/ad_group_history" or key_substring:|)',
-      ),
-    ).toEqual({
+    expect(testAutocomplete('sinks(key:"FIVETRAN/google_ads/ad_group_history" or key:|)')).toEqual({
       list: [
         expect.objectContaining({
           text: '"asset1"',
@@ -569,8 +542,8 @@ describe('createAssetSelectionHint', () => {
           text: '"asset3"',
         }),
       ],
-      from: 76, // cursor location
-      to: 76, // cursor location
+      from: 56, // cursor location
+      to: 56, // cursor location
     });
   });
 
@@ -606,7 +579,7 @@ describe('createAssetSelectionHint', () => {
 
   it('suggestions after IncompleteOrExpression chain', () => {
     expect(
-      testAutocomplete('key:"test" or key_substring:"FIVETRAN/google_ads/ad_group_history"+ or |'),
+      testAutocomplete('key:"test" or key:"FIVETRAN/google_ads/ad_group_history"+ or |'),
     ).toEqual({
       list: [
         expect.objectContaining({
@@ -633,8 +606,8 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: '+'}),
         expect.objectContaining({text: '()'}),
       ],
-      from: 71, // cursor position
-      to: 71, // cursor position
+      from: 61, // cursor position
+      to: 61, // cursor position
     });
   });
 
@@ -729,7 +702,7 @@ describe('createAssetSelectionHint', () => {
       to: 23, // cursor position
     });
 
-    expect(testAutocomplete('sinks(key_substring:"set" or key_substring:"asset"|)')).toEqual({
+    expect(testAutocomplete('sinks(key:"set" or key:"asset"|)')).toEqual({
       list: [
         expect.objectContaining({
           text: ' and ',
@@ -739,21 +712,21 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({text: '+'}),
       ],
-      from: 50, // cursor position
-      to: 50, // cursor position
+      from: 30, // cursor position
+      to: 30, // cursor position
     });
 
-    expect(testAutocomplete('sinks(key_substring:"asset" or key_substring:"s|et2")')).toEqual({
+    expect(testAutocomplete('sinks(key:"asset" or key:"s|et2")')).toEqual({
       list: [
         expect.objectContaining({
           text: '"asset2"',
         }),
       ],
-      from: 45, // start of value
-      to: 51, // end of value
+      from: 25, // start of value
+      to: 31, // end of value
     });
 
-    expect(testAutocomplete('sinks(key_substring:"sset1"| or key_substring:"set")')).toEqual({
+    expect(testAutocomplete('sinks(key:"sset1"| or key:"set")')).toEqual({
       list: [
         expect.objectContaining({
           text: ' and ',
@@ -763,8 +736,8 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({text: '+'}),
       ],
-      from: 27, // cursor position
-      to: 27, // cursor position
+      from: 17, // cursor position
+      to: 17, // cursor position
     });
   });
 
@@ -909,10 +882,10 @@ describe('createAssetSelectionHint', () => {
   it('suggestions within incomplete function call expression', () => {
     expect(
       testAutocomplete(
-        '(sinks(key_substring:"FIVETRAN/google_ads/ad_group_history" or (key_substring:"aws_cost_report"+2)|',
+        '(sinks(key:"FIVETRAN/google_ads/ad_group_history" or (key:"aws_cost_report"+2)|',
       ),
     ).toEqual({
-      from: 98,
+      from: 78,
       list: [
         expect.objectContaining({
           text: ' and ',
@@ -923,15 +896,13 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: '+'}),
         expect.objectContaining({text: ')'}),
       ],
-      to: 98,
+      to: 78,
     });
   });
 
   it('makes suggestion in whitespace after or token in between two incomplete or expressions', () => {
-    expect(
-      testAutocomplete('key_substring:"aws_cost_report" or |or key_substring:"aws_cost_report"'),
-    ).toEqual({
-      from: 35,
+    expect(testAutocomplete('key:"aws_cost_report" or |or key:"aws_cost_report"')).toEqual({
+      from: 25,
       list: [
         expect.objectContaining({
           text: 'key:',
@@ -961,15 +932,13 @@ describe('createAssetSelectionHint', () => {
           text: '()',
         }),
       ],
-      to: 35,
+      to: 25,
     });
   });
 
   it('suggests and/or logical operators', () => {
-    expect(
-      testAutocomplete('key_substring:"aws_cost_report" o|r and key_substring:"aws_cost_report"'),
-    ).toEqual({
-      from: 32,
+    expect(testAutocomplete('key:"aws_cost_report" o|r and key:"aws_cost_report"')).toEqual({
+      from: 22,
       list: [
         expect.objectContaining({
           text: 'or',
@@ -978,13 +947,11 @@ describe('createAssetSelectionHint', () => {
           text: 'and',
         }),
       ],
-      to: 34,
+      to: 24,
     });
 
-    expect(
-      testAutocomplete('key_substring:"aws_cost_report" a|nd and key_substring:"aws_cost_report"'),
-    ).toEqual({
-      from: 32,
+    expect(testAutocomplete('key:"aws_cost_report" a|nd and key:"aws_cost_report"')).toEqual({
+      from: 22,
       list: [
         expect.objectContaining({
           text: 'and',
@@ -993,7 +960,7 @@ describe('createAssetSelectionHint', () => {
           text: 'or',
         }),
       ],
-      to: 35,
+      to: 25,
     });
   });
 

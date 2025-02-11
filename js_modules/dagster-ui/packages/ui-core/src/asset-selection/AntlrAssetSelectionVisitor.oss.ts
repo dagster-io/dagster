@@ -1,4 +1,5 @@
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import escapeRegExp from 'lodash/escapeRegExp';
 import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 
 import {getFunctionName, getTraversalDepth, getValue} from './util';
@@ -14,7 +15,6 @@ import {
   FunctionCallExpressionContext,
   GroupAttributeExprContext,
   KeyExprContext,
-  KeySubstringExprContext,
   KindAttributeExprContext,
   NotExpressionContext,
   OrExpressionContext,
@@ -148,15 +148,10 @@ export class AntlrAssetSelectionVisitor
   }
 
   visitKeyExpr(ctx: KeyExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = [...this.all_assets].filter((i) => i.name === value);
-    selection.forEach((i) => this.focus_assets.add(i));
-    return new Set(selection);
-  }
+    const value: string = getValue(ctx.keyValue());
+    const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
+    const selection = [...this.all_assets].filter((i) => regex.test(i.name));
 
-  visitKeySubstringExpr(ctx: KeySubstringExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = [...this.all_assets].filter((i) => i.name.includes(value));
     selection.forEach((i) => this.focus_assets.add(i));
     return new Set(selection);
   }

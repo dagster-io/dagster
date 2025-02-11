@@ -127,7 +127,7 @@ INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()=])* '"';
 EQUAL: '=';
 
 // Identifiers (attributes and functions)
-IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
+IDENTIFIER: [a-zA-Z_*][a-zA-Z0-9_*]*;
 
 // Whitespace
 WS: [ \t\r\n]+;

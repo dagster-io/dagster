@@ -18,7 +18,7 @@ import {
   FunctionNameContext,
   GroupAttributeExprContext,
   KeyExprContext,
-  KeySubstringExprContext,
+  KeyValueContext,
   KindAttributeExprContext,
   NotExpressionContext,
   OrExpressionContext,
@@ -114,14 +114,6 @@ export interface AssetSelectionVisitor<Result> extends ParseTreeVisitor<Result> 
    * @return the visitor result
    */
   visitKeyExpr?: (ctx: KeyExprContext) => Result;
-
-  /**
-   * Visit a parse tree produced by the `KeySubstringExpr`
-   * labeled alternative in `AssetSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitKeySubstringExpr?: (ctx: KeySubstringExprContext) => Result;
 
   /**
    * Visit a parse tree produced by the `TagAttributeExpr`
@@ -274,4 +266,11 @@ export interface AssetSelectionVisitor<Result> extends ParseTreeVisitor<Result> 
    * @return the visitor result
    */
   visitValue?: (ctx: ValueContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `AssetSelectionParser.keyValue`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitKeyValue?: (ctx: KeyValueContext) => Result;
 }

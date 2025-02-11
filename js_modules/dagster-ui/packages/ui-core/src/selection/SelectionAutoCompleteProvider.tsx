@@ -300,7 +300,7 @@ export const createProvider = <
     textCallback?: (text: string) => string;
   }) {
     const attribute = primaryAttributeKey as string;
-    const text = `${attribute}_substring:"${query}"`;
+    const text = `key:"*${query}*"`;
     let displayAttribute = attribute.replace(/_/g, ' ');
     displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
     const displayText = `${displayAttribute} contains "${query}"`;
@@ -366,10 +366,7 @@ export const createProvider = <
         );
     },
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
-      let values = attributesMap[attribute as keyof typeof attributesMap];
-      if (attribute === `${primaryAttributeKey as string}_substring`) {
-        values = attributesMap[primaryAttributeKey];
-      }
+      const values = attributesMap[attribute as keyof typeof attributesMap];
       return (
         values
           ?.filter((value) => doesValueIncludeQuery({value, query}))
