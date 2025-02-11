@@ -9,6 +9,7 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._record import record
 from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
 from dagster_sling.resources import AssetExecutionContext
+from pydantic import BaseModel
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component import registered_component_type
@@ -53,10 +54,25 @@ class SlingReplicationParams(ResolvableSchema[SlingReplicationSpec]):
         )
 
 
-class SlingReplicationCollectionParams(ResolvableSchema["SlingReplicationCollection"]):
+class ResolvedSlingReplicationCollectionSchema(BaseModel):
+    sling: SlingResource
+    replications: Sequence[SlingReplicationSpec]
+    transforms: Sequence[Callable[[Definitions], Definitions]]
+
+
+class SlingReplicationCollectionParams(ResolvableSchema[ResolvedSlingReplicationCollectionSchema]):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationParams]
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
+
+    def resolve(self, context: ResolutionContext) -> ResolvedSlingReplicationCollectionSchema:
+        return ResolvedSlingReplicationCollectionSchema(
+            sling=SlingResource(**context.resolve_value(self.sling.model_dump()))
+            if self.sling
+            else SlingResource(),
+            replications=context.resolve_value(self.replications),
+            transforms=context.resolve_value(self.transforms or []),
+        )
 
 
 @registered_component_type
@@ -87,14 +103,13 @@ class SlingReplicationCollection(Component):
 
     @classmethod
     def load(
-        cls, context: ResolutionContext, schema: SlingReplicationCollectionParams
+        cls, context: ComponentLoadContext, schema: SlingReplicationCollectionParams
     ) -> "SlingReplicationCollection":
+        resolved = context.resolution_context.resolve_value(schema)
         return cls(
-            sling=SlingResource(**context.resolve_value(schema.sling.model_dump()))
-            if schema.sling
-            else SlingResource(),
-            replications=context.resolve_value(schema.replications),
-            transforms=context.resolve_value(schema.transforms or []),
+            sling=resolved.sling,
+            replications=resolved.replications,
+            transforms=resolved.transforms,
         )
 
     def build_asset(
