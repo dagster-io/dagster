@@ -9,7 +9,7 @@ def build_prerelease_dg_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
     input_step: BlockStep = {
-        "block": ":question: Choose veresion",
+        "block": ":question: Choose version",
         "prompt": None,
         "fields": [
             {
