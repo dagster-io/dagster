@@ -98,21 +98,24 @@ class ADLS2FileManager(FileManager):
         with self.read(file_handle, mode="rb") as file_obj:
             return file_obj.read()
 
-    def write_data(self, data: bytes, ext: Optional[str] = None):
+    def write_data(self, data: bytes, ext: Optional[str] = None) -> ADLS2FileHandle:
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", ext=ext)
 
-    def write(self, file_obj: io.BytesIO, mode: str = "wb", ext: Optional[str] = None):
+    def write(
+        self, file_obj: io.BytesIO, mode: str = "wb", ext: Optional[str] = None
+    ) -> ADLS2FileHandle:
         check_file_like_obj(file_obj)
         adls2_key = self.get_full_key(str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
         adls2_file = self._client.get_file_client(
             file_system=self._file_system, file_path=adls2_key
         )
         adls2_file.upload_data(file_obj, overwrite=True)
-        return ADLS2FileHandle(self._client.account_name, self._file_system, adls2_key)  # type: ignore
+        account_name = check.not_none(self._client.account_name, "Expected account name to be set")
+        return ADLS2FileHandle(account_name, self._file_system, adls2_key)
 
     def get_full_key(self, file_key: str) -> str:
         return f"{self._prefix}/{file_key}"
 
-    def delete_local_temp(self):
+    def delete_local_temp(self) -> None:
         self._temp_file_manager.close()

@@ -89,6 +89,7 @@ class PickledObjectADLS2IOManager(UPathIOManager):
     def _acquire_lease(self, client: Any, is_rm: bool = False) -> Iterator[str]:
         lease_client = self.lease_client_constructor(client=client)
         try:
+            # Unclear why this needs to be type-ignored
             lease_client.acquire(lease_duration=self.lease_duration)  # type: ignore
             yield lease_client.id
         finally:
