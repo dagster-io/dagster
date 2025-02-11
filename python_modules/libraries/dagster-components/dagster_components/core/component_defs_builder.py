@@ -42,6 +42,7 @@ def build_components_from_component_folder(
 
 
 def build_defs_from_component_path(
+    components_root: Path,
     path: Path,
     registry: ComponentTypeRegistry,
     resources: Mapping[str, object],
@@ -52,6 +53,7 @@ def build_defs_from_component_path(
         raise Exception(f"No component found at path {path}")
 
     context = ComponentLoadContext(
+        components_root=components_root,
         resources=resources,
         registry=registry,
         decl_node=decl_node,
@@ -101,6 +103,7 @@ def build_component_defs(
     all_defs: list[Definitions] = []
     for component_path in components_root.iterdir():
         defs = build_defs_from_component_path(
+            components_root=components_root,
             path=component_path,
             registry=registry,
             resources=resources or {},

@@ -22,6 +22,7 @@ def load_test_component_defs_inject_component(
         registry = load_test_component_project_registry(include_test=True)
 
         return build_defs_from_component_path(
+            components_root=Path(tmpdir).parent.parent,
             path=Path(tmpdir),
             registry=registry,
             resources={},

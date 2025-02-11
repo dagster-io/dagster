@@ -14,6 +14,7 @@ from dagster_components.core.component_key import GlobalComponentKey
 def load_test_component_defs(name: str) -> Definitions:
     registry = load_test_component_project_registry()
     return build_defs_from_component_path(
+        components_root=Path(__file__).parent / "components",
         path=Path(__file__).parent / "components" / name,
         registry=registry,
         resources={},

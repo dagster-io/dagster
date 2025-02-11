@@ -38,8 +38,15 @@ class DefinitionsComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         with pushd(str(context.path)):
-            module = import_uncached_module_from_path(
-                "definitions", self.definitions_path or "definitions.py"
+            path_in_components_root = context.path.absolute().relative_to(
+                context.components_root.parent.parent.absolute()
             )
+            component_module_name = ".".join(path_in_components_root.parts)
+
+            defs_file_path = Path(self.definitions_path).absolute()
+            if defs_file_path.name != "__init__.py":
+                name = f"{component_module_name}.{defs_file_path.stem}"
+
+            module = import_uncached_module_from_path(name, str(self.definitions_path))
 
         return load_definitions_from_module(module)
