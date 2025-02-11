@@ -94,14 +94,14 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @beta_param(param="include_external_assets")
-    def all(include_external_assets: bool = False) -> "AllSelection":
+    @beta_param(param="include_sources")
+    def all(include_sources: bool = False) -> "AllSelection":
         """Returns a selection that includes all assets and their asset checks.
 
         Args:
-            include_external_assets (bool): If True, then include all external assets.
+            include_sources (bool): If True, then include all external assets.
         """
-        return AllSelection(include_external_assets=include_external_assets)
+        return AllSelection(include_sources=include_sources)
 
     @public
     @staticmethod
@@ -177,14 +177,14 @@ class AssetSelection(ABC):
 
     @public
     @staticmethod
-    @beta_param(param="include_external_assets")
+    @beta_param(param="include_sources")
     def key_prefixes(
-        *key_prefixes: CoercibleToAssetKeyPrefix, include_external_assets: bool = False
+        *key_prefixes: CoercibleToAssetKeyPrefix, include_sources: bool = False
     ) -> "KeyPrefixesAssetSelection":
         """Returns a selection that includes assets that match any of the provided key prefixes and all the asset checks that target them.
 
         Args:
-            include_external_assets (bool): If True, then include external assets matching the key prefix(es)
+            include_sources (bool): If True, then include external assets matching the key prefix(es)
                 in the selection.
 
         Examples:
@@ -200,18 +200,18 @@ class AssetSelection(ABC):
         _asset_key_prefixes = [key_prefix_from_coercible(key_prefix) for key_prefix in key_prefixes]
         return KeyPrefixesAssetSelection(
             selected_key_prefixes=_asset_key_prefixes,
-            include_external_assets=include_external_assets,
+            include_sources=include_sources,
         )
 
     @staticmethod
-    @beta_param(param="include_external_assets")
+    @beta_param(param="include_sources")
     def key_substring(
-        key_substring: str, include_external_assets: bool = False
+        key_substring: str, include_sources: bool = False
     ) -> "KeySubstringAssetSelection":
         """Returns a selection that includes assets whose string representation contains the provided substring and all the asset checks that target it.
 
         Args:
-            include_external_assets (bool): If True, then include external assets matching the substring
+            include_sources (bool): If True, then include external assets matching the substring
                 in the selection.
 
         Examples:
@@ -226,62 +226,54 @@ class AssetSelection(ABC):
               AssetSelection.key_substring("b/c")
         """
         return KeySubstringAssetSelection(
-            selected_key_substring=key_substring, include_external_assets=include_external_assets
+            selected_key_substring=key_substring, include_sources=include_sources
         )
 
     @public
     @staticmethod
-    @beta_param(param="include_external_assets")
-    def groups(*group_strs, include_external_assets: bool = False) -> "GroupsAssetSelection":
+    @beta_param(param="include_sources")
+    def groups(*group_strs, include_sources: bool = False) -> "GroupsAssetSelection":
         """Returns a selection that includes materializable assets that belong to any of the
         provided groups and all the asset checks that target them.
 
         Args:
-            include_external_assets (bool): If True, then include external assets matching the group in the
+            include_sources (bool): If True, then include external assets matching the group in the
                 selection.
         """
         check.tuple_param(group_strs, "group_strs", of_type=str)
-        return GroupsAssetSelection(
-            selected_groups=group_strs, include_external_assets=include_external_assets
-        )
+        return GroupsAssetSelection(selected_groups=group_strs, include_sources=include_sources)
 
     @public
     @staticmethod
-    @beta_param(param="include_external_assets")
-    def tag(key: str, value: str, include_external_assets: bool = False) -> "AssetSelection":
+    @beta_param(param="include_sources")
+    def tag(key: str, value: str, include_sources: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
 
         Args:
-            include_external_assets (bool): If True, then include external assets matching the group in the
+            include_sources (bool): If True, then include external assets matching the group in the
                 selection.
         """
-        return TagAssetSelection(
-            key=key, value=value, include_external_assets=include_external_assets
-        )
+        return TagAssetSelection(key=key, value=value, include_sources=include_sources)
 
     @staticmethod
-    @beta_param(param="include_external_assets")
-    def tag_string(string: str, include_external_assets: bool = False) -> "AssetSelection":
+    @beta_param(param="include_sources")
+    def tag_string(string: str, include_sources: bool = False) -> "AssetSelection":
         """Returns a selection that includes materializable assets that have the provided tag, and
         all the asset checks that target them.
 
 
         Args:
-            include_external_assets (bool): If True, then include external assets matching the group in the
+            include_sources (bool): If True, then include external assets matching the group in the
                 selection.
         """
         split_by_equals_segments = string.split("=")
         if len(split_by_equals_segments) == 1:
-            return TagAssetSelection(
-                key=string, value="", include_external_assets=include_external_assets
-            )
+            return TagAssetSelection(key=string, value="", include_sources=include_sources)
         elif len(split_by_equals_segments) == 2:
             key, value = split_by_equals_segments
-            return TagAssetSelection(
-                key=key, value=value, include_external_assets=include_external_assets
-            )
+            return TagAssetSelection(key=key, value=value, include_sources=include_sources)
         else:
             check.failed(f"Invalid tag selection string: {string}. Must have no more than one '='.")
 
@@ -508,14 +500,14 @@ class AssetSelection(ABC):
         return {handle for handle in asset_graph.asset_check_keys if handle.asset_key in asset_keys}
 
     @classmethod
-    @beta_param(param="include_external_assets")
-    def from_string(cls, string: str, include_external_assets=False) -> "AssetSelection":
+    @beta_param(param="include_sources")
+    def from_string(cls, string: str, include_sources=False) -> "AssetSelection":
         from dagster._core.definitions.antlr_asset_selection.antlr_asset_selection import (
             AntlrAssetSelectionParser,
         )
 
         try:
-            return AntlrAssetSelectionParser(string, include_external_assets).asset_selection
+            return AntlrAssetSelectionParser(string, include_sources).asset_selection
         except:
             pass
         if string == "*":
@@ -614,14 +606,14 @@ class AssetSelection(ABC):
 @whitelist_for_serdes
 @record
 class AllSelection(AssetSelection):
-    include_external_assets: Optional[bool] = None
+    include_sources: Optional[bool] = None
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         return (
             asset_graph.get_all_asset_keys()
-            if self.include_external_assets
+            if self.include_sources
             else asset_graph.materializable_asset_keys
         )
 
@@ -927,14 +919,14 @@ class DownstreamAssetSelection(ChainedAssetSelection):
 @record
 class GroupsAssetSelection(AssetSelection):
     selected_groups: Sequence[str]
-    include_external_assets: bool
+    include_sources: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
-            if self.include_external_assets
+            if self.include_sources
             else asset_graph.materializable_asset_keys
         )
         return {
@@ -962,14 +954,14 @@ class GroupsAssetSelection(AssetSelection):
 class TagAssetSelection(AssetSelection):
     key: str
     value: str
-    include_external_assets: bool
+    include_sources: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
-            if self.include_external_assets
+            if self.include_sources
             else asset_graph.materializable_asset_keys
         )
 
@@ -1153,14 +1145,14 @@ class KeysAssetSelection(AssetSelection):
 @record
 class KeyPrefixesAssetSelection(AssetSelection):
     selected_key_prefixes: Sequence[Sequence[str]]
-    include_external_assets: bool
+    include_sources: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
-            if self.include_external_assets
+            if self.include_sources
             else asset_graph.materializable_asset_keys
         )
         return {
@@ -1177,14 +1169,14 @@ class KeyPrefixesAssetSelection(AssetSelection):
 @record
 class KeySubstringAssetSelection(AssetSelection):
     selected_key_substring: str
-    include_external_assets: bool
+    include_sources: bool
 
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
         base_set = (
             asset_graph.get_all_asset_keys()
-            if self.include_external_assets
+            if self.include_sources
             else asset_graph.materializable_asset_keys
         )
         return {key for key in base_set if self.selected_key_substring in key.to_user_string()}
