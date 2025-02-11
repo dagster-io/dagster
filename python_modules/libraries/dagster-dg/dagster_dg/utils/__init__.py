@@ -440,5 +440,5 @@ def get_uv_run_executable_path(executable_name: str) -> Optional[str]:
     uv_run_cmd = ["uv", "run", "which", executable_name]
     try:
         return subprocess.check_output(uv_run_cmd).decode("utf-8").strip()
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, NotADirectoryError):
         return None
