@@ -1,6 +1,12 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import DagsterVersions from './dagsterVersions.json';
+
+const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(
+  0,
+  5,
+);
 
 const config: Config = {
   title: 'Dagster Docs',
@@ -35,10 +41,6 @@ const config: Config = {
           contextualSearch: false,
         },
       }),
-    announcementBar: {
-      id: 'announcementBar',
-      content: `<div><h3>Welcome to Dagster's new and improved documentation site!</h3> You can find the legacy documentation with content for versions 1.9.9 and earlier at <a target="_blank" href="https://legacy-docs.dagster.io/">legacy-docs.dagster.io</a>.</div>`,
-    },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
@@ -102,16 +104,28 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
+        {
+          label: 'Versions',
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownItemsAfter: [
+            ...DagsterVersionsDropdownItems.map(
+              ([versionName, versionUrl]) => ({
+                label: versionName,
+                href: versionUrl,
+              }),
+            ),
+            {
+              href: 'https://legacy-docs.dagster.io',
+              label: '1.9.9 and earlier'
+            }
+          ]
+        },
         //{
         //  label: 'Changelog',
         //  type: 'doc',
         //  docId: 'changelog',
         //  position: 'right',
-        //},
-        //{
-        //  label: 'Versions',
-        //  type: 'docsVersionDropdown',
-        //  position: 'right'
         //},
         {
            label: 'Feedback',
