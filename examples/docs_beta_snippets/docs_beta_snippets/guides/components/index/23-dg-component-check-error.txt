@@ -1,5 +1,6 @@
 dg component check 
 
+Using /Users/ben/repos/dagster/examples/docs_beta_snippets/.tox/docs_snapshot_update/bin/dagster-components
 /.../jaffle-platform/jaffle_platform/components/jdbt/component.yaml:8 -  Unable to parse YAML: while scanning a quoted scalar, found unexpected end of stream
      | 
    7 |     key: "target/main/{{ node.name }}

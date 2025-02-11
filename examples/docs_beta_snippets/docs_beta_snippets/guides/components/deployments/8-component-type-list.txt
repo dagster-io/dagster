@@ -1,5 +1,6 @@
 dg component-type list
 
+Using /private/var/folders/bc/4npnrqyd46l4vbbkdsdsw3_h0000gn/T/tmp_2m89qi8/my-deployment/code_locations/code-location-1/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Component Type                                        ┃ Summary                        ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩

@@ -1,3 +1,4 @@
 dg component check 
 
+Using /Users/ben/repos/dagster/examples/docs_beta_snippets/.tox/docs_snapshot_update/bin/dagster-components
 All components validated successfully.
