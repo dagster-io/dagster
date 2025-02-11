@@ -13,7 +13,7 @@ def serializedATN():
         4,
         1,
         27,
-        116,
+        117,
         2,
         0,
         7,
@@ -46,6 +46,10 @@ def serializedATN():
         7,
         7,
         7,
+        2,
+        8,
+        7,
+        8,
         1,
         0,
         1,
@@ -84,7 +88,7 @@ def serializedATN():
         1,
         3,
         1,
-        35,
+        37,
         8,
         1,
         1,
@@ -101,14 +105,14 @@ def serializedATN():
         1,
         5,
         1,
-        43,
+        45,
         8,
         1,
         10,
         1,
         12,
         1,
-        46,
+        48,
         9,
         1,
         1,
@@ -133,270 +137,267 @@ def serializedATN():
         2,
         3,
         2,
-        58,
-        8,
-        2,
-        1,
-        3,
-        3,
-        3,
-        61,
-        8,
-        3,
-        1,
-        3,
-        1,
-        3,
-        1,
-        4,
-        1,
-        4,
-        3,
-        4,
-        67,
-        8,
-        4,
-        1,
-        5,
-        1,
-        5,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        3,
-        6,
-        82,
-        8,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        3,
-        6,
-        104,
-        8,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        1,
-        6,
-        3,
-        6,
-        112,
-        8,
-        6,
-        1,
-        7,
-        1,
-        7,
-        1,
-        7,
-        0,
-        1,
-        2,
-        8,
-        0,
-        2,
-        4,
-        6,
-        8,
-        10,
-        12,
-        14,
-        0,
-        2,
-        1,
-        0,
-        23,
-        24,
-        1,
-        0,
-        25,
-        26,
-        130,
-        0,
-        16,
-        1,
-        0,
-        0,
-        0,
-        2,
-        34,
-        1,
-        0,
-        0,
-        0,
-        4,
-        57,
-        1,
-        0,
-        0,
-        0,
-        6,
         60,
+        8,
+        2,
+        1,
+        3,
+        3,
+        3,
+        63,
+        8,
+        3,
+        1,
+        3,
+        1,
+        3,
+        1,
+        4,
+        1,
+        4,
+        3,
+        4,
+        69,
+        8,
+        4,
+        1,
+        5,
+        1,
+        5,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        3,
+        6,
+        81,
+        8,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        3,
+        6,
+        103,
+        8,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        1,
+        6,
+        3,
+        6,
+        111,
+        8,
+        6,
+        1,
+        7,
+        1,
+        7,
+        1,
+        8,
+        1,
+        8,
+        1,
+        8,
+        0,
+        1,
+        2,
+        9,
+        0,
+        2,
+        4,
+        6,
+        8,
+        10,
+        12,
+        14,
+        16,
+        0,
+        3,
+        1,
+        0,
+        22,
+        23,
+        1,
+        0,
+        24,
+        25,
+        1,
+        0,
+        24,
+        26,
+        129,
+        0,
+        18,
+        1,
+        0,
+        0,
+        0,
+        2,
+        36,
+        1,
+        0,
+        0,
+        0,
+        4,
+        59,
+        1,
+        0,
+        0,
+        0,
+        6,
+        62,
         1,
         0,
         0,
         0,
         8,
-        64,
+        66,
         1,
         0,
         0,
         0,
         10,
-        68,
+        70,
         1,
         0,
         0,
         0,
         12,
-        111,
+        110,
         1,
         0,
         0,
         0,
         14,
-        113,
+        112,
         1,
         0,
         0,
         0,
         16,
-        17,
+        114,
+        1,
+        0,
+        0,
+        0,
+        18,
+        19,
         3,
         2,
         1,
-        0,
-        17,
-        18,
-        5,
-        0,
-        0,
-        1,
-        18,
-        1,
-        1,
-        0,
-        0,
         0,
         19,
         20,
+        5,
+        0,
+        0,
+        1,
+        20,
+        1,
+        1,
+        0,
+        0,
+        0,
+        21,
+        22,
         6,
         1,
         -1,
         0,
-        20,
-        35,
+        22,
+        37,
         3,
         4,
         2,
         0,
-        21,
-        22,
+        23,
+        24,
         3,
         6,
         3,
         0,
-        22,
-        23,
+        24,
+        25,
         3,
         4,
         2,
-        0,
-        23,
-        24,
-        3,
-        8,
-        4,
-        0,
-        24,
-        35,
-        1,
-        0,
-        0,
         0,
         25,
         26,
         3,
-        6,
-        3,
+        8,
+        4,
         0,
         26,
-        27,
-        3,
-        4,
-        2,
-        0,
-        27,
-        35,
+        37,
         1,
         0,
         0,
+        0,
+        27,
+        28,
+        3,
+        6,
+        3,
         0,
         28,
         29,
@@ -405,669 +406,669 @@ def serializedATN():
         2,
         0,
         29,
+        37,
+        1,
+        0,
+        0,
+        0,
         30,
+        31,
+        3,
+        4,
+        2,
+        0,
+        31,
+        32,
         3,
         8,
         4,
         0,
-        30,
-        35,
+        32,
+        37,
         1,
         0,
         0,
         0,
-        31,
-        32,
+        33,
+        34,
         5,
         4,
         0,
         0,
-        32,
-        35,
+        34,
+        37,
         3,
         2,
         1,
         4,
-        33,
         35,
+        37,
         5,
         5,
         0,
         0,
-        34,
-        19,
-        1,
-        0,
-        0,
-        0,
-        34,
+        36,
         21,
         1,
         0,
         0,
         0,
-        34,
-        25,
+        36,
+        23,
         1,
         0,
         0,
         0,
-        34,
-        28,
+        36,
+        27,
         1,
         0,
         0,
         0,
-        34,
-        31,
+        36,
+        30,
         1,
         0,
         0,
         0,
-        34,
+        36,
         33,
         1,
         0,
         0,
         0,
+        36,
         35,
-        44,
         1,
         0,
         0,
         0,
-        36,
         37,
+        46,
+        1,
+        0,
+        0,
+        0,
+        38,
+        39,
         10,
         3,
         0,
         0,
-        37,
-        38,
+        39,
+        40,
         5,
         2,
         0,
         0,
-        38,
-        43,
+        40,
+        45,
         3,
         2,
         1,
         4,
-        39,
-        40,
+        41,
+        42,
         10,
         2,
         0,
         0,
-        40,
-        41,
+        42,
+        43,
         5,
         3,
         0,
         0,
-        41,
         43,
+        45,
         3,
         2,
         1,
         3,
-        42,
-        36,
-        1,
-        0,
-        0,
-        0,
-        42,
-        39,
-        1,
-        0,
-        0,
-        0,
-        43,
-        46,
+        44,
+        38,
         1,
         0,
         0,
         0,
         44,
-        42,
-        1,
-        0,
-        0,
-        0,
-        44,
-        45,
+        41,
         1,
         0,
         0,
         0,
         45,
-        3,
+        48,
         1,
         0,
         0,
         0,
         46,
         44,
+        1,
+        0,
+        0,
+        0,
+        46,
+        47,
         1,
         0,
         0,
         0,
         47,
-        58,
+        3,
+        1,
+        0,
+        0,
+        0,
+        48,
+        46,
+        1,
+        0,
+        0,
+        0,
+        49,
+        60,
         3,
         12,
         6,
         0,
-        48,
-        49,
-        3,
-        10,
-        5,
-        0,
-        49,
-        50,
-        5,
-        9,
-        0,
-        0,
         50,
         51,
         3,
-        2,
-        1,
+        10,
+        5,
         0,
         51,
         52,
         5,
-        10,
-        0,
-        0,
-        52,
-        58,
-        1,
-        0,
-        0,
-        0,
-        53,
-        54,
-        5,
         9,
         0,
         0,
-        54,
-        55,
+        52,
+        53,
         3,
         2,
         1,
         0,
-        55,
-        56,
+        53,
+        54,
         5,
         10,
         0,
         0,
+        54,
+        60,
+        1,
+        0,
+        0,
+        0,
+        55,
         56,
-        58,
+        5,
+        9,
+        0,
+        0,
+        56,
+        57,
+        3,
+        2,
         1,
-        0,
-        0,
         0,
         57,
-        47,
-        1,
-        0,
-        0,
-        0,
-        57,
-        48,
-        1,
-        0,
-        0,
-        0,
-        57,
-        53,
-        1,
-        0,
-        0,
-        0,
         58,
         5,
+        10,
+        0,
+        0,
+        58,
+        60,
         1,
         0,
         0,
         0,
         59,
+        49,
+        1,
+        0,
+        0,
+        0,
+        59,
+        50,
+        1,
+        0,
+        0,
+        0,
+        59,
+        55,
+        1,
+        0,
+        0,
+        0,
+        60,
+        5,
+        1,
+        0,
+        0,
+        0,
         61,
+        63,
         5,
         7,
         0,
         0,
-        60,
-        59,
-        1,
-        0,
-        0,
-        0,
-        60,
-        61,
-        1,
-        0,
-        0,
-        0,
-        61,
         62,
+        61,
         1,
         0,
         0,
         0,
         62,
         63,
-        5,
-        6,
+        1,
+        0,
         0,
         0,
         63,
-        7,
+        64,
         1,
         0,
         0,
         0,
         64,
-        66,
+        65,
         5,
         6,
         0,
         0,
         65,
+        7,
+        1,
+        0,
+        0,
+        0,
+        66,
+        68,
+        5,
+        6,
+        0,
+        0,
         67,
+        69,
         5,
         7,
         0,
         0,
-        66,
-        65,
-        1,
-        0,
-        0,
-        0,
-        66,
+        68,
         67,
-        1,
-        0,
-        0,
-        0,
-        67,
-        9,
         1,
         0,
         0,
         0,
         68,
         69,
-        7,
+        1,
         0,
         0,
         0,
         69,
+        9,
+        1,
+        0,
+        0,
+        0,
+        70,
+        71,
+        7,
+        0,
+        0,
+        0,
+        71,
         11,
         1,
         0,
         0,
         0,
-        70,
-        71,
+        72,
+        73,
         5,
         12,
         0,
         0,
-        71,
-        72,
+        73,
+        74,
         5,
         8,
         0,
         0,
-        72,
-        112,
+        74,
+        111,
+        3,
+        16,
+        8,
+        0,
+        75,
+        76,
+        5,
+        15,
+        0,
+        0,
+        76,
+        77,
+        5,
+        8,
+        0,
+        0,
+        77,
+        80,
         3,
         14,
         7,
         0,
-        73,
-        74,
+        78,
+        79,
+        5,
+        1,
+        0,
+        0,
+        79,
+        81,
+        3,
+        14,
+        7,
+        0,
+        80,
+        78,
+        1,
+        0,
+        0,
+        0,
+        80,
+        81,
+        1,
+        0,
+        0,
+        0,
+        81,
+        111,
+        1,
+        0,
+        0,
+        0,
+        82,
+        83,
         5,
         13,
         0,
         0,
-        74,
-        75,
+        83,
+        84,
         5,
         8,
         0,
         0,
-        75,
-        112,
+        84,
+        111,
         3,
         14,
         7,
         0,
-        76,
-        77,
+        85,
+        86,
+        5,
+        14,
+        0,
+        0,
+        86,
+        87,
+        5,
+        8,
+        0,
+        0,
+        87,
+        111,
+        3,
+        14,
+        7,
+        0,
+        88,
+        89,
         5,
         16,
         0,
         0,
-        77,
-        78,
-        5,
-        8,
-        0,
-        0,
-        78,
-        81,
-        3,
-        14,
-        7,
-        0,
-        79,
-        80,
-        5,
-        1,
-        0,
-        0,
-        80,
-        82,
-        3,
-        14,
-        7,
-        0,
-        81,
-        79,
-        1,
-        0,
-        0,
-        0,
-        81,
-        82,
-        1,
-        0,
-        0,
-        0,
-        82,
-        112,
-        1,
-        0,
-        0,
-        0,
-        83,
-        84,
-        5,
-        14,
-        0,
-        0,
-        84,
-        85,
-        5,
-        8,
-        0,
-        0,
-        85,
-        112,
-        3,
-        14,
-        7,
-        0,
-        86,
-        87,
-        5,
-        15,
-        0,
-        0,
-        87,
-        88,
-        5,
-        8,
-        0,
-        0,
-        88,
-        112,
-        3,
-        14,
-        7,
-        0,
         89,
         90,
         5,
-        17,
+        8,
         0,
         0,
         90,
-        91,
-        5,
-        8,
-        0,
-        0,
-        91,
-        112,
+        111,
         3,
         14,
         7,
         0,
+        91,
         92,
-        93,
-        5,
-        19,
-        0,
-        0,
-        93,
-        94,
-        5,
-        8,
-        0,
-        0,
-        94,
-        112,
-        3,
-        14,
-        7,
-        0,
-        95,
-        96,
-        5,
-        20,
-        0,
-        0,
-        96,
-        97,
-        5,
-        8,
-        0,
-        0,
-        97,
-        112,
-        3,
-        14,
-        7,
-        0,
-        98,
-        99,
-        5,
-        21,
-        0,
-        0,
-        99,
-        100,
-        5,
-        8,
-        0,
-        0,
-        100,
-        103,
-        3,
-        14,
-        7,
-        0,
-        101,
-        102,
-        5,
-        1,
-        0,
-        0,
-        102,
-        104,
-        3,
-        14,
-        7,
-        0,
-        103,
-        101,
-        1,
-        0,
-        0,
-        0,
-        103,
-        104,
-        1,
-        0,
-        0,
-        0,
-        104,
-        112,
-        1,
-        0,
-        0,
-        0,
-        105,
-        106,
         5,
         18,
         0,
         0,
-        106,
-        107,
-        5,
-        8,
-        0,
-        0,
-        107,
-        112,
-        3,
-        14,
-        7,
-        0,
-        108,
-        109,
-        5,
-        22,
-        0,
-        0,
-        109,
-        110,
-        5,
-        8,
-        0,
-        0,
-        110,
-        112,
-        3,
-        14,
-        7,
-        0,
-        111,
-        70,
-        1,
-        0,
-        0,
-        0,
-        111,
-        73,
-        1,
-        0,
-        0,
-        0,
-        111,
-        76,
-        1,
-        0,
-        0,
-        0,
-        111,
-        83,
-        1,
-        0,
-        0,
-        0,
-        111,
-        86,
-        1,
-        0,
-        0,
-        0,
-        111,
-        89,
-        1,
-        0,
-        0,
-        0,
-        111,
         92,
-        1,
+        93,
+        5,
+        8,
         0,
         0,
-        0,
+        93,
         111,
+        3,
+        14,
+        7,
+        0,
+        94,
         95,
-        1,
+        5,
+        19,
         0,
         0,
+        95,
+        96,
+        5,
+        8,
         0,
+        0,
+        96,
         111,
+        3,
+        14,
+        7,
+        0,
+        97,
         98,
+        5,
+        20,
+        0,
+        0,
+        98,
+        99,
+        5,
+        8,
+        0,
+        0,
+        99,
+        102,
+        3,
+        14,
+        7,
+        0,
+        100,
+        101,
+        5,
+        1,
+        0,
+        0,
+        101,
+        103,
+        3,
+        14,
+        7,
+        0,
+        102,
+        100,
         1,
         0,
         0,
         0,
+        102,
+        103,
+        1,
+        0,
+        0,
+        0,
+        103,
         111,
+        1,
+        0,
+        0,
+        0,
+        104,
         105,
+        5,
+        17,
+        0,
+        0,
+        105,
+        106,
+        5,
+        8,
+        0,
+        0,
+        106,
+        111,
+        3,
+        14,
+        7,
+        0,
+        107,
+        108,
+        5,
+        21,
+        0,
+        0,
+        108,
+        109,
+        5,
+        8,
+        0,
+        0,
+        109,
+        111,
+        3,
+        14,
+        7,
+        0,
+        110,
+        72,
+        1,
+        0,
+        0,
+        0,
+        110,
+        75,
+        1,
+        0,
+        0,
+        0,
+        110,
+        82,
+        1,
+        0,
+        0,
+        0,
+        110,
+        85,
+        1,
+        0,
+        0,
+        0,
+        110,
+        88,
+        1,
+        0,
+        0,
+        0,
+        110,
+        91,
+        1,
+        0,
+        0,
+        0,
+        110,
+        94,
+        1,
+        0,
+        0,
+        0,
+        110,
+        97,
+        1,
+        0,
+        0,
+        0,
+        110,
+        104,
+        1,
+        0,
+        0,
+        0,
+        110,
+        107,
         1,
         0,
         0,
         0,
         111,
-        108,
-        1,
-        0,
-        0,
-        0,
-        112,
         13,
         1,
         0,
         0,
         0,
+        112,
         113,
-        114,
         7,
         1,
         0,
         0,
-        114,
+        113,
         15,
+        1,
+        0,
+        0,
+        0,
+        114,
+        115,
+        7,
+        2,
+        0,
+        0,
+        115,
+        17,
         1,
         0,
         0,
         0,
         9,
-        34,
-        42,
+        36,
         44,
-        57,
-        60,
-        66,
-        81,
-        103,
-        111,
+        46,
+        59,
+        62,
+        68,
+        80,
+        102,
+        110,
     ]
 
 
@@ -1094,7 +1095,6 @@ class AssetSelectionParser(Parser):
         "')'",
         "','",
         "'key'",
-        "'key_substring'",
         "'owner'",
         "'group'",
         "'tag'",
@@ -1122,7 +1122,6 @@ class AssetSelectionParser(Parser):
         "RPAREN",
         "COMMA",
         "KEY",
-        "KEY_SUBSTRING",
         "OWNER",
         "GROUP",
         "TAG",
@@ -1136,6 +1135,7 @@ class AssetSelectionParser(Parser):
         "ROOTS",
         "QUOTED_STRING",
         "UNQUOTED_STRING",
+        "UNQUOTED_REGEX_STRING",
         "WS",
     ]
 
@@ -1147,6 +1147,7 @@ class AssetSelectionParser(Parser):
     RULE_functionName = 5
     RULE_attributeExpr = 6
     RULE_value = 7
+    RULE_keyValue = 8
 
     ruleNames = [
         "start",
@@ -1157,6 +1158,7 @@ class AssetSelectionParser(Parser):
         "functionName",
         "attributeExpr",
         "value",
+        "keyValue",
     ]
 
     EOF = Token.EOF
@@ -1172,20 +1174,20 @@ class AssetSelectionParser(Parser):
     RPAREN = 10
     COMMA = 11
     KEY = 12
-    KEY_SUBSTRING = 13
-    OWNER = 14
-    GROUP = 15
-    TAG = 16
-    KIND = 17
-    CODE_LOCATION = 18
-    COLUMN = 19
-    TABLE_NAME = 20
-    COLUMN_TAG = 21
-    CHANGED_IN_BRANCH = 22
-    SINKS = 23
-    ROOTS = 24
-    QUOTED_STRING = 25
-    UNQUOTED_STRING = 26
+    OWNER = 13
+    GROUP = 14
+    TAG = 15
+    KIND = 16
+    CODE_LOCATION = 17
+    COLUMN = 18
+    TABLE_NAME = 19
+    COLUMN_TAG = 20
+    CHANGED_IN_BRANCH = 21
+    SINKS = 22
+    ROOTS = 23
+    QUOTED_STRING = 24
+    UNQUOTED_STRING = 25
+    UNQUOTED_REGEX_STRING = 26
     WS = 27
 
     def __init__(self, input: TokenStream, output: TextIO = sys.stdout):
@@ -1231,9 +1233,9 @@ class AssetSelectionParser(Parser):
         self.enterRule(localctx, 0, self.RULE_start)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 16
+            self.state = 18
             self.expr(0)
-            self.state = 17
+            self.state = 19
             self.match(AssetSelectionParser.EOF)
         except RecognitionException as re:
             localctx.exception = re
@@ -1484,7 +1486,7 @@ class AssetSelectionParser(Parser):
         self.enterRecursionRule(localctx, 2, self.RULE_expr, _p)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 34
+            self.state = 36
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input, 0, self._ctx)
             if la_ == 1:
@@ -1492,7 +1494,7 @@ class AssetSelectionParser(Parser):
                 self._ctx = localctx
                 _prevctx = localctx
 
-                self.state = 20
+                self.state = 22
                 self.traversalAllowedExpr()
                 pass
 
@@ -1500,11 +1502,11 @@ class AssetSelectionParser(Parser):
                 localctx = AssetSelectionParser.UpAndDownTraversalExpressionContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 21
-                self.upTraversal()
-                self.state = 22
-                self.traversalAllowedExpr()
                 self.state = 23
+                self.upTraversal()
+                self.state = 24
+                self.traversalAllowedExpr()
+                self.state = 25
                 self.downTraversal()
                 pass
 
@@ -1512,9 +1514,9 @@ class AssetSelectionParser(Parser):
                 localctx = AssetSelectionParser.UpTraversalExpressionContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 25
+                self.state = 27
                 self.upTraversal()
-                self.state = 26
+                self.state = 28
                 self.traversalAllowedExpr()
                 pass
 
@@ -1522,9 +1524,9 @@ class AssetSelectionParser(Parser):
                 localctx = AssetSelectionParser.DownTraversalExpressionContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 28
+                self.state = 30
                 self.traversalAllowedExpr()
-                self.state = 29
+                self.state = 31
                 self.downTraversal()
                 pass
 
@@ -1532,9 +1534,9 @@ class AssetSelectionParser(Parser):
                 localctx = AssetSelectionParser.NotExpressionContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 31
+                self.state = 33
                 self.match(AssetSelectionParser.NOT)
-                self.state = 32
+                self.state = 34
                 self.expr(4)
                 pass
 
@@ -1542,12 +1544,12 @@ class AssetSelectionParser(Parser):
                 localctx = AssetSelectionParser.AllExpressionContext(self, localctx)
                 self._ctx = localctx
                 _prevctx = localctx
-                self.state = 33
+                self.state = 35
                 self.match(AssetSelectionParser.STAR)
                 pass
 
             self._ctx.stop = self._input.LT(-1)
-            self.state = 44
+            self.state = 46
             self._errHandler.sync(self)
             _alt = self._interp.adaptivePredict(self._input, 2, self._ctx)
             while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
@@ -1555,7 +1557,7 @@ class AssetSelectionParser(Parser):
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
-                    self.state = 42
+                    self.state = 44
                     self._errHandler.sync(self)
                     la_ = self._interp.adaptivePredict(self._input, 1, self._ctx)
                     if la_ == 1:
@@ -1563,14 +1565,14 @@ class AssetSelectionParser(Parser):
                             self, AssetSelectionParser.ExprContext(self, _parentctx, _parentState)
                         )
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
-                        self.state = 36
+                        self.state = 38
                         if not self.precpred(self._ctx, 3):
                             from antlr4.error.Errors import FailedPredicateException
 
                             raise FailedPredicateException(self, "self.precpred(self._ctx, 3)")
-                        self.state = 37
+                        self.state = 39
                         self.match(AssetSelectionParser.AND)
-                        self.state = 38
+                        self.state = 40
                         self.expr(4)
                         pass
 
@@ -1579,18 +1581,18 @@ class AssetSelectionParser(Parser):
                             self, AssetSelectionParser.ExprContext(self, _parentctx, _parentState)
                         )
                         self.pushNewRecursionContext(localctx, _startState, self.RULE_expr)
-                        self.state = 39
+                        self.state = 41
                         if not self.precpred(self._ctx, 2):
                             from antlr4.error.Errors import FailedPredicateException
 
                             raise FailedPredicateException(self, "self.precpred(self._ctx, 2)")
-                        self.state = 40
+                        self.state = 42
                         self.match(AssetSelectionParser.OR)
-                        self.state = 41
+                        self.state = 43
                         self.expr(3)
                         pass
 
-                self.state = 46
+                self.state = 48
                 self._errHandler.sync(self)
                 _alt = self._interp.adaptivePredict(self._input, 2, self._ctx)
 
@@ -1706,35 +1708,35 @@ class AssetSelectionParser(Parser):
         localctx = AssetSelectionParser.TraversalAllowedExprContext(self, self._ctx, self.state)
         self.enterRule(localctx, 4, self.RULE_traversalAllowedExpr)
         try:
-            self.state = 57
+            self.state = 59
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]:
+            if token in [12, 13, 14, 15, 16, 17, 18, 19, 20, 21]:
                 localctx = AssetSelectionParser.AttributeExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
-                self.state = 47
+                self.state = 49
                 self.attributeExpr()
                 pass
-            elif token in [23, 24]:
+            elif token in [22, 23]:
                 localctx = AssetSelectionParser.FunctionCallExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 2)
-                self.state = 48
-                self.functionName()
-                self.state = 49
-                self.match(AssetSelectionParser.LPAREN)
                 self.state = 50
-                self.expr(0)
+                self.functionName()
                 self.state = 51
+                self.match(AssetSelectionParser.LPAREN)
+                self.state = 52
+                self.expr(0)
+                self.state = 53
                 self.match(AssetSelectionParser.RPAREN)
                 pass
             elif token in [9]:
                 localctx = AssetSelectionParser.ParenthesizedExpressionContext(self, localctx)
                 self.enterOuterAlt(localctx, 3)
-                self.state = 53
-                self.match(AssetSelectionParser.LPAREN)
-                self.state = 54
-                self.expr(0)
                 self.state = 55
+                self.match(AssetSelectionParser.LPAREN)
+                self.state = 56
+                self.expr(0)
+                self.state = 57
                 self.match(AssetSelectionParser.RPAREN)
                 pass
             else:
@@ -1784,14 +1786,14 @@ class AssetSelectionParser(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 60
+            self.state = 62
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if _la == 7:
-                self.state = 59
+                self.state = 61
                 self.match(AssetSelectionParser.DIGITS)
 
-            self.state = 62
+            self.state = 64
             self.match(AssetSelectionParser.PLUS)
         except RecognitionException as re:
             localctx.exception = re
@@ -1836,13 +1838,13 @@ class AssetSelectionParser(Parser):
         self.enterRule(localctx, 8, self.RULE_downTraversal)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 64
-            self.match(AssetSelectionParser.PLUS)
             self.state = 66
+            self.match(AssetSelectionParser.PLUS)
+            self.state = 68
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input, 5, self._ctx)
             if la_ == 1:
-                self.state = 65
+                self.state = 67
                 self.match(AssetSelectionParser.DIGITS)
 
         except RecognitionException as re:
@@ -1889,9 +1891,9 @@ class AssetSelectionParser(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 68
+            self.state = 70
             _la = self._input.LA(1)
-            if not (_la == 23 or _la == 24):
+            if not (_la == 22 or _la == 23):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -1996,8 +1998,8 @@ class AssetSelectionParser(Parser):
         def COLON(self):
             return self.getToken(AssetSelectionParser.COLON, 0)
 
-        def value(self):
-            return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
+        def keyValue(self):
+            return self.getTypedRuleContext(AssetSelectionParser.KeyValueContext, 0)
 
         def enterRule(self, listener: ParseTreeListener):
             if hasattr(listener, "enterKeyExpr"):
@@ -2100,36 +2102,6 @@ class AssetSelectionParser(Parser):
         def accept(self, visitor: ParseTreeVisitor):
             if hasattr(visitor, "visitCodeLocationAttributeExpr"):
                 return visitor.visitCodeLocationAttributeExpr(self)
-            else:
-                return visitor.visitChildren(self)
-
-    class KeySubstringExprContext(AttributeExprContext):
-        def __init__(
-            self, parser, ctx: ParserRuleContext
-        ):  # actually a AssetSelectionParser.AttributeExprContext
-            super().__init__(parser)
-            self.copyFrom(ctx)
-
-        def KEY_SUBSTRING(self):
-            return self.getToken(AssetSelectionParser.KEY_SUBSTRING, 0)
-
-        def COLON(self):
-            return self.getToken(AssetSelectionParser.COLON, 0)
-
-        def value(self):
-            return self.getTypedRuleContext(AssetSelectionParser.ValueContext, 0)
-
-        def enterRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "enterKeySubstringExpr"):
-                listener.enterKeySubstringExpr(self)
-
-        def exitRule(self, listener: ParseTreeListener):
-            if hasattr(listener, "exitKeySubstringExpr"):
-                listener.exitKeySubstringExpr(self)
-
-        def accept(self, visitor: ParseTreeVisitor):
-            if hasattr(visitor, "visitKeySubstringExpr"):
-                return visitor.visitKeySubstringExpr(self)
             else:
                 return visitor.visitChildren(self)
 
@@ -2263,135 +2235,125 @@ class AssetSelectionParser(Parser):
         localctx = AssetSelectionParser.AttributeExprContext(self, self._ctx, self.state)
         self.enterRule(localctx, 12, self.RULE_attributeExpr)
         try:
-            self.state = 111
+            self.state = 110
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [12]:
                 localctx = AssetSelectionParser.KeyExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
-                self.state = 70
-                self.match(AssetSelectionParser.KEY)
-                self.state = 71
-                self.match(AssetSelectionParser.COLON)
                 self.state = 72
-                self.value()
-                pass
-            elif token in [13]:
-                localctx = AssetSelectionParser.KeySubstringExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 2)
+                self.match(AssetSelectionParser.KEY)
                 self.state = 73
-                self.match(AssetSelectionParser.KEY_SUBSTRING)
+                self.match(AssetSelectionParser.COLON)
                 self.state = 74
-                self.match(AssetSelectionParser.COLON)
-                self.state = 75
-                self.value()
+                self.keyValue()
                 pass
-            elif token in [16]:
+            elif token in [15]:
                 localctx = AssetSelectionParser.TagAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 3)
-                self.state = 76
+                self.enterOuterAlt(localctx, 2)
+                self.state = 75
                 self.match(AssetSelectionParser.TAG)
-                self.state = 77
+                self.state = 76
                 self.match(AssetSelectionParser.COLON)
-                self.state = 78
+                self.state = 77
                 self.value()
-                self.state = 81
+                self.state = 80
                 self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input, 6, self._ctx)
                 if la_ == 1:
-                    self.state = 79
+                    self.state = 78
                     self.match(AssetSelectionParser.EQUAL)
-                    self.state = 80
+                    self.state = 79
                     self.value()
 
                 pass
-            elif token in [14]:
+            elif token in [13]:
                 localctx = AssetSelectionParser.OwnerAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 4)
-                self.state = 83
+                self.enterOuterAlt(localctx, 3)
+                self.state = 82
                 self.match(AssetSelectionParser.OWNER)
+                self.state = 83
+                self.match(AssetSelectionParser.COLON)
                 self.state = 84
-                self.match(AssetSelectionParser.COLON)
-                self.state = 85
                 self.value()
                 pass
-            elif token in [15]:
+            elif token in [14]:
                 localctx = AssetSelectionParser.GroupAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 5)
-                self.state = 86
+                self.enterOuterAlt(localctx, 4)
+                self.state = 85
                 self.match(AssetSelectionParser.GROUP)
-                self.state = 87
+                self.state = 86
                 self.match(AssetSelectionParser.COLON)
-                self.state = 88
+                self.state = 87
                 self.value()
                 pass
-            elif token in [17]:
+            elif token in [16]:
                 localctx = AssetSelectionParser.KindAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 6)
-                self.state = 89
+                self.enterOuterAlt(localctx, 5)
+                self.state = 88
                 self.match(AssetSelectionParser.KIND)
-                self.state = 90
+                self.state = 89
                 self.match(AssetSelectionParser.COLON)
+                self.state = 90
+                self.value()
+                pass
+            elif token in [18]:
+                localctx = AssetSelectionParser.ColumnAttributeExprContext(self, localctx)
+                self.enterOuterAlt(localctx, 6)
                 self.state = 91
+                self.match(AssetSelectionParser.COLUMN)
+                self.state = 92
+                self.match(AssetSelectionParser.COLON)
+                self.state = 93
                 self.value()
                 pass
             elif token in [19]:
-                localctx = AssetSelectionParser.ColumnAttributeExprContext(self, localctx)
+                localctx = AssetSelectionParser.TableNameAttributeExprContext(self, localctx)
                 self.enterOuterAlt(localctx, 7)
-                self.state = 92
-                self.match(AssetSelectionParser.COLUMN)
-                self.state = 93
-                self.match(AssetSelectionParser.COLON)
                 self.state = 94
+                self.match(AssetSelectionParser.TABLE_NAME)
+                self.state = 95
+                self.match(AssetSelectionParser.COLON)
+                self.state = 96
                 self.value()
                 pass
             elif token in [20]:
-                localctx = AssetSelectionParser.TableNameAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 8)
-                self.state = 95
-                self.match(AssetSelectionParser.TABLE_NAME)
-                self.state = 96
-                self.match(AssetSelectionParser.COLON)
-                self.state = 97
-                self.value()
-                pass
-            elif token in [21]:
                 localctx = AssetSelectionParser.ColumnTagAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 9)
-                self.state = 98
+                self.enterOuterAlt(localctx, 8)
+                self.state = 97
                 self.match(AssetSelectionParser.COLUMN_TAG)
-                self.state = 99
+                self.state = 98
                 self.match(AssetSelectionParser.COLON)
-                self.state = 100
+                self.state = 99
                 self.value()
-                self.state = 103
+                self.state = 102
                 self._errHandler.sync(self)
                 la_ = self._interp.adaptivePredict(self._input, 7, self._ctx)
                 if la_ == 1:
-                    self.state = 101
+                    self.state = 100
                     self.match(AssetSelectionParser.EQUAL)
-                    self.state = 102
+                    self.state = 101
                     self.value()
 
                 pass
-            elif token in [18]:
+            elif token in [17]:
                 localctx = AssetSelectionParser.CodeLocationAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 10)
-                self.state = 105
+                self.enterOuterAlt(localctx, 9)
+                self.state = 104
                 self.match(AssetSelectionParser.CODE_LOCATION)
-                self.state = 106
+                self.state = 105
                 self.match(AssetSelectionParser.COLON)
-                self.state = 107
+                self.state = 106
                 self.value()
                 pass
-            elif token in [22]:
+            elif token in [21]:
                 localctx = AssetSelectionParser.ChangedInBranchAttributeExprContext(self, localctx)
-                self.enterOuterAlt(localctx, 11)
-                self.state = 108
+                self.enterOuterAlt(localctx, 10)
+                self.state = 107
                 self.match(AssetSelectionParser.CHANGED_IN_BRANCH)
-                self.state = 109
+                self.state = 108
                 self.match(AssetSelectionParser.COLON)
-                self.state = 110
+                self.state = 109
                 self.value()
                 pass
             else:
@@ -2441,9 +2403,63 @@ class AssetSelectionParser(Parser):
         self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 113
+            self.state = 112
             _la = self._input.LA(1)
-            if not (_la == 25 or _la == 26):
+            if not (_la == 24 or _la == 25):
+                self._errHandler.recoverInline(self)
+            else:
+                self._errHandler.reportMatch(self)
+                self.consume()
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+    class KeyValueContext(ParserRuleContext):
+        __slots__ = "parser"
+
+        def __init__(self, parser, parent: ParserRuleContext = None, invokingState: int = -1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def QUOTED_STRING(self):
+            return self.getToken(AssetSelectionParser.QUOTED_STRING, 0)
+
+        def UNQUOTED_STRING(self):
+            return self.getToken(AssetSelectionParser.UNQUOTED_STRING, 0)
+
+        def UNQUOTED_REGEX_STRING(self):
+            return self.getToken(AssetSelectionParser.UNQUOTED_REGEX_STRING, 0)
+
+        def getRuleIndex(self):
+            return AssetSelectionParser.RULE_keyValue
+
+        def enterRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "enterKeyValue"):
+                listener.enterKeyValue(self)
+
+        def exitRule(self, listener: ParseTreeListener):
+            if hasattr(listener, "exitKeyValue"):
+                listener.exitKeyValue(self)
+
+        def accept(self, visitor: ParseTreeVisitor):
+            if hasattr(visitor, "visitKeyValue"):
+                return visitor.visitKeyValue(self)
+            else:
+                return visitor.visitChildren(self)
+
+    def keyValue(self):
+        localctx = AssetSelectionParser.KeyValueContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 16, self.RULE_keyValue)
+        self._la = 0  # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 114
+            _la = self._input.LA(1)
+            if not (((_la) & ~0x3F) == 0 and ((1 << _la) & 117440512) != 0):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
