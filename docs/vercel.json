@@ -615,6 +615,11 @@
       "permanent": false
     },
     {
+      "source": "/tutorials/:path*",
+      "destination": "/examples/:path*",
+      "permanent": false
+    },
+    {
       "source": "/concepts",
       "destination": "/getting-started/concepts",
       "permanent": false

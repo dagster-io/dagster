@@ -22,11 +22,11 @@ To get around this, we can employ prompt engineering. Prompt engineering is the 
 
 We can write a prompt that tells the models our desired outcome and provide an example. In our case, a prompt might look like this:
 
-<CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="10" lineEnd="33"/>
+<CodeExample path="docs_projects/project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="10" lineEnd="33"/>
 
 Now we can use this prompt with Claude. Within our Dagster asset (`user_input_prompt`) we can use the `AnthropicResource` to easily interact with the Anthropic client. We will also want to include a [run configuration](/guides/operate/configuration/run-configuration) for the asset so we can reuse this same pipeline with slightly different inputs. Finally, since we can ensure the response format from Claude with our prompt engineering, we can define a more specific output for the asset. Using [Pydantic](https://docs.pydantic.dev/latest/), we can define the exact schema we expect.
 
-<CodeExample path="project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="67" lineEnd="99"/>
+<CodeExample path="docs_projects/project_prompt_eng/project_prompt_eng/assets.py" language="python" lineStart="67" lineEnd="99"/>
 
 Looking at the final asset, you can see the pieces working in unison. We combine the input from the run configuration into our prompt, which returns a result we can assume is JSON. Then we can unpack that JSON into our `UserInputSchema` schema to get further validation that our result matches what we expected.
 
@@ -38,4 +38,4 @@ latitude=41.8796 longitude=-87.6237 fuel_type='ELEC'
 
 ## Next steps
 
-- Continue this tutorial with [custom resource](custom-resource)
+- Continue this example with [custom resource](custom-resource)

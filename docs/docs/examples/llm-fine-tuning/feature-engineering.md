@@ -68,14 +68,14 @@ CATEGORIES = [
 
 Using these categories, we can construct a table of the most common genres and select the single best genre for each book (assuming it was shelved that way at least three times). We can then wrap that query in an asset and materialize it as a table alongside our other DuckDB tables:
 
-<CodeExample path="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="64" lineEnd="105"/>
+<CodeExample path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="64" lineEnd="105"/>
 
 ## Enrichment table
 
 With our `book_category` asset created, we can combine that with the `author` and `graphic_novel` assets to create our final data set we will use for modeling. Here we will both create the table within DuckDB and select its contents into a DataFrame, which we can pass to our next series of assets:
 
-<CodeExample path="project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="107" lineEnd="134"/>
+<CodeExample path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" lineStart="107" lineEnd="134"/>
 
 ## Next steps
 
-- Continue this tutorial with [file creation](file-creation)
+- Continue this example with [file creation](file-creation)

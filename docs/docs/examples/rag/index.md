@@ -1,21 +1,25 @@
 ---
-title: LLM fine-tuning with OpenAI
-description: Learn how to fine-tune an LLM
+title: Retrieval-Augmented Generation (RAG) with Pinecone
+description: Learn how to build a RAG system
 last_update:
    author: Dennis Hume
 sidebar_position: 10
 sidebar_custom_props:
-  logo: images/integrations/openai.svg
+  logo: images/integrations/pinecone.svg
 ---
 
-# Fine-tune an LLM
+:::note
 
-In this tutorial, you'll build a pipeline with Dagster that:
+To see [video of this example](https://www.youtube.com/watch?v=MHwwKfCXwDA)
 
-- Loads a public Goodreads JSON dataset into DuckDB
-- Performs feature engineering to enhance the data
-- Creates and validates the data files needed for an OpenAI fine-tuning job
-- Generate a custom model and validate it
+:::
+
+In this example, you'll build a pipeline with Dagster that:
+
+- Loads data from GitHub and Documentation site
+- Translates the data into embeddings and tags metadata
+- Stores the data in a vector database
+- Retrieves relevant information to answer ad hoc questions
 
 <details>
   <summary>Prerequisites</summary>
@@ -24,8 +28,6 @@ To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
-- Familiarity with SQL and Python data manipulation libraries, such as [Pandas](https://pandas.pydata.org/).
-- Understanding of data pipelines and the extract, transform, and load process (ETL).
 </details>
 
 
@@ -36,7 +38,7 @@ First, set up a new Dagster project.
 1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
-   cd examples/dagster-llm-fine-tune
+   cd examples/docs_projects/project_ask_ai_dagster
    ```
 
 2. Create and activate a virtual environment:
@@ -44,14 +46,14 @@ First, set up a new Dagster project.
    <Tabs>
    <TabItem value="macos" label="MacOS">
    ```bash
-   uv venv dagster_tutorial
-   source dagster_tutorial/bin/activate
+   uv venv dagster_example
+   source dagster_example/bin/activate
    ```
    </TabItem>
    <TabItem value="windows" label="Windows">
    ```bash
-   uv venv dagster_tutorial
-   dagster_tutorial\Scripts\activate
+   uv venv dagster_example
+   dagster_example\Scripts\activate
    ```
    </TabItem>
    </Tabs>
@@ -66,7 +68,6 @@ First, set up a new Dagster project.
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-followed by a bash code snippet for 
 
 ```bash
 dagster dev
@@ -74,4 +75,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this tutorial with [ingestion](ingestion)
+- Continue this example with [sources](sources)
