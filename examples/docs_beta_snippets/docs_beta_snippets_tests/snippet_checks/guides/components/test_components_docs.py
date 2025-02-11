@@ -117,6 +117,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-list-component-types.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
         )
 
         _run_command(
@@ -128,6 +129,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-list-component-types.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
         )
 
         # Scaffold new ingestion, validate new files
@@ -249,6 +251,7 @@ streams:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-list-component-types.txt",
                 update_snippets=update_snippets,
+                snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
             )
             run_command_and_snippet_output(
                 cmd="dg component-type info 'dbt_project@dagster_components'",
@@ -287,12 +290,11 @@ params:
 """,
             )
             run_command_and_snippet_output(
-                cmd="dg component check --no-use-dg-managed-environment",
+                cmd="dg component check",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check-error.txt",
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
-                    ("--no-use-dg-managed-environment", ""),
                     MASK_JAFFLE_PLATFORM,
                 ],
                 expect_error=True,
@@ -312,12 +314,12 @@ params:
 """,
             )
             run_command_and_snippet_output(
-                cmd="dg component check --no-use-dg-managed-environment",
+                cmd="dg component check",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check.txt",
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
-                    ("--no-use-dg-managed-environment", ""),
+                    MASK_JAFFLE_PLATFORM,
                 ],
             )
 
