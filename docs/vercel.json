@@ -81,8 +81,112 @@
       "permanent": false
     },
     {
-      "source": "/api/:path*",
-      "destination": "/api/python-api/:path*",
+      "source": "/api/libraries/:path*",
+      "destination": "/api/python-api/libraries/:path*"
+    },
+    {
+      "source": "/api/asset-checks",
+      "destination": "/api/python-api/asset-checks",
+      "permanent": false
+    },
+    {
+      "source": "/api/assets",
+      "destination": "/api/python-api/assets",
+      "permanent": false
+    },
+    {
+      "source": "/api/cli",
+      "destination": "/api/python-api/cli",
+      "permanent": false
+    },
+    {
+      "source": "/api/definitions",
+      "destination": "/api/python-api/definitions",
+      "permanent": false
+    },
+    {
+      "source": "/api/dynamic",
+      "destination": "/api/python-api/dynamic",
+      "permanent": false
+    },
+    {
+      "source": "/api/errors",
+      "destination": "/api/python-api/errors",
+      "permanent": false
+    },
+    {
+      "source": "/api/execution",
+      "destination": "/api/python-api/execution",
+      "permanent": false
+    },
+    {
+      "source": "/api/external-assets",
+      "destination": "/api/python-api/external-assets",
+      "permanent": false
+    },
+    {
+      "source": "/api/hooks",
+      "destination": "/api/python-api/hooks",
+      "permanent": false
+    },
+    {
+      "source": "/api/internals",
+      "destination": "/api/python-api/internals",
+      "permanent": false
+    },
+    {
+      "source": "/api/io-managers",
+      "destination": "/api/python-api/io-managers",
+      "permanent": false
+    },
+    {
+      "source": "/api/jobs",
+      "destination": "/api/python-api/jobs",
+      "permanent": false
+    },
+    {
+      "source": "/api/loggers",
+      "destination": "/api/python-api/loggers",
+      "permanent": false
+    },
+    {
+      "source": "/api/metadata",
+      "destination": "/api/python-api/metadata",
+      "permanent": false
+    },
+    {
+      "source": "/api/ops",
+      "destination": "/api/python-api/ops",
+      "permanent": false
+    },
+    {
+      "source": "/api/partitions",
+      "destination": "/api/python-api/partitions",
+      "permanent": false
+    },
+    {
+      "source": "/api/pipes",
+      "destination": "/api/python-api/pipes",
+      "permanent": false
+    },
+    {
+      "source": "/api/repositories",
+      "destination": "/api/python-api/repositories",
+      "permanent": false
+    },
+    {
+      "source": "/api/resources",
+      "destination": "/api/python-api/resources",
+      "permanent": false
+    },
+    {
+      "source": "/api/schedules-sensors",
+      "destination": "/api/python-api/schedules-sensors",
+      "permanent": false
+    },
+    {
+      "source": "/api/types",
+      "destination": "/api/python-api/types",
       "permanent": false
     },
     {
