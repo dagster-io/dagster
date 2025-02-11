@@ -10,7 +10,7 @@
 - [ui] Made defunct code locations removable when editing environment variables.
 - [ui] Added a warning icon to the Agents item in Deployment settings, indicating when there are no active agents.
 - [dagster-tableau] Changed logic to show embedded data sources in case published data sources are not present. Also, pulled more metadata from Tableau. (Thanks [@VenkyRules](https://github.com/VenkyRules)!)
-- Added new decorators to reflect our [new API lifecycle](https://docs.dagster.io/api/api-lifecycle): `@preview`, `@beta` and `@superseded`. Also added new annotations and warnings to match these new stages.
+- Added new decorators to reflect our [new API lifecycle](https://docs.dagster.io/api/api-lifecycle): `@preview`, `@beta` and `@superseded`. Also added new annotations and warnings to match these new decorators.
 
 ### Bugfixes
 
