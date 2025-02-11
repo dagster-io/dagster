@@ -1,5 +1,5 @@
 [tool.dagster]
 modules = [
     { type = "module", name = "foo" },
-    { type = "module", name = "bar" }
+    { type = "module", name = "bar", location_name = "optional display name" }
 ]  ## names of project's Python modules
