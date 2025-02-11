@@ -52,7 +52,7 @@ For a refresher on how to set up a Dagster project, follow our [Recommended Dags
 
 Running `dagster dev` without any additional configuration starts an ephemeral instance in a temporary directory.  You may see log output indicating as such:
 ```shell
-Using temporary directory /Users/rhendricks/tmpqs_fk8_5 for storage.
+Using temporary directory /Users/rhendricks/.tmp_dagster_home_qs_fk8_5 for storage.
 ```
 This indicates that any runs or materialized assets created during your session won't be persisted once the session ends.
 

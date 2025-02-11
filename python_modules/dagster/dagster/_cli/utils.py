@@ -48,7 +48,9 @@ def _inject_local_env_file(logger: logging.Logger) -> Iterator[None]:
 def _get_temporary_instance(cli_command: str, logger: logging.Logger) -> Iterator[DagsterInstance]:
     # make the temp dir in the cwd since default temp dir roots
     # have issues with FS notify-based event log watching
-    with tempfile.TemporaryDirectory(dir=os.getcwd()) as tempdir:
+    # use a fixed prefix so that consumer projects can reliably manage,
+    # e.g., add to .gitignore
+    with tempfile.TemporaryDirectory(prefix=".tmp_dagster_home_", dir=os.getcwd()) as tempdir:
         logger.info(
             f"Using temporary directory {tempdir} for storage. This will be removed when"
             f" {cli_command} exits."
