@@ -40,4 +40,4 @@ As you can see, the new `joined_data` asset looks a lot like our previous ones, 
 
 ## Next steps
 
-- Continue this tutorial with by [creating and materializing a partitioned asset](ensure-data-quality-with-asset-checks).
+- Continue this tutorial with [ensuring data quality with asset checks](ensure-data-quality-with-asset-checks).
