@@ -18,7 +18,7 @@ from . import constants
 def taxi_zones_file() -> MaterializeResult:
     """The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal."""
     raw_taxi_zones = requests.get(
-        "https://data.cityofnewyork.us/api/views/755u-8jsi/rows.csv?accessType=DOWNLOAD"
+        "https://community-engineering-artifacts.s3.us-west-2.amazonaws.com/dagster-university/data/taxi_zones.csv"
     )
 
     with open(
