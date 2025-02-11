@@ -8,11 +8,19 @@ on:
     paths:
       - docs/**
       - examples/docs_beta_snippets/**
+      - examples/docs_snippets/**
+      - examples/docs_projects/**
+      - examples/getting_started_etl_tutorial/**
+      - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
   pull_request:
     paths:
       - docs/**
       - examples/docs_beta_snippets/**
+      - examples/docs_snippets/**
+      - examples/docs_projects/**
+      - examples/getting_started_etl_tutorial/**
+      - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
     types:
       - opened

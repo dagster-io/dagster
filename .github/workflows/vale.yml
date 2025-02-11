@@ -4,6 +4,11 @@ on:
     paths:
       - 'docs/**'
       - .github/workflows/vale.yml
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
   push:
     branches:
       - master
@@ -24,6 +29,7 @@ jobs:
     name: runner / vale
     runs-on: ubuntu-latest
     continue-on-error: true
+    if: github.event.pull_request.draft == false
     steps:
       - uses: actions/checkout@v3
       - uses: errata-ai/vale-action@reviewdog
