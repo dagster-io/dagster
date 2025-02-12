@@ -804,7 +804,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
                 location = GrpcServerCodeLocation(
                     origin=origin,
-                    server_id=endpoint.server_id,
                     port=endpoint.port,
                     socket=endpoint.socket,
                     host=endpoint.host,
