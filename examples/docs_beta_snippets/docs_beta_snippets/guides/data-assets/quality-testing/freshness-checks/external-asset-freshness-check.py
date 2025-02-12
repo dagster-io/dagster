@@ -28,7 +28,7 @@ def hourly_sales(snowflake: dg_snowflake.SnowflakeResource):
 
 
 # highlight-start
-# Define a schedule to run the freshness check
+# Define a schedule to observe the snowdlake table
 freshness_check_schedule = dg.ScheduleDefinition(
     job=dg.define_asset_job(
         "hourly_sales_observation_job",
@@ -46,6 +46,10 @@ hourly_sales_freshness_check = dg.build_last_update_freshness_checks(
     assets=[hourly_sales],
     lower_bound_delta=timedelta(hours=1),
 )
+# Define freshness check sensor
+freshness_checks_sensor = dg.build_sensor_for_freshness_checks(
+    freshness_checks=hourly_sales_freshness_check
+)
 # highlight-end
 
 
@@ -53,6 +57,7 @@ defs = dg.Definitions(
     assets=[hourly_sales],
     asset_checks=hourly_sales_freshness_check,
     schedules=[freshness_check_schedule],
+    sensors=[freshness_checks_sensor],
     resources={
         "snowflake": dg_snowflake.SnowflakeResource(
             user=dg.EnvVar("SNOWFLAKE_USER"),
