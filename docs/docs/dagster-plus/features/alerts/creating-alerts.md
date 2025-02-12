@@ -65,9 +65,9 @@ You can set up alerts to notify you whenever a run takes more than some threshol
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Run** from the menu and click **Continue**.
-5. Choose run targets and select "Run exceeding a specificed number of hours" filling in the number of hours and click **Continue**.
+5. Choose run targets and select "Run exceeding a specified number of hours" filling in the number of hours and click **Continue**.
 6. Choose a notification channel for your Run alert and click **Continue**.
-7. Review and save your Run alert and click **Save alert**. 
+7. Review and save your Run alert and click **Save alert**.
 
 5. Select **Job running over** and how many hours to alert after.
 
@@ -116,8 +116,8 @@ If using a RetryPolicy, an alert will only be sent after all retries complete.
 3. Click **Create alert policy**.
 4. Select **Asset** from the menu and click **Continue**.
 5. Choose asset targets and events and click **Continue**.
-6. Choose a notification channel for your for your asset alert and click **Continue**.
-7. Review and save your asset alert and click **Save alert**. 
+6. Choose a notification channel for your asset alert and click **Continue**.
+7. Review and save your asset alert and click **Save alert**.
 
 
   </TabItem>
@@ -157,7 +157,7 @@ By default, these alerts will target all assets in the deployment, but they can 
 4. Select **Asset** from the menu and click **Continue**.
 5. Choose asset targets and select the relevant asset check events and click **Continue**.
 6. Choose a notification channel for your asset alert and click **Continue**.
-7. Review and save your asset alert and click **Save alert**. 
+7. Review and save your asset alert and click **Save alert**.
 
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
@@ -194,9 +194,9 @@ Alerts are sent only when a schedule/sensor transitions from **success** to **fa
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Automation** from the menu and click **Continue**.
-5. Select the tick types to be alerted on. Choose if you only want to be alerted after N consectuive failures and click **Continue**.
+5. Select the tick types to be alerted on. Choose if you only want to be alerted after N consecutive failures and click **Continue**.
 6. Choose a notification channel for your automation alert and click **Continue**.
-7. Review and save your automation alert and click **Save alert**. 
+7. Review and save your automation alert and click **Save alert**.
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
@@ -232,7 +232,7 @@ You can set up alerts to fire when any code location fails to load due to an err
 4. Select **Code Location** from the menu and click **Continue**.
 5. Select your target and click **Continue**.
 6. Choose a notification channel for your code location alert and click **Continue**.
-7. Review and save your code location alert and click **Save alert**. 
+7. Review and save your code location alert and click **Save alert**.
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
@@ -272,7 +272,7 @@ You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in th
 4. Select **Code Location** from the menu and click **Continue**.
 5. Select your target and click **Continue**.
 6. Choose a notification channel for your code location alert and click **Continue**.
-7. Review and save your code location alert and click **Save alert**. 
+7. Review and save your code location alert and click **Save alert**.
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
