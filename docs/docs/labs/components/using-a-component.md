@@ -3,6 +3,11 @@ title: "Adding a component to a project"
 sidebar_position: 200
 ---
 
+:::info
+
+Please contact Dagster if you would like to try Components.
+
+:::
 
 ## Finding a component
 

@@ -1,7 +1,14 @@
 ---
 title: "Setting up a deployment"
 sidebar_position: 400
+pagination_next: null
 ---
+
+:::info
+
+Please contact Dagster if you would like to try Components.
+
+:::
 
 Many users will want to manage multiple code locations within a single coherent
 directory structure. `dg` facilitates this with the concept of a _deployment_
