@@ -106,6 +106,7 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_DOCS_NEXT_PROJECT_ID }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           scope: ${{ secrets.VERCEL_ORG_ID }}
+          alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.archive.dagster-docs.io
 
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25
