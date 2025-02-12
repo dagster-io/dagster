@@ -76,6 +76,7 @@ def sling_assets(
         partitions_def (Optional[PartitionsDefinition]): The partitions definition for this asset.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for this asset.
         op_tags (Optional[Mapping[str, Any]]): The tags for the underlying op.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs the sling assets' execution.
 
     Examples:
         Running a sync by providing a path to a Sling Replication config:

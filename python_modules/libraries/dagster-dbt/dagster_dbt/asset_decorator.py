@@ -73,6 +73,8 @@ def dbt_assets(
             project location and manifest. Not required, but needed to attach code references from
             model code to Dagster assets.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs the dbt
+            assets' execution.
 
     Examples:
         Running ``dbt build`` for a dbt project:
