@@ -39,10 +39,10 @@ const config: Config = {
             indexName: process.env.ALGOLIA_INDEX_NAME,
             contextualSearch: false,
           },
-    announcementBar: {
-      id: 'announcementBar',
-      content: `<div><h3>This is the preview of the new documentation site.</h3> If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/discussions/24816">GitHub</a>. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</div>`,
-    },
+    // announcementBar: {
+    //   id: 'announcementBar',
+    //   content: `<div><h3>This is the preview of the new documentation site.</h3> If you have any feedback, please let us know on <a target="_blank" href="https://github.com/dagster-io/dagster/discussions/24816">GitHub</a>. The current documentation can be found at <a target="_blank" href="https://docs.dagster.io/">docs.dagster.io</a>.</div>`,
+    // },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
@@ -112,9 +112,15 @@ const config: Config = {
         //  docId: 'changelog',
         //  position: 'right',
         //},
+        // {
+        //   label: 'Feedback',
+        //   href: 'https://github.com/dagster-io/dagster/discussions/24816',
+        //   position: 'right',
+        //   className: 'feedback-nav-link',
+        // },
         {
-          label: 'Feedback',
-          href: 'https://github.com/dagster-io/dagster/discussions/24816',
+          label: 'Latest version',
+          href: 'https://docs.dagster.io',
           position: 'right',
           className: 'feedback-nav-link',
         },
