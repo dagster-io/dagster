@@ -26,6 +26,20 @@ For example, you may wish to monitor an asset that's materialized daily, but don
 Asset sensors enable dependencies across different jobs and different code locations. This flexibility allows for modular and decoupled workflows.
 
 ```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+
 graph LR;
 
 AssetToWatch(AssetToWatch) --> AssetSensor(AssetSensor);

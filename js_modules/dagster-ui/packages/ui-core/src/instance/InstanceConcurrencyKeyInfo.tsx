@@ -132,7 +132,7 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                 <tbody>
                   <tr>
                     <td style={{verticalAlign: 'middle'}}>Granularity</td>
-                    <td>{granularity === 'run' ? 'Run' : 'Op'}</td>
+                    <td>{granularity === 'op' ? 'Op' : 'Run'}</td>
                   </tr>
                   <tr>
                     <td style={{verticalAlign: 'middle'}}>Limit</td>
@@ -161,7 +161,7 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                 </tbody>
               </MetadataTableWIP>
             </Box>
-            {data?.instance.poolConfig?.poolGranularity !== 'run' ? (
+            {data?.instance.poolConfig?.poolGranularity === 'op' ? (
               <>
                 <Box
                   padding={{vertical: 16, horizontal: 24}}

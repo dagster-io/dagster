@@ -4,7 +4,12 @@ from functools import update_wrapper
 from types import MethodType
 
 import dagster._check as check
-from dagster._check.builder import EvalContext, build_check_call_str
+from dagster._check.builder import (
+    INJECTED_DEFAULT_VALS_LOCAL_VAR,
+    EvalContext,
+    build_args_and_assignment_strs,
+    build_check_call_str,
+)
 
 
 class CheckedFnWrapper(ABC):
@@ -22,10 +27,7 @@ class CheckedFnWrapper(ABC):
 
     def __init__(self, fn):
         self._target_fn = fn
-        self._eval_ctx = EvalContext.capture_from_frame(
-            2,
-            add_to_local_ns={},
-        )
+        self._eval_ctx = EvalContext.capture_from_frame(2)
 
     def __get__(self, instance, _=None):
         """Allow the decorated function to be bound to instances to support class methods."""
@@ -36,8 +38,8 @@ class CheckedFnWrapper(ABC):
     def __call__(self, *args, **kwargs):
         signature = inspect.signature(self._target_fn)
         lines = []
-        inputs = []
-
+        param_names = []
+        defaults = {}
         for name, param in signature.parameters.items():
             if param.annotation != param.empty:
                 param_str = build_check_call_str(
@@ -50,24 +52,29 @@ class CheckedFnWrapper(ABC):
 
             if param.kind in (param.KEYWORD_ONLY, param.POSITIONAL_OR_KEYWORD):
                 param_str = f"{param.name}={param_str}"
-            inputs.append(param.name)
+
+            param_names.append(param.name)
+            if param.default != param.empty:
+                defaults[param.name] = param.default
+
             lines.append(param_str)
 
         lazy_imports_str = "\n    ".join(
             f"from {module} import {t}" for t, module in self._eval_ctx.lazy_imports.items()
         )
-
+        args_str, set_calls_str = build_args_and_assignment_strs(
+            param_names,
+            defaults,
+            kw_only=False,
+        )
         param_block = ",\n        ".join(lines)
-        inputs_block = ",\n    ".join(inputs)
 
         checked_fn_name = f"__checked_{self._target_fn.__name__}"
 
         fn_str = f"""
-def {checked_fn_name}(
-    __checked_wrapper,
-    {inputs_block}
-):
+def {checked_fn_name}(__checked_wrapper{args_str}):
     {lazy_imports_str}
+    {set_calls_str}
     return __checked_wrapper._target_fn(
         {param_block}
     )
@@ -75,6 +82,8 @@ def {checked_fn_name}(
 
         if "check" not in self._eval_ctx.global_ns:
             self._eval_ctx.global_ns["check"] = check
+
+        self._eval_ctx.local_ns[INJECTED_DEFAULT_VALS_LOCAL_VAR] = defaults
 
         call = self._eval_ctx.compile_fn(
             fn_str,

@@ -30,62 +30,67 @@ interface Props {
   definition: AssetNodeFragment;
   selected: boolean;
   kindFilter?: StaticSetFilter<string>;
+  onChangeAssetSelection?: (selection: string) => void;
 }
 
-export const AssetNode = React.memo(({definition, selected, kindFilter}: Props) => {
-  const {liveData} = useAssetLiveData(definition.assetKey);
-  const hasChecks = (liveData?.assetChecks || []).length > 0;
+export const AssetNode = React.memo(
+  ({definition, selected, kindFilter, onChangeAssetSelection}: Props) => {
+    const {liveData} = useAssetLiveData(definition.assetKey);
+    const hasChecks = (liveData?.assetChecks || []).length > 0;
 
-  const marginTopForCenteringNode = !hasChecks ? ASSET_NODE_STATUS_ROW_HEIGHT / 2 : 0;
+    const marginTopForCenteringNode = !hasChecks ? ASSET_NODE_STATUS_ROW_HEIGHT / 2 : 0;
 
-  return (
-    <AssetInsetForHoverEffect>
-      <AssetNodeContainer $selected={selected}>
-        <Box
-          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-          style={{minHeight: ASSET_NODE_TAGS_HEIGHT, marginTop: marginTopForCenteringNode}}
-        >
-          <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
-          <ChangedReasonsTag
-            changedReasons={definition.changedReasons}
-            assetKey={definition.assetKey}
-          />
-        </Box>
-        <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
-          <AssetNameRow definition={definition} />
-          <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
-            {definition.description ? (
-              <AssetDescription $color={Colors.textDefault()}>
-                {markdownToPlaintext(definition.description).split('\n')[0]}
-              </AssetDescription>
-            ) : (
-              <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
-            )}
-            {definition.isPartitioned && definition.isMaterializable && (
-              <PartitionCountTags definition={definition} liveData={liveData} />
-            )}
-          </Box>
-
-          <AssetNodeStatusRow definition={definition} liveData={liveData} />
-          {hasChecks && <AssetNodeChecksRow definition={definition} liveData={liveData} />}
-        </AssetNodeBox>
-        <Box
-          style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
-          flex={{alignItems: 'center', direction: 'row-reverse', gap: 8}}
-        >
-          {definition.kinds.map((kind) => (
-            <AssetKind
-              key={kind}
-              kind={kind}
-              style={{position: 'relative', margin: 0}}
-              currentPageFilter={kindFilter}
+    return (
+      <AssetInsetForHoverEffect>
+        <AssetNodeContainer $selected={selected}>
+          <Box
+            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+            style={{minHeight: ASSET_NODE_TAGS_HEIGHT, marginTop: marginTopForCenteringNode}}
+          >
+            <StaleReasonsTag liveData={liveData} assetKey={definition.assetKey} />
+            <ChangedReasonsTag
+              changedReasons={definition.changedReasons}
+              assetKey={definition.assetKey}
             />
-          ))}
-        </Box>
-      </AssetNodeContainer>
-    </AssetInsetForHoverEffect>
-  );
-}, isEqual);
+          </Box>
+          <AssetNodeBox $selected={selected} $isMaterializable={definition.isMaterializable}>
+            <AssetNameRow definition={definition} />
+            <Box style={{padding: '6px 8px'}} flex={{direction: 'column', gap: 4}} border="top">
+              {definition.description ? (
+                <AssetDescription $color={Colors.textDefault()}>
+                  {markdownToPlaintext(definition.description).split('\n')[0]}
+                </AssetDescription>
+              ) : (
+                <AssetDescription $color={Colors.textLight()}>No description</AssetDescription>
+              )}
+              {definition.isPartitioned && definition.isMaterializable && (
+                <PartitionCountTags definition={definition} liveData={liveData} />
+              )}
+            </Box>
+
+            <AssetNodeStatusRow definition={definition} liveData={liveData} />
+            {hasChecks && <AssetNodeChecksRow definition={definition} liveData={liveData} />}
+          </AssetNodeBox>
+          <Box
+            style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
+            flex={{alignItems: 'center', direction: 'row-reverse', gap: 8}}
+          >
+            {definition.kinds.map((kind) => (
+              <AssetKind
+                key={kind}
+                kind={kind}
+                style={{position: 'relative', margin: 0}}
+                currentPageFilter={kindFilter}
+                onChangeAssetSelection={onChangeAssetSelection}
+              />
+            ))}
+          </Box>
+        </AssetNodeContainer>
+      </AssetInsetForHoverEffect>
+    );
+  },
+  isEqual,
+);
 
 export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
   const displayName = definition.assetKey.path[definition.assetKey.path.length - 1]!;

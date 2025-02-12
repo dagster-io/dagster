@@ -20,6 +20,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._grpc.server import GrpcServerCommand
 from dagster._serdes import serialize_value
 from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
@@ -131,6 +132,9 @@ def dev_command(
                 f" {dagster_home_path}. The dagster.yaml file will not be used to configure Dagster"
                 " unless it is placed in the same folder as DAGSTER_HOME."
             )
+
+    # Essential on windows-- will set up windows signals to raise KeyboardInterrupt
+    setup_interrupt_handlers()
 
     with get_possibly_temporary_instance_for_cli("dagster dev", logger=logger) as instance:
         with _optionally_create_temp_workspace(

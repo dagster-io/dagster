@@ -20,7 +20,12 @@ from typing import (  # noqa: UP035
 from typing_extensions import Self, dataclass_transform
 
 import dagster._check as check
-from dagster._check import EvalContext, build_check_call_str
+from dagster._check.builder import (
+    INJECTED_DEFAULT_VALS_LOCAL_VAR,
+    EvalContext,
+    build_args_and_assignment_strs,
+    build_check_call_str,
+)
 from dagster._check.record import RECORD_MARKER_FIELD, RECORD_MARKER_VALUE, is_record
 
 ImportFrom = check.ImportFrom  # re-expose for convenience
@@ -31,7 +36,6 @@ TVal = TypeVar("TVal")
 _RECORD_ANNOTATIONS_FIELD = "__record_annotations__"
 _CHECKED_NEW = "__checked_new__"
 _DEFAULTS_NEW = "__defaults_new__"
-_INJECTED_DEFAULT_VALS_LOCAL_VAR = "__dm_defaults__"
 _NAMED_TUPLE_BASE_NEW_FIELD = "__nt_new__"
 _REMAPPING_FIELD = "__field_remap__"
 _ORIGINAL_CLASS_FIELD = "__original_class__"
@@ -119,7 +123,7 @@ def _namedtuple_record_transform(
         eval_ctx = EvalContext.capture_from_frame(
             1 + decorator_frames,
             # inject default values in to the local namespace for reference in generated __new__
-            add_to_local_ns={_INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
+            add_to_local_ns={INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
         )
         generated_new = JitCheckedNew(
             field_set,
@@ -133,7 +137,7 @@ def _namedtuple_record_transform(
         eval_ctx = EvalContext(
             global_ns={},
             # inject default values in to the local namespace for reference in generated __new__
-            local_ns={_INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
+            local_ns={INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
             lazy_imports={},
         )
         generated_new = eval_ctx.compile_fn(
@@ -169,6 +173,7 @@ def _namedtuple_record_transform(
         "__qualname__": cls.__qualname__,
         "__annotations__": field_set,
         "__doc__": cls.__doc__,
+        "__get_pydantic_core_schema__": _pydantic_core_schema,
     }
 
     # Due to MRO issues, we can not support both @record_custom __new__ and record inheritance
@@ -498,7 +503,7 @@ class JitCheckedNew:
 
     def _build_checked_new_str(self) -> str:
         args_str, set_calls_str = build_args_and_assignment_strs(
-            self._field_set,
+            self._field_set.keys(),
             self._defaults,
             self._kw_only,
         )
@@ -535,7 +540,11 @@ def _build_defaults_new(
     kw_only: bool,
 ) -> str:
     """Build a __new__ implementation that handles default values."""
-    kw_args_str, set_calls_str = build_args_and_assignment_strs(field_set, defaults, kw_only)
+    kw_args_str, set_calls_str = build_args_and_assignment_strs(
+        field_set,
+        defaults,
+        kw_only,
+    )
     assign_str = ",\n        ".join([f"{name}={name}" for name in field_set.keys()])
     return f"""
 def __defaults_new__(cls{kw_args_str}):
@@ -545,45 +554,6 @@ def __defaults_new__(cls{kw_args_str}):
         {assign_str}
     )
     """
-
-
-def build_args_and_assignment_strs(
-    field_set: Mapping[str, type],
-    defaults: Mapping[str, Any],
-    kw_only: bool,
-) -> tuple[str, str]:
-    """Utility funciton shared between _defaults_new and _checked_new to create the arguments to
-    the function as well as any assignment calls that need to happen.
-    """
-    args = []
-    set_calls = []
-    for arg in field_set.keys():
-        if arg in defaults:
-            default = defaults[arg]
-            if default is None:
-                args.append(f"{arg} = None")
-            # dont share class instance of default empty containers
-            elif default == []:
-                args.append(f"{arg} = None")
-                set_calls.append(f"{arg} = {arg} if {arg} is not None else []")
-            elif default == {}:
-                args.append(f"{arg} = None")
-                set_calls.append(f"{arg} = {arg} if {arg} is not None else {'{}'}")
-            # fallback to direct reference if unknown
-            else:
-                args.append(f"{arg} = {_INJECTED_DEFAULT_VALS_LOCAL_VAR}['{arg}']")
-        else:
-            args.append(arg)
-
-    args_str = ""
-    if args:
-        args_str = f", {'*,' if kw_only else ''} {', '.join(args)}"
-
-    set_calls_str = ""
-    if set_calls:
-        set_calls_str = "\n    ".join(set_calls)
-
-    return args_str, set_calls_str
 
 
 def _banned_iter(*args, **kwargs):
@@ -629,3 +599,13 @@ def _defines_own_new(cls) -> bool:
 
 def _do_defensive_checks():
     return bool(os.getenv("DAGSTER_RECORD_DEFENSIVE_CHECKS"))
+
+
+@classmethod
+def _pydantic_core_schema(cls, source: Any, handler):
+    """Forces pydantic_core to treat records as normal types instead of namedtuples. In particular,
+    pydantic assumes that all namedtuples can be constructed with posargs, while records are kw-only.
+    """
+    from pydantic_core import core_schema
+
+    return core_schema.is_instance_schema(cls)
