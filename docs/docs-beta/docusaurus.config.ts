@@ -34,10 +34,10 @@ const config: Config = {
           contextualSearch: false,
         },
       }),
-    announcementBar: {
-      id: 'announcementBar',
-      content: `<div><h3>Welcome to Dagster's new and improved documentation site!</h3> You can find the legacy documentation with content for versions 1.9.9 and earlier at <a target="_blank" href="https://legacy-docs.dagster.io/">legacy-docs.dagster.io</a>.</div>`,
-    },
+    // announcementBar: {
+    //   id: 'announcementBar',
+    //   content: `<div><h3>Welcome to Dagster's new and improved documentation site!</h3> You can find the legacy documentation with content for versions 1.9.9 and earlier at <a target="_blank" href="https://legacy-docs.dagster.io/">legacy-docs.dagster.io</a>.</div>`,
+    // },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
@@ -112,9 +112,15 @@ const config: Config = {
           type: 'docsVersionDropdown',
           position: 'right'
         },
+        // {
+        //    label: 'Feedback',
+        //    href: 'https://github.com/dagster-io/dagster/discussions/27332',
+        //    position: 'right',
+        //    className: 'feedback-nav-link',
+        // },
         {
-           label: 'Feedback',
-           href: 'https://github.com/dagster-io/dagster/discussions/27332',
+           label: 'Latest version',
+           href: 'https://docs.dagster.io',
            position: 'right',
            className: 'feedback-nav-link',
          },
