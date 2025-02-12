@@ -59,6 +59,7 @@ def sling_assets(
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to materialize a set of Sling replication streams as Dagster assets, as
     described by a Sling replication config. This will create on Asset for every Sling target stream.
@@ -75,6 +76,7 @@ def sling_assets(
         partitions_def (Optional[PartitionsDefinition]): The partitions definition for this asset.
         backfill_policy (Optional[BackfillPolicy]): The backfill policy for this asset.
         op_tags (Optional[Mapping[str, Any]]): The tags for the underlying op.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs the sling assets' execution.
 
     Examples:
         Running a sync by providing a path to a Sling Replication config:
@@ -133,4 +135,5 @@ def sling_assets(
             )
             for stream in streams
         ],
+        pool=pool,
     )
