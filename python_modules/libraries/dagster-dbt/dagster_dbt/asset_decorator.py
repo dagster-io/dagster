@@ -37,6 +37,7 @@ def dbt_assets(
     required_resource_keys: Optional[set[str]] = None,
     project: Optional[DbtProject] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -347,4 +348,5 @@ def dbt_assets(
         op_tags=resolved_op_tags,
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
+        pool=pool,
     )
