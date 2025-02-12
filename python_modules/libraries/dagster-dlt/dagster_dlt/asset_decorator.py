@@ -58,6 +58,7 @@ def dlt_assets(
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 
@@ -141,4 +142,5 @@ def dlt_assets(
             dlt_pipeline=dlt_pipeline,
             dagster_dlt_translator=dagster_dlt_translator,
         ),
+        pool=pool,
     )
