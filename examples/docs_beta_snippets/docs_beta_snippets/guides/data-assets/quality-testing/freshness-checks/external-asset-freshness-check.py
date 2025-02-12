@@ -28,7 +28,7 @@ def hourly_sales(snowflake: dg_snowflake.SnowflakeResource):
 
 
 # highlight-start
-# Define a schedule to observe the snowdlake table
+# Define a schedule to observe the snowflake table
 freshness_check_schedule = dg.ScheduleDefinition(
     job=dg.define_asset_job(
         "hourly_sales_observation_job",
