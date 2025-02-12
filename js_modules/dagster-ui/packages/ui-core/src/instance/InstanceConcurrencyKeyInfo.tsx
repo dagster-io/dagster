@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Caption,
@@ -75,6 +76,7 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
   );
   const {data, refetch} = queryResult;
   const concurrencyLimit = data?.instance.concurrencyLimit;
+  const hasRunQueue = data?.instance.runQueuingSupported;
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const history = useHistory();
   const onDelete = () => {
@@ -127,6 +129,30 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
             <Box padding={{vertical: 16, horizontal: 24}}>
               <Subheading>Pool info</Subheading>
             </Box>
+            {!hasRunQueue && granularity !== 'op' ? (
+              <Box margin={{horizontal: 20, bottom: 20}}>
+                <Alert
+                  intent="warning"
+                  title="Run granularity for pools not supported"
+                  description={
+                    <>
+                      The pool granularity is set to <Mono>run</Mono>, but run-level concurrency is
+                      not supported with this run coordinator. To enable run granularity for pools,
+                      configure your instance to use the default <Mono>QueuedRunCoordinator</Mono>{' '}
+                      in your <Mono>dagster.yaml</Mono>. See the{' '}
+                      <a
+                        target="_blank"
+                        rel="noreferrer"
+                        href="https://docs.dagster.io/deployment/dagster-instance#queuedruncoordinator"
+                      >
+                        QueuedRunCoordinator documentation
+                      </a>{' '}
+                      for more information.
+                    </>
+                  }
+                />
+              </Box>
+            ) : null}
             <Box padding={{bottom: 24}}>
               <MetadataTableWIP style={{marginLeft: -1}}>
                 <tbody>
@@ -683,6 +709,7 @@ export const CONCURRENCY_KEY_DETAILS_QUERY = gql`
         defaultPoolLimit
         opGranularityRunBuffer
       }
+      runQueuingSupported
       concurrencyLimit(concurrencyKey: $concurrencyKey) {
         ...ConcurrencyLimitFragment
       }
