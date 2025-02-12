@@ -177,6 +177,13 @@ const config: Config = {
       '@docusaurus/preset-classic',
       {
         docs: {
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '1.10.0 (latest)',
+              path: '/'
+            }
+          },
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
           editUrl: 'https://github.com/dagster-io/dagster/tree/master/docs',
