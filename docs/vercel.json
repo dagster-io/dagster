@@ -1920,7 +1920,7 @@
       "permanent": false
     },
     {
-      "source": "/guides/previews/:path*",
+      "source": "/guides/preview/:path*",
       "destination": "/labs/:path*"
     }
   ]
