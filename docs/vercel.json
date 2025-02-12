@@ -1913,6 +1913,11 @@
       "source": "/next/:path*/",
       "destination": "/:path*/",
       "permanent": false
+    },
+    {
+      "source": "/integrations/airlift/tutorial/migrate",
+      "destination": "/integrations/libraries/airlift/airflow-to-dagster",
+      "permanent": false
     }
   ]
 }
