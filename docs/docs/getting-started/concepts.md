@@ -11,14 +11,13 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
-
 }%%
   graph TD
 
@@ -108,11 +107,11 @@ Dagster provides a variety of abstractions for building and orchestrating data p
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -164,11 +163,11 @@ An <PyObject section="assets" module="dagster" object="asset" /> represents a lo
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -198,11 +197,11 @@ An <PyObject section="asset-checks" module="dagster" object="asset_check" /> is 
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -228,11 +227,11 @@ A `code location` is a collection of <PyObject section="definitions" module="dag
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -267,11 +266,11 @@ A <PyObject section="config" module="dagster" object="RunConfig" /> is a set sch
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -320,11 +319,11 @@ A <PyObject section="config" module="dagster" object="RunConfig" /> is a set sch
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -357,11 +356,11 @@ A <PyObject section="graphs" module="dagster" object="GraphDefinition" method="t
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -391,11 +390,11 @@ An <PyObject section="io-managers" module="dagster" object="IOManager" /> define
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -437,11 +436,11 @@ A <PyObject section="jobs" module="dagster" object="job" /> is a subset of <PyOb
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -471,11 +470,11 @@ An <PyObject section="ops" module="dagster" object="op" /> is a computational un
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -501,11 +500,11 @@ A <PyObject section="partitions" object="PartitionsDefinition" /> represents a l
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -540,11 +539,11 @@ A <PyObject section="resources" module="dagster" object="ConfigurableResource"/>
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -570,11 +569,11 @@ A `type` is a way to define and validate the data passed between <PyObject secti
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%
@@ -609,11 +608,11 @@ A <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinit
     'theme': 'base',
     'themeVariables': {
       'primaryColor': '#4F43DD',
-      'primaryTextColor': '#fff',
+      'primaryTextColor': '#FFFFFF',
       'primaryBorderColor': '#231F1B',
       'lineColor': '#DEDDFF',
       'secondaryColor': '#BDBAB7',
-      'tertiaryColor': '#BDBAB7'
+      'tertiaryColor': '#FFFFFF'
     }
   }
 }%%

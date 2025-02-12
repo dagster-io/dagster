@@ -176,6 +176,24 @@ flowchart LR
 
 Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
 
+Generally try and match the Dagster color palette:
+
+```
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+```
+
 ### Tabs
 
 Tabs are formatted as follows:
