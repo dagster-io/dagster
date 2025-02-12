@@ -1,8 +1,10 @@
 import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {GraphData, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
+import {featureEnabled} from '../app/Flags';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {useExecuteAssetMenuItem} from '../assets/AssetActionMenu';
 import {
@@ -107,14 +109,14 @@ export const useAssetNodeMenu = ({
           <MenuItem
             text="Show upstream graph"
             icon="arrow_back"
-            onClick={() => showGraph(`*\"${tokenForAssetKey(node.assetKey)}\"`)}
+            onClick={() => showGraph(upstreamGraphQuery(node.assetKey))}
           />
         ) : null}
         {downstream.length || !graphData ? (
           <MenuItem
             text="Show downstream graph"
             icon="arrow_forward"
-            onClick={() => showGraph(`\"${tokenForAssetKey(node.assetKey)}\"*`)}
+            onClick={() => showGraph(downstreamGraphQuery(node.assetKey))}
           />
         ) : null}
       </Menu>
@@ -219,3 +221,17 @@ const UpstreamDownstreamDialog = ({
     />
   );
 };
+
+function upstreamGraphQuery(assetKey: AssetKeyInput) {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+    return `+key:"${tokenForAssetKey(assetKey)}"`;
+  }
+  return `*\"${tokenForAssetKey(assetKey)}\"`;
+}
+
+function downstreamGraphQuery(assetKey: AssetKeyInput) {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+    return `key:"${tokenForAssetKey(assetKey)}"+`;
+  }
+  return `\"${tokenForAssetKey(assetKey)}\"*`;
+}
