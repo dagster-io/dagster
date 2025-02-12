@@ -10,6 +10,7 @@ on:
       - docs/docs-beta/**
       - examples/docs_beta_snippets/**
       - docs/sphinx/**
+      - docs/tox.ini
   pull_request:
     paths:
       - docs/docs-beta/**
