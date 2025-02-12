@@ -719,12 +719,24 @@ class AssetDaemon(DagsterDaemon):
 
             if sensor:
                 selection = check.not_none(sensor.asset_selection)
+                repository_origin = check.not_none(repository).get_remote_origin()
                 # resolve the selection against just the assets in the sensor's repository
                 repo_asset_graph = check.not_none(repository).asset_graph
-                eligible_keys = selection.resolve(repo_asset_graph) | selection.resolve_checks(
+                resolved_keys = selection.resolve(repo_asset_graph) | selection.resolve_checks(
                     repo_asset_graph
                 )
                 eligibility_graph = repo_asset_graph
+
+                # Ensure that if there are two identical asset keys defined in different code
+                # locations with automation conditions, only one of them actually launches runs
+                eligible_keys = {
+                    key
+                    for key in resolved_keys
+                    if (
+                        workspace_asset_graph.get_repository_handle(key).get_remote_origin()
+                        == repository_origin
+                    )
+                }
             else:
                 eligible_keys = workspace_asset_graph.get_all_asset_keys()
                 eligibility_graph = workspace_asset_graph
