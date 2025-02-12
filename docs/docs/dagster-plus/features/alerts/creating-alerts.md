@@ -18,9 +18,13 @@ By default, these alerts will target all runs in the deployment, but they can be
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
-2. Click the **Alerts** tab.
-3. Click **Add alert policy**.
-4. Select **Run alert** from the dropdown.
+2. Click the **Alert policies** tab.
+3. Click **Create alert policy**.
+4. Select **Run** from the menu and click **Continue**.
+5. Choose run targets and events for your alert and click **Continue**.
+6. Choose a notification channel for your Run alert and click **Continue**.
+7. Review and save your Run alert and click **Save alert**.
+
 
 5. Select **Job failure**.
 
@@ -58,9 +62,12 @@ You can set up alerts to notify you whenever a run takes more than some threshol
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
-2. Click the **Alerts** tab.
-3. Click **Add alert policy**.
-4. Select **Run alert** from the dropdown.
+2. Click the **Alert policies** tab.
+3. Click **Create alert policy**.
+4. Select **Run** from the menu and click **Continue**.
+5. Choose run targets and select "Run exceeding a specificed number of hours" filling in the number of hours and click **Continue**.
+6. Choose a notification channel for your Run alert and click **Continue**.
+7. Review and save your Run alert and click **Save alert**. 
 
 5. Select **Job running over** and how many hours to alert after.
 
@@ -105,13 +112,13 @@ If using a RetryPolicy, an alert will only be sent after all retries complete.
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
-2. Click the **Alerts** tab.
-3. Click **Add alert policy**.
-4. Select **Asset alert** from the dropdown.
+2. Click the **Alert policies** tab.
+3. Click **Create alert policy**.
+4. Select **Asset** from the menu and click **Continue**.
+5. Choose asset targets and events and click **Continue**.
+6. Choose a notification channel for your for your asset alert and click **Continue**.
+7. Review and save your asset alert and click **Save alert**. 
 
-5. Select **Failure** under the **Materializations** heading.
-
-If desired, select a **target** from the dropdown menu to scope this alert to a specific asset or group.
 
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
@@ -145,13 +152,12 @@ By default, these alerts will target all assets in the deployment, but they can 
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
-2. Click the **Alerts** tab.
-3. Click **Add alert policy**.
-4. Select **Asset alert** from the dropdown.
-
-5. Select **Failed (ERROR)** under the **Asset Checks** heading.
-
-If desired, select a **target** from the dropdown menu to scope this alert to a specific asset or group.
+2. Click the **Alert policies** tab.
+3. Click **Create alert policy**.
+4. Select **Asset** from the menu and click **Continue**.
+5. Choose asset targets and select the relevant asset check events and click **Continue**.
+6. Choose a notification channel for your asset alert and click **Continue**.
+7. Review and save your asset alert and click **Save alert**. 
 
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
@@ -185,9 +191,12 @@ Alerts are sent only when a schedule/sensor transitions from **success** to **fa
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
-2. Click the **Alerts** tab.
-3. Click **Add alert policy**.
-4. Select **Schedule/Sensor alert** from the dropdown.
+2. Click the **Alert policies** tab.
+3. Click **Create alert policy**.
+4. Select **Automation** from the menu and click **Continue**.
+5. Select the tick types to be alerted on. Choose if you only want to be alerted after N consectuive failures and click **Continue**.
+6. Choose a notification channel for your automation alert and click **Continue**.
+7. Review and save your automation alert and click **Save alert**. 
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
@@ -218,9 +227,12 @@ You can set up alerts to fire when any code location fails to load due to an err
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
-2. Click the **Alerts** tab.
-3. Click **Add alert policy**.
-4. Select **Code location error alert** from the dropdown.
+2. Click the **Alert policies** tab.
+3. Click **Create alert policy**.
+4. Select **Code Location** from the menu and click **Continue**.
+5. Select your target and click **Continue**.
+6. Choose a notification channel for your code location alert and click **Continue**.
+7. Review and save your code location alert and click **Save alert**. 
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
@@ -255,9 +267,12 @@ You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in th
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
-2. Click the **Alerts** tab.
-3. Click **Add alert policy**.
-4. Select **Code location error alert** from the dropdown.
+2. Click the **Alert policies** tab.
+3. Click **Create alert policy**.
+4. Select **Code Location** from the menu and click **Continue**.
+5. Select your target and click **Continue**.
+6. Choose a notification channel for your code location alert and click **Continue**.
+7. Review and save your code location alert and click **Save alert**. 
   </TabItem>
   <TabItem value='cli' label='Using the CLI'>
     Execute the following command to sync the configured alert policy to your Dagster+ deployment.
