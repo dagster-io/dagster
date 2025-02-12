@@ -71,7 +71,7 @@ You can customize the evaluation function of an asset sensor to include specific
 stateDiagram-v2
     direction LR
 
-    classDef userDefined fill: #lightblue
+    classDef userDefined fill: lightblue
 
     [*] --> AssetMaterialization
     AssetMaterialization --> [*]
