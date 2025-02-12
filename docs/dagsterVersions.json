@@ -1,6 +1,6 @@
 {
-  "1.9.13": "https://legacy-docs.dagster.io",
-  "1.9.12": "https://legacy-docs.dagster.io",
-  "1.9.11": "https://legacy-docs.dagster.io",
-  "1.9.10": "https://legacy-docs.dagster.io"
+  "1.9.13": "https://release-1-9-13.archive.dagster-docs.io/",
+  "1.9.12": "https://release-1-9-12.archive.dagster-docs.io/",
+  "1.9.11": "https://release-1-9-11.archive.dagster-docs.io/",
+  "1.9.10": "https://release-1-9-10.archive.dagster-docs.io/"
 }
