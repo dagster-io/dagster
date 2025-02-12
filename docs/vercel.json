@@ -1922,6 +1922,14 @@
     {
       "source": "/guides/preview/:path*",
       "destination": "/labs/:path*"
+    },
+    {
+      "source": "/guides/preview/",
+      "destination": "/labs/"
+    },
+    {
+      "source": "/guides/preview",
+      "destination": "/labs/"
     }
   ]
 }
