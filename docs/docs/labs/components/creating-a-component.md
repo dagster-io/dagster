@@ -3,12 +3,6 @@ title: 'Creating a New Component Type'
 sidebar_position: 100
 ---
 
-:::info
-
-Please contact Dagster if you would like to try Components.
-
-:::
-
 The `dagster-components` system makes it easy to create new component types that can be reused across your project.
 
 In most cases, component types map to a specific technology. For example, you might have a `DockerScriptComponent` that executes a script in a Docker container, or a `SnowflakeQueryComponent` that runs a query on Snowflake.

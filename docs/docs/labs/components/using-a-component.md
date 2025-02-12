@@ -3,12 +3,6 @@ title: "Adding a component to a project"
 sidebar_position: 200
 ---
 
-:::info
-
-Please contact Dagster if you would like to try Components.
-
-:::
-
 ## Finding a component
 
 You can view the available component types in your environment by running the following command:

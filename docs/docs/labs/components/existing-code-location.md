@@ -3,12 +3,6 @@ title: 'Making an existing code location components-compatible'
 sidebar_position: 300
 ---
 
-:::info
-
-Please contact Dagster if you would like to try Components.
-
-:::
-
 :::note
 This guide is only relevant if you are starting from an _existing_ Dagster code location. This setup is unnecessary if you used `dg code-location generate` to create your code location.
 :::
