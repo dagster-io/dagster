@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - docs-prod
+      - 'release-*'
     paths:
       - .github/workflows/build-docs-revamp.yml
       - docs/docs-beta/**
