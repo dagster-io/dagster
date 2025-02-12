@@ -555,3 +555,12 @@ def test_table_name(
     assert asset_materializations[0].materialization.metadata[
         "dagster/table_name"
     ] == TextMetadataValue(text="SLING_SQLITE.main.orders")
+
+
+def test_pool(replication_config: SlingReplicationParam):
+    pool = "custom_pool"
+
+    @sling_assets(replication_config=replication_config, pool=pool)
+    def my_sling_assets(): ...
+
+    assert my_sling_assets.op.pool == pool
