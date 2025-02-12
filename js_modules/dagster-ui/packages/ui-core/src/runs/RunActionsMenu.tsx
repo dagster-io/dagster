@@ -14,6 +14,7 @@ import {
   Popover,
   Tooltip,
 } from '@dagster-io/ui-components';
+import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
@@ -348,7 +349,11 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
   const reexecuteFromFailureMap = Object.fromEntries(
     reexecuteFromFailureRuns.map((r) => [r.id, r.id]),
   );
-  const isPartOfBackfill = selected.some((r) => r.tags.some((t) => t.key === DagsterTag.Backfill));
+  const selectedRunBackfillIds = uniq(
+    selected
+      .map((r) => r.tags.find((t) => t.key === DagsterTag.Backfill)?.value ?? '')
+      .filter(Boolean),
+  );
 
   const reexecutableRuns = selected.filter(
     (r) => doneStatuses.has(r.status) && r.hasReExecutePermission,
@@ -447,18 +452,18 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
       />
       <ReexecutionDialog
         isOpen={visibleDialog === 'reexecute-from-failure'}
-        isPartOfBackfill={isPartOfBackfill}
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={reexecuteFromFailureMap}
+        selectedRunBackfillIds={selectedRunBackfillIds}
         reexecutionStrategy={ReexecutionStrategy.FROM_FAILURE}
       />
       <ReexecutionDialog
         isOpen={visibleDialog === 'reexecute'}
-        isPartOfBackfill={isPartOfBackfill}
         onClose={closeDialogs}
         onComplete={onComplete}
         selectedRuns={reexecutableMap}
+        selectedRunBackfillIds={selectedRunBackfillIds}
         reexecutionStrategy={ReexecutionStrategy.ALL_STEPS}
       />
     </>

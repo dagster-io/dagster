@@ -11,10 +11,12 @@ import {
   Mono,
 } from '@dagster-io/ui-components';
 import {useEffect, useReducer, useRef} from 'react';
+import {Link} from 'react-router-dom';
 
 import {NavigationBlock} from './NavigationBlock';
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION} from './RunUtils';
 import {useMutation} from '../apollo-client';
+import {getBackfillPath} from './RunsFeedUtils';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
@@ -23,10 +25,10 @@ import {ReexecutionStrategy} from '../graphql/types';
 
 interface Props {
   isOpen: boolean;
-  isPartOfBackfill: boolean;
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
   selectedRuns: {[id: string]: string};
+  selectedRunBackfillIds: string[];
   reexecutionStrategy: ReexecutionStrategy;
 }
 
@@ -131,7 +133,8 @@ const reexecutionDialogReducer = (
 };
 
 export const ReexecutionDialog = (props: Props) => {
-  const {isOpen, isPartOfBackfill, onClose, onComplete, reexecutionStrategy, selectedRuns} = props;
+  const {isOpen, onClose, onComplete, reexecutionStrategy, selectedRuns, selectedRunBackfillIds} =
+    props;
 
   // Freeze the selected IDs, since the list may change as runs continue processing and
   // re-executing. We want to preserve the list we're given.
@@ -222,11 +225,20 @@ export const ReexecutionDialog = (props: Props) => {
         return (
           <Group direction="column" spacing={16}>
             <div>{message()}</div>
-            {isPartOfBackfill ? (
+            {selectedRunBackfillIds.length > 0 ? (
               <div>
-                One or more of these runs is part of a backfill. If the backfill has completed,
-                re-executing these runs will not update the backfill status or launch runs of
-                downstream dependencies.
+                {selectedRunBackfillIds.length > 1 ? (
+                  <>One or more of these runs is part of a backfill</>
+                ) : (
+                  <>
+                    One or more of these runs is part of backfill{' '}
+                    <Link to={getBackfillPath(selectedRunBackfillIds[0]!, false)}>
+                      {selectedRunBackfillIds[0]}
+                    </Link>
+                  </>
+                )}
+                . If the backfill has completed, re-executing these runs will not update the
+                backfill status or launch runs of downstream dependencies.
               </div>
             ) : undefined}
           </Group>
