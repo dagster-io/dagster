@@ -5,7 +5,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {OpTags} from './OpTags';
 import {featureEnabled} from '../app/Flags';
 import {DefinitionTag} from '../graphql/types';
-import {linkToAssetTableWithKindFilter} from '../search/useGlobalSearch';
+import {linkToAssetTableWithKindFilter} from '../search/links';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
