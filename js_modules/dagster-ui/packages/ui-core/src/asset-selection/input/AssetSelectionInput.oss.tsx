@@ -1,6 +1,7 @@
 import type {Linter} from 'codemirror/addon/lint/lint';
 import {useAssetSelectionAutoCompleteProvider as defaultUseAssetSelectionAutoCompleteProvider} from 'shared/asset-selection/input/useAssetSelectionAutoCompleteProvider.oss';
 
+import {assetSelectionSyntaxSupportedAttributes, unsupportedAttributeMessages} from './util';
 import {AssetGraphQueryItem} from '../../asset-graph/useAssetGraphData';
 import {SelectionAutoCompleteProvider} from '../../selection/SelectionAutoCompleteProvider';
 import {SelectionAutoCompleteInput} from '../../selection/SelectionInput';
@@ -21,6 +22,8 @@ export interface AssetSelectionInputProps {
 const defaultLinter = createSelectionLinter({
   Lexer: AssetSelectionLexer,
   Parser: AssetSelectionParser,
+  supportedAttributes: assetSelectionSyntaxSupportedAttributes,
+  unsupportedAttributeMessages,
 });
 
 export const AssetSelectionInput = ({

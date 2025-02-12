@@ -1,7 +1,10 @@
 import styled from 'styled-components';
 
 import {RunGraphQueryItem} from './toGraphQueryItems';
-import {useGanttChartSelectionAutoCompleteProvider} from './useGanttChartSelectionAutoCompleteProvider';
+import {
+  ganttChartSelectionSyntaxSupportedAttributes,
+  useGanttChartSelectionAutoCompleteProvider,
+} from './useGanttChartSelectionAutoCompleteProvider';
 import {RunSelectionLexer} from '../run-selection/generated/RunSelectionLexer';
 import {RunSelectionParser} from '../run-selection/generated/RunSelectionParser';
 import {InputDiv, SelectionAutoCompleteInput} from '../selection/SelectionInput';
@@ -31,7 +34,11 @@ export const GanttChartSelectionInput = ({
   );
 };
 const getLinter = weakMapMemoize(() =>
-  createSelectionLinter({Lexer: RunSelectionLexer, Parser: RunSelectionParser}),
+  createSelectionLinter({
+    Lexer: RunSelectionLexer,
+    Parser: RunSelectionParser,
+    supportedAttributes: ganttChartSelectionSyntaxSupportedAttributes,
+  }),
 );
 
 const Wrapper = styled.div`
