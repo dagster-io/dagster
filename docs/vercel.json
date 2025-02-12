@@ -1918,6 +1918,10 @@
       "source": "/integrations/airlift/tutorial/migrate",
       "destination": "/integrations/libraries/airlift/airflow-to-dagster",
       "permanent": false
+    },
+    {
+      "source": "/guides/previews/:path*",
+      "destination": "/labs/:path*"
     }
   ]
 }

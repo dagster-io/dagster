@@ -102,6 +102,12 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
+        {
+          label: 'Labs',
+          type: 'doc',
+          docId: 'labs/index',
+          position: 'left',
+        },
         //{
         //  label: 'Changelog',
         //  type: 'doc',
