@@ -60,7 +60,7 @@ export const InstanceConcurrencyIndexContent = React.memo(() => {
   >(INSTANCE_CONCURRENCY_LIMITS_QUERY, {
     notifyOnNetworkStatusChange: true,
   });
-  const [activeTab, setActiveTab] = React.useState<ConcurrencyTab>('run-concurrency');
+  const [activeTab, setActiveTab] = React.useState<ConcurrencyTab>('key-concurrency');
 
   const {data} = queryResult;
 

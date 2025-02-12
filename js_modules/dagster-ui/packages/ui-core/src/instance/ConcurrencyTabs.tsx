@@ -10,12 +10,12 @@ interface Props {
 export const ConcurrencyTabs = ({activeTab, onChange}: Props) => {
   return (
     <Tabs selectedTabId={activeTab} onChange={onChange}>
+      <Tab title="Pools" id="key-concurrency" selected={activeTab === 'key-concurrency'} />
       <Tab
-        title="Run concurrency"
+        title="Run tag concurrency"
         id="run-concurrency"
         selected={activeTab === 'run-concurrency'}
       />
-      <Tab title="Pools" id="key-concurrency" selected={activeTab === 'key-concurrency'} />
     </Tabs>
   );
 };
