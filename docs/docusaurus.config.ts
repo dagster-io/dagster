@@ -166,6 +166,13 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
           editUrl: 'https://github.com/dagster-io/dagster/tree/master/docs',
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '1.9.11',
+              path: '/'
+            }
+          }
         },
         blog: false,
         theme: {
