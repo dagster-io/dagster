@@ -328,8 +328,10 @@ class DagsterGrpcClient:
         res = self._query("ListRepositories", dagster_api_pb2.ListRepositoriesRequest)
         return res.serialized_list_repositories_response_or_error
 
-    async def gen_list_repositories(self) -> str:
-        res = await self._gen_query("ListRepositories", dagster_api_pb2.ListRepositoriesRequest)
+    async def gen_list_repositories(self, **kwargs) -> str:
+        res = await self._gen_query(
+            "ListRepositories", dagster_api_pb2.ListRepositoriesRequest, **kwargs
+        )
         return res.serialized_list_repositories_response_or_error
 
     def external_partition_names(self, partition_names_args: PartitionNamesArgs) -> str:
@@ -429,6 +431,7 @@ class DagsterGrpcClient:
         self,
         remote_repository_origin: RemoteRepositoryOrigin,
         job_name: str,
+        timeout=DEFAULT_GRPC_TIMEOUT,
     ) -> dagster_api_pb2.ExternalJobReply:
         check.inst_param(
             remote_repository_origin,
@@ -441,6 +444,7 @@ class DagsterGrpcClient:
             dagster_api_pb2.ExternalJobRequest,
             serialized_repository_origin=serialize_value(remote_repository_origin),
             job_name=job_name,
+            timeout=timeout,
         )
 
     def streaming_external_repository(
