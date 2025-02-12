@@ -169,6 +169,7 @@ def _namedtuple_record_transform(
         "__qualname__": cls.__qualname__,
         "__annotations__": field_set,
         "__doc__": cls.__doc__,
+        "__get_pydantic_core_schema__": _pydantic_core_schema,
     }
 
     # Due to MRO issues, we can not support both @record_custom __new__ and record inheritance
@@ -629,3 +630,13 @@ def _defines_own_new(cls) -> bool:
 
 def _do_defensive_checks():
     return bool(os.getenv("DAGSTER_RECORD_DEFENSIVE_CHECKS"))
+
+
+@classmethod
+def _pydantic_core_schema(cls, source: Any, handler):
+    """Forces pydantic_core to treat records as normal types instead of namedtuples. In particular,
+    pydantic assumes that all namedtuples can be constructed with posargs, while records are kw-only.
+    """
+    from pydantic_core import core_schema
+
+    return core_schema.is_instance_schema(cls)
