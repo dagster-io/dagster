@@ -29,106 +29,67 @@ This command builds a code location at `jaffle-platform` and initializes a new P
 virtual environment inside of it. When using `dg`'s default environment
 management behavior, you won't need to worry about activating this virtual environment yourself.
 
-Let's have a look at the scaffolded files:
-
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/3-tree.txt" />
-
-
-You can see that we have a fairly standard Python project structure. There is a
-python package `jaffle_platform`-- the name is an underscored inflection of the
-project root directory (`jaffle_platform`). There is also an (empty)
-`jaffle_platform_tests` test package, a `pyproject.toml`, and a `uv.lock`. The
-`pyproject.toml` contains a `tool.dagster` and `tool.dg` section that look like
-this:
-
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/4-pyproject.toml" language="TOML" title="jaffle-platform/pyproject.toml" />
-
-
-The `tool.dagster` section is not `dg`-specific, it specifies that a set of definitions can be loaded from the `jaffle_platform.definitions` module. The `tool.dg` section contains two settings requiring more explanation.
-
-`is_code_location = true` specifies that this project is a `dg`-managed code location. This is just a regular Dagster code location that has been structured in a particular way. Let's look at the content of `jaffle_platform/definitions.py`:
-
-
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/5-definitions.py" language="Python" title="jaffle-platform/jaffle_platform/definitions.py" />
-This call to `build_component_defs` will:
-
-- discover the set of components defined in the project
-- compute a set of `Definitions` from each component
-- merge the component-specific definitions into a single `Definitions` object
-
-`is_code_location` is telling `dg` that the project is structured in this way and therefore contains component instances. In the current project, component instances will be placed in the default location at `jaffle_platform/components`.
-
-`is_component_lib = true` specifies that the project is a component library.
-This means that the project may contain component types that can be referenced
-when generating component instances. In a typical code location most components
-are likely to be instances of types defined in external libraries (e.g.
-`dagster-components`), but it can also be useful to define custom component
-types scoped to the project. That is why `is_component_lib` is set to `true` by
-default. Any scaffolded component types in `jaffle_platform` will be placed in
-the default location at `jaffle_platform/lib`. You can also see that this
-module is registered under the `dagster.components` entry point in
-`pyproject.toml`. This is what makes the components discoverable to `dg`:
-
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/6-pyproject.toml" language="TOML" title="jaffle-platform/pyproject.toml" />
-
-
-Now that we've got a basic scaffold, we're ready to start building components. We are going to set up a data platform using Sling to ingest data and DBT to process the data. We'll then automate the daily execution of our pipeline using Dagster automation conditions.
+To learn more about the files, directories, and default settings in a code location scaffolded with Components, see "[Creating a code location with Components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components#overview-of-files-and-directories)
 
 ## Ingest data
 
-First let's set up Sling. If we query the available component types in our environment, we don't see anything Sling-related:
+### Add the Sling Component
+
+First, you will need to set up Sling. If you query the available Component types in your environment at this point, you won't see anything Sling-related:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/7-dg-list-component-types.txt" />
 
-This is because the basic `dagster-components` package (which was installed when we scaffolded our code location) is lightweight and doesn't include components for specific integrations (like Sling). We can get access to a Sling component by installing the `sling` extra of `dagster-components`:
-
-:::note
-Recall that `dg` always operates in an isolated environment-- so how is it able to access the set of components types available in our project environment? Under the hood, `dg` attempts to resolve a project root whenever it is run. If it finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will by default expect a `uv`-managed virtual environment to be present in the same directory (this can be confirmed by the presence of a `uv.lock` file). When you run commands like `dg component-type list`, `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up for us as part of the `dg code-location scaffold` command.
-:::
+This is because the basic `dagster-components` package (which was installed when we scaffolded our code location) doesn't include Components for specific integrations (like Sling). We can get access to a Sling Component by installing the `sling` extra of `dagster-components`:
 
 <CliInvocationExample contents="uv add 'dagster-components[sling]'" />
 
-Now let's see what component types are available:
+:::note
+
+`dg` always operates in an isolated environment, but it is able to access the set of Component types available in your project environment, because under the hood, `dg` attempts to resolve a project root whenever it is run. If it finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory (this can be confirmed by the presence of a `uv.lock` file). When you run commands like `dg component-type list`, `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg code-location scaffold` command.
+
+:::
+
+Run the TODO command again to confirm that the `dagster_components.sling_replication` Component type is now available:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/8-dg-list-component-types.txt" />
 
-
-Great-- now we can see the `dagster_components.sling_replication` component type. Let's create a new instance of this component:
+Next, create a new instance of this Component type:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/9-dg-scaffold-sling-replication.txt" />
-
 
 This adds a component instance to the project at `jaffle_platform/components/ingest_files`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/10-tree-jaffle-platform.txt" />
 
-
-A single file, `component.yaml`, was created in the component folder. The `component.yaml` file is common to all Dagster components, and specifies the component type and any parameters used to scaffold definitions from the component at runtime.
+A single file, `component.yaml`, was created in the Component folder. The `component.yaml` file is common to all Dagster components, and specifies the Component type and any parameters used to scaffold definitions from the Component at runtime.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/11-component.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/ingest_files/component.yaml"/>
 
-
-Right now the parameters define a single "replication"-- this is a sling concept that specifies how data should be replicated from a source to a target. The details are specified in a `replication.yaml` file that is read by Sling. This file does not yet exist-- we are going to create it shortly.
+Right now the parameters define a single "replication"-- this is a Sling concept that specifies how data should be replicated from a source to a target. The details are specified in a `replication.yaml` file that is read by Sling. This file does not yet exist-- we are going to create it shortly.
 
 :::note
 The `path` parameter for a replication is relative to the same folder containing component.yaml. This is a convention for components.
 :::
 
-But first, let's set up DuckDB:
+### Set up DuckDB
+
+Set up and test DuckDB:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/12-sling-setup-duckdb.txt" />
 
-
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/13-sling-test-duckdb.txt" />
 
+### Download files for Sling source
 
-Now, let's download some files locally to use our Sling source (Sling doesn't support reading from the public internet):
+Next, you will need to download some files locally to use your Sling source, since Sling doesn't support reading from the public internet:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/14-curl.txt" />
 
-And finally create `replication.yaml` referencing the downloaded files:
+Finally, create a `replication.yaml` file that references the downloaded files:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/15-replication.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/ingest_files/replication.yaml" />
+
+### View and materialize assets in the Dagster UI
 
 Let's load up our code location in the Dagster UI to see what we've got:
 
@@ -142,31 +103,39 @@ Click "Materialize All", and we should now have tables in the DuckDB instance. L
 
 ## Transform data
 
-We'll now download a pre-existing sample DBT project from github. We're going to use the data we are ingesting with Sling as an input for the DBT project. Clone the project (and delete the embedded git repo):
+### Clone a sample dbt project from GitHub
+
+To transform the data, you will need to download clone a sample dbt project from GitHub. You will use the data ingested with Sling as an input for the dbt project. Follow the steps below to clone the project and delete the embedded git repo:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/17-jaffle-clone.txt" />
 
-We'll need to create a Dagster DBT project component to interface with the dbt project. We can access the DBT project component by installing `dagster-components[dbt]` and `dbt-duckdb`:
+### Install the dbt project Component type
+
+To interface with the dbt project, you will need to instantiate a Dagster dbt project Component. To access the dbt project Component type, install `dagster-components[dbt]` and `dbt-duckdb`:
 
 <CliInvocationExample contents="uv add 'dagster-components[dbt]' dbt-duckdb" />
 
+Run the TODO command to confirm that the `dagster_components.dbt_project` Component type is now available:
+
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" />
 
-
-There it is: `dagster_components.dbt_project`. We can access detailed info about a component type using the `dg component-type info` command. Let's have a look at the `dagster_components.dbt_project` component type:
+You can access detailed information about a Component type with the `dg component-type info` command:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-component-type-info.txt" />
 
+The output of `dg component-type info` shows the parameters (in JSON schema format) for both Component generation and runtime loading of the Component. (The runtime parameters have been truncated here due to length.)
 
-The output of the above command shows the parameters (in JSON schema format) for both component generation and runtime loading of the component (the runtime parameters have been truncated here due to length).
+### Scaffold a new instance of the dbt project Component
 
-Let's scaffold a new instance of the `dagster_components.dbt_project` component, providing the path to the dbt project we cloned earlier as the `project_path` scaffold paramater. We can pass this on the command line:
+Next, scaffold a new instance of the `dagster_components.dbt_project` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold paramater:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/20-dg-scaffold-jdbt.txt"/>
 
-This creates a new component instance in the project at `jaffle_platform/components/jdbt`. Open `component.yaml` and you'll see:
+This creates a new Component instance in the project at `jaffle_platform/components/jdbt`. Open `component.yaml` in that directory and you'll see:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/21-component-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
+
+### Update the dbt project Component configuration
 
 Let’s see the project in the Dagster UI:
 
@@ -204,9 +173,9 @@ viewing a sample of the newly materialized assets from the command line:
 
 ## Automate the pipeline
 
-## Automation
+### Automate Sling ingestion
 
-Now that we've defined some assets, let automate them to keep them up to date. We can do this via declarative automation directly in our yaml DSL. Navigate to `components/ingest_files/component.yaml` and update with the below:
+Now that you've defined some assets, you can automate them to keep them up to date. You can do this using [declarative automation](/guides/automate/declarative-automation) directly in the `component.yaml` file. Navigate to `components/ingest_files/component.yaml` and add the `automation_condition` below to automatically pull in data with Sling every day:
 
 ```yaml create=jaffle_platform/components/ingest_files/component.yaml title="jaffle-platform/jaffle_platform/components/ingest_files/component.yaml"
 type: dagster_components.sling_replication_collection
@@ -222,9 +191,9 @@ params:
           automation_condition: "on_cron(@daily)"
 ```
 
-This will automatically pull in data with sling each day. Now we want to make
-the dbt project execute after our sling replication runs. Update
-`components/jdbt/component.yaml` with the below:
+### Automate dbt transformation
+
+Next, update the dbt project so it executes after the Sling replication runs. Navigate to `components/jdbt/component.yaml` and add the `automation_condition` below:
 
 ```yaml create=jaffle_platform/components/jdbt/component.yaml title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml"
 type: dagster_components.dbt_project
