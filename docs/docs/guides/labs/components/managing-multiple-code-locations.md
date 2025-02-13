@@ -1,6 +1,6 @@
 ---
-title: "Setting up a deployment"
-sidebar_position: 400
+title: 'Managing multiple code locations with Components'
+sidebar_position: 40
 ---
 
 :::info

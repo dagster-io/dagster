@@ -1,6 +1,6 @@
 ---
-title: 'Making an existing code location components-compatible'
-sidebar_position: 300
+title: 'Migrating an existing code location to Components'
+sidebar_position: 200
 ---
 
 :::info
