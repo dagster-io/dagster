@@ -55,6 +55,8 @@
 
 ### Dagster Plus
 
+- Shipped a range of improvements to alerts in Dagster+, including more granular targeting, streamlined UIs, and more helpful content. Stay tuned for a some final changes and a full announcement in the coming weeks!
+
 ## 1.9.13 (core) / 0.25.13 (libraries)
 
 ### Dagster Plus
