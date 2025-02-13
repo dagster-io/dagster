@@ -386,7 +386,7 @@ def model_question(
     description="Compare fine-tuned model against base model accuracy",
 )
 def fine_tuned_model_accuracy(
-    context: dg.AssetExecutionContext,
+    context: dg.AssetCheckExecutionContext,
     openai: OpenAIResource,
     fine_tuned_model,
     data,
