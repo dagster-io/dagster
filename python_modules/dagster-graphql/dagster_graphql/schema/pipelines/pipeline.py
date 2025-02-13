@@ -980,7 +980,6 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
         return GrapheneRepository(self._remote_job.repository_handle)
 
-    @capture_error
     def resolve_partitionKeysOrError(
         self,
         graphene_info: ResolveInfo,
