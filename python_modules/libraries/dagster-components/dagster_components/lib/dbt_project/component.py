@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Annotated, Callable, Optional
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -57,8 +57,10 @@ class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
     dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
-    op: Optional[OpSpecSchema]
-    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)]
+    op: Optional[OpSpecSchema] = None
+    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = field(
+        default_factory=lambda: DagsterDbtTranslator()
+    )
     transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None
 
     @computed_field
