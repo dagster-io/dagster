@@ -8,7 +8,7 @@ When new releases include breaking changes or deprecations, this document descri
 
 ### Notable behavior changes
 
-- We've refreshed our integrations with popular ELT tools like [Fivetran](https://docs.dagster.io/integrations/libraries/fivetran) and [Airbyte](https://docs.dagster.io/integrations/libraries/airbyte/airbyte-oss) to leverage Dagster's asset-based patterns better and provide enhanced visibility into your data pipelines. The old integration patterns are still available, so there are no breaking changes, but we enourage users to take advantage of the new capabilities!
+- We've refreshed our integrations with popular ELT tools like [Fivetran](https://docs.dagster.io/integrations/libraries/fivetran) and [Airbyte](https://docs.dagster.io/integrations/libraries/airbyte/airbyte-oss) to leverage Dagster's asset-based patterns better and provide enhanced visibility into your data pipelines. The old integration patterns are still available, so there are no breaking changes, but we encourage users to take advantage of the new capabilities!
 
 ### Deprecations
 
