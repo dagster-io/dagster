@@ -28,7 +28,7 @@ class InnerSchema(ResolvableSchema[InnerObject]):
     val2: Optional[str]
 
 
-class TargetParams(ResolvableSchema[TargetObject]):
+class TargetSchema(ResolvableSchema[TargetObject]):
     int_val: str
     str_val: str
     inners: Optional[Sequence[InnerSchema]] = None
@@ -42,7 +42,7 @@ def test_valid_resolution_simple() -> None:
 
 def test_valid_resolution_nested() -> None:
     context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
-    params = TargetParams(
+    params = TargetSchema(
         int_val="{{ some_int }}",
         str_val="{{ some_str }}_x",
         inners=[InnerSchema(val1="{{ some_int }}", val2="{{ some_str }}_y")],
