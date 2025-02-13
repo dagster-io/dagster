@@ -31,9 +31,10 @@ def resolve_asset_specs(
 @registered_component_type(name="shell_command")
 @dataclass
 class ShellCommand(Component):
+    """Models a shell script as a Dagster asset."""
+
     script_path: str
     asset_specs: Annotated[Sequence[dg.AssetSpec], FieldResolver(resolve_asset_specs)]
-    """Models a shell script as a Dagster asset."""
 
     @classmethod
     def get_schema(cls) -> type[ShellScriptSchema]:
