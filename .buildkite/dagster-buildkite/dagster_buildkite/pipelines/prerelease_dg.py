@@ -17,6 +17,7 @@ def build_prerelease_dg_steps() -> List[BuildkiteStep]:
                 "required": False,
                 "key": "version-to-release",
                 "default": None,
+                "hint": "0.1.15",
             },
         ],
     }
