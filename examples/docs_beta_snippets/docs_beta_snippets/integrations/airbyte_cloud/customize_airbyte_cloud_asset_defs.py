@@ -10,8 +10,10 @@ airbyte_workspace = AirbyteCloudWorkspace(
 
 
 @airbyte_assets(
+    # Replace with your connection ID
     connection_id="airbyte_connection_id",
     workspace=airbyte_workspace,
+    # Replace with your connection name
     name="airbyte_connection_name",
     group_name="airbyte_connection_name",
 )
