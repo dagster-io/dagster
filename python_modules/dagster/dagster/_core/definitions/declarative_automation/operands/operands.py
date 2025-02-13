@@ -1,5 +1,6 @@
 import datetime
-from typing import Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, AbstractSet, Optional
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
@@ -15,6 +16,9 @@ from dagster._core.definitions.declarative_automation.utils import SerializableT
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
+
+if TYPE_CHECKING:
+    from dagster._core.storage.dagster_run import RunRecord
 
 
 @whitelist_for_serdes
@@ -148,8 +152,39 @@ class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
         return "executed_with_root_target"
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return await context.asset_graph_view.compute_latest_run_executed_with_subset(
-            from_subset=context.candidate_subset, target=context.root_context.key
+        def _filter_fn(run_record: "RunRecord") -> bool:
+            asset_selection = run_record.dagster_run.asset_selection or set()
+            check_selection = run_record.dagster_run.asset_check_selection or set()
+            return context.root_context.key in (asset_selection | check_selection)
+
+        return await context.asset_graph_view.compute_latest_run_matches_subset(
+            from_subset=context.candidate_subset, filter_fn=_filter_fn
+        )
+
+
+@whitelist_for_serdes
+@record
+class LatestRunExecutedWithTags(SubsetAutomationCondition):
+    tag_keys: Optional[AbstractSet[str]] = None
+    tag_values: Optional[Mapping[str, str]] = None
+
+    @property
+    def name(self) -> str:
+        return "executed_with_tags"
+
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+        def _filter_fn(run_record: "RunRecord") -> bool:
+            if self.tag_keys and run_record.dagster_run.tags.keys() < self.tag_keys:
+                return False
+            if self.tag_values and not all(
+                run_record.dagster_run.tags.get(key) == value
+                for key, value in self.tag_values.items()
+            ):
+                return False
+            return True
+
+        return await context.asset_graph_view.compute_latest_run_matches_subset(
+            from_subset=context.candidate_subset, filter_fn=_filter_fn
         )
 
 
