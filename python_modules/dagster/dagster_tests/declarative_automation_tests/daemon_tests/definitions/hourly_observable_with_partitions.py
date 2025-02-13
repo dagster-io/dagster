@@ -7,7 +7,7 @@ static_partitions1 = dg.StaticPartitionsDefinition(["x", "y", "z"])
     automation_condition=dg.AutomationCondition.on_cron("@hourly"),
     partitions_def=static_partitions1,
 )
-def obs() -> None:
+def obs() -> dg.DataVersionsByPartition:
     return dg.DataVersionsByPartition({"x": "42", "y": "43", "z": "44"})
 
 

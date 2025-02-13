@@ -5,6 +5,7 @@ from dagster import (
     AssetMaterialization,
     AutomationCondition,
     DagsterInstance,
+    DataVersion,
     Definitions,
     asset,
     asset_check,
@@ -192,9 +193,10 @@ def test_on_cron_on_asset_check() -> None:
 
 def test_on_cron_on_observable_source() -> None:
     @observable_source_asset(automation_condition=AutomationCondition.on_cron("@hourly"))
-    def obs() -> None: ...
+    def obs() -> DataVersion:
+        return DataVersion("42")
 
-    @asset(deps=[obs], automation_condition=AutomationCondition.on_cron("@hourly"))
+    @asset(deps=[obs], automation_condition=AutomationCondition.eager())
     def mat() -> None: ...
 
     current_time = datetime.datetime(2024, 8, 16, 4, 35)
@@ -207,12 +209,19 @@ def test_on_cron_on_observable_source() -> None:
     )
     assert result.total_requested == 0
 
-    # now passed a cron tick, kick off both
+    # now passed a cron tick, kick off observation
     current_time += datetime.timedelta(minutes=30)
     result = evaluate_automation_conditions(
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
-    assert result.total_requested == 2
+    assert result.total_requested == 1
+
+    # next tick, kick off materialization
+    current_time += datetime.timedelta(minutes=1)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
+    )
+    assert result.total_requested == 1
 
     # don't kick off again
     current_time += datetime.timedelta(minutes=1)

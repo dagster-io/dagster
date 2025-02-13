@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
@@ -31,6 +31,9 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
 from dagster._utils.warnings import disable_dagster_warnings
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetNode
 
 
 class AssetNode(BaseAssetNode):
