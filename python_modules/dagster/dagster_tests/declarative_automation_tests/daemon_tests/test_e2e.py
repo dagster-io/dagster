@@ -317,7 +317,9 @@ def test_checks_and_assets_in_same_run() -> None:
 
 
 def _get_location_name(run: DagsterRun):
-    return run.remote_job_origin.repository_origin.code_location_origin.location_name
+    return check.not_none(
+        run.remote_job_origin
+    ).repository_origin.code_location_origin.location_name
 
 
 def test_cross_location_source_assets() -> None:
