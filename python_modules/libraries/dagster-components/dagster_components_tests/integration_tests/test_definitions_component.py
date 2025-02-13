@@ -34,6 +34,14 @@ def test_definitions_component_with_explicit_file_relative_imports() -> None:
     }
 
 
+def test_definitions_component_with_explicit_file_relative_imports_init() -> None:
+    defs = load_test_component_defs("definitions/explicit_file_relative_imports_init")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("asset_in_init_file"),
+        AssetKey("asset_in_some_other_file"),
+    }
+
+
 def test_definitions_component_with_explicit_file_relative_imports_complex() -> None:
     defs = load_test_component_defs("definitions/explicit_file_relative_imports_complex")
     assert {spec.key for spec in defs.get_all_asset_specs()} == {

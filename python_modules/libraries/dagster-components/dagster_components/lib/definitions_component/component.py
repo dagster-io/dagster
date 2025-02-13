@@ -50,8 +50,8 @@ class DefinitionsComponent(Component):
                 Path(self.definitions_path) if self.definitions_path else Path("definitions.py")
             ).absolute()
             if defs_file_path.name != "__init__.py":
-                name = f"{component_module_name}.{defs_file_path.stem}"
+                component_module_name = f"{component_module_name}.{defs_file_path.stem}"
 
-            module = importlib.import_module(name)
+            module = importlib.import_module(component_module_name)
 
         return load_definitions_from_module(module)
