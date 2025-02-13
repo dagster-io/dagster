@@ -989,6 +989,20 @@ class AssetDaemon(DagsterDaemon):
                 for rr in run_requests
             ]
 
+            workspace = workspace_process_context.create_request_context()
+            asset_graph = workspace.asset_graph
+
+            missing_asset_keys = set()
+            for run_request in run_requests:
+                for asset_key in run_request.asset_selection or []:
+                    if not asset_graph.has(asset_key):
+                        missing_asset_keys.add(asset_key)
+
+            if missing_asset_keys:
+                raise Exception(
+                    f"Tick produced asset keys {missing_asset_keys} that are no longer in the asset graph. The assets may have been removed while they were being evaluated, or a code location may have moved into an error state. Retrying with the latest asset graph."
+                )
+
             # Write out the in-progress tick data, which ensures that if the tick crashes or raises an exception, it will retry
             tick = tick_context.set_run_requests(
                 run_requests=run_requests,
