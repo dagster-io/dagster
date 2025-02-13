@@ -46,6 +46,15 @@ class InitialEvaluationCondition(BuiltinAutomationCondition):
 
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         condition_tree_id = context.root_context.condition.get_unique_id()
+        # will need to add some logic here to store the cursor as a tuple of
+        # `(condition_tree_id, label)` and only trigger if both change.
+        # the other tricky bit is that condition_tree_id is currently a function
+        # of the label so there's no way to detect "only the label changed" without
+        # creating a new condition identifier that strips out the label
+        # in theory, we could also update this to make a db call to fetch the previous
+        # evaluation in the case that the condition tree id changes (which should be
+        # very rare, so the extra performance hit should be fine). that way we could
+        # detect this change without changing what we store in the cursor
         if context.previous_true_subset is None or condition_tree_id != context.cursor:
             subset = context.candidate_subset
         else:

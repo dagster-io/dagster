@@ -152,6 +152,43 @@ def test_initial_evaluation_condition_toggle() -> None:
     assert result.total_requested == 1
 
 
+def test_initial_evaluation_condition_label_constant() -> None:
+    def _get_defs(condition: dg.AutomationCondition, label: str) -> dg.Definitions:
+        cond = (dg.AutomationCondition.initial_evaluation() & condition).with_label(label)
+
+        @dg.asset(automation_condition=cond)
+        def a() -> None: ...
+
+        return dg.Definitions(assets=[a])
+
+    instance = dg.DagsterInstance.ephemeral()
+
+    cond1 = dg.AutomationCondition.in_progress()
+    cond2 = dg.AutomationCondition.in_progress() | dg.AutomationCondition.any_deps_in_progress()
+
+    # initial evaluation, should be true
+    result = dg.evaluate_automation_conditions(defs=_get_defs(cond1, "my_cond"), instance=instance)
+    assert _get_initial_evaluation_count(result) == 1
+
+    # no longer initial evaluation
+    result = dg.evaluate_automation_conditions(
+        defs=_get_defs(cond1, "my_cond"), instance=instance, cursor=result.cursor
+    )
+    assert _get_initial_evaluation_count(result) == 0
+
+    # condition changes, but label is the same
+    result = dg.evaluate_automation_conditions(
+        defs=_get_defs(cond2, "my_cond"), instance=instance, cursor=result.cursor
+    )
+    assert _get_initial_evaluation_count(result) == 0
+
+    # label changes, condition is otherwise the same
+    result = dg.evaluate_automation_conditions(
+        defs=_get_defs(cond2, "my_new_cond"), instance=instance, cursor=result.cursor
+    )
+    assert _get_initial_evaluation_count(result) == 0
+
+
 def test_no_update_on_new_deps() -> None:
     def _get_defs(deps: Sequence[str]) -> dg.Definitions:
         @dg.multi_asset(specs=[dg.AssetSpec(d) for d in deps])
