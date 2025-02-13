@@ -12,9 +12,7 @@ from typing import (
     get_origin,
 )
 
-from dagster._annotations import _get_annotation_target
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._record import record
 from pydantic import BaseModel, ConfigDict
 
 from dagster_components.core.schema.metadata import FieldInfo
@@ -22,7 +20,6 @@ from dagster_components.core.schema.metadata import FieldInfo
 if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
 
-FIELD_RESOLVER_ATTR = "__field_resolver__"
 
 T = TypeVar("T")
 
@@ -51,10 +48,7 @@ class ResolvableSchema(BaseModel, Generic[T]):
             **(
                 _get_annotation_field_resolvers(target_type)
                 or _get_annotation_field_resolvers(self.__class__)
-            ),
-            # check for decorators on the schema class and target type
-            **_get_decorator_field_resolvers(self.FieldResolvers),
-            **_get_decorator_field_resolvers(target_type),
+            )
         }
 
     @property
@@ -82,8 +76,6 @@ class ResolvableSchema(BaseModel, Generic[T]):
     def resolve(self, context: "ResolutionContext") -> T:
         return self.resolve_as(self._resolved_type, context)
 
-    class FieldResolvers: ...
-
 
 class FieldResolver(FieldInfo):
     """Contains information on how to resolve this field from a ResolvableSchema."""
@@ -104,52 +96,24 @@ class FieldResolver(FieldInfo):
         )
 
 
-@record
-class FieldResolverInfo:
-    field_name: str
-    resolver: FieldResolver
-
-
-def field_resolver(field_name: str) -> Any:
-    def decorator(
-        fn: Callable[["ResolutionContext", ResolvableSchema], T],
-    ) -> Callable[["ResolutionContext", ResolvableSchema], T]:
-        setattr(
-            _get_annotation_target(fn),
-            FIELD_RESOLVER_ATTR,
-            FieldResolverInfo(field_name=field_name, resolver=FieldResolver(fn=fn)),
-        )
-        return fn
-
-    return decorator
-
-
-def _get_field_resolver_info(obj: Any) -> Optional[FieldResolverInfo]:
-    return getattr(_get_annotation_target(obj), FIELD_RESOLVER_ATTR, None)
-
-
 def _get_annotation_field_resolvers(cls: type) -> dict[str, FieldResolver]:
     if issubclass(cls, BaseModel):
-        field_names = cls.model_fields.keys()
+        # neither pydantic's Field.annotation nor Field.rebuild_annotation() actually
+        # return the original annotation, so we have to walk the mro to get them
+        annotations = {}
+        for field_name in cls.model_fields:
+            for base in cls.__mro__:
+                if field_name in getattr(base, "__annotations__", {}):
+                    annotations[field_name] = base.__annotations__[field_name]
+                    break
+        return {
+            field_name: FieldResolver.from_annotation(annotation, field_name)
+            for field_name, annotation in annotations.items()
+        }
     elif is_dataclass(cls):
-        field_names = {field.name for field in fields(cls)}
+        return {
+            field.name: FieldResolver.from_annotation(field.type, field.name)
+            for field in fields(cls)
+        }
     else:
         return {}
-
-    resolvers = {}
-    for field_name in field_names:
-        for subcls in cls.__mro__:
-            if field_name in getattr(subcls, "__annotations__", {}):
-                resolvers[field_name] = FieldResolver.from_annotation(
-                    subcls.__annotations__[field_name], field_name
-                )
-    return resolvers
-
-
-def _get_decorator_field_resolvers(cls: type) -> dict[str, FieldResolver]:
-    resolvers = {}
-    for attr_name in dir(cls):
-        info = _get_field_resolver_info(getattr(cls, attr_name))
-        if isinstance(info, FieldResolverInfo):
-            resolvers[info.field_name] = info.resolver
-    return resolvers
