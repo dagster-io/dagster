@@ -28,7 +28,7 @@ Scaffold params schema:
             "title": "Project Path"
         }
     },
-    "title": "DbtScaffoldParams",
+    "title": "DbtScaffoldSchema",
     "type": "object"
 }
 

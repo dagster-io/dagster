@@ -13,7 +13,7 @@ from dagster_dbt import (
 )
 from pydantic import computed_field
 
-from dagster_components import Component, ComponentLoadContext, field_resolver
+from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.core.component import registered_component_type
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
@@ -37,31 +37,29 @@ class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 
 
+def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliResource:
+    return DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
+
+
+def resolve_translator(
+    context: ResolutionContext, schema: DbtProjectSchema
+) -> DagsterDbtTranslator:
+    return get_wrapped_translator_class(DagsterDbtTranslator)(
+        resolving_info=TranslatorResolvingInfo(
+            "node", schema.asset_attributes or AssetAttributesSchema(), context
+        )
+    )
+
+
 @registered_component_type(name="dbt_project")
 @dataclass
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
-    dbt: DbtCliResource
+    dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
     op: Optional[OpSpecSchema]
-    translator: DagsterDbtTranslator
+    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)]
     transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None
-
-    @field_resolver("dbt")
-    @staticmethod
-    def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliResource:
-        return DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
-
-    @field_resolver("translator")
-    @staticmethod
-    def resolve_translator(
-        context: ResolutionContext, schema: DbtProjectSchema
-    ) -> DagsterDbtTranslator:
-        return get_wrapped_translator_class(DagsterDbtTranslator)(
-            resolving_info=TranslatorResolvingInfo(
-                "node", schema.asset_attributes or AssetAttributesSchema(), context
-            )
-        )
 
     @computed_field
     @property

@@ -1,17 +1,23 @@
 from collections.abc import Sequence
-from typing import Optional
+from typing import Annotated, Optional
 
 import pytest
 from dagster._check.functions import ParameterCheckError
-from dagster_components import ResolutionContext, ResolvableSchema, field_resolver
+from dagster_components import FieldResolver, ResolutionContext, ResolvableSchema
+from dagster_components.core.schema.base import field_resolver
 from pydantic import BaseModel
 
 
-class InnerObject(BaseModel):
-    val1_renamed: int
-    val2: Optional[str]
+def resolve_val2(context: ResolutionContext, schema: "InnerSchema") -> str:
+    return context.resolve_value(schema.val2 or "a", as_type=str) + "_resolved"
 
-    @field_resolver("val1_renamed")
+
+class InnerObject(BaseModel):
+    val1_renamed_decorator: int
+    val2_renamed_annotated: Annotated[Optional[str], FieldResolver(resolve_val2)]
+    val3: Optional[str]
+
+    @field_resolver("val1_renamed_decorator")
     @staticmethod
     def resolve_val1_renamed(context: ResolutionContext, schema: "InnerSchema") -> int:
         return 20 + context.resolve_value(schema.val1, as_type=int)
@@ -26,6 +32,7 @@ class TargetObject(BaseModel):
 class InnerSchema(ResolvableSchema[InnerObject]):
     val1: str
     val2: Optional[str]
+    val3: str = "val3"
 
 
 class TargetSchema(ResolvableSchema[TargetObject]):
@@ -36,8 +43,10 @@ class TargetSchema(ResolvableSchema[TargetObject]):
 
 def test_valid_resolution_simple() -> None:
     context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
-    params = InnerSchema(val1="{{ some_int }}", val2="{{ some_str }}_b")
-    assert context.resolve_value(params) == InnerObject(val1_renamed=21, val2="a_b")
+    params = InnerSchema(val1="{{ some_int }}", val2="{{ some_str }}_b", val3="{{ some_str }}_c")
+    assert context.resolve_value(params) == InnerObject(
+        val1_renamed_decorator=21, val2_renamed_annotated="a_b_resolved", val3="a_c"
+    )
 
 
 def test_valid_resolution_nested() -> None:
@@ -51,7 +60,11 @@ def test_valid_resolution_nested() -> None:
     assert context.resolve_value(params) == TargetObject(
         int_val=1,
         str_val="a_x",
-        inners=[InnerObject(val1_renamed=21, val2="a_y")],
+        inners=[
+            InnerObject(
+                val1_renamed_decorator=21, val2_renamed_annotated="a_y_resolved", val3="val3"
+            )
+        ],
     )
 
 

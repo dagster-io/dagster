@@ -157,7 +157,7 @@ _EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
             "asset_key",
             "filename"
         ],
-        "title": "SimplePipesScriptAssetParams",
+        "title": "SimplePipesScriptAssetSchema",
         "type": "object"
     }
 
@@ -178,7 +178,7 @@ _EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
             "asset_key",
             "filename"
         ],
-        "title": "SimplePipesScriptAssetParams",
+        "title": "SimplePipesScriptAssetSchema",
         "type": "object"
     }
 """).strip()
@@ -251,7 +251,7 @@ def test_component_type_info_flag_fields_success():
                         "asset_key",
                         "filename"
                     ],
-                    "title": "SimplePipesScriptAssetParams",
+                    "title": "SimplePipesScriptAssetSchema",
                     "type": "object"
                 }
             """).strip()
@@ -281,7 +281,7 @@ def test_component_type_info_flag_fields_success():
                         "asset_key",
                         "filename"
                     ],
-                    "title": "SimplePipesScriptAssetParams",
+                    "title": "SimplePipesScriptAssetSchema",
                     "type": "object"
                 }
             """).strip()

@@ -71,9 +71,9 @@ Next, we'll want to translate this schema into fully-resolved python objects. Fo
 
 By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully-resolved types where appropriate.
 
-Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. Whenever we define a field on the component that isn't on the schema, or is a different type, we can define an `@field_resolver` to tell the system how to resolve that particular field.
+Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. Whenever we define a field on the component that isn't on the schema, or is a different type, we can add an annotation to that field with `Annotated[<type>, FieldResolver(...)]` to tell the system how to resolve that particular field.
 
-In our case, we'll just define a single field resolver for the `asset_specs` field on our component.
+In our case, we'll just define a single field resolver for the `asset_specs` field on our component. Because `AssetSpecSchema` is a `ResolvableModel`, this can be directly resolved into an `AssetSpec` object using `context.resolve_value()`.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-class-defined.py" language="python" />
 
