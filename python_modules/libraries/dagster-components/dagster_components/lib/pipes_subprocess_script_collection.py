@@ -41,16 +41,16 @@ class PipesSubprocessScriptCollectionSchema(ResolvableSchema["PipesSubprocessScr
     scripts: Sequence[PipesSubprocessScriptSchema]
 
 
-def resolve_specs_by_path(
-    context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
-) -> Mapping[str, Sequence[AssetSpec]]:
-    return {spec.path: spec.assets for spec in context.resolve_value(schema.scripts)}
-
-
 @registered_component_type(name="pipes_subprocess_script_collection")
 @dataclass
 class PipesSubprocessScriptCollection(Component):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
+
+    @staticmethod
+    def resolve_specs_by_path(
+        context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
+    ) -> Mapping[str, Sequence[AssetSpec]]:
+        return {spec.path: spec.assets for spec in context.resolve_value(schema.scripts)}
 
     specs_by_path: Annotated[
         Mapping[str, Sequence[AssetSpec]], FieldResolver(resolve_specs_by_path)
