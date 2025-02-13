@@ -364,4 +364,5 @@ def validate_and_coerce_op_result_to_iterator(
                         "execution, results must be yielded: "
                         "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/graphs#with-conditional-branching"
                     )
+                    return
                 yield Output(output_name=output_def.name, value=element)
