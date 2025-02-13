@@ -794,13 +794,6 @@ def test_observable_source_asset_is_not_backfilled() -> None:
             assert len(runs) == 3
             assert all(run.asset_selection == {AssetKey("obs")} for run in runs)
 
-        # wait for the observation to execute before proceeding
-        for i in range(100):
-            if _get_runs_for_latest_ticks(context)[0].status in IN_PROGRESS_RUN_STATUSES:
-                sleep(0.1)
-            else:
-                break
-
         time += datetime.timedelta(minutes=1)
         with freeze_time(time):
             _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
