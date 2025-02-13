@@ -47,6 +47,19 @@ To specify a limit for the pool "database" using the CLI, use:
 dagster instance concurrency set database 1
 ```
 
+Finally, you have to set the enforcement granularity for the pool.  Because we want to limit the total number of runs containing a specific op at any given time, we need to set the pool granularity to `run`.
+
+* Dagster Core, add the following to your [dagster.yaml](/guides/deploy/dagster-yaml)
+* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/deployments/deployment-settings-reference)
+
+```yaml
+concurrency:
+  pools:
+    granularity: 'run'
+```
+
+Without this granularity set, the default granularity is set to the `op`.  This means that for a pool `foo` with a limit `1`, we enforce that only one op is executing at a given time across all runs.
+
 ### Setting a default limit for concurrency pools
 
 * Dagster+: Edit the `concurrency` config in deployment settings via the [Dagster+ UI](/guides/operate/webserver) or the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli/).
@@ -86,18 +99,6 @@ concurrency:
         value:
           applyLimitPerUniqueValue: true
         limit: 10
-```
-
-## [Advanced] Limit the number of assets or ops actively in execution across a large set of runs
-
-For deployments with complex jobs containing many ops, blocking entire runs for a small number of concurrency-limited ops may be too coarse-grained for your requirements.  Instead of enforcing concurrency limits at the run level, Dagster will ensure that the concurrency limit will be applied at the individual asset or op execution level.  This means that if one run completes its materialization of a pool's asset, a materialization of another pool asset in a different run may begin even if the first run is still in progress.
-
-You can set the granularity of the concurrency limit enforcement to be at the op level instead of at the run level:
-
-```yaml
-concurrency:
-  pools:
-    granularity: op
 ```
 
 ## Prevent runs from starting if another run is already occurring (advanced)

@@ -97,12 +97,9 @@ class InstanceConcurrencyContext:
         if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
 
-        if self._pool_config.pool_granularity == PoolGranularity.RUN or (
-            self._pool_config.pool_granularity is None and not is_legacy_tag
-        ):
-            # short-circuit the claiming of the global op concurrency slot
-            # no need to reset pending claims here since the pool config doesn't change over the
-            # lifetime of the context
+        if self._pool_config.pool_granularity == PoolGranularity.RUN:
+            # with pool granularity set to run, we don't need to enforce the global concurrency
+            # limits here, since we're already in a launched run.
             return True
 
         if step_key in self._pending_claims:
