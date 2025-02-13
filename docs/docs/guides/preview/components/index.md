@@ -10,7 +10,7 @@ Dagster Components is a new way to structure your Dagster projects. It aims to p
 
 - An opinionated project layout that supports ongoing scaffolding from "Hello world" to the most advanced projects.
 - A class-based interface (`Component`) for dynamically constructing Dagster definitions from arbitrary data (such as third-party integration configuration files).
-- A toolkit for buildng YAML DSLs for `Components`, allowing instances of components to be defined with little to no Python code.
+- A toolkit for building YAML DSLs for `Components`, allowing instances of components to be defined with little to no Python code.
 - A Dagster-provided set of component types that provide a simplified user experience for common integrations.
 
 ## Project Setup
