@@ -1,7 +1,8 @@
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from dagster_components import (
     AssetSpecSchema,
@@ -27,10 +28,16 @@ class ShellCommand(Component):
     script_path: str
     asset_specs: Sequence[dg.AssetSpec]
 
+    @classmethod
+    def get_additional_scope(cls) -> Mapping[str, Any]:
+        return {
+            "daily_partitions": dg.DailyPartitionsDefinition(start_date="2024-01-01")
+        }
+
     @field_resolver("asset_specs")
     @staticmethod
     def resolve_asset_specs(
-        schema: ShellScriptSchema, context: ResolutionContext
+        context: ResolutionContext, schema: ShellScriptSchema
     ) -> Sequence[dg.AssetSpec]:
         return context.resolve_value(schema.asset_specs)
 
