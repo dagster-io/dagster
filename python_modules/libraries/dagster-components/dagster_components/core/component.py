@@ -5,6 +5,7 @@ import importlib.metadata
 import inspect
 import sys
 import textwrap
+import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -30,7 +31,11 @@ from dagster_components.core.component_scaffolder import (
 )
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.utils import load_module_from_path
+from dagster_components.utils import format_error_message, load_module_from_path
+
+
+class ComponentsEntryPointLoadError(DagsterError):
+    pass
 
 
 class ComponentDeclNode(ABC):
@@ -158,7 +163,19 @@ class ComponentTypeRegistry:
             ):
                 continue
 
-            root_module = entry_point.load()
+            try:
+                root_module = entry_point.load()
+            except Exception as e:
+                warnings.warn(
+                    format_error_message(f"""
+                        Error loading entry point {entry_point.name} in group
+                        {COMPONENTS_ENTRY_POINT_GROUP}. Any components defined by this entry point
+                        will note be available. Error:
+                    """)
+                    + "\n"
+                    + f"  {(e)}"
+                )
+
             if not isinstance(root_module, ModuleType):
                 raise DagsterError(
                     f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "

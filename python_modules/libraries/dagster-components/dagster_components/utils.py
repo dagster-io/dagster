@@ -1,5 +1,6 @@
 import importlib.util
 import sys
+import textwrap
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -34,6 +35,11 @@ def ensure_dagster_components_tests_import() -> None:
 def exit_with_error(error_message: str) -> None:
     click.echo(click.style(error_message, fg="red"))
     sys.exit(1)
+
+
+def format_error_message(message: str) -> str:
+    # width=10000 unwraps any hardwrapping
+    return textwrap.dedent(textwrap.fill(message, width=10000))
 
 
 # Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
