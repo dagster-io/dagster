@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
 
-import dagster as dg
 from dagster_components import (
     AssetSpecSchema,
     Component,
@@ -14,6 +13,8 @@ from dagster_components import (
     ResolvableSchema,
     registered_component_type,
 )
+
+import dagster as dg
 
 
 class ShellScriptSchema(ResolvableSchema):
