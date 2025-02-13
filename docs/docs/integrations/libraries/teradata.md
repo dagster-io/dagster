@@ -34,7 +34,7 @@ To begin integrating Dagster with Teradata Vantage for building and managing ETL
 With your virtual environment active, the next step is to install dagster and the Teradata provider package (dagster-teradata) to interact with Teradata Vantage.
 
 1. Install the Required Packages:
-    
+
     ```bash
     pip install dagster dagster-webserver dagster-teradata
     ```
@@ -110,7 +110,7 @@ This file represents sample data that will be used as input for your ETL pipelin
 
 ## Define Assets for the ETL Pipeline
 
-Now, we’ll define a series of assets for the ETL pipeline inside the assets.py file.
+Now, we'll define a series of assets for the ETL pipeline inside the assets.py file.
 
 Edit the assets.py File: Open the dagster_quickstart/assets.py file and add the following code to define the pipeline:
 
@@ -170,7 +170,7 @@ from .assets import read_csv_file, read_table, create_table, drop_table, insert_
 
 # Define the pipeline and resources
 defs = Definitions(
-    assets=[read_csv_file, read_table, create_table, drop_table, insert_rows],  
+    assets=[read_csv_file, read_table, create_table, drop_table, insert_rows],
     resources={
         "teradata": TeradataResource(
             host=EnvVar("TERADATA_HOST"),
@@ -199,12 +199,12 @@ After executing the command dagster dev, the Dagster logs will be displayed dire
         ```bash
         2025-02-04 09:15:46 +0530 - dagster-webserver - INFO - Serving dagster-webserver on http://127.0.0.1:3000 in process 32564,
         ```
-        It indicates that the Dagster web server is running successfully. At this point, you can proceed to the next step.
+        It indicates that the Dagster webserver is running successfully. At this point, you can proceed to the next step.
 <br />
 2.	**Access the Dagster UI:** Open a web browser and navigate to http://127.0.0.1:3000. This will open the Dagster UI where you can manage and monitor your pipelines.
 <br />
 3.	**Run the Pipeline:**
-* In the top navigation of the Dagster UI, click on Assets > View global asset lineage.
+* In the top navigation of the Dagster UI, click Assets > View global asset lineage.
 * Click Materialize to execute the pipeline.
 * In the popup window, click View to see the details of the pipeline run.
 <br />
@@ -291,13 +291,13 @@ The `s3_to_teradata` method is used to load data from an S3 bucket into a Terada
 
 ### Arguments Supported by `s3_blob_to_teradata`
 
-- **s3 (S3Resource)**:  
+- **s3 (S3Resource)**:
   The `S3Resource` object used to interact with the S3 bucket.
 
-- **s3_source_key (str)**:  
-  The URI specifying the location of the S3 bucket. The URI format is:  
-  `/s3/YOUR-BUCKET.s3.amazonaws.com/YOUR-BUCKET-NAME`  
-  For more details, refer to:  
+- **s3_source_key (str)**:
+  The URI specifying the location of the S3 bucket. The URI format is:
+  `/s3/YOUR-BUCKET.s3.amazonaws.com/YOUR-BUCKET-NAME`
+  For more details, refer to:
   [Teradata Documentation - Native Object Store](https://docs.teradata.com/search/documents?query=native+object+store&sort=last_update&virtual-field=title_only&content-lang=en-US)
 
 - **teradata_table (str)**:  
@@ -309,7 +309,7 @@ The `s3_to_teradata` method is used to load data from an S3 bucket into a Terada
 
 - **teradata_authorization_name (str)**:  
   The name of the Teradata Authorization Database Object, which controls access to the S3 object store.  
-  For more details, refer to:  
+  For more details, refer to:
   [Teradata Vantage Native Object Store - Setting Up Access](https://docs.teradata.com/r/Enterprise_IntelliFlex_VMware/Teradata-VantageTM-Native-Object-Store-Getting-Started-Guide-17.20/Setting-Up-Access/Controlling-Foreign-Table-Access-with-an-AUTHORIZATION-Object)
 
 ---
@@ -363,7 +363,7 @@ The `azure_blob_to_teradata` method is used to load data from Azure Data Lake St
   The `ADLS2Resource` object used to interact with the Azure Blob Storage.
 
 - **blob_source_key (str)**:  
-  The URI specifying the location of the Azure Blob object. The format is:  
+  The URI specifying the location of the Azure Blob object. The format is:
   `/az/YOUR-STORAGE-ACCOUNT.blob.core.windows.net/YOUR-CONTAINER/YOUR-BLOB-LOCATION`  
   For more details, refer to the Teradata documentation:  
   [Teradata Documentation - Native Object Store](https://docs.teradata.com/search/documents?query=native+object+store&sort=last_update&virtual-field=title_only&content-lang=en-US)
