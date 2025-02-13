@@ -39,7 +39,12 @@ class DefinitionsComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         with pushd(str(context.path)):
-            component_module_name = ".".join([context.module_name, context.path.stem])
+            abs_context_path = context.path.absolute()
+
+            component_module_relative_path = abs_context_path.parts[
+                abs_context_path.parts.index("components") + 1 :
+            ]
+            component_module_name = ".".join([context.module_name, *component_module_relative_path])
 
             defs_file_path = (
                 Path(self.definitions_path) if self.definitions_path else Path("definitions.py")
