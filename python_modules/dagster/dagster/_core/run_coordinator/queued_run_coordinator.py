@@ -39,7 +39,7 @@ class RunQueueConfig(
         tag_concurrency_limits: Optional[Sequence[Mapping[str, Any]]],
         max_user_code_failure_retries: int = 0,
         user_code_failure_retry_delay: int = 60,
-        should_block_op_concurrency_limited_runs: bool = False,
+        should_block_op_concurrency_limited_runs: bool = True,
         op_concurrency_slot_buffer: int = 0,
     ):
         return super().__new__(
@@ -66,8 +66,7 @@ class RunQueueConfig(
             ),
             max_user_code_failure_retries=self.max_user_code_failure_retries,
             user_code_failure_retry_delay=self.user_code_failure_retry_delay,
-            should_block_op_concurrency_limited_runs=bool(pool_settings)
-            or self.should_block_op_concurrency_limited_runs,
+            should_block_op_concurrency_limited_runs=self.should_block_op_concurrency_limited_runs,
             op_concurrency_slot_buffer=pool_settings.get(
                 "op_granularity_run_buffer", self.op_concurrency_slot_buffer
             ),
@@ -122,7 +121,8 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             user_code_failure_retry_delay, "user_code_failure_retry_delay", 60
         )
         self._should_block_op_concurrency_limited_runs: bool = bool(
-            block_op_concurrency_limited_runs and block_op_concurrency_limited_runs.get("enabled")
+            not block_op_concurrency_limited_runs
+            or block_op_concurrency_limited_runs.get("enabled", True)
         )
         self._op_concurrency_slot_buffer: int = (
             block_op_concurrency_limited_runs.get("op_concurrency_slot_buffer", 0)
