@@ -79,7 +79,7 @@ class GlobalOpConcurrencyLimitsCounter:
         self._launched_pool_counts = defaultdict(int)
         self._in_progress_pool_counts = defaultdict(int)
         self._slot_count_offset = slot_count_offset
-        self._pool_granularity = pool_granularity if pool_granularity else PoolGranularity.RUN
+        self._pool_granularity = pool_granularity if pool_granularity else PoolGranularity.OP
         self._in_progress_run_ids: set[str] = set(
             [record.dagster_run.run_id for record in in_progress_run_records]
         )

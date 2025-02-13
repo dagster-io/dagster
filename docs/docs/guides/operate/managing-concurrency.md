@@ -25,9 +25,9 @@ concurrency:
     max_concurrent_runs: 15
 ```
 
-## Limit the number of runs that can be in progress for a set of ops
+## Limit the number of assets or ops actively executing across all runs
 
-You can assign assets and ops to concurrency pools which allow you to limit the number of in progress runs containing those assets or ops.  You first assign your asset or op to a concurrency pool using the `pool` keyword argument.
+You can assign assets and ops to concurrency pools which allow you to limit the number of in progress op executions across all runs.  You first assign your asset or op to a concurrency pool using the `pool` keyword argument.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/operate/concurrency-pool-api.py" language="python" title="Specifying pools on assets and ops" />
 
@@ -46,6 +46,23 @@ To specify a limit for the pool "database" using the CLI, use:
 ```
 dagster instance concurrency set database 1
 ```
+
+## Limit the number of runs that can be in progress for a set of ops
+
+You can also use concurrency pools to limit the number of in progress runs containing those assets or ops.  You can follow the steps in the [Limit the number of assets or ops actively in execution across all runs](#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs) section to assign your assets and ops to pools and to configure the desired limit.
+
+Once you have assigned your assets and ops to your pool, you can change your deployment settings to set the pool enforcement granularity.  To limit the total number of runs containing a specific op at any given time (instead of the total number of ops actively executing), we need to set the pool granularity to `run`.
+
+* Dagster Core, add the following to your [dagster.yaml](/guides/deploy/dagster-yaml)
+* In Dagster+, add the following to your [deployment settings](/dagster-plus/deployment/management/deployments/deployment-settings-reference)
+
+```yaml
+concurrency:
+  pools:
+    granularity: 'run'
+```
+
+Without this granularity set, the default granularity is set to the `op`.  This means that for a pool `foo` with a limit `1`, we enforce that only one op is executing at a given time across all runs, but the number of runs in progress is unaffected by the pool limit.
 
 ### Setting a default limit for concurrency pools
 
@@ -86,18 +103,6 @@ concurrency:
         value:
           applyLimitPerUniqueValue: true
         limit: 10
-```
-
-## [Advanced] Limit the number of assets or ops actively in execution across a large set of runs
-
-For deployments with complex jobs containing many ops, blocking entire runs for a small number of concurrency-limited ops may be too coarse-grained for your requirements.  Instead of enforcing concurrency limits at the run level, Dagster will ensure that the concurrency limit will be applied at the individual asset or op execution level.  This means that if one run completes its materialization of a pool's asset, a materialization of another pool asset in a different run may begin even if the first run is still in progress.
-
-You can set the granularity of the concurrency limit enforcement to be at the op level instead of at the run level:
-
-```yaml
-concurrency:
-  pools:
-    granularity: op
 ```
 
 ## Prevent runs from starting if another run is already occurring (advanced)
