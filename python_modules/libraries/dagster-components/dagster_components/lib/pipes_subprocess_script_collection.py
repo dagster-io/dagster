@@ -1,5 +1,6 @@
 import shutil
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -8,13 +9,14 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+from pydantic import BaseModel, ConfigDict
 
 from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
     registered_component_type,
 )
-from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
+from dagster_components.core.schema.base import ResolvableSchema, field_resolver
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecSchema
 
@@ -22,34 +24,35 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptParams(ComponentSchema):
+class PipesSubprocessScriptSpec(BaseModel):
+    path: str
+    assets: Sequence[AssetSpec]
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+
+
+class PipesSubprocessScriptParams(ResolvableSchema[PipesSubprocessScriptSpec]):
     path: str
     assets: Sequence[AssetSpecSchema]
 
-    def resolve(self, context: ResolutionContext):
-        return context.resolve_value((self.path, self.assets))
 
-
-class PipesSubprocessScriptCollectionParams(ComponentSchema):
+class PipesSubprocessScriptCollectionParams(ResolvableSchema["PipesSubprocessScriptCollection"]):
     scripts: Sequence[PipesSubprocessScriptParams]
 
 
-@resolver(fromtype=PipesSubprocessScriptCollectionParams, exclude_fields={"scripts"})
-class PipesSubprocessScriptCollectionResolver(Resolver[PipesSubprocessScriptCollectionParams]):
-    def resolve_specs_by_path(
-        self, context: ResolutionContext
-    ) -> Mapping[str, Sequence[AssetSpec]]:
-        return dict(script.resolve(context) for script in self.schema.scripts)
-
-
 @registered_component_type(name="pipes_subprocess_script_collection")
+@dataclass
 class PipesSubprocessScriptCollection(Component):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    def __init__(self, specs_by_path: Mapping[str, Sequence[AssetSpec]]):
-        # mapping from the script name (e.g. /path/to/script_abc.py -> script_abc)
-        # to the specs it produces
-        self.specs_by_path = specs_by_path
+    specs_by_path: Mapping[str, Sequence[AssetSpec]]
+
+    @staticmethod
+    @field_resolver("specs_by_path")
+    def resolve_specs_by_path(
+        context: ResolutionContext, schema: PipesSubprocessScriptCollectionParams
+    ) -> Mapping[str, Sequence[AssetSpec]]:
+        return {spec.path: spec.assets for spec in context.resolve_value(schema.scripts)}
 
     @staticmethod
     def introspect_from_path(path: Path) -> "PipesSubprocessScriptCollection":

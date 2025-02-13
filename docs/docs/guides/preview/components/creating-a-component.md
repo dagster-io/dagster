@@ -47,7 +47,6 @@ This will add a new file to your project in the `lib` directory:
 This file contains the basic structure for the new component type. There are two methods that you'll need to implement:
 
 - `get_schema`: This method should return a Pydantic model that defines the schema for the component. This is the schema for the data that goes into `component.yaml`.
-- `load`: This method takes the loading context and returns an instance of the component class. This is where you'll load the parameters from the `component.yaml` file.
 - `build_defs`: This method should return a `Definitions` object for this component.
 
 ## Defining a schema
