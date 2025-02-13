@@ -1,29 +1,17 @@
 import os
-import re
-import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-
-import pytest
 
 from dagster._utils.env import environ
 from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
-    MASK_EDITABLE_DAGSTER,
-    MASK_JAFFLE_PLATFORM,
-    MASK_SLING_DOWNLOAD_DUCKDB,
-    MASK_SLING_PROMO,
-    MASK_SLING_WARNING,
-    MASK_TIME,
 )
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
     compare_tree_output,
     create_file,
-    re_ignore_after,
-    re_ignore_before,
     run_command_and_snippet_output,
 )
 
@@ -60,6 +48,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
                 "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
+                "VIRTUAL_ENV": "",
             }
         ),
     ):
@@ -85,12 +74,6 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             update_snippets=update_snippets,
         )
 
-        check_file(
-            Path("my_existing_project") / "elt" / "definitions.py",
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-inner-definitions-before.py",
-            update_snippets=update_snippets,
-        )
-
         _run_command(cmd="uv venv")
         _run_command(cmd="uv sync")
         _run_command(
@@ -102,6 +85,31 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_MY_EXISTING_PROJECT],
+        )
+
+        run_command_and_snippet_output(
+            cmd="mv my_existing_project/elt/* my_existing_project/components/elt-definitions && rm -rf my_existing_project/elt",
+            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-mv.txt",
+            update_snippets=update_snippets,
+        )
+
+        create_file(
+            Path("my_existing_project")
+            / "components"
+            / "elt-definitions"
+            / "definitions.py",
+            """import dagster as dg
+
+from . import assets
+from .jobs import sync_tables_daily_schedule, sync_tables_job
+
+defs = dg.Definitions(
+    assets=dg.load_assets_from_modules([assets]),
+    jobs=[sync_tables_job],
+    schedules=[sync_tables_daily_schedule],
+)
+""",
+            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-elt-nested-definitions.py",
         )
 
         create_file(
@@ -117,25 +125,28 @@ params:
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-yaml.txt",
         )
 
-        run_command_and_snippet_output(
-            cmd="mv my_existing_project/elt/definitions.py my_existing_project/components/elt-definitions && rm -rf my_existing_project/elt",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-mv.txt",
-            update_snippets=update_snippets,
-        )
-
         create_file(
             Path("my_existing_project") / "definitions.py",
             """from pathlib import Path
 
 import dagster_components as dg_components
-from my_existing_project.analytics import definitions as analytics_definitions
+from my_existing_project.analytics import assets as analytics_assets
+from my_existing_project.analytics.jobs import (
+    regenerate_analytics_hourly_schedule,
+    regenerate_analytics_job,
+)
 
 import dagster as dg
 
 defs = dg.Definitions.merge(
-    dg.load_definitions_from_module(analytics_definitions),
+    dg.Definitions(
+        assets=dg.load_assets_from_modules([analytics_assets]),
+        jobs=[regenerate_analytics_job],
+        schedules=[regenerate_analytics_hourly_schedule],
+    ),
     dg_components.build_component_defs(Path(__file__).parent / "components"),
 )
+
 """,
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-definitions-after.py",
         )
@@ -153,6 +164,69 @@ defs = dg.Definitions.merge(
         )
 
         # validate loads
+        _run_command(
+            "uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+        )
+
+        # migrate analytics
+        _run_command(
+            cmd="dg component scaffold 'definitions@dagster_components' analytics-definitions",
+        )
+        _run_command(
+            cmd="mv my_existing_project/analytics/* my_existing_project/components/analytics-definitions && rm -rf my_existing_project/analytics",
+        )
+        create_file(
+            Path("my_existing_project")
+            / "components"
+            / "analytics-definitions"
+            / "definitions.py",
+            """import dagster as dg
+
+from . import assets
+from .jobs import regenerate_analytics_hourly_schedule, regenerate_analytics_job
+
+defs = dg.Definitions(
+    assets=dg.load_assets_from_modules([assets]),
+    jobs=[regenerate_analytics_job],
+    schedules=[regenerate_analytics_hourly_schedule],
+)
+""",
+        )
+        create_file(
+            Path("my_existing_project")
+            / "components"
+            / "analytics-definitions"
+            / "component.yaml",
+            """type: definitions@dagster_components
+
+params:
+  definitions_path: definitions.py
+""",
+        )
+
+        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(
+            r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
+        )
+        run_command_and_snippet_output(
+            cmd="tree",
+            snippet_path=COMPONENTS_SNIPPETS_DIR
+            / f"{next_snip_no()}-tree-after-all.txt",
+            update_snippets=update_snippets,
+            custom_comparison_fn=compare_tree_output,
+        )
+
+        create_file(
+            Path("my_existing_project") / "definitions.py",
+            """from pathlib import Path
+
+import dagster_components as dg_components
+
+defs = dg_components.build_component_defs(Path(__file__).parent / "components")
+""",
+            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-definitions-after-all.py",
+        )
+
         _run_command(
             "uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
         )

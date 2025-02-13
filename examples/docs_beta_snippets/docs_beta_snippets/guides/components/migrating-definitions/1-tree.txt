@@ -7,12 +7,13 @@ tree
 │   ├── analytics
 │   │   ├── __init__.py
 │   │   ├── assets.py
-│   │   └── definitions.py
+│   │   └── jobs.py
 │   ├── components
 │   ├── definitions.py
 │   └── elt
 │       ├── __init__.py
-│       └── definitions.py
+│       ├── assets.py
+│       └── jobs.py
 └── pyproject.toml
 
-5 directories, 9 files
+5 directories, 10 files

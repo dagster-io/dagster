@@ -9,7 +9,7 @@ line-length = 88
 # Ignore a specific file
 extend-exclude = [
   "docs_beta_snippets/guides/components/existing-project/6-initial-definitions.py",
-  "docs_beta_snippets/guides/components/shell-script-component/2-shell-command-empty.py"
+  "docs_beta_snippets/guides/components/shell-script-component/2-shell-command-empty.py",
   "docs_beta_snippets/guides/components/migrating-definitions/2-definitions-before.py",
 ]
 
