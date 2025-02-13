@@ -17,12 +17,19 @@ from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
     cli as dg_cli,
 )
-from dagster_dg.utils import discover_git_root, pushd, set_toml_value
+from dagster_dg.utils import (
+    discover_git_root,
+    get_venv_executable,
+    install_to_venv,
+    is_windows,
+    pushd,
+    set_toml_value,
+)
 from typing_extensions import Self
 
 
 @contextmanager
-def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
+def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     libraries_paths = [
         Path(dagster_git_repo_dir) / "python_modules" / name
@@ -30,22 +37,30 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
     ]
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
+        venv_path = Path.cwd() / ".venv"
         install_args: list[str] = []
         for path in libraries_paths:
             install_args.extend(["-e", str(path)])
-        subprocess.run(
-            ["uv", "pip", "install", "--python", ".venv/bin/python", *install_args], check=True
-        )
-        with modify_environment_variable("PATH", f"{Path.cwd()}/.venv/bin:{os.environ['PATH']}"):
-            yield
+        install_to_venv(venv_path, install_args)
+
+        venv_exec_path = get_venv_executable(venv_path).parent
+        assert (venv_exec_path / "python").exists() or (venv_exec_path / "python.exe").exists()
+        with modify_environment_variable(
+            "PATH", os.pathsep.join([str(venv_exec_path), os.environ["PATH"]])
+        ):
+            yield venv_path
 
 
 @contextmanager
-def isolated_example_deployment_foo(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[None]:
+def isolated_example_deployment_foo(
+    runner: Union[CliRunner, "ProxyRunner"], create_venv: bool = False
+) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
         runner.invoke("deployment", "scaffold", "foo")
         with pushd("foo"):
+            if create_venv:
+                subprocess.run(["uv", "venv", ".venv"], check=True)
             yield
 
 
@@ -70,10 +85,10 @@ def isolated_example_code_location_foo_bar(
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     if in_deployment:
         fs_context = isolated_example_deployment_foo(runner)
-        code_loc_path = "code_locations/foo-bar"
+        code_loc_path = Path("code_locations/foo-bar")
     else:
         fs_context = runner.isolated_filesystem()
-        code_loc_path = "foo-bar"
+        code_loc_path = Path("foo-bar")
     with fs_context:
         runner.invoke(
             "code-location",
@@ -99,7 +114,7 @@ def isolated_example_component_library_foo_bar(
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with isolated_components_venv(runner):
+    with isolated_components_venv(runner) as venv_path:
         # We just use the code location generation function and then modify it to be a component library
         # only.
         runner.invoke(
@@ -111,7 +126,7 @@ def isolated_example_component_library_foo_bar(
             "foo-bar",
         )
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-            shutil.rmtree("foo_bar/components")
+            shutil.rmtree(Path("foo_bar/components"))
 
             # Make it not a code location
             with modify_pyproject_toml() as toml:
@@ -129,9 +144,7 @@ def isolated_example_component_library_foo_bar(
                     Path(*lib_package_name.split(".")).mkdir(exist_ok=True)
 
             # Install the component library into our venv
-            subprocess.run(
-                ["uv", "pip", "install", "--python", "../.venv/bin/python", "-e", "."], check=True
-            )
+            install_to_venv(venv_path, ["-e", "."])
             yield
 
 
@@ -164,6 +177,100 @@ def set_env_var(name: str, value: str) -> Iterator[None]:
         os.environ[name] = original_value
     else:
         del os.environ[name]
+
+
+# ########################
+# ##### TERMINAL OUTPUT UTILS
+# ########################
+
+STANDARDIZE_BOX_CHARACTERS_MAP = str.maketrans(
+    {
+        # Curved box characters mapped to straight
+        "\u256d": "\u250c",  # ╭ -> ┌
+        "\u256e": "\u2510",  # ╮ -> ┐
+        "\u256f": "\u2518",  # ╯ -> ┘
+        "\u2570": "\u2514",  # ╰ -> └
+        # Thickr box characters mappend to thin
+        "\u250f": "\u250c",  # ┏ -> ┌
+        "\u2513": "\u2510",  # ┓ -> ┐
+        "\u2517": "\u2514",  # ┗ -> └
+        "\u251b": "\u2518",  # ┛ -> ┘
+        "\u2503": "\u2502",  # ┃ -> │
+        "\u2501": "\u2500",  # ━ -> ─
+        "\u2523": "\u251c",  # ┣ -> ├
+        "\u2533": "\u252c",  # ┳ -> ┬
+        "\u253b": "\u2534",  # ┻ -> ┴
+        "\u254b": "\u253c",  # ╋ -> ┼
+        "\u252b": "\u2524",  # ┫ -> ┤
+        "\u2521": "\u251c",  # ┡ -> ├
+        "\u2547": "\u253c",  # ╇ -> ┼
+        "\u2529": "\u2524",  # ┩ -> ┤
+        # Double-lined box characters mapped to thin
+        "\u2550": "\u2500",  # ═ -> ─
+        "\u2551": "\u2502",  # ║ -> │
+        "\u2554": "\u250c",  # ╔ -> ┌
+        "\u2557": "\u2510",  # ╗ -> ┐
+        "\u255a": "\u2514",  # ╚ -> └
+        "\u255d": "\u2518",  # ╝ -> ┘
+        "\u2560": "\u251c",  # ╠ -> ├
+        "\u2563": "\u2524",  # ╣ -> ┤
+        "\u2566": "\u252c",  # ╦ -> ┬
+        "\u2569": "\u2534",  # ╩ -> ┴
+        "\u256c": "\u253c",  # ╬ -> ┼
+    }
+)
+
+
+# When testing commands that output tables/panels box characters, use this on both strings being
+# compared. This is necessary because different platforms will sometimes output subtly different box
+# characters.
+def standardize_box_characters(text: str) -> str:
+    return text.translate(STANDARDIZE_BOX_CHARACTERS_MAP)
+
+
+@contextmanager
+def fixed_panel_width(width: int = 80) -> Iterator[None]:
+    # The width of panels in the help output is determined by the `COLUMNS` environment variable.
+    # Unclear to me whether this controls the width of the terminal as a whole or just the width of
+    # the panels rendered by `rich`, but regardless it is enough to achieve consistent output in the
+    # below tests.
+    #
+    # On Windows, we set the width to width + 1 to get the same output as on Unix systems. This is
+    # because when its the same width, the windows table comes out one character shorter. This may
+    # be due to the use of two-character newlines (CRLF) on Windows vs one-character newline on
+    # Unix. These are both whitespace and get stripped from output, but `rich` may be outputting one
+    # character less of table width on Windows due to this.
+    normalized_width = width + 1 if is_windows() else width
+    with set_env_var("COLUMNS", str(normalized_width)):
+        yield
+
+
+# Typer's rich help output is difficult to match exactly, as it contains blank lines with extraneous
+# whitespace. So we use this helper function to compare the output of the help message with the
+# expected output. Comparing line-by-line also helps debugging.
+#
+# Also, windows tends to output different box drawing characters than Unix. Therefore we sub out any
+# of the windows box drawing characters here for the Unix ones so that we can have standard test
+# output.
+def match_terminal_box_output(output: str, expected_output: str):
+    standardized_output = standardize_box_characters(output)
+    standardized_expected_output = standardize_box_characters(expected_output)
+    standardized_output_lines = standardized_output.split("\n")
+    standardized_expected_output_lines = standardized_expected_output.split("\n")
+    for i in range(len(standardized_output_lines)):
+        output_line = standardized_output_lines[i].strip()
+        expected_output_line = standardized_expected_output_lines[i].strip()
+        assert output_line == expected_output_line, (
+            f"Line {i} of output does not match expected output.\n"
+            f"Output  : {output_line}\n"
+            f"Expected: {expected_output_line}"
+        )
+    return True
+
+
+# ########################
+# ##### CLI RUNNER
+# ########################
 
 
 @dataclass

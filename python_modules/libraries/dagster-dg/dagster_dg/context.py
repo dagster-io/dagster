@@ -21,11 +21,12 @@ from dagster_dg.utils import (
     get_executable_path,
     get_path_for_module,
     get_path_for_package,
-    get_uv_command_env,
     get_uv_run_executable_path,
+    get_venv_executable,
     is_executable_available,
     is_package_installed,
     pushd,
+    strip_activated_venv_from_env_vars,
 )
 
 # Deployment
@@ -130,7 +131,7 @@ class DgContext:
         return self._cache is not None
 
     def get_cache_key(self, data_type: CachableDataType) -> tuple[str, str, str]:
-        path_parts = [str(part) for part in self.root_path.parts if part != "/"]
+        path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
             *([self.components_lib_path] if self.is_component_library else []),
@@ -214,7 +215,7 @@ class DgContext:
             raise DgError(
                 "`code_location_python_executable` is only available in a code location context"
             )
-        return self.root_path / ".venv" / "bin" / "python"
+        return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property
     def components_package_name(self) -> str:
@@ -302,7 +303,7 @@ class DgContext:
     def external_components_command(self, command: list[str], log: bool = True) -> str:
         if self.use_dg_managed_environment:
             code_location_command_prefix = ["uv", "run", "dagster-components"]
-            env = get_uv_command_env()
+            env = strip_activated_venv_from_env_vars()
             executable_path = get_uv_run_executable_path("dagster-components")
         else:
             code_location_command_prefix = ["dagster-components"]
@@ -327,7 +328,7 @@ class DgContext:
         path = path or self.root_path
         with pushd(path):
             if not (path / "uv.lock").exists():
-                subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
+                subprocess.run(["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars())
 
     @property
     def use_dg_managed_environment(self) -> bool:
@@ -344,3 +345,16 @@ class DgContext:
         """
         if not is_executable_available("dagster-components"):
             exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)
+
+    @cached_property
+    def venv_path(self) -> Path:
+        path = self.root_path
+        while path != path.parent:
+            if (path / ".venv").exists():
+                return path
+            path = path.parent
+        raise DgError("Cannot find .venv")
+
+    @cached_property
+    def dagster_components_executable(self) -> Path:
+        return get_venv_executable(self.venv_path, "dagster-components")
