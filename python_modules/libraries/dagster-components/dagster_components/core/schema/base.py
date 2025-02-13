@@ -42,7 +42,7 @@ class ResolvableSchema(BaseModel, Generic[T]):
             raise DagsterInvalidDefinitionError(
                 f"Expected at most one generic argument for type: `{self.__class__}`"
             )
-        resolved_type = generic_args[0]
+        resolved_type = next(iter(generic_args))
         return resolved_type if isinstance(resolved_type, type) else None
 
     def _get_field_resolvers(self, target_type: type) -> Mapping[str, "FieldResolver"]:
