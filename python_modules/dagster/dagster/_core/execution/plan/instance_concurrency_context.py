@@ -92,7 +92,6 @@ class InstanceConcurrencyContext:
         concurrency_key: str,
         step_key: str,
         step_priority: int = 0,
-        is_legacy_tag: bool = False,
     ) -> bool:
         if not self._instance.event_log_storage.supports_global_concurrency_limits:
             return True
