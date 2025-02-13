@@ -1,5 +1,5 @@
 ---
-title: "Preview"
+title: "Labs"
 sidebar_class_name: hidden
 ---
 
