@@ -18,33 +18,37 @@ def get_default_extension_dir() -> Path:
         return Path.home() / ".local" / "share" / "dg" / "vscode"
 
 
-def has_vscode_cli_command() -> bool:
-    return bool(shutil.which("code"))
+def has_editor_cli_command(executable_name: str) -> bool:
+    return bool(shutil.which(executable_name))
 
 
-def run_vscode_cli_command(args: list[str]) -> bytes:
-    return subprocess.check_output(["code"] + args)
+def run_editor_cli_command(executable_name: str, args: list[str]) -> bytes:
+    return subprocess.check_output([executable_name] + args)
 
 
-def recommend_yaml_extension() -> None:
-    if not has_vscode_cli_command():
+def recommend_yaml_extension(executable_name: str) -> None:
+    if not has_editor_cli_command(executable_name):
         click.echo(
-            "Could not find `code` executable in PATH. In order to use the dagster-components-schema extension, "
+            f"Could not find `{executable_name}` executable in PATH. In order to use the dagster-components-schema extension, "
             "please install the redhat.vscode-yaml extension manually."
         )
         return
 
-    extensions = run_vscode_cli_command(["--list-extensions"]).decode("utf-8").split("\n")
+    extensions = (
+        run_editor_cli_command(executable_name, ["--list-extensions"]).decode("utf-8").split("\n")
+    )
     if "redhat.vscode-yaml" in extensions:
         click.echo("redhat.vscode-yaml extension is already installed.")
     else:
         if click.confirm(
             "The redhat.vscode-yaml extension is not installed. Would you like to install it now?"
         ):
-            run_vscode_cli_command(["--install-extension", "redhat.vscode-yaml"])
+            run_editor_cli_command(executable_name, ["--install-extension", "redhat.vscode-yaml"])
 
 
-def install_or_update_yaml_schema_extension(yaml_dir: Path, schema_path: Path) -> None:
+def install_or_update_yaml_schema_extension(
+    executable_name: str, yaml_dir: Path, schema_path: Path
+) -> None:
     """Builds a VS Code extension which associates the built JSON schema files with YAML
     files in the provided directory, provided that the user has the Red Hat YAML extension
     already installed.
@@ -84,8 +88,12 @@ def install_or_update_yaml_schema_extension(yaml_dir: Path, schema_path: Path) -
     click.echo(f"Packaged extension to {extension_zip_path}")
 
     try:
-        run_vscode_cli_command(["--uninstall-extension", "dagster.dagster-components-schema"])
+        run_editor_cli_command(
+            executable_name, ["--uninstall-extension", "dagster.dagster-components-schema"]
+        )
     except subprocess.CalledProcessError:
         click.echo("No existing dagster.dagster-components-schema extension to uninstall.")
-    run_vscode_cli_command(["--install-extension", os.fspath(extension_zip_path.resolve())])
+    run_editor_cli_command(
+        executable_name, ["--install-extension", os.fspath(extension_zip_path.resolve())]
+    )
     click.echo("Successfully installed Dagster Components schema extension.")

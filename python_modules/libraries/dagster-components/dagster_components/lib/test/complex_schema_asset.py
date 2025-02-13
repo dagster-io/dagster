@@ -7,7 +7,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 
 from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
-from dagster_components.core.schema.base import ComponentSchema
+from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
@@ -16,7 +16,7 @@ from dagster_components.core.schema.objects import (
 )
 
 
-class ComplexAssetParams(ComponentSchema):
+class ComplexAssetSchema(ResolvableSchema):
     value: str
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
@@ -31,7 +31,7 @@ class ComplexSchemaAsset(Component):
 
     @classmethod
     def get_schema(cls):
-        return ComplexAssetParams
+        return ComplexAssetSchema
 
     @classmethod
     def get_scaffolder(cls) -> DefaultComponentScaffolder:

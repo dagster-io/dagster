@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Callable, Literal, Optional, Union
+from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.asset_dep import AssetDep
@@ -11,18 +11,27 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel
 
-from dagster_components.core.schema.base import ComponentSchema, Resolver, resolver
+from dagster_components.core.schema.base import FieldResolver, ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
 
 
-class OpSpecSchema(ComponentSchema):
+def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
+    resolved_val = context.resolve_value(key, as_type=Union[str, AssetKey])
+    return (
+        AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
+    )
+
+
+class OpSpecSchema(ResolvableSchema):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
 
 
-class AssetDepSchema(ComponentSchema):
-    asset: str
-    partition_mapping: Optional[str] = None
+class AssetDepSchema(ResolvableSchema[AssetDep]):
+    asset: Annotated[
+        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.asset, context))
+    ]
+    partition_mapping: Optional[str]
 
 
 class _ResolvableAssetAttributesMixin(BaseModel):
@@ -38,21 +47,35 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     automation_condition: Optional[str] = None
 
 
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ComponentSchema):
-    key: Optional[str] = None
+class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpec]):
+    key: Annotated[
+        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
+    ]
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ComponentSchema):
-    key: str
+class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Mapping[str, Any]]):
+    """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
+    does not require a key. This is useful in contexts where you want to modify attributes of
+    an existing AssetSpec.
+    """
+
+    key: Annotated[
+        Optional[str],
+        FieldResolver(
+            lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
+        ),
+    ] = None
+
+    def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
+        # only include fields that are explcitly set
+        set_fields = self.model_dump(exclude_unset=True).keys()
+        return {k: v for k, v in self.resolve_fields(dict, context).items() if k in set_fields}
 
 
-class AssetSpecTransformSchema(ComponentSchema):
+class AssetSpecTransformSchema(ResolvableSchema):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def apply_to_spec(self, spec: AssetSpec, context: ResolutionContext) -> AssetSpec:
         # add the original spec to the context and resolve values
@@ -88,38 +111,5 @@ class AssetSpecTransformSchema(ComponentSchema):
         ]
         return replace(defs, assets=assets)
 
-
-def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
-    resolved_val = context.resolve_value(key)
-    return (
-        AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
-    )
-
-
-@resolver(fromtype=AssetDepSchema, totype=AssetDep)
-class AssetDepResolver(Resolver[AssetDepSchema]):
-    def resolve_asset(self, context: ResolutionContext) -> AssetKey:
-        return _resolve_asset_key(self.schema.asset, context)
-
-
-@resolver(fromtype=AssetSpecSchema, totype=AssetSpec)
-class AssetSpecResolver(Resolver[AssetSpecSchema]):
-    def resolve_key(self, context: ResolutionContext) -> AssetKey:
-        return _resolve_asset_key(self.schema.key, context)
-
-
-@resolver(fromtype=AssetAttributesSchema)
-class AssetAttributesResolver(Resolver[AssetAttributesSchema]):
-    def resolve_key(self, context: ResolutionContext) -> Optional[AssetKey]:
-        return _resolve_asset_key(self.schema.key, context) if self.schema.key else None
-
-    def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        # only include fields that are explcitly set
-        set_fields = self.schema.model_dump(exclude_unset=True).keys()
-        return {k: v for k, v in self.get_resolved_fields(context).items() if k in set_fields}
-
-
-@resolver(fromtype=AssetSpecTransformSchema)
-class AssetSpecTransformResolver(Resolver[AssetSpecTransformSchema]):
     def resolve(self, context: ResolutionContext) -> Callable[[Definitions], Definitions]:
-        return lambda defs: self.schema.apply(defs, context)
+        return lambda defs: self.apply(defs, context)

@@ -694,7 +694,7 @@ class AssetDaemon(DagsterDaemon):
 
         workspace = workspace_process_context.create_request_context()
 
-        asset_graph = workspace.asset_graph
+        workspace_asset_graph = workspace.asset_graph
 
         instance: DagsterInstance = workspace_process_context.instance
         error_info = None
@@ -724,13 +724,15 @@ class AssetDaemon(DagsterDaemon):
                 eligible_keys = selection.resolve(repo_asset_graph) | selection.resolve_checks(
                     repo_asset_graph
                 )
+                eligibility_graph = repo_asset_graph
             else:
-                eligible_keys = asset_graph.get_all_asset_keys()
+                eligible_keys = workspace_asset_graph.get_all_asset_keys()
+                eligibility_graph = workspace_asset_graph
 
             auto_materialize_entity_keys = {
                 target_key
                 for target_key in eligible_keys
-                if asset_graph.get(target_key).automation_condition is not None
+                if eligibility_graph.get(target_key).automation_condition is not None
             }
             num_target_entities = len(auto_materialize_entity_keys)
 
@@ -738,7 +740,7 @@ class AssetDaemon(DagsterDaemon):
                 key
                 for key in eligible_keys
                 if isinstance(key, AssetKey)
-                and asset_graph.get(key).auto_observe_interval_minutes is not None
+                and eligibility_graph.get(key).auto_observe_interval_minutes is not None
             }
             num_auto_observe_assets = len(auto_observe_asset_keys)
 
@@ -759,14 +761,16 @@ class AssetDaemon(DagsterDaemon):
                         SensorInstigatorData,
                         check.not_none(auto_materialize_instigator_state).instigator_data,
                     ).cursor,
-                    asset_graph,
+                    workspace_asset_graph,
                 )
 
                 instigator_origin_id = sensor.get_remote_origin().get_id()
                 instigator_selector_id = sensor.get_remote_origin().get_selector().get_id()
                 instigator_name = sensor.name
             else:
-                stored_cursor = _get_pre_sensor_auto_materialize_cursor(instance, asset_graph)
+                stored_cursor = _get_pre_sensor_auto_materialize_cursor(
+                    instance, workspace_asset_graph
+                )
                 instigator_origin_id = _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID
                 instigator_selector_id = _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
                 instigator_name = _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME
@@ -877,7 +881,7 @@ class AssetDaemon(DagsterDaemon):
                     tick,
                     sensor,
                     workspace_process_context,
-                    asset_graph,
+                    workspace_asset_graph,
                     auto_materialize_entity_keys,
                     stored_cursor,
                     auto_observe_asset_keys,
