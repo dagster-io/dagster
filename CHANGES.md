@@ -23,6 +23,11 @@
 - [dagster-dbt] Fixed a bug introduced in dagster-dbt 0.25.7 that would cause execution to fail when using the `@dbt_assets` decorator with an `io_manager_key` specified.
 - [dagster-dbt] Refactored `UnitTestDefinition` instantiation to address failure to initialize dbt models with unit tests. (Thanks [@kang8](https://github.com/kang8)!)
 - Fixed issue where `dagster instance migrate` was failing for instances with tables having non-empty concurrency limits.
+- Fixed an issue where Declarative Automation sensors in code locations that included source assets referencing assets with automation conditions in other code locations would sometimes cause duplicate runs to be created.
+- Turned on run blocking for concurrency keys/pools by default. For op granularity, runs are dequeued if there exists at least one op that can execute once the run has started. For run granularity, runs are dequeued if all pools have available slots.
+- [dagster-dbt] Added pool support.
+- [dagster-dlt] Added pool support.
+- [dagster-sling] Added pool support.
 
 ### Documentation
 
