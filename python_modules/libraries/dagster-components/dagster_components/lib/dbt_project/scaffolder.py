@@ -13,7 +13,7 @@ from dagster_components.core.component_scaffolder import (
 from dagster_components.scaffold import scaffold_component_yaml
 
 
-class DbtScaffoldParams(BaseModel):
+class DbtScaffoldSchema(BaseModel):
     init: bool = Field(default=False)
     project_path: Optional[str] = None
 
@@ -21,9 +21,9 @@ class DbtScaffoldParams(BaseModel):
 class DbtProjectComponentScaffolder(ComponentScaffolder):
     @classmethod
     def get_schema(cls) -> Optional[type[BaseModel]]:
-        return DbtScaffoldParams
+        return DbtScaffoldSchema
 
-    def scaffold(self, request: ComponentScaffoldRequest, params: DbtScaffoldParams) -> None:
+    def scaffold(self, request: ComponentScaffoldRequest, params: DbtScaffoldSchema) -> None:
         cwd = os.getcwd()
         if params.project_path:
             # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to

@@ -31,13 +31,13 @@ class PipesSubprocessScriptSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
 
-class PipesSubprocessScriptParams(ResolvableSchema[PipesSubprocessScriptSpec]):
+class PipesSubprocessScriptSchema(ResolvableSchema[PipesSubprocessScriptSpec]):
     path: str
     assets: Sequence[AssetSpecSchema]
 
 
-class PipesSubprocessScriptCollectionParams(ResolvableSchema["PipesSubprocessScriptCollection"]):
-    scripts: Sequence[PipesSubprocessScriptParams]
+class PipesSubprocessScriptCollectionSchema(ResolvableSchema["PipesSubprocessScriptCollection"]):
+    scripts: Sequence[PipesSubprocessScriptSchema]
 
 
 @registered_component_type(name="pipes_subprocess_script_collection")
@@ -50,7 +50,7 @@ class PipesSubprocessScriptCollection(Component):
     @staticmethod
     @field_resolver("specs_by_path")
     def resolve_specs_by_path(
-        context: ResolutionContext, schema: PipesSubprocessScriptCollectionParams
+        context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
     ) -> Mapping[str, Sequence[AssetSpec]]:
         return {spec.path: spec.assets for spec in context.resolve_value(schema.scripts)}
 
@@ -60,8 +60,8 @@ class PipesSubprocessScriptCollection(Component):
         return PipesSubprocessScriptCollection(specs_by_path=path_specs)
 
     @classmethod
-    def get_schema(cls) -> type[PipesSubprocessScriptCollectionParams]:
-        return PipesSubprocessScriptCollectionParams
+    def get_schema(cls) -> type[PipesSubprocessScriptCollectionSchema]:
+        return PipesSubprocessScriptCollectionSchema
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

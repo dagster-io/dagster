@@ -33,7 +33,7 @@ class SlingReplicationSpec(BaseModel):
     @field_resolver("translator")
     @staticmethod
     def resolve_translator(
-        context: ResolutionContext, schema: "SlingReplicationParams"
+        context: ResolutionContext, schema: "SlingReplicationSchema"
     ) -> DagsterSlingTranslator:
         return get_wrapped_translator_class(DagsterSlingTranslator)(
             resolving_info=TranslatorResolvingInfo(
@@ -44,7 +44,7 @@ class SlingReplicationSpec(BaseModel):
         )
 
 
-class SlingReplicationParams(ResolvableSchema[SlingReplicationSpec]):
+class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
     path: str
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
@@ -53,9 +53,9 @@ class SlingReplicationParams(ResolvableSchema[SlingReplicationSpec]):
     ] = None
 
 
-class SlingReplicationCollectionParams(ResolvableSchema["SlingReplicationCollectionParams"]):
+class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollectionSchema"]):
     sling: Optional[SlingResource] = None
-    replications: Sequence[SlingReplicationParams]
+    replications: Sequence[SlingReplicationSchema]
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 
 
@@ -71,7 +71,7 @@ class SlingReplicationCollection(Component):
     @field_resolver("resource")
     @staticmethod
     def resolve_sling(
-        context: ResolutionContext, schema: SlingReplicationCollectionParams
+        context: ResolutionContext, schema: SlingReplicationCollectionSchema
     ) -> SlingResource:
         return (
             SlingResource(**context.resolve_value(schema.sling.model_dump()))
@@ -88,8 +88,8 @@ class SlingReplicationCollection(Component):
         return SlingReplicationComponentScaffolder()
 
     @classmethod
-    def get_schema(cls) -> type[SlingReplicationCollectionParams]:
-        return SlingReplicationCollectionParams
+    def get_schema(cls) -> type[SlingReplicationCollectionSchema]:
+        return SlingReplicationCollectionSchema
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec
