@@ -3,8 +3,16 @@ title: 'Making an existing code location components-compatible'
 sidebar_position: 300
 ---
 
+:::info
+
+This feature is still in development and might change in patch releases. It’s not production-ready, and the documentation may also evolve. Stay tuned for updates.
+
+:::
+
 :::note
+
 This guide is only relevant if you are starting from an _existing_ Dagster code location. This setup is unnecessary if you used `dg code-location generate` to create your code location.
+
 :::
 
 Let's begin with a Dagster code location that has some assets, but no components:
