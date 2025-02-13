@@ -39,7 +39,7 @@ export const RunningBackfillsNotice = ({assetSelection}: {assetSelection: AssetK
       {runningBackfillCount === 1
         ? `Note: A backfill has been requested and may be refreshing displayed assets. `
         : `Note: ${runningBackfillCount} backfills have been requested and may be refreshing displayed assets. `}
-      <Link to="/overview/backfills" target="_blank">
+      <Link to="/runs?view=backfills" target="_blank">
         <Box flex={{gap: 4, display: 'inline-flex', alignItems: 'center'}}>
           View <Icon name="open_in_new" color={Colors.linkDefault()} />
         </Box>

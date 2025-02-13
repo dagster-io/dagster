@@ -4,8 +4,6 @@ import {OverviewActivityRoot} from './OverviewActivityRoot';
 import {OverviewResourcesRoot} from './OverviewResourcesRoot';
 import {Route} from '../app/Route';
 import {AutomaterializationRoot} from '../assets/auto-materialization/AutomaterializationRoot';
-import {InstanceBackfillsRoot} from '../instance/InstanceBackfillsRoot';
-import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 export const OverviewRoot = () => {
   return (
@@ -17,8 +15,6 @@ export const OverviewRoot = () => {
       <Route path="/overview/schedules" render={() => <Redirect to="/automation" />} />
       <Route path="/overview/sensors" render={() => <Redirect to="/automation" />} />
       <Route path="/overview/automation" render={() => <AutomaterializationRoot />} />
-      <Route path="/overview/backfills/:backfillId" render={() => <BackfillPage />} />
-      <Route path="/overview/backfills" exact render={() => <InstanceBackfillsRoot />} />
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
       </Route>
