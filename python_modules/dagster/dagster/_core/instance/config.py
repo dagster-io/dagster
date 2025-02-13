@@ -656,7 +656,7 @@ class ConcurrencyConfig:
         if (
             not pool_granularity
             and run_coordinator_run_queue_config
-            and run_coordinator_run_queue_config.should_block_op_concurrency_limited_runs
+            and run_coordinator_run_queue_config.explicitly_enabled_concurrency_run_blocking
         ):
             # if this was explicitly configured in the run coordinator config, we should default to op granularity
             pool_granularity = PoolGranularity.OP

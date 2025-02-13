@@ -30,6 +30,7 @@ class RunQueueConfig(
             ("user_code_failure_retry_delay", int),
             ("should_block_op_concurrency_limited_runs", bool),
             ("op_concurrency_slot_buffer", int),
+            ("explicitly_enabled_concurrency_run_blocking", bool),
         ],
     )
 ):
@@ -41,6 +42,7 @@ class RunQueueConfig(
         user_code_failure_retry_delay: int = 60,
         should_block_op_concurrency_limited_runs: bool = True,
         op_concurrency_slot_buffer: int = 0,
+        explicitly_enabled_concurrency_run_blocking: bool = False,
     ):
         return super().__new__(
             cls,
@@ -52,6 +54,10 @@ class RunQueueConfig(
                 should_block_op_concurrency_limited_runs, "should_block_op_concurrency_limited_runs"
             ),
             check.int_param(op_concurrency_slot_buffer, "op_concurrency_slot_buffer"),
+            check.bool_param(
+                explicitly_enabled_concurrency_run_blocking,
+                "explicitly_enabled_concurrency_run_blocking",
+            ),
         )
 
     def with_concurrency_settings(
@@ -70,6 +76,7 @@ class RunQueueConfig(
             op_concurrency_slot_buffer=pool_settings.get(
                 "op_granularity_run_buffer", self.op_concurrency_slot_buffer
             ),
+            explicitly_enabled_concurrency_run_blocking=self.explicitly_enabled_concurrency_run_blocking,
         )
 
 
@@ -124,6 +131,9 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             not block_op_concurrency_limited_runs
             or block_op_concurrency_limited_runs.get("enabled", True)
         )
+        self._explicitly_enabled_concurrency_run_blocking: bool = bool(
+            block_op_concurrency_limited_runs and block_op_concurrency_limited_runs.get("enabled")
+        )
         self._op_concurrency_slot_buffer: int = (
             block_op_concurrency_limited_runs.get("op_concurrency_slot_buffer", 0)
             if block_op_concurrency_limited_runs
@@ -150,6 +160,7 @@ class QueuedRunCoordinator(RunCoordinator[T_DagsterInstance], ConfigurableClass)
             user_code_failure_retry_delay=self._user_code_failure_retry_delay,
             should_block_op_concurrency_limited_runs=self._should_block_op_concurrency_limited_runs,
             op_concurrency_slot_buffer=self._op_concurrency_slot_buffer,
+            explicitly_enabled_concurrency_run_blocking=self._explicitly_enabled_concurrency_run_blocking,
         )
 
     @property
