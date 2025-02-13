@@ -112,6 +112,20 @@ def test_component_type_docs_success():
         assert_runner_result(result)
 
 
+def test_component_type_docs_success_output_console():
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+        result = runner.invoke(
+            "component-type",
+            "docs",
+            "complex_schema_asset@dagster_components.test",
+            "--output",
+            "cli",
+        )
+        assert_runner_result(result)
+        assert "<html" in result.output
+        assert "An asset that has a complex params schema." in result.output
+
+
 def test_component_type_docs_with_no_dagster_components_fails() -> None:
     with (
         ProxyRunner.test() as runner,
