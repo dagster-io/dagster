@@ -1876,32 +1876,32 @@
     },
     {
       "source": "/next/guides/build/components",
-      "destination": "/guides/preview/components/",
+      "destination": "/guides/labs/components/",
       "permanent": false
     },
     {
       "source": "/next/guides/build/components/",
-      "destination": "/guides/preview/components/",
+      "destination": "/guides/labs/components/",
       "permanent": false
     },
     {
       "source": "/next/guides/build/components/:path",
-      "destination": "/guides/preview/components/:path",
+      "destination": "/guides/labs/components/:path",
       "permanent": false
     },
     {
       "source": "/guides/build/components",
-      "destination": "/guides/preview/components/",
+      "destination": "/guides/labs/components/",
       "permanent": false
     },
     {
       "source": "/guides/build/components/",
-      "destination": "/guides/preview/components/",
+      "destination": "/guides/labs/components/",
       "permanent": false
     },
     {
       "source": "/guides/build/components/:path",
-      "destination": "/guides/preview/components/:path",
+      "destination": "/guides/labs/components/:path",
       "permanent": false
     },
     {
@@ -1918,6 +1918,18 @@
       "source": "/integrations/airlift/tutorial/migrate",
       "destination": "/integrations/libraries/airlift/airflow-to-dagster",
       "permanent": false
+    },
+    {
+      "source": "/guides/preview/",
+      "destination": "/guides/labs/"
+    },
+    {
+      "source": "/guides/preview",
+      "destination": "/guides/labs/" 
+    },
+    {
+      "source": "/guides/preview/:path*",
+      "destination": "/guides/labs/:path*"
     }
   ]
 }

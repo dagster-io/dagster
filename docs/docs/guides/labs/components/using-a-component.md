@@ -3,6 +3,12 @@ title: "Adding a component to a project"
 sidebar_position: 200
 ---
 
+:::info
+
+This feature is still in development and might change in patch releases. It’s not production-ready, and the documentation may also evolve. Stay tuned for updates.
+
+:::
+
 
 ## Finding a component
 

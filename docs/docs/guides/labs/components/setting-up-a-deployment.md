@@ -3,6 +3,12 @@ title: "Setting up a deployment"
 sidebar_position: 400
 ---
 
+:::info
+
+This feature is still in development and might change in patch releases. It’s not production-ready, and the documentation may also evolve. Stay tuned for updates.
+
+:::
+
 Many users will want to manage multiple code locations within a single coherent
 directory structure. `dg` facilitates this with the concept of a _deployment_
 directory.
