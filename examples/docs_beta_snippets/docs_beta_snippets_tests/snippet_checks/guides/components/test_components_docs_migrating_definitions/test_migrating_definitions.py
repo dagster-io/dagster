@@ -226,7 +226,3 @@ defs = dg_components.build_component_defs(Path(__file__).parent / "components")
 """,
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-definitions-after-all.py",
         )
-
-        _run_command(
-            "uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
-        )
