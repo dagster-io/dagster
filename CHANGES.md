@@ -34,6 +34,13 @@
 
 - The `include_sources` param on all `AssetSelection` APIs has been renamed to `include_external_assets`.
 - Disallowed invalid characters (i.e. anything other than letters, numbers, dashes, and underscores) in pool names.
+- Changed the default run coordinator to be the queued run coordinator. This requires the Dagster daemon to be running for runs to be launched. To restore the previous behavior, you can add the following configuration block to your `dagster.yaml`:
+
+  ```
+  run_coordinator:
+    module: dagster.core.run_coordinator.sync_in_memory_run_coordinator
+    class: SyncInMemoryRunCoordinator
+  ```
 
 ### Deprecations
 
