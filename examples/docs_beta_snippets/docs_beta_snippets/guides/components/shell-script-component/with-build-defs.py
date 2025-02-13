@@ -40,11 +40,13 @@ class ShellCommand(Component):
         return ShellScriptSchema
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
+        resolved_script_path = Path(load_context.path, self.script_path).absolute()
+
         @dg.multi_asset(name=Path(self.script_path).stem, specs=self.asset_specs)
         def _asset(context: dg.AssetExecutionContext):
-            self.execute(context)
+            self.execute(resolved_script_path, context)
 
         return dg.Definitions(assets=[_asset])
 
-    def execute(self, context: dg.AssetExecutionContext):
-        subprocess.run(["sh", self.script_path], check=True)
+    def execute(self, resolved_script_path: Path, context: dg.AssetExecutionContext):
+        subprocess.run(["sh", str(resolved_script_path)], check=True)

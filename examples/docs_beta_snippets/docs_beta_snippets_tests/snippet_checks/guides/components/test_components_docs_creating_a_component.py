@@ -186,7 +186,6 @@ params:
 echo "Hello, world!"
 """
         )
-        # TODO: fix component impl, right now script does not resolve properly
-        # _run_command(
-        #     "dagster asset materialize --select '*' -m my_component_library.definitions"
-        # )
+        _run_command(
+            "dagster asset materialize --select '*' -m my_component_library.definitions"
+        )
