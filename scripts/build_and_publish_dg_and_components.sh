@@ -24,7 +24,7 @@ grep -rl "__version__ = \".*\"" "python_modules/libraries/dagster-dg" | xargs se
 
 # Release dagster-components
 mkdir -p package_prerelease
-cp -R "python_modules/libraries/dagster-components" package_prerelease
+cp -R python_modules/libraries/dagster-components/* package_prerelease
 cd package_prerelease
 
 echo "Building package..."
@@ -39,7 +39,7 @@ rm -rf package_prerelease
 
 # Release dagster-dg
 mkdir -p package_prerelease
-cp -R "python_modules/libraries/dagster-dg" package_prerelease
+cp -R python_modules/libraries/dagster-dg/* package_prerelease
 cd package_prerelease
 
 echo "Building package..."
@@ -53,11 +53,12 @@ rm -rf package_prerelease
 
 
 echo "Committing and tagging release..."
-PACKAGE_NAME="dagster-dg"
 git add -A
 git config --global user.email "devtools@dagsterlabs.com"
 git config --global user.name "Dagster Labs"
-git commit -m "$PACKAGE_NAME $VERSION_TO_RELEASE"
+git commit -m "dagster-dg $VERSION_TO_RELEASE"
 
-git tag "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
-git push origin "$PACKAGE_NAME/v$VERSION_TO_RELEASE"
+git tag "dagster-dg/v$VERSION_TO_RELEASE"
+git push origin "dagster-dg/v$VERSION_TO_RELEASE"
+git tag "dagster-components/v$VERSION_TO_RELEASE"
+git push origin "dagster-components/v$VERSION_TO_RELEASE"
