@@ -14,7 +14,6 @@ from dagster_dg_tests.utils import (
     fixed_panel_width,
     isolated_components_venv,
     isolated_example_component_library_foo_bar,
-    isolated_example_deployment_foo,
     match_terminal_box_output,
     modify_pyproject_toml,
 )
@@ -35,23 +34,6 @@ def test_component_type_scaffold_success() -> None:
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         assert registry.has_global(GlobalComponentKey(name="baz", namespace="foo_bar"))
-
-
-def test_component_type_scaffold_outside_component_library_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("component-type", "scaffold", "baz")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster component library directory" in result.output
-
-
-def test_component_type_scaffold_with_no_dagster_components_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_component_library_foo_bar(runner),
-    ):
-        result = runner.invoke("component-type", "scaffold", "baz", env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
 
 
 def test_component_type_scaffold_already_exists_fails() -> None:
@@ -106,11 +88,7 @@ def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -
 
 def test_component_type_docs_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
-        result = runner.invoke(
-            "component-type",
-            "docs",
-            "complex_schema_asset@dagster_components.test",
-        )
+        result = runner.invoke("component-type", "docs", "simple_asset@dagster_components.test")
         assert_runner_result(result)
 
 
@@ -126,21 +104,6 @@ def test_component_type_docs_success_output_console():
         assert_runner_result(result)
         assert "<html" in result.output
         assert "An asset that has a complex params schema." in result.output
-
-
-def test_component_type_docs_with_no_dagster_components_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_components_venv(runner),
-    ):
-        result = runner.invoke(
-            "component-type",
-            "docs",
-            "complex_schema_asset@dagster_components.test",
-            env={"PATH": "/dev/null"},
-        )
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
 
 
 # ########################
@@ -320,26 +283,8 @@ def test_component_type_info_multiple_flags_fails() -> None:
         )
 
 
-def test_component_type_info_with_no_dagster_components_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_components_venv(runner),
-    ):
-        result = runner.invoke(
-            "component-type",
-            "info",
-            "simple_pipes_script_asset@dagster_components.test",
-            env={"PATH": "/dev/null"},
-        )
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
-
-
 def test_component_type_info_undefined_component_type_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_components_venv(runner),
-    ):
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
             "component-type",
             "info",
@@ -374,16 +319,6 @@ def test_list_component_types_success():
             # strip the first line of logging output
             output = "\n".join(result.output.split("\n")[1:])
             match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
-
-
-def test_component_type_list_with_no_dagster_components_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_components_venv(runner),
-    ):
-        result = runner.invoke("component-type", "list", env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
 
 
 def test_component_type_list_json_succeeds():

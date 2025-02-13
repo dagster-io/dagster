@@ -208,6 +208,9 @@ def test_dynamic_subcommand_help_message():
                 │                                                                          use.                                        │
                 │ --use-dg-managed-environment    --no-use-dg-managed-environment          Enable management of the virtual            │
                 │                                                                          environment with uv.                        │
+                │ --require-local-venv            --no-require-local-venv                  Require use of a local virtual environment  │
+                │                                                                          (`.venv` found in ancestors of the working  │
+                │                                                                          directory).                                 │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
         """).strip(),
         )

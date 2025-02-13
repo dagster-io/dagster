@@ -80,10 +80,7 @@ class ComponentScaffoldGroup(DgClickGroup):
         if not has_config_on_cli_context(cli_context):
             cli_context.invoke(not_none(self.callback), **cli_context.params)
         config = get_config_from_cli_context(cli_context)
-        dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), config)
-
-        if not dg_context.is_code_location:
-            exit_with_error("This command must be run inside a Dagster code location directory.")
+        dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         for key, component_type in registry.global_items():
