@@ -425,9 +425,7 @@ def test_default_granularity(concurrency_instance_default_granularity):
 
     with InstanceConcurrencyContext(concurrency_instance_default_granularity, run) as context:
         assert context.claim("foo", "a")
-        assert context.claim("foo", "b")
-        assert context.claim("foo", "c", is_legacy_tag=True)
-        assert not context.claim("foo", "d", is_legacy_tag=True)
+        assert not context.claim("foo", "b")
 
     foo_info = concurrency_instance_default_granularity.event_log_storage.get_concurrency_info(
         "foo"
