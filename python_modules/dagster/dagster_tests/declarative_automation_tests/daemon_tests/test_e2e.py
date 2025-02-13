@@ -316,6 +316,37 @@ def test_checks_and_assets_in_same_run() -> None:
             }
 
 
+def _get_location_name(run: DagsterRun):
+    return run.remote_job_origin.repository_origin.code_location_origin.location_name
+
+
+def test_cross_location_source_assets() -> None:
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["defs_with_source_assets", "always_evaluates"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        assert _get_latest_evaluation_ids(context) == {0}
+        assert _get_runs_for_latest_ticks(context) == []
+
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            # observable source asset executes
+            assert _get_latest_evaluation_ids(context) == {1, 2}
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 2
+            assert any(
+                run.asset_selection == {AssetKey("foo_source_asset")}
+                and _get_location_name(run) == "defs_with_source_assets"
+                for run in runs
+            )
+            assert any(
+                run.asset_selection == {AssetKey("always")}
+                and _get_location_name(run) == "always_evaluates"
+                for run in runs
+            )
+
+
 def test_cross_location_checks() -> None:
     time = get_current_datetime()
     with (
