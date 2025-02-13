@@ -1,11 +1,23 @@
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
-from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
 from dagster._annotations import _get_annotation_target
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 from pydantic import BaseModel, ConfigDict
+
+from dagster_components.core.schema.metadata import FieldInfo
 
 if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
@@ -13,13 +25,6 @@ if TYPE_CHECKING:
 FIELD_RESOLVER_ATTR = "__field_resolver__"
 
 T = TypeVar("T")
-
-
-def _get_default_field_resolver(field_name: str):
-    def _resolver(context: "ResolutionContext", schema: "ResolvableSchema"):
-        return context.resolve_value(getattr(schema, field_name))
-
-    return _resolver
 
 
 class ResolvableSchema(BaseModel, Generic[T]):
@@ -40,27 +45,16 @@ class ResolvableSchema(BaseModel, Generic[T]):
         resolved_type = generic_args[0]
         return resolved_type if isinstance(resolved_type, type) else None
 
-    def _get_implicit_field_resolvers(self, target_type: type) -> Mapping[str, "FieldResolverInfo"]:
-        # extract target field names directly from the target type if possible
-        if issubclass(target_type, BaseModel):
-            field_names = target_type.model_fields.keys()
-        elif is_dataclass(target_type):
-            field_names = [field.name for field in fields(target_type)]
-        else:
-            # assume field names in target type align with field names in the schema
-            field_names = self.model_fields.keys()
+    def _get_field_resolvers(self, target_type: type) -> Mapping[str, "FieldResolver"]:
         return {
-            field_name: FieldResolverInfo(
-                field_name=field_name, fn=_get_default_field_resolver(field_name)
-            )
-            for field_name in field_names
-        }
-
-    def _get_field_resolvers(self, target_type: type) -> Mapping[str, "FieldResolverInfo"]:
-        return {
-            **self._get_implicit_field_resolvers(target_type),
-            **_get_explicit_field_resolvers(self.FieldResolvers),
-            **_get_explicit_field_resolvers(target_type),
+            # extract field resolvers from annotations if possible, otherwise extract from the schema type
+            **(
+                _get_annotation_field_resolvers(target_type)
+                or _get_annotation_field_resolvers(self.__class__)
+            ),
+            # check for decorators on the schema class and target type
+            **_get_decorator_field_resolvers(self.FieldResolvers),
+            **_get_decorator_field_resolvers(target_type),
         }
 
     @property
@@ -78,8 +72,8 @@ class ResolvableSchema(BaseModel, Generic[T]):
     def resolve_fields(self, target_type: type, context: "ResolutionContext") -> Mapping[str, Any]:
         """Returns a mapping of field names to resolved values for those fields."""
         return {
-            field_name: resolver_info.fn(self, context)
-            for field_name, resolver_info in self._get_field_resolvers(target_type).items()
+            field_name: resolver.fn(context, self)
+            for field_name, resolver in self._get_field_resolvers(target_type).items()
         }
 
     def resolve_as(self, target_type: type[T], context: "ResolutionContext") -> T:
@@ -91,13 +85,29 @@ class ResolvableSchema(BaseModel, Generic[T]):
     class FieldResolvers: ...
 
 
+class FieldResolver(FieldInfo):
+    """Contains information on how to resolve this field from a ResolvableSchema."""
+
+    def __init__(self, fn: Callable[["ResolutionContext", Any], Any]):
+        self.fn = fn
+        super().__init__()
+
+    @staticmethod
+    def from_annotation(annotation: Any, field_name: str) -> "FieldResolver":
+        if get_origin(annotation) is Annotated:
+            args = get_args(annotation)
+            resolver = next((arg for arg in args if isinstance(arg, FieldResolver)), None)
+            if resolver:
+                return resolver
+        return FieldResolver(
+            lambda context, schema: context.resolve_value(getattr(schema, field_name))
+        )
+
+
 @record
 class FieldResolverInfo:
     field_name: str
-    fn: Callable[["ResolutionContext", ResolvableSchema], Any]
-
-
-FieldResolverArgs = ["ResolutionContext", ResolvableSchema]
+    resolver: FieldResolver
 
 
 def field_resolver(field_name: str) -> Any:
@@ -107,7 +117,7 @@ def field_resolver(field_name: str) -> Any:
         setattr(
             _get_annotation_target(fn),
             FIELD_RESOLVER_ATTR,
-            FieldResolverInfo(field_name=field_name, fn=fn),
+            FieldResolverInfo(field_name=field_name, resolver=FieldResolver(fn=fn)),
         )
         return fn
 
@@ -118,10 +128,28 @@ def _get_field_resolver_info(obj: Any) -> Optional[FieldResolverInfo]:
     return getattr(_get_annotation_target(obj), FIELD_RESOLVER_ATTR, None)
 
 
-def _get_explicit_field_resolvers(cls: type) -> dict[str, FieldResolverInfo]:
+def _get_annotation_field_resolvers(cls: type) -> dict[str, FieldResolver]:
+    if issubclass(cls, BaseModel):
+        field_names = cls.model_fields.keys()
+    elif is_dataclass(cls):
+        field_names = {field.name for field in fields(cls)}
+    else:
+        return {}
+
+    resolvers = {}
+    for field_name in field_names:
+        for subcls in cls.__mro__:
+            if field_name in getattr(subcls, "__annotations__", {}):
+                resolvers[field_name] = FieldResolver.from_annotation(
+                    subcls.__annotations__[field_name], field_name
+                )
+    return resolvers
+
+
+def _get_decorator_field_resolvers(cls: type) -> dict[str, FieldResolver]:
     resolvers = {}
     for attr_name in dir(cls):
         info = _get_field_resolver_info(getattr(cls, attr_name))
         if isinstance(info, FieldResolverInfo):
-            resolvers[info.field_name] = info
+            resolvers[info.field_name] = info.resolver
     return resolvers
