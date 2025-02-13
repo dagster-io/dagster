@@ -53,7 +53,7 @@ def build_defs_from_component_path(
         raise Exception(f"No component found at path {path}")
 
     context = ComponentLoadContext(
-        components_root=components_root,
+        module_name=".".join(components_root.parts[-2:]),
         resources=resources,
         registry=registry,
         decl_node=decl_node,
