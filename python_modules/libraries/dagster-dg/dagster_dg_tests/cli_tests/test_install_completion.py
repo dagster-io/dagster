@@ -13,5 +13,9 @@ def test_install_completion():
         with patch("typer._completion_shared.install") as mock_install:
             mock_install.return_value = shell, "/some/path"
             result = runner.invoke("--install-completion")
-            assert_runner_result(result)
-            assert f"{shell} completion installed in /some/path" in result.output
+            if shell in ["cmd", "powershell"]:  # windows shells are not supported
+                assert_runner_result(result, exit_0=False)
+                assert f"Shell `{shell}` is not supported" in result.output
+            else:
+                assert_runner_result(result)
+                assert f"{shell} completion installed in /some/path" in result.output

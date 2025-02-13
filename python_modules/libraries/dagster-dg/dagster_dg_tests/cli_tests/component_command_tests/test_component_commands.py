@@ -4,7 +4,11 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dagster_dg.utils import ensure_dagster_dg_tests_import, set_toml_value
+from dagster_dg.utils import (
+    cross_platfrom_string_path,
+    ensure_dagster_dg_tests_import,
+    set_toml_value,
+)
 
 ensure_dagster_dg_tests_import()
 
@@ -14,6 +18,7 @@ from dagster_dg_tests.utils import (
     isolated_example_code_location_foo_bar,
     isolated_example_deployment_foo,
     modify_pyproject_toml,
+    standardize_box_characters,
 )
 
 # ########################
@@ -26,6 +31,7 @@ def test_component_scaffold_dynamic_subcommand_generation() -> None:
         result = runner.invoke("component", "scaffold", "--help")
         assert_runner_result(result)
 
+        normalized_output = standardize_box_characters(result.output)
         # These are wrapped in a table so it's hard to check exact output.
         for line in [
             "╭─ Commands",
@@ -34,7 +40,7 @@ def test_component_scaffold_dynamic_subcommand_generation() -> None:
             "│ simple_asset@dagster_components.test",
             "│ simple_pipes_script_asset@dagster_components.test",
         ]:
-            assert line in result.output
+            assert standardize_box_characters(line) in normalized_output
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
@@ -245,14 +251,14 @@ def test_component_scaffold_succeeds_scaffolded_component_type() -> None:
 # ##### REAL COMPONENTS
 
 
-dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffle_shop"
+dbt_project_path = Path("../stub_code_locations/dbt_project_location/components/jaffle_shop")
 
 
 @pytest.mark.parametrize(
     "params",
     [
         ["--json-params", json.dumps({"project_path": str(dbt_project_path)})],
-        ["--project-path", dbt_project_path],
+        ["--project-path", str(dbt_project_path)],
     ],
 )
 def test_scaffold_dbt_project_instance(params) -> None:
@@ -277,7 +283,9 @@ def test_scaffold_dbt_project_instance(params) -> None:
         assert component_yaml_path.exists()
         assert "type: dbt_project@dagster_components" in component_yaml_path.read_text()
         assert (
-            "stub_code_locations/dbt_project_location/components/jaffle_shop"
+            cross_platfrom_string_path(
+                "stub_code_locations/dbt_project_location/components/jaffle_shop"
+            )
             in component_yaml_path.read_text()
         )
 

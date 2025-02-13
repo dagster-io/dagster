@@ -1,4 +1,3 @@
-import sys
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -9,7 +8,7 @@ import tomlkit
 from click.core import ParameterSource
 
 from dagster_dg.error import DgError, DgValidationError
-from dagster_dg.utils import get_toml_value
+from dagster_dg.utils import get_toml_value, is_macos, is_windows
 
 T = TypeVar("T")
 
@@ -17,9 +16,9 @@ DEFAULT_BUILTIN_COMPONENT_LIB = "dagster_components"
 
 
 def _get_default_cache_dir() -> Path:
-    if sys.platform == "win32":
+    if is_windows():
         return Path.home() / "AppData" / "dg" / "cache"
-    elif sys.platform == "darwin":
+    elif is_macos():
         return Path.home() / "Library" / "Caches" / "dg"
     else:
         return Path.home() / ".cache" / "dg"

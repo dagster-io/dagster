@@ -31,6 +31,27 @@ Hash: TypeAlias = Any
 CLI_CONFIG_KEY = "config"
 
 
+def is_windows() -> bool:
+    return sys.platform == "win32"
+
+
+def is_macos() -> bool:
+    return sys.platform == "darwin"
+
+
+def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
+    if is_windows():
+        return venv_dir / "Scripts" / f"{executable}.exe"
+    else:
+        return venv_dir / "bin" / executable
+
+
+def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
+    executable = get_venv_executable(venv_dir)
+    command = ["uv", "pip", "install", "--python", str(executable), *install_args]
+    subprocess.run(command, check=True)
+
+
 # Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
 # importable.
 @contextlib.contextmanager
@@ -85,10 +106,16 @@ def is_executable_available(command: str) -> bool:
     return bool(shutil.which(command)) or bool(get_uv_run_executable_path(command))
 
 
+# Short for "normalize path"-- use this to get the platform-correct string representation of an
+# existing string path.
+def cross_platfrom_string_path(path: str):
+    return str(Path(path))
+
+
 # uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
 # variable is set (common during development) and does not match the venv resolved by uv, it prints
 # undesireable warnings.
-def get_uv_command_env() -> Mapping[str, str]:
+def strip_activated_venv_from_env_vars() -> Mapping[str, str]:
     return {k: v for k, v in os.environ.items() if not k == "VIRTUAL_ENV"}
 
 
@@ -98,6 +125,14 @@ def discover_git_root(path: Path) -> Path:
             return path
         path = path.parent
     raise ValueError("Could not find git root")
+
+
+def discover_venv(path: Path) -> Path:
+    while path != path.parent:
+        if (path / ".venv").exists():
+            return path
+        path = path.parent
+    raise ValueError("Could not find venv")
 
 
 @contextlib.contextmanager
@@ -287,6 +322,11 @@ def exit_with_error(error_message: str) -> Never:
     sys.exit(1)
 
 
+# ########################
+# ##### ERROR MESSAGES
+# ########################
+
+
 def _format_error_message(message: str) -> str:
     # width=10000 unwraps any hardwrapping
     return textwrap.dedent(textwrap.fill(message, width=10000))
@@ -440,5 +480,5 @@ def get_uv_run_executable_path(executable_name: str) -> Optional[str]:
     uv_run_cmd = ["uv", "run", "which", executable_name]
     try:
         return subprocess.check_output(uv_run_cmd).decode("utf-8").strip()
-    except (subprocess.CalledProcessError, NotADirectoryError):
+    except (subprocess.CalledProcessError, NotADirectoryError, FileNotFoundError):
         return None
