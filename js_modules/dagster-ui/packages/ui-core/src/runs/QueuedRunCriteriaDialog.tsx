@@ -185,9 +185,11 @@ const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
                 <Tooltip
                   placement="bottom"
                   content={
-                    poolOpGranularityRunLimited
-                      ? 'Pool limits are set on all of the initial steps in this run. This run will not start until there are available slots for at least one step.'
-                      : 'Pool limits are set on ops for this run. This run will not start until there are available slots for all pools.'
+                    <div style={{maxWidth: 300}}>
+                      {poolOpGranularityRunLimited
+                        ? 'Pool limits are set on all of the initial steps in this run. This run will not start until there are available slots for at least one step.'
+                        : 'Pool limits are set on ops for this run. This run will not start until there are available slots for all pools.'}
+                    </div>
                   }
                 >
                   <Icon name="info" color={Colors.accentGray()} />
