@@ -1,23 +1,31 @@
-import os
-import signal
 import subprocess
-import sys
 import time
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Optional, TypeVar
 
 import click
-import psutil
 import yaml
 
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
-from dagster_dg.utils import DgClickCommand, exit_with_error, get_uv_run_executable_path, pushd
+from dagster_dg.utils import (
+    DgClickCommand,
+    exit_with_error,
+    get_uv_run_executable_path,
+    get_venv_executable,
+    pushd,
+)
+from dagster_dg.utils.ipc import (
+    get_ipc_shutdown_pipe,
+    interrupt_on_ipc_shutdown_message,
+    open_ipc_subprocess,
+    send_ipc_shutdown_message,
+)
 
 T = TypeVar("T")
 
@@ -69,6 +77,16 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     show_default=True,
     required=False,
 )
+@click.option(
+    "--shutdown-pipe",
+    type=click.INT,
+    required=False,
+    hidden=True,
+    help=(
+        "Internal use only. Pass a readable pipe file descriptor to the dg dev process"
+        " that will be monitored for a shutdown signal. Useful to interrupt the process in CI."
+    ),
+)
 @dg_global_options
 @click.pass_context
 def dev_command(
@@ -79,6 +97,7 @@ def dev_command(
     port: Optional[int],
     host: Optional[str],
     live_data_poll_rate: int,
+    shutdown_pipe: Optional[int],
     **global_options: Mapping[str, object],
 ) -> None:
     """Start a local deployment of your Dagster project.
@@ -99,12 +118,41 @@ def dev_command(
         *_format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
     ]
 
+    read_fd, write_fd = get_ipc_shutdown_pipe()
+    shutdown_pipe_options = ["--shutdown-pipe", str(read_fd)]
+
+    other_options = [*shutdown_pipe_options, *forward_options]
+
     # In a code location context, we can just run `dagster dev` directly, using `dagster` from the
     # code location's environment.
     if dg_context.is_code_location:
-        cmd = ["uv", "run", "dagster", "dev", *forward_options]
+        cmd = ["uv", "run", "dagster", "dev", *other_options]
         cmd_location = get_uv_run_executable_path("dagster")
         temp_workspace_file_cm = nullcontext()
+
+    # In a deployment context with a venv containing dagster and dagster-webserver (both are
+    # required for `dagster dev`), we can run `dagster dev` using whatever is installed in the
+    # deployment venv.
+    elif (
+        dg_context.is_deployment
+        and dg_context.has_venv
+        and get_venv_executable(dg_context.venv_path, "dagster").exists()
+        and get_venv_executable(dg_context.venv_path, "dagster-webserver").exists()
+    ):
+        # --no-project because we might not have the necessary fields in deployment pyproject.toml
+        cmd = [
+            "uv",
+            "run",
+            # Unclear why this is necessary, but it seems to be in CI. May be a uv version issue.
+            "--python",
+            get_venv_executable(dg_context.venv_path),
+            "--no-project",
+            "dagster",
+            "dev",
+            *other_options,
+        ]
+        cmd_location = get_uv_run_executable_path("dagster")
+        temp_workspace_file_cm = _temp_workspace_file(dg_context)
 
     # In a deployment context, dg dev will construct a temporary
     # workspace file that points at all defined code locations and invoke:
@@ -124,7 +172,7 @@ def dev_command(
             "dagster-webserver",
             "dagster",
             "dev",
-            *forward_options,
+            *other_options,
         ]
         cmd_location = "ephemeral dagster dev"
         temp_workspace_file_cm = _temp_workspace_file(dg_context)
@@ -135,32 +183,32 @@ def dev_command(
         print(f"Using {cmd_location}")  # noqa: T201
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
-        uv_run_dagster_dev_process = _open_subprocess(cmd)
-        try:
-            while True:
-                time.sleep(_CHECK_SUBPROCESS_INTERVAL)
-                if uv_run_dagster_dev_process.poll() is not None:
-                    raise DgError(
-                        f"dagster-dev process shut down unexpectedly with return code {uv_run_dagster_dev_process.returncode}."
-                    )
-        except KeyboardInterrupt:
-            click.secho(
-                "Received keyboard interrupt. Shutting down dagster-dev process.", fg="yellow"
-            )
-        finally:
-            # For reasons not fully understood, directly interrupting the `uv run` process does not
-            # work as intended. The interrupt signal is not correctly propagated to the `dagster
-            # dev` process, and so that process never shuts down. Therefore, we send the signal
-            # directly to the `dagster dev` process (the only child of the `uv run` process). This
-            # will cause `dagster dev` to terminate which in turn will cause `uv run` to terminate.
-            dagster_dev_pid = _get_child_process_pid(uv_run_dagster_dev_process)
-            _interrupt_subprocess(dagster_dev_pid)
-
+        uv_run_dagster_dev_process = open_ipc_subprocess(cmd, pass_fds=[read_fd])
+        with interrupt_on_ipc_shutdown_message(shutdown_pipe) if shutdown_pipe else nullcontext():
             try:
-                uv_run_dagster_dev_process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                click.secho("`dagster dev` did not terminate in time. Killing it.")
-                uv_run_dagster_dev_process.kill()
+                while True:
+                    time.sleep(_CHECK_SUBPROCESS_INTERVAL)
+                    if uv_run_dagster_dev_process.poll() is not None:
+                        raise DgError(
+                            f"dagster-dev process shut down unexpectedly with return code {uv_run_dagster_dev_process.returncode}."
+                        )
+            except KeyboardInterrupt:
+                click.secho(
+                    "Received keyboard interrupt. Shutting down dagster-dev process.", fg="yellow"
+                )
+            finally:
+                # For reasons not fully understood, directly interrupting the `uv run` process does not
+                # work as intended. The interrupt signal is not correctly propagated to the `dagster
+                # dev` process, and so that process never shuts down. Therefore, we send the signal
+                # directly to the `dagster dev` process (the only child of the `uv run` process). This
+                # will cause `dagster dev` to terminate which in turn will cause `uv run` to terminate.
+                send_ipc_shutdown_message(write_fd)
+
+                try:
+                    uv_run_dagster_dev_process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    click.secho("`dagster dev` did not terminate in time. Killing it.")
+                    uv_run_dagster_dev_process.kill()
 
 
 @contextmanager
@@ -185,34 +233,3 @@ def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
 
 def _format_forwarded_option(option: str, value: object) -> list[str]:
     return [] if value is None else [option, str(value)]
-
-
-def _get_child_process_pid(proc: "subprocess.Popen") -> int:
-    children = psutil.Process(proc.pid).children(recursive=False)
-    if len(children) != 1:
-        raise ValueError(f"Expected exactly one child process, but found {len(children)}")
-    return children[0].pid
-
-
-# Windows subprocess termination utilities. See here for why we send CTRL_BREAK_EVENT on Windows:
-# https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
-
-
-def _interrupt_subprocess(pid: int) -> None:
-    """Send CTRL_BREAK_EVENT on Windows, SIGINT on other platforms."""
-    if sys.platform == "win32":
-        os.kill(pid, signal.CTRL_BREAK_EVENT)
-    else:
-        os.kill(pid, signal.SIGINT)
-
-
-def _open_subprocess(command: Sequence[str]) -> "subprocess.Popen":
-    """Sets the correct flags to support graceful termination."""
-    creationflags = 0
-    if sys.platform == "win32":
-        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP
-
-    return subprocess.Popen(
-        command,
-        creationflags=creationflags,
-    )
