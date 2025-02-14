@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Optional, Union  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
@@ -31,6 +31,9 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
 from dagster._utils.warnings import disable_dagster_warnings
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetNode
 
 
 class AssetNode(BaseAssetNode):
@@ -357,6 +360,20 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
 
 
+def _get_execution_type(
+    node: Union[AssetNode, "RemoteWorkspaceAssetNode", AssetCheckNode],
+) -> Optional[AssetExecutionType]:
+    from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetNode
+
+    if isinstance(node, AssetNode):
+        return node.execution_type
+    elif isinstance(node, RemoteWorkspaceAssetNode):
+        return node.repo_scoped_asset_infos[0].asset_node.asset_node_snap.execution_type
+    else:
+        # there's no way to define a AssetCheck that doesn't include a way to execute it
+        return AssetExecutionType.MATERIALIZATION
+
+
 def executable_in_same_run(
     asset_graph: BaseAssetGraph, child_key: EntityKey, parent_key: EntityKey
 ):
@@ -377,6 +394,10 @@ def executable_in_same_run(
 
     # partitions definitions must match
     if child_node.partitions_def != parent_node.partitions_def:
+        return False
+
+    # execution types must match
+    if _get_execution_type(child_node) != _get_execution_type(parent_node):
         return False
 
     # unpartitioned assets can always execute together
