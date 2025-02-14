@@ -1,11 +1,12 @@
+import importlib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
 )
-from dagster._seven import import_uncached_module_from_path
 from dagster._utils import pushd
 
 from dagster_components import (
@@ -38,8 +39,19 @@ class DefinitionsComponent(Component):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         with pushd(str(context.path)):
-            module = import_uncached_module_from_path(
-                "definitions", self.definitions_path or "definitions.py"
-            )
+            abs_context_path = context.path.absolute()
+
+            component_module_relative_path = abs_context_path.parts[
+                abs_context_path.parts.index("components") + 1 :
+            ]
+            component_module_name = ".".join([context.module_name, *component_module_relative_path])
+
+            defs_file_path = (
+                Path(self.definitions_path) if self.definitions_path else Path("definitions.py")
+            ).absolute()
+            if defs_file_path.name != "__init__.py":
+                component_module_name = f"{component_module_name}.{defs_file_path.stem}"
+
+            module = importlib.import_module(component_module_name)
 
         return load_definitions_from_module(module)

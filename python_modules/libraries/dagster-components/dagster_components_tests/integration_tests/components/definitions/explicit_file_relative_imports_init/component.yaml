@@ -1,0 +1,4 @@
+type: definitions@dagster_components
+
+params:
+  definitions_path: __init__.py
