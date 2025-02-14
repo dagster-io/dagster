@@ -266,6 +266,7 @@ COMPONENT_FILE_SCHEMA = {
         "type": {"type": "string"},
         "params": {"type": "object"},
     },
+    "additionalProperties": False,
 }
 
 

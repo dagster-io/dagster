@@ -1,5 +1,6 @@
+import re
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, Union
 
 import click
 import typer
@@ -39,6 +40,23 @@ def augment_inline_error_message(location: str, msg: str):
     return msg
 
 
+ADDITIONAL_PROPERTIES_ERROR_MESSAGE = (
+    r"Additional properties are not allowed \('(.*?)' was unexpected\)"
+)
+
+
+def augment_error_path(error_details: ValidationError) -> Sequence[Union[str, int]]:
+    """Augment the error location (e.g. key) for certain error messages.
+
+    In particular, for extra properties, returns the location of the extra property instead
+    of the parent key.
+    """
+    additional_property = re.match(ADDITIONAL_PROPERTIES_ERROR_MESSAGE, error_details.message)
+    if additional_property:
+        return [*error_details.absolute_path, additional_property.group(1)]
+    return error_details.absolute_path
+
+
 def format_indented_error_msg(col: int, msg: str) -> str:
     """Format an error message with a caret pointing to the column where the error occurred."""
     return typer.style(" " * (col - 1) + f"^ {msg}", fg=typer.colors.YELLOW)
@@ -66,15 +84,15 @@ def error_dict_to_formatted_error(
             we validate params separately from the top-level component YAML fields, so this is often
             set to e.g. ["params"] when validating the internal params of a component.
     """
+    error_path = augment_error_path(error_details)
+
     source_position, source_position_path = source_position_tree.lookup_closest_and_path(
-        [*prefix, *error_details.absolute_path], trace=None
+        [*prefix, *error_path], trace=None
     )
 
     # Retrieves dotted path representation of the location of the error in the YAML file, e.g.
     # params.nested.foo.an_int
-    location = ".".join([*prefix, *[str(part) for part in error_details.absolute_path]]).split(
-        " at "
-    )[0]
+    location = ".".join([*prefix, *[str(part) for part in error_path]]).split(" at ")[0]
 
     # Find the first source position that has a different start line than the current source position
     # This is e.g. the parent json key of the current source position
