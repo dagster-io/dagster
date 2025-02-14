@@ -65,7 +65,7 @@ You can set up alerts to notify you whenever a run takes more than some threshol
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Run** from the menu and click **Continue**.
-5. Choose run targets and select "Run exceeding a specified number of hours" filling in the number of hours and click **Continue**.
+5. Choose run targets, select "Run exceeding a specified number of hours", enter the number of hours, and click **Continue**.
 6. Choose a notification channel for your Run alert and click **Continue**.
 7. Review and save your Run alert and click **Save alert**.
 
@@ -155,7 +155,7 @@ By default, these alerts will target all assets in the deployment, but they can 
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Asset** from the menu and click **Continue**.
-5. Choose asset targets and select the relevant asset check events and click **Continue**.
+5. Choose asset targets, select the relevant asset check events, and click **Continue**.
 6. Choose a notification channel for your asset alert and click **Continue**.
 7. Review and save your asset alert and click **Save alert**.
 
@@ -194,7 +194,7 @@ Alerts are sent only when a schedule/sensor transitions from **success** to **fa
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Automation** from the menu and click **Continue**.
-5. Select the tick types to be alerted on. Choose if you only want to be alerted after N consecutive failures and click **Continue**.
+5. Select the tick types to be alerted on. Choose if you only want to be alerted after `n` consecutive failures and click **Continue**.
 6. Choose a notification channel for your automation alert and click **Continue**.
 7. Review and save your automation alert and click **Save alert**.
   </TabItem>
