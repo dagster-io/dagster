@@ -384,3 +384,34 @@ def test_component_type_list_with_no_dagster_components_fails() -> None:
         result = runner.invoke("component-type", "list", env={"PATH": "/dev/null"})
         assert_runner_result(result, exit_0=False)
         assert "Could not find the `dagster-components` executable" in result.output
+
+
+def test_component_type_list_json_succeeds():
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+        result = runner.invoke("component-type", "list", "--json")
+        assert_runner_result(result)
+        # strip the first line of logging output
+        output = "\n".join(result.output.split("\n")[1:])
+        assert (
+            output.strip()
+            == textwrap.dedent("""
+                [
+                    {
+                        "key": "all_metadata_empty_asset@dagster_components.test",
+                        "summary": null
+                    },
+                    {
+                        "key": "complex_schema_asset@dagster_components.test",
+                        "summary": "An asset that has a complex params schema."
+                    },
+                    {
+                        "key": "simple_asset@dagster_components.test",
+                        "summary": "A simple asset that returns a constant string value."
+                    },
+                    {
+                        "key": "simple_pipes_script_asset@dagster_components.test",
+                        "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
+                    }
+                ]
+            """).strip()
+        )
