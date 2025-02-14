@@ -46,6 +46,13 @@ def resolve_local_venv(start_path: Path) -> Optional[Path]:
     return None
 
 
+def clear_screen():
+    if is_windows():
+        os.system("cls")
+    else:
+        os.system("clear")
+
+
 def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
     if is_windows():
         return venv_dir / "Scripts" / f"{executable}.exe"
@@ -270,7 +277,18 @@ def hash_directory_metadata(
     path: Union[str, Path],
     includes: Optional[Sequence[str]],
     excludes: Sequence[str],
+    error_on_missing: bool = False,
 ) -> None:
+    """Hashes the metadata of all files in the given directory.
+
+    Args:
+        hasher: The hasher to use to hash the metadata.
+        path: The directory path to hash the metadata of.
+        includes: The glob patterns of files to include in the hash, or None to include all files.
+        excludes: The glob patterns of files to exclude from the hash.
+        error_on_missing: Whether to raise an error if a file is missing. Set to False for cases where
+            we expect the filesystem to be actively changing.
+    """
     for root, dirs, files in os.walk(path):
         for name in dirs + files:
             if any(fnmatch(name, pattern) for pattern in excludes):
@@ -281,11 +299,24 @@ def hash_directory_metadata(
             hash_file_metadata(hasher, filepath)
 
 
-def hash_file_metadata(hasher: Hash, path: Union[str, Path]) -> None:
-    stat = os.stat(path=path)
-    hasher.update(str(path).encode())
-    hasher.update(str(stat.st_mtime).encode())  # Last modified time
-    hasher.update(str(stat.st_size).encode())  # File size
+def hash_file_metadata(
+    hasher: Hash, path: Union[str, Path], error_on_missing: bool = False
+) -> None:
+    """Hashes the metadata of a file.
+
+    Args:
+        hasher: The hasher to use to hash the metadata.
+        path: The file path to hash the metadata of.
+        error_on_missing: Whether to raise an error if a file is missing.
+    """
+    try:
+        stat = os.stat(path=path)
+        hasher.update(str(path).encode())
+        hasher.update(str(stat.st_mtime).encode())  # Last modified time
+        hasher.update(str(stat.st_size).encode())  # File size
+    except FileNotFoundError:
+        if error_on_missing:
+            raise
 
 
 T = TypeVar("T")

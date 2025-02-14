@@ -17,6 +17,7 @@ from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd
+from dagster_dg.utils.filesystem import watch_paths
 from dagster_dg.yaml_utils import parse_yaml_with_source_positions
 from dagster_dg.yaml_utils.source_position import (
     LineCol,
@@ -67,9 +68,13 @@ class ErrorInput(NamedTuple):
 
 @check_group.command(name="yaml", cls=DgClickCommand)
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
+@click.option(
+    "--watch", is_flag=True, help="Watch for changes to the component files and re-validate them."
+)
 @dg_global_options
 def check_yaml_command(
     paths: Sequence[str],
+    watch: bool,
     **global_options: object,
 ) -> None:
     """Check component.yaml files against their schemas, showing validation errors."""
@@ -79,96 +84,109 @@ def check_yaml_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
-    validation_errors: list[ErrorInput] = []
+    def run_check(_: Any = None) -> bool:
+        validation_errors: list[ErrorInput] = []
 
-    component_contents_by_key: dict[ComponentKey, Any] = {}
-    modules_to_fetch = set()
-    for component_dir in dg_context.defs_path.iterdir():
-        if resolved_paths and not any(
-            path == component_dir or path in component_dir.parents for path in resolved_paths
-        ):
-            continue
+        component_contents_by_key: dict[ComponentKey, Any] = {}
+        modules_to_fetch = set()
+        for component_dir in dg_context.defs_path.iterdir():
+            if resolved_paths and not any(
+                path == component_dir or path in component_dir.parents for path in resolved_paths
+            ):
+                continue
 
-        component_path = component_dir / "component.yaml"
+            component_path = component_dir / "component.yaml"
 
-        if component_path.exists():
-            text = component_path.read_text()
-            try:
-                component_doc_tree = parse_yaml_with_source_positions(
-                    text, filename=str(component_path)
+            if component_path.exists():
+                text = component_path.read_text()
+                try:
+                    component_doc_tree = parse_yaml_with_source_positions(
+                        text, filename=str(component_path)
+                    )
+                except ScannerError as se:
+                    validation_errors.append(
+                        ErrorInput(
+                            None,
+                            ValidationError(f"Unable to parse YAML: {se.context}, {se.problem}"),
+                            _scaffold_value_and_source_position_tree(
+                                filename=str(component_path),
+                                row=se.problem_mark.line + 1 if se.problem_mark else 1,
+                                col=se.problem_mark.column + 1 if se.problem_mark else 1,
+                            ),
+                        )
+                    )
+                    continue
+
+                # First, validate the top-level structure of the component file
+                # (type and params keys) before we try to validate the params themselves.
+                top_level_errs = list(
+                    top_level_component_validator.iter_errors(component_doc_tree.value)
                 )
-            except ScannerError as se:
+                for err in top_level_errs:
+                    validation_errors.append(ErrorInput(None, err, component_doc_tree))
+                if top_level_errs:
+                    continue
+
+                raw_key = component_doc_tree.value.get("type")
+                component_instance_module = dg_context.get_component_instance_module_name(
+                    component_dir.name
+                )
+                qualified_key = (
+                    f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
+                )
+                key = ComponentKey.from_typename(qualified_key)
+                component_contents_by_key[key] = component_doc_tree
+
+                # We need to fetch components from any modules local to the project because these are
+                # not cached with the components from the general environment.
+                if key.namespace.startswith(dg_context.defs_module_name):
+                    modules_to_fetch.add(key.namespace)
+
+        # Fetch the local component types, if we need any local components
+        component_registry = RemoteComponentRegistry.from_dg_context(
+            dg_context, extra_modules=list(modules_to_fetch)
+        )
+        for key, component_doc_tree in component_contents_by_key.items():
+            try:
+                json_schema = component_registry.get(key).component_schema or {}
+
+                v = Draft202012Validator(json_schema)
+                for err in v.iter_errors(component_doc_tree.value["attributes"]):
+                    validation_errors.append(ErrorInput(key, err, component_doc_tree))
+            except KeyError:
+                # No matching component type found
                 validation_errors.append(
                     ErrorInput(
                         None,
-                        ValidationError(f"Unable to parse YAML: {se.context}, {se.problem}"),
-                        _scaffold_value_and_source_position_tree(
-                            filename=str(component_path),
-                            row=se.problem_mark.line + 1 if se.problem_mark else 1,
-                            col=se.problem_mark.column + 1 if se.problem_mark else 1,
-                        ),
+                        ValidationError(f"Component type '{key.to_typename()}' not found."),
+                        component_doc_tree,
                     )
                 )
-                continue
-
-            # First, validate the top-level structure of the component file
-            # (type and params keys) before we try to validate the params themselves.
-            top_level_errs = list(
-                top_level_component_validator.iter_errors(component_doc_tree.value)
-            )
-            for err in top_level_errs:
-                validation_errors.append(ErrorInput(None, err, component_doc_tree))
-            if top_level_errs:
-                continue
-
-            raw_key = component_doc_tree.value.get("type")
-            component_instance_module = dg_context.get_component_instance_module_name(
-                component_dir.name
-            )
-            qualified_key = (
-                f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
-            )
-            key = ComponentKey.from_typename(qualified_key)
-            component_contents_by_key[key] = component_doc_tree
-
-            # We need to fetch components from any modules local to the project because these are
-            # not cached with the components from the general environment.
-            if key.namespace.startswith(dg_context.defs_module_name):
-                modules_to_fetch.add(key.namespace)
-
-    # Fetch the local component types, if we need any local components
-    component_registry = RemoteComponentRegistry.from_dg_context(
-        dg_context, extra_modules=list(modules_to_fetch)
-    )
-    for key, component_doc_tree in component_contents_by_key.items():
-        try:
-            json_schema = component_registry.get(key).component_schema or {}
-
-            v = Draft202012Validator(json_schema)
-            for err in v.iter_errors(component_doc_tree.value["attributes"]):
-                validation_errors.append(ErrorInput(key, err, component_doc_tree))
-        except KeyError:
-            # No matching component type found
-            validation_errors.append(
-                ErrorInput(
-                    None,
-                    ValidationError(f"Component type '{key.to_typename()}' not found."),
-                    component_doc_tree,
+        if validation_errors:
+            for key, error, component_doc_tree in validation_errors:
+                click.echo(
+                    error_dict_to_formatted_error(
+                        key,
+                        error,
+                        source_position_tree=component_doc_tree.source_position_tree,
+                        prefix=["attributes"] if key else [],
+                    )
                 )
-            )
-    if validation_errors:
-        for key, error, component_doc_tree in validation_errors:
-            click.echo(
-                error_dict_to_formatted_error(
-                    key,
-                    error,
-                    source_position_tree=component_doc_tree.source_position_tree,
-                    prefix=["attributes"] if key else [],
-                )
-            )
-        click.get_current_context().exit(1)
+            return False
+        else:
+            click.echo("All components validated successfully.")
+            return True
+
+    if watch:
+        watched_paths = (
+            resolved_paths or [dg_context.defs_path]
+        ) + dg_context.component_registry_paths()
+        watch_paths(watched_paths, run_check)
     else:
-        click.echo("All components validated successfully.")
+        if run_check(None):
+            click.get_current_context().exit(0)
+        else:
+            click.get_current_context().exit(1)
 
 
 @check_group.command(name="defs", cls=DgClickCommand)

@@ -1,6 +1,8 @@
 import contextlib
 import re
 import shutil
+import threading
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Optional
@@ -23,6 +25,7 @@ from dagster_dg.utils import (
 )
 
 ensure_dagster_dg_tests_import()
+from dagster_dg.utils import filesystem
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -122,6 +125,62 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
 
             else:
                 assert_runner_result(result)
+
+
+def test_check_cli_with_watch() -> None:
+    """Tests that the check CLI prints rich error messages when attempting to
+    load components with errors.
+    """
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_VALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+        ) as tmpdir_valid,
+        create_project_from_components(
+            runner,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_INVALID_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(tmpdir):
+            stdout = ""
+
+            def run_check(runner: ProxyRunner) -> None:
+                result = runner.invoke(
+                    "check",
+                    "yaml",
+                    "--watch",
+                    catch_exceptions=False,
+                )
+                nonlocal stdout
+                stdout = result.stdout
+
+            # Start the check command in a separate thread
+            check_thread = threading.Thread(target=run_check, args=(runner,))
+            check_thread.daemon = True  # Make thread daemon so it exits when main thread exits
+            check_thread.start()
+
+            time.sleep(2)  # Give the check command time to start
+
+            # Copy the invalid component into the valid code location
+            shutil.copy(
+                tmpdir_valid / "foo_bar" / "defs" / "basic_component_success" / "component.yaml",
+                tmpdir / "foo_bar" / "defs" / "basic_component_invalid_value" / "component.yaml",
+            )
+
+            time.sleep(2)  # Give time for the watcher to detect changes
+
+            # Signal the watcher to exit
+            filesystem.SHOULD_WATCHER_EXIT = True
+
+            time.sleep(2)
+            check_thread.join(timeout=1)
+
+            assert "All components validated successfully" in stdout
+            assert BASIC_INVALID_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(stdout)
 
 
 @pytest.mark.parametrize(
