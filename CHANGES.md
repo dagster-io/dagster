@@ -6,7 +6,8 @@
 
 - Fixed an issue where runs containing pool-assigned ops without limits set got stuck in the run queue.
 - Fixed an issue where a "Message: Cannot return null for non-nullable field PartitionKeys.partitionKeys." error was raised in the launchpad for jobs with unpartitioned assets.
-- [ui] Updated "Queue criteria" dialog to reference and link to pool concurrency
+- [ui] Updated "Queue criteria" modal to reference and link to pool concurrency settings pages.
+- [ui] The "Queue criteria" modal for a run no longer closes as new runs arrive.
 
 ## 1.10.0 (core) / 0.26.0 (libraries)
 
