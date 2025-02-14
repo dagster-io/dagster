@@ -95,6 +95,16 @@ This command generates static content into the `build` directory and can be serv
 
 **NOTE:** the `make sphinx_objects_inv` command needs to be run before creating a new release. We plan to automate this procedure in the future.
 
+### Versioning
+
+Previous versions of the docs site are made accessible through preview deployments in Vercel, for example:
+
+* https://release-1-9-13.archive.dagster-docs.io/
+
+Which is hosted on the `archive` subdomain of dagster-docs.io where `release-1-9-13` is the release branch in version control.
+
+These versions are made available in the navigation bar as external links on the latest docs site, and a link to the "Latest docs" is presented on archived versions of the docs. See the conditional logic using `VERCEL_ENV` in docusaurus.config.ts.
+
 ---
 
 ## Deployment
