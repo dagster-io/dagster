@@ -80,6 +80,9 @@ dagsterWebserver:
   # Set to -1 to disable.
   dbPoolRecycle: ~
 
+  # The maximum overflow size of the sqlalchemy pool. Set to -1 to disable.
+  dbPoolMaxOverflow: ~
+
   # The log level of the uvicorn web server, defaults to warning if not set
   logLevel: ~
 

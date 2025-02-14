@@ -43,6 +43,7 @@ DEFAULT_WEBSERVER_PORT = 3000
 
 DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
 DEFAULT_POOL_RECYCLE = 3600  # 1 hr
+DEFAULT_POOL_MAX_OVERFLOW = 20
 
 
 @click.command(
@@ -122,6 +123,16 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     show_default=True,
 )
 @click.option(
+    "--db-pool-max-overflow",
+    help=(
+        "The maximum overflow size of the sqlalchemy pool. Set to -1 to disable."
+        "Not respected in all configurations."
+    ),
+    default=DEFAULT_POOL_MAX_OVERFLOW,
+    type=click.INT,
+    show_default=True,
+)
+@click.option(
     "--read-only",
     help=(
         "Start server in read-only mode, where all mutations such as launching runs and "
@@ -196,6 +207,7 @@ def dagster_webserver(
     path_prefix: str,
     db_statement_timeout: int,
     db_pool_recycle: int,
+    db_pool_max_overflow: int,
     read_only: bool,
     suppress_warnings: bool,
     uvicorn_log_level: str,
@@ -237,7 +249,7 @@ def dagster_webserver(
             )
         )
         # Allow the instance components to change behavior in the context of a long running server process
-        instance.optimize_for_webserver(db_statement_timeout, db_pool_recycle)
+        instance.optimize_for_webserver(db_statement_timeout, db_pool_recycle, db_pool_max_overflow)
 
         with WorkspaceProcessContext(
             instance,
