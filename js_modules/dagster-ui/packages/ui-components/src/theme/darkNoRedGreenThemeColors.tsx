@@ -1,6 +1,6 @@
 import {css} from 'styled-components';
 
-export const darkThemeColors = css`
+export const darktNoRedGreenThemeColors = css`
   --browser-color-scheme: dark;
   --color-keyline-default: var(--color-translucent-gray20);
   --color-link-default: var(--color-core-blue200);
@@ -12,7 +12,7 @@ export const darkThemeColors = css`
   --color-text-disabled: var(--color-core-gray600);
   --color-text-red: var(--color-core-red200);
   --color-text-yellow: var(--color-core-yellow200);
-  --color-text-green: var(--color-core-green200);
+  --color-text-green: var(--color-core-cobalt200);
   --color-text-blue: var(--color-core-blue200);
   --color-text-olive: var(--color-core-olive200);
   --color-text-cyan: var(--color-core-cyan200);
@@ -24,14 +24,14 @@ export const darkThemeColors = css`
   --color-background-lighter: var(--color-core-gray850);
   --color-background-lighter-hover: var(--color-core-gray800);
   --color-background-disabled: var(--color-core-gray800);
-  --color-background-red: var(--color-translucent-red15);
-  --color-background-red-hover: var(--color-translucent-red20);
+  --color-background-red: var(--color-translucent-yellow15);
+  --color-background-red-hover: var(--color-translucent-yellow20);
   --color-background-yellow: var(--color-translucent-yellow15);
   --color-background-yellow-hover: var(--color-translucent-yellow20);
-  --color-background-green: var(--color-translucent-green15);
-  --color-background-green-hover: var(--color-translucent-green20);
-  --color-background-blue: var(--color-translucent-blue25);
-  --color-background-blue-hover: var(--color-translucent-blue30);
+  --color-background-green: var(--color-translucent-cobalt15);
+  --color-background-green-hover: var(--color-translucent-cobalt20);
+  --color-background-blue: var(--color-translucent-gray15);
+  --color-background-blue-hover: var(--color-translucent-gray20);
   --color-background-olive: var(--color-translucent-olive15);
   --color-background-oliver-hover: var(--color-translucent-olive20);
   --color-background-cyan: var(--color-translucent-cyan15);
@@ -43,19 +43,19 @@ export const darkThemeColors = css`
   --color-border-default: var(--color-core-gray800);
   --color-border-hover: var(--color-core-gray700);
   --color-border-disabled: var(--color-core-gray600);
-  --color-focus-ring: var(--color-core-blue600);
+  --color-focus-ring: var(--color-core-white);
   --color-accent-primary: var(--color-core-gray150);
   --color-accent-primary-hover: var(--color-core-gray50);
   --color-accent-reversed: var(--color-core-gray950);
   --color-accent-reversed-hover: var(--color-core-gray800);
-  --color-accent-red: var(--color-core-red500);
-  --color-accent-red-hover: var(--color-core-red600);
-  --color-accent-yellow: var(--color-core-yellow500);
+  --color-accent-red: var(--color-core-yellow500);
+  --color-accent-red-hover: var(--color-core-yellow600);
+  --color-accent-yellow: var(--color-core-yellow700);
   --color-accent-yellow-hover: var(--color-core-yellow600);
-  --color-accent-green: var(--color-core-green600);
-  --color-accent-green-hover: var(--color-core-green700);
-  --color-accent-blue: var(--color-core-blue400);
-  --color-accent-blue-hover: var(--color-core-blue500);
+  --color-accent-green: var(--color-core-cobalt400);
+  --color-accent-green-hover: var(--color-core-cobalt500);
+  --color-accent-blue: var(--color-core-gray600);
+  --color-accent-blue-hover: var(--color-core-gray500);
   --color-accent-cyan: var(--color-core-cyan500);
   --color-accent-cyan-hover: var(--color-core-cyan600);
   --color-accent-lime: var(--color-core-lime500);
@@ -91,7 +91,7 @@ export const darkThemeColors = css`
   --color-lineage-node-background-hover: var(--color-core-gray800);
   --color-lineage-node-border: var(--color-core-gray700);
   --color-lineage-node-border-hover: var(--color-core-gray400);
-  --color-lineage-node-border-selected: var(--color-core-blue300);
+  --color-lineage-node-border-selected: var(--color-core-white);
   --color-data-viz-blue: var(--color-dataviz-blue200);
   --color-data-viz-blue-alt: var(--color-dataviz-blue100);
   --color-data-viz-blurple: var(--color-dataviz-blurple200);
@@ -119,7 +119,7 @@ export const darkThemeColors = css`
   --color-data-viz-yellow: var(--color-dataviz-yellow200);
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow100);
   --color-checkbox-unchecked: var(--color-core-gray500);
-  --color-checkbox-checked: var(--color-core-blue400);
+  --color-checkbox-checked: var(--color-core-cobalt500);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray950),
     var(--color-translucent-blue15) 100%

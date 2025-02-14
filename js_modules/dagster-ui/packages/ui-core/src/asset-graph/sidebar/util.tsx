@@ -1,4 +1,4 @@
-import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
+import {Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import styled, {keyframes} from 'styled-components';
 
@@ -71,19 +71,19 @@ export function StatusCaseDot({statusCase}: {statusCase: StatusCase}) {
     case 'missing':
       return (
         <Tooltip content="Missing" position="top">
-          <Dot style={{border: `2px solid ${Colors.accentGray()}`}} />
+          <Icon name="missing" color={Colors.accentGray()} />
         </Tooltip>
       );
     case 'failed':
       return (
         <Tooltip content="Failed" position="top">
-          <Dot style={{backgroundColor: Colors.accentRed()}} />
+          <Icon name="check_failed" color={Colors.accentRed()} />
         </Tooltip>
       );
     case 'inprogress':
       return <Spinner purpose="caption-text" />;
     case 'successful':
-      return <Dot style={{backgroundColor: Colors.accentGreen()}} />;
+      return <Icon name="run_success" color={Colors.accentGreen()} />;
   }
 }
 
