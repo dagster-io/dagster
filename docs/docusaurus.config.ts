@@ -99,7 +99,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'API reference',
+          label: 'API',
           type: 'doc',
           docId: 'api/index',
           position: 'left',
