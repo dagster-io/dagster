@@ -7,6 +7,7 @@ from typing import Optional
 
 import pytest
 from dagster_components.test.test_cases import (
+    BASIC_COMPONENT_TYPE_FILEPATH,
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
     BASIC_VALID_VALUE,
@@ -42,6 +43,15 @@ CLI_TEST_CASES = [
         check_error_msg=msg_includes_all_of(
             "component.yaml:1",
             "Component type 'my_component_does_not_exist@__init__.py' not found",
+        ),
+    ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_extra_top_level_value",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:7",
+            "'an_extra_top_level_value' was unexpected",
         ),
     ),
 ]
