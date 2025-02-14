@@ -79,3 +79,14 @@ export const attributeToIcon: Record<Attribute, IconName> = {
   owner: 'owner',
   tag: 'tag',
 };
+
+export const assetSelectionSyntaxSupportedAttributes: Attribute[] = Object.keys(
+  attributeToIcon,
+) as Attribute[];
+
+export const unsupportedAttributeMessages = {
+  column_tag: 'column_tag filtering is available in Dagster+',
+  column: 'column filtering is available in Dagster+',
+  table_name: 'table_name filtering is available in Dagster+',
+  changed_in_branch: 'changed_in_branch filtering is available in Dagster+ branch deployments',
+};

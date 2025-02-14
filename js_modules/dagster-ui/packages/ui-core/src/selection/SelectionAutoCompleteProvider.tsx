@@ -274,7 +274,7 @@ export const createProvider = <
     options?: {includeParenthesis?: boolean};
   }) {
     const functionName = func[0]!.toUpperCase() + func.slice(1);
-    const displayText = options?.includeParenthesis ? `${functionName}()` : functionName;
+    const rightLabel = options?.includeParenthesis ? `${func}()` : func;
     let icon: IconName;
     switch (func) {
       case 'roots':
@@ -288,7 +288,7 @@ export const createProvider = <
     }
     return {
       text,
-      jsx: <SuggestionJSXBase label={functionName} icon={icon} rightLabel={displayText} />,
+      jsx: <SuggestionJSXBase label={functionName} icon={icon} rightLabel={rightLabel} />,
     };
   }
 
