@@ -105,6 +105,8 @@ Which is hosted on the `archive` subdomain of dagster-docs.io where `release-1-9
 
 These versions are made available in the navigation bar as external links on the latest docs site, and a link to the "Latest docs" is presented on archived versions of the docs. See the conditional logic using `VERCEL_ENV` in docusaurus.config.ts.
 
+To validate the dropdown menu, you can run `VERCEL_ENV=production yarn start`.
+
 ---
 
 ## Deployment
