@@ -1341,7 +1341,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1, run_id_2])
 
-    @pytest.mark.parametrize("concurrency_config", [{}])
+    @pytest.mark.parametrize("concurrency_config", [{}, {"pools": {"granularity": "op"}}])
     @pytest.mark.parametrize("run_coordinator_config", [{}])
     def test_concurrency_run_default(
         self,
@@ -1365,18 +1365,23 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
 
-        # submit a run that also occupies the foo slot, bar slot
+        # the second run is not launched
+        self.submit_run(
+            instance, remote_job, workspace, run_id=run_id_2, asset_selection=set([foo_key])
+        )
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+
+        # submit a run that also occupies the foo slot, bar slot and is launched (the bar key is unconstrained)
         self.submit_run(
             instance,
             remote_job,
             workspace,
-            run_id=run_id_2,
+            run_id=run_id_3,
             asset_selection=set([foo_key, bar_key]),
         )
-
-        # the second run is not launched
         list(daemon.run_iteration(concurrency_limited_workspace_context))
-        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1, run_id_3])
 
     @pytest.mark.parametrize(
         "concurrency_config",
