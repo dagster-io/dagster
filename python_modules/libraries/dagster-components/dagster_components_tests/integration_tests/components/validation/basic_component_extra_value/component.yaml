@@ -1,4 +1,4 @@
-type: my_component@__init__.py
+type: my_component@file:__init__.py
 
 params:
   a_string: "a string"
