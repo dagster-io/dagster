@@ -127,12 +127,12 @@ const config: Config = {
         //  docId: 'changelog',
         //  position: 'right',
         //},
-        {
-           label: 'Feedback',
-           href: 'https://github.com/dagster-io/dagster/discussions/27332',
-           position: 'right',
-           className: 'feedback-nav-link',
-         },
+        // {
+        //    label: 'Feedback',
+        //    href: 'https://github.com/dagster-io/dagster/discussions/27332',
+        //    position: 'right',
+        //    className: 'feedback-nav-link',
+        //  },
       ],
     },
     image: 'images/og.png',
@@ -157,6 +157,7 @@ const config: Config = {
             <a href='https://www.dagster.io/terms'>Terms of Service</a>
             <a href='https://www.dagster.io/privacy/'>Privacy Policy</a>
             <a href='https://www.dagster.io/security/'>Security</a>
+            <a href='https://github.com/dagster-io/dagster/pull/27862'>Feedback</a>
           </div>
 
           <div class='footer__items--right'>
