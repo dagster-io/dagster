@@ -1,5 +1,5 @@
 ---
-title: 'Creating a new component type'
+title: 'Creating and registering a Component type'
 sidebar_position: 100
 ---
 
@@ -126,7 +126,3 @@ params:
     - key: a
       partitions_def: "{{ daily_partitions }}"
 ```
-
-## Next steps
-
-- [Add a new component to your project](./using-a-component.md)
