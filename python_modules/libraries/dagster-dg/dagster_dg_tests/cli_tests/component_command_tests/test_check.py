@@ -1,6 +1,8 @@
 import contextlib
 import re
 import shutil
+import threading
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Optional
@@ -18,6 +20,7 @@ from dagster_components.test.test_cases import (
 from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd, set_toml_value
 
 ensure_dagster_dg_tests_import()
+from dagster_dg.utils import filesystem
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -58,13 +61,18 @@ CLI_TEST_CASES = [
 
 @contextlib.contextmanager
 def create_code_location_from_components(
-    runner: ProxyRunner, *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
+    runner: ProxyRunner,
+    *src_paths: str,
+    local_component_defn_to_inject: Optional[Path] = None,
 ) -> Iterator[Path]:
     """Scaffolds a code location with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
     origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
-    with isolated_example_code_location_foo_bar(runner, component_dirs=origin_paths):
+    with isolated_example_code_location_foo_bar(
+        runner,
+        component_dirs=origin_paths,
+    ):
         for src_path in src_paths:
             components_dir = Path.cwd() / "foo_bar" / "components" / src_path.split("/")[-1]
             if local_component_defn_to_inject:
@@ -124,6 +132,70 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
 
             else:
                 assert result.exit_code == 0
+
+
+def test_check_cli_with_watch() -> None:
+    """Tests that the check CLI prints rich error messages when attempting to
+    load components with errors.
+    """
+    with (
+        ProxyRunner.test() as runner,
+        create_code_location_from_components(
+            runner,
+            BASIC_VALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+        ) as tmpdir_valid,
+        create_code_location_from_components(
+            runner,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_INVALID_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(tmpdir):
+            stdout = ""
+
+            def run_check(runner: ProxyRunner) -> None:
+                result = runner.invoke(
+                    "component",
+                    "check",
+                    "--watch",
+                    catch_exceptions=False,
+                )
+                nonlocal stdout
+                stdout = result.stdout
+
+            # Start the check command in a separate thread
+            check_thread = threading.Thread(target=run_check, args=(runner,))
+            check_thread.daemon = True  # Make thread daemon so it exits when main thread exits
+            check_thread.start()
+
+            time.sleep(2)  # Give the check command time to start
+
+            # Copy the invalid component into the valid code location
+            shutil.copy(
+                tmpdir_valid
+                / "foo_bar"
+                / "components"
+                / "basic_component_success"
+                / "component.yaml",
+                tmpdir
+                / "foo_bar"
+                / "components"
+                / "basic_component_invalid_value"
+                / "component.yaml",
+            )
+
+            time.sleep(2)  # Give time for the watcher to detect changes
+
+            # Signal the watcher to exit
+            filesystem.SHOULD_WATCHER_EXIT = True
+
+            time.sleep(2)
+            check_thread.join(timeout=1)
+
+            assert "All components validated successfully" in stdout
+            assert BASIC_INVALID_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(stdout)
 
 
 @pytest.mark.parametrize(
@@ -206,7 +278,10 @@ def test_validation_cli_local_component_cache() -> None:
         ) as code_location_dir,
     ):
         with pushd(code_location_dir):
-            result = runner.invoke("component", "check")
+            result = runner.invoke(
+                "component",
+                "check",
+            )
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )
@@ -216,7 +291,10 @@ def test_validation_cli_local_component_cache() -> None:
             )
 
             # Local components should all be cached
-            result = runner.invoke("component", "check")
+            result = runner.invoke(
+                "component",
+                "check",
+            )
             assert not re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )
@@ -242,7 +320,10 @@ def test_validation_cli_local_component_cache() -> None:
             ).write_text(contents + "\n")
 
             # basic_component_success local component is now be invalidated and needs to be re-cached, the other one should still be cached
-            result = runner.invoke("component", "check")
+            result = runner.invoke(
+                "component",
+                "check",
+            )
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )

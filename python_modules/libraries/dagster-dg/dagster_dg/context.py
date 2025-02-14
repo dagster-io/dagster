@@ -7,7 +7,7 @@ from typing import Final, Optional
 
 from typing_extensions import Self
 
-from dagster_dg.cache import CachableDataType, DgCache, hash_paths
+from dagster_dg.cache import CachableDataType, DgCache
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import DgConfig, DgPartialConfig, load_dg_config_file
 from dagster_dg.error import DgError
@@ -31,6 +31,7 @@ from dagster_dg.utils import (
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
 )
+from dagster_dg.utils.filesystem import hash_paths
 
 # Deployment
 _DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code_locations"
@@ -144,13 +145,16 @@ class DgContext:
     def has_cache(self) -> bool:
         return self._cache is not None
 
-    def get_cache_key(self, data_type: CachableDataType) -> tuple[str, str, str]:
-        path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
-        paths_to_hash = [
+    def component_registry_paths(self) -> list[Path]:
+        """Paths that should be watched for changes to the component registry."""
+        return [
             self.root_path / "uv.lock",
             *([self.components_lib_path] if self.is_component_library else []),
         ]
-        env_hash = hash_paths(paths_to_hash)
+
+    def get_cache_key(self, data_type: CachableDataType) -> tuple[str, str, str]:
+        path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
+        env_hash = hash_paths(self.component_registry_paths())
         return ("_".join(path_parts), env_hash, data_type)
 
     def get_cache_key_for_local_components(self, path: Path) -> tuple[str, str, str]:
