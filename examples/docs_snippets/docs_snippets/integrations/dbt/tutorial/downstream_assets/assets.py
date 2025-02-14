@@ -8,11 +8,11 @@ import plotly.express as px
 from dagster import MetadataValue, AssetExecutionContext, asset
 from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 
-from .project import dbt_project
+from .project import jaffle_shop_project
 
 # end_imports
 
-duckdb_database_path = dbt_project.project_dir.joinpath("tutorial.duckdb")
+duckdb_database_path = jaffle_shop_project.project_dir.joinpath("tutorial.duckdb")
 
 
 @asset(compute_kind="python")
