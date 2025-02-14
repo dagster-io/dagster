@@ -41,7 +41,7 @@ CLI_TEST_CASES = [
         should_error=True,
         check_error_msg=msg_includes_all_of(
             "component.yaml:1",
-            "Component type 'my_component_does_not_exist@__init__.py' not found",
+            "Component type 'my_component_does_not_exist@file:__init__.py' not found",
         ),
     ),
     ComponentValidationTestCase(

@@ -30,8 +30,8 @@ dirpath = Path(".")
         ("foo@bar", GlobalComponentKey("foo", "bar")),
         ("foo@bar.baz", GlobalComponentKey("foo", "bar.baz")),
         ("foo@file.xyz", GlobalComponentKey("foo", "file.xyz")),
-        ("foo@file:bar.py", LocalComponentKey("foo", "bar.py", dirpath)),
-        ("foo@file:bar/baz.py", LocalComponentKey("foo", "bar/baz.py", dirpath)),
+        ("foo@file:bar.py", LocalComponentKey("foo", "file:bar.py", dirpath)),
+        ("foo@file:bar/baz.py", LocalComponentKey("foo", "file:bar/baz.py", dirpath)),
     ],
 )
 def test_valid_component_keys(component_typename: str, component_key: ComponentKey) -> None:

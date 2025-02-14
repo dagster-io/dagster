@@ -365,7 +365,7 @@ def find_local_component_types(component_path: Path) -> Mapping[LocalComponentKe
             component_types[
                 LocalComponentKey(
                     name=get_component_type_name(component_type),
-                    namespace=py_file.name,
+                    namespace=f"file:{py_file.name}",
                     dirpath=py_file.parent,
                 )
             ] = component_type
