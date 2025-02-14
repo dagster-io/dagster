@@ -50,7 +50,7 @@ Now that we've introduced an asset explicitly for the `customers.csv` file outpu
 
 When done, our code will look like this.
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py" language="python" lineStart="9" lineEnd="12"/>
 
 ### Adding partitions
 
