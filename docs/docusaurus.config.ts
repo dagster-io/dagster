@@ -102,12 +102,12 @@ const config: Config = {
           position: 'left',
         },
 
-        // Conditionally display version dropdown when in Vercel production environment
+        // Conditionally display version dropdown when in local and Vercel production environments.
         //
         //     https://vercel.com/docs/projects/environment-variables/system-environment-variables#VERCEL_ENV
         //
-        // Otherwise display a link to the latest docs site; this will used in local and preview builds.
-        process.env.VERCEL_ENV && process.env.VERCEL_ENV === 'production'
+        // Otherwise display a link to the latest docs site; this will used in preview builds.
+        !process.env.VERCEL_ENV || process.env.VERCEL_ENV === 'production'
           ? {
               label: 'Versions',
               type: 'docsVersionDropdown',
