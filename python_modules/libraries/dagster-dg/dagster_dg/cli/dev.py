@@ -88,7 +88,7 @@ def dev_command(
     location.
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context = DgContext.for_deployment_or_code_location_environment(Path.cwd(), cli_config)
 
     forward_options = [
         *_format_forwarded_option("--code-server-log-level", code_server_log_level),

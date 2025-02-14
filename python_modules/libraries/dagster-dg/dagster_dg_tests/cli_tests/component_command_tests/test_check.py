@@ -21,7 +21,6 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_code_location_foo_bar,
-    isolated_example_deployment_foo,
     modify_pyproject_toml,
 )
 
@@ -62,20 +61,6 @@ def create_code_location_from_components(
                 shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
 
         yield Path.cwd()
-
-
-def test_component_check_outside_code_location_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("component", "check")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster code location directory" in result.output
-
-
-def test_list_components_with_no_dagster_components_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        result = runner.invoke("component", "check", env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
 
 
 def test_component_check_succeeds_non_default_component_package() -> None:

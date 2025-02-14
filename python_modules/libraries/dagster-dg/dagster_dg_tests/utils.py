@@ -28,20 +28,23 @@ from dagster_dg.utils import (
 from typing_extensions import Self
 
 
+def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    install_args: list[str] = []
+    for path in libraries_rel_paths:
+        full_path = Path(dagster_git_repo_dir) / "python_modules" / path
+        install_args.extend(["-e", str(full_path)])
+    install_to_venv(venv_path, install_args)
+
+
 @contextmanager
 def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    libraries_paths = [
-        Path(dagster_git_repo_dir) / "python_modules" / name
-        for name in ["dagster", "libraries/dagster-components", "dagster-pipes"]
-    ]
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
-        install_args: list[str] = []
-        for path in libraries_paths:
-            install_args.extend(["-e", str(path)])
-        install_to_venv(venv_path, install_args)
+        _install_libraries_to_venv(
+            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes"]
+        )
 
         venv_exec_path = get_venv_executable(venv_path).parent
         assert (venv_exec_path / "python").exists() or (venv_exec_path / "python.exe").exists()
@@ -59,8 +62,13 @@ def isolated_example_deployment_foo(
     with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
         runner.invoke("deployment", "scaffold", "foo")
         with pushd("foo"):
+            # Create a venv capable of running dagster dev
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
+                venv_path = Path.cwd() / ".venv"
+                _install_libraries_to_venv(
+                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql"]
+                )
             yield
 
 
@@ -111,10 +119,13 @@ def isolated_example_code_location_foo_bar(
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     lib_package_name: Optional[str] = None,
+    skip_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with isolated_components_venv(runner) as venv_path:
+    with (
+        runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
+    ) as venv_path:
         # We just use the code location generation function and then modify it to be a component library
         # only.
         runner.invoke(
@@ -144,7 +155,9 @@ def isolated_example_component_library_foo_bar(
                     Path(*lib_package_name.split(".")).mkdir(exist_ok=True)
 
             # Install the component library into our venv
-            install_to_venv(venv_path, ["-e", "."])
+            if not skip_venv:
+                assert venv_path
+                install_to_venv(venv_path, ["-e", "."])
             yield
 
 
@@ -287,6 +300,7 @@ class ProxyRunner:
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
+        require_local_venv: bool = True,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
@@ -300,6 +314,7 @@ class ProxyRunner:
                 "--cache-dir",
                 str(cache_dir),
                 *(["--verbose"] if verbose else []),
+                *(["--no-require-local-venv"] if not require_local_venv else []),
                 *(["--disable-cache"] if disable_cache else []),
             ]
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)

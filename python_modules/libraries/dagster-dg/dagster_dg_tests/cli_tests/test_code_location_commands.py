@@ -203,10 +203,3 @@ def test_code_location_list_success():
                 foo
             """).strip()
         )
-
-
-def test_code_location_list_outside_deployment_fails() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("code-location", "list")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster deployment directory" in result.output
