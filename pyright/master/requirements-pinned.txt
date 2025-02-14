@@ -473,7 +473,7 @@ posthog==3.11.0
 premailer==3.10.0
 prison==0.2.1
 progressbar2==4.5.0
--e examples/project_atproto_dashboard
+-e examples/docs_projects/project_atproto_dashboard
 -e examples/docs_projects/project_dagster_modal_pipes
 -e examples/docs_projects/project_prompt_eng
 prometheus-client==0.21.1

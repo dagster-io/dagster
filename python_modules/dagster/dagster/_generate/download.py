@@ -39,7 +39,6 @@ AVAILABLE_EXAMPLES = [
     "getting_started_etl_tutorial",
     "google_drive_factory",
     "project_analytics",
-    "project_atproto_dashboard",
     "project_dagster_university_start",
     "project_du_dbt_starter",
     "project_fully_featured",
