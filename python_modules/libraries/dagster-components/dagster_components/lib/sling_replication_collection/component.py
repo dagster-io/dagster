@@ -1,5 +1,4 @@
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Callable, Optional, Union
 
@@ -9,7 +8,8 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
 from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
 from dagster_sling.resources import AssetExecutionContext
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from pydantic.dataclasses import dataclass
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.core.component import registered_component_type
@@ -44,12 +44,21 @@ class SlingReplicationSpec(BaseModel):
 
 
 class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
-    path: str
-    op: Optional[OpSpecSchema] = None
+    path: str = Field(
+        ...,
+        description="The path to the Sling replication file. For more information, see https://docs.slingdata.io/concepts/replication#overview.",
+    )
+    op: Optional[OpSpecSchema] = Field(
+        None,
+        description="Customizations to the op underlying the Sling replication.",
+    )
     asset_attributes: Annotated[
         Optional[AssetAttributesSchema],
         ResolvableFieldInfo(required_scope={"stream_definition"}),
-    ] = None
+    ] = Field(
+        None,
+        description="Customizations to the assets produced by the Sling replication.",
+    )
 
 
 class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollectionSchema"]):
@@ -73,9 +82,13 @@ def resolve_resource(
 class SlingReplicationCollection(Component):
     """Expose one or more Sling replications to Dagster as assets."""
 
-    resource: Annotated[SlingResource, FieldResolver(resolve_resource)]
-    replications: Sequence[SlingReplicationSpec]
-    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]]
+    resource: Annotated[SlingResource, FieldResolver(resolve_resource)] = Field(
+        ..., description="Customizations to Sling execution."
+    )
+    replications: Sequence[SlingReplicationSpec] = Field(
+        ..., description="A set of Sling replications to expose as assets."
+    )
+    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = Field(None)
 
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:
