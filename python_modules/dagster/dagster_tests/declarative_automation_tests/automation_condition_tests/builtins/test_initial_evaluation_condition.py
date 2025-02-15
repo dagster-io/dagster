@@ -116,6 +116,42 @@ def test_update_on_condition_change() -> None:
         assert _get_initial_evaluation_count(result) == 0
 
 
+def test_initial_evaluation_condition_toggle() -> None:
+    def _get_defs(has_condition: bool = True) -> dg.Definitions:
+        @dg.asset(
+            automation_condition=dg.AutomationCondition.initial_evaluation()
+            if has_condition
+            else None
+        )
+        def a() -> None: ...
+
+        return dg.Definitions(assets=[a])
+
+    instance = dg.DagsterInstance.ephemeral()
+
+    # initial evaluation, should be true
+    result = dg.evaluate_automation_conditions(defs=_get_defs(), instance=instance)
+    assert result.total_requested == 1
+
+    # no longer initial evaluation
+    result = dg.evaluate_automation_conditions(
+        defs=_get_defs(), instance=instance, cursor=result.cursor
+    )
+    assert result.total_requested == 0
+
+    # remove condition, nothing to evaluate
+    result = dg.evaluate_automation_conditions(
+        defs=_get_defs(has_condition=False), instance=instance, cursor=result.cursor
+    )
+    assert result.total_requested == 0
+
+    # add condition back, now it's initial evaluation again
+    result = dg.evaluate_automation_conditions(
+        defs=_get_defs(), instance=instance, cursor=result.cursor
+    )
+    assert result.total_requested == 1
+
+
 def test_no_update_on_new_deps() -> None:
     def _get_defs(deps: Sequence[str]) -> dg.Definitions:
         @dg.multi_asset(specs=[dg.AssetSpec(d) for d in deps])
