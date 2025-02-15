@@ -76,6 +76,8 @@ class SSHResource(ConfigurableResource):
     _logger: Optional[logging.Logger] = PrivateAttr(default=None)
     _host_proxy: Optional[paramiko.ProxyCommand] = PrivateAttr(default=None)
     _key_obj: Optional[paramiko.RSAKey] = PrivateAttr(default=None)
+    _key_file: Optional[str] = PrivateAttr(default=None)
+    _username: Optional[str] = PrivateAttr(default=None)
 
     def set_logger(self, logger: logging.Logger) -> None:
         self._logger = logger
@@ -94,7 +96,9 @@ class SSHResource(ConfigurableResource):
                     f"username to ssh to host: {self.remote_host} is not specified. Using system's default provided"
                     " by getpass.getuser()"
                 )
-            self.username = getpass.getuser()
+            self._username = getpass.getuser()
+        else:
+            self._username = self.username
 
         user_ssh_config_filename = os.path.expanduser("~/.ssh/config")
         if os.path.isfile(user_ssh_config_filename):
@@ -109,7 +113,9 @@ class SSHResource(ConfigurableResource):
             if not (self.password or self.key_file):
                 identify_file = host_info.get("identityfile")
                 if host_info and identify_file:
-                    self.key_file = identify_file[0]
+                    self._key_file = identify_file[0]
+            else:
+                self._key_file = self.key_file
 
     @property
     def log(self) -> logging.Logger:
@@ -139,9 +145,9 @@ class SSHResource(ConfigurableResource):
         if self.password and self.password.strip():
             client.connect(
                 hostname=self.remote_host,
-                username=self.username,
+                username=self._username,
                 password=self.password,
-                key_filename=self.key_file,
+                key_filename=self._key_file,
                 pkey=self._key_obj,
                 timeout=self.timeout,
                 compress=self.compress,
@@ -152,8 +158,8 @@ class SSHResource(ConfigurableResource):
         else:
             client.connect(
                 hostname=self.remote_host,
-                username=self.username,
-                key_filename=self.key_file,
+                username=self._username,
+                key_filename=self._key_file,
                 pkey=self._key_obj,
                 timeout=self.timeout,
                 compress=self.compress,
