@@ -226,6 +226,7 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `typescript`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-typescript-color.svg" width={20} height={20} />        |
 | `vercel`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-vercel-color.svg" width={20} height={20} />            |
 | `wandb`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-w&b-color.svg" width={20} height={20} />               |
+| `weaviate`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-weaviate-color.svg" width={20} height={20} />               |
 | `x`                 | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-x-color.svg" width={20} height={20} />                 |
 | `xgboost`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-xgboost-color.svg" width={20} height={20} />           |
 | `youtube`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-youtube-color.svg" width={20} height={20} />           |
