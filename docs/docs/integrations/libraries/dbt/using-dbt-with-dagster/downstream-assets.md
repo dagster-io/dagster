@@ -22,7 +22,7 @@ pip install plotly
 
 You've added upstream assets to your data pipeline, but nothing downstream - until now. In this step, you'll define a Dagster asset called `order_count_chart` that uses the data in the `customers` dbt model to computes a plotly chart of the number of orders per customer.
 
-Like the `raw_customers` asset that we added in the [previous section](upstream-assets#step-2-define-an-upstream-dagster-asset), we'll put this asset in our `definitions.py` file, inside the `jaffle_dagster` directory.
+Like the `raw_customers` asset that we added in the [previous section](upstream-assets#step-2-define-an-upstream-dagster-asset), we'll put this asset in our `assets.py` file, inside the `jaffle_dagster` directory.
 
 To add the `order_count_chart` asset:
 
@@ -38,7 +38,7 @@ To add the `order_count_chart` asset:
 
    This asset definition looks similar the asset we defined in the previous section. In this case, instead of fetching data from an external source and writing it to DuckDB, it reads data from DuckDB, and then uses it to make a plot.
 
-   The line `deps=get_asset_key_for_model([jaffle_shop_dbt_assets], "customers")` tells Dagster that this asset is downstream of the `customers` dbt model. This dependency will be displayed as such in Dagster's UI. If you launch a run to materialize both of them, Dagster won't run `order_count_chart` until `customers` completes.
+   The line `deps=[get_asset_key_for_model([jaffle_shop_dbt_assets], "customers")]` tells Dagster that this asset is downstream of the `customers` dbt model. This dependency will be displayed as such in Dagster's UI. If you launch a run to materialize both of them, Dagster won't run `order_count_chart` until `customers` completes.
 
 3. Add the `order_count_chart` to the `Definitions`:
 

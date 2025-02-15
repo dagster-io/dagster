@@ -74,19 +74,19 @@ The most important file is the Python file that contains the set of definitions 
 
 In our `definitions.py` Python file, we import from `assets.py`, which contains the code to model our dbt models as Dagster assets. To return a Dagster asset for each dbt model, the code in this `assets.py` file needs to know what dbt models you have. It finds out what models you have by reading a file called a `manifest.json`, which is a file that dbt can generate for any dbt project and contains information about every model, seed, snapshot, test, etc. in the project.
 
-To retrieve the `manifest.json`, `assets.py` imports from `project.py`, which defines an internal representation of your dbt project. Then, in `assets.py`, the path to the `manifest.json` file can be accessed with `dbt_project.manifest_path`:
+To retrieve the `manifest.json`, `assets.py` imports from `project.py`, which defines an internal representation of your dbt project. Then, in `assets.py`, the path to the `manifest.json` file can be accessed with `jaffle_shop_project.manifest_path`:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/load_dbt_models/project.py" startAfter="start_load_project" endBefore="=end_load_project" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/load_dbt_models/project.py" startAfter="start_load_project" endBefore="end_load_project" />
 
 Generating the `manifest.json` file for a dbt project is time-consuming, so it's best to avoid doing so every time this Python module is imported. Thus, in production deployments of Dagster, you'll typically have the CI/CD system that packages up your code generate your `manifest.json`.
 
 However, in development, you typically want changes made to files in your dbt project to be immediately reflected in the Dagster UI without needing to regenerate the manifest.
 
-`dbt_project.prepare_if_dev()` helps with this – it re-generates your `manifest.json` at the time Dagster imports your code, _but_ only if it's being imported by the `dagster dev` command.
+`jaffle_shop_project.prepare_if_dev()` helps with this – it re-generates your `manifest.json` at the time Dagster imports your code, _but_ only if it's being imported by the `dagster dev` command.
 
 Once you've got a `manifest.json` file, it's time to define your Dagster assets using it. The following code, in your project's `assets.py`, does this:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/load_dbt_models/assets.py" startAfter="start_dbt_assets" endBefore="=end_dbt_assets" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/load_dbt_models/assets.py" startAfter="start_dbt_assets" endBefore="end_dbt_assets" />
 
 This code might look a bit fancy, because it uses a decorator. Here's a breakdown of what's going on:
 
