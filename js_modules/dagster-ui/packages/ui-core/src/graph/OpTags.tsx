@@ -177,6 +177,7 @@ import twilio from './kindtag-images/tool-twilio-color.svg';
 import typescript from './kindtag-images/tool-typescript-color.svg';
 import vercel from './kindtag-images/tool-vercel-color.svg';
 import wandb from './kindtag-images/tool-w&b-color.svg';
+import weaviate from './kindtag-images/tool-weaviate-color.svg';
 import x from './kindtag-images/tool-x-color.svg';
 import xgboost from './kindtag-images/tool-xgboost-color.svg';
 import youtube from './kindtag-images/tool-youtube-color.svg';
@@ -227,6 +228,7 @@ export type KnownTagType =
   | 'googlesheets'
   | 'sql'
   | 'wandb'
+  | 'weaviate'
   | 'databricks'
   | 'airflow'
   | 'dataset'
@@ -495,6 +497,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   wandb: {
     icon: wandb,
     content: 'Weights & Biases',
+  },
+  weaviate: {
+    icon: weaviate,
+    content: 'Weaviate',
   },
   databricks: {
     icon: databricks,
