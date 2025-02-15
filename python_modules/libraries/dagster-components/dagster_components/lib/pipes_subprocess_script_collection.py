@@ -1,6 +1,5 @@
 import shutil
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
@@ -9,7 +8,8 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.dataclasses import dataclass
 
 from dagster_components import FieldResolver
 from dagster_components.core.component import (
@@ -54,7 +54,10 @@ class PipesSubprocessScriptCollection(Component):
 
     specs_by_path: Annotated[
         Mapping[str, Sequence[AssetSpec]], FieldResolver(resolve_specs_by_path)
-    ]
+    ] = Field(
+        ...,
+        description="A mapping from Python script paths to the assets that are produced by the script.",
+    )
 
     @staticmethod
     def introspect_from_path(path: Path) -> "PipesSubprocessScriptCollection":
