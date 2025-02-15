@@ -69,7 +69,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "dagster.postgresql.secretName" $ | quote }}
-                  key: postgresql-password
+                  key: {{ include "dagster.postgresql.secretPasswordKey" $ | quote }}
           envFrom:
             - configMapRef:
                 name: {{ template "dagster.fullname" $ }}-celery-worker-env
