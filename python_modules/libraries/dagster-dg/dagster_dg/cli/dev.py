@@ -216,3 +216,86 @@ def _open_subprocess(command: Sequence[str]) -> "subprocess.Popen":
         command,
         creationflags=creationflags,
     )
+
+
+@click.group(name="definitions")
+def definitions_cli():
+    """Commands for working with Dagster definitions."""
+
+
+@definitions_cli.command(name="validate", cls=DgClickCommand)
+@click.option(
+    "--log-level",
+    help="Set the log level for dagster services.",
+    show_default=True,
+    default="info",
+    type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
+)
+@click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the logs for dagster services",
+)
+@dg_global_options
+@click.pass_context
+def validate_command(
+    context: click.Context,
+    log_level: str,
+    log_format: str,
+    **global_options: Mapping[str, object],
+) -> None:
+    """Loads and validates your Dagster definitions using a Dagster instance.
+
+    If run inside a deployment directory, this command will launch all code locations in the
+    deployment. If launched inside a code location directory, it will launch only that code
+    location.
+
+    When running, this command sets the environment variable `DAGSTER_IS_DEFS_VALIDATION_CLI=1`.
+    This environment variable can be used to control the behavior of your code in validation mode.
+
+    This command returns an exit code 1 when errors are found, otherwise an exit code 0.
+
+    """
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.for_deployment_or_code_location_environment(Path.cwd(), cli_config)
+
+    forward_options = [
+        *_format_forwarded_option("--log-level", log_level),
+        *_format_forwarded_option("--log-format", log_format),
+    ]
+
+    # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
+    # code location's environment.
+    if dg_context.is_code_location:
+        cmd = ["uv", "run", "dagster", "definitions", "validate", *forward_options]
+        cmd_location = get_uv_run_executable_path("dagster")
+        temp_workspace_file_cm = nullcontext()
+
+    # In a deployment context, dg validate will construct a temporary
+    # workspace file that points at all defined code locations and invoke:
+    #
+    #     uv tool run --with dagster-webserver dagster definitions validate
+    elif dg_context.is_deployment:
+        cmd = [
+            "uv",
+            "tool",
+            "run",
+            "dagster",
+            "definitions",
+            "validate",
+            *forward_options,
+        ]
+        cmd_location = "ephemeral dagster definitions validate"
+        temp_workspace_file_cm = _temp_workspace_file(dg_context)
+    else:
+        exit_with_error("This command must be run inside a code location or deployment directory.")
+
+    with pushd(dg_context.root_path), temp_workspace_file_cm as workspace_file:
+        print(f"Using {cmd_location}")  # noqa: T201
+        if workspace_file:  # only non-None deployment context
+            cmd.extend(["--workspace", workspace_file])
+
+        subprocess.run(cmd, check=True)
