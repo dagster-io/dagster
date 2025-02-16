@@ -79,6 +79,7 @@ def isolated_example_code_location_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_deployment: bool = True,
     skip_venv: bool = False,
+    populate_cache: bool = True,
     component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
     """Scaffold a code location named foo_bar in an isolated filesystem.
@@ -104,6 +105,7 @@ def isolated_example_code_location_foo_bar(
             "--use-editable-dagster",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
+            *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
         )
         with clear_module_from_cache("foo_bar"), pushd(code_loc_path):

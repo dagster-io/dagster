@@ -10,8 +10,8 @@ from dagster_dg_tests.utils import (
 
 # For all cache tests, avoid setting up venv in example code location so we do not prepopulate the
 # cache (which is part of the venv setup routine).
-example_code_location = partial(isolated_example_code_location_foo_bar, skip_venv=True)
-cache_runner_args = {"verbose": True, "require_local_venv": False}
+example_code_location = partial(isolated_example_code_location_foo_bar, populate_cache=False)
+cache_runner_args = {"verbose": True}
 
 
 def test_load_from_cache():

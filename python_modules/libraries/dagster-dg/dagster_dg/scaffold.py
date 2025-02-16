@@ -98,6 +98,7 @@ def scaffold_code_location(
     dg_context: DgContext,
     editable_dagster_root: Optional[str] = None,
     skip_venv: bool = False,
+    populate_cache: bool = True,
 ) -> None:
     click.echo(f"Creating a Dagster code location at {path}.")
 
@@ -125,7 +126,8 @@ def scaffold_code_location(
     cl_dg_context = dg_context.with_root_path(path)
     if cl_dg_context.use_dg_managed_environment and not skip_venv:
         cl_dg_context.ensure_uv_lock()
-        RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+        if populate_cache:
+            RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
 
 # ########################
