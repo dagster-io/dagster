@@ -91,7 +91,7 @@ To run the Dagster documentation website locally, run the following commands:
 
 ```bash
 cd docs
-yarn start   # Serves the docs website on  http://localhost:3050/
+yarn start   # Serves the docs website on http://localhost:3050/
 ```
 
 Troubleshooting tip: Make sure that Yarn is installed already and your Node version is >=18.0.
