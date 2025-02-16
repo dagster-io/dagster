@@ -94,14 +94,14 @@ cd docs
 yarn start   # Serves the docs website on  http://localhost:3050/
 ```
 
-Troubleshooting tip: Make sure that Yarn is installed already and your Node version is >=12.13.0.
+Troubleshooting tip: Make sure that Yarn is installed already and your Node version is >=18.0.
 
 The API documentation is generated from ReStructured Text files (`.rst`), which extracts Python docstrings from the library files. The `.rst` files can be found in the `docs/sphinx/sections/api/apidocs` directory.
 
 If you change any `.rst` files, be sure to run the following command in the `docs` directory:
 
 ```bash
-yarn sync-api-docs
+make apidoc-build
 ```
 
 The majority of our code snippets are pulled from real Python files. This allows us to test our code snippets and ensure they remain up-to-date.
@@ -117,7 +117,7 @@ You can find the corresponding Python file at `dagster/examples/docs_snippets/do
 To change the code snippet, update the `.py` file, then run the following from the `docs` directory:
 
 ```bash
-yarn generate-code-imports
+make mdx-format
 ```
 
 For linting and formatting, use:
