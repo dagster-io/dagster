@@ -33,7 +33,7 @@ const ThemeRoot = createGlobalStyle`
     ${lightThemeColors}
   }
 
-  .lightNoRedGreenThemeColors {
+  .themeLightNoRedGreen {
     ${lightNoRedGreenThemeColors}
   }
 
