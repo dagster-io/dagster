@@ -58,20 +58,20 @@ class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollect
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 
 
-def resolve_resource(
-    context: ResolutionContext, schema: SlingReplicationCollectionSchema
-) -> SlingResource:
-    return (
-        SlingResource(**context.resolve_value(schema.sling.model_dump()))
-        if schema.sling
-        else SlingResource()
-    )
-
-
 @registered_component_type
 @dataclass
 class SlingReplicationCollection(Component):
     """Expose one or more Sling replications to Dagster as assets."""
+
+    @staticmethod
+    def resolve_resource(
+        context: ResolutionContext, schema: SlingReplicationCollectionSchema
+    ) -> SlingResource:
+        return (
+            SlingResource(**context.resolve_value(schema.sling.model_dump()))
+            if schema.sling
+            else SlingResource()
+        )
 
     resource: Annotated[SlingResource, FieldResolver(resolve_resource)]
     replications: Sequence[SlingReplicationSpec]
