@@ -45,8 +45,8 @@ def my_asset():
 
 Some kinds are given a branded icon in the UI. We currently support nearly 200 unique technology icons.
 
-| Value               | Icon                                                                                                               |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Value               | Icon                                                                                                                        |
+|---------------------|-----------------------------------------------------------------------------------------------------------------------------|
 | `airbyte`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airbyte-color.svg" width={20} height={20} />           |
 | `airflow`           | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airflow-color.svg" width={20} height={20} />           |
 | `airliftmapped`     | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-airflow-color.svg" width={20} height={20} />           |
@@ -145,6 +145,7 @@ Some kinds are given a branded icon in the UI. We currently support nearly 200 u
 | `montecarlo`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-montecarlo-color.svg" width={20} height={20} />        |
 | `mysql`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-mysql-color.svg" width={20} height={20} />             |
 | `net`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-microsoft-color.svg" width={20} height={20} />         |
+| `notdiamond`        | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-notdiamond-color.svg" width={20} height={20} />        |
 | `noteable`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-noteable-color.svg" width={20} height={20} />          |
 | `notion`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-notion-color.svg" width={20} height={20} />            |
 | `numpy`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-numpy-color.svg" width={20} height={20} />             |
