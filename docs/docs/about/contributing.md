@@ -91,17 +91,17 @@ To run the Dagster documentation website locally, run the following commands:
 
 ```bash
 cd docs
-make next-watch-build   # Serves the docs website on http://localhost:3001
+yarn start   # Serves the docs website on  http://localhost:3050/
 ```
 
-Troubleshooting tip: You may need to run `make next-dev-install` first to install dependencies. Also make sure that your Node version is >=12.13.0.
+Troubleshooting tip: Make sure that Yarn is installed already and your Node version is >=12.13.0.
 
 The API documentation is generated from ReStructured Text files (`.rst`), which extracts Python docstrings from the library files. The `.rst` files can be found in the `docs/sphinx/sections/api/apidocs` directory.
 
 If you change any `.rst` files, be sure to run the following command in the `docs` directory:
 
 ```bash
-make apidoc-build
+yarn sync-api-docs
 ```
 
 The majority of our code snippets are pulled from real Python files. This allows us to test our code snippets and ensure they remain up-to-date.
@@ -117,7 +117,15 @@ You can find the corresponding Python file at `dagster/examples/docs_snippets/do
 To change the code snippet, update the `.py` file, then run the following from the `docs` directory:
 
 ```bash
-make mdx-format
+yarn generate-code-imports
+```
+
+For linting and formatting, use:
+
+```bash
+yarn lint        # Lints and fixes issues in .tsx, .ts, .js, .md, and .mdx files
+yarn vale        # Checks writing style in .md and .mdx files
+yarn lint-and-vale  # Runs both lint and vale checks
 ```
 
 You can find more information about developing documentation in `docs/README.md`.
