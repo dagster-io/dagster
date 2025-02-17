@@ -1492,7 +1492,7 @@ def execute_asset_backfill_iteration_inner(
         )
         logger.info(
             f"Assets materialized since last tick:\n{_asset_graph_subset_to_str(materialized_since_last_tick, asset_graph)}"
-            if not materialized_since_last_tick.empty
+            if not materialized_since_last_tick.is_empty
             else "No relevant assets materialized since last tick."
         )
 
@@ -1538,7 +1538,7 @@ def execute_asset_backfill_iteration_inner(
 
     logger.info(
         f"Asset partitions to request:\n{_asset_graph_subset_to_str(asset_subset_to_request, asset_graph)}"
-        if not asset_subset_to_request.empty
+        if not asset_subset_to_request.is_empty
         else "No asset partitions to request."
     )
 
