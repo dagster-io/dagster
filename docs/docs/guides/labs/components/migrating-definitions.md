@@ -61,7 +61,7 @@ Once each of our definitions modules are migrated to components, our project is 
 
 Our project root now only constructs Definitions from components:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/migrating-definitions/10-definitions-after-all.py" title="my_existing_projoject/definitions.py" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/migrating-definitions/10-definitions-after-all.py" title="my_existing_project/definitions.py" />
 
 ## Next steps
 
