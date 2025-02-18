@@ -18,7 +18,7 @@ import {
   FunctionNameContext,
   GroupAttributeExprContext,
   KeyExprContext,
-  KeySubstringExprContext,
+  KeyValueContext,
   KindAttributeExprContext,
   NotExpressionContext,
   OrExpressionContext,
@@ -156,19 +156,6 @@ export interface AssetSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitKeyExpr?: (ctx: KeyExprContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `KeySubstringExpr`
-   * labeled alternative in `AssetSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  enterKeySubstringExpr?: (ctx: KeySubstringExprContext) => void;
-  /**
-   * Exit a parse tree produced by the `KeySubstringExpr`
-   * labeled alternative in `AssetSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  exitKeySubstringExpr?: (ctx: KeySubstringExprContext) => void;
 
   /**
    * Enter a parse tree produced by the `TagAttributeExpr`
@@ -413,4 +400,15 @@ export interface AssetSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitValue?: (ctx: ValueContext) => void;
+
+  /**
+   * Enter a parse tree produced by `AssetSelectionParser.keyValue`.
+   * @param ctx the parse tree
+   */
+  enterKeyValue?: (ctx: KeyValueContext) => void;
+  /**
+   * Exit a parse tree produced by `AssetSelectionParser.keyValue`.
+   * @param ctx the parse tree
+   */
+  exitKeyValue?: (ctx: KeyValueContext) => void;
 }
