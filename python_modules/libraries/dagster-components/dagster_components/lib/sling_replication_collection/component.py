@@ -88,7 +88,10 @@ class SlingReplicationCollection(Component):
     replications: Sequence[SlingReplicationSpec] = Field(
         ..., description="A set of Sling replications to expose as assets."
     )
-    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = Field(None)
+    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = Field(
+        default=None,
+        description="Transformations to apply to the Sling definitions produced by this component.",
+    )
 
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:

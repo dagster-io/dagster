@@ -23,8 +23,10 @@ def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
 
 
 class OpSpecSchema(ResolvableSchema):
-    name: Optional[str] = Field(None, description="The name of the op.")
-    tags: Optional[dict[str, str]] = Field(None, description="Arbitrary metadata for the op.")
+    name: Optional[str] = Field(default=None, description="The name of the op.")
+    tags: Optional[dict[str, str]] = Field(
+        default=None, description="Arbitrary metadata for the op."
+    )
 
 
 class AssetDepSchema(ResolvableSchema[AssetDep]):
@@ -39,19 +41,21 @@ class _ResolvableAssetAttributesMixin(BaseModel):
         default_factory=list,
         description="The asset keys for the upstream assets that this asset depends on.",
     )
-    description: Optional[str] = Field(None, description="Human-readable description of the asset.")
+    description: Optional[str] = Field(
+        default=None, description="Human-readable description of the asset."
+    )
     metadata: Union[str, Mapping[str, Any]] = Field(
         default_factory=dict, description="Additional metadata for the asset."
     )
     group_name: Optional[str] = Field(
-        None, description="Used to organize assets into groups, defaults to 'default'."
+        default=None, description="Used to organize assets into groups, defaults to 'default'."
     )
     skippable: bool = Field(
-        False,
+        default=False,
         description="Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
     )
     code_version: Optional[str] = Field(
-        None,
+        default=None,
         description="A version representing the code that produced the asset. Increment this value when the code changes.",
     )
     owners: Sequence[str] = Field(
@@ -62,11 +66,11 @@ class _ResolvableAssetAttributesMixin(BaseModel):
         default_factory=dict, description="Tags for filtering and organizing."
     )
     kinds: Optional[Sequence[str]] = Field(
-        None,
+        default=None,
         description="A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
     )
     automation_condition: Optional[str] = Field(
-        None,
+        default=None,
         description="The condition under which the asset will be automatically materialized.",
     )
 
