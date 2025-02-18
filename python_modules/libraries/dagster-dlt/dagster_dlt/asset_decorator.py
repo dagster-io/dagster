@@ -58,6 +58,7 @@ def dlt_assets(
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 
@@ -69,6 +70,7 @@ def dlt_assets(
         dagster_dlt_translator (DagsterDltTranslator, optional): Customization object for defining asset parameters from dlt resources.
         partitions_def (Optional[PartitionsDefinition]): Optional partitions definition.
         op_tags (Optional[Mapping[str, Any]]): The tags for the underlying op.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs the dlt assets' execution.
 
     Examples:
         Loading Hubspot data to Snowflake with an auto materialize policy using the dlt verified source:
@@ -141,4 +143,5 @@ def dlt_assets(
             dlt_pipeline=dlt_pipeline,
             dagster_dlt_translator=dagster_dlt_translator,
         ),
+        pool=pool,
     )

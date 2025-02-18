@@ -167,7 +167,10 @@ def test_antlr_tree_invalid(selection_str):
         ("tag:foo=bar", AssetSelection.tag("foo", "bar", include_sources=True)),
         ('owner:"owner@owner.com"', AssetSelection.owner("owner@owner.com")),
         ("group:my_group", AssetSelection.groups("my_group", include_sources=True)),
-        ("kind:my_kind", AssetSelection.tag(f"{KIND_PREFIX}my_kind", "", include_sources=True)),
+        (
+            "kind:my_kind",
+            AssetSelection.tag(f"{KIND_PREFIX}my_kind", "", include_sources=True),
+        ),
         (
             "code_location:my_location",
             CodeLocationAssetSelection(selected_code_location="my_location"),

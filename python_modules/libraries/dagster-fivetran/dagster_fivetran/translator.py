@@ -59,7 +59,7 @@ class FivetranConnector:
 
     @property
     def url(self) -> str:
-        return f"https://fivetran.com/dashboard/connectors/{self.service}/{self.name}"
+        return f"https://fivetran.com/dashboard/connectors/{self.id}"
 
     @property
     def destination_id(self) -> str:

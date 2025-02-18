@@ -82,19 +82,13 @@ export const InstanceBackfills = () => {
         <Alert
           title={
             <>
-              <span>Backfills are moving:</span>
+              <span>
+                In the March 6th release, backfills are moving to the{' '}
+                <Link to="/runs?view=backfills">Runs page</Link>.
+              </span>{' '}
               <span style={{fontWeight: 'normal'}}>
-                {' '}
-                We&apos;re moving backfills to the <Link to="/runs?view=backfills">Runs</Link> page
-                to provide a unified view of executions. The Backfills page will be removed in a
-                future release.{' '}
-                <a
-                  href="https://github.com/dagster-io/dagster/discussions/24898"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Share feedback
-                </a>{' '}
+                The new Runs UI provides a unified view of executions as well as a dedicated
+                Backfills list.
               </span>
             </>
           }

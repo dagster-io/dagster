@@ -24,9 +24,11 @@ def msg_includes_all_of(*substrings: str) -> Callable[[str], None]:
     return _validate_error_msg
 
 
+BASIC_COMPONENT_TYPE_FILEPATH = Path(__file__).parent / "basic_components.py"
+
 BASIC_INVALID_VALUE = ComponentValidationTestCase(
     component_path="validation/basic_component_invalid_value",
-    component_type_filepath=Path(__file__).parent / "basic_components.py",
+    component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
     should_error=True,
     validate_error_msg=msg_includes_all_of(
         "component.yaml:5", "params.an_int", "Input should be a valid integer"
@@ -40,7 +42,7 @@ BASIC_INVALID_VALUE = ComponentValidationTestCase(
 
 BASIC_MISSING_VALUE = ComponentValidationTestCase(
     component_path="validation/basic_component_missing_value",
-    component_type_filepath=Path(__file__).parent / "basic_components.py",
+    component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
     should_error=True,
     validate_error_msg=msg_includes_all_of("component.yaml:3", "params.an_int", "required"),
     check_error_msg=msg_includes_all_of(
@@ -52,7 +54,7 @@ BASIC_MISSING_VALUE = ComponentValidationTestCase(
 
 BASIC_VALID_VALUE = ComponentValidationTestCase(
     component_path="validation/basic_component_success",
-    component_type_filepath=Path(__file__).parent / "basic_components.py",
+    component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
     should_error=False,
 )
 
@@ -75,19 +77,19 @@ COMPONENT_VALIDATION_TEST_CASES = [
     ),
     ComponentValidationTestCase(
         component_path="validation/basic_component_extra_value",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:7", "params.a_bool", "Extra inputs are not permitted"
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:3",
+            "component.yaml:7",
             "'a_bool' was unexpected",
         ),
     ),
     ComponentValidationTestCase(
         component_path="validation/nested_component_invalid_values",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:7",
@@ -108,7 +110,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
     ),
     ComponentValidationTestCase(
         component_path="validation/nested_component_missing_values",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:5", "params.nested.foo.an_int", "required"
@@ -124,7 +126,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
     ),
     ComponentValidationTestCase(
         component_path="validation/nested_component_extra_values",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:8",
@@ -134,17 +136,17 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "params.nested.baz.another_bool",
         ),
         check_error_msg=msg_includes_all_of(
-            "component.yaml:5",
+            "component.yaml:8",
             "params.nested.foo",
             "'a_bool' was unexpected",
-            "component.yaml:12",
+            "component.yaml:15",
             "params.nested.baz",
             "'another_bool' was unexpected",
         ),
     ),
     ComponentValidationTestCase(
         component_path="validation/invalid_component_file_model",
-        component_type_filepath=Path(__file__).parent / "basic_components.py",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:1",

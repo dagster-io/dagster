@@ -642,15 +642,20 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
     def build(cls, workspace: WorkspaceSnapshot):
         # Combine repository scoped asset graphs with additional context to form the global graph
 
-        code_locations = (
-            location_entry.code_location
-            for location_entry in workspace.code_location_entries.values()
-            if location_entry.code_location
+        code_locations = sorted(
+            (
+                location_entry.code_location
+                for location_entry in workspace.code_location_entries.values()
+                if location_entry.code_location
+            ),
+            key=lambda code_location: code_location.name,
         )
         repos = (
             repo
             for code_location in code_locations
-            for repo in code_location.get_repositories().values()
+            for repo in sorted(
+                code_location.get_repositories().values(), key=lambda repo: repo.name
+            )
         )
 
         asset_infos_by_key: dict[AssetKey, list[RepositoryScopedAssetInfo]] = defaultdict(list)

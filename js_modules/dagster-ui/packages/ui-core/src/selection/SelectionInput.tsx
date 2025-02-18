@@ -113,6 +113,7 @@ export const SelectionAutoCompleteInput = ({
       });
 
       cmInstance.current.setSize('100%', 20);
+      setCurrentHeight(20);
 
       // Enforce single line by preventing newlines
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
@@ -170,6 +171,8 @@ export const SelectionAutoCompleteInput = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [currentHeight, setCurrentHeight] = useState(20);
+
   const adjustHeight = useCallback(() => {
     const lines = cmInstance.current?.getWrapperElement().querySelector('.CodeMirror-lines');
     if (!lines || !cmInstance.current || !focusRef.current) {
@@ -179,6 +182,7 @@ export const SelectionAutoCompleteInput = ({
       const linesHeight = lines?.clientHeight;
       if (linesHeight && focusRef.current) {
         cmInstance.current?.setSize('100%', `${linesHeight}px`);
+        setCurrentHeight(linesHeight);
       }
     });
   }, []);
@@ -318,6 +322,7 @@ export const SelectionAutoCompleteInput = ({
     focusRef.current = false;
     cmInstance.current?.setOption('lineWrapping', false);
     cmInstance.current?.setSize('100%', '20px');
+    setCurrentHeight(20);
   }, []);
 
   useResizeObserver(inputRef, adjustHeight);
@@ -355,13 +360,13 @@ export const SelectionAutoCompleteInput = ({
             setShowResults({current: true});
           }}
         >
-          <div style={{alignSelf: 'flex-start'}}>
+          <div style={{alignSelf: currentHeight > 20 ? 'flex-start' : 'center'}}>
             <Icon name="search" style={{marginTop: 2}} />
           </div>
           <div ref={editorRef} />
           <Box
             flex={{direction: 'row', alignItems: 'center', gap: 4}}
-            style={{alignSelf: 'flex-end'}}
+            style={{alignSelf: currentHeight > 20 ? 'flex-end' : 'center'}}
           >
             {innerValue !== '' && (
               <UnstyledButton

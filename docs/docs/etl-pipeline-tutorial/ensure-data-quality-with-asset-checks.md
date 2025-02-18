@@ -49,4 +49,4 @@ Asset checks will run when an asset is materialized, but asset checks can also b
 
 ## Next steps
 
-- Continue this tutorial with [Asset Checks](create-and-materialize-partitioned-asset)
+- Continue this tutorial with [creating and materializing partitioned assets](create-and-materialize-partitioned-asset)

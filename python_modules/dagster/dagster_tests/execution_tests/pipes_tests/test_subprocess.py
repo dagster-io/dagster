@@ -62,7 +62,7 @@ from dagster._core.pipes.utils import (
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._utils import process_is_alive
 from dagster._utils.env import environ
-from dagster._utils.warnings import ExperimentalWarning
+from dagster._utils.warnings import BetaWarning
 from dagster_pipes import DagsterPipesError
 
 from dagster_tests.execution_tests.pipes_tests.utils import temp_script
@@ -879,7 +879,7 @@ def test_pipes_cli_args_params_loader():
     assert result.success
 
 
-def test_pipes_subprocess_client_no_experimental_warning():
+def test_pipes_subprocess_client_no_beta_warning(recwarn):
     def script_fn():
         pass
 
@@ -890,14 +890,13 @@ def test_pipes_subprocess_client_no_experimental_warning():
             cmd = [_PYTHON_EXECUTABLE, external_script]
             return pipes_client.run(command=cmd, context=context).get_materialize_result()
 
-    with pytest.warns() as record:
-        materialize(
-            [foo],
-            resources={"pipes_client": PipesSubprocessClient()},
-        )
+    materialize(
+        [foo],
+        resources={"pipes_client": PipesSubprocessClient()},
+    )
 
-    experimental_warnings = [w for w in record if issubclass(w.category, ExperimentalWarning)]
+    beta_warnings = [w for w in recwarn if issubclass(w.category, BetaWarning)]
 
-    if experimental_warnings:
-        for warning in experimental_warnings:
+    if beta_warnings:
+        for warning in beta_warnings:
             assert "Pipes" not in str(warning.message)

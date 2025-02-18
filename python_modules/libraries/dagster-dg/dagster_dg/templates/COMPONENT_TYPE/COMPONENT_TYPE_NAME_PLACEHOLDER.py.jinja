@@ -3,11 +3,11 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
-    ComponentSchema,
+    ResolvableSchema,
     registered_component_type,
 )
 
-class {{ component_type_class_name }}Params(ComponentSchema):
+class {{ component_type_class_name }}Schema(ResolvableSchema):
     ...
 
 @registered_component_type(name="{{ name }}")
@@ -17,11 +17,9 @@ class {{ component_type_class_name }}(Component):
     COMPONENT DESCRIPTION HERE.
     """
 
-    def __init__(self): ...
-
     @classmethod
     def get_schema(cls):
-        return {{ component_type_class_name }}Params
+        return {{ component_type_class_name }}Schema
 
     @classmethod
     def get_scaffolder(cls) -> DefaultComponentScaffolder:

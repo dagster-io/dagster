@@ -143,8 +143,8 @@ class AntlrAssetSelectionVisitor(AssetSelectionVisitor):
     def visitKeyValue(self, ctx: AssetSelectionParser.KeyValueContext):
         if ctx.QUOTED_STRING():
             return ctx.QUOTED_STRING().getText().strip('"')
-        elif ctx.UNQUOTED_REGEX_STRING():
-            return ctx.UNQUOTED_REGEX_STRING().getText()
+        elif ctx.UNQUOTED_WILDCARD_STRING():
+            return ctx.UNQUOTED_WILDCARD_STRING().getText()
         elif ctx.UNQUOTED_STRING():
             return ctx.UNQUOTED_STRING().getText()
 

@@ -56,7 +56,9 @@ import {featureEnabled} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
-import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
+import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
+import {SVGViewportProvider} from '../graph/SVGViewportContext';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
@@ -150,43 +152,45 @@ export const AssetGraphExplorer = (props: Props) => {
   }, [filterFn]);
 
   return (
-    <Loading allowStaleData queryResult={fetchResult}>
-      {() => {
-        if (graphDataLoading || filteredAssetsLoading) {
-          return <LoadingSpinner purpose="page" />;
-        }
-        if (!assetGraphData || !allAssetKeys) {
-          return <NonIdealState icon="error" title="Query Error" />;
-        }
+    <SVGViewportProvider>
+      <Loading allowStaleData queryResult={fetchResult}>
+        {() => {
+          if (graphDataLoading || filteredAssetsLoading) {
+            return <LoadingSpinner purpose="page" />;
+          }
+          if (!assetGraphData || !allAssetKeys) {
+            return <NonIdealState icon="error" title="Query Error" />;
+          }
 
-        const hasCycles = graphHasCycles(assetGraphData);
+          const hasCycles = graphHasCycles(assetGraphData);
 
-        if (hasCycles) {
+          if (hasCycles) {
+            return (
+              <NonIdealState
+                icon="error"
+                title="Cycle detected"
+                description="Assets dependencies form a cycle"
+              />
+            );
+          }
           return (
-            <NonIdealState
-              icon="error"
-              title="Cycle detected"
-              description="Assets dependencies form a cycle"
+            <AssetGraphExplorerWithData
+              key={props.explorerPath.pipelineName}
+              assetGraphData={assetGraphData}
+              fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
+              allAssetKeys={allAssetKeys}
+              graphQueryItems={graphQueryItems}
+              filterBar={filterBar}
+              filterButton={button}
+              kindFilter={kindFilter}
+              groupsFilter={groupsFilter}
+              loading={filteredAssetsLoading || graphDataLoading}
+              {...props}
             />
           );
-        }
-        return (
-          <AssetGraphExplorerWithData
-            key={props.explorerPath.pipelineName}
-            assetGraphData={assetGraphData}
-            fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
-            allAssetKeys={allAssetKeys}
-            graphQueryItems={graphQueryItems}
-            filterBar={filterBar}
-            filterButton={button}
-            kindFilter={kindFilter}
-            groupsFilter={groupsFilter}
-            loading={filteredAssetsLoading || graphDataLoading}
-            {...props}
-          />
-        );
-      }}
-    </Loading>
+        }}
+      </Loading>
+    </SVGViewportProvider>
   );
 };
 
@@ -257,7 +261,7 @@ const AssetGraphExplorerWithData = ({
     useMemo(() => ({direction}), [direction]),
   );
 
-  const viewportEl = React.useRef<SVGViewport>();
+  const viewportEl = React.useRef<SVGViewportRef>();
 
   const selectedTokens = explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',');
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
@@ -322,9 +326,6 @@ const AssetGraphExplorerWithData = ({
         {
           ...explorerPath,
           opNames: [nextOpsNameSelection],
-          opsQuery: nodeIsInDisplayedGraph
-            ? explorerPath.opsQuery
-            : `${explorerPath.opsQuery},++"${token}"++`,
           pipelineName: explorerPath.pipelineName,
         },
         'replace',
@@ -342,7 +343,7 @@ const AssetGraphExplorerWithData = ({
   );
 
   const zoomToGroup = React.useCallback(
-    (groupId: string, animate = true) => {
+    (groupId: string, animate = true, adjustScale = true) => {
       if (!viewportEl.current) {
         return;
       }
@@ -352,10 +353,12 @@ const AssetGraphExplorerWithData = ({
           groupBounds.width,
           groupBounds.height,
         );
+        const currentScale = viewportEl.current.getScale();
         viewportEl.current.zoomToSVGBox(
           groupBounds,
           animate,
-          Math.min(viewportEl.current.state.scale, targetScale * 0.9),
+          adjustScale ? Math.min(currentScale, targetScale * 0.9) : currentScale,
+          true,
         );
       }
     },
@@ -383,7 +386,7 @@ const AssetGraphExplorerWithData = ({
       focusGroupIdAfterLayoutRef.current &&
       layout.groups[focusGroupIdAfterLayoutRef.current]?.expanded
     ) {
-      zoomToGroup(focusGroupIdAfterLayoutRef.current, false);
+      zoomToGroup(focusGroupIdAfterLayoutRef.current, false, false);
       focusGroupIdAfterLayoutRef.current = '';
     } else if (lastSelectedNode) {
       const layoutNode = layout.nodes[lastSelectedNode.id];
@@ -478,15 +481,21 @@ const AssetGraphExplorerWithData = ({
   const [showSidebar, setShowSidebar] = React.useState(viewType === 'global');
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    groupsFilter?.setState(
-      new Set([
-        {
-          groupName: group.groupName,
-          repositoryName: group.repositoryName,
-          repositoryLocationName: group.repositoryLocationName,
-        },
-      ]),
-    );
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+      onChangeAssetSelection(
+        `group:"${group.groupName}" and code_location:"${group.repositoryLocationName}"`,
+      );
+    } else {
+      groupsFilter?.setState(
+        new Set([
+          {
+            groupName: group.groupName,
+            repositoryName: group.repositoryName,
+            repositoryLocationName: group.repositoryLocationName,
+          },
+        ]),
+      );
+    }
   };
 
   const svgViewport = layout ? (
@@ -495,7 +504,6 @@ const AssetGraphExplorerWithData = ({
         viewportEl.current = r || undefined;
       }}
       defaultZoom="zoom-to-fit-width"
-      interactor={SVGViewport.Interactors.PanAndZoom}
       graphWidth={layout.width}
       graphHeight={layout.height}
       graphHasNoMinimumZoom={false}
@@ -670,6 +678,7 @@ const AssetGraphExplorerWithData = ({
                         definition={graphNode.definition}
                         selected={selectedGraphNodes.includes(graphNode)}
                         kindFilter={kindFilter}
+                        onChangeAssetSelection={onChangeAssetSelection}
                       />
                     </AssetNodeContextMenuWrapper>
                   )}

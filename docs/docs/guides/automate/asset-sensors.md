@@ -26,6 +26,20 @@ For example, you may wish to monitor an asset that's materialized daily, but don
 Asset sensors enable dependencies across different jobs and different code locations. This flexibility allows for modular and decoupled workflows.
 
 ```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+
 graph LR;
 
 AssetToWatch(AssetToWatch) --> AssetSensor(AssetSensor);
@@ -90,7 +104,7 @@ For example, you might use a sensor to trigger a job when an asset is materializ
 
 :::note
 
-The experimental `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system. For more information, see the [Declarative Automation documentation](/guides/automate/declarative-automation/).
+The `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system. For more information, see the [Declarative Automation documentation](/guides/automate/declarative-automation/).
 
 :::
 

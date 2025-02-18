@@ -1135,7 +1135,7 @@ class AssetSelectionParser(Parser):
         "ROOTS",
         "QUOTED_STRING",
         "UNQUOTED_STRING",
-        "UNQUOTED_REGEX_STRING",
+        "UNQUOTED_WILDCARD_STRING",
         "WS",
     ]
 
@@ -1187,7 +1187,7 @@ class AssetSelectionParser(Parser):
     ROOTS = 23
     QUOTED_STRING = 24
     UNQUOTED_STRING = 25
-    UNQUOTED_REGEX_STRING = 26
+    UNQUOTED_WILDCARD_STRING = 26
     WS = 27
 
     def __init__(self, input: TokenStream, output: TextIO = sys.stdout):
@@ -2431,8 +2431,8 @@ class AssetSelectionParser(Parser):
         def UNQUOTED_STRING(self):
             return self.getToken(AssetSelectionParser.UNQUOTED_STRING, 0)
 
-        def UNQUOTED_REGEX_STRING(self):
-            return self.getToken(AssetSelectionParser.UNQUOTED_REGEX_STRING, 0)
+        def UNQUOTED_WILDCARD_STRING(self):
+            return self.getToken(AssetSelectionParser.UNQUOTED_WILDCARD_STRING, 0)
 
         def getRuleIndex(self):
             return AssetSelectionParser.RULE_keyValue

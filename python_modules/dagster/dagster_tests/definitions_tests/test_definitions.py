@@ -17,6 +17,7 @@ from dagster import (
 from dagster._core.definitions import AssetMaterialization, Node, create_run_config_schema
 from dagster._core.definitions.dependency import NodeHandle, NodeOutput
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._legacy import InputDefinition
 
 
@@ -285,3 +286,21 @@ def test_composite_mapping_collision():
                 }
             },
         )
+
+
+def test_pool_mismatch():
+    with pytest.raises(DagsterInvalidDefinitionError) as _:
+
+        @op(pool="foo", tags={GLOBAL_CONCURRENCY_TAG: "bar"})
+        def my_op():
+            pass
+
+
+def test_pool_invalid():
+    illegal_pools = ["foo/bar", "foo bar", "foo:bar", "foo,bar", "foo|bar", "foo.bar", "foo-bar"]
+    for pool in illegal_pools:
+        with pytest.raises(DagsterInvalidDefinitionError) as _:
+
+            @op(pool=pool)
+            def my_op():
+                pass

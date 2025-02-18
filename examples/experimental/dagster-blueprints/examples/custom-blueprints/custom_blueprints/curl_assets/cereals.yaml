@@ -1,3 +1,0 @@
-type: curl_asset
-table_name: cereals
-csv_url: https://raw.githubusercontent.com/dagster-io/dagster/master/docs/next/public/assets/cereal.csv

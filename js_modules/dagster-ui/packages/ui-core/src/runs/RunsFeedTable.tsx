@@ -10,6 +10,7 @@ import {
 import {useVirtualizer} from '@tanstack/react-virtual';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 
+import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunTableEmptyState} from './RunTableEmptyState';
 import {RunsQueryRefetchContext} from './RunUtils';
@@ -47,7 +48,9 @@ interface RunsFeedTableProps {
 }
 
 // Potentially other modals in the future
-type RunsFeedDialogState = {type: 'partitions'; backfillId: string};
+export type RunsFeedDialogState =
+  | {type: 'partitions'; backfillId: string}
+  | {type: 'queue-criteria'; entry: RunsFeedTableEntryFragment};
 
 export const RunsFeedTable = ({
   entries,
@@ -192,6 +195,12 @@ export const RunsFeedTable = ({
           backfillId={dialog?.type === 'partitions' ? dialog.backfillId : undefined}
           onClose={() => setDialog(null)}
         />
+        <QueuedRunCriteriaDialog
+          run={dialog?.type === 'queue-criteria' ? dialog.entry : undefined}
+          isOpen={dialog?.type === 'queue-criteria'}
+          onClose={() => setDialog(null)}
+        />
+
         <IndeterminateLoadingBar $loading={loading} />
         <Container ref={parentRef} style={scroll ? {overflow: 'auto'} : {overflow: 'visible'}}>
           {header}
@@ -214,7 +223,7 @@ export const RunsFeedTable = ({
                       entry={entry}
                       checked={checkedIds.has(entry.id)}
                       onToggleChecked={onToggleFactory(entry.id)}
-                      onShowPartitions={() => setDialog({type: 'partitions', backfillId: entry.id})}
+                      onShowDialog={setDialog}
                       refetch={refetch}
                       onAddTag={onAddTag}
                       hideTags={hideTags}

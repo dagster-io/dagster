@@ -51,6 +51,20 @@ In this example, `my_multi_asset` produces two assets: `asset_one` and `asset_tw
 This example could be expressed as:
 
 ```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+
 flowchart LR
   multi(my_multi_asset) --> one(asset_one)
   multi(my_multi_asset) --> two(asset_two)
@@ -67,6 +81,21 @@ In this example, `complex_asset` is an asset that's the result of two operations
 This example could be expressed as:
 
 ```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+
+}%%
+
 flowchart LR
   one((step_one)) --> asset(complex_asset)
   two((step_two)) --> asset(complex_asset)

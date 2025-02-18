@@ -292,11 +292,12 @@ def test_sensor_invocation_resources_context_manager() -> None:
     # Fails bc resource is a contextmanager and sensor context is not entered
     with pytest.raises(
         DagsterInvariantViolationError, match="At least one provided resource is a generator"
-    ):
+    ) as exc_info:
         basic_sensor_str_resource_req(
             build_sensor_context(resources={"my_resource": my_cm_resource})
         )
 
+    assert "with build_sensor_context" in str(exc_info.value)
     with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
         assert cast(RunRequest, basic_sensor_str_resource_req(context)).run_config == {"foo": "foo"}
 

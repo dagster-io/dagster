@@ -9,26 +9,12 @@ from dagster_graphql_tests.graphql.repo import (
 
 
 def test_sync_run_launcher_from_configurable_class():
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            }
-        },
-    ) as instance_no_hijack:
+    with instance_for_test(synchronous_run_launcher=True) as instance_no_hijack:
         assert isinstance(instance_no_hijack.run_launcher, SyncInMemoryRunLauncher)
 
 
 def test_sync_run_launcher_run():
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            }
-        },
-    ) as instance:
+    with instance_for_test(synchronous_run_launcher=True) as instance:
         with get_main_workspace(instance) as workspace:
             location = workspace.get_code_location(main_repo_location_name())
             repo = location.get_repository(main_repo_name())

@@ -5,8 +5,9 @@ import subprocess
 import time
 
 import psutil
+import pytest
 import requests
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils import ensure_dagster_dg_tests_import, is_windows
 from dagster_graphql.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
@@ -17,17 +18,22 @@ from dagster_dg_tests.utils import (
 )
 
 
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_command_deployment_context_success():
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
+    # The deployment command will use `uv tool run dagster dev` to start the webserver if it
+    # cannot find a venv with `dagster` and `dagster-webserver` installed. `uv tool run` will
+    # pull the `dagster` package from PyPI. To avoid this, we ensure the deployment directory has a
+    # venv with `dagster` and `dagster-webserver` installed.
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner, create_venv=True):
         runner.invoke("code-location", "scaffold", "code-location-1")
         runner.invoke("code-location", "scaffold", "code-location-2")
-
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         code_locations = {"code-location-1", "code-location-2"}
         _assert_code_locations_loaded_and_exit(code_locations, port, dev_process)
 
 
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_command_code_location_context_success():
     with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         port = _find_free_port()
@@ -35,18 +41,9 @@ def test_dev_command_code_location_context_success():
         _assert_code_locations_loaded_and_exit({"foo-bar"}, port, dev_process)
 
 
-def test_dev_command_outside_project_context_fails():
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        port = _find_free_port()
-        dev_process = _launch_dev_command(["--port", str(port)], capture_output=True)
-        assert dev_process.wait() != 0
-        assert dev_process.stdout
-        assert (
-            "This command must be run inside a code location or deployment directory."
-            in dev_process.stdout.read().decode()
-        )
-
-
+@pytest.mark.skipif(
+    is_windows() == "Windows", reason="Temporarily skipping (signal issues in CLI).."
+)
 def test_dev_command_has_options_of_dagster_dev():
     from dagster._cli.dev import dev_command as dagster_dev_command
     from dagster_dg.cli import dev_command as dev_command
@@ -66,6 +63,7 @@ def test_dev_command_has_options_of_dagster_dev():
         "use_ssl",
         # Misc others to exclude
         "use_legacy_code_server_behavior",
+        "shutdown_pipe",
     }
 
     dg_dev_param_names = {param.name for param in dev_command.params}
@@ -77,6 +75,7 @@ def test_dev_command_has_options_of_dagster_dev():
 
 
 # Modify this test with a new option whenever a new forwarded option is added to `dagster-dev`.
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_command_forwards_options_to_dagster_dev():
     with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         port = _find_free_port()

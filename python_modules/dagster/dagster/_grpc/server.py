@@ -4,6 +4,7 @@ import math
 import multiprocessing
 import os
 import queue
+import subprocess
 import sys
 import threading
 import time
@@ -108,6 +109,8 @@ from dagster._utils.typed_dict import init_optional_typeddict
 if TYPE_CHECKING:
     from multiprocessing.synchronize import Event as MPEvent
     from subprocess import Popen
+
+    from dagster._grpc.client import DagsterGrpcClient
 
 EVENT_QUEUE_POLL_INTERVAL = 0.1
 
@@ -1328,12 +1331,12 @@ code_servers:
 
 
 def wait_for_grpc_server(
-    server_process,
-    client,
-    subprocess_args,
-    timeout=60,
+    server_process: subprocess.Popen,
+    client: "DagsterGrpcClient",
+    subprocess_args: Sequence[str],
+    timeout: int = 60,
     additional_timeout_msg: Optional[str] = None,
-):
+) -> None:
     start_time = time.time()
 
     last_error = None

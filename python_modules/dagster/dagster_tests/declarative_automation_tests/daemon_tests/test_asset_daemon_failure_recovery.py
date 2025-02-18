@@ -61,12 +61,9 @@ def instance():
 def daemon_paused_instance():
     with instance_for_test(
         overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
             "auto_materialize": {"max_tick_retries": 2, "use_sensors": False},
-        }
+        },
+        synchronous_run_launcher=True,
     ) as the_instance:
         yield the_instance
 

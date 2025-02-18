@@ -261,7 +261,7 @@ class ScheduleEvaluationContext:
                 raise DagsterInvariantViolationError(
                     "At least one provided resource is a generator, but attempting to access"
                     " resources outside of context manager scope. You can use the following syntax"
-                    " to open a context manager: `with build_sensor_context(...) as context:`"
+                    " to open a context manager: `with build_schedule_context(...) as context:`"
                 )
 
         return self._resources
@@ -518,7 +518,7 @@ class ScheduleDefinition(IHasInternalInit):
             The target that the schedule will execute.
             It can take :py:class:`~dagster.AssetSelection` objects and anything coercible to it (e.g. `str`, `Sequence[str]`, `AssetKey`, `AssetsDefinition`).
             It can also accept :py:class:`~dagster.JobDefinition` (a function decorated with `@job` is an instance of `JobDefinition`) and `UnresolvedAssetJobDefinition` (the return value of :py:func:`~dagster.define_asset_job`) objects.
-            This is an experimental parameter that will replace `job` and `job_name`.
+            This parameter will replace `job` and `job_name`.
         metadata (Optional[Mapping[str, Any]]): A set of metadata entries that annotate the
             schedule. Values will be normalized to typed `MetadataValue` objects. Not currently
             shown in the UI but available at runtime via

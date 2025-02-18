@@ -9,6 +9,7 @@ import click
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._check.decorator import checked
 from dagster._cli.config_scaffolder import scaffold_job_config
 from dagster._cli.utils import (
     assert_no_remaining_opts,
@@ -206,13 +207,11 @@ def execute_print_command(
             )
 
 
+@checked
 def print_ops(
     job_snapshot: JobSnap,
     print_fn: Callable[..., Any],
 ) -> None:
-    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
-    check.callable_param(print_fn, "print_fn")
-
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
     printer.line(f"Job: {job_snapshot.name}")
 
@@ -222,12 +221,11 @@ def print_ops(
             printer.line(f"Op: {node.node_name}")
 
 
+@checked
 def print_job(
     job_snapshot: JobSnap,
     print_fn: Callable[..., Any],
 ) -> None:
-    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
-    check.callable_param(print_fn, "print_fn")
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
     printer.line(f"Job: {job_snapshot.name}")
 
@@ -245,9 +243,8 @@ def print_job(
             print_op(printer, job_snapshot, node)
 
 
+@checked
 def format_description(desc: str, indent: str) -> str:
-    check.str_param(desc, "desc")
-    check.str_param(indent, "indent")
     desc = re.sub(r"\s+", " ", desc)
     dedented = textwrap.dedent(desc)
     wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent=indent)
@@ -255,13 +252,12 @@ def format_description(desc: str, indent: str) -> str:
     return filled
 
 
+@checked
 def print_op(
     printer: IndentingPrinter,
     job_snapshot: JobSnap,
     node_invocation_snap: NodeInvocationSnap,
 ) -> None:
-    check.inst_param(job_snapshot, "job_snapshot", JobSnap)
-    check.inst_param(node_invocation_snap, "node_invocation_snap", NodeInvocationSnap)
     printer.line(f"Op: {node_invocation_snap.node_name}")
     with printer.with_indent():
         printer.line("Inputs:")
@@ -405,17 +401,14 @@ def _normalize_cli_op_selection(op_selection: Optional[str]) -> Optional[Sequenc
     return [ele.strip() for ele in op_selection.split(",")]
 
 
+@checked
 def do_execute_command(
     recon_job: ReconstructableJob,
     instance: DagsterInstance,
     config: list[str],
-    tags: Optional[Mapping[str, str]] = None,
+    tags: Optional[Mapping[str, Any]] = None,
     op_selection: Optional[Sequence[str]] = None,
 ) -> ExecutionResult:
-    check.inst_param(recon_job, "recon_job", ReconstructableJob)
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.opt_sequence_param(config, "config", of_type=str)
-
     with execute_job(
         recon_job,
         run_config=get_run_config_from_file_list(config),
@@ -475,6 +468,7 @@ def job_launch_command(
 
 
 @telemetry_wrapper
+@checked
 def execute_launch_command(
     *,
     instance: DagsterInstance,
@@ -487,7 +481,6 @@ def execute_launch_command(
     op_selection: Optional[str] = None,
     job_name: Optional[str] = None,
 ) -> DagsterRun:
-    check.inst_param(instance, "instance", DagsterInstance)
     run_config = get_run_config_from_cli_opts(config, config_json)
     normalized_op_selection = _normalize_cli_op_selection(op_selection)
 
@@ -523,6 +516,7 @@ def execute_launch_command(
         return instance.submit_run(dagster_run.run_id, workspace)
 
 
+@checked
 def _create_run(
     instance: DagsterInstance,
     code_location: CodeLocation,
@@ -533,16 +527,6 @@ def _create_run(
     op_selection: Optional[Sequence[str]],
     run_id: Optional[str],
 ) -> DagsterRun:
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.inst_param(code_location, "code_location", CodeLocation)
-    check.inst_param(remote_repo, "remote_repo", RemoteRepository)
-    check.inst_param(remote_job, "remote_job", RemoteJob)
-    check.opt_mapping_param(run_config, "run_config", key_type=str)
-
-    check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
-    check.opt_str_param(run_id, "run_id")
-
     run_config, tags, op_selection = _check_execute_remote_job_args(
         remote_job,
         run_config,
@@ -591,19 +575,14 @@ def _create_run(
     )
 
 
+@checked
 def _check_execute_remote_job_args(
     remote_job: RemoteJob,
     run_config: Mapping[str, object],
     tags: Optional[Mapping[str, str]],
     op_selection: Optional[Sequence[str]],
 ) -> tuple[Mapping[str, object], Mapping[str, str], Optional[Sequence[str]]]:
-    check.inst_param(remote_job, "remote_job", RemoteJob)
-    run_config = check.opt_mapping_param(run_config, "run_config")
-
-    tags = check.opt_mapping_param(tags, "tags", key_type=str)
-    check.opt_sequence_param(op_selection, "op_selection", of_type=str)
-    tags = merge_dicts(remote_job.tags, tags)
-
+    tags = merge_dicts(remote_job.tags, tags or {})
     return (
         run_config,
         normalize_tags(tags),
@@ -649,15 +628,12 @@ def execute_scaffold_command(
     do_scaffold_command(job.get_definition(), print_fn, print_only_required)
 
 
+@checked
 def do_scaffold_command(
     job_def: JobDefinition,
     printer: Callable[..., Any],
     skip_non_required: bool,
 ):
-    check.inst_param(job_def, "job_def", JobDefinition)
-    check.callable_param(printer, "printer")
-    check.bool_param(skip_non_required, "skip_non_required")
-
     config_dict = scaffold_job_config(job_def, skip_non_required=skip_non_required)
     yaml_string = dump_run_config_yaml(config_dict)
     printer(yaml_string)

@@ -1,47 +1,41 @@
 import {
   Button,
-  Group,
   Icon,
   JoinedButtons,
   Menu,
+  MenuDivider,
   MenuItem,
   Popover,
+  Tooltip,
 } from '@dagster-io/ui-components';
-import {useState} from 'react';
+import {useMemo, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {BackfillStepStatusDialog, backfillCanShowStepStatus} from './BackfillStepStatusDialog';
 import {BackfillTerminationDialog} from './BackfillTerminationDialog';
-import {RESUME_BACKFILL_MUTATION} from './BackfillUtils';
 import {BackfillActionsBackfillFragment} from './types/BackfillFragments.types';
-import {ResumeBackfillMutation, ResumeBackfillMutationVariables} from './types/BackfillUtils.types';
-import {useMutation} from '../../apollo-client';
-import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {showSharedToaster} from '../../app/DomUtils';
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
-import {BulkActionStatus} from '../../graphql/types';
+import {useReexecuteBackfill} from './useReexecuteBackfill';
+import {useResumeBackfill} from './useResumeBackfill';
+import {DEFAULT_DISABLED_REASON} from '../../app/Permissions';
+import {BulkActionStatus, ReexecutionStrategy} from '../../graphql/types';
 import {getBackfillPath} from '../../runs/RunsFeedUtils';
 import {runsPathWithFilters} from '../../runs/RunsFilterInput';
+import {testId} from '../../testing/testId';
 import {AnchorButton} from '../../ui/AnchorButton';
 
-export function backfillCanCancel(backfill: {
-  hasCancelPermission: boolean;
-  status: BulkActionStatus;
-}) {
-  return backfill.hasCancelPermission && backfill.status === BulkActionStatus.REQUESTED;
-}
+const BULK_ACTION_TERMINAL_STATUSES = [
+  BulkActionStatus.COMPLETED,
+  BulkActionStatus.FAILED,
+  BulkActionStatus.CANCELED,
+  BulkActionStatus.COMPLETED_SUCCESS,
+  BulkActionStatus.COMPLETED_FAILED,
+];
 
-export function backfillCanResume(backfill: {
-  hasResumePermission: boolean;
-  status: BulkActionStatus;
-  partitionSet: {__typename: 'PartitionSet'} | null;
-}) {
-  return !!(
-    backfill.hasResumePermission &&
-    backfill.status === BulkActionStatus.FAILED &&
-    backfill.partitionSet
-  );
-}
+const BULK_ACTION_TERMINAL_WITH_FAILURES = [
+  BulkActionStatus.FAILED,
+  BulkActionStatus.CANCELED,
+  BulkActionStatus.COMPLETED_FAILED,
+];
 
 export const BackfillActionsMenu = ({
   backfill,
@@ -53,6 +47,7 @@ export const BackfillActionsMenu = ({
   anchorLabel?: string;
 }) => {
   const history = useHistory();
+
   const runsUrl = runsPathWithFilters([
     {
       token: 'tag',
@@ -62,44 +57,55 @@ export const BackfillActionsMenu = ({
 
   const [showTerminateDialog, setShowTerminateDialog] = useState(false);
   const [showStepStatus, setShowStepStatus] = useState(false);
-  const [resumeBackfill] = useMutation<ResumeBackfillMutation, ResumeBackfillMutationVariables>(
-    RESUME_BACKFILL_MUTATION,
-  );
 
-  const resume = async () => {
-    const {data} = await resumeBackfill({variables: {backfillId: backfill.id}});
-    if (data && data.resumePartitionBackfill.__typename === 'ResumeBackfillSuccess') {
-      refetch();
-    } else if (data && data.resumePartitionBackfill.__typename === 'UnauthorizedError') {
-      await showSharedToaster({
-        message: (
-          <Group direction="column" spacing={4}>
-            <div>
-              Attempted to retry the backfill in read-only mode. This backfill was not retried.
-            </div>
-          </Group>
-        ),
-        icon: 'error',
-        intent: 'danger',
-      });
-    } else if (data && data.resumePartitionBackfill.__typename === 'PythonError') {
-      const error = data.resumePartitionBackfill;
-      await showSharedToaster({
-        message: <div>An unexpected error occurred. This backfill was not retried.</div>,
-        icon: 'error',
-        intent: 'danger',
-        action: {
-          text: 'View error',
-          onClick: () =>
-            showCustomAlert({
-              body: <PythonErrorInfo error={error} />,
-            }),
-        },
-      });
+  const resume = useResumeBackfill(backfill, refetch);
+  const reexecute = useReexecuteBackfill(backfill, refetch);
+
+  const cancelDisabledState = useMemo(() => {
+    if (!backfill.hasCancelPermission) {
+      return {disabled: true, message: DEFAULT_DISABLED_REASON};
     }
-  };
+    if (backfill.status !== BulkActionStatus.REQUESTED) {
+      return {disabled: true, message: 'Backfill is not in progress.'};
+    }
+    return {disabled: false};
+  }, [backfill]);
 
-  const canCancel = backfillCanCancel(backfill);
+  const resumeDisabledState = useMemo(() => {
+    if (!backfill.hasResumePermission) {
+      return {disabled: true, message: DEFAULT_DISABLED_REASON};
+    }
+    if (backfill.status !== BulkActionStatus.FAILED) {
+      return {disabled: true, message: 'All partition runs have been launched.'};
+    }
+    if (!backfill.partitionSet) {
+      return {disabled: true, message: 'Backfill partition set is not available.'};
+    }
+    return {disabled: false};
+  }, [backfill]);
+
+  const reexecutionDisabledState = useMemo(() => {
+    if (!backfill.hasResumePermission) {
+      return {disabled: true, message: DEFAULT_DISABLED_REASON};
+    }
+    if (!BULK_ACTION_TERMINAL_STATUSES.includes(backfill.status)) {
+      return {disabled: true, message: 'Backfill is still in progress.'};
+    }
+    return {disabled: false};
+  }, [backfill]);
+
+  const reexecutionFromFailureDisabledState = useMemo(() => {
+    if (!backfill.hasResumePermission) {
+      return {disabled: true, message: DEFAULT_DISABLED_REASON};
+    }
+    if (!BULK_ACTION_TERMINAL_WITH_FAILURES.includes(backfill.status)) {
+      return {
+        disabled: true,
+        message: 'Backfill is still in progress or completed without failed materializations.',
+      };
+    }
+    return {disabled: false};
+  }, [backfill]);
 
   const popover = (
     <Popover
@@ -119,24 +125,76 @@ export const BackfillActionsMenu = ({
               setShowStepStatus(true);
             }}
           />
-          <MenuItem
-            disabled={!backfillCanResume(backfill)}
-            text="Resume failed backfill"
-            title="Submits runs for all partitions in the backfill that do not have a corresponding run. Does not retry failed runs."
-            icon="refresh"
-            onClick={() => resume()}
-          />
-          <MenuItem
-            text="Cancel backfill"
-            icon="cancel"
-            intent="danger"
-            disabled={!canCancel}
-            onClick={() => setShowTerminateDialog(true)}
-          />
+
+          <MenuDivider />
+          <Tooltip
+            position="left"
+            targetTagName="div"
+            content={
+              reexecutionDisabledState.message || 'Launch a new backfill for the same partitions'
+            }
+          >
+            <MenuItem
+              icon="refresh"
+              tagName="button"
+              text="Re-execute"
+              disabled={reexecutionDisabledState.disabled}
+              onClick={() => reexecute(ReexecutionStrategy.ALL_STEPS)}
+            />
+          </Tooltip>
+          <Tooltip
+            position="left"
+            targetTagName="div"
+            content={
+              reexecutionFromFailureDisabledState.message ||
+              'Launch a new backfill for partitions that were not materialized successfully'
+            }
+          >
+            <MenuItem
+              icon="refresh"
+              tagName="button"
+              text="Re-execute from failure"
+              disabled={reexecutionFromFailureDisabledState.disabled}
+              onClick={() => reexecute(ReexecutionStrategy.FROM_FAILURE)}
+            />
+          </Tooltip>
+          <Tooltip
+            position="left"
+            targetTagName="div"
+            content={
+              resumeDisabledState.message ||
+              'Launch runs for remaining partitions in the backfill that do not have a corresponding run. Does not retry failed runs.'
+            }
+          >
+            <MenuItem
+              disabled={resumeDisabledState.disabled}
+              text="Resume and launch runs"
+              icon="refresh"
+              onClick={() => resume()}
+            />
+          </Tooltip>
+          <Tooltip
+            position="left"
+            targetTagName="div"
+            content={
+              cancelDisabledState.message || 'Stop queueing runs and cancel unfinished runs.'
+            }
+          >
+            <MenuItem
+              text="Cancel backfill"
+              icon="cancel"
+              intent="danger"
+              disabled={cancelDisabledState.disabled}
+              onClick={() => setShowTerminateDialog(true)}
+            />
+          </Tooltip>
         </Menu>
       }
     >
-      <Button icon={<Icon name="expand_more" />} />
+      <Button
+        data-testId={testId('backfill_actions_dropdown_toggle')}
+        icon={<Icon name="expand_more" />}
+      />
     </Popover>
   );
 

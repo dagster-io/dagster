@@ -646,7 +646,6 @@ class GrpcServerCodeLocation(CodeLocation):
         host: Optional[str] = None,
         port: Optional[int] = None,
         socket: Optional[str] = None,
-        server_id: Optional[str] = None,
         heartbeat: Optional[bool] = False,
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
@@ -697,7 +696,7 @@ class GrpcServerCodeLocation(CodeLocation):
             )
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
-            self._server_id = server_id if server_id else sync_get_server_id(self.client)
+            self._server_id = sync_get_server_id(self.client)
             self.repository_names = set(
                 symbol.repository_name for symbol in list_repositories_response.repository_symbols
             )

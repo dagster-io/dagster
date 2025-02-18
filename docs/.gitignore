@@ -1,3 +1,6 @@
+# code examples are generated at run and build time, and should not be included in version control
+src/code-examples-content.js
+
 sphinx/_build/
 .env
 .docusaurus

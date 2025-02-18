@@ -2,13 +2,19 @@ import {useCallback} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
-import {useMutation} from '../apollo-client';
+import {gql, useApolloClient, useMutation} from '../apollo-client';
+import {DagsterTag} from './RunTag';
+import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
-import {ExecutionParams, ReexecutionStrategy} from '../graphql/types';
+import {BulkActionStatus, ExecutionParams, ReexecutionStrategy} from '../graphql/types';
 import {showLaunchError} from '../launchpad/showLaunchError';
+import {
+  CheckBackfillStatusQuery,
+  CheckBackfillStatusQueryVariables,
+} from './types/useJobReExecution.types';
 
 /**
  * This hook gives you a mutation method that you can use to re-execute runs.
@@ -20,6 +26,8 @@ import {showLaunchError} from '../launchpad/showLaunchError';
  */
 export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
   const history = useHistory();
+  const confirm = useConfirmation();
+  const client = useApolloClient();
   const {onCompleted} = opts || {};
 
   const [launchPipelineReexecution] = useMutation<
@@ -29,9 +37,41 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
 
   return useCallback(
     async (
-      run: {id: string; pipelineName: string},
+      run: {id: string; pipelineName: string; tags: {key: string; value: string}[]},
       param: ReexecutionStrategy | ExecutionParams,
     ) => {
+      const backfillTag = run.tags.find((t) => t.key === DagsterTag.Backfill);
+
+      if (backfillTag) {
+        const {data} = await client.query<
+          CheckBackfillStatusQuery,
+          CheckBackfillStatusQueryVariables
+        >({
+          query: CHECK_BACKFILL_STATUS_QUERY,
+          fetchPolicy: 'no-cache',
+          variables: {
+            backfillId: backfillTag.value,
+          },
+        });
+        const backfillRunning =
+          data.partitionBackfillOrError.__typename === 'PartitionBackfill'
+            ? data.partitionBackfillOrError.status === BulkActionStatus.REQUESTED
+            : false;
+
+        if (!backfillRunning) {
+          try {
+            await confirm({
+              title: 'Re-execution within backfill',
+              description: `This run is part of a completed backfill. Re-executing will not update the backfill status or launch runs of downstream dependencies.`,
+              intent: 'primary',
+              catchOnCancel: true,
+            });
+          } catch {
+            return;
+          }
+        }
+      }
+
       try {
         const result = await launchPipelineReexecution({
           variables:
@@ -48,6 +88,17 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
         showLaunchError(error as Error);
       }
     },
-    [history, launchPipelineReexecution, onCompleted],
+    [client, confirm, launchPipelineReexecution, history, onCompleted],
   );
 };
+
+const CHECK_BACKFILL_STATUS_QUERY = gql`
+  query CheckBackfillStatus($backfillId: String!) {
+    partitionBackfillOrError(backfillId: $backfillId) {
+      ... on PartitionBackfill {
+        id
+        status
+      }
+    }
+  }
+`;
