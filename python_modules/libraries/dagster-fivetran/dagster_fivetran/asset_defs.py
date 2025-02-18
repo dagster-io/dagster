@@ -32,7 +32,12 @@ from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.asset_decorator import fivetran_assets
-from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource, FivetranWorkspace
+from dagster_fivetran.resources import (
+    DEFAULT_POLL_INTERVAL,
+    FivetranFilter,
+    FivetranResource,
+    FivetranWorkspace,
+)
 from dagster_fivetran.translator import (
     DagsterFivetranTranslator,
     FivetranConnectorTableProps,
@@ -733,6 +738,7 @@ def build_fivetran_assets_definitions(
     *,
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+    fivetran_filter: Optional[FivetranFilter] = None,
 ) -> Sequence[AssetsDefinition]:
     """The list of AssetsDefinition for all connectors in the Fivetran workspace.
 
@@ -741,6 +747,7 @@ def build_fivetran_assets_definitions(
         dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
+        fivetran_filter (Optional[FivetranFilter]): Filters the set of Fivetran objects to fetch.
 
     Returns:
         List[AssetsDefinition]: The list of AssetsDefinition for all connectors in the Fivetran workspace.
@@ -807,9 +814,10 @@ def build_fivetran_assets_definitions(
 
     """
     dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+    fivetran_filter = fivetran_filter or FivetranFilter()
 
     all_asset_specs = workspace.load_asset_specs(
-        dagster_fivetran_translator=dagster_fivetran_translator
+        dagster_fivetran_translator=dagster_fivetran_translator, fivetran_filter=fivetran_filter
     )
 
     connector_ids = {
@@ -826,6 +834,7 @@ def build_fivetran_assets_definitions(
             name=connector_id,
             group_name=connector_id,
             dagster_fivetran_translator=dagster_fivetran_translator,
+            fivetran_filter=fivetran_filter,
         )
         def _asset_fn(context: AssetExecutionContext, fivetran: FivetranWorkspace):
             yield from fivetran.sync_and_poll(context=context)
