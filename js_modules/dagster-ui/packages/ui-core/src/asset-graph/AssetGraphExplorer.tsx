@@ -58,6 +58,7 @@ import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
+import {SVGViewportProvider} from '../graph/SVGViewportContext';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
@@ -151,43 +152,45 @@ export const AssetGraphExplorer = (props: Props) => {
   }, [filterFn]);
 
   return (
-    <Loading allowStaleData queryResult={fetchResult}>
-      {() => {
-        if (graphDataLoading || filteredAssetsLoading) {
-          return <LoadingSpinner purpose="page" />;
-        }
-        if (!assetGraphData || !allAssetKeys) {
-          return <NonIdealState icon="error" title="Query Error" />;
-        }
+    <SVGViewportProvider>
+      <Loading allowStaleData queryResult={fetchResult}>
+        {() => {
+          if (graphDataLoading || filteredAssetsLoading) {
+            return <LoadingSpinner purpose="page" />;
+          }
+          if (!assetGraphData || !allAssetKeys) {
+            return <NonIdealState icon="error" title="Query Error" />;
+          }
 
-        const hasCycles = graphHasCycles(assetGraphData);
+          const hasCycles = graphHasCycles(assetGraphData);
 
-        if (hasCycles) {
+          if (hasCycles) {
+            return (
+              <NonIdealState
+                icon="error"
+                title="Cycle detected"
+                description="Assets dependencies form a cycle"
+              />
+            );
+          }
           return (
-            <NonIdealState
-              icon="error"
-              title="Cycle detected"
-              description="Assets dependencies form a cycle"
+            <AssetGraphExplorerWithData
+              key={props.explorerPath.pipelineName}
+              assetGraphData={assetGraphData}
+              fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
+              allAssetKeys={allAssetKeys}
+              graphQueryItems={graphQueryItems}
+              filterBar={filterBar}
+              filterButton={button}
+              kindFilter={kindFilter}
+              groupsFilter={groupsFilter}
+              loading={filteredAssetsLoading || graphDataLoading}
+              {...props}
             />
           );
-        }
-        return (
-          <AssetGraphExplorerWithData
-            key={props.explorerPath.pipelineName}
-            assetGraphData={assetGraphData}
-            fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
-            allAssetKeys={allAssetKeys}
-            graphQueryItems={graphQueryItems}
-            filterBar={filterBar}
-            filterButton={button}
-            kindFilter={kindFilter}
-            groupsFilter={groupsFilter}
-            loading={filteredAssetsLoading || graphDataLoading}
-            {...props}
-          />
-        );
-      }}
-    </Loading>
+        }}
+      </Loading>
+    </SVGViewportProvider>
   );
 };
 
@@ -340,7 +343,7 @@ const AssetGraphExplorerWithData = ({
   );
 
   const zoomToGroup = React.useCallback(
-    (groupId: string, animate = true) => {
+    (groupId: string, animate = true, adjustScale = true) => {
       if (!viewportEl.current) {
         return;
       }
@@ -350,10 +353,12 @@ const AssetGraphExplorerWithData = ({
           groupBounds.width,
           groupBounds.height,
         );
+        const currentScale = viewportEl.current.getScale();
         viewportEl.current.zoomToSVGBox(
           groupBounds,
           animate,
-          Math.min(viewportEl.current.getScale(), targetScale * 0.9),
+          adjustScale ? Math.min(currentScale, targetScale * 0.9) : currentScale,
+          true,
         );
       }
     },
@@ -381,7 +386,7 @@ const AssetGraphExplorerWithData = ({
       focusGroupIdAfterLayoutRef.current &&
       layout.groups[focusGroupIdAfterLayoutRef.current]?.expanded
     ) {
-      zoomToGroup(focusGroupIdAfterLayoutRef.current, false);
+      zoomToGroup(focusGroupIdAfterLayoutRef.current, false, false);
       focusGroupIdAfterLayoutRef.current = '';
     } else if (lastSelectedNode) {
       const layoutNode = layout.nodes[lastSelectedNode.id];

@@ -10,19 +10,13 @@ import React, {
   useImperativeHandle,
   useMemo,
   useRef,
-  useState,
 } from 'react';
 import styled from 'styled-components';
 
-import {
-  DEFAULT_MAX_AUTOCENTER_ZOOM,
-  DEFAULT_MIN_ZOOM,
-  DEFAULT_ZOOM,
-  DETAIL_ZOOM,
-} from './SVGConsts';
+import {DEFAULT_MAX_AUTOCENTER_ZOOM, DEFAULT_MIN_ZOOM, DEFAULT_ZOOM} from './SVGConsts';
 import {SVGExporter} from './SVGExporter';
+import {SVGViewportProvider, useSVGViewport} from './SVGViewportContext';
 import {IBounds} from './common';
-import {usePartialSetStateUpdateCallback} from '../hooks/useSetStateUpdateCallback';
 import {testId} from '../testing/testId';
 
 export interface SVGViewportProps {
@@ -79,7 +73,7 @@ export interface SVGViewportRef {
   /** Zoom around a particular screen point, e.g. the mouse cursor. */
   adjustZoomRelativeToScreenPoint(nextScale: number, point: Point): void;
   /** Zoom to a specific bounding box within the SVG. */
-  zoomToSVGBox(box: IBounds, animate: boolean, newScale?: number): void;
+  zoomToSVGBox(box: IBounds, animate: boolean, newScale?: number, alignTop?: boolean): void;
   /** Zoom to a specific x,y coordinate (in SVG space). */
   zoomToSVGCoords(x: number, y: number, animate: boolean, scale?: number): void;
   /** Smoothly animate the zoom transform from the current to the provided target. */
@@ -124,7 +118,13 @@ const IconButton = styled.button`
   }
 `;
 
-export const SVGViewport = forwardRef<SVGViewportRef, SVGViewportProps>(
+export const SVGViewport = forwardRef<SVGViewportRef, SVGViewportProps>((props, ref) => (
+  <SVGViewportProvider>
+    <SVGViewportInner {...props} ref={ref} />
+  </SVGViewportProvider>
+));
+
+const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
   (
     {
       graphWidth,
@@ -142,28 +142,12 @@ export const SVGViewport = forwardRef<SVGViewportRef, SVGViewportProps>(
     },
     ref,
   ) => {
-    const [viewportState, setViewportState] = useState<SVGViewportState>({
-      x: 0,
-      y: 0,
-      scale: DETAIL_ZOOM,
-      minScale: 0,
-      isClickHeld: false,
-      isExporting: false,
-    });
+    const {viewportState, viewportStateRef, setViewportState, mergeViewportState} =
+      useSVGViewport();
 
     const element = useRef<HTMLDivElement>(null);
     const animationRef = useRef<any>(null);
     const resizeObserverRef = useRef<any>(null);
-
-    // Ref for the viewport state so that we can access up to date state in our event
-    // handlers which fire more frequently than the component re-renders.
-    // So we can't just use the state variable directly in our event handlers.
-    const [viewportStateRef, mergeViewportState] = usePartialSetStateUpdateCallback(
-      viewportState,
-      (partial) => {
-        setViewportState((prev) => ({...prev, ...partial}));
-      },
-    );
 
     const cancelAnimations = useCallback(() => {
       if (animationRef.current) {
@@ -297,11 +281,16 @@ export const SVGViewport = forwardRef<SVGViewportRef, SVGViewportProps>(
       [mergeViewportState, screenToSVGCoords],
     );
 
-    function zoomToSVGBox(box: IBounds, animate: boolean, newScale = viewportState.scale) {
+    function zoomToSVGBox(
+      box: IBounds,
+      animate: boolean,
+      newScale = viewportState.scale,
+      alignTop = false,
+    ) {
       // From the original class logic: toggle between min and max if scale == minZoom.
       const scaleToUse = newScale === getMinZoom() ? getMaxZoom() : newScale;
       const cx = box.x + box.width / 2;
-      const cy = box.y + box.height / 2;
+      const cy = alignTop ? box.y : box.y + box.height / 2;
       zoomToSVGCoords(cx, cy, animate, scaleToUse);
     }
 
@@ -417,7 +406,7 @@ export const SVGViewport = forwardRef<SVGViewportRef, SVGViewportProps>(
         document.addEventListener('mouseup', onUp);
         document.addEventListener('click', onCancelClick, {capture: true});
       },
-      [cancelAnimations, getOffsetXY, mergeViewportState],
+      [cancelAnimations, getOffsetXY, mergeViewportState, setViewportState],
     );
 
     const onWheel = useMemo(

@@ -16,18 +16,26 @@ import {ToggleDirectionButton, useLayoutDirectionState} from '../asset-graph/Gra
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
+import {SVGViewportProvider} from '../graph/SVGViewportContext';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
-
 export type AssetNodeLineageGraphProps = {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   params: AssetViewParams;
 };
 
-export const AssetNodeLineageGraph = ({
+export const AssetNodeLineageGraph = (props: AssetNodeLineageGraphProps) => {
+  return (
+    <SVGViewportProvider>
+      <AssetNodeLineageGraphInner {...props} />
+    </SVGViewportProvider>
+  );
+};
+
+const AssetNodeLineageGraphInner = ({
   assetKey,
   assetGraphData,
   params,
