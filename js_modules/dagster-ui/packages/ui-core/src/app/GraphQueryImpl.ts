@@ -23,10 +23,6 @@ type TraverseStepFunction<T> = (item: T, callback: (nextItem: T) => void) => voi
 export class GraphTraverser<T extends GraphQueryItem> {
   itemNameMap: {[name: string]: T} = {};
 
-  // TODO: One reason doing DFS on the client side is sub optimal.
-  // javascript is tail end recursive tho so we could go for ever without worrying about
-  // stack overflow problems?
-
   constructor(items: T[]) {
     items.forEach((item) => (this.itemNameMap[item.name] = item));
   }
@@ -35,21 +31,29 @@ export class GraphTraverser<T extends GraphQueryItem> {
     return this.itemNameMap[name];
   }
 
-  traverse(
-    item: T,
-    step: TraverseStepFunction<T>,
-    depth: number,
-    results: {[key: string]: T} = {},
-  ) {
-    results[item.name] = item;
+  traverse(rootItem: T, nextItemsForItem: TraverseStepFunction<T>, maxDepth: number) {
+    const results: {[key: string]: T} = {};
+    const queue: [T, number][] = [[rootItem, 0]];
 
-    if (depth > 0) {
-      step(item, (next) => {
-        if (!(next.name in results)) {
-          this.traverse(next, step, depth - 1, results);
-        }
-      });
+    /** This code performs a breadth-first search, putting all the items discovered at depth 1
+     * onto the queue before visiting any items at depth 2. This is important because graphs
+     * can look like this:
+     *
+     *  /---------\
+     * A --> B --> C
+     */
+    while (queue.length) {
+      const [item, depth] = queue.shift()!;
+      results[item.name] = item;
+      if (depth < maxDepth) {
+        nextItemsForItem(item, (next) => {
+          if (!(next.name in results)) {
+            queue.push([next, depth + 1]);
+          }
+        });
+      }
     }
+
     return Object.values(results);
   }
 

@@ -5,7 +5,7 @@ import sys
 import tempfile
 import time
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -19,7 +19,13 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._grpc.server import GrpcServerCommand
 from dagster._serdes import serialize_value
-from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._serdes.ipc import (
+    get_ipc_shutdown_pipe,
+    interrupt_on_ipc_shutdown_message,
+    open_ipc_subprocess,
+    send_ipc_shutdown_message,
+)
+from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
@@ -86,6 +92,13 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--shutdown-pipe",
+    type=click.INT,
+    required=False,
+    hidden=True,
+    help="Internal use only. Pass a readable pipe file descriptor to the dev process that will be monitored for a shutdown signal.",
+)
 @workspace_options
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
@@ -98,6 +111,7 @@ def dev_command(
     host: Optional[str],
     live_data_poll_rate: Optional[str],
     use_legacy_code_server_behavior: bool,
+    shutdown_pipe: Optional[int],
     **other_opts: object,
 ) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -132,7 +146,17 @@ def dev_command(
                 " unless it is placed in the same folder as DAGSTER_HOME."
             )
 
-    with get_possibly_temporary_instance_for_cli("dagster dev", logger=logger) as instance:
+    # Set up windows interrupt signals to raise KeyboardInterrupt. Note that these handlers are
+    # not used if we are using the shutdown pipe.
+    setup_interrupt_handlers()
+
+    with ExitStack() as stack:
+        if shutdown_pipe:
+            stack.enter_context(interrupt_on_ipc_shutdown_message(shutdown_pipe))
+        instance = stack.enter_context(
+            get_possibly_temporary_instance_for_cli("dagster dev", logger=logger)
+        )
+
         with _optionally_create_temp_workspace(
             use_legacy_code_server_behavior=use_legacy_code_server_behavior,
             workspace_opts=workspace_opts,
@@ -148,6 +172,7 @@ def dev_command(
                 *workspace_args,
             ]
 
+            webserver_read_fd, webserver_write_fd = get_ipc_shutdown_pipe()
             webserver_process = open_ipc_subprocess(
                 [sys.executable, "-m", "dagster_webserver"]
                 + (["--port", port] if port else [])
@@ -155,8 +180,12 @@ def dev_command(
                 + (["--dagster-log-level", log_level])
                 + (["--log-format", log_format])
                 + (["--live-data-poll-rate", live_data_poll_rate] if live_data_poll_rate else [])
-                + args
+                + ["--shutdown-pipe", str(webserver_read_fd)]
+                + args,
+                pass_fds=[webserver_read_fd],
             )
+
+            daemon_read_fd, daemon_write_fd = get_ipc_shutdown_pipe()
             daemon_process = open_ipc_subprocess(
                 [
                     sys.executable,
@@ -167,8 +196,11 @@ def dev_command(
                     log_level,
                     "--log-format",
                     log_format,
+                    "--shutdown-pipe",
+                    str(daemon_read_fd),
                 ]
-                + args
+                + args,
+                pass_fds=[daemon_read_fd],
             )
             try:
                 while True:
@@ -192,8 +224,8 @@ def dev_command(
                 logger.exception("An unexpected exception has occurred")
             finally:
                 logger.info("Shutting down Dagster services...")
-                interrupt_ipc_subprocess(daemon_process)
-                interrupt_ipc_subprocess(webserver_process)
+                send_ipc_shutdown_message(webserver_write_fd)
+                send_ipc_shutdown_message(daemon_write_fd)
 
                 try:
                     webserver_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)

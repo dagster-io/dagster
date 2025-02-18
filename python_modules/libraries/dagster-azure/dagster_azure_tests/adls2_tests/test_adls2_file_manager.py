@@ -109,7 +109,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
 
     adls2_fake_resource = FakeADLS2Resource(account_name=storage_account)
     adls2_fake_file_manager = ADLS2FileManager(
-        adls2_client=adls2_fake_resource.adls2_client,
+        adls2_client=adls2_fake_resource.adls2_client,  # type: ignore
         file_system=file_system,
         prefix="some-prefix",
     )

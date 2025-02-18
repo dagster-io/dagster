@@ -56,7 +56,6 @@ setup(
         "test": [
             "click",
             "dagster-components",
-            "dagster-graphql",
             "pydantic",
             "pytest",
         ],

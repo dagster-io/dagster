@@ -11,7 +11,7 @@ from dagster_components.core.component_scaffolder import (
 )
 
 
-class SimpleAssetParams(BaseModel):
+class SimpleAssetSchema(BaseModel):
     asset_key: str
     value: str
 
@@ -22,7 +22,7 @@ class SimpleAsset(Component):
 
     @classmethod
     def get_schema(cls):
-        return SimpleAssetParams
+        return SimpleAssetSchema
 
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:

@@ -72,7 +72,7 @@ def get_pyproject_toml_dev_dependencies(use_editable_dagster: bool) -> str:
 
 def get_pyproject_toml_uv_sources(editable_dagster_root: Path) -> str:
     lib_lines = [
-        f'{path.name} = {{ path = "{path}", editable = true }}'
+        f"{path.name} = {{ path = '{path}', editable = true }}"
         for path in _gather_dagster_packages(editable_dagster_root)
     ]
     return "\n".join(
@@ -140,7 +140,7 @@ def scaffold_component_type(dg_context: DgContext, name: str) -> None:
     scaffold_subtree(
         path=root_path,
         name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
-        templates_path=os.path.join(os.path.dirname(__file__), "templates", "COMPONENT_TYPE"),
+        templates_path=str(Path(__file__).parent / "templates" / "COMPONENT_TYPE"),
         project_name=name,
         component_type_class_name=camelcase(name),
         name=name,

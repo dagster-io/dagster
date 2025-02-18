@@ -114,7 +114,9 @@ ConcurrencyLimitsTable = db.Table(
     ),
     db.Column("concurrency_key", MySQLCompatabilityTypes.UniqueText, nullable=False, unique=True),
     db.Column("limit", db.Integer, nullable=False),
-    db.Column("using_default_limit", db.Boolean, nullable=False, default=False),
+    db.Column(
+        "using_default_limit", db.Boolean, nullable=False, default=False, server_default=db.false()
+    ),
     db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
 )

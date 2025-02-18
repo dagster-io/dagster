@@ -1,0 +1,1 @@
+dg component-type docs shell_command@my_component_library

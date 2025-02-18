@@ -1,14 +1,14 @@
 import os
 import pickle
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
+from dagster._check.builder import INJECTED_DEFAULT_VALS_LOCAL_VAR
 from dagster._check.functions import CheckError
 from dagster._record import (
-    _INJECTED_DEFAULT_VALS_LOCAL_VAR,
     IHaveNew,
     ImportFrom,
     LegacyNamedTupleMixin,
@@ -22,6 +22,7 @@ from dagster._record import (
 from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._utils import hash_collection
 from dagster._utils.cached_method import cached_method
+from pydantic import BaseModel, TypeAdapter
 
 if TYPE_CHECKING:
     from dagster._core.test_utils import TestType
@@ -305,7 +306,7 @@ def test_sentinel():
     "fields, defaults, expected",
     [
         (
-            {"name": str},
+            ["name"],
             {},
             (
                 ", *, name",
@@ -315,7 +316,7 @@ def test_sentinel():
         # defaults dont need to be in certain order since we force kwargs
         # None handled directly by arg default
         (
-            {"name": str, "age": int, "f": float},
+            ["name", "age", "f"],
             {"age": None},
             (
                 ", *, name, age = None, f",
@@ -324,7 +325,7 @@ def test_sentinel():
         ),
         # empty container defaults get fresh copies via assignments
         (
-            {"things": list},
+            ["things"],
             {"things": []},
             (
                 ", *, things = None",
@@ -332,7 +333,7 @@ def test_sentinel():
             ),
         ),
         (
-            {"map": dict},
+            ["map"],
             {"map": {}},
             (
                 ", *, map = None",
@@ -341,10 +342,10 @@ def test_sentinel():
         ),
         # base case - default values resolved by reference to injected local
         (
-            {"val": Any},
+            ["val"],
             {"val": object()},
             (
-                f", *, val = {_INJECTED_DEFAULT_VALS_LOCAL_VAR}['val']",
+                f", *, val = {INJECTED_DEFAULT_VALS_LOCAL_VAR}['val']",
                 "",
             ),
         ),
@@ -353,7 +354,14 @@ def test_sentinel():
 def test_build_args_and_assign(fields, defaults, expected):
     # tests / documents shared utility fn
     # don't hesitate to delete this upon refactor
-    assert build_args_and_assignment_strs(fields, defaults, kw_only=True) == expected
+    assert (
+        build_args_and_assignment_strs(
+            fields,
+            defaults,
+            kw_only=True,
+        )
+        == expected
+    )
 
 
 @record
@@ -874,3 +882,41 @@ def test_posargs_inherit():
         @record(kw_only=False)
         class B(A):
             b: int
+
+
+def test_pydantic() -> None:
+    @record
+    class Simple:
+        a: str
+        b: str
+
+    class SimpleHolder(BaseModel):
+        simple: Simple
+
+    holder = SimpleHolder(simple=Simple(a="a", b="b"))
+    assert TypeAdapter(SimpleHolder).validate_python(holder)
+
+    @record_custom
+    class Custom(IHaveNew):
+        ab: str
+        c: str
+
+        def __new__(cls, a: str, b: str, c: int):
+            return super().__new__(cls, ab=a + b, c=str(c))
+
+    class CustomHolder(BaseModel):
+        custom: Custom
+        custom_list: Sequence[Custom]
+        custom_mapping: Mapping[str, Custom]
+        custom_list_mapping: Mapping[str, Sequence[Custom]]
+        optional_custom_list_mapping: Optional[Mapping[str, Sequence[Custom]]]
+
+    c = Custom("a", "b", 1)
+    holder = CustomHolder(
+        custom=c,
+        custom_list=[c],
+        custom_mapping={"c": c},
+        custom_list_mapping={"c": [c]},
+        optional_custom_list_mapping={"c": [c]},
+    )
+    assert TypeAdapter(CustomHolder).validate_python(holder)

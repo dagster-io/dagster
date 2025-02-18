@@ -7,11 +7,25 @@ import pytest
 from dagster._module_alias_map import AliasedModuleFinder, get_meta_path_insertion_index
 
 
-def test_no_experimental_warnings():
+def test_no_beta_warnings():
     process = subprocess.run(
         [sys.executable, "-c", "import dagster"], check=False, capture_output=True
     )
-    assert not re.search(r"ExperimentalWarning", process.stderr.decode("utf-8"))
+    assert not re.search(r"BetaWarning", process.stderr.decode("utf-8"))
+
+
+def test_no_preview_warnings():
+    process = subprocess.run(
+        [sys.executable, "-c", "import dagster"], check=False, capture_output=True
+    )
+    assert not re.search(r"PreviewWarning", process.stderr.decode("utf-8"))
+
+
+def test_no_supersession_warnings():
+    process = subprocess.run(
+        [sys.executable, "-c", "import dagster"], check=False, capture_output=True
+    )
+    assert not re.search(r"SupersessionWarning", process.stderr.decode("utf-8"))
 
 
 # Fill this with tests for deprecated symbols

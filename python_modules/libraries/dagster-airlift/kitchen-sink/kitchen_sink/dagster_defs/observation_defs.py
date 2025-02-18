@@ -47,6 +47,7 @@ def build_mapped_defs() -> Definitions:
             ),
         ),
         event_transformer_fn=observations_from_materializations,
+        sensor_minimum_interval_seconds=1,
     )
 
 

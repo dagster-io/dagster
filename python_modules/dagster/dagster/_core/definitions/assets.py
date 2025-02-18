@@ -16,7 +16,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster._check as check
-from dagster._annotations import experimental_param, public
+from dagster._annotations import beta_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph_computation import AssetGraphComputation
@@ -70,7 +70,7 @@ from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts, reverse_dict
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.tags import normalize_tags
-from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
+from dagster._utils.warnings import BetaWarning, PreviewWarning, disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -112,8 +112,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
     _specs_by_key: Mapping[AssetKey, AssetSpec]
     _computation: Optional[AssetGraphComputation]
 
-    @experimental_param(param="specs")
-    @experimental_param(param="execution_type")
+    @beta_param(param="execution_type")
     def __init__(
         self,
         *,
@@ -370,7 +369,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         execution_type: Optional[AssetExecutionType],
     ) -> "AssetsDefinition":
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            warnings.simplefilter("ignore", category=PreviewWarning)
+            warnings.simplefilter("ignore", category=BetaWarning)
             return AssetsDefinition(
                 keys_by_input_name=keys_by_input_name,
                 keys_by_output_name=keys_by_output_name,
@@ -400,7 +400,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         return direct_invocation_result(self, *args, **kwargs)
 
     @public
-    @experimental_param(param="resource_defs")
+    @beta_param(param="resource_defs")
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
@@ -459,7 +459,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 to the default partition mapping for the partitions definition, which is typically maps
                 partition keys to the same partition keys in upstream assets.
             resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-                (Experimental) A mapping of resource keys to resource definitions. These resources
+                (Beta) A mapping of resource keys to resource definitions. These resources
                 will be initialized during execution, and can be accessed from the
                 body of ops in the graph during execution.
             group_name (Optional[str]): A group name for the constructed asset. Assets without a

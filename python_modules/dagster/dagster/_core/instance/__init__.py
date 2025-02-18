@@ -30,7 +30,7 @@ import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
@@ -85,7 +85,7 @@ from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
+from dagster._utils.warnings import beta_warning, disable_dagster_warnings
 
 # 'airflow_execution_date' and 'is_airflow_ingest_pipeline' are hardcoded tags used in the
 # airflow ingestion logic (see: dagster_pipeline_factory.py). 'airflow_execution_date' stores the
@@ -1315,9 +1315,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
 
             if not self._run_storage.has_job_snapshot(parent_snapshot_id):
-                self._run_storage.add_job_snapshot(
-                    check.not_none(parent_job_snapshot), parent_snapshot_id
-                )
+                self._run_storage.add_job_snapshot(check.not_none(parent_job_snapshot))
 
         job_snapshot_id = job_snapshot.snapshot_id
         if not self._run_storage.has_job_snapshot(job_snapshot_id):
@@ -1804,9 +1802,8 @@ class DagsterInstance(DynamicPartitionsStore):
     def add_snapshot(
         self,
         snapshot: Union["JobSnap", "ExecutionPlanSnapshot"],
-        snapshot_id: Optional[str] = None,
     ) -> None:
-        return self._run_storage.add_snapshot(snapshot, snapshot_id)
+        return self._run_storage.add_snapshot(snapshot)
 
     @traced
     def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
@@ -2391,7 +2388,7 @@ class DagsterInstance(DynamicPartitionsStore):
             logging_config = self.get_settings("python_logs").get("dagster_handler_config", {})
 
             if logging_config:
-                experimental_warning("Handling yaml-defined logging configuration")
+                beta_warning("Handling yaml-defined logging configuration")
 
             # Handlers can only be retrieved from dictConfig configuration if they are attached
             # to a logger. We add a dummy logger to the configuration that allows us to access user
@@ -3169,7 +3166,7 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @property
     def should_start_background_run_thread(self) -> bool:
-        """Gate on an experimental feature to start a thread that monitors for if the run should be canceled."""
+        """Gate on a feature to start a thread that monitors for if the run should be canceled."""
         return False
 
     def get_tick_retention_settings(
@@ -3270,7 +3267,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return result
 
-    @experimental
     @public
     def report_runless_asset_event(
         self,

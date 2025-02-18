@@ -322,9 +322,6 @@ const AssetGraphExplorerWithData = ({
         {
           ...explorerPath,
           opNames: [nextOpsNameSelection],
-          opsQuery: nodeIsInDisplayedGraph
-            ? explorerPath.opsQuery
-            : `${explorerPath.opsQuery},++"${token}"++`,
           pipelineName: explorerPath.pipelineName,
         },
         'replace',
@@ -478,15 +475,21 @@ const AssetGraphExplorerWithData = ({
   const [showSidebar, setShowSidebar] = React.useState(viewType === 'global');
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    groupsFilter?.setState(
-      new Set([
-        {
-          groupName: group.groupName,
-          repositoryName: group.repositoryName,
-          repositoryLocationName: group.repositoryLocationName,
-        },
-      ]),
-    );
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+      onChangeAssetSelection(
+        `group:"${group.groupName}" and code_location:"${group.repositoryLocationName}"`,
+      );
+    } else {
+      groupsFilter?.setState(
+        new Set([
+          {
+            groupName: group.groupName,
+            repositoryName: group.repositoryName,
+            repositoryLocationName: group.repositoryLocationName,
+          },
+        ]),
+      );
+    }
   };
 
   const svgViewport = layout ? (
@@ -670,6 +673,7 @@ const AssetGraphExplorerWithData = ({
                         definition={graphNode.definition}
                         selected={selectedGraphNodes.includes(graphNode)}
                         kindFilter={kindFilter}
+                        onChangeAssetSelection={onChangeAssetSelection}
                       />
                     </AssetNodeContextMenuWrapper>
                   )}

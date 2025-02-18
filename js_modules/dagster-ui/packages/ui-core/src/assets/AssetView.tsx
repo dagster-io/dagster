@@ -30,6 +30,7 @@ import {
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
 } from './types/AssetView.types';
+import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsDialog} from './useReportEventsDialog';
@@ -47,7 +48,6 @@ import {
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -59,7 +59,7 @@ interface Props {
 }
 
 export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
-  const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const [params, setParams] = useAssetViewParams();
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
   // Load the asset definition
@@ -308,7 +308,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
         }
         right={
           <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
-            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 && upstream ? (
+            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 ? (
               <LaunchAssetExecutionButton
                 scope={{all: [cachedOrLiveDefinition]}}
                 showChangedAndMissingOption={false}

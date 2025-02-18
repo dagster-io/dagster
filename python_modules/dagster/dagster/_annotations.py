@@ -14,7 +14,6 @@ from dagster._core.decorator_utils import (
 from dagster._utils.warnings import (
     beta_warning,
     deprecation_warning,
-    experimental_warning,
     preview_warning,
     supersession_warning,
 )
@@ -846,208 +845,6 @@ def get_deprecated_param_info(obj: Annotatable, param_name: str) -> DeprecatedIn
 
 
 # ########################
-# ##### EXPERIMENTAL
-# ########################
-
-_EXPERIMENTAL_ATTR_NAME: Final[str] = "_experimental"
-
-
-@dataclass
-class ExperimentalInfo:
-    additional_warn_text: Optional[str] = None
-    subject: Optional[str] = None
-
-
-@overload
-def experimental(
-    __obj: T_Annotatable,
-    *,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
-    emit_runtime_warning: bool = ...,
-) -> T_Annotatable: ...
-
-
-@overload
-def experimental(
-    __obj: None = ...,
-    *,
-    additional_warn_text: Optional[str] = ...,
-    subject: Optional[str] = ...,
-    emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]: ...
-
-
-def experimental(
-    __obj: Optional[T_Annotatable] = None,
-    *,
-    additional_warn_text: Optional[str] = None,
-    subject: Optional[str] = None,
-    emit_runtime_warning: bool = True,
-) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
-    """Mark an object as experimental. This appends some metadata to the object that causes it
-    to be rendered with an "experimental" tag and associated warning in the docs.
-
-    If `emit_runtime_warning` is True, a warning will also be emitted when the function is called,
-    having the same text as is displayed in the docs. For consistency between docs and runtime
-    warnings, this decorator is preferred to manual calls to `experimental_warning`.
-
-    Args:
-        additional_warn_text (str): Additional text to display after the experimental warning.
-        emit_runtime_warning (bool): Whether to emit a warning when the function is called.
-        subject (Optional[str]): The subject of the experimental warning. Defaults to a string
-            representation of the decorated object. This is useful when marking usage of
-            an experimental API inside an otherwise non-deprecated function, so
-            that it can be easily cleaned up later. It should only be used with
-            `emit_runtime_warning=False`, as we don't want to warn users when an
-            experimental API is used internally.
-
-    Usage:
-
-        .. code-block:: python
-
-            @experimental
-            def my_experimental_function(my_arg):
-                do_stuff()
-
-            @experimental
-            class MyExperimentalClass:
-                pass
-    """
-    if __obj is None:
-        return lambda obj: experimental(
-            obj,
-            additional_warn_text=additional_warn_text,
-            subject=subject,
-            emit_runtime_warning=emit_runtime_warning,
-        )
-    else:
-        target = _get_annotation_target(__obj)
-        setattr(target, _EXPERIMENTAL_ATTR_NAME, ExperimentalInfo(additional_warn_text, subject))
-
-        if emit_runtime_warning:
-            stack_level = _get_warning_stacklevel(__obj)
-            subject = subject or _get_subject(__obj)
-            warning_fn = lambda: experimental_warning(
-                subject,
-                additional_warn_text=additional_warn_text,
-                stacklevel=stack_level,
-            )
-            return apply_pre_call_decorator(__obj, warning_fn)
-        else:
-            return __obj
-
-
-def is_experimental(obj: Annotatable) -> bool:
-    target = _get_annotation_target(obj)
-    return hasattr(target, _EXPERIMENTAL_ATTR_NAME) and getattr(target, _EXPERIMENTAL_ATTR_NAME)
-
-
-def get_experimental_info(obj: Annotatable) -> ExperimentalInfo:
-    target = _get_annotation_target(obj)
-    return getattr(target, _EXPERIMENTAL_ATTR_NAME)
-
-
-# ########################
-# ##### EXPERIMENTAL PARAM
-# ########################
-
-_EXPERIMENTAL_PARAM_ATTR_NAME: Final[str] = "_experimental_params"
-
-
-@overload
-def experimental_param(
-    __obj: T_Annotatable,
-    *,
-    param: str,
-    additional_warn_text: Optional[str] = ...,
-    emit_runtime_warning: bool = ...,
-) -> T_Annotatable: ...
-
-
-@overload
-def experimental_param(
-    __obj: None = ...,
-    *,
-    param: str,
-    additional_warn_text: Optional[str] = ...,
-    emit_runtime_warning: bool = ...,
-) -> Callable[[T_Annotatable], T_Annotatable]: ...
-
-
-def experimental_param(
-    __obj: Optional[T_Annotatable] = None,
-    *,
-    param: str,
-    additional_warn_text: Optional[str] = None,
-    emit_runtime_warning: bool = True,
-) -> Union[T_Annotatable, Callable[[T_Annotatable], T_Annotatable]]:
-    """Mark a parameter of a class initializer or function/method as experimental. This appends some
-    metadata to the decorated object that causes the specified argument to be rendered with an
-    "experimental" tag and associated warning in the docs.
-
-    If `emit_runtime_warning` is True, a warning will also be emitted when the function is called
-    and a non-None value is passed for the parameter. For consistency between docs and runtime
-    warnings, this decorator is preferred to manual calls to `experimental_warning`. Note that the
-    warning will only be emitted if the value is passed as a keyword argument.
-
-    Args:
-        param (str): The name of the parameter to mark experimental.
-        additional_warn_text (str): Additional text to display after the deprecation warning.
-            Typically this should suggest a newer API.
-        emit_runtime_warning (bool): Whether to emit a warning when the function is called.
-    """
-    if __obj is None:
-        return lambda obj: experimental_param(
-            obj,
-            param=param,
-            additional_warn_text=additional_warn_text,
-            emit_runtime_warning=emit_runtime_warning,
-        )
-    else:
-        check.invariant(
-            _annotatable_has_param(__obj, param),
-            f"Attempted to mark undefined parameter `{param}` experimental.",
-        )
-        target = _get_annotation_target(__obj)
-
-        if not hasattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME):
-            setattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME, {})
-        getattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME)[param] = ExperimentalInfo(
-            additional_warn_text=additional_warn_text,
-        )
-
-        if emit_runtime_warning:
-            condition = lambda *_, **kwargs: kwargs.get(param) is not None
-            warning_fn = lambda: experimental_warning(
-                _get_subject(__obj, param=param),
-                additional_warn_text=additional_warn_text,
-                stacklevel=4,
-            )
-            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)
-        else:
-            return __obj
-
-
-def has_experimental_params(obj: Annotatable) -> bool:
-    return hasattr(_get_annotation_target(obj), _EXPERIMENTAL_PARAM_ATTR_NAME)
-
-
-def get_experimental_params(obj: Annotatable) -> Mapping[str, ExperimentalInfo]:
-    return getattr(_get_annotation_target(obj), _EXPERIMENTAL_PARAM_ATTR_NAME)
-
-
-def is_experimental_param(obj: Annotatable, param_name: str) -> bool:
-    target = _get_annotation_target(obj)
-    return param_name in getattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME, {})
-
-
-def get_experimental_param_info(obj: Annotatable, param_name: str) -> ExperimentalInfo:
-    target = _get_annotation_target(obj)
-    return getattr(target, _EXPERIMENTAL_PARAM_ATTR_NAME)[param_name]
-
-
-# ########################
 # ##### HELPERS
 # ########################
 
@@ -1066,13 +863,17 @@ def copy_annotations(dest: Annotatable, src: Annotatable) -> None:
             _DEPRECATED_PARAM_ATTR_NAME,
             getattr(src_target, _DEPRECATED_PARAM_ATTR_NAME),
         )
-    if hasattr(src_target, _EXPERIMENTAL_ATTR_NAME):
-        setattr(dest_target, _EXPERIMENTAL_ATTR_NAME, getattr(src_target, _EXPERIMENTAL_ATTR_NAME))
-    if hasattr(src_target, _EXPERIMENTAL_PARAM_ATTR_NAME):
+    if hasattr(src_target, _SUPERSEDED_ATTR_NAME):
+        setattr(dest_target, _SUPERSEDED_ATTR_NAME, getattr(src_target, _SUPERSEDED_ATTR_NAME))
+    if hasattr(src_target, _PREVIEW_ATTR_NAME):
+        setattr(dest_target, _PREVIEW_ATTR_NAME, getattr(src_target, _PREVIEW_ATTR_NAME))
+    if hasattr(src_target, _BETA_ATTR_NAME):
+        setattr(dest_target, _BETA_ATTR_NAME, getattr(src_target, _BETA_ATTR_NAME))
+    if hasattr(src_target, _BETA_PARAM_ATTR_NAME):
         setattr(
             dest_target,
-            _EXPERIMENTAL_PARAM_ATTR_NAME,
-            getattr(src_target, _EXPERIMENTAL_PARAM_ATTR_NAME),
+            _BETA_PARAM_ATTR_NAME,
+            getattr(src_target, _BETA_PARAM_ATTR_NAME),
         )
 
 

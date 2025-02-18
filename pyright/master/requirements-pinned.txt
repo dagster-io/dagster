@@ -114,7 +114,6 @@ daff==1.3.46
 dagster-anthropic==0.0.1
 -e python_modules/libraries/dagster-aws
 -e python_modules/libraries/dagster-azure
--e examples/experimental/dagster-blueprints
 -e python_modules/libraries/dagster-celery
 -e python_modules/libraries/dagster-celery-docker
 -e python_modules/libraries/dagster-celery-k8s
@@ -475,8 +474,8 @@ premailer==3.10.0
 prison==0.2.1
 progressbar2==4.5.0
 -e examples/project_atproto_dashboard
--e examples/project_dagster_modal_pipes
--e examples/project_prompt_eng
+-e examples/docs_projects/project_dagster_modal_pipes
+-e examples/docs_projects/project_prompt_eng
 prometheus-client==0.21.1
 prompt-toolkit==3.0.50
 propcache==0.2.1

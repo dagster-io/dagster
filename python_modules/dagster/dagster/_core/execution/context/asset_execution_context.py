@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import AbstractSet, Any, Optional  # noqa: UP035
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import DataProvenance, DataVersion
@@ -558,7 +558,6 @@ class AssetExecutionContext:
     #### data lineage related
 
     @public
-    @experimental
     @_copy_docs_from_op_execution_context
     def get_asset_provenance(self, asset_key: AssetKey) -> Optional[DataProvenance]:
         return self.op_execution_context.get_asset_provenance(asset_key=asset_key)

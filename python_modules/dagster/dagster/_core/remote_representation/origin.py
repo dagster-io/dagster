@@ -281,7 +281,6 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerCodeLocation(
                 origin=self,
-                server_id=endpoint.server_id,
                 port=endpoint.port,
                 socket=endpoint.socket,
                 host=endpoint.host,

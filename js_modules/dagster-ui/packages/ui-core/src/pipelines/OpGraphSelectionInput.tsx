@@ -1,6 +1,9 @@
 import styled from 'styled-components';
 
-import {useOpGraphSelectionAutoCompleteProvider} from './useOpGraphSelectionAutoCompleteProvider';
+import {
+  opGraphSelectionSyntaxSupportedAttributes,
+  useOpGraphSelectionAutoCompleteProvider,
+} from './useOpGraphSelectionAutoCompleteProvider';
 import {GraphQueryItem} from '../app/GraphQueryImpl';
 import {OpSelectionLexer} from '../op-selection/generated/OpSelectionLexer';
 import {OpSelectionParser} from '../op-selection/generated/OpSelectionParser';
@@ -32,7 +35,11 @@ export const OpGraphSelectionInput = ({
 };
 
 const getLinter = weakMapMemoize(() =>
-  createSelectionLinter({Lexer: OpSelectionLexer, Parser: OpSelectionParser}),
+  createSelectionLinter({
+    Lexer: OpSelectionLexer,
+    Parser: OpSelectionParser,
+    supportedAttributes: opGraphSelectionSyntaxSupportedAttributes,
+  }),
 );
 
 const Wrapper = styled.div`

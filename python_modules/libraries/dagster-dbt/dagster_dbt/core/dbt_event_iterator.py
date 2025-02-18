@@ -211,7 +211,7 @@ class DbtEventIterator(Iterator[T]):
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
-        """Experimental functionality which will fetch row counts for materialized dbt
+        """Functionality which will fetch row counts for materialized dbt
         models in a dbt run once they are built. Note that row counts will not be fetched
         for views, since this requires running the view's SQL query which may be costly.
 
@@ -229,7 +229,7 @@ class DbtEventIterator(Iterator[T]):
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
-        """Experimental functionality which will fetch column schema metadata for dbt models in a run
+        """Functionality which will fetch column schema metadata for dbt models in a run
         once they're built. It will also fetch schema information for upstream models and generate
         column lineage metadata using sqlglot, if enabled.
 

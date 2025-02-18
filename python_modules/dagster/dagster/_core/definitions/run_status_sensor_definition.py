@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union, ca
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, experimental_param, public
+from dagster._annotations import beta_param, deprecated_param, public
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
@@ -213,7 +213,7 @@ class RunStatusSensorContext:
                 raise DagsterInvariantViolationError(
                     "At least one provided resource is a generator, but attempting to access"
                     " resources outside of context manager scope. You can use the following syntax"
-                    " to open a context manager: `with build_schedule_context(...) as context:`"
+                    " to open a context manager: `with build_sensor_context(...) as context:`"
                 )
 
         return self._resources
@@ -331,7 +331,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
         return [cast(DagsterEvent, record.event_log_entry.dagster_event) for record in records]
 
 
-@experimental_param(param="repository_def")
+@beta_param(param="repository_def")
 def build_run_status_sensor_context(
     sensor_name: str,
     dagster_event: DagsterEvent,
@@ -515,7 +515,7 @@ def run_failure_sensor(
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]): The job a RunRequest should
             execute if yielded from the sensor.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJob]]]):
             A list of jobs to be executed if RunRequests are yielded from the sensor.
         monitor_all_repositories (bool): (deprecated in favor of monitor_all_code_locations) If set to True,
             the sensor will monitor all runs in the Dagster instance. If set to True, an error will be raised if you also specify
@@ -604,7 +604,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             be used for searching and filtering in the UI.
         metadata (Optional[Mapping[str, object]]): A set of metadata entries that annotate the
             sensor. Values will be normalized to typed `MetadataValue` objects.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]):
             A list of jobs to be executed if RunRequests are yielded from the sensor.
     """
 
@@ -1103,7 +1103,7 @@ def run_status_sensor(
             status can be overridden from the Dagster UI or via the GraphQL API.
         request_job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job that should be
             executed if a RunRequest is yielded from the sensor.
-        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]): (experimental)
+        request_jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
             A list of jobs to be executed if RunRequests are yielded from the sensor.
         monitor_all_repositories (Optional[bool]): (deprecated in favor of monitor_all_code_locations) If set to True, the sensor will monitor all runs in the Dagster instance.
             If set to True, an error will be raised if you also specify monitored_jobs or job_selection.

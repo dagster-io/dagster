@@ -62,6 +62,7 @@ export type ConcurrencyKeyDetailsQuery = {
     id: string;
     minConcurrencyLimitValue: number;
     maxConcurrencyLimitValue: number;
+    runQueuingSupported: boolean;
     poolConfig: {
       __typename: 'PoolConfig';
       poolGranularity: string | null;
@@ -109,7 +110,7 @@ export const DeleteConcurrencyLimitVersion = '03397142bc71bc17649f43dd17aabf4ea7
 
 export const FreeConcurrencySlotsVersion = '7363c435dba06ed2a4be96e1d9bf1f1f8d9c90533b80ff42896fe9d50879d60e';
 
-export const ConcurrencyKeyDetailsQueryVersion = 'b280e9b683e68dbb37ae96ec1f4541fb759d8282da2a61eb5f01ef82ffbec0bf';
+export const ConcurrencyKeyDetailsQueryVersion = '4578bc70e20ae2324dd5b870dde4e2ffb85708c050dacdaa6741e2a7f67edf7d';
 
 export const RunsForConcurrencyKeyQueryVersion = '35ebd16622a13c6aaa35577c7694bf8ffdeb16921b46c6040a407bb3095eaf75';
 

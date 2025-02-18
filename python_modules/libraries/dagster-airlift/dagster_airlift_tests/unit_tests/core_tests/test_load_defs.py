@@ -773,6 +773,7 @@ def test_enrich() -> None:
     airflow_assets = enrich_airflow_mapped_assets(
         airflow_instance=make_instance({"dag": ["task"]}),
         mapped_assets=[spec],
+        source_code_retrieval_enabled=None,
     )
     assert len(airflow_assets) == 1
     assets_def = next(iter(airflow_assets))

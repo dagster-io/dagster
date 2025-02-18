@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import cast
 
 import dagster as dg
@@ -14,6 +15,7 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from pydantic import BaseModel, TypeAdapter
 
 
 def test_validate_asset_owner() -> None:
@@ -398,3 +400,12 @@ def test_static_partition_mapping_dep() -> None:
     c_dep = next(iter(dep for dep in a_spec.deps if dep.asset_key == AssetKey("c")))
     assert b_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
     assert c_dep.partition_mapping == dg.StaticPartitionMapping({"1": "1", "2": "2"})
+
+
+def test_pydantic_spec() -> None:
+    class SpecHolder(BaseModel):
+        spec: AssetSpec
+        spec_list: Sequence[AssetSpec]
+
+    holder = SpecHolder(spec=AssetSpec(key="foo"), spec_list=[AssetSpec(key="bar")])
+    assert TypeAdapter(SpecHolder).validate_python(holder)

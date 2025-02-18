@@ -149,3 +149,39 @@ def test_class():
     Foo.scream("hi")
     with pytest.raises(CheckError):
         Foo.scream(3)  # type: ignore
+
+
+def test_defaults():
+    @checked
+    def foo(a: int, b: int = 1):
+        return a + b
+
+    assert foo(0) == 1
+
+    @checked
+    def bar(private_list: list = []):
+        private_list.append(1)
+        return private_list
+
+    assert bar() == [1]
+    assert bar() == [1]  # @checked makes it a not shared container instance
+
+    class GlobalThing:
+        def __init__(self):
+            self._things = []
+
+        def bump(self):
+            self._things.append(1)
+
+        def total(self):
+            return sum(self._things)
+
+    _global = GlobalThing()
+
+    @checked
+    def baz(shared_inst: GlobalThing = _global):
+        _global.bump()
+        return _global.total()
+
+    assert baz() == 1
+    assert baz() == 2

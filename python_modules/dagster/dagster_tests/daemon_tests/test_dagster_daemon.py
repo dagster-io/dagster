@@ -33,7 +33,7 @@ def test_scheduler_instance():
         ) as controller:
             daemons = controller.daemons
 
-            assert len(daemons) == 4
+            assert len(daemons) == 5
 
             assert any(isinstance(daemon, SchedulerDaemon) for daemon in daemons)
 
