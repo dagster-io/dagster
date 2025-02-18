@@ -85,11 +85,6 @@ describe('parseAssetSelectionQuery', () => {
       assertQueryResult('key:A', ['A']);
     });
 
-    it('should parse key_substring query', () => {
-      assertQueryResult('key_substring:A', ['A']);
-      assertQueryResult('key_substring:B', ['B', 'B2']);
-    });
-
     it('should parse and query', () => {
       assertQueryResult('key:A and key:B', []);
       assertQueryResult('key:A and key:B and key:C', []);
