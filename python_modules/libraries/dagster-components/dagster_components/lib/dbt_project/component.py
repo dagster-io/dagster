@@ -21,7 +21,6 @@ from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
     AssetSpecTransformSchema,
     OpSpecSchema,
-    ResolutionContext,
 )
 from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
@@ -37,30 +36,29 @@ class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
     transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
 
 
-def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliResource:
-    return DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
-
-
-def resolve_translator(
-    context: ResolutionContext, schema: DbtProjectSchema
-) -> DagsterDbtTranslator:
-    return get_wrapped_translator_class(DagsterDbtTranslator)(
-        resolving_info=TranslatorResolvingInfo(
-            "node", schema.asset_attributes or AssetAttributesSchema(), context
-        )
-    )
-
-
 @registered_component_type(name="dbt_project")
 @dataclass
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
-    dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
+    dbt: Annotated[
+        DbtCliResource,
+        FieldResolver(
+            lambda context, schema: DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
+        ),
+    ]
     op: Optional[OpSpecSchema] = None
-    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = field(
-        default_factory=lambda: DagsterDbtTranslator()
-    )
+    translator: Annotated[
+        DagsterDbtTranslator,
+        FieldResolver(
+            lambda context, schema: get_wrapped_translator_class(DagsterDbtTranslator)(
+                resolving_info=TranslatorResolvingInfo(
+                    "node", schema.asset_attributes or AssetAttributesSchema(), context
+                )
+            )
+        ),
+    ] = field(default_factory=lambda: DagsterDbtTranslator())
+
     transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None
 
     @computed_field
