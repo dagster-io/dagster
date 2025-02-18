@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, Sequence, Set
 from datetime import datetime, timedelta
 from functools import partial
 from typing import Any, Callable, Optional, Union
@@ -475,6 +475,50 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
 # ------------------
 
 
+@record
+class FivetranFilter:
+    """Filters the set of Fivetran objects to fetch.
+
+    Args:
+        connector_names (Optional[Set[str]]): A set of connector names to fetch.
+            All connectors for which the exact name is included in this list will be fetched.
+            If not provided, all connectors will be fetched.
+        connector_ids (Optional[Set[str]]): A set of connector IDs to fetch.
+            All connectors for which the ID is included in this list will be fetched.
+            If not provided, all connectors will be fetched.
+        databases (Optional[Set[str]]): A set of databases to fetch.
+            All connectors for which the destination database is included in this list will be fetched.
+            If not provided, all connectors will be fetched.
+        services (Optional[Set[str]]): A set of services to fetch.
+            All connectors for which the destination service is included in this list will be fetched.
+            If not provided, all connectors will be fetched.
+
+    """
+
+    connector_names: Optional[Set[str]] = None
+    connector_ids: Optional[Set[str]] = None
+    databases: Optional[Set[str]] = None
+    services: Optional[Set[str]] = None
+
+    def has_connector(self, connector: FivetranConnector) -> bool:
+        return self._has_connector_name(connector.name) and self._has_connector_id(connector.id)
+
+    def has_destination(self, destination: FivetranDestination) -> bool:
+        return self._has_database(destination.database) and self._has_service(destination.service)
+
+    def _has_connector_name(self, connector_name: str) -> bool:
+        return True if not self.connector_names or connector_name in self.connector_names else False
+
+    def _has_connector_id(self, connector_id: str) -> bool:
+        return True if not self.connector_ids or connector_id in self.connector_ids else False
+
+    def _has_database(self, database: Optional[str]) -> bool:
+        return True if not self.databases or database in self.databases else False
+
+    def _has_service(self, service: str) -> bool:
+        return True if not self.services or service in self.services else False
+
+
 @beta
 class FivetranClient:
     """This class exposes methods on top of the Fivetran REST API."""
@@ -874,12 +918,16 @@ class FivetranWorkspace(ConfigurableResource):
 
     def fetch_fivetran_workspace_data(
         self,
+        fivetran_filter: Optional[FivetranFilter] = None,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
+        fivetran_filter (Optional[FivetranFilter]): Filters the set of Fivetran objects to fetch.
 
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
         """
+        fivetran_filter = fivetran_filter or FivetranFilter()
+
         connectors_by_id = {}
         destinations_by_id = {}
         schema_configs_by_connector_id = {}
@@ -894,6 +942,9 @@ class FivetranWorkspace(ConfigurableResource):
             destination = FivetranDestination.from_destination_details(
                 destination_details=destination_details
             )
+
+            if not fivetran_filter.has_destination(destination):
+                continue
             destinations_by_id[destination.id] = destination
 
             connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
@@ -905,6 +956,8 @@ class FivetranWorkspace(ConfigurableResource):
                 if not connector.is_connected:
                     continue
 
+                if not fivetran_filter.has_connector(connector):
+                    continue
                 connectors_by_id[connector.id] = connector
 
                 schema_config_details = client.get_schema_config_for_connector(
@@ -926,6 +979,7 @@ class FivetranWorkspace(ConfigurableResource):
     def load_asset_specs(
         self,
         dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+        fivetran_filter: Optional[FivetranFilter] = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -933,6 +987,7 @@ class FivetranWorkspace(ConfigurableResource):
             dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
                 to convert Fivetran content into :py:class:`dagster.AssetSpec`.
                 Defaults to :py:class:`DagsterFivetranTranslator`.
+            fivetran_filter (Optional[FivetranFilter]): Filters the set of Fivetran objects to fetch.
 
         Returns:
             List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -957,6 +1012,7 @@ class FivetranWorkspace(ConfigurableResource):
         return load_fivetran_asset_specs(
             workspace=self,
             dagster_fivetran_translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
+            fivetran_filter=fivetran_filter,
         )
 
     def _generate_materialization(
@@ -1076,6 +1132,7 @@ class FivetranWorkspace(ConfigurableResource):
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+    fivetran_filter: Optional[FivetranFilter] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -1084,6 +1141,7 @@ def load_fivetran_asset_specs(
         dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
+        fivetran_filter (Optional[FivetranFilter]): Filters the set of Fivetran objects to fetch.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -1117,6 +1175,7 @@ def load_fivetran_asset_specs(
                 FivetranWorkspaceDefsLoader(
                     workspace=initialized_workspace,
                     translator=dagster_fivetran_translator,
+                    fivetran_filter=fivetran_filter,
                 )
                 .build_defs()
                 .assets,
@@ -1129,13 +1188,14 @@ def load_fivetran_asset_specs(
 class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: FivetranWorkspace
     translator: DagsterFivetranTranslator
+    fivetran_filter: Optional[FivetranFilter] = None
 
     @property
     def defs_key(self) -> str:
         return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.account_id}"
 
     def fetch_state(self) -> FivetranWorkspaceData:
-        return self.workspace.fetch_fivetran_workspace_data()
+        return self.workspace.fetch_fivetran_workspace_data(fivetran_filter=self.fivetran_filter)
 
     def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
         all_asset_specs = [
