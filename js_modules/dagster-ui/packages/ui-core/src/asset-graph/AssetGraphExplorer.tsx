@@ -56,7 +56,7 @@ import {featureEnabled} from '../app/Flags';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
-import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM, SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
@@ -257,7 +257,7 @@ const AssetGraphExplorerWithData = ({
     useMemo(() => ({direction}), [direction]),
   );
 
-  const viewportEl = React.useRef<SVGViewport>();
+  const viewportEl = React.useRef<SVGViewportRef>();
 
   const selectedTokens = explorerPath.opNames[explorerPath.opNames.length - 1]!.split(',');
   const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
@@ -352,7 +352,7 @@ const AssetGraphExplorerWithData = ({
         viewportEl.current.zoomToSVGBox(
           groupBounds,
           animate,
-          Math.min(viewportEl.current.state.scale, targetScale * 0.9),
+          Math.min(viewportEl.current.getScale(), targetScale * 0.9),
         );
       }
     },
@@ -498,7 +498,6 @@ const AssetGraphExplorerWithData = ({
         viewportEl.current = r || undefined;
       }}
       defaultZoom="zoom-to-fit-width"
-      interactor={SVGViewport.Interactors.PanAndZoom}
       graphWidth={layout.width}
       graphHeight={layout.height}
       graphHasNoMinimumZoom={false}

@@ -33,6 +33,13 @@ export const AUTOMATION_ASSET_SELECTION_FRAGMENT = gql`
       automationCondition {
         __typename
       }
+      repository {
+        id
+        location {
+          id
+          name
+        }
+      }
     }
   }
 

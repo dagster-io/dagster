@@ -14,7 +14,7 @@ import * as React from 'react';
  */
 export function useSetStateUpdateCallback<T>(
   currentState: T,
-  updateCallback: (next: T) => void,
+  updateCallback: (current: T) => void,
 ): React.Dispatch<React.SetStateAction<T>> {
   const stateRef = React.useRef<T>(currentState);
   stateRef.current = currentState;
@@ -32,4 +32,32 @@ export function useSetStateUpdateCallback<T>(
   }, []);
 
   return update;
+}
+
+export function usePartialSetStateUpdateCallback<T>(
+  currentState: T,
+  updateCallback: (current: T) => void,
+) {
+  const stateRef = React.useRef<T>(currentState);
+  stateRef.current = currentState;
+
+  const updateCallbackRef = React.useRef(updateCallback);
+  updateCallbackRef.current = updateCallback;
+
+  const update = React.useCallback((next: ((current: T) => Partial<T>) | Partial<T>) => {
+    if (next instanceof Function) {
+      stateRef.current = {
+        ...stateRef.current,
+        ...next(stateRef.current),
+      };
+    } else {
+      stateRef.current = {
+        ...stateRef.current,
+        ...next,
+      };
+    }
+    updateCallbackRef.current(stateRef.current);
+  }, []);
+
+  return [stateRef, update] as const;
 }

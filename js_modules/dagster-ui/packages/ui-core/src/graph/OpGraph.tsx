@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import {OpEdges} from './OpEdges';
 import {OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT, OpNode} from './OpNode';
 import {ParentOpNode} from './ParentOpNode';
-import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM, SVGViewport, SVGViewportInteractor} from './SVGViewport';
+import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM, SVGViewport, SVGViewportRef} from './SVGViewport';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {
   Edge,
@@ -31,7 +31,6 @@ interface OpGraphProps {
   selectedHandleID?: string;
   selectedOp?: OpGraphOpFragment;
   highlightedOps: Array<OpGraphOpFragment>;
-  interactor?: SVGViewportInteractor;
   onClickOp?: (arg: OpNameOrPath) => void;
   onDoubleClickOp?: (arg: OpNameOrPath) => void;
   onEnterSubgraph?: (arg: OpNameOrPath) => void;
@@ -136,7 +135,7 @@ OpGraphContents.displayName = 'OpGraphContents';
 const EmptyHighlightedArray: never[] = [];
 
 export class OpGraph extends React.Component<OpGraphProps> {
-  viewportEl: React.RefObject<SVGViewport> = React.createRef();
+  viewportEl: React.RefObject<SVGViewportRef> = React.createRef();
 
   argToOpLayout = (arg: OpNameOrPath) => {
     const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1]!;
@@ -183,7 +182,7 @@ export class OpGraph extends React.Component<OpGraphProps> {
   };
 
   render() {
-    const {layout, interactor, jobName, onClickBackground, onDoubleClickOp} = this.props;
+    const {layout, jobName, onClickBackground, onDoubleClickOp} = this.props;
 
     return (
       <SVGViewport
@@ -191,7 +190,6 @@ export class OpGraph extends React.Component<OpGraphProps> {
         key={jobName}
         maxZoom={DEFAULT_MAX_ZOOM}
         defaultZoom="zoom-to-fit"
-        interactor={interactor || SVGViewport.Interactors.PanAndZoom}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onClick={onClickBackground}
