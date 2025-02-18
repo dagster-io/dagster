@@ -65,5 +65,5 @@ Our project root now only constructs Definitions from components:
 
 ## Next steps
 
-- [Add a new component to your code location](/guides/labs/components/building-pipelines-with-components/adding-components-yaml)
+- [Add a new component to your code location](/guides/labs/components/building-pipelines-with-components/adding-components)
 - [Create a new component type](/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type)

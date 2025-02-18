@@ -82,5 +82,5 @@ Now, your code location is ready to use components! `dg` can be used to scaffold
 ## Next steps
 
 - [Migrate existing definitions to components](migrating-definitions)
-- [Add a new component to your code location](/guides/labs/components/building-pipelines-with-components/adding-components-yaml)
+- [Add a new component to your code location](/guides/labs/components/building-pipelines-with-components/adding-components)
 - [Create a new component type](/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type)

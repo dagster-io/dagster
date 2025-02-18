@@ -5,7 +5,7 @@ sidebar_position: 10
 
 :::info
 
-This feature is still in development and might change in patch releases. It’s not production-ready, and the documentation may also evolve. Stay tuned for updates.
+This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
 
 :::
 
@@ -21,8 +21,6 @@ Dagster Components is a new way to structure your Dagster projects. It aims to p
 - A Dagster-provided set of component types that provide a simplified user experience for common integrations.
 
 ## Installation
-
-TODO - need steps for if not on a Mac / using `brew`
 
 To use Components, you must install the `dg` command line tool, which lives in the published Python package `dagster-dg`. `dg` is designed to be globally installed and has no dependency on `dagster` itself. `dg` allows you to quickly scaffold Dagster code locations and populate them with Components. 
 

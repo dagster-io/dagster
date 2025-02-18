@@ -251,4 +251,4 @@ params:
 
 ## Next steps
 
-To continue your journey with Components, you can [add more Components to your project](/guides/labs/components/building-pipelines-with-components/adding-components-yaml) or learn how to [manage multiple code locations with Components](/guides/labs/components/managing-multiple-code-locations).
+To continue your journey with Components, you can [add more Components to your project](/guides/labs/components/building-pipelines-with-components/adding-components) or learn how to [manage multiple code locations with Components](/guides/labs/components/managing-multiple-code-locations).
