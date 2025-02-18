@@ -3266,6 +3266,11 @@ def test_asset_backfill_not_complete_until_retries_complete(
     assert backfill.status == BulkActionStatus.REQUESTED
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
     assert instance.get_runs_count() == 3
     wait_for_all_runs_to_start(instance, timeout=30)
     assert instance.get_runs_count() == 3
@@ -3296,8 +3301,9 @@ def test_asset_backfill_not_complete_until_retries_complete(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.asset_backfill_data
-    assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
+
     assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.asset_backfill_data.get_targeted_partitions_without_materialization_status().is_empty
 
     # manually mark the run as successful to show that the backfill will be marked as complete
     # since there are no in progress runs
@@ -3373,7 +3379,7 @@ def test_asset_backfill_not_complete_if_automatic_retry_could_happen(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.asset_backfill_data
-    assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
+    assert backfill.asset_backfill_data.get_targeted_partitions_without_materialization_status().is_empty
     assert backfill.status == BulkActionStatus.REQUESTED
 
     # automatic retries wont get automatically run in test environment, so we run the function manually
@@ -3443,7 +3449,7 @@ def test_asset_backfill_fails_if_retries_fail(
     backfill = instance.get_backfill(backfill_id)
     assert backfill
     assert backfill.asset_backfill_data
-    assert backfill.asset_backfill_data.all_targeted_partitions_have_materialization_status()
+    assert backfill.asset_backfill_data.get_targeted_partitions_without_materialization_status().is_empty
     assert backfill.status == BulkActionStatus.REQUESTED
 
     runs = instance.get_run_records()

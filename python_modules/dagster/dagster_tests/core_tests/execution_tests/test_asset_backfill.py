@@ -53,7 +53,6 @@ from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     AssetBackfillIterationResult,
     AssetBackfillStatus,
-    backfill_is_complete,
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
@@ -676,12 +675,7 @@ def run_backfill_to_completion(
         fail_and_downstream_asset_graph_subset.iterate_asset_partitions()
     )
 
-    while not backfill_is_complete(
-        backfill_id=backfill_id,
-        backfill_data=backfill_data,
-        instance=instance,
-        logger=logging.getLogger("fake_logger"),
-    ):
+    while not backfill_data.get_targeted_partitions_without_materialization_status().is_empty:
         iteration_count += 1
 
         result1 = execute_asset_backfill_iteration_consume_generator(
