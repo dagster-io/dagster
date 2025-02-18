@@ -27,23 +27,14 @@ For formatting guidelines, see the [CONTRIBUTING](CONTRIBUTING.md) guide.
 
 ## Installation
 
-The site uses `node` and [yarn](https://yarnpkg.com/) for package management. We recommend using `nvm` to install the long-term-support version of Node.
+The site uses [yarn](https://yarnpkg.com/) for package management. We recommend using `nvm` to install the long-term-support version of Node.
 
+```sh
+brew install nvm yarn vale
 ```
-brew install nvm yarn
+
+```sh
 nvm install --lts
-```
-
-```
-yarn install
-```
-
-The docs site also uses [Vale](https://vale.sh/) to check for issues in the documentation.
-
-Install Vale with:
-
-```bash
-brew install vale
 ```
 
 ---
@@ -52,13 +43,38 @@ brew install vale
 
 To start the local development server:
 
+```sh
+yarn install
+```
+
 ```bash
 yarn start
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server. Access the website at [http://localhost:3050](http://localhost:3050).
+This command starts a local development server and opens [http://localhost:3050](http://localhost:3050) in a browser window.
+
+### Build
+
+To build the site for production:
+
+```bash
+# build and copy api markdown files
+yarn build-api-docs
+
+# build and copy the sphinx objects.inv
+yarn build-sphinx-object-inv
+
+# build the static site
+yarn build
+```
+
+This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.
+
+**NOTE:** the `make sphinx_objects_inv` command needs to be run before creating a new release. We plan to automate this procedure in the future.
 
 ### Linters
+
+The docs site also uses [Vale](https://vale.sh/) to check for issues in the documentation.
 
 To check the documentation for different issues, use the following:
 
@@ -72,28 +88,6 @@ yarn vale
 yarn vale /path/to/file      ## check individual file
 yarn vale --no-wrap          ## remove wrapping from output
 ```
-
----
-
-## Build
-
-To build the site for production:
-
-```bash
-# build and copy API markdown files
-make mdx
-make mdx_copy
-
-# build and copy the Sphinx objects.inv
-make sphinx_objects_inv
-
-# build the static site
-yarn build
-```
-
-This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.
-
-**NOTE:** the `make sphinx_objects_inv` command needs to be run before creating a new release. We plan to automate this procedure in the future.
 
 ### Versioning
 
@@ -113,15 +107,7 @@ To validate the dropdown menu, you can run `VERCEL_ENV=preview yarn start`.
 
 This site is built and deployed using Vercel.
 
-### API documentation
-
-API documentation is built in Vercel by overriding the _Build Command_ to the following:
-
-```sh
-yarn sync-api-docs && yarn build
-```
-
-This runs the `scripts/vercel-sync-api-docs.sh` script which builds the MDX files using the custom `sphinx-mdx-builder`, and copies the resulting MDX files to `docs/api/python-api`.
+The _build_ step in Vercel is overridden to build API documentation using the `scripts/vercel-sync-api-docs.sh` script; this should _not_ be used locally.
 
 ---
 
