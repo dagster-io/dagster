@@ -51,6 +51,7 @@ export const ASSET_TABLE_DEFINITION_FRAGMENT = gql`
         name
       }
     }
+    staleStatus
   }
 `;
 
