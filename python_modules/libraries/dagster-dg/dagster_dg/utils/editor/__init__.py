@@ -2,17 +2,18 @@ import json
 import os
 import shutil
 import subprocess
-import sys
 import zipfile
 from pathlib import Path
 
 import click
 
+from dagster_dg.utils import is_macos, is_windows
+
 
 def get_default_extension_dir() -> Path:
-    if sys.platform == "win32":
+    if is_windows():
         return Path.home() / "AppData" / "dg" / "vscode"
-    elif sys.platform == "darwin":
+    elif is_macos():
         return Path.home() / "Library" / "Application Support" / "dg" / "vscode"
     else:
         return Path.home() / ".local" / "share" / "dg" / "vscode"

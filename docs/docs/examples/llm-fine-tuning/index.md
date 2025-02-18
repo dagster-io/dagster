@@ -36,7 +36,7 @@ First, set up a new Dagster project.
 1. Clone the [Dagster repo](https://github.com/dagster-io/dagster) and navigate to the project:
 
    ```bash
-   cd examples/docs_projects/dagster-llm-fine-tune
+   cd examples/docs_projects/project-llm-fine-tune
    ```
 
 2. Create and activate a virtual environment:

@@ -9,7 +9,7 @@ import {
 } from '../instance/types/InstanceConcurrencyKeyInfo.types';
 
 export const PoolTag = ({pool}: {pool: string}) => {
-  const path = `/deployment/concurrency/${pool}`;
+  const path = `/deployment/concurrency/${encodeURIComponent(pool)}`;
   const {data} = useQuery<ConcurrencyKeyDetailsQuery, ConcurrencyKeyDetailsQueryVariables>(
     CONCURRENCY_KEY_DETAILS_QUERY,
     {

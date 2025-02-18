@@ -3,7 +3,6 @@ import {useState} from 'react';
 
 import {OpNameOrPath} from '../../ops/OpNameOrPath';
 import {OpGraph} from '../OpGraph';
-import {SVGViewport} from '../SVGViewport';
 import {
   buildBasicDAG,
   buildCompositeCollapsedIODAG,
@@ -28,7 +27,6 @@ export const Basic = () => {
       jobName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops, {})}
-      interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
       onClickOp={(s) => setsetFocusOps(['name' in s ? s.name : s.path.join('.')])}
@@ -45,7 +43,6 @@ export const FanOut = () => {
       jobName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops, {})}
-      interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
       onClickOp={(s) => setsetFocusOps(['name' in s ? s.name : s.path.join('.')])}
@@ -61,7 +58,6 @@ export const Tagged = () => {
       jobName="Test Pipeline"
       ops={ops}
       layout={getFullOpLayout(ops, {})}
-      interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
       onClickOp={(s) => setsetFocusOps(['name' in s ? s.name : s.path.join('.')])}
@@ -84,7 +80,6 @@ export const Composite = () => {
       parentOp={parentOp}
       parentHandleID={parentOpName}
       layout={parentOp ? getFullOpLayout(childOps, {parentOp}) : getFullOpLayout(ops, {})}
-      interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
       onClickOp={(nameOrPath) => setFocusOps([toName(nameOrPath)])}
@@ -116,7 +111,6 @@ export const CompositeCollapsedIO = () => {
       parentOp={parentOp}
       parentHandleID={parentOpName}
       layout={parentOp ? getFullOpLayout(childOps, {parentOp}) : getFullOpLayout(ops, {})}
-      interactor={SVGViewport.Interactors.PanAndZoom}
       focusOps={ops.filter((s) => focusOps.includes(s.name))}
       highlightedOps={[]}
       onClickOp={(nameOrPath) => setFocusOps([toName(nameOrPath)])}

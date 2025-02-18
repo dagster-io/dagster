@@ -1339,7 +1339,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1, run_id_2])
 
-    @pytest.mark.parametrize("concurrency_config", [{}])
+    @pytest.mark.parametrize("concurrency_config", [{}, {"pools": {"granularity": "op"}}])
     @pytest.mark.parametrize("run_coordinator_config", [{}])
     def test_concurrency_run_default(
         self,
@@ -1363,16 +1363,50 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
 
-        # submit a run that also occupies the foo slot, bar slot
+        # the second run is not launched
+        self.submit_run(
+            instance, remote_job, workspace, run_id=run_id_2, asset_selection=set([foo_key])
+        )
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
+
+        # submit a run that also occupies the foo slot, bar slot and is launched (the bar key is unconstrained)
         self.submit_run(
             instance,
             remote_job,
             workspace,
-            run_id=run_id_2,
+            run_id=run_id_3,
             asset_selection=set([foo_key, bar_key]),
         )
+        list(daemon.run_iteration(concurrency_limited_workspace_context))
+        assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1, run_id_3])
 
-        # the second run is not launched
+    @pytest.mark.parametrize(
+        "concurrency_config",
+        [
+            {"pools": {"granularity": "op"}},
+            {"pools": {"granularity": "run"}},
+            {},
+        ],
+    )
+    @pytest.mark.parametrize("run_coordinator_config", [{}])
+    def test_concurrency_run_unconfigured(
+        self,
+        concurrency_limited_workspace_context,
+        daemon,
+        instance,
+    ):
+        run_id_1 = make_new_run_id()
+        workspace = concurrency_limited_workspace_context.create_request_context()
+
+        # concurrency_limited_asset_job
+        remote_job = self.get_concurrency_job(workspace)
+        foo_key = AssetKey(["prefix", "foo_limited_asset"])
+
+        # there are no configured slots, the run should be launched
+        self.submit_run(
+            instance, remote_job, workspace, run_id=run_id_1, asset_selection=set([foo_key])
+        )
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
 

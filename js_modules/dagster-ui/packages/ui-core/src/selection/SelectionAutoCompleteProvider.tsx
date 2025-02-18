@@ -274,7 +274,7 @@ export const createProvider = <
     options?: {includeParenthesis?: boolean};
   }) {
     const functionName = func[0]!.toUpperCase() + func.slice(1);
-    const displayText = options?.includeParenthesis ? `${functionName}()` : functionName;
+    const rightLabel = options?.includeParenthesis ? `${func}()` : func;
     let icon: IconName;
     switch (func) {
       case 'roots':
@@ -288,7 +288,7 @@ export const createProvider = <
     }
     return {
       text,
-      jsx: <SuggestionJSXBase label={functionName} icon={icon} rightLabel={displayText} />,
+      jsx: <SuggestionJSXBase label={functionName} icon={icon} rightLabel={rightLabel} />,
     };
   }
 
@@ -300,7 +300,7 @@ export const createProvider = <
     textCallback?: (text: string) => string;
   }) {
     const attribute = primaryAttributeKey as string;
-    const text = `${attribute}_substring:"${query}"`;
+    const text = `key:"*${query}*"`;
     let displayAttribute = attribute.replace(/_/g, ' ');
     displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
     const displayText = `${displayAttribute} contains "${query}"`;
@@ -366,10 +366,7 @@ export const createProvider = <
         );
     },
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
-      let values = attributesMap[attribute as keyof typeof attributesMap];
-      if (attribute === `${primaryAttributeKey as string}_substring`) {
-        values = attributesMap[primaryAttributeKey];
-      }
+      const values = attributesMap[attribute as keyof typeof attributesMap];
       return (
         values
           ?.filter((value) => doesValueIncludeQuery({value, query}))

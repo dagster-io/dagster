@@ -91,9 +91,13 @@ class GlobalOpConcurrencyLimitsCounter:
         # initialize all the pool limits to the default if necessary
         self._initialize_pool_limits(instance, queued_pool_names)
 
+        # fetch all the configured pool keys
+        all_configured_pool_names = instance.event_log_storage.get_concurrency_keys()
+        configured_queued_pool_names = all_configured_pool_names.intersection(queued_pool_names)
+
         # fetch all the concurrency info for all of the runs at once, so we can claim in the correct
         # priority order
-        self._fetch_concurrency_info(instance, queued_pool_names)
+        self._fetch_concurrency_info(instance, configured_queued_pool_names)
 
         # fetch all the outstanding pools for in-progress runs
         self._process_in_progress_runs(in_progress_run_records)

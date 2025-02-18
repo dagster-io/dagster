@@ -223,6 +223,7 @@ T = TypeVar("T")
 
 @dataclass
 class ComponentLoadContext:
+    module_name: str
     resources: Mapping[str, object]
     registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
@@ -236,6 +237,7 @@ class ComponentLoadContext:
         decl_node: Optional[ComponentDeclNode] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
+            module_name="test",
             resources=resources or {},
             registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
