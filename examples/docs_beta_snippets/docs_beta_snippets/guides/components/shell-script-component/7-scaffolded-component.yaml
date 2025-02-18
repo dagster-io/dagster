@@ -1,0 +1,7 @@
+type: shell_command@my_component_library
+
+params:
+  script_path: script.sh
+  asset_specs:
+  - name: my_asset
+    description: My asset
