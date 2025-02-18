@@ -921,7 +921,9 @@ class FivetranWorkspace(ConfigurableResource):
         fivetran_filter: Optional[FivetranFilter] = None,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
-        fivetran_filter (Optional[FivetranFilter]): Filters the set of Fivetran objects to fetch.
+
+        Args:
+            fivetran_filter (Optional[FivetranFilter]): Filters the set of Fivetran objects to fetch.
 
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
