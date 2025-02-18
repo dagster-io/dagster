@@ -15,7 +15,7 @@ If you want to use Python to add Components to your project instead, see "[Addin
 
 :::note Prerequisites
 
-Before adding a Component with Python, you must either [create a project with Components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing code location to Components](/guides/labs/components/migrating-to-components/migrating-code-locations).
+Before adding a Component with Python, you must either [create a project with Components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components) or [migrate an existing code location to Components](/guides/labs/components/migrating-to-components/migrating-code-location).
 
 :::
 

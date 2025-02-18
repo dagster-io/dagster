@@ -4,7 +4,7 @@ sidebar_position: 100
 ---
 
 :::note
-This guide covers migrating existing Python definitions to components. This guide presupposes a components-enabled project. See the [getting started guide](./) or [Making an existing code location components-compatible](./existing-code-location) guide for more information.
+This guide covers migrating existing Python definitions to components. This guide presupposes a components-enabled project. See the [getting started guide](/guides/labs/components/) or [Making an existing code location components-compatible](/guides/labs/components/migrating-to-components/migrating-code-location) guide for more information.
 :::
 
 When adding components to an existing Dagster code location, it is often useful to restructure your definitions into component folders, making it easier to eventually migrate them entirely to using components.
@@ -65,5 +65,5 @@ Our project root now only constructs Definitions from components:
 
 ## Next steps
 
-- [Add a new component to your code location](./using-a-component)
-- [Create a new component type](./creating-a-component)
+- [Add a new component to your code location](/guides/labs/components/building-pipelines-with-components/adding-components-yaml)
+- [Create a new component type](/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type)
