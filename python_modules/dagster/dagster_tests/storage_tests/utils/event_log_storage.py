@@ -5309,6 +5309,7 @@ class TestEventLogStorage:
         if not self.can_set_concurrency_defaults():
             pytest.skip("storage does not support setting global op concurrency defaults")
 
+        # this must return False when there is no default value, for back-compat reasons
         assert not storage.initialize_concurrency_limit_to_default("foo")
 
         self.set_default_op_concurrency(instance, storage, 1)
@@ -5333,6 +5334,7 @@ class TestEventLogStorage:
         if not self.can_set_concurrency_defaults():
             pytest.skip("storage does not support setting global op concurrency defaults")
 
+        # this must return False when there is no default value, for back-compat reasons
         assert not storage.initialize_concurrency_limit_to_default("foo")
 
         self.set_default_op_concurrency(instance, storage, 1)
@@ -5353,7 +5355,9 @@ class TestEventLogStorage:
         assert instance.global_op_concurrency_default_limit is None
         assert storage.get_pool_config().default_pool_limit is None
 
+        # this must return False when there is no default value, for back-compat reasons
         assert not storage.initialize_concurrency_limit_to_default("foo")
+
         assert storage.get_concurrency_info("foo").slot_count == 0
 
     def test_asset_checks(
