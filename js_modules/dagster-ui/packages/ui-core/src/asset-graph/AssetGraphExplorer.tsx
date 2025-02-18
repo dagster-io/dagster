@@ -343,7 +343,7 @@ const AssetGraphExplorerWithData = ({
   );
 
   const zoomToGroup = React.useCallback(
-    (groupId: string, animate = true) => {
+    (groupId: string, animate = true, adjustScale = true) => {
       if (!viewportEl.current) {
         return;
       }
@@ -353,10 +353,12 @@ const AssetGraphExplorerWithData = ({
           groupBounds.width,
           groupBounds.height,
         );
+        const currentScale = viewportEl.current.getScale();
         viewportEl.current.zoomToSVGBox(
           groupBounds,
           animate,
-          Math.min(viewportEl.current.getScale(), targetScale * 0.9),
+          adjustScale ? Math.min(currentScale, targetScale * 0.9) : currentScale,
+          true,
         );
       }
     },
@@ -384,7 +386,7 @@ const AssetGraphExplorerWithData = ({
       focusGroupIdAfterLayoutRef.current &&
       layout.groups[focusGroupIdAfterLayoutRef.current]?.expanded
     ) {
-      zoomToGroup(focusGroupIdAfterLayoutRef.current, false);
+      zoomToGroup(focusGroupIdAfterLayoutRef.current, false, false);
       focusGroupIdAfterLayoutRef.current = '';
     } else if (lastSelectedNode) {
       const layoutNode = layout.nodes[lastSelectedNode.id];
