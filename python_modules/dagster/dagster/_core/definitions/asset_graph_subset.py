@@ -61,6 +61,10 @@ class AssetGraphSubset(NamedTuple):
             len(subset) for subset in self.partitions_subsets_by_asset_key.values()
         )
 
+    @property
+    def is_empty(self) -> bool:
+        return len(self.asset_keys) == 0
+
     def get_asset_subset(
         self, asset_key: AssetKey, asset_graph: BaseAssetGraph
     ) -> SerializableEntitySubset[AssetKey]:
@@ -271,7 +275,7 @@ class AssetGraphSubset(NamedTuple):
         )
 
     @classmethod
-    def empty(cls) -> "AssetGraphSubset":
+    def create_empty_subset(cls) -> "AssetGraphSubset":
         return AssetGraphSubset({}, set())
 
     @classmethod
