@@ -41,6 +41,11 @@ export type ScheduleAssetSelectionQuery = {
                     __typename: 'AssetNode';
                     id: string;
                     automationCondition: {__typename: 'AutomationCondition'} | null;
+                    repository: {
+                      __typename: 'Repository';
+                      id: string;
+                      location: {__typename: 'RepositoryLocation'; id: string; name: string};
+                    };
                   } | null;
                 }>;
               }
@@ -59,4 +64,4 @@ export type ScheduleAssetSelectionQuery = {
     | {__typename: 'ScheduleNotFoundError'};
 };
 
-export const ScheduleAssetSelectionQueryVersion = '33af4b2d37d581ed3da0226f0877ad73a1ad46ab9c8938a19509fc4f851c78bb';
+export const ScheduleAssetSelectionQueryVersion = '57798e78b7c283cdcad94271c19e7ee0dfb15e27dd9dab56fe43820297d091ac';

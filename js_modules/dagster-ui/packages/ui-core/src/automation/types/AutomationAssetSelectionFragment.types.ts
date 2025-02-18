@@ -21,6 +21,11 @@ export type AutomationAssetSelectionFragment = {
             __typename: 'AssetNode';
             id: string;
             automationCondition: {__typename: 'AutomationCondition'} | null;
+            repository: {
+              __typename: 'Repository';
+              id: string;
+              location: {__typename: 'RepositoryLocation'; id: string; name: string};
+            };
           } | null;
         }>;
       }
@@ -44,5 +49,10 @@ export type AssetSelectionNodeFragment = {
     __typename: 'AssetNode';
     id: string;
     automationCondition: {__typename: 'AutomationCondition'} | null;
+    repository: {
+      __typename: 'Repository';
+      id: string;
+      location: {__typename: 'RepositoryLocation'; id: string; name: string};
+    };
   } | null;
 };

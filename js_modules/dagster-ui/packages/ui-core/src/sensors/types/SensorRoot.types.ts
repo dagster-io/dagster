@@ -168,6 +168,11 @@ export type SensorAssetSelectionQuery = {
                     __typename: 'AssetNode';
                     id: string;
                     automationCondition: {__typename: 'AutomationCondition'} | null;
+                    repository: {
+                      __typename: 'Repository';
+                      id: string;
+                      location: {__typename: 'RepositoryLocation'; id: string; name: string};
+                    };
                   } | null;
                 }>;
               }
@@ -189,4 +194,4 @@ export type SensorAssetSelectionQuery = {
 
 export const SensorRootQueryVersion = 'fd32c8557a75c273133137c289091357635f3be0af17b9a57b052087f8e9d023';
 
-export const SensorAssetSelectionQueryVersion = '2fb6c2c612ee7ab4a7ad1f59cfd7677a6a3d14319200f8c49b43850de8b3b0f3';
+export const SensorAssetSelectionQueryVersion = '77cdea4505d683b3257ff9c1a7054c8e76d380162c27ed927e12702f65bc5854';
