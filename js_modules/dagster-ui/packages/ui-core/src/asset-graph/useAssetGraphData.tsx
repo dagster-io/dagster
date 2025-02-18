@@ -11,7 +11,6 @@ import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from 
 import {gql} from '../apollo-client';
 import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
-import {throttleLatest} from './throttleLatest';
 import {featureEnabled} from '../app/Flags';
 import {
   AssetGraphQuery,
@@ -137,16 +136,13 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   });
 
   const computeGraphData = useMemo(() => {
-    return throttleLatest(
-      indexedDBAsyncMemoize<
-        Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
-        GraphDataState,
-        typeof computeGraphDataWrapper
-      >(computeGraphDataWrapper, (props) => {
-        return JSON.stringify(props);
-      }),
-      2000,
-    );
+    return indexedDBAsyncMemoize<
+      Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+      GraphDataState,
+      typeof computeGraphDataWrapper
+    >(computeGraphDataWrapper, (props) => {
+      return JSON.stringify(props);
+    });
   }, []);
 
   const nodes = fetchResult.data?.assetNodes;
@@ -398,15 +394,13 @@ async function computeGraphDataWrapper(
   return computeGraphDataImpl(props);
 }
 
-const buildGraphData = throttleLatest(
-  indexedDBAsyncMemoize<BuildGraphDataMessageType, GraphData, typeof buildGraphDataWrapper>(
-    buildGraphDataWrapper,
-    (props) => {
-      return JSON.stringify(props);
-    },
-  ),
-  2000,
-);
+const buildGraphData = indexedDBAsyncMemoize<
+  BuildGraphDataMessageType,
+  GraphData,
+  typeof buildGraphDataWrapper
+>(buildGraphDataWrapper, (props) => {
+  return JSON.stringify(props);
+});
 
 async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
