@@ -19,6 +19,13 @@ TEST_API_KEY = "test_api_key"
 TEST_API_SECRET = "test_api_secret"
 TEST_ANOTHER_ACCOUNT_ID = "test_another_account_id"
 
+TEST_CONNECTOR_NAME = "test_connector_name"
+TEST_CONNECTOR_ID = "test_connector_id"
+TEST_DESTINATION_DATABASE = "test_destination_database"
+TEST_DESTINATION_SERVICE = "test_destination_service"
+TEST_DESTINATION_ID = "my_group_destination_id"
+TEST_GROUP_ID = "my_group_destination_id"
+
 TEST_SCHEMA_NAME = "schema_name_in_destination_1"
 TEST_TABLE_NAME = "table_name_in_destination_1"
 TEST_SECOND_SCHEMA_NAME = "schema_name_in_destination_2"
@@ -33,7 +40,7 @@ SAMPLE_GROUPS = {
     "data": {
         "items": [
             {
-                "id": "my_group_destination_id",
+                "id": TEST_GROUP_ID,
                 "name": "Group_Name",
                 "created_at": "2024-01-01T00:00:00Z",
             }
@@ -50,9 +57,9 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
     "data": {
         "items": [
             {
-                "id": "connector_id",
-                "service": "adls",
-                "schema": "gsheets.table",
+                "id": TEST_CONNECTOR_ID,
+                "service": TEST_DESTINATION_SERVICE,
+                "schema": TEST_CONNECTOR_NAME,
                 "paused": False,
                 "status": {
                     "tasks": [
@@ -80,7 +87,7 @@ SAMPLE_CONNECTORS_FOR_GROUP = {
                 "daily_sync_time": "14:00",
                 "succeeded_at": "2024-12-01T15:45:29.013729Z",
                 "sync_frequency": 360,
-                "group_id": "my_group_destination_id",
+                "group_id": TEST_GROUP_ID,
                 "connected_by": "user_id",
                 "setup_tests": [
                     {
@@ -123,13 +130,13 @@ SAMPLE_DESTINATION_DETAILS = {
     "code": "Success",
     "message": "Operation performed.",
     "data": {
-        "id": "my_group_destination_id",
-        "service": "adls",
+        "id": TEST_DESTINATION_ID,
+        "service": TEST_DESTINATION_SERVICE,
         "region": "GCP_US_EAST4",
         "networking_method": "Directly",
         "setup_status": "CONNECTED",
         "daylight_saving_time_enabled": True,
-        "group_id": "my_group_destination_id",
+        "group_id": TEST_GROUP_ID,
         "time_zone_offset": "+3",
         "setup_tests": [
             {
@@ -143,6 +150,7 @@ SAMPLE_DESTINATION_DETAILS = {
         "private_link_id": "private_link_id",
         "hybrid_deployment_agent_id": "hybrid_deployment_agent_id",
         "config": {
+            "database": TEST_DESTINATION_DATABASE,
             "tenant_id": "service_principal_tenant_id",
             "auth_type": "PERSONAL_ACCESS_TOKEN | OAUTH2",
             "storage_account_name": "adls_storage_account_name",
@@ -174,7 +182,7 @@ def get_sample_connection_details(succeeded_at: str, failed_at: str) -> Mapping[
         "code": "Success",
         "message": "Operation performed.",
         "data": {
-            "id": "connector_id",
+            "id": TEST_CONNECTOR_ID,
             "service": "15five",
             "schema": "schema.table",
             "paused": False,
@@ -203,7 +211,7 @@ def get_sample_connection_details(succeeded_at: str, failed_at: str) -> Mapping[
             "daily_sync_time": "14:00",
             "succeeded_at": succeeded_at,
             "sync_frequency": 1440,
-            "group_id": "my_group_destination_id",
+            "group_id": TEST_GROUP_ID,
             "connected_by": "user_id",
             "setup_tests": [
                 {
@@ -458,17 +466,17 @@ def get_fivetran_connector_api_url(connector_id: str) -> str:
 
 @pytest.fixture(name="connector_id")
 def connector_id_fixture() -> str:
-    return "connector_id"
+    return TEST_CONNECTOR_ID
 
 
 @pytest.fixture(name="destination_id")
 def destination_id_fixture() -> str:
-    return "my_group_destination_id"
+    return TEST_DESTINATION_ID
 
 
 @pytest.fixture(name="group_id")
 def group_id_fixture() -> str:
-    return "my_group_destination_id"
+    return TEST_GROUP_ID
 
 
 @pytest.fixture(
