@@ -5,7 +5,8 @@ import styled from 'styled-components';
 import {OpEdges} from './OpEdges';
 import {OP_NODE_DEFINITION_FRAGMENT, OP_NODE_INVOCATION_FRAGMENT, OpNode} from './OpNode';
 import {ParentOpNode} from './ParentOpNode';
-import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM, SVGViewport, SVGViewportRef} from './SVGViewport';
+import {DEFAULT_MAX_ZOOM, DETAIL_ZOOM} from './SVGConsts';
+import {SVGViewport, SVGViewportRef} from './SVGViewport';
 import {OpGraphLayout} from './asyncGraphLayout';
 import {
   Edge,
