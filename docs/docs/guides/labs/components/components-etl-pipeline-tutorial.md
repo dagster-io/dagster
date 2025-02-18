@@ -7,51 +7,81 @@ sidebar_position: 10
 
 ### Install project dependencies
 
-If you have not already done so, follow the [steps to install `uv` and `dg`](/guides/labs/components/index.md#installation).
+:::info Prerequisites
 
-Next, install the tools used in this tutorial. We use [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=macos&download_method=package_manager) for a local database, and [`tree`](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTALL) to visualize project structure. `tree` is optional and is only used to produce an easily understandable representation of the project structure on the comand line. `find`, `ls` or any other directory listing command will also work.
-
-<CliInvocationExample contents="brew install duckdb tree" />
-
-:::note
-
-If you are not in a Mac environment, use the links above to see the installation instructions for your environment.
+To complete this tutorial, you must [install `uv` and `dg`](/guides/labs/components/index.md#installation).
 
 :::
 
+First, install [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=macos&download_method=package_manager) for a local database and [`tree`](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTALL) to visualize project structure:
+
+<Tabs>
+
+<TabItem value="mac" label="Mac">
+
+<CliInvocationExample contents="brew install duckdb tree" />
+
+</TabItem>
+
+<TabItem value="windows" label="Windows">
+
+See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=win&download_method=package_manager) Windows installation instructions and [`tree`](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTALL) installation instructions.
+
+</TabItem>
+
+<TabItem value="linux" label="Linux">
+
+See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environment=cli&platform=linux&download_method=direct&architecture=x86_64) and [`tree`](https://oldmanprogrammer.net/source.php?dir=projects/tree/INSTALL) Linux installation instructions.
+
+</TabItem>
+
+</Tabs>
+
+:::note
+
+`tree` is optional and is only used to produce a nicely formatted representation of the project structure on the comand line. You can also use `find`, `ls`, `dir`, or any other directory listing command.
+
+:::
+
+
 ### Scaffold a new code location
 
-After installing dependencies, scaffold a Components-ready code location for the project:
+After installing dependencies, scaffold a Components-ready code location for your project:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
 
-This command builds a code location at `jaffle-platform` and initializes a new Python
-virtual environment inside of it. When using `dg`'s default environment
-management behavior, you won't need to worry about activating this virtual environment yourself.
+The `dg code-location scaffold` command builds a code location at `jaffle-platform` and initializes a new Python
+virtual environment inside it. When you use `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
-To learn more about the files, directories, and default settings in a code location scaffolded with Components, see "[Creating a code location with Components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components#overview-of-files-and-directories)
+To learn more about the files, directories, and default settings in a code location scaffolded with `dg code-location scaffold`, see "[Creating a code location with Components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components#overview-of-files-and-directories)".
 
 ## Ingest data
 
-### Add the Sling Component
+### 1. Add the Sling Component type to your environment
 
-First, you will need to set up Sling. If you query the available Component types in your environment at this point, you won't see anything Sling-related:
+To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available Component types in your environment at this point, the Sling Component won't appear, since the basic `dagster-components` package that was installed when you scaffolded your code location doesn't include Components for specific integrations (like Sling):
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/7-dg-list-component-types.txt" />
 
-This is because the basic `dagster-components` package (which was installed when we scaffolded our code location) doesn't include Components for specific integrations (like Sling). We can get access to a Sling Component by installing the `sling` extra of `dagster-components`:
+To make the Sling Component available in your environment, install the `sling` extra of `dagster-components`:
 
 <CliInvocationExample contents="uv add 'dagster-components[sling]'" />
 
 :::note
 
-`dg` always operates in an isolated environment, but it is able to access the set of Component types available in your project environment, because under the hood, `dg` attempts to resolve a project root whenever it is run. If it finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory (this can be confirmed by the presence of a `uv.lock` file). When you run commands like `dg component-type list`, `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg code-location scaffold` command.
+`dg` always operates in an isolated environment, but it is able to access the set of Component types available in your project environment because it attempts to resolve a project root whenever it is run. If `dg` finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory. (This can be confirmed by the presence of a `uv.lock` file.)
+
+When you run commands like `dg component-type list`, `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg code-location scaffold` command.
 
 :::
 
-Run the TODO command again to confirm that the `dagster_components.sling_replication` Component type is now available:
+### 2. Confirm availability of the Sling Component type
+
+To confirm that the `dagster_components.sling_replication` Component type is now available, run the `dg component-type list` command again:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/8-dg-list-component-types.txt" />
+
+### 3. Create a new instance of the Sling Component
 
 Next, create a new instance of this Component type:
 
@@ -71,7 +101,7 @@ Right now the parameters define a single "replication"-- this is a Sling concept
 The `path` parameter for a replication is relative to the same folder containing component.yaml. This is a convention for components.
 :::
 
-### Set up DuckDB
+### 4. Set up DuckDB
 
 Set up and test DuckDB:
 
@@ -79,7 +109,7 @@ Set up and test DuckDB:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/13-sling-test-duckdb.txt" />
 
-### Download files for Sling source
+### 5. Download files for Sling source
 
 Next, you will need to download some files locally to use your Sling source, since Sling doesn't support reading from the public internet:
 
@@ -89,35 +119,39 @@ Finally, create a `replication.yaml` file that references the downloaded files:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/15-replication.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/ingest_files/replication.yaml" />
 
-### View and materialize assets in the Dagster UI
+### 6. View and materialize assets in the Dagster UI
 
-Let's load up our code location in the Dagster UI to see what we've got:
+Load your code location in the Dagster UI to see what you've built so far. To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
 
 <CliInvocationExample contents="uv run dagster dev # will be dg dev in the future" />
 
 ![](/images/guides/build/projects-and-components/components/sling.png)
 
-Click "Materialize All", and we should now have tables in the DuckDB instance. Let's verify on the command line:
+Verify the DuckDB tables on the command line:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/16-duckdb-select.txt" />
 
 ## Transform data
 
-### Clone a sample dbt project from GitHub
+To transform the data, you will need to download a sample dbt project from GitHub and use the data ingested with Sling as an input for the dbt project.
 
-To transform the data, you will need to download clone a sample dbt project from GitHub. You will use the data ingested with Sling as an input for the dbt project. Follow the steps below to clone the project and delete the embedded git repo:
+### 1. Clone a sample dbt project from GitHub
+
+First, clone the project and delete the embedded git repo:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/17-jaffle-clone.txt" />
 
-### Install the dbt project Component type
+### 2. Install the dbt project Component type
 
 To interface with the dbt project, you will need to instantiate a Dagster dbt project Component. To access the dbt project Component type, install `dagster-components[dbt]` and `dbt-duckdb`:
 
 <CliInvocationExample contents="uv add 'dagster-components[dbt]' dbt-duckdb" />
 
-Run the TODO command to confirm that the `dagster_components.dbt_project` Component type is now available:
+To confirm that the `dagster_components.dbt_project` Component type is now available, run `dg component-type list`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" />
+
+:::tip
 
 You can access detailed information about a Component type with the `dg component-type info` command:
 
@@ -125,17 +159,19 @@ You can access detailed information about a Component type with the `dg componen
 
 The output of `dg component-type info` shows the parameters (in JSON schema format) for both Component generation and runtime loading of the Component. (The runtime parameters have been truncated here due to length.)
 
-### Scaffold a new instance of the dbt project Component
+:::
 
-Next, scaffold a new instance of the `dagster_components.dbt_project` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold paramater:
+### 3. Scaffold a new instance of the dbt project Component
+
+Next, scaffold a new instance of the `dagster_components.dbt_project` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/20-dg-scaffold-jdbt.txt"/>
 
-This creates a new Component instance in the project at `jaffle_platform/components/jdbt`. Open `component.yaml` in that directory and you'll see:
+This creates a new Component instance in the project at `jaffle_platform/components/jdbt`. To see the component configuration, open `component.yaml` in that directory:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/21-component-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-### Update the dbt project Component configuration
+### 4. Update the dbt project Component configuration
 
 Let’s see the project in the Dagster UI:
 
@@ -173,7 +209,7 @@ viewing a sample of the newly materialized assets from the command line:
 
 ## Automate the pipeline
 
-### Automate Sling ingestion
+### 1. Automate Sling ingestion
 
 Now that you've defined some assets, you can automate them to keep them up to date. You can do this using [declarative automation](/guides/automate/declarative-automation) directly in the `component.yaml` file. Navigate to `components/ingest_files/component.yaml` and add the `automation_condition` below to automatically pull in data with Sling every day:
 
@@ -191,7 +227,7 @@ params:
           automation_condition: "on_cron(@daily)"
 ```
 
-### Automate dbt transformation
+### 2. Automate dbt transformation
 
 Next, update the dbt project so it executes after the Sling replication runs. Navigate to `components/jdbt/component.yaml` and add the `automation_condition` below:
 
@@ -211,7 +247,7 @@ params:
         automation_condition: "eager"
 ```
 
-Now the DBT project will update automatically after the Sling replication runs.
+Now the dbt project will update automatically after the Sling replication runs.
 
 ## Next steps
 
