@@ -3,16 +3,13 @@ title: 'Customizing Components'
 sidebar_position: 400
 ---
 
-Sometimes, you may want to customize the behavior of a Component beyond what is available in the `component.yaml` file.
+You can customize the behavior of a Component beyond what is available in the `component.yaml` file.
 
-To do this, you can create a subclass of your desired Component in the same directory as your `component.yaml` file. By convention, this subclass should be created in a file named `component.py`.
-
-This subclass should be annotated with the `@component_type` decorator, which will define a local name for this component:
-
+To do so, you can create a subclass of your desired Component in a file named `component.py` in the same directory as your `component.yaml` file. This subclass should be annotated with the `@component_type` decorator, which will define a local name for this component:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/custom-subclass/basic-subclass.py" language="python" />
 
-You can then update the `type:` field in your `component.yaml` file to reference this new Component type. The new type name will be `.<component-name>`, where the leading `.` indicates that this is a local Component type.
+You can then update the `type:` field in your `component.yaml` file to reference this new Component type. The new type name will be `.<component-name>`, where the leading `.` indicates that this is a local Component type:
 
 ```yaml
 type: .custom_subclass
@@ -23,12 +20,11 @@ params:
 
 ## Customizing execution
 
-By convention, most library Components have an `execute()` method that defines the core runtime behavior of the component. This can be overridden by subclasses of the Component to customize this behavior.
+By convention, most library Components have an `execute()` method that defines the core runtime behavior of the Component. This can be overridden by subclasses of the Component to customize this behavior.
 
 For example, we can create a subclass of the `SlingReplicationCollectionComponent` that adds a debug log message during execution:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/custom-subclass/debug-mode.py" language="python" />
-
 
 ## Adding component-level templating scope
 

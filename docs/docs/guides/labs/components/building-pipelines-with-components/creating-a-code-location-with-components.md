@@ -72,4 +72,4 @@ module is registered under the `dagster.components` entry point in `pyproject.to
 
 ## Next steps
 
-After scaffolding your code location with Components, you can [add more Components](adding-components-yaml) to complete your pipeline.
+After scaffolding your code location with Components, you can [add more Components](adding-components) to complete your pipeline.

@@ -16,4 +16,4 @@ Before adding a Component with Python, you must either [create a project with Co
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/python-components/component.py" language="python" />
 
-This function just needs to return an instance of your desired Component type. In the example above, we've used this functionality to customize the `translator` argument of the `DbtProjectComponent` class.
+This function needs to return an instance of your desired Component type. In the example above, we've used this functionality to customize the `translator` argument of the `DbtProjectComponent` class.
