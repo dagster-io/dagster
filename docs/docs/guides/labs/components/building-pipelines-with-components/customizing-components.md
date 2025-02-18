@@ -3,6 +3,12 @@ title: 'Customizing Components'
 sidebar_position: 400
 ---
 
+:::info
+
+This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
+
+:::
+
 You can customize the behavior of a Component beyond what is available in the `component.yaml` file.
 
 To do so, you can create a subclass of your desired Component in a file named `component.py` in the same directory as your `component.yaml` file. This subclass should be annotated with the `@component_type` decorator, which will define a local name for this component:

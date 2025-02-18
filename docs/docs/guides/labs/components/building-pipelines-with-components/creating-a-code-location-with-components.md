@@ -3,13 +3,19 @@ title: 'Creating a code location with Components'
 sidebar_position: 100
 ---
 
+:::info
+
+This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
+
+:::
+
 :::note Prerequisites
 
 Before creating a project with Components, you must follow the [steps to install `uv` and `dg`](/guides/labs/components/index.md#installation).
 
 :::
 
-After installing dependencies, you can scaffold a Components-ready code location for your project:
+After [installing dependencies](/guides/labs/components/index.md#installation), you can scaffold a Components-ready code location for your project:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
 
