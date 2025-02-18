@@ -14,7 +14,8 @@ import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode'
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
 import {ToggleDirectionButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
-import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
+import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
@@ -52,7 +53,7 @@ export const AssetNodeLineageGraph = ({
     allGroups,
     useMemo(() => ({direction}), [direction]),
   );
-  const viewportEl = useRef<SVGViewport>();
+  const viewportEl = useRef<SVGViewportRef>();
   const history = useHistory();
 
   const onClickAsset = (e: React.MouseEvent<any>, key: AssetKey) => {
@@ -84,7 +85,6 @@ export const AssetNodeLineageGraph = ({
         ref={(r) => {
           viewportEl.current = r || undefined;
         }}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         defaultZoom="zoom-to-fit"
         graphWidth={layout.width}
         graphHeight={layout.height}
