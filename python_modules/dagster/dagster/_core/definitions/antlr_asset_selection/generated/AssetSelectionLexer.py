@@ -1918,7 +1918,7 @@ class AssetSelectionLexer(Lexer):
     ROOTS = 23
     QUOTED_STRING = 24
     UNQUOTED_STRING = 25
-    UNQUOTED_REGEX_STRING = 26
+    UNQUOTED_WILDCARD_STRING = 26
     WS = 27
 
     channelNames = ["DEFAULT_TOKEN_CHANNEL", "HIDDEN"]
@@ -1978,7 +1978,7 @@ class AssetSelectionLexer(Lexer):
         "ROOTS",
         "QUOTED_STRING",
         "UNQUOTED_STRING",
-        "UNQUOTED_REGEX_STRING",
+        "UNQUOTED_WILDCARD_STRING",
         "WS",
     ]
 
@@ -2008,7 +2008,7 @@ class AssetSelectionLexer(Lexer):
         "ROOTS",
         "QUOTED_STRING",
         "UNQUOTED_STRING",
-        "UNQUOTED_REGEX_STRING",
+        "UNQUOTED_WILDCARD_STRING",
         "WS",
     ]
 

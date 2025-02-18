@@ -3,12 +3,12 @@ from collections.abc import Sequence
 from dagster_components import (
     AssetSpecSchema,
     Component,
-    ComponentSchema,
+    ResolvableSchema,
     registered_component_type,
 )
 
 
-class ShellCommandParams(ComponentSchema):
+class ShellCommandParams(ResolvableSchema):
     path: str
     asset_specs: Sequence[AssetSpecSchema]
 

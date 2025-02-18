@@ -33,7 +33,7 @@ def _get_subset_with_keys(graph_view, keys):
 def test_bfs_filter_empty_graph():
     """Test BFS filter on empty graph returns empty result."""
     graph_view = AssetGraphView.for_test(Definitions())
-    initial_subset = AssetGraphSubset.empty()
+    initial_subset = AssetGraphSubset.create_empty_subset()
 
     def condition_fn(subset, _visited):
         return AssetGraphViewBfsFilterConditionResult(subset, [])
@@ -42,7 +42,7 @@ def test_bfs_filter_empty_graph():
         graph_view, condition_fn, initial_subset, include_full_execution_set=False
     )
 
-    assert result == AssetGraphSubset.empty()
+    assert result == AssetGraphSubset.create_empty_subset()
     assert failed == []
 
 
@@ -81,7 +81,7 @@ def test_bfs_filter_dependency_chain():
             )
 
             return AssetGraphViewBfsFilterConditionResult(
-                AssetGraphSubset.empty(),
+                AssetGraphSubset.create_empty_subset(),
                 [(subset, "asset3 not allowed")],
             )
         return AssetGraphViewBfsFilterConditionResult(subset, [])

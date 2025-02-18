@@ -643,8 +643,7 @@ class ConcurrencyConfig:
                 ),
                 max_user_code_failure_retries=run_coordinator_run_queue_config.max_user_code_failure_retries,
                 user_code_failure_retry_delay=run_coordinator_run_queue_config.user_code_failure_retry_delay,
-                should_block_op_concurrency_limited_runs=bool(pool_settings)
-                or run_coordinator_run_queue_config.should_block_op_concurrency_limited_runs,
+                should_block_op_concurrency_limited_runs=run_coordinator_run_queue_config.should_block_op_concurrency_limited_runs,
                 op_concurrency_slot_buffer=pool_settings.get(
                     "op_granularity_run_buffer",
                     run_coordinator_run_queue_config.op_concurrency_slot_buffer,
@@ -657,7 +656,7 @@ class ConcurrencyConfig:
         if (
             not pool_granularity
             and run_coordinator_run_queue_config
-            and run_coordinator_run_queue_config.should_block_op_concurrency_limited_runs
+            and run_coordinator_run_queue_config.explicitly_enabled_concurrency_run_blocking
         ):
             # if this was explicitly configured in the run coordinator config, we should default to op granularity
             pool_granularity = PoolGranularity.OP

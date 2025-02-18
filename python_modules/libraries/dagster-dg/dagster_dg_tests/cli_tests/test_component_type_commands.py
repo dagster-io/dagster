@@ -11,9 +11,10 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
+    fixed_panel_width,
     isolated_components_venv,
     isolated_example_component_library_foo_bar,
-    isolated_example_deployment_foo,
+    match_terminal_box_output,
     modify_pyproject_toml,
 )
 
@@ -33,23 +34,6 @@ def test_component_type_scaffold_success() -> None:
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         assert registry.has_global(GlobalComponentKey(name="baz", namespace="foo_bar"))
-
-
-def test_component_type_scaffold_outside_component_library_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("component-type", "scaffold", "baz")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster component library directory" in result.output
-
-
-def test_component_type_scaffold_with_no_dagster_components_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_example_component_library_foo_bar(runner),
-    ):
-        result = runner.invoke("component-type", "scaffold", "baz", env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
 
 
 def test_component_type_scaffold_already_exists_fails() -> None:
@@ -104,27 +88,22 @@ def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -
 
 def test_component_type_docs_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
-        result = runner.invoke(
-            "component-type",
-            "docs",
-            "complex_schema_asset@dagster_components.test",
-        )
+        result = runner.invoke("component-type", "docs", "simple_asset@dagster_components.test")
         assert_runner_result(result)
 
 
-def test_component_type_docs_with_no_dagster_components_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_components_venv(runner),
-    ):
+def test_component_type_docs_success_output_console():
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
             "component-type",
             "docs",
             "complex_schema_asset@dagster_components.test",
-            env={"PATH": "/dev/null"},
+            "--output",
+            "cli",
         )
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
+        assert_runner_result(result)
+        assert "<html" in result.output
+        assert "An asset that has a complex params schema." in result.output
 
 
 # ########################
@@ -157,7 +136,7 @@ _EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
             "asset_key",
             "filename"
         ],
-        "title": "SimplePipesScriptAssetParams",
+        "title": "SimplePipesScriptAssetSchema",
         "type": "object"
     }
 
@@ -178,7 +157,7 @@ _EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
             "asset_key",
             "filename"
         ],
-        "title": "SimplePipesScriptAssetParams",
+        "title": "SimplePipesScriptAssetSchema",
         "type": "object"
     }
 """).strip()
@@ -192,7 +171,7 @@ def test_component_type_info_all_metadata_success():
             "simple_pipes_script_asset@dagster_components.test",
         )
         assert_runner_result(result)
-        assert result.output.strip() == _EXPECTED_COMPONENT_TYPE_INFO_FULL
+        assert result.output.strip().endswith(_EXPECTED_COMPONENT_TYPE_INFO_FULL)
 
 
 def test_component_type_info_all_metadata_empty_success():
@@ -203,9 +182,8 @@ def test_component_type_info_all_metadata_empty_success():
             "all_metadata_empty_asset@dagster_components.test",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert result.output.strip().endswith(
+            textwrap.dedent("""
                 all_metadata_empty_asset@dagster_components.test
             """).strip()
         )
@@ -220,9 +198,8 @@ def test_component_type_info_flag_fields_success():
             "--description",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert result.output.strip().endswith(
+            textwrap.dedent("""
             A simple asset that runs a Python script with the Pipes subprocess client.
 
             Because it is a pipes asset, no value is returned.
@@ -236,9 +213,8 @@ def test_component_type_info_flag_fields_success():
             "--scaffold-params-schema",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert result.output.strip().endswith(
+            textwrap.dedent("""
                 {
                     "properties": {
                         "asset_key": {
@@ -254,7 +230,7 @@ def test_component_type_info_flag_fields_success():
                         "asset_key",
                         "filename"
                     ],
-                    "title": "SimplePipesScriptAssetParams",
+                    "title": "SimplePipesScriptAssetSchema",
                     "type": "object"
                 }
             """).strip()
@@ -267,9 +243,8 @@ def test_component_type_info_flag_fields_success():
             "--component-params-schema",
         )
         assert_runner_result(result)
-        assert (
-            result.output.strip()
-            == textwrap.dedent("""
+        assert result.output.strip().endswith(
+            textwrap.dedent("""
                 {
                     "properties": {
                         "asset_key": {
@@ -285,7 +260,7 @@ def test_component_type_info_flag_fields_success():
                         "asset_key",
                         "filename"
                     ],
-                    "title": "SimplePipesScriptAssetParams",
+                    "title": "SimplePipesScriptAssetSchema",
                     "type": "object"
                 }
             """).strip()
@@ -308,26 +283,8 @@ def test_component_type_info_multiple_flags_fails() -> None:
         )
 
 
-def test_component_type_info_with_no_dagster_components_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_components_venv(runner),
-    ):
-        result = runner.invoke(
-            "component-type",
-            "info",
-            "simple_pipes_script_asset@dagster_components.test",
-            env={"PATH": "/dev/null"},
-        )
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
-
-
 def test_component_type_info_undefined_component_type_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_components_venv(runner),
-    ):
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
             "component-type",
             "info",
@@ -356,16 +313,40 @@ _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
 
 def test_list_component_types_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
-        result = runner.invoke("component-type", "list")
+        with fixed_panel_width(width=120):
+            result = runner.invoke("component-type", "list")
+            assert_runner_result(result)
+            # strip the first line of logging output
+            output = "\n".join(result.output.split("\n")[1:])
+            match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
+
+
+def test_component_type_list_json_succeeds():
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+        result = runner.invoke("component-type", "list", "--json")
         assert_runner_result(result)
-        assert result.output.strip() == _EXPECTED_COMPONENT_TYPES
-
-
-def test_component_type_list_with_no_dagster_components_fails() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        isolated_components_venv(runner),
-    ):
-        result = runner.invoke("component-type", "list", env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
+        # strip the first line of logging output
+        output = "\n".join(result.output.split("\n")[1:])
+        assert (
+            output.strip()
+            == textwrap.dedent("""
+                [
+                    {
+                        "key": "all_metadata_empty_asset@dagster_components.test",
+                        "summary": null
+                    },
+                    {
+                        "key": "complex_schema_asset@dagster_components.test",
+                        "summary": "An asset that has a complex params schema."
+                    },
+                    {
+                        "key": "simple_asset@dagster_components.test",
+                        "summary": "A simple asset that returns a constant string value."
+                    },
+                    {
+                        "key": "simple_pipes_script_asset@dagster_components.test",
+                        "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
+                    }
+                ]
+            """).strip()
+        )

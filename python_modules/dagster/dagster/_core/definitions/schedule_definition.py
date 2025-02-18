@@ -261,7 +261,7 @@ class ScheduleEvaluationContext:
                 raise DagsterInvariantViolationError(
                     "At least one provided resource is a generator, but attempting to access"
                     " resources outside of context manager scope. You can use the following syntax"
-                    " to open a context manager: `with build_sensor_context(...) as context:`"
+                    " to open a context manager: `with build_schedule_context(...) as context:`"
                 )
 
         return self._resources

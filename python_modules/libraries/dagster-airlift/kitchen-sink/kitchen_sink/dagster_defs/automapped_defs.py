@@ -25,6 +25,7 @@ def build_full_automapped_defs() -> Definitions:
             task_defs("print_task", Definitions(assets=[the_print_asset])),
             task_defs("downstream_print_task", Definitions(assets=[the_downstream_print_asset])),
         ),
+        sensor_minimum_interval_seconds=1,
     )
 
 

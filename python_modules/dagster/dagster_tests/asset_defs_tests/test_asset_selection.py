@@ -145,8 +145,8 @@ def test_asset_selection_all(all_assets: _AssetList):
     sel = AssetSelection.all()
     assert sel.resolve(all_assets) == _asset_keys_of(all_assets) - {earth.key}
 
-    sel_include_external_assets = AssetSelection.all(include_external_assets=True)
-    assert sel_include_external_assets.resolve(all_assets) == _asset_keys_of(all_assets)
+    sel_include_sources = AssetSelection.all(include_sources=True)
+    assert sel_include_sources.resolve(all_assets) == _asset_keys_of(all_assets)
 
 
 def test_asset_selection_and(all_assets: _AssetList):
@@ -170,7 +170,7 @@ def test_asset_selection_groups(all_assets: _AssetList):
     assert sel.resolve(all_assets) == _asset_keys_of({alice, candace, fiona})
 
     # includes source assets if flag set
-    sel = AssetSelection.groups("planets", include_external_assets=True)
+    sel = AssetSelection.groups("planets", include_sources=True)
     assert sel.resolve(all_assets) == {earth.key}
 
 
@@ -201,7 +201,7 @@ def test_asset_selection_key_prefixes(all_assets: _AssetList):
     assert sel.resolve(all_assets) == set()
 
     # includes source assets if flag set
-    sel = AssetSelection.key_prefixes("celestial", include_external_assets=True)
+    sel = AssetSelection.key_prefixes("celestial", include_sources=True)
     assert sel.resolve(all_assets) == {earth.key}
 
 
@@ -217,7 +217,7 @@ def test_asset_selection_key_substring(all_assets: _AssetList):
     assert sel.resolve(all_assets) == set()
 
     # includes source assets if flag set
-    sel = AssetSelection.key_substring("celestial/e", include_external_assets=True)
+    sel = AssetSelection.key_substring("celestial/e", include_sources=True)
     assert sel.resolve(all_assets) == {earth.key}
 
 
@@ -559,9 +559,7 @@ def test_asset_selection_type_checking():
     test = DownstreamAssetSelection(child=valid_asset_selection, depth=0, include_self=False)
     assert isinstance(test, DownstreamAssetSelection)
 
-    test = GroupsAssetSelection(
-        selected_groups=valid_string_sequence, include_external_assets=False
-    )
+    test = GroupsAssetSelection(selected_groups=valid_string_sequence, include_sources=False)
     assert isinstance(test, GroupsAssetSelection)
 
     with pytest.raises(CheckError):
@@ -570,15 +568,13 @@ def test_asset_selection_type_checking():
     assert isinstance(test, KeysAssetSelection)
 
     with pytest.raises(CheckError):
-        GroupsAssetSelection(selected_groups=invalid_argument, include_external_assets=False)
+        GroupsAssetSelection(selected_groups=invalid_argument, include_sources=False)
 
     with pytest.raises(CheckError):
-        KeyPrefixesAssetSelection(
-            selected_key_prefixes=invalid_argument, include_external_assets=False
-        )
+        KeyPrefixesAssetSelection(selected_key_prefixes=invalid_argument, include_sources=False)
 
     test = KeyPrefixesAssetSelection(
-        selected_key_prefixes=valid_string_sequence_sequence, include_external_assets=False
+        selected_key_prefixes=valid_string_sequence_sequence, include_sources=False
     )
     assert isinstance(test, KeyPrefixesAssetSelection)
 
@@ -780,11 +776,11 @@ def test_empty_namedtuple_truthy():
 def test_deserialize_old_all_asset_selection():
     old_serialized_value = '{"__class__": "AllSelection"}'
     new_unserialized_value = deserialize_value(old_serialized_value, AllSelection)
-    assert not new_unserialized_value.include_external_assets
+    assert not new_unserialized_value.include_sources
 
 
 def test_from_string():
-    assert AssetSelection.from_string("*") == AssetSelection.all(include_external_assets=False)
+    assert AssetSelection.from_string("*") == AssetSelection.all(include_sources=False)
     assert AssetSelection.from_string("my_asset") == AssetSelection.assets("my_asset")
     assert AssetSelection.from_string("*my_asset") == AssetSelection.assets("my_asset").upstream(
         depth=MAX_NUM, include_self=True

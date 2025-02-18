@@ -11,7 +11,6 @@ import {GraphData, buildGraphData as buildGraphDataImpl, tokenForAssetKey} from 
 import {gql} from '../apollo-client';
 import {computeGraphData as computeGraphDataImpl} from './ComputeGraphData';
 import {BuildGraphDataMessageType, ComputeGraphDataMessageType} from './ComputeGraphData.types';
-import {throttleLatest} from './throttleLatest';
 import {featureEnabled} from '../app/Flags';
 import {
   AssetGraphQuery,
@@ -136,19 +135,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     version: AssetGraphQueryVersion,
   });
 
-  const computeGraphData = useMemo(() => {
-    return throttleLatest(
-      indexedDBAsyncMemoize<
-        Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
-        GraphDataState,
-        typeof computeGraphDataWrapper
-      >(computeGraphDataWrapper, (props) => {
-        return JSON.stringify(props);
-      }),
-      2000,
-    );
-  }, []);
-
   const nodes = fetchResult.data?.assetNodes;
 
   const repoFilteredNodes = useMemo(() => {
@@ -224,7 +210,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     options.loading,
     supplementaryData,
     supplementaryDataLoading,
-    computeGraphData,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading || supplementaryDataLoading;
@@ -240,6 +225,14 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 }
 
 type AssetNode = AssetNodeForGraphQueryFragment;
+
+const computeGraphData = indexedDBAsyncMemoize<
+  Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+  GraphDataState,
+  typeof computeGraphDataWrapper
+>(computeGraphDataWrapper, (props) => {
+  return JSON.stringify(props);
+});
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
@@ -398,15 +391,13 @@ async function computeGraphDataWrapper(
   return computeGraphDataImpl(props);
 }
 
-const buildGraphData = throttleLatest(
-  indexedDBAsyncMemoize<BuildGraphDataMessageType, GraphData, typeof buildGraphDataWrapper>(
-    buildGraphDataWrapper,
-    (props) => {
-      return JSON.stringify(props);
-    },
-  ),
-  2000,
-);
+const buildGraphData = indexedDBAsyncMemoize<
+  BuildGraphDataMessageType,
+  GraphData,
+  typeof buildGraphDataWrapper
+>(buildGraphDataWrapper, (props) => {
+  return JSON.stringify(props);
+});
 
 async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,

@@ -97,27 +97,27 @@ type OperatorType = 'and' | 'or' | 'not' | 'parenthesis' | 'up-traversal' | 'dow
 
 const operatorToIconAndLabel: Record<OperatorType, {icon: IconName; label: string}> = {
   and: {
-    icon: 'curly_braces',
+    icon: 'and',
     label: 'And',
   },
   or: {
-    icon: 'curly_braces',
+    icon: 'or',
     label: 'Or',
   },
   not: {
-    icon: 'curly_braces',
+    icon: 'not',
     label: 'Not',
   },
   parenthesis: {
-    icon: 'curly_braces',
+    icon: 'parenthesis',
     label: 'Parenthesis',
   },
   'up-traversal': {
-    icon: 'curly_braces',
+    icon: 'graph_upstream',
     label: 'Include upstream dependencies',
   },
   'down-traversal': {
-    icon: 'curly_braces',
+    icon: 'graph_downstream',
     label: 'Include downstream dependencies',
   },
 };
@@ -274,21 +274,21 @@ export const createProvider = <
     options?: {includeParenthesis?: boolean};
   }) {
     const functionName = func[0]!.toUpperCase() + func.slice(1);
-    const displayText = options?.includeParenthesis ? `${functionName}()` : functionName;
+    const rightLabel = options?.includeParenthesis ? `${func}()` : func;
     let icon: IconName;
     switch (func) {
       case 'roots':
-        icon = 'arrow_upward';
+        icon = 'roots';
         break;
       case 'sinks':
-        icon = 'arrow_indent';
+        icon = 'sinks';
         break;
       default:
         assertUnreachable(func);
     }
     return {
       text,
-      jsx: <SuggestionJSXBase label={functionName} icon={icon} rightLabel={displayText} />,
+      jsx: <SuggestionJSXBase label={functionName} icon={icon} rightLabel={rightLabel} />,
     };
   }
 

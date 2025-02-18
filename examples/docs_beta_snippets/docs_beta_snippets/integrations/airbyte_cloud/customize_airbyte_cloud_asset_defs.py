@@ -10,9 +10,9 @@ airbyte_workspace = AirbyteCloudWorkspace(
 
 
 @airbyte_assets(
-    connection_id="airbyte_connection_id",
+    connection_id="airbyte_connection_id",  # Replace with your connection ID
     workspace=airbyte_workspace,
-    name="airbyte_connection_name",
+    name="airbyte_connection_name",  # Replace with your connection name
     group_name="airbyte_connection_name",
 )
 def airbyte_connection_assets(

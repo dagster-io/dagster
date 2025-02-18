@@ -116,14 +116,14 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
 
     def __init__(
         self,
-        storage_account,
-        container,
-        secret_credential=None,
-        local_dir=None,
+        storage_account: str,
+        container: str,
+        secret_credential: Optional[dict] = None,
+        local_dir: Optional[str] = None,
         inst_data: Optional[ConfigurableClassData] = None,
-        prefix="dagster",
-        upload_interval=None,
-        default_azure_credential=None,
+        prefix: str = "dagster",
+        upload_interval: Optional[int] = None,
+        default_azure_credential: Optional[dict] = None,
         access_key_or_sas_token: Optional[str] = None,
         show_url_only: bool = False,
     ):
@@ -154,16 +154,15 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         self._download_urls = {}
 
         # proxy calls to local compute log manager (for subscriptions, etc)
-        if not local_dir:
-            local_dir = seven.get_system_temp_directory()
+        base_dir: str = local_dir if local_dir else seven.get_system_temp_directory()
 
-        self._local_manager = LocalComputeLogManager(local_dir)
+        self._local_manager = LocalComputeLogManager(base_dir)
         self._subscription_manager = PollingComputeLogSubscriptionManager(self)
         self._upload_interval = check.opt_int_param(upload_interval, "upload_interval")
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
-    def inst_data(self):
+    def inst_data(self) -> Optional[ConfigurableClassData]:
         return self._inst_data
 
     @classmethod
@@ -209,14 +208,14 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
     def upload_interval(self) -> Optional[int]:
         return self._upload_interval if self._upload_interval else None
 
-    def _clean_prefix(self, prefix):
+    def _clean_prefix(self, prefix: str) -> str:
         parts = prefix.split("/")
         return "/".join([part for part in parts if part])
 
-    def _resolve_path_for_namespace(self, namespace):
+    def _resolve_path_for_namespace(self, namespace: Sequence[str]) -> Sequence[str]:
         return [self._blob_prefix, "storage", *namespace]
 
-    def _blob_key(self, log_key, io_type, partial=False):
+    def _blob_key(self, log_key: Sequence[str], io_type: ComputeIOType, partial=False) -> str:
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
         [*namespace, filebase] = log_key
@@ -260,7 +259,9 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         if to_remove:
             self._container_client.delete_blobs(*to_remove)
 
-    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+    def download_url_for_type(
+        self, log_key: Sequence[str], io_type: ComputeIOType
+    ) -> Optional[str]:
         if not self.is_capture_complete(log_key):
             return None
 
@@ -331,7 +332,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
 
         return user_delegation_key
 
-    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType) -> str:
         if not self.is_capture_complete(log_key):
             return self.local_manager.get_captured_local_path(log_key, IO_TYPE_EXTENSION[io_type])
 

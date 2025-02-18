@@ -17,6 +17,11 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ --help                        -h        Show this message and exit.                    │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Global options ───────────────────────────────────────────────────────────────────────╮
+│ --require-local-venv        --no-require-local-venv          Require use of a local    │
+│                                                              virtual environment       │
+│                                                              (`.venv` found in         │
+│                                                              ancestors of the working  │
+│                                                              directory).               │
 │ --use-dg-managed-enviro…    --no-use-dg-managed-en…          Enable management of the  │
 │                                                              virtual environment with  │
 │                                                              uv.                       │

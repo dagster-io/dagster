@@ -5272,6 +5272,31 @@ class TestEventLogStorage:
         storage.delete_concurrency_limit("foo")
         assert storage.get_concurrency_keys() == set()
 
+    def test_get_concurrency(self, storage: EventLogStorage):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        assert storage.get_concurrency_keys() == set()
+        info = storage.get_concurrency_info("foo")
+        assert info.slot_count == 0
+        assert info.limit is None
+
+        # set concurrency slot to 0
+        storage.set_concurrency_slots("foo", 0)
+        assert storage.get_concurrency_keys() == set(["foo"])
+        info = storage.get_concurrency_info("foo")
+        assert info.slot_count == 0
+        assert info.limit is not None
+        assert info.limit == 0
+
+        # set concurrency slot to 1
+        storage.set_concurrency_slots("foo", 1)
+        assert storage.get_concurrency_keys() == set(["foo"])
+        info = storage.get_concurrency_info("foo")
+        assert info.slot_count == 1
+        assert info.limit == 1
+
     def test_default_concurrency(
         self,
         storage: EventLogStorage,

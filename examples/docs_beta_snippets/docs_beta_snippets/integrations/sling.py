@@ -25,8 +25,8 @@ target = SlingConnectionResource(
 
 @sling_assets(
     replication_config={
-        "SOURCE": "MY_PG",
-        "TARGET": "MY_SF",
+        "source": "MY_PG",
+        "target": "MY_SF",
         "defaults": {
             "mode": "full-refresh",
             "object": "{stream_schema}_{stream_table}",

@@ -33,7 +33,6 @@ import {
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
-import {useFeatureFlags} from '../app/Flags';
 import {QueryRefreshState} from '../app/QueryRefresh';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useTrackPageView} from '../app/analytics';
@@ -61,7 +60,7 @@ export const InstanceConcurrencyIndexContent = React.memo(() => {
   >(INSTANCE_CONCURRENCY_LIMITS_QUERY, {
     notifyOnNetworkStatusChange: true,
   });
-  const [activeTab, setActiveTab] = React.useState<ConcurrencyTab>('run-concurrency');
+  const [activeTab, setActiveTab] = React.useState<ConcurrencyTab>('key-concurrency');
 
   const {data} = queryResult;
 
@@ -248,8 +247,6 @@ export const ConcurrencyLimits = ({
       .sort((a, b) => COMMON_COLLATOR.compare(a, b));
   }, [concurrencyKeys, search]);
 
-  const {flagPoolUI} = useFeatureFlags();
-
   if (!hasSupport) {
     return (
       <>
@@ -276,19 +273,12 @@ export const ConcurrencyLimits = ({
         <Box margin={24}>
           <NonIdealState
             icon="error"
-            title={flagPoolUI ? 'No pool limits' : 'No concurrency limits'}
+            title="No pool limits"
             description={
-              flagPoolUI ? (
-                <>
-                  No pool limits have been configured for this instance.&nbsp;
-                  <ButtonLink onClick={() => onAdd()}>Add a pool limit</ButtonLink>.
-                </>
-              ) : (
-                <>
-                  No concurrency limits have been configured for this instance.&nbsp;
-                  <ButtonLink onClick={() => onAdd()}>Add a concurrency limit</ButtonLink>.
-                </>
-              )
+              <>
+                No pool limits have been configured for this instance.&nbsp;
+                <ButtonLink onClick={() => onAdd()}>Add a pool limit</ButtonLink>.
+              </>
             }
           />
         </Box>
@@ -296,12 +286,8 @@ export const ConcurrencyLimits = ({
         <Box padding={16}>
           <NonIdealState
             icon="no-results"
-            title={flagPoolUI ? 'No pool limits' : 'No concurrency limits'}
-            description={
-              flagPoolUI
-                ? 'No pool limits matching the filter.'
-                : 'No concurrency limits matching the filter.'
-            }
+            title="No pool limits"
+            description="No pool limits matching the filter."
           />
         </Box>
       ) : (
@@ -331,7 +317,6 @@ const ConcurrencyLimitHeader = ({
     }
   | {setSearch?: never; search?: never}
 )) => {
-  const {flagPoolUI} = useFeatureFlags();
   return (
     <Box flex={{direction: 'column'}}>
       {setSearch ? (
@@ -343,12 +328,12 @@ const ConcurrencyLimitHeader = ({
           <TextInput
             value={search || ''}
             style={{width: '30vw', minWidth: 150, maxWidth: 400}}
-            placeholder={flagPoolUI ? 'Filter pools' : 'Filter concurrency keys'}
+            placeholder="Filter pools"
             onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
           />
           {onAdd ? (
             <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
-              {flagPoolUI ? 'Add pool limit' : 'Add concurrency limit'}
+              Add pool limit
             </Button>
           ) : null}
         </Box>
@@ -383,7 +368,6 @@ const AddConcurrencyLimitDialog = ({
     SetConcurrencyLimitMutation,
     SetConcurrencyLimitMutationVariables
   >(SET_CONCURRENCY_LIMIT_MUTATION);
-  const {flagPoolUI} = useFeatureFlags();
   const save = async () => {
     setIsSubmitting(true);
     await setConcurrencyLimit({
@@ -395,22 +379,18 @@ const AddConcurrencyLimitDialog = ({
   };
 
   return (
-    <Dialog
-      isOpen={open}
-      title={flagPoolUI ? 'Add pool limit' : 'Add concurrency limit'}
-      onClose={onClose}
-    >
+    <Dialog isOpen={open} title="Add pool limit" onClose={onClose}>
       <DialogBody>
-        <Box margin={{bottom: 4}}>{flagPoolUI ? 'Pool' : 'Concurrency key'}:</Box>
+        <Box margin={{bottom: 4}}>Pool:</Box>
         <Box margin={{bottom: 16}}>
           <TextInput
             value={keyInput || ''}
             onChange={(e) => setKeyInput(e.target.value)}
-            placeholder={flagPoolUI ? 'Pool' : 'Concurrency key'}
+            placeholder="Pool"
           />
         </Box>
         <Box margin={{bottom: 4}}>
-          {flagPoolUI ? 'Pool' : 'Concurrency'} limit ({minValue}-{maxValue}):
+          Pool limit ({minValue}-{maxValue}):
         </Box>
         <Box>
           <TextInput

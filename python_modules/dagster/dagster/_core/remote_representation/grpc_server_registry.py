@@ -1,6 +1,5 @@
 import sys
 import threading
-import uuid
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
@@ -26,17 +25,15 @@ class GrpcServerEndpoint(
     NamedTuple(
         "_GrpcServerEndpoint",
         [
-            ("server_id", str),
             ("host", str),
             ("port", Optional[int]),
             ("socket", Optional[str]),
         ],
     )
 ):
-    def __new__(cls, server_id: str, host: str, port: Optional[int], socket: Optional[str]):
+    def __new__(cls, host: str, port: Optional[int], socket: Optional[str]):
         return super().__new__(
             cls,
-            check.str_param(server_id, "server_id"),
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
             check.opt_str_param(socket, "socket"),
@@ -52,7 +49,6 @@ class ServerRegistryEntry(NamedTuple):
     loadable_target_origin: LoadableTargetOrigin
     creation_timestamp: float
     process: GrpcServerProcess
-    server_id: str
 
 
 class ErrorRegistryEntry(NamedTuple):
@@ -183,10 +179,8 @@ class GrpcServerRegistry(AbstractContextManager):
             active_entry = self._active_entries[origin_id]
             refresh_server = loadable_target_origin != active_entry.loadable_target_origin
 
-        new_server_id: Optional[str]
         if refresh_server:
             try:
-                new_server_id = str(uuid.uuid4())
                 server_process = GrpcServerProcess(
                     instance_ref=self.instance_ref,
                     server_command=self.server_command,
@@ -194,7 +188,6 @@ class GrpcServerRegistry(AbstractContextManager):
                     loadable_target_origin=loadable_target_origin,
                     heartbeat=True,
                     heartbeat_timeout=self._heartbeat_ttl,
-                    fixed_server_id=new_server_id,
                     startup_timeout=self._startup_timeout,
                     log_level=self._log_level,
                     inject_env_vars_from_instance=self._inject_env_vars_from_instance,
@@ -207,7 +200,6 @@ class GrpcServerRegistry(AbstractContextManager):
                     process=server_process,
                     loadable_target_origin=loadable_target_origin,
                     creation_timestamp=get_current_timestamp(),
-                    server_id=new_server_id,
                 )
             except Exception:
                 self._active_entries[origin_id] = ErrorRegistryEntry(
@@ -225,7 +217,6 @@ class GrpcServerRegistry(AbstractContextManager):
             )
 
         return GrpcServerEndpoint(
-            server_id=active_entry.server_id,
             host="localhost",
             port=active_entry.process.port,
             socket=active_entry.process.socket,

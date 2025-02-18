@@ -6,7 +6,6 @@ from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    NamedTuple,
     Optional,
     Union,
     overload,
@@ -19,6 +18,7 @@ from dagster._annotations import (
     only_allow_hidden_params_in_kwargs,
     public,
 )
+from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -34,13 +34,13 @@ from dagster._core.definitions.utils import (
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
+from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets import AssetsDefinition
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
@@ -107,26 +107,8 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
 )
-class AssetSpec(
-    NamedTuple(
-        "_AssetSpec",
-        [
-            ("key", PublicAttr[AssetKey]),
-            ("deps", PublicAttr[Iterable["AssetDep"]]),
-            ("description", PublicAttr[Optional[str]]),
-            ("metadata", PublicAttr[Mapping[str, Any]]),
-            ("group_name", PublicAttr[Optional[str]]),
-            ("skippable", PublicAttr[bool]),
-            ("code_version", PublicAttr[Optional[str]]),
-            ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
-            ("owners", PublicAttr[Sequence[str]]),
-            ("tags", PublicAttr[Mapping[str, str]]),
-            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
-        ],
-    ),
-    IHasInternalInit,
-):
+@record_custom
+class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     """Specifies the core attributes of an asset, except for the function that materializes or
     observes it.
 
@@ -158,6 +140,19 @@ class AssetSpec(
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
     """
+
+    key: PublicAttr[AssetKey]
+    deps: PublicAttr[Iterable[AssetDep]]
+    description: PublicAttr[Optional[str]]
+    metadata: PublicAttr[Mapping[str, Any]]
+    group_name: PublicAttr[Optional[str]]
+    skippable: PublicAttr[bool]
+    code_version: PublicAttr[Optional[str]]
+    freshness_policy: PublicAttr[Optional[FreshnessPolicy]]
+    automation_condition: PublicAttr[Optional[AutomationCondition]]
+    owners: PublicAttr[Sequence[str]]
+    tags: PublicAttr[Mapping[str, str]]
+    partitions_def: PublicAttr[Optional[PartitionsDefinition]]
 
     def __new__(
         cls,

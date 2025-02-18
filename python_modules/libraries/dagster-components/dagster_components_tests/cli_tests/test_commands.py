@@ -62,7 +62,7 @@ def test_list_component_types_command():
                 "value": {"title": "Value", "type": "string"},
             },
             "required": ["asset_key", "value"],
-            "title": "SimpleAssetParams",
+            "title": "SimpleAssetSchema",
             "type": "object",
         },
     }
@@ -73,7 +73,7 @@ def test_list_component_types_command():
             "filename": {"title": "Filename", "type": "string"},
         },
         "required": ["asset_key", "filename"],
-        "title": "SimplePipesScriptAssetParams",
+        "title": "SimplePipesScriptAssetSchema",
         "type": "object",
     }
 

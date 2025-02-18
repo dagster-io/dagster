@@ -164,6 +164,10 @@ const RUN_RE_EXECUTION_QUERY = gql`
         id
         status
         pipelineName
+        tags {
+          key
+          value
+        }
         executionPlan {
           artifactsPersisted
           ...ExecutionPlanToGraphFragment
