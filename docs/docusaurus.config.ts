@@ -3,10 +3,7 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import DagsterVersions from './dagsterVersions.json';
 
-const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(
-  0,
-  5,
-);
+const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
 
 const config: Config = {
   title: 'Dagster Docs',
@@ -104,35 +101,34 @@ const config: Config = {
           docId: 'api/index',
           position: 'left',
         },
-        {
-          label: 'Versions',
-          type: 'docsVersionDropdown',
-          position: 'right',
-          dropdownItemsAfter: [
-            ...DagsterVersionsDropdownItems.map(
-              ([versionName, versionUrl]) => ({
-                label: versionName,
-                href: versionUrl,
-              }),
-            ),
-            {
-              href: 'https://legacy-docs.dagster.io',
-              label: '1.9.9 and earlier'
+
+        // Conditionally display version dropdown when in local and Vercel production environments.
+        //
+        //     https://vercel.com/docs/projects/environment-variables/system-environment-variables#VERCEL_ENV
+        //
+        // Otherwise display a link to the latest docs site; this will used in preview builds.
+        !process.env.VERCEL_ENV || process.env.VERCEL_ENV === 'production'
+          ? {
+              label: 'Versions',
+              type: 'docsVersionDropdown',
+              position: 'right',
+              dropdownItemsAfter: [
+                ...DagsterVersionsDropdownItems.map(([versionName, versionUrl]) => ({
+                  label: versionName,
+                  href: versionUrl,
+                })),
+                {
+                  href: 'https://legacy-docs.dagster.io',
+                  label: '1.9.9 and earlier',
+                },
+              ],
             }
-          ]
-        },
-        //{
-        //  label: 'Changelog',
-        //  type: 'doc',
-        //  docId: 'changelog',
-        //  position: 'right',
-        //},
-        // {
-        //    label: 'Feedback',
-        //    href: 'https://github.com/dagster-io/dagster/discussions/27332',
-        //    position: 'right',
-        //    className: 'feedback-nav-link',
-        //  },
+          : {
+              label: 'Latest version',
+              href: 'https://docs.dagster.io',
+              position: 'right',
+              className: 'feedback-nav-link',
+            },
       ],
     },
     image: 'images/og.png',
@@ -182,8 +178,8 @@ const config: Config = {
           versions: {
             current: {
               label: '1.10.0 (latest)',
-              path: '/'
-            }
+              path: '/',
+            },
           },
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
