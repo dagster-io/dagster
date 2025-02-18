@@ -135,16 +135,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     version: AssetGraphQueryVersion,
   });
 
-  const computeGraphData = useMemo(() => {
-    return indexedDBAsyncMemoize<
-      Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
-      GraphDataState,
-      typeof computeGraphDataWrapper
-    >(computeGraphDataWrapper, (props) => {
-      return JSON.stringify(props);
-    });
-  }, []);
-
   const nodes = fetchResult.data?.assetNodes;
 
   const repoFilteredNodes = useMemo(() => {
@@ -220,7 +210,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     options.loading,
     supplementaryData,
     supplementaryDataLoading,
-    computeGraphData,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading || supplementaryDataLoading;
@@ -236,6 +225,14 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 }
 
 type AssetNode = AssetNodeForGraphQueryFragment;
+
+const computeGraphData = indexedDBAsyncMemoize<
+  Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+  GraphDataState,
+  typeof computeGraphDataWrapper
+>(computeGraphDataWrapper, (props) => {
+  return JSON.stringify(props);
+});
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
