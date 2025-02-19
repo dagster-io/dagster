@@ -23,9 +23,9 @@ mdx_copy:
 	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs/api/python-api/
 
 sphinx_objects_inv:
-	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	@echo "DEPRECATED - use \`yarn build-api-docs\`"
-	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	tox -e sphinx
 	cp sphinx/_build/json/objects.inv static/.
 
