@@ -99,6 +99,7 @@ class AssetOut:
         backfill_policy: Optional[BackfillPolicy] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        location: Optional[str] = None,
         **kwargs,
     ):
         # Accept a hidden "spec" argument to allow for the AssetOut to be constructed from an AssetSpec
@@ -163,6 +164,7 @@ class AssetOut:
         self.is_required = is_required
         self.io_manager_key = io_manager_key
         self.backfill_policy = backfill_policy
+        self.location = location
 
     @property
     def key(self) -> Optional[AssetKey]:
