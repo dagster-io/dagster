@@ -3,7 +3,6 @@ import typing
 import requests
 
 import dagster as dg
-from dagster import json_console_logger
 
 LOGGER_CONFIG = {"loggers": {"console": {"config": {"log_level": "INFO"}}}}
 
@@ -30,5 +29,5 @@ hackernews_topstory_ids_job = dg.define_asset_job(
 defs = dg.Definitions(
     assets=[hackernews_topstory_ids],
     jobs=[hackernews_topstory_ids_job],
-    loggers={"console": json_console_logger},
+    loggers={"console": dg.json_console_logger},
 )

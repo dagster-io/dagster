@@ -1,4 +1,5 @@
-from dagster import Definitions
+import dagster as dg
+
 from dagster_components import (
     Component,
     ComponentLoadContext,
@@ -25,6 +26,6 @@ class ShellCommand(Component):
     def get_scaffolder(cls) -> DefaultComponentScaffolder:
         return DefaultComponentScaffolder()
 
-    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
         # Add definition construction logic here.
-        return Definitions()
+        return dg.Definitions()
