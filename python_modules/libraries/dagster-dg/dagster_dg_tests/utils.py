@@ -60,7 +60,7 @@ def isolated_example_deployment_foo(
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
-        runner.invoke("deployment", "scaffold", "foo")
+        runner.invoke("scaffold", "deployment", "foo")
         with pushd("foo"):
             # Create a venv capable of running dagster dev
             if create_venv:
@@ -100,8 +100,8 @@ def isolated_example_code_location_foo_bar(
         code_loc_path = Path("foo-bar")
     with fs_context:
         runner.invoke(
-            "code-location",
             "scaffold",
+            "code-location",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
@@ -131,8 +131,8 @@ def isolated_example_component_library_foo_bar(
         # We just use the code location generation function and then modify it to be a component library
         # only.
         result = runner.invoke(
-            "code-location",
             "scaffold",
+            "code-location",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "--skip-venv",
@@ -355,7 +355,7 @@ class ProxyRunner:
         # We need to find the right spot to inject global options. For the `dg component scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[:2] == ("component", "scaffold"):
+        if args[:2] == ("scaffold", "component"):
             index = 2
         elif "--help" in args:
             index = args.index("--help")

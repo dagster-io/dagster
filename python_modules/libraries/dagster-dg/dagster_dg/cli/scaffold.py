@@ -1,18 +1,16 @@
-from collections.abc import Mapping, Sequence
+import os
+from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any, Optional
 
 import click
 from click.core import ParameterSource
-from jsonschema import Draft202012Validator, ValidationError
 from typer.rich_utils import rich_format_help
-from yaml.scanner import ScannerError
 
-from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
-from dagster_dg.component_key import ComponentKey, GlobalComponentKey, LocalComponentKey
+from dagster_dg.component_key import GlobalComponentKey
 from dagster_dg.config import (
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -20,7 +18,12 @@ from dagster_dg.config import (
     set_config_on_cli_context,
 )
 from dagster_dg.context import DgContext
-from dagster_dg.scaffold import scaffold_component_instance
+from dagster_dg.scaffold import (
+    scaffold_code_location,
+    scaffold_component_instance,
+    scaffold_component_type,
+    scaffold_deployment,
+)
 from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
@@ -30,26 +33,114 @@ from dagster_dg.utils import (
     not_none,
     parse_json_option,
 )
-from dagster_dg.yaml_utils import parse_yaml_with_source_positions
-from dagster_dg.yaml_utils.source_position import (
-    LineCol,
-    SourcePosition,
-    SourcePositionTree,
-    ValueAndSourcePositionTree,
+
+
+@click.group(name="scaffold", cls=DgClickGroup)
+def scaffold_group():
+    """Commands for scaffolding Dagster code."""
+
+
+# ########################
+# ##### CODE LOCATION
+# ########################
+
+
+@scaffold_group.command(name="code-location", cls=DgClickCommand)
+@click.argument("name", type=str)
+@click.option(
+    "--use-editable-dagster",
+    type=str,
+    flag_value="TRUE",
+    is_flag=False,
+    default=None,
+    help=(
+        "Install Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
+        " may be set as a flag (no value is passed). If set as a flag,"
+        " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
+    ),
 )
+@click.option(
+    "--skip-venv",
+    is_flag=True,
+    default=False,
+    help="Do not create a virtual environment for the code location.",
+)
+@click.option(
+    "--populate-cache/--no-populate-cache",
+    is_flag=True,
+    default=True,
+    help="Whether to automatically populate the component type cache for the code location.",
+    hidden=True,
+)
+@dg_global_options
+@click.pass_context
+def code_location_scaffold_command(
+    context: click.Context,
+    name: str,
+    use_editable_dagster: Optional[str],
+    skip_venv: bool,
+    populate_cache: bool,
+    **global_options: object,
+) -> None:
+    """Scaffold a Dagster code location file structure and a uv-managed virtual environment scoped
+    to the code location.
 
+    This command can be run inside or outside of a deployment directory. If run inside a deployment,
+    the code location will be created within the deployment directory's code location directory.
 
-@click.group(name="component", cls=DgClickGroup)
-def component_group():
-    """Commands for operating on components."""
+    The code location file structure defines a Python package with some pre-existing internal
+    structure:
+
+    \b
+    ├── <name>
+    │   ├── __init__.py
+    │   ├── components
+    │   ├── definitions.py
+    │   └── lib
+    │       └── __init__.py
+    ├── <name>_tests
+    │   └── __init__.py
+    └── pyproject.toml
+
+    The `<name>.components` directory holds components (which can be created with `dg scaffold
+    component`).  The `<name>.lib` directory holds custom component types scoped to the code
+    location (which can be created with `dg component-type scaffold`).
+    """  # noqa: D301
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    if dg_context.is_deployment:
+        if dg_context.has_code_location(name):
+            exit_with_error(f"A code location named {name} already exists.")
+        code_location_path = dg_context.code_location_root_path / name
+    else:
+        code_location_path = Path.cwd() / name
+
+    if use_editable_dagster == "TRUE":
+        if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
+            exit_with_error(
+                "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
+            )
+        editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
+    elif use_editable_dagster:  # a string value was passed
+        editable_dagster_root = use_editable_dagster
+    else:
+        editable_dagster_root = None
+
+    scaffold_code_location(
+        code_location_path,
+        dg_context,
+        editable_dagster_root,
+        skip_venv=skip_venv,
+        populate_cache=populate_cache,
+    )
 
 
 # ########################
-# ##### SCAFFOLD
+# ##### COMPONENT
 # ########################
 
 
-# The `dg component scaffold` command is special because its subcommands are dynamically generated
+# The `dg scaffold component` command is special because its subcommands are dynamically generated
 # from the registered component types in the code location. Because the registered component types
 # depend on the built-in component library we are using, we cannot resolve them until we have the
 # built-in component library, which can be set via a global option, e.g.:
@@ -124,8 +215,8 @@ class ComponentScaffoldSubCommand(DgClickCommand):
 # behavior of `--help` by setting `help_option_names=[]`, ensuring that we can process the other
 # options first and generate the correct subcommands. We then add a custom `--help` option that
 # gets invoked inside the callback.
-@component_group.group(
-    name="scaffold",
+@scaffold_group.group(
+    name="component",
     cls=ComponentScaffoldGroup,
     invoke_without_command=True,
     context_settings={"help_option_names": []},
@@ -240,158 +331,55 @@ def _create_component_scaffold_subcommand(
 
 
 # ########################
-# ##### LIST
+# ##### COMPONENT TYPE
 # ########################
 
 
-@component_group.command(name="list", cls=DgClickCommand)
+@scaffold_group.command(name="component-type", cls=DgClickCommand)
+@click.argument("name", type=str)
 @dg_global_options
 @click.pass_context
-def component_list_command(context: click.Context, **global_options: object) -> None:
-    """List Dagster component instances defined in the current code location."""
-    cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
-
-    for component_instance_name in dg_context.get_component_instance_names():
-        click.echo(component_instance_name)
-
-
-# ########################
-# ##### CHECK
-# ########################
-
-COMPONENT_FILE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "type": {"type": "string"},
-        "params": {"type": "object"},
-    },
-    "additionalProperties": False,
-}
-
-
-def _is_local_component(component_name: str) -> bool:
-    return component_name.endswith(".py")
-
-
-def _scaffold_value_and_source_position_tree(
-    filename: str, row: int, col: int
-) -> ValueAndSourcePositionTree:
-    return ValueAndSourcePositionTree(
-        value=None,
-        source_position_tree=SourcePositionTree(
-            position=SourcePosition(
-                filename=filename, start=LineCol(row, col), end=LineCol(row, col)
-            ),
-            children={},
-        ),
-    )
-
-
-class ErrorInput(NamedTuple):
-    component_name: Optional[ComponentKey]
-    error: ValidationError
-    source_position_tree: ValueAndSourcePositionTree
-
-
-@component_group.command(name="check", cls=DgClickCommand)
-@click.argument("paths", nargs=-1, type=click.Path(exists=True))
-@dg_global_options
-@click.pass_context
-def component_check_command(
-    context: click.Context,
-    paths: Sequence[str],
-    **global_options: object,
+def component_type_scaffold_command(
+    context: click.Context, name: str, **global_options: object
 ) -> None:
-    """Check component files against their schemas, showing validation errors."""
-    resolved_paths = [Path(path).absolute() for path in paths]
-    top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
+    """Scaffold of a custom Dagster component type.
 
+    This command must be run inside a Dagster code location directory. The component type scaffold
+    will be placed in submodule `<code_location_name>.lib.<name>`.
+    """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
+    registry = RemoteComponentRegistry.from_dg_context(dg_context)
+    component_key = GlobalComponentKey(name=name, namespace=dg_context.root_package_name)
+    if registry.has_global(component_key):
+        exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
-    validation_errors: list[ErrorInput] = []
+    scaffold_component_type(dg_context, name)
 
-    component_contents_by_key: dict[ComponentKey, Any] = {}
-    local_component_dirs = set()
-    for component_dir in dg_context.components_path.iterdir():
-        if resolved_paths and not any(
-            path == component_dir or path in component_dir.parents for path in resolved_paths
-        ):
-            continue
 
-        component_path = component_dir / "component.yaml"
+# ########################
+# ##### DEPLOYMENT
+# ########################
 
-        if component_path.exists():
-            text = component_path.read_text()
-            try:
-                component_doc_tree = parse_yaml_with_source_positions(
-                    text, filename=str(component_path)
-                )
-            except ScannerError as se:
-                validation_errors.append(
-                    ErrorInput(
-                        None,
-                        ValidationError(f"Unable to parse YAML: {se.context}, {se.problem}"),
-                        _scaffold_value_and_source_position_tree(
-                            filename=str(component_path),
-                            row=se.problem_mark.line + 1 if se.problem_mark else 1,
-                            col=se.problem_mark.column + 1 if se.problem_mark else 1,
-                        ),
-                    )
-                )
-                continue
-            # First, validate the top-level structure of the component file
-            # (type and params keys) before we try to validate the params themselves.
-            top_level_errs = list(
-                top_level_component_validator.iter_errors(component_doc_tree.value)
-            )
-            for err in top_level_errs:
-                validation_errors.append(ErrorInput(None, err, component_doc_tree))
-            if top_level_errs:
-                continue
 
-            component_key = ComponentKey.from_typename(
-                component_doc_tree.value.get("type"), dirpath=component_path.parent
-            )
-            component_contents_by_key[component_key] = component_doc_tree
-            if isinstance(component_key, LocalComponentKey):
-                local_component_dirs.add(component_dir)
+@scaffold_group.command(name="deployment", cls=DgClickCommand)
+@dg_global_options
+@click.argument("path", type=Path)
+@click.pass_context
+def deployment_scaffold_command(
+    context: click.Context, path: Path, **global_options: object
+) -> None:
+    """Scaffold a Dagster deployment file structure.
 
-    # Fetch the local component types, if we need any local components
-    component_registry = RemoteComponentRegistry.from_dg_context(
-        dg_context, local_component_type_dirs=list(local_component_dirs)
-    )
-    for component_key, component_doc_tree in component_contents_by_key.items():
-        try:
-            json_schema = component_registry.get(component_key).component_params_schema or {}
-
-            v = Draft202012Validator(json_schema)
-            for err in v.iter_errors(component_doc_tree.value["params"]):
-                validation_errors.append(ErrorInput(component_key, err, component_doc_tree))
-        except KeyError:
-            # No matching component type found
-            validation_errors.append(
-                ErrorInput(
-                    None,
-                    ValidationError(
-                        f"Component type '{component_key.to_typename()}' not found in {component_key.python_file}."
-                        if isinstance(component_key, LocalComponentKey)
-                        else f"Component type '{component_key.to_typename()}' not found."
-                    ),
-                    component_doc_tree,
-                )
-            )
-    if validation_errors:
-        for component_key, error, component_doc_tree in validation_errors:
-            click.echo(
-                error_dict_to_formatted_error(
-                    component_key,
-                    error,
-                    source_position_tree=component_doc_tree.source_position_tree,
-                    prefix=["params"] if component_key else [],
-                )
-            )
-        context.exit(1)
-    else:
-        click.echo("All components validated successfully.")
+    The deployment file structure includes a directory for code locations and configuration files
+    for deploying to Dagster Plus.
+    """
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dir_abspath = os.path.abspath(path)
+    if os.path.exists(dir_abspath):
+        exit_with_error(
+            f"A file or directory at {dir_abspath} already exists. "
+            + "\nPlease delete the contents of this path or choose another location."
+        )
+    scaffold_deployment(path, dg_context)
