@@ -33,6 +33,6 @@ echo "Running sphinx-mdx and copying files to \`docs/api/python-api\`"
 tox -e sphinx-mdx
 cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs/api/python-api/
 
-echo "Running sphinx and copying \`object.inv\` to to \`static/\`"
+echo "Running sphinx and copying \`object.inv\` to \`static/\`"
 tox -e sphinx
 cp sphinx/_build/json/objects.inv static/.
