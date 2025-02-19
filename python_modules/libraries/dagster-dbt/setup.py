@@ -54,7 +54,7 @@ setup(
     extras_require={
         "test": [
             "pytest-rerunfailures",
-            "dbt-duckdb",
+            "dbt-duckdb<1.9.2",  # concurrency issues
             "dagster-duckdb",
             "dagster-duckdb-pandas",
         ]

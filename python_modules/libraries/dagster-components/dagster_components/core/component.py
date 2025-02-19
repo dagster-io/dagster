@@ -10,13 +10,12 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, ClassVar, Optional, TypedDict, TypeVar, Union
+from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import snakecase
-from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components.core.component_key import (
@@ -29,8 +28,13 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
+from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.utils import load_module_from_path
+from dagster_components.utils import format_error_message, load_module_from_path
+
+
+class ComponentsEntryPointLoadError(DagsterError):
+    pass
 
 
 class ComponentDeclNode(ABC):
@@ -39,10 +43,8 @@ class ComponentDeclNode(ABC):
 
 
 class Component(ABC):
-    name: ClassVar[Optional[str]] = None
-
     @classmethod
-    def get_schema(cls) -> Optional[type[BaseModel]]:
+    def get_schema(cls) -> Optional[type[ResolvableSchema]]:
         return None
 
     @classmethod
@@ -64,8 +66,8 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    @abstractmethod
-    def load(cls, params: Optional[BaseModel], context: "ComponentLoadContext") -> Self: ...
+    def load(cls, params: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
+        return params.resolve_as(cls, context.resolution_context) if params else cls()
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
@@ -160,7 +162,16 @@ class ComponentTypeRegistry:
             ):
                 continue
 
-            root_module = entry_point.load()
+            try:
+                root_module = entry_point.load()
+            except Exception as e:
+                raise ComponentsEntryPointLoadError(
+                    format_error_message(f"""
+                        Error loading entry point `{entry_point.name}` in group `{COMPONENTS_ENTRY_POINT_GROUP}`.
+                        Please fix the error or uninstall the package that defines this entry point.
+                    """)
+                ) from e
+
             if not isinstance(root_module, ModuleType):
                 raise DagsterError(
                     f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "
@@ -220,11 +231,12 @@ def get_registered_component_types_in_module(module: ModuleType) -> Iterable[typ
             yield component
 
 
-T = TypeVar("T", bound=BaseModel)
+T = TypeVar("T")
 
 
 @dataclass
 class ComponentLoadContext:
+    module_name: str
     resources: Mapping[str, object]
     registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
@@ -238,6 +250,7 @@ class ComponentLoadContext:
         decl_node: Optional[ComponentDeclNode] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
+            module_name="test",
             resources=resources or {},
             registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
@@ -264,6 +277,9 @@ class ComponentLoadContext:
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
+
+    def resolve(self, value: ResolvableSchema, as_type: type[T]) -> T:
+        return self.resolution_context.resolve_value(value, as_type=as_type)
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
@@ -318,9 +334,9 @@ def get_component_type_name(component_type: type[Component]) -> str:
 T_Component = TypeVar("T_Component", bound=Component)
 
 
-def component_loader(
-    fn: Callable[[ComponentLoadContext], T],
-) -> Callable[[ComponentLoadContext], T]:
+def component(
+    fn: Callable[[ComponentLoadContext], T_Component],
+) -> Callable[[ComponentLoadContext], T_Component]:
     setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
     return fn
 

@@ -3,13 +3,7 @@ from typing import Union
 
 import dagster._check as check
 import docutils.nodes as nodes
-from dagster._annotations import (
-    BetaInfo,
-    DeprecatedInfo,
-    ExperimentalInfo,
-    PreviewInfo,
-    SupersededInfo,
-)
+from dagster._annotations import BetaInfo, DeprecatedInfo, PreviewInfo, SupersededInfo
 from sphinx.util.docutils import SphinxDirective
 
 # ########################
@@ -21,19 +15,13 @@ from sphinx.util.docutils import SphinxDirective
 
 def inject_object_flag(
     obj: object,
-    info: Union[SupersededInfo, DeprecatedInfo, ExperimentalInfo, PreviewInfo, BetaInfo],
+    info: Union[SupersededInfo, DeprecatedInfo, PreviewInfo, BetaInfo],
     docstring: list[str],
 ) -> None:
     if isinstance(info, DeprecatedInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
         flag_type = "deprecated"
         message = f"This API will be removed in version {info.breaking_version}.\n{additional_text}"
-    elif isinstance(info, ExperimentalInfo):
-        additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
-        flag_type = "experimental"
-        message = (
-            f"This API may break in future versions, even between dot releases.\n{additional_text}"
-        )
     elif isinstance(info, SupersededInfo):
         additional_text = f" {info.additional_warn_text}." if info.additional_warn_text else ""
         flag_type = "superseded"
@@ -61,7 +49,7 @@ def inject_object_flag(
 def inject_param_flag(
     lines: list[str],
     param: str,
-    info: Union[DeprecatedInfo, ExperimentalInfo],
+    info: Union[BetaInfo, DeprecatedInfo],
 ):
     additional_text = f" {info.additional_warn_text}" if info.additional_warn_text else ""
     if isinstance(info, DeprecatedInfo):
@@ -69,11 +57,11 @@ def inject_param_flag(
         message = (
             f"(This parameter will be removed in version {info.breaking_version}.{additional_text})"
         )
-    elif isinstance(info, ExperimentalInfo):
-        flag = ":inline-flag:`experimental`"
+    elif isinstance(info, BetaInfo):
+        flag = ":inline-flag:`beta`"
         message = (
-            "(This parameter may break in future versions, even between dot"
-            f" releases.{additional_text})"
+            f"(This parameter is currently in beta, and may have breaking changes in minor version releases, "
+            f"with behavior changes in patch releases.{additional_text})"
         )
     else:
         check.failed(f"Unexpected info type {type(info)}")

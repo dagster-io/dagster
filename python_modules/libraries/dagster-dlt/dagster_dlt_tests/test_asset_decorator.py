@@ -772,3 +772,12 @@ def test_with_tag_replacements_legacy(dlt_pipeline: Pipeline) -> None:
 
     for tags in my_dlt_assets.tags_by_key.values():
         assert tags == expected_tags
+
+
+def test_pool(dlt_pipeline: Pipeline) -> None:
+    pool = "custom_pool"
+
+    @dlt_assets(dlt_source=pipeline(), dlt_pipeline=dlt_pipeline, pool=pool)
+    def my_dlt_assets(): ...
+
+    assert my_dlt_assets.op.pool == pool

@@ -8,15 +8,13 @@ import {
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {SupplementaryInformation} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
 import {AntlrAssetSelectionVisitor} from 'shared/asset-selection/AntlrAssetSelectionVisitor.oss';
-import {
-  AssetSelectionLexer,
-  AssetSelectionParser,
-} from 'shared/asset-selection/AssetSelectionAntlr.oss';
 
 import {featureEnabled} from '../app/Flags';
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {AssetGraphQueryItem} from '../asset-graph/useAssetGraphData';
 import {weakMapMemoize} from '../util/weakMapMemoize';
+import {AssetSelectionLexer} from './generated/AssetSelectionLexer';
+import {AssetSelectionParser} from './generated/AssetSelectionParser';
 
 export class AntlrInputErrorListener implements ANTLRErrorListener<any> {
   syntaxError(
@@ -77,11 +75,13 @@ export const filterAssetSelectionByQuery = weakMapMemoize(
     query: string,
     supplementaryData: SupplementaryInformation,
   ): AssetSelectionQueryResult => {
+    if (query.length === 0) {
+      return {all: all_assets, focus: []};
+    }
     if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
       const result = parseAssetSelectionQuery(all_assets, query, supplementaryData);
       if (result instanceof Error) {
-        // fall back to old behavior
-        return filterByQuery(all_assets, query);
+        return {all: [], focus: []};
       }
       return result;
     }

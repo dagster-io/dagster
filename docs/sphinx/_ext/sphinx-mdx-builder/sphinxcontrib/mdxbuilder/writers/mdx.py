@@ -151,6 +151,7 @@ class MdxTranslator(SphinxTranslator):
         self.list_counter: list[int] = []
         self.in_literal = 0
         self.in_literal_block = 0
+        self.in_list_item = 0
         self.desc_count = 0
 
         self.max_line_width = self.config.mdx_max_line_width or 120
@@ -293,7 +294,9 @@ class MdxTranslator(SphinxTranslator):
                 do_format()
                 result.append((indent + itemindent, item))  # type: ignore[arg-type]
                 toformat = []
+
         do_format()
+
         if first is not None and result:
             # insert prefix into first line (ex. *, [1], See also, etc.)
             newindent = result[0][0] - indent
@@ -317,7 +320,6 @@ class MdxTranslator(SphinxTranslator):
         raise nodes.SkipNode
 
     def visit_Text(self, node: nodes.Text) -> None:
-        # print("->", type(node.parent), node.parent)
         if isinstance(node.parent, nodes.reference):
             return
 
@@ -331,8 +333,19 @@ class MdxTranslator(SphinxTranslator):
         if "This parameter will be removed" in content:
             return
 
+        # Prevents wrapped lines in list items, for example in parameter descriptions:
+        #
+        # Args:
+        #     group_name (Optional[str], optional): The name of the asset group.
+        #     dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
+        #         to convert Airbyte content into :py:class:`dagster.AssetSpec`.
+        #         Defaults to :py:class:`DagsterAirbyteTranslator`.
+        if self.in_list_item:
+            content = content.replace("\n", " ")
+
         if self.in_literal and not self.in_literal_block:
-            content = node.astext().replace("<", "\\<").replace("{", "\\{")
+            content = content.replace("<", "\\<").replace("{", "\\{")
+
         self.add_text(content)
 
     def depart_Text(self, node: Element) -> None:
@@ -723,6 +736,8 @@ class MdxTranslator(SphinxTranslator):
         pass
 
     def visit_list_item(self, node: Element) -> None:
+        self.in_list_item += 1
+
         if self.list_counter[-1] == -1:
             self.new_state(2)
             # bullet list
@@ -735,6 +750,7 @@ class MdxTranslator(SphinxTranslator):
             self.new_state(len(str(self.list_counter[-1])) + 2)
 
     def depart_list_item(self, node: Element) -> None:
+        self.in_list_item -= 1
         if self.list_counter[-1] == -1:
             self.end_state(first="- ", wrap=False)
             self.states[-1].pop()
@@ -1007,8 +1023,6 @@ class MdxTranslator(SphinxTranslator):
     def _flag_to_level(self, flag_type: str) -> str:
         """Maps flag type to style that will be using in CSS and admonitions."""
         level = "info"
-        if flag_type == "experimental":
-            level = "warning"
         if flag_type == "preview":
             level = "warning"
         if flag_type == "beta":

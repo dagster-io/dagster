@@ -1106,11 +1106,6 @@ class TestRunStorage:
         assert storage.has_job_snapshot(job_snapshot_id)
         assert not storage.has_job_snapshot("nope")
 
-        if self.can_delete_runs():
-            storage.wipe()
-
-            assert not storage.has_job_snapshot(job_snapshot_id)
-
     def test_single_write_read_with_snapshot(self, storage: RunStorage):
         run_with_snapshot_id = str(uuid4())
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
@@ -1138,7 +1133,6 @@ class TestRunStorage:
         if self.can_delete_runs():
             storage.wipe()
 
-            assert not storage.has_job_snapshot(job_snapshot_id)
             assert not storage.has_run(run_with_snapshot_id)
 
     def test_single_write_with_missing_snapshot(self, storage: RunStorage):
@@ -1172,11 +1166,6 @@ class TestRunStorage:
         assert serialize_pp(fetched_ep_snapshot) == serialize_pp(ep_snapshot)
         assert storage.has_execution_plan_snapshot(snapshot_id)
         assert not storage.has_execution_plan_snapshot("nope")
-
-        if self.can_delete_runs():
-            storage.wipe()
-
-            assert not storage.has_execution_plan_snapshot(snapshot_id)
 
     def test_fetch_run_filter(self, storage):
         assert storage
@@ -1813,36 +1802,6 @@ class TestRunStorage:
         )
 
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
-
-    def test_debug_snapshot_import(self, storage):
-        from dagster._core.execution.api import create_execution_plan
-        from dagster._core.snap import (
-            create_execution_plan_snapshot_id,
-            snapshot_from_execution_plan,
-        )
-
-        run_id = make_new_run_id()
-        run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
-        storage.add_run(run_to_add)
-
-        job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
-
-        job_snapshot = job_def.get_job_snapshot()
-        job_snapshot_id = job_snapshot.snapshot_id
-        new_job_snapshot_id = f"{job_snapshot_id}-new-snapshot"
-
-        storage.add_snapshot(job_snapshot, snapshot_id=new_job_snapshot_id)
-        assert not storage.has_snapshot(job_snapshot_id)
-        assert storage.has_snapshot(new_job_snapshot_id)
-
-        execution_plan = create_execution_plan(job_def)
-        ep_snapshot = snapshot_from_execution_plan(execution_plan, new_job_snapshot_id)
-        ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
-        new_ep_snapshot_id = f"{ep_snapshot_id}-new-snapshot"
-
-        storage.add_snapshot(ep_snapshot, snapshot_id=new_ep_snapshot_id)
-        assert not storage.has_snapshot(ep_snapshot_id)
-        assert storage.has_snapshot(new_ep_snapshot_id)
 
     def test_run_record_stats(self, storage, instance):
         assert storage

@@ -8,6 +8,8 @@ import {
   createProvider,
 } from '../selection/SelectionAutoCompleteProvider';
 
+export const opGraphSelectionSyntaxSupportedAttributes = ['name'] as const;
+
 export const useOpGraphSelectionAutoCompleteProvider = (
   items: GraphQueryItem[],
 ): Pick<SelectionAutoCompleteProvider, 'useAutoComplete'> => {

@@ -67,6 +67,7 @@ describe('ReexecutionDialog', () => {
           onClose={jest.fn()}
           onComplete={jest.fn()}
           selectedRuns={selectedMap}
+          selectedRunBackfillIds={[]}
           reexecutionStrategy={props.strategy}
         />
       </MemoryRouter>

@@ -3,7 +3,7 @@ import warnings
 try:
     # Centralise Azure imports here so we only need to warn in one place
     from azure.core.exceptions import ResourceNotFoundError
-    from azure.storage.blob import BlobServiceClient, generate_blob_sas
+    from azure.storage.blob import BlobLeaseClient, BlobServiceClient, generate_blob_sas
 except ImportError:
     msg = (
         "Could not import required Azure objects. This probably means you have an old version "
@@ -16,11 +16,11 @@ except ImportError:
     raise
 
 
-def _create_url(storage_account, subdomain):
+def _create_url(storage_account: str, subdomain: str) -> str:
     return f"https://{storage_account}.{subdomain}.core.windows.net/"
 
 
-def create_blob_client(storage_account, credential) -> BlobServiceClient:
+def create_blob_client(storage_account: str, credential) -> BlobServiceClient:
     """Create a Blob Storage client."""
     account_url = _create_url(storage_account, "blob")
     if hasattr(credential, "account_key"):
@@ -28,4 +28,10 @@ def create_blob_client(storage_account, credential) -> BlobServiceClient:
     return BlobServiceClient(account_url, credential)
 
 
-__all__ = ["BlobServiceClient", "ResourceNotFoundError", "create_blob_client", "generate_blob_sas"]
+__all__ = [
+    "BlobLeaseClient",
+    "BlobServiceClient",
+    "ResourceNotFoundError",
+    "create_blob_client",
+    "generate_blob_sas",
+]

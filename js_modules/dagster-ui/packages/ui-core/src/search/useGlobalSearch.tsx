@@ -1,9 +1,15 @@
-import qs from 'qs';
 import {useCallback, useContext, useEffect, useRef} from 'react';
 import {useAugmentSearchResults} from 'shared/search/useAugmentSearchResults.oss';
 
-import {GroupMetadata, buildAssetCountBySection} from './BuildAssetSearchResults';
+import {buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
+import {
+  linkToAssetTableWithAssetOwnerFilter,
+  linkToAssetTableWithGroupFilter,
+  linkToAssetTableWithKindFilter,
+  linkToAssetTableWithTagFilter,
+  linkToCodeLocation,
+} from './links';
 import {AssetFilterSearchResultType, SearchResult, SearchResultType} from './types';
 import {
   SearchPrimaryQuery,
@@ -24,51 +30,10 @@ import {
 } from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
-import {AssetOwner, DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {assetOwnerAsString} from '../workspace/assetOwnerAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
-import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
 import {workspacePath} from '../workspace/workspacePath';
-
-export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
-  return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
-};
-
-export const linkToAssetTableWithKindFilter = (kind: string) => {
-  return `/assets?${qs.stringify({
-    kinds: JSON.stringify([kind]),
-  })}`;
-};
-
-export const linkToAssetTableWithTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
-  return `/assets?${qs.stringify({
-    tags: JSON.stringify([tag]),
-  })}`;
-};
-
-export const linkToAssetTableWithAssetOwnerFilter = (owner: AssetOwner) => {
-  return `/assets?${qs.stringify({
-    owners: JSON.stringify([owner]),
-  })}`;
-};
-
-export const linkToAssetTableWithColumnsFilter = (columns: string[]) => {
-  return `/assets?${qs.stringify({
-    columns: JSON.stringify(columns),
-  })}`;
-};
-
-export const linkToAssetTableWithColumnTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
-  return `/assets?${qs.stringify({
-    columnTags: JSON.stringify([tag]),
-  })}`;
-};
-
-export const linkToCodeLocation = (repoAddress: RepoAddress) => {
-  return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
-};
 
 const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
   const {data} = input;

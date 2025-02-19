@@ -447,6 +447,15 @@ def test_op_tags(test_jaffle_shop_manifest: dict[str, Any]):
         def exclude_tag(): ...
 
 
+def test_pool(test_jaffle_shop_manifest: dict[str, Any]) -> None:
+    pool = "custom_pool"
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest, pool=pool)
+    def my_dbt_assets(): ...
+
+    assert my_dbt_assets.op.pool == pool
+
+
 def test_with_asset_key_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> None:
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:

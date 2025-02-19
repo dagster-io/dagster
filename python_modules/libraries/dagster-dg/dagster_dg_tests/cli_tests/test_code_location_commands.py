@@ -109,25 +109,27 @@ def test_code_location_scaffold_editable_dagster_success(mode: str, monkeypatch)
         with open("code_locations/foo-bar/pyproject.toml") as f:
             toml = tomlkit.parse(f.read())
             assert get_toml_value(toml, ("tool", "uv", "sources", "dagster"), dict) == {
-                "path": f"{dagster_git_repo_dir}/python_modules/dagster",
+                "path": str(dagster_git_repo_dir / "python_modules" / "dagster"),
                 "editable": True,
             }
             assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-pipes"), dict) == {
-                "path": f"{dagster_git_repo_dir}/python_modules/dagster-pipes",
+                "path": str(dagster_git_repo_dir / "python_modules" / "dagster-pipes"),
                 "editable": True,
             }
             assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-webserver"), dict) == {
-                "path": f"{dagster_git_repo_dir}/python_modules/dagster-webserver",
+                "path": str(dagster_git_repo_dir / "python_modules" / "dagster-webserver"),
                 "editable": True,
             }
             assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-components"), dict) == {
-                "path": f"{dagster_git_repo_dir}/python_modules/libraries/dagster-components",
+                "path": str(
+                    dagster_git_repo_dir / "python_modules" / "libraries" / "dagster-components"
+                ),
                 "editable": True,
             }
             # Check for presence of one random package with no component to ensure we are
             # preemptively adding all packages
             assert get_toml_value(toml, ("tool", "uv", "sources", "dagstermill"), dict) == {
-                "path": f"{dagster_git_repo_dir}/python_modules/libraries/dagstermill",
+                "path": str(dagster_git_repo_dir / "python_modules" / "libraries" / "dagstermill"),
                 "editable": True,
             }
 
@@ -146,6 +148,27 @@ def test_code_location_scaffold_skip_venv_success() -> None:
         # Check venv not created
         assert not Path("foo-bar/.venv").exists()
         assert not Path("foo-bar/uv.lock").exists()
+
+
+def test_code_location_scaffold_no_populate_cache_success() -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("code-location", "scaffold", "--no-populate-cache", "foo-bar")
+        assert_runner_result(result)
+        assert Path("foo-bar").exists()
+        assert Path("foo-bar/foo_bar").exists()
+        assert Path("foo-bar/foo_bar/lib").exists()
+        assert Path("foo-bar/foo_bar/components").exists()
+        assert Path("foo-bar/foo_bar_tests").exists()
+        assert Path("foo-bar/pyproject.toml").exists()
+
+        # Check venv created
+        assert Path("foo-bar/.venv").exists()
+        assert Path("foo-bar/uv.lock").exists()
+
+        with pushd("foo-bar"):
+            result = runner.invoke("component-type", "list", "--verbose")
+            assert_runner_result(result)
+            assert "CACHE [miss]" in result.output
 
 
 def test_code_location_scaffold_no_use_dg_managed_environment_success() -> None:
@@ -201,10 +224,3 @@ def test_code_location_list_success():
                 foo
             """).strip()
         )
-
-
-def test_code_location_list_outside_deployment_fails() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("code-location", "list")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster deployment directory" in result.output

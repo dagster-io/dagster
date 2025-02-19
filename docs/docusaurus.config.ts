@@ -1,6 +1,9 @@
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import DagsterVersions from './dagsterVersions.json';
+
+const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
 
 const config: Config = {
   title: 'Dagster Docs',
@@ -35,10 +38,6 @@ const config: Config = {
           contextualSearch: false,
         },
       }),
-    announcementBar: {
-      id: 'announcementBar',
-      content: `<div><h3>Welcome to Dagster's new and improved documentation site!</h3> You can find the legacy documentation with content for versions 1.9.9 and earlier at <a target="_blank" href="https://legacy-docs.dagster.io/">legacy-docs.dagster.io</a>.</div>`,
-    },
     colorMode: {
       defaultMode: 'light',
       disableSwitch: false,
@@ -79,9 +78,9 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'Tutorials',
+          label: 'Examples',
           type: 'doc',
-          docId: 'tutorials/index',
+          docId: 'examples/index',
           position: 'left',
         },
         {
@@ -97,28 +96,39 @@ const config: Config = {
           position: 'left',
         },
         {
-          label: 'API reference',
+          label: 'API',
           type: 'doc',
           docId: 'api/index',
           position: 'left',
         },
-        //{
-        //  label: 'Changelog',
-        //  type: 'doc',
-        //  docId: 'changelog',
-        //  position: 'right',
-        //},
-        //{
-        //  label: 'Versions',
-        //  type: 'docsVersionDropdown',
-        //  position: 'right'
-        //},
-        {
-           label: 'Feedback',
-           href: 'https://github.com/dagster-io/dagster/discussions/27332',
-           position: 'right',
-           className: 'feedback-nav-link',
-         },
+
+        // Conditionally display version dropdown when in local and Vercel production environments.
+        //
+        //     https://vercel.com/docs/projects/environment-variables/system-environment-variables#VERCEL_ENV
+        //
+        // Otherwise display a link to the latest docs site; this will used in preview builds.
+        !process.env.VERCEL_ENV || process.env.VERCEL_ENV === 'production'
+          ? {
+              label: 'Versions',
+              type: 'docsVersionDropdown',
+              position: 'right',
+              dropdownItemsAfter: [
+                ...DagsterVersionsDropdownItems.map(([versionName, versionUrl]) => ({
+                  label: versionName,
+                  href: versionUrl,
+                })),
+                {
+                  href: 'https://legacy-docs.dagster.io',
+                  label: '1.9.9 and earlier',
+                },
+              ],
+            }
+          : {
+              label: 'Latest version',
+              href: 'https://docs.dagster.io',
+              position: 'right',
+              className: 'feedback-nav-link',
+            },
       ],
     },
     image: 'images/og.png',
@@ -143,6 +153,7 @@ const config: Config = {
             <a href='https://www.dagster.io/terms'>Terms of Service</a>
             <a href='https://www.dagster.io/privacy/'>Privacy Policy</a>
             <a href='https://www.dagster.io/security/'>Security</a>
+            <a href='https://github.com/dagster-io/dagster/discussions/27332'>Feedback</a>
           </div>
 
           <div class='footer__items--right'>
@@ -163,6 +174,13 @@ const config: Config = {
       '@docusaurus/preset-classic',
       {
         docs: {
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '1.10.0 (latest)',
+              path: '/',
+            },
+          },
           sidebarPath: './sidebars.ts',
           routeBasePath: '/',
           editUrl: 'https://github.com/dagster-io/dagster/tree/master/docs',

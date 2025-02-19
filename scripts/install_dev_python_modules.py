@@ -50,7 +50,6 @@ def main(
     # Supported on all Python versions.
     editable_target_paths = [
         ".buildkite/dagster-buildkite",
-        "examples/experimental/dagster-blueprints",
         "python_modules/libraries/dagster-airlift[core,in-airflow,mwaa,dbt,test]",
         "integration_tests/python_modules/dagster-k8s-test-infra",
         "helm/dagster/schema[test]",

@@ -39,8 +39,8 @@ def _assert_scaffold_invocation(
     )
 
     assert result.exit_code == 0
-    assert f"Initializing Dagster project {project_name}" in result.stdout
-    assert "Your Dagster project has been initialized" in result.stdout
+    assert f"Initializing Dagster project {project_name}" in result.output
+    assert "Your Dagster project has been initialized" in result.output
     assert dagster_project_dir.exists()
     assert dagster_project_dir.joinpath(project_name).exists()
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))

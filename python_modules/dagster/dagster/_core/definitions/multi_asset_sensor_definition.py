@@ -5,7 +5,7 @@ from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, experimental, public
+from dagster._annotations import deprecated_param, public, superseded
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
@@ -155,7 +155,6 @@ class MultiAssetSensorContextCursor:
     breaking_version="2.0",
     additional_warn_text="Use `last_tick_completion_time` instead.",
 )
-@experimental
 class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
     """The context object available as the argument to the evaluation function of a
     :py:class:`dagster.MultiAssetSensorDefinition`.
@@ -980,7 +979,6 @@ def get_cursor_from_latest_materializations(
     return cursor_str
 
 
-@experimental
 def build_multi_asset_sensor_context(
     *,
     monitored_assets: Union[Sequence[AssetKey], AssetSelection],
@@ -1099,7 +1097,12 @@ MultiAssetMaterializationFunction = Callable[
 ]
 
 
-@experimental
+@superseded(
+    additional_warn_text="For most use cases, Declarative Automation should be used instead of "
+    "multi_asset_sensors to monitor the status of upstream assets and launch runs in response. "
+    "In cases where side effects are required, or a specific job must be targeted for execution, "
+    "multi_asset_sensors may be used."
+)
 class MultiAssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a list of
     assets.
@@ -1123,10 +1126,10 @@ class MultiAssetSensorDefinition(SensorDefinition):
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
             object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]]):
-            (experimental) A list of jobs to be executed when the sensor fires.
+            A list of jobs to be executed when the sensor fires.
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
-        request_assets (Optional[AssetSelection]): (Experimental) an asset selection to launch a run
+        request_assets (Optional[AssetSelection]): an asset selection to launch a run
             for if the sensor condition is met. This can be provided instead of specifying a job.
         tags (Optional[Mapping[str, str]]): A set of key-value tags that annotate the sensor and can
             be used for searching and filtering in the UI.

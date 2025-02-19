@@ -46,7 +46,7 @@ class OutputDefinition:
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
-        code_version (Optional[str]): (Experimental) Version of the code that generates this output. In
+        code_version (Optional[str]): Version of the code that generates this output. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
 
@@ -350,7 +350,7 @@ class Out(
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
-        code_version (Optional[str]): (Experimental) Version of the code that generates this output. In
+        code_version (Optional[str]): Version of the code that generates this output. In
             general, versions should be set only for code that deterministically produces the same
             output when given the same inputs.
     """

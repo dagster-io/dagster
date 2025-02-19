@@ -75,7 +75,7 @@ def test_python_params_node_rename(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(context, DbtProjectComponent.get_schema())
+    params = decl_node.get_params(DbtProjectComponent.get_schema())
     component = DbtProjectComponent.load(params=params, context=context)
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
@@ -94,7 +94,7 @@ def test_python_params_group(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(context, DbtProjectComponent.get_schema())
+    params = decl_node.get_params(DbtProjectComponent.get_schema())
     comp = DbtProjectComponent.load(params=params, context=context)
     assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
     defs: Definitions = comp.build_defs(script_load_context(None))
@@ -135,7 +135,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        params = decl_node.get_params(context, DbtProjectComponent.get_schema())
+        params = decl_node.get_params(DbtProjectComponent.get_schema())
         comp = DbtProjectComponent.load(params=params, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
         defs: Definitions = comp.build_defs(script_load_context())
@@ -158,6 +158,6 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        params = decl_node.get_params(context, DbtProjectComponent.get_schema())
+        params = decl_node.get_params(DbtProjectComponent.get_schema())
         comp = DbtProjectComponent.load(params=params, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS_WITH_PREFIX

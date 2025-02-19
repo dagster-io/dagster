@@ -4,7 +4,11 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dagster_dg.utils import ensure_dagster_dg_tests_import, set_toml_value
+from dagster_dg.utils import (
+    cross_platfrom_string_path,
+    ensure_dagster_dg_tests_import,
+    set_toml_value,
+)
 
 ensure_dagster_dg_tests_import()
 
@@ -12,8 +16,8 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_code_location_foo_bar,
-    isolated_example_deployment_foo,
     modify_pyproject_toml,
+    standardize_box_characters,
 )
 
 # ########################
@@ -26,6 +30,7 @@ def test_component_scaffold_dynamic_subcommand_generation() -> None:
         result = runner.invoke("component", "scaffold", "--help")
         assert_runner_result(result)
 
+        normalized_output = standardize_box_characters(result.output)
         # These are wrapped in a table so it's hard to check exact output.
         for line in [
             "╭─ Commands",
@@ -34,7 +39,7 @@ def test_component_scaffold_dynamic_subcommand_generation() -> None:
             "│ simple_asset@dagster_components.test",
             "│ simple_pipes_script_asset@dagster_components.test",
         ]:
-            assert line in result.output
+            assert standardize_box_characters(line) in normalized_output
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
@@ -133,13 +138,6 @@ def test_component_scaffold_undefined_component_type_fails() -> None:
         assert "No component type `fake@fake` is registered" in result.output
 
 
-def test_component_scaffold_outside_code_location_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("component", "scaffold", "bar@baz", "qux")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster code location directory" in result.output
-
-
 def test_scaffold_component_command_with_non_matching_package_name():
     with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         #  move the module from foo_bar to module_not_same_as_code_location
@@ -154,19 +152,6 @@ def test_scaffold_component_command_with_non_matching_package_name():
             "Could not find expected package `foo_bar` in the current environment. Components expects the package name to match the directory name of the code location."
             in str(result.exception)
         )
-
-
-def test_component_scaffold_with_no_dagster_components_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        result = runner.invoke(
-            "component",
-            "scaffold",
-            "simple_pipes_script_asset@dagster_components.test",
-            "qux",
-            env={"PATH": "/dev/null"},
-        )
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
 
 
 @pytest.mark.parametrize("in_deployment", [True, False])
@@ -245,14 +230,14 @@ def test_component_scaffold_succeeds_scaffolded_component_type() -> None:
 # ##### REAL COMPONENTS
 
 
-dbt_project_path = "../stub_code_locations/dbt_project_location/components/jaffle_shop"
+dbt_project_path = Path("../stub_code_locations/dbt_project_location/components/jaffle_shop")
 
 
 @pytest.mark.parametrize(
     "params",
     [
         ["--json-params", json.dumps({"project_path": str(dbt_project_path)})],
-        ["--project-path", dbt_project_path],
+        ["--project-path", str(dbt_project_path)],
     ],
 )
 def test_scaffold_dbt_project_instance(params) -> None:
@@ -277,7 +262,9 @@ def test_scaffold_dbt_project_instance(params) -> None:
         assert component_yaml_path.exists()
         assert "type: dbt_project@dagster_components" in component_yaml_path.read_text()
         assert (
-            "stub_code_locations/dbt_project_location/components/jaffle_shop"
+            cross_platfrom_string_path(
+                "stub_code_locations/dbt_project_location/components/jaffle_shop"
+            )
             in component_yaml_path.read_text()
         )
 
@@ -304,17 +291,3 @@ def test_list_components_succeeds():
             qux
         """).strip()
         )
-
-
-def test_list_components_command_outside_code_location_fails() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("component", "list")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster code location directory" in result.output
-
-
-def test_list_components_with_no_dagster_components_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        result = runner.invoke("component", "list", env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output

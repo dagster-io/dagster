@@ -11,10 +11,23 @@ rebuild_kind_tags: ## Add all kind tags to the kind tags page
 	python scripts/regen_kind_tags.py
 
 mdx:
+	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	@echo "DEPRECATED - use \`yarn build-api-docs\`"
+	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	tox -e sphinx-mdx
 
 mdx_copy:
+	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	@echo "DEPRECATED - use \`yarn build-api-docs\`"
+	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs/api/python-api/
+
+sphinx_objects_inv:
+	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	@echo "DEPRECATED - use \`yarn build-sphinx-object-inv\`"
+	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+	tox -e sphinx
+	cp sphinx/_build/json/objects.inv static/.
 
 regenerate_cli_snippets:
 	cd ../examples/docs_beta_snippets && tox -e docs_snapshot_update && echo "\nSnippets regenerated!"

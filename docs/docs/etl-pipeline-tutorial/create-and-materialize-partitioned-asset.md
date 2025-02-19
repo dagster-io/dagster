@@ -170,11 +170,11 @@ defs = dg.Definitions(
 To materialize these assets:
 1. Navigate to the assets page.
 2. Reload definitions.
-3. Select the `monthly_performance` asset, then **Materialize selected**.
+3. Select the `monthly_sales_performance` asset, then **Materialize selected**.
 4. Ensure all partitions are selected, then launch a backfill. 
 5. Select the `product_performance` asset, then **Materialize selected**. 
 6. Ensure all partitions are selected, then launch a backfill.
 
 ## Next steps
 
-Now that we have the main assets in our ETL pipeline, its time to add [automation to our pipeline](automate-your-pipeline)
+Now that we have the main assets in our ETL pipeline, it's time to add [automation to our pipeline](automate-your-pipeline)

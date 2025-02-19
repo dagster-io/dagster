@@ -5,7 +5,7 @@ from hashlib import sha256
 from typing import TYPE_CHECKING, Callable, Final, NamedTuple, Optional, Union
 
 from dagster import _check as check
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import beta, deprecated
 from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
@@ -36,7 +36,7 @@ class DataVersion(
         [("value", str)],
     )
 ):
-    """(Experimental) Represents a data version for an asset.
+    """Represents a data version for an asset.
 
     Args:
         value (str): An arbitrary string representing a data version.
@@ -52,7 +52,7 @@ class DataVersion(
         )
 
 
-@experimental
+@beta
 class DataVersionsByPartition(
     NamedTuple(
         "_DataVersionsByPartition", [("data_versions_by_partition", Mapping[str, DataVersion])]
@@ -94,7 +94,7 @@ class DataProvenance(
         ],
     )
 ):
-    """(Experimental) Provenance information for an asset materialization.
+    """Provenance information for an asset materialization.
 
     Args:
         code_version (str): The code version of the op that generated a materialization.

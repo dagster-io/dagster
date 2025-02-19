@@ -257,9 +257,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def add_snapshot(
         self,
         snapshot: Union["JobSnap", "ExecutionPlanSnapshot"],
-        snapshot_id: Optional[str] = None,
     ) -> None:
-        return self._storage.run_storage.add_snapshot(snapshot, snapshot_id)
+        return self._storage.run_storage.add_snapshot(snapshot)
 
     def has_snapshot(self, snapshot_id: str) -> bool:
         return self._storage.run_storage.has_snapshot(snapshot_id)
@@ -267,8 +266,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def has_job_snapshot(self, job_snapshot_id: str) -> bool:
         return self._storage.run_storage.has_job_snapshot(job_snapshot_id)
 
-    def add_job_snapshot(self, job_snapshot: "JobSnap", snapshot_id: Optional[str] = None) -> str:
-        return self._storage.run_storage.add_job_snapshot(job_snapshot, snapshot_id)
+    def add_job_snapshot(self, job_snapshot: "JobSnap") -> str:
+        return self._storage.run_storage.add_job_snapshot(job_snapshot)
 
     def get_job_snapshot(self, job_snapshot_id: str) -> "JobSnap":
         return self._storage.run_storage.get_job_snapshot(job_snapshot_id)
@@ -276,12 +275,8 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id: str) -> bool:
         return self._storage.run_storage.has_execution_plan_snapshot(execution_plan_snapshot_id)
 
-    def add_execution_plan_snapshot(
-        self, execution_plan_snapshot: "ExecutionPlanSnapshot", snapshot_id: Optional[str] = None
-    ) -> str:
-        return self._storage.run_storage.add_execution_plan_snapshot(
-            execution_plan_snapshot, snapshot_id
-        )
+    def add_execution_plan_snapshot(self, execution_plan_snapshot: "ExecutionPlanSnapshot") -> str:
+        return self._storage.run_storage.add_execution_plan_snapshot(execution_plan_snapshot)
 
     def get_execution_plan_snapshot(
         self, execution_plan_snapshot_id: str
@@ -303,8 +298,12 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def dispose(self) -> None:
         return self._storage.run_storage.dispose()
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
-        return self._storage.run_storage.optimize_for_webserver(statement_timeout, pool_recycle)
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
+        return self._storage.run_storage.optimize_for_webserver(
+            statement_timeout, pool_recycle, max_overflow
+        )
 
     def add_daemon_heartbeat(self, daemon_heartbeat: "DaemonHeartbeat") -> None:
         return self._storage.run_storage.add_daemon_heartbeat(daemon_heartbeat)
@@ -460,9 +459,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def dispose(self) -> None:
         return self._storage.event_log_storage.dispose()
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         return self._storage.event_log_storage.optimize_for_webserver(
-            statement_timeout, pool_recycle
+            statement_timeout,
+            pool_recycle,
+            max_overflow,
         )
 
     def get_event_records(
@@ -867,9 +870,13 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def optimize(self, print_fn: Optional[PrintFn] = None, force_rebuild_all: bool = False) -> None:
         return self._storage.schedule_storage.optimize(print_fn, force_rebuild_all)
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         return self._storage.schedule_storage.optimize_for_webserver(
-            statement_timeout, pool_recycle
+            statement_timeout,
+            pool_recycle,
+            max_overflow,
         )
 
     def dispose(self) -> None:

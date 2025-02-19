@@ -138,7 +138,6 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
--e examples/experimental/dagster-blueprints
 -e python_modules/libraries/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
 -e examples/experimental/dagster-dlift
 -e examples/starlift-demo
@@ -148,5 +147,7 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]
 -e examples/project_atproto_dashboard
--e examples/project_dagster_modal_pipes
--e examples/project_prompt_eng
+-e examples/docs_projects/project_dagster_modal_pipes
+-e examples/docs_projects/project_prompt_eng
+# -e examples/docs_projects/project_ask_ai_dagster
+# -e examples/docs_projects/project_llm_fine_tune

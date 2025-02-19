@@ -350,7 +350,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         code_location = self.get_code_location(code_location_name)
         return code_location.get_notebook_data(notebook_path=notebook_path)
 
-    def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
+    def get_base_deployment_asset_graph(self) -> Optional["RemoteWorkspaceAssetGraph"]:
         return None
 
     def get_repository(
@@ -804,7 +804,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
                 location = GrpcServerCodeLocation(
                     origin=origin,
-                    server_id=endpoint.server_id,
                     port=endpoint.port,
                     socket=endpoint.socket,
                     host=endpoint.host,

@@ -75,8 +75,8 @@ GCS Sensor
 .. autofunction:: dagster_gcp.gcs.sensor.get_gcs_keys
 
 
-File Manager (Experimental)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File Manager
+^^^^^^^^^^^^
 
 .. autoclass:: GCSFileHandle
   :members:

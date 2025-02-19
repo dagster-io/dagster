@@ -13,7 +13,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {CreatedByTagCell} from './CreatedByTag';
-import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
 import {RunStatusTag, RunStatusTagWithStats} from './RunStatusTag';
@@ -21,6 +20,7 @@ import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {RunTargetLink} from './RunTargetLink';
 import {RunStateSummary, RunTime, titleForRun} from './RunUtils';
+import {RunsFeedDialogState} from './RunsFeedTable';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTimeFragment} from './types/RunUtils.types';
@@ -35,7 +35,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 export const RunsFeedRow = ({
   entry,
   onAddTag,
-  onShowPartitions,
+  onShowDialog,
   checked,
   onToggleChecked,
   refetch,
@@ -43,7 +43,7 @@ export const RunsFeedRow = ({
 }: {
   entry: RunsFeedTableEntryFragment;
   refetch: () => void;
-  onShowPartitions: () => void;
+  onShowDialog: (dialog: RunsFeedDialogState) => void;
   onAddTag?: (token: RunFilterToken) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
@@ -74,7 +74,6 @@ export const RunsFeedRow = ({
     [entry],
   );
 
-  const [showQueueCriteria, setShowQueueCriteria] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
 
   const runTime: RunTimeFragment = {
@@ -134,9 +133,7 @@ export const RunsFeedRow = ({
             {entry.runStatus === RunStatus.QUEUED ? (
               <Caption>
                 <ButtonLink
-                  onClick={() => {
-                    setShowQueueCriteria(true);
-                  }}
+                  onClick={() => onShowDialog({type: 'queue-criteria', entry})}
                   color={Colors.textLight()}
                 >
                   View queue criteria
@@ -164,7 +161,7 @@ export const RunsFeedRow = ({
             backfill={entry}
             repoAddress={null}
             useTags={true}
-            onShowPartitions={onShowPartitions}
+            onShowPartitions={() => onShowDialog({type: 'partitions', backfillId: entry.id})}
           />
         )}
       </RowCell>
@@ -202,11 +199,6 @@ export const RunsFeedRow = ({
           <RunActionsMenu run={entry} onAddTag={onAddTag} anchorLabel="View" />
         )}
       </RowCell>
-      <QueuedRunCriteriaDialog
-        run={entry}
-        isOpen={showQueueCriteria}
-        onClose={() => setShowQueueCriteria(false)}
-      />
     </RowGrid>
   );
 };

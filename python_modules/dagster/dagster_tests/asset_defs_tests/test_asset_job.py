@@ -1677,7 +1677,7 @@ def test_graph_output_is_input_within_graph():
 
 
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
-@ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is currently in beta")
 def test_source_asset_io_manager_def():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1762,8 +1762,8 @@ def test_source_asset_io_manager_key_provided():
 
 
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
-@ignore_warning("Parameter `resource_defs` .* is experimental")
-@ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
+@ignore_warning("Parameter `io_manager_def` .* is currently in beta")
 def test_source_asset_requires_resource_defs():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -1799,7 +1799,7 @@ def test_source_asset_requires_resource_defs():
     assert result.output_for_node("my_derived_asset") == 9
 
 
-@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_other_asset_provides_req():
     # Demonstrate that assets cannot resolve each other's dependencies with
     # resources on each definition.
@@ -1818,7 +1818,7 @@ def test_other_asset_provides_req():
         create_test_asset_job(assets=[asset_reqs_foo, asset_provides_foo])
 
 
-@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_transitive_deps_not_provided():
     @resource(required_resource_keys={"foo"})
     def unused_resource():
@@ -1835,7 +1835,7 @@ def test_transitive_deps_not_provided():
         create_test_asset_job(assets=[the_asset])
 
 
-@ignore_warning("Parameter `resource_defs` .* is experimental")
+@ignore_warning("Parameter `resource_defs` .* is currently in beta")
 def test_transitive_resource_deps_provided():
     @resource(required_resource_keys={"foo"})
     def used_resource(context):
@@ -1852,7 +1852,7 @@ def test_transitive_resource_deps_provided():
 
 
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
-@ignore_warning("Parameter `io_manager_def` .* is experimental")
+@ignore_warning("Parameter `io_manager_def` .* is currently in beta")
 def test_transitive_io_manager_dep_not_provided():
     @io_manager(required_resource_keys={"foo"})  # pyright: ignore[reportArgumentType]
     def the_manager():

@@ -1,3 +1,4 @@
 dg component scaffold dbt_project@dagster_components jdbt --project-path dbt/jdbt
 
 Creating a Dagster component instance folder at /.../jaffle-platform/jaffle_platform/components/jdbt.
+Using /.../jaffle-platform/.venv/bin/dagster-components

@@ -5272,6 +5272,31 @@ class TestEventLogStorage:
         storage.delete_concurrency_limit("foo")
         assert storage.get_concurrency_keys() == set()
 
+    def test_get_concurrency(self, storage: EventLogStorage):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        assert storage.get_concurrency_keys() == set()
+        info = storage.get_concurrency_info("foo")
+        assert info.slot_count == 0
+        assert info.limit is None
+
+        # set concurrency slot to 0
+        storage.set_concurrency_slots("foo", 0)
+        assert storage.get_concurrency_keys() == set(["foo"])
+        info = storage.get_concurrency_info("foo")
+        assert info.slot_count == 0
+        assert info.limit is not None
+        assert info.limit == 0
+
+        # set concurrency slot to 1
+        storage.set_concurrency_slots("foo", 1)
+        assert storage.get_concurrency_keys() == set(["foo"])
+        info = storage.get_concurrency_info("foo")
+        assert info.slot_count == 1
+        assert info.limit == 1
+
     def test_default_concurrency(
         self,
         storage: EventLogStorage,
@@ -5283,6 +5308,9 @@ class TestEventLogStorage:
 
         if not self.can_set_concurrency_defaults():
             pytest.skip("storage does not support setting global op concurrency defaults")
+
+        # this must return False when there is no default value, for back-compat reasons
+        assert not storage.initialize_concurrency_limit_to_default("foo")
 
         self.set_default_op_concurrency(instance, storage, 1)
 
@@ -5306,6 +5334,9 @@ class TestEventLogStorage:
         if not self.can_set_concurrency_defaults():
             pytest.skip("storage does not support setting global op concurrency defaults")
 
+        # this must return False when there is no default value, for back-compat reasons
+        assert not storage.initialize_concurrency_limit_to_default("foo")
+
         self.set_default_op_concurrency(instance, storage, 1)
         assert instance.global_op_concurrency_default_limit == 1
         assert storage.get_pool_config().default_pool_limit == 1
@@ -5324,7 +5355,9 @@ class TestEventLogStorage:
         assert instance.global_op_concurrency_default_limit is None
         assert storage.get_pool_config().default_pool_limit is None
 
-        assert storage.initialize_concurrency_limit_to_default("foo")
+        # this must return False when there is no default value, for back-compat reasons
+        assert not storage.initialize_concurrency_limit_to_default("foo")
+
         assert storage.get_concurrency_info("foo").slot_count == 0
 
     def test_asset_checks(
@@ -6228,3 +6261,34 @@ class TestEventLogStorage:
         ):
             assert value is not None
             assert len(value.deserialize_materialized_partition_subsets(partition_defs[i])) == 1
+
+    def test_get_pool_limits(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ):
+        assert storage
+        if not storage.supports_global_concurrency_limits:
+            pytest.skip("storage does not support global op concurrency")
+
+        storage.set_concurrency_slots("foo", 4)
+        limits = storage.get_pool_limits()
+        assert len(limits) == 1
+        assert limits[0].name == "foo"
+        assert limits[0].limit == 4
+        assert not limits[0].from_default
+
+        if not self.can_set_concurrency_defaults():
+            return
+
+        self.set_default_op_concurrency(instance, storage, 1)
+        assert storage.initialize_concurrency_limit_to_default("bar")
+
+        limits = storage.get_pool_limits()
+        assert len(limits) == 2
+        limits_by_name = {limit.name: limit for limit in limits}
+        limit = limits_by_name.get("bar")
+        assert limit
+        assert limit.name == "bar"
+        assert limit.limit == 1
+        assert limit.from_default

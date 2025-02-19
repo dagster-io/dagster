@@ -1,9 +1,10 @@
 import {
   DownTraversalContext,
   FunctionNameContext,
+  KeyValueContext,
   UpTraversalContext,
   ValueContext,
-} from 'shared/asset-selection/AssetSelectionAntlr.oss';
+} from './generated/AssetSelectionParser';
 
 export function getTraversalDepth(ctx: UpTraversalContext | DownTraversalContext): number {
   const digits = ctx.DIGITS();
@@ -23,11 +24,14 @@ export function getFunctionName(ctx: FunctionNameContext): string {
   throw new Error('Invalid function name');
 }
 
-export function getValue(ctx: ValueContext): string {
+export function getValue(ctx: ValueContext | KeyValueContext): string {
   if (ctx.QUOTED_STRING()) {
     return ctx.text.slice(1, -1);
   }
   if (ctx.UNQUOTED_STRING()) {
+    return ctx.text;
+  }
+  if ('UNQUOTED_REGEX_STRING' in ctx && ctx.UNQUOTED_REGEX_STRING()) {
     return ctx.text;
   }
   throw new Error('Invalid value');

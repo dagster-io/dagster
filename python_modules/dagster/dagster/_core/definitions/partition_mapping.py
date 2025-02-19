@@ -9,7 +9,7 @@ from functools import cached_property, lru_cache
 from typing import NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental, public
+from dagster._annotations import PublicAttr, beta, public
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -162,7 +162,8 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
         upstream_partition_keys = set(upstream_partitions_subset.get_partition_keys())
         downstream_partition_keys = set(
             downstream_partitions_def.get_partition_keys(
-                dynamic_partitions_store=dynamic_partitions_store
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
         )
 
@@ -605,7 +606,7 @@ class BaseMultiPartitionMapping(ABC):
         return result
 
 
-@experimental
+@beta
 @whitelist_for_serdes
 class MultiToSingleDimensionPartitionMapping(
     BaseMultiPartitionMapping,
@@ -694,7 +695,7 @@ class DimensionPartitionMapping(
         )
 
 
-@experimental
+@beta
 @whitelist_for_serdes
 class MultiPartitionMapping(
     BaseMultiPartitionMapping,

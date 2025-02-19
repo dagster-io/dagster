@@ -43,6 +43,7 @@ class Webserver(BaseModel, extra="forbid"):
     enableReadOnly: bool
     dbStatementTimeout: Optional[int] = None
     dbPoolRecycle: Optional[int] = None
+    dbPoolMaxOverflow: Optional[int] = None
     logLevel: Optional[str] = None
     schedulerName: Optional[str] = None
     volumeMounts: Optional[list[kubernetes.VolumeMount]] = None

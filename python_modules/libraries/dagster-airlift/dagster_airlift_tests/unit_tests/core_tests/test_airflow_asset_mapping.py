@@ -183,6 +183,7 @@ def test_produce_fetched_airflow_data() -> None:
         airflow_instance=instance,
         mapping_info=mapping_info,
         dag_selector_fn=None,
+        automapping_enabled=True,
     )
 
     assert len(fetched_airflow_data.mapping_info.mapped_task_asset_specs) == 1

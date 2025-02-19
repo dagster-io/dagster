@@ -8,7 +8,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._record import record
 from jinja2.nativetypes import NativeTemplate
 
-from dagster_components.core.schema.base import ResolvableModel
+from dagster_components.core.schema.base import ResolvableSchema
 
 T = TypeVar("T")
 
@@ -42,13 +42,24 @@ class ResolutionContext:
 
     def _resolve_inner_value(self, val: Any) -> Any:
         """Resolves a single value, if it is a templated string."""
-        return NativeTemplate(val).render(**self.scope) if isinstance(val, str) else val
+        if isinstance(val, ResolvableSchema):
+            return val.resolve(self)
+        elif isinstance(val, str):
+            return NativeTemplate(val).render(**self.scope)
+        else:
+            return val
 
     @overload
-    def resolve_value(self, val: ResolvableModel[T]) -> T: ...
+    def resolve_value(self, val: Any, as_type: type[T]) -> T: ...
 
     @overload
-    def resolve_value(self, val: str) -> Any: ...
+    def resolve_value(self, val: ResolvableSchema[T]) -> T: ...
+
+    @overload
+    def resolve_value(self, val: Optional[ResolvableSchema[T]]) -> Optional[T]: ...
+
+    @overload
+    def resolve_value(self, val: Sequence[ResolvableSchema[T]]) -> Sequence[T]: ...
 
     @overload
     def resolve_value(self, val: Mapping) -> Mapping: ...
@@ -59,26 +70,9 @@ class ResolutionContext:
     @overload
     def resolve_value(self, val: Sequence) -> Sequence: ...
 
-    @overload
-    def resolve_value(self, val: Optional[str]) -> Optional[Any]: ...
-
-    @overload
-    def resolve_value(self, val: Optional[Mapping]) -> Optional[Mapping]: ...
-
-    @overload
-    def resolve_value(self, val: Optional[tuple]) -> Optional[tuple]: ...
-
-    @overload
-    def resolve_value(self, val: Optional[Sequence]) -> Optional[Sequence]: ...
-
-    @overload
-    def resolve_value(self, val: Any) -> Any: ...
-
-    def resolve_value(self, val: Any) -> Any:
+    def resolve_value(self, val: Any, as_type: Optional[type] = None) -> Any:
         """Recursively resolves templated values in a nested object."""
-        if isinstance(val, ResolvableModel):
-            return val.resolve(self)
-        elif isinstance(val, dict):
+        if isinstance(val, dict):
             return {k: self.resolve_value(v) for k, v in val.items()}
         elif isinstance(val, tuple):
             return tuple(self.resolve_value(v) for v in val)
