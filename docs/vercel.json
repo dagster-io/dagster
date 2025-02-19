@@ -651,12 +651,7 @@
     },
     {
       "source": "/concepts/assets/asset-selection-syntax",
-      "destination": "/guides/build/assets/asset-selection-syntax/",
-      "permanent": false
-    },
-    {
-      "source": "/guides/build/assets/asset-selection-syntax",
-      "destination": "/guides/build/assets/asset-selection-syntax/",
+      "destination": "/guides/build/assets/asset-selection-syntax",
       "permanent": false
     },
     {
