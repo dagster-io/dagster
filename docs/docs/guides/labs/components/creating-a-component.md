@@ -75,7 +75,7 @@ We can the schema for our component and add it to our class as follows:
 
 ### Defining the python class
 
-Next, we'll want to translate this schema into fully-resolved python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecSchema]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
+Next, we'll want to translate this schema into fully-resolved Python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecSchema]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
 
 By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully-resolved types where appropriate.
 
@@ -123,7 +123,7 @@ Once your component type is registered, instances of the component type can be s
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/6-scaffold-instance-of-component.txt" />
 
-By default, this will create a new directory alongside a barebones `component.yaml` file. However, you can customize this behavior by implementing a `get_scaffolder` method on your component type.
+By default, this will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by implementing a `get_scaffolder` method on your component type.
 
 In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
