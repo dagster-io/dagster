@@ -70,7 +70,7 @@ To simplify common use cases, `dagster-components` provides schemas for common b
 
 We can the schema for our component and add it to our class as follows:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" title="my_component_library/lib/shell_command.py"/>
 
 
 ### Defining the Python class
@@ -83,7 +83,7 @@ Our path will still just be a string, but our `asset_specs` will be a list of `A
 
 
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-class-defined.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-class-defined.py" language="python" title="my_component_library/lib/shell_command.py"/>
 
 :::tip
 
@@ -98,7 +98,7 @@ To do so, we'll want to override the `build_defs` method, which is responsible f
 
 Our `build_defs` method will create a single `@asset` that executes the provided shell script. By convention, we'll put the code to actually execute this asset inside of a function called `execute`. This makes it easier for future developers to create subclasses of this component.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-build-defs.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-build-defs.py" language="python" title="my_component_library/lib/shell_command.py" />
 
 ### Component registration
 
@@ -127,7 +127,7 @@ By default, this will create a new directory alongside an unpopulated `component
 
 In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
-<CodeExample  path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-scaffolder.py" language="python" />
+<CodeExample  path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-scaffolder.py" language="python" title="my_component_library/lib/shell_command.py"/>
 
 Now, when we run `dg component scaffold`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
 
