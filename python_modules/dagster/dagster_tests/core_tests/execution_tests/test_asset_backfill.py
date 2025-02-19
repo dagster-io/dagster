@@ -428,6 +428,68 @@ def test_materializations_outside_of_backfill():
     )
 
 
+def test_materialization_outside_of_backfill_range_during_backfill():
+    @asset()
+    def upstream():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-01-01"),
+    )
+    def downstream(upstream):
+        pass
+
+    assets_by_repo_name = {"repo": [upstream, downstream]}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    with DagsterInstance.ephemeral() as instance:
+        backfill_id = "dummy_backfill_id"
+        asset_backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph=asset_graph,
+            partition_names=["2023-01-01"],
+            asset_selection=[downstream.key, upstream.key],
+            dynamic_partitions_store=MagicMock(),
+            all_partitions=False,
+            backfill_start_timestamp=create_datetime(2023, 1, 9, 0, 0, 0).timestamp(),
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {AssetKeyPartitionKey(AssetKey("upstream"), None)}, asset_graph
+        )
+
+        # Downstream asset creates a new materialization 'from the future' (outside
+        # of the backfill range) and upstream asset creates a new materialization as well
+        # (the downstream materialization 'from the future' should be ignored)
+        do_run(
+            all_assets=[upstream, downstream],
+            asset_keys=[upstream.key],
+            partition_key=None,
+            instance=instance,
+        )
+
+        do_run(
+            all_assets=[upstream, downstream],
+            asset_keys=[downstream.key],
+            partition_key="2023-01-12",
+            instance=instance,
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {
+                AssetKeyPartitionKey(AssetKey("upstream"), None),
+                AssetKeyPartitionKey(AssetKey("downstream"), "2023-01-01"),
+            },
+            asset_graph,
+        )
+
+
 def test_do_not_rerequest_while_existing_run_in_progress():
     @asset(
         partitions_def=DailyPartitionsDefinition("2023-01-01"),

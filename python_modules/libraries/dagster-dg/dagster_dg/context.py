@@ -1,3 +1,5 @@
+import shlex
+import shutil
 import subprocess
 from collections.abc import Iterable
 from dataclasses import replace
@@ -23,9 +25,7 @@ from dagster_dg.utils import (
     generate_missing_dagster_components_in_local_venv_error_message,
     get_path_for_module,
     get_path_for_package,
-    get_uv_run_executable_path,
     get_venv_executable,
-    is_executable_available,
     is_package_installed,
     pushd,
     resolve_local_venv,
@@ -315,14 +315,14 @@ class DgContext:
     # ########################
 
     def external_components_command(self, command: list[str], log: bool = True) -> str:
+        executable_path = self.get_executable("dagster-components")
         if self.use_dg_managed_environment:
+            # uv run will resolve to the same dagster-components as we resolve above
             code_location_command_prefix = ["uv", "run", "dagster-components"]
             env = strip_activated_venv_from_env_vars()
-            executable_path = get_uv_run_executable_path("dagster-components")
         else:
-            code_location_command_prefix = [self.dagster_components_executable]
-            env = strip_activated_venv_from_env_vars()
-            executable_path = self.dagster_components_executable
+            code_location_command_prefix = [str(executable_path)]
+            env = None
         full_command = [
             *code_location_command_prefix,
             *(
@@ -335,8 +335,18 @@ class DgContext:
         with pushd(self.root_path):
             if log:
                 print(f"Using {executable_path}")  # noqa: T201
-            result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=True)
-            return result.stdout.decode("utf-8")
+
+            # We don't capture stderr here-- it will print directly to the console, then we can
+            # add a clean error message at the end explanining what happened.
+            result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=False)
+            if result.returncode != 0:
+                exit_with_error(f"""
+                    An error occurred while executing a `dagster-components` command in the {self.environment_desc}.
+
+                    `{shlex.join(full_command)}` exited with code {result.returncode}. Aborting.
+                """)
+            else:
+                return result.stdout.decode("utf-8")
 
     def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
         path = path or self.root_path
@@ -347,18 +357,6 @@ class DgContext:
     @property
     def use_dg_managed_environment(self) -> bool:
         return self.config.use_dg_managed_environment and self.is_code_location
-
-    def validate_deployment_command_environment(self) -> None:
-        """Commands that operate on a deployment need to be run inside a deployment context."""
-        if not self.is_deployment:
-            exit_with_error(NOT_DEPLOYMENT_ERROR_MESSAGE)
-
-    def validate_registry_command_environment(self) -> None:
-        """Commands that access the component registry need to be run with dagster-components
-        available on $PATH.
-        """
-        if not is_executable_available("dagster-components"):
-            exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)
 
     @property
     def has_venv(self) -> bool:
@@ -371,9 +369,32 @@ class DgContext:
             raise DgError("Cannot find .venv")
         return path
 
-    @cached_property
-    def dagster_components_executable(self) -> Path:
-        return get_venv_executable(self.venv_path, "dagster-components")
+    def has_executable(self, command: str) -> bool:
+        return self._resolve_executable(command) is not None
+
+    def get_executable(self, command: str) -> Path:
+        if not (executable := self._resolve_executable(command)):
+            raise DgError(f"Cannot find executable {command}")
+        return executable
+
+    def _resolve_executable(self, command: str) -> Optional[Path]:
+        if (
+            self.has_venv
+            and (venv_exec := get_venv_executable(self.venv_path, command))
+            and venv_exec.exists()
+        ):
+            return venv_exec
+        elif not self.use_dg_managed_environment and (global_exec := shutil.which(command)):
+            return Path(global_exec)
+        else:
+            return None
+
+    @property
+    def environment_desc(self) -> str:
+        if self.has_venv:
+            return f"Python environment at {self.venv_path}"
+        else:
+            return "ambient Python environment"
 
 
 # ########################
@@ -385,11 +406,11 @@ def _validate_dagster_components_availability(context: DgContext) -> None:
     if context.config.require_local_venv:
         if not context.has_venv:
             exit_with_error(NO_LOCAL_VENV_ERROR_MESSAGE)
-        elif not context.dagster_components_executable.exists():
+        elif not get_venv_executable(context.venv_path, "dagster-components").exists():
             exit_with_error(
                 generate_missing_dagster_components_in_local_venv_error_message(
                     str(context.venv_path)
                 )
             )
-    elif not is_executable_available("dagster-components"):
+    elif not context.has_executable("dagster-components"):
         exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)

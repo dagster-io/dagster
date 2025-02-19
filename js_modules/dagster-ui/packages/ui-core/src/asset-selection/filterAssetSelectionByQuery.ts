@@ -75,11 +75,13 @@ export const filterAssetSelectionByQuery = weakMapMemoize(
     query: string,
     supplementaryData: SupplementaryInformation,
   ): AssetSelectionQueryResult => {
+    if (query.length === 0) {
+      return {all: all_assets, focus: []};
+    }
     if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
       const result = parseAssetSelectionQuery(all_assets, query, supplementaryData);
       if (result instanceof Error) {
-        // fall back to old behavior
-        return filterByQuery(all_assets, query);
+        return {all: [], focus: []};
       }
       return result;
     }

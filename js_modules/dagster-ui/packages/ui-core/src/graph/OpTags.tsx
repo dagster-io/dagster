@@ -130,6 +130,7 @@ import python from './kindtag-images/tool-python-color.svg';
 import pytorch from './kindtag-images/tool-pytorch-color.svg';
 import pytorchlightning from './kindtag-images/tool-pytorchlightning-color.svg';
 import r from './kindtag-images/tool-r-color.svg';
+import r2 from './kindtag-images/tool-r2-color.svg';
 import rabbitmq from './kindtag-images/tool-rabbitmq-color.svg';
 import ray from './kindtag-images/tool-ray-color.svg';
 import react from './kindtag-images/tool-react-color.svg';
@@ -178,6 +179,7 @@ import twilio from './kindtag-images/tool-twilio-color.svg';
 import typescript from './kindtag-images/tool-typescript-color.svg';
 import vercel from './kindtag-images/tool-vercel-color.svg';
 import wandb from './kindtag-images/tool-w&b-color.svg';
+import weaviate from './kindtag-images/tool-weaviate-color.svg';
 import x from './kindtag-images/tool-x-color.svg';
 import xgboost from './kindtag-images/tool-xgboost-color.svg';
 import youtube from './kindtag-images/tool-youtube-color.svg';
@@ -228,6 +230,7 @@ export type KnownTagType =
   | 'googlesheets'
   | 'sql'
   | 'wandb'
+  | 'weaviate'
   | 'databricks'
   | 'airflow'
   | 'dataset'
@@ -337,6 +340,7 @@ export type KnownTagType =
   | 'papertrail'
   | 'plural'
   | 'prefect'
+  | 'r2'
   | 'react'
   | 'reddit'
   | 'redshift'
@@ -497,6 +501,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   wandb: {
     icon: wandb,
     content: 'Weights & Biases',
+  },
+  weaviate: {
+    icon: weaviate,
+    content: 'Weaviate',
   },
   databricks: {
     icon: databricks,
@@ -741,6 +749,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: ray,
     content: 'Ray',
     blackAndWhite: true,
+  },
+  r2: {
+    icon: r2,
+    content: 'R2',
   },
   axioma: {
     icon: axioma,
