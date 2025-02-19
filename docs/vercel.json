@@ -1929,7 +1929,7 @@
     },
     {
       "source": "/guides/labs/components/migrating-definitions",
-      "destination": "/guides/labs/components/incrementally-adopting-components/using-existing-definitions"
+      "destination": "/guides/labs/components/incrementally-adopting-components/existing-definitions"
     },
     {
       "source": "/guides/labs/components/setting-up-a-deployment",
