@@ -20,5 +20,5 @@ uv venv
 source .venv/bin/activate
 
 uv pip install tox
-uvx tox -e sphinx-mdx
-make mdx_copy
+
+yarn build-api-docs
