@@ -58,11 +58,8 @@ This command starts a local development server and opens [http://localhost:3050]
 To build the site for production:
 
 ```bash
-# build and copy api markdown files
+# build and copy API markdown files; build and copy the sphinx `objects.inv` to static/
 yarn build-api-docs
-
-# build and copy the sphinx objects.inv
-yarn build-sphinx-object-inv
 
 # build the static site
 yarn build
