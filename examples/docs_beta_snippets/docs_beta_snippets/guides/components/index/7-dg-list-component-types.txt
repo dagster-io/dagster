@@ -1,4 +1,4 @@
-dg component-type list
+dg list component-types
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Component Type                                        ┃ Summary                        ┃

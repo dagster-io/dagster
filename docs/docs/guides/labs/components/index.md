@@ -106,7 +106,7 @@ First let's set up Sling. If we query the available component types in our envir
 This is because the basic `dagster-components` package (which was installed when we scaffolded our code location) is lightweight and doesn't include components for specific integrations (like Sling). We can get access to a Sling component by installing the `sling` extra of `dagster-components`:
 
 :::note
-Recall that `dg` always operates in an isolated environment-- so how is it able to access the set of components types available in our project environment? Under the hood, `dg` attempts to resolve a project root whenever it is run. If it finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will by default expect a `uv`-managed virtual environment to be present in the same directory (this can be confirmed by the presence of a `uv.lock` file). When you run commands like `dg component-type list`, `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up for us as part of the `dg code-location scaffold` command.
+Recall that `dg` always operates in an isolated environment-- so how is it able to access the set of components types available in our project environment? Under the hood, `dg` attempts to resolve a project root whenever it is run. If it finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will by default expect a `uv`-managed virtual environment to be present in the same directory (this can be confirmed by the presence of a `uv.lock` file). When you run commands like `dg list component-type`, `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up for us as part of the `dg scaffold code-location` command.
 :::
 
 <CliInvocationExample contents="uv add 'dagster-components[sling]'" />
@@ -177,7 +177,7 @@ We'll need to create a Dagster DBT project component to interface with the dbt p
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" />
 
 
-There it is: `dagster_components.dbt_project`. We can access detailed info about a component type using the `dg component-type info` command. Let's have a look at the `dagster_components.dbt_project` component type:
+There it is: `dagster_components.dbt_project`. We can access detailed info about a component type using the `dg info component-type` command. Let's have a look at the `dagster_components.dbt_project` component type:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-component-type-info.txt" />
 
@@ -202,7 +202,7 @@ You can see at first glance that there appear to be two copies of the `raw_custo
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/22-project-jdbt-incorrect.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-You might notice the typo in the above file - after updating a component file, it's often useful to validate that the changes match the component's schema. You can do this by running `dg component check`:
+You might notice the typo in the above file - after updating a component file, it's often useful to validate that the changes match the component's schema. You can do this by running `dg check component`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-dg-component-check-error.txt" />
 
@@ -210,7 +210,7 @@ You can see that the error message includes the filename, line number, and a cod
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/24-project-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-Finally, we can re-run `dg component check` to validate that our fix works:
+Finally, we can re-run `dg check component` to validate that our fix works:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/25-dg-component-check.txt" />
 
