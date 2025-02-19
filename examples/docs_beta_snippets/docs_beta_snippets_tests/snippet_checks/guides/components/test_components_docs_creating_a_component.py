@@ -1,31 +1,13 @@
 import os
-import re
-import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import pytest
-from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
-
 from dagster._utils.env import environ
-from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
-    DAGSTER_ROOT,
-    EDITABLE_DIR,
-    MASK_EDITABLE_DAGSTER,
-    MASK_JAFFLE_PLATFORM,
-    MASK_SLING_DOWNLOAD_DUCKDB,
-    MASK_SLING_PROMO,
-    MASK_SLING_WARNING,
-    MASK_TIME,
-)
+from docs_beta_snippets_tests.snippet_checks.guides.components.utils import DAGSTER_ROOT
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
     check_file,
-    compare_tree_output,
     create_file,
-    re_ignore_after,
-    re_ignore_before,
     run_command_and_snippet_output,
     screenshot_page,
 )
@@ -158,9 +140,18 @@ def test_components_docs_index(update_snippets: bool, get_selenium_driver) -> No
         # We'll create an instance of the component type
         # and e2e test that the component is written correctly, e.g.
         # that we can actually run a shell script.
-        _run_command(
-            cmd="dg component scaffold 'shell_command@my_component_library' my_shell_command",
+        create_file(
+            Path("my_component_library") / "lib" / "shell_command.py",
+            contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
         )
+        run_command_and_snippet_output(
+            cmd="dg component scaffold 'shell_command@my_component_library' my_shell_command",
+            snippet_path=COMPONENTS_SNIPPETS_DIR
+            / f"{next_snip_no()}-scaffold-instance-of-component.txt",
+            update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
+        )
+
         check_file(
             Path("my_component_library")
             / "components"
@@ -169,22 +160,14 @@ def test_components_docs_index(update_snippets: bool, get_selenium_driver) -> No
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffolded-component.yaml",
             update_snippets=update_snippets,
         )
-        (
+        check_file(
             Path("my_component_library")
             / "components"
             / "my_shell_command"
-            / "component.yaml"
-        ).write_text("""type: shell_command@my_component_library
-
-params:
-  script_path: script.sh
-  asset_specs:
-    - key: my_shell_command
-""")
-        Path("my_component_library/components/my_shell_command/script.sh").write_text(
-            """#!/bin/bash
-echo "Hello, world!"
-"""
+            / "script.sh",
+            COMPONENTS_SNIPPETS_DIR
+            / f"{next_snip_no()}-scaffolded-component-script.sh",
+            update_snippets=update_snippets,
         )
         _run_command(
             "dagster asset materialize --select '*' -m my_component_library.definitions"

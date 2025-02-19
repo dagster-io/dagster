@@ -1,6 +1,9 @@
 # code examples are generated at run and build time, and should not be included in version control
 src/code-examples-content.js
 
+# this file is generated at build time with `yarn build-api-docs`
+static/objects.inv
+
 sphinx/_build/
 .env
 .docusaurus

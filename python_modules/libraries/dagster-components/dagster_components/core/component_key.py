@@ -1,15 +1,32 @@
 import re
+import textwrap
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
 
-COMPONENT_TYPE_REGEX = re.compile(r"^([a-zA-Z0-9_]+)@([a-zA-Z0-9_\.]+)$")
+LOCAL_COMPONENT_IDENTIFIER = "file:"
+
+_COMPONENT_NAME_REGEX = r"[a-zA-Z0-9_]+"
+_FILE_PATH_REGEX = r"[a-zA-Z0-9_\.\/-]+"
+_LOCAL_NAMESPACE_REGEX = rf"{LOCAL_COMPONENT_IDENTIFIER}{_FILE_PATH_REGEX}"
+_GLOBAL_NAMESPACE_REGEX = r"[a-zA-Z0-9_\.]+"
+
+COMPONENT_TYPENAME_REGEX = re.compile(
+    rf"^({_COMPONENT_NAME_REGEX})@(({_LOCAL_NAMESPACE_REGEX})|({_GLOBAL_NAMESPACE_REGEX}))$"
+)
+
+
+def _generate_invalid_component_typename_error_message(typename: str) -> str:
+    return textwrap.dedent(f"""
+        Invalid component type name: `{typename}`.
+        Type names must match regex: `{COMPONENT_TYPENAME_REGEX.pattern}`.
+    """)
 
 
 def _name_and_namespace_from_type(typename: str) -> tuple[str, str]:
-    match = COMPONENT_TYPE_REGEX.match(typename)
+    match = COMPONENT_TYPENAME_REGEX.match(typename)
     if not match:
-        raise ValueError(f"Invalid component type name: {typename}")
+        raise ValueError(_generate_invalid_component_typename_error_message(typename))
     return match.group(1), match.group(2)
 
 
@@ -23,10 +40,11 @@ class ComponentKey(ABC):
 
     @staticmethod
     def from_typename(typename: str, dirpath: Path) -> "ComponentKey":
-        if typename.endswith(".py"):
-            return LocalComponentKey.from_type(typename, dirpath)
+        name, namespace = _name_and_namespace_from_type(typename)
+        if namespace.startswith(LOCAL_COMPONENT_IDENTIFIER):
+            return LocalComponentKey(name, namespace, dirpath)
         else:
-            return GlobalComponentKey.from_typename(typename)
+            return GlobalComponentKey(name, namespace)
 
 
 @dataclass(frozen=True)
@@ -41,11 +59,16 @@ class GlobalComponentKey(ComponentKey):
 class LocalComponentKey(ComponentKey):
     dirpath: Path
 
+    def __post_init__(self) -> None:
+        if not self.python_file.resolve().is_relative_to(self.dirpath.resolve()):
+            raise ValueError(f"File {self.namespace} must be within directory: {self.dirpath}")
+
     @staticmethod
-    def from_type(typename: str, dirpath: Path) -> "LocalComponentKey":
+    def from_typename(typename: str, dirpath: Path) -> "LocalComponentKey":
         name, namespace = _name_and_namespace_from_type(typename)
         return LocalComponentKey(name=name, namespace=namespace, dirpath=dirpath)
 
     @property
     def python_file(self) -> Path:
-        return self.dirpath / self.namespace
+        relative_path = self.namespace[len(LOCAL_COMPONENT_IDENTIFIER) :]
+        return self.dirpath / relative_path

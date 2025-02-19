@@ -102,6 +102,7 @@ import modal from './kindtag-images/tool-modal-color.svg';
 import mongodb from './kindtag-images/tool-mongodb-color.svg';
 import montecarlo from './kindtag-images/tool-montecarlo-color.svg';
 import mysql from './kindtag-images/tool-mysql-color.svg';
+import notdiamond from './kindtag-images/tool-notdiamond-color.svg';
 import noteable from './kindtag-images/tool-noteable-color.svg';
 import notion from './kindtag-images/tool-notion-color.svg';
 import numpy from './kindtag-images/tool-numpy-color.svg';
@@ -178,6 +179,7 @@ import twilio from './kindtag-images/tool-twilio-color.svg';
 import typescript from './kindtag-images/tool-typescript-color.svg';
 import vercel from './kindtag-images/tool-vercel-color.svg';
 import wandb from './kindtag-images/tool-w&b-color.svg';
+import weaviate from './kindtag-images/tool-weaviate-color.svg';
 import x from './kindtag-images/tool-x-color.svg';
 import xgboost from './kindtag-images/tool-xgboost-color.svg';
 import youtube from './kindtag-images/tool-youtube-color.svg';
@@ -228,6 +230,7 @@ export type KnownTagType =
   | 'googlesheets'
   | 'sql'
   | 'wandb'
+  | 'weaviate'
   | 'databricks'
   | 'airflow'
   | 'dataset'
@@ -294,6 +297,7 @@ export type KnownTagType =
   | 'metabase'
   | 'linear'
   | 'notion'
+  | 'notdiamond'
   | 'hackernewsapi'
   | 'hackernews'
   | 'tecton'
@@ -497,6 +501,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   wandb: {
     icon: wandb,
     content: 'Weights & Biases',
+  },
+  weaviate: {
+    icon: weaviate,
+    content: 'Weaviate',
   },
   databricks: {
     icon: databricks,
@@ -766,6 +774,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: notion,
     content: 'Notion',
     blackAndWhite: true,
+  },
+  notdiamond: {
+    icon: notdiamond,
+    content: 'Not Diamond',
   },
   hackernewsapi: {
     icon: hackernews,

@@ -24,7 +24,7 @@ mdx_copy:
 
 sphinx_objects_inv:
 	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-	@echo "DEPRECATED - use \`yarn build-sphinx-object-inv\`"
+	@echo "DEPRECATED - use \`yarn build-api-docs\`"
 	@echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 	tox -e sphinx
 	cp sphinx/_build/json/objects.inv static/.

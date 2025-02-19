@@ -1,6 +1,6 @@
 ---
-title: 'Making an existing code location components-compatible'
-sidebar_position: 300
+title: 'Using components in an existing code location'
+sidebar_position: 200
 ---
 
 :::info
@@ -81,6 +81,6 @@ Now, your code location is ready to use components! `dg` can be used to scaffold
 
 ## Next steps
 
-- [Migrate existing definitions to components](./migrating-definitions)
-- [Add a new component to your code location](./using-a-component)
-- [Create a new component type](./creating-a-component)
+- [Migrate existing definitions to components](existing-definitions)
+- [Add a new component to your code location](/guides/labs/components/building-pipelines-with-components/adding-components)
+- [Create a new component type](/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type)
