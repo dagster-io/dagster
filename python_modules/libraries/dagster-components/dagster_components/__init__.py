@@ -26,4 +26,5 @@ from dagster_components.core.schema.objects import (
     AssetSpecTransformSchema as AssetSpecTransformSchema,
     OpSpecSchema as OpSpecSchema,
 )
+from dagster_components.scaffold import scaffold_component_yaml as scaffold_component_yaml
 from dagster_components.version import __version__ as __version__
