@@ -102,6 +102,7 @@ import modal from './kindtag-images/tool-modal-color.svg';
 import mongodb from './kindtag-images/tool-mongodb-color.svg';
 import montecarlo from './kindtag-images/tool-montecarlo-color.svg';
 import mysql from './kindtag-images/tool-mysql-color.svg';
+import notdiamond from './kindtag-images/tool-notdiamond-color.svg';
 import noteable from './kindtag-images/tool-noteable-color.svg';
 import notion from './kindtag-images/tool-notion-color.svg';
 import numpy from './kindtag-images/tool-numpy-color.svg';
@@ -296,6 +297,7 @@ export type KnownTagType =
   | 'metabase'
   | 'linear'
   | 'notion'
+  | 'notdiamond'
   | 'hackernewsapi'
   | 'hackernews'
   | 'tecton'
@@ -772,6 +774,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: notion,
     content: 'Notion',
     blackAndWhite: true,
+  },
+  notdiamond: {
+    icon: notdiamond,
+    content: 'Not Diamond',
   },
   hackernewsapi: {
     icon: hackernews,
