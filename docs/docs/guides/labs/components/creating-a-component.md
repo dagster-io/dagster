@@ -73,11 +73,11 @@ We can the schema for our component and add it to our class as follows:
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" />
 
 
-### Defining the python class
+### Defining the Python class
 
-Next, we'll want to translate this schema into fully-resolved Python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecSchema]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
+Next, we'll want to translate this schema into fully resolved Python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecSchema]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
 
-By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully-resolved types where appropriate.
+By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully resolved types where appropriate.
 
 Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `AssetSpecSchema` implements `ResolvableSchema[AssetSpec]`, which indicates that it can automatically resolve into an `AssetSpec` object, so we don't need to do any additional work to resolve this field for our component.
 
