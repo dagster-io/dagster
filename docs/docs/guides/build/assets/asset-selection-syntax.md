@@ -1,13 +1,7 @@
 ---
-title: "Asset selection syntax (v1.10.0)"
+title: "Asset selection syntax"
 sidebar_position: 1000
 ---
-
-:::note
-
-This is the 1.10.0 version of the asset selection syntax. For the 1.9.11 version, see the [v1.9.11 asset selection syntax documentation](/guides/build/assets/asset-selection-syntax-1-9-11).
-
-:::
 
 Dagster's asset selection syntax allows you to query and view assets within your data lineage graph. You can select upstream and downstream layers of the graph, use filters to narrow down your selection, and use functions to return the root or sink assets of a given selection.
 
