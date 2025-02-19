@@ -1,6 +1,8 @@
+import shutil
 import textwrap
 from pathlib import Path
 
+from dagster_components.utils import format_error_message
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import GlobalComponentKey
 from dagster_dg.context import DgContext
@@ -310,6 +312,28 @@ _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
     └───────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────┘
 """).strip()
 
+_EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
+    [
+        {
+            "key": "all_metadata_empty_asset@dagster_components.test",
+            "summary": null
+        },
+        {
+            "key": "complex_schema_asset@dagster_components.test",
+            "summary": "An asset that has a complex params schema."
+        },
+        {
+            "key": "simple_asset@dagster_components.test",
+            "summary": "A simple asset that returns a constant string value."
+        },
+        {
+            "key": "simple_pipes_script_asset@dagster_components.test",
+            "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
+        }
+    ]
+
+""").strip()
+
 
 def test_list_component_types_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
@@ -327,26 +351,26 @@ def test_component_type_list_json_succeeds():
         assert_runner_result(result)
         # strip the first line of logging output
         output = "\n".join(result.output.split("\n")[1:])
-        assert (
-            output.strip()
-            == textwrap.dedent("""
-                [
-                    {
-                        "key": "all_metadata_empty_asset@dagster_components.test",
-                        "summary": null
-                    },
-                    {
-                        "key": "complex_schema_asset@dagster_components.test",
-                        "summary": "An asset that has a complex params schema."
-                    },
-                    {
-                        "key": "simple_asset@dagster_components.test",
-                        "summary": "A simple asset that returns a constant string value."
-                    },
-                    {
-                        "key": "simple_pipes_script_asset@dagster_components.test",
-                        "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
-                    }
-                ]
-            """).strip()
-        )
+        assert output.strip() == _EXPECTED_COMPONENT_TYPES_JSON
+
+
+# Need to use capfd here to capture stderr from the subprocess invoked by the `component-type list`
+# command. This subprocess inherits stderr from the parent process, for whatever reason `capsys` does
+# not work.
+def test_component_type_list_bad_entry_point_fails(capfd):
+    with ProxyRunner.test() as runner, isolated_example_component_library_foo_bar(runner):
+        # Delete the component lib package referenced by the entry point
+        shutil.rmtree("foo_bar/lib")
+
+        # Disable cache to force re-discovery of deleted entry point
+        result = runner.invoke("component-type", "list", "--disable-cache", "--json")
+        assert_runner_result(result, exit_0=False)
+
+        expected_error_message = format_error_message("""
+            An error occurred while executing a `dagster-components` command in the
+            Python environment
+        """)
+        assert expected_error_message in result.output
+
+        captured = capfd.readouterr()
+        assert "Error loading entry point `foo_bar` in group `dagster.components`." in captured.err

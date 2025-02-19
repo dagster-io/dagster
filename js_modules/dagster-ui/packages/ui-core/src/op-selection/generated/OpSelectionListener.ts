@@ -12,8 +12,8 @@ import {
   ExprContext,
   FunctionCallExpressionContext,
   FunctionNameContext,
+  KeyValueContext,
   NameExprContext,
-  NameSubstringExprContext,
   NotExpressionContext,
   OrExpressionContext,
   ParenthesizedExpressionContext,
@@ -149,19 +149,6 @@ export interface OpSelectionListener extends ParseTreeListener {
   exitNameExpr?: (ctx: NameExprContext) => void;
 
   /**
-   * Enter a parse tree produced by the `NameSubstringExpr`
-   * labeled alternative in `OpSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  enterNameSubstringExpr?: (ctx: NameSubstringExprContext) => void;
-  /**
-   * Exit a parse tree produced by the `NameSubstringExpr`
-   * labeled alternative in `OpSelectionParser.attributeExpr`.
-   * @param ctx the parse tree
-   */
-  exitNameSubstringExpr?: (ctx: NameSubstringExprContext) => void;
-
-  /**
    * Enter a parse tree produced by the `AttributeExpression`
    * labeled alternative in `OpSelectionParser.traversalAllowedExpr`.
    * @param ctx the parse tree
@@ -287,4 +274,15 @@ export interface OpSelectionListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitValue?: (ctx: ValueContext) => void;
+
+  /**
+   * Enter a parse tree produced by `OpSelectionParser.keyValue`.
+   * @param ctx the parse tree
+   */
+  enterKeyValue?: (ctx: KeyValueContext) => void;
+  /**
+   * Exit a parse tree produced by `OpSelectionParser.keyValue`.
+   * @param ctx the parse tree
+   */
+  exitKeyValue?: (ctx: KeyValueContext) => void;
 }

@@ -183,8 +183,10 @@ def test_dynamic_subcommand_help_message():
                 "simple_pipes_script_asset@dagster_components.test",
                 "--help",
             )
+            # Strip interpreter logging line
+            output = "\n".join(result.output.split("\n")[1:])
         assert match_terminal_box_output(
-            result.output.strip(),
+            output.strip(),
             textwrap.dedent("""
 
                  Usage: dg component scaffold [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]

@@ -44,23 +44,22 @@ OP_TAGS_FILE = (
     / "graph"
     / "OpTags.tsx"
 )
-KIND_TAGS_DOCS_FILE = (
-    REPO_ROOT / "docs" / "content" / "concepts" / "metadata-tags" / "kind-tags.mdx"
-)
+KIND_TAGS_DOCS_PARTIAL = REPO_ROOT / "docs" / "docs" / "partials" / "_KindsTags.md"
 DOCS_KIND_IMAGES_DEST = (
     REPO_ROOT
     / "docs"
-    / "next"
-    / "public"
+    / "static"
     / "images"
-    / "concepts"
+    / "guides"
+    / "build"
+    / "assets"
     / "metadata-tags"
     / "kinds"
     / "icons"
 )
 
 KIND_LINE = (
-    '| `{kind}`{kind_spacing}| <Image src="{image}" width={{20}} height={{20}} />{image_spacing}|'
+    '| `{kind}`{kind_spacing}| <img src="{image}" width={{20}} height={{20}} />{image_spacing}|'
 )
 
 
@@ -120,7 +119,7 @@ def main() -> None:
             kind_image_dest_path = DOCS_KIND_IMAGES_DEST / kind_image_path.name
             kind_image_dest_path.write_bytes(kind_image_path.read_bytes())
             kind_docs_images[kind] = "/" + str(
-                kind_image_dest_path.relative_to(REPO_ROOT / "docs" / "next" / "public")
+                kind_image_dest_path.relative_to(REPO_ROOT / "docs" / "static")
             )
     for kind in missing_kinds:
         all_current_kinds.remove(kind)
@@ -132,33 +131,27 @@ def main() -> None:
     output = sorted_rest_of_kinds
     for kind_order in SPECIAL_KIND_ORDERS:
         output.extend([kind for kind in kind_order if kind in all_current_kinds])
-    docs_file_contents = KIND_TAGS_DOCS_FILE.read_text()
+
     docs_file_new_contents = []
 
-    # Rebuild the docs file with all kinds and images in the correct order
-    in_kind_tags_section = False
-    for line in docs_file_contents.split("\n"):
-        if "| -----------------" in line:
-            in_kind_tags_section = True
-        elif in_kind_tags_section:
-            if len(line.strip()) == 0:
-                in_kind_tags_section = False
+    # Header
+    docs_file_new_contents.append("| Tag | Image |")
 
-                for kind in output:
-                    docs_file_new_contents.append(
-                        KIND_LINE.format(
-                            kind=kind,
-                            kind_spacing=" " * (20 - len(kind)),
-                            image=kind_docs_images.get(kind, ""),
-                            image_spacing=" " * (100 - len(kind_docs_images.get(kind, ""))),
-                        )
-                    )
+    # Divider
+    docs_file_new_contents.append("|-----|-------|")
 
-            else:
-                continue
-        docs_file_new_contents.append(line)
+    # Table content
+    for kind in output:
+        docs_file_new_contents.append(
+            KIND_LINE.format(
+                kind=kind,
+                kind_spacing=" " * (20 - len(kind)),
+                image=kind_docs_images.get(kind, ""),
+                image_spacing=" " * (100 - len(kind_docs_images.get(kind, ""))),
+            )
+        )
 
-    KIND_TAGS_DOCS_FILE.write_text("\n".join(docs_file_new_contents))
+    KIND_TAGS_DOCS_PARTIAL.write_text("\n".join(docs_file_new_contents))
 
     print(f"Generated {len(output)} kinds")  # noqa: T201
 

@@ -1,4 +1,5 @@
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
+import escapeRegExp from 'lodash/escapeRegExp';
 
 import {GraphTraverser} from '../app/GraphQueryImpl';
 import {RunGraphQueryItem} from '../gantt/toGraphQueryItems';
@@ -9,7 +10,6 @@ import {
   DownTraversalExpressionContext,
   FunctionCallExpressionContext,
   NameExprContext,
-  NameSubstringExprContext,
   NotExpressionContext,
   OrExpressionContext,
   ParenthesizedExpressionContext,
@@ -21,7 +21,6 @@ import {
 } from './generated/RunSelectionParser';
 import {RunSelectionVisitor} from './generated/RunSelectionVisitor';
 import {getFunctionName, getTraversalDepth, getValue} from '../asset-selection/util';
-
 export class AntlrRunSelectionVisitor
   extends AbstractParseTreeVisitor<Set<RunGraphQueryItem>>
   implements RunSelectionVisitor<Set<RunGraphQueryItem>>
@@ -141,15 +140,9 @@ export class AntlrRunSelectionVisitor
   }
 
   visitNameExpr(ctx: NameExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = [...this.all_runs].filter((i) => i.name === value);
-    selection.forEach((i) => this.focus_runs.add(i));
-    return new Set(selection);
-  }
-
-  visitNameSubstringExpr(ctx: NameSubstringExprContext) {
-    const value: string = getValue(ctx.value());
-    const selection = [...this.all_runs].filter((i) => i.name.includes(value));
+    const value: string = getValue(ctx.keyValue());
+    const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
+    const selection = [...this.all_runs].filter((i) => regex.test(i.name));
     selection.forEach((i) => this.focus_runs.add(i));
     return new Set(selection);
   }

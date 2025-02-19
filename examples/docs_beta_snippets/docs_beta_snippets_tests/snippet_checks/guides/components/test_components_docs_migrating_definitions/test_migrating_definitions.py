@@ -88,10 +88,11 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="mv my_existing_project/elt/* my_existing_project/components/elt-definitions && rm -rf my_existing_project/elt",
+            cmd="mv my_existing_project/elt/* my_existing_project/components/elt-definitions",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-mv.txt",
             update_snippets=update_snippets,
         )
+        _run_command("rm -rf my_existing_project/elt")
 
         create_file(
             Path("my_existing_project")

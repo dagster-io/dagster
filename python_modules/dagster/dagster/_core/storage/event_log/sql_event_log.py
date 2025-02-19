@@ -2303,11 +2303,18 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
         else:
-            conn.execute(
-                ConcurrencyLimitsTable.update()
-                .where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
-                .values(limit=num, using_default_limit=False)
-            )
+            if has_default_pool_limit_col:
+                conn.execute(
+                    ConcurrencyLimitsTable.update()
+                    .where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
+                    .values(limit=num, using_default_limit=False)
+                )
+            else:
+                conn.execute(
+                    ConcurrencyLimitsTable.update()
+                    .where(ConcurrencyLimitsTable.c.concurrency_key == concurrency_key)
+                    .values(limit=num)
+                )
 
     def set_concurrency_slots(self, concurrency_key: str, num: int) -> None:
         """Allocate a set of concurrency slots.

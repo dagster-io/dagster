@@ -388,14 +388,11 @@ class GrapheneAssetNode(graphene.ObjectType):
         if self._asset_graph_differ is not None:
             return self._asset_graph_differ
 
-        base_deployment_context = graphene_info.context.get_base_deployment_context()
-
-        if base_deployment_context is None:
-            return None
+        base_deployment_asset_graph = graphene_info.context.get_base_deployment_asset_graph()
 
         self._asset_graph_differ = AssetGraphDiffer(
             branch_asset_graph=graphene_info.context.asset_graph,
-            base_asset_graph=base_deployment_context.asset_graph,
+            base_asset_graph=base_deployment_asset_graph,
         )
         return self._asset_graph_differ
 

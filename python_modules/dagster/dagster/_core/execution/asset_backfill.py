@@ -659,7 +659,7 @@ def _get_requested_asset_graph_subset_from_run_requests(
     asset_graph_view: AssetGraphView,
 ) -> AssetGraphSubset:
     asset_graph = asset_graph_view.asset_graph
-    requested_subset = AssetGraphSubset.empty()
+    requested_subset = AssetGraphSubset.create_empty_subset()
     for run_request in run_requests:
         # Run request targets a range of partitions
         range_start = run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG)
@@ -1124,8 +1124,9 @@ def execute_asset_backfill_iteration(
             updated_backfill_data.failed_and_downstream_subset
             - previous_asset_backfill_data.failed_and_downstream_subset
         )
-        updated_backfill_in_progress = (
-            updated_backfill_data.requested_subset - updated_backfill_data.materialized_subset
+        updated_backfill_in_progress = updated_backfill_data.requested_subset - (
+            updated_backfill_data.materialized_subset
+            | updated_backfill_data.failed_and_downstream_subset
         )
         previous_backfill_in_progress = (
             previous_asset_backfill_data.requested_subset
@@ -1492,7 +1493,7 @@ def execute_asset_backfill_iteration_inner(
         )
         logger.info(
             f"Assets materialized since last tick:\n{_asset_graph_subset_to_str(materialized_since_last_tick, asset_graph)}"
-            if not materialized_since_last_tick.empty
+            if not materialized_since_last_tick.is_empty
             else "No relevant assets materialized since last tick."
         )
 
@@ -1538,7 +1539,7 @@ def execute_asset_backfill_iteration_inner(
 
     logger.info(
         f"Asset partitions to request:\n{_asset_graph_subset_to_str(asset_subset_to_request, asset_graph)}"
-        if not asset_subset_to_request.empty
+        if not asset_subset_to_request.is_empty
         else "No asset partitions to request."
     )
 
@@ -1617,7 +1618,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 failed_and_downstream_partitions.get_internal_value(),
-                f"{failed_and_downstream_partitions} has failed or is downstream of a failed asset",
+                "Failed or is downstream of a failed asset",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
@@ -1631,7 +1632,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 materialized_partitions.get_internal_value(),
-                f"{materialized_partitions} already materialized by backfill",
+                "Already materialized by backfill",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
@@ -1646,7 +1647,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 requested_partitions.get_internal_value(),
-                f"{requested_partitions} already requested by backfill",
+                "Already requested by backfill",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
@@ -1992,7 +1993,7 @@ def _get_failed_asset_graph_subset(
         )
     )
 
-    result: AssetGraphSubset = AssetGraphSubset.empty()
+    result: AssetGraphSubset = AssetGraphSubset.create_empty_subset()
     for run in runs:
         planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
             run_id=run.run_id
