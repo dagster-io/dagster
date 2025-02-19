@@ -129,6 +129,7 @@ import python from './kindtag-images/tool-python-color.svg';
 import pytorch from './kindtag-images/tool-pytorch-color.svg';
 import pytorchlightning from './kindtag-images/tool-pytorchlightning-color.svg';
 import r from './kindtag-images/tool-r-color.svg';
+import r2 from './kindtag-images/tool-r2-color.svg';
 import rabbitmq from './kindtag-images/tool-rabbitmq-color.svg';
 import ray from './kindtag-images/tool-ray-color.svg';
 import react from './kindtag-images/tool-react-color.svg';
@@ -335,6 +336,7 @@ export type KnownTagType =
   | 'papertrail'
   | 'plural'
   | 'prefect'
+  | 'r2'
   | 'react'
   | 'reddit'
   | 'redshift'
@@ -739,6 +741,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: ray,
     content: 'Ray',
     blackAndWhite: true,
+  },
+  r2: {
+    icon: r2,
+    content: 'R2',
   },
   axioma: {
     icon: axioma,
