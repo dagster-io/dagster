@@ -3402,6 +3402,18 @@
                     "default": null,
                     "title": "Dbpoolrecycle"
                 },
+                "dbPoolMaxOverflow": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Dbpoolmaxoverflow"
+                },
                 "logLevel": {
                     "anyOf": [
                         {
