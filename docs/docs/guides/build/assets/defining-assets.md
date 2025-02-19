@@ -35,7 +35,7 @@ The simplest way to define a data asset in Dagster is by using the <PyObject sec
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/data-assets/asset_decorator.py" language="python" title="Using @dg.asset decorator" />
 
-In this example, `my_data_asset` is an asset that logs its output. Dagster automatically tracks its dependencies and handles its execution within the pipeline.
+In this example, `weekly_sales_report` is an asset that logs its output. Dagster automatically tracks its dependencies and handles its execution within the pipeline.
 
 ## Defining operations that create multiple assets \{#multi-asset}
 
