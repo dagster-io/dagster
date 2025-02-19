@@ -1,6 +1,6 @@
 ---
 title: Dashboard
-description: Manaing dashboard objects
+description: Managing dashboard objects
 last_update:
  author: Dennis Hume
 sidebar_position: 50
@@ -28,4 +28,4 @@ With the dashboard definition set, we have all three layers of the end-to-end pr
 
 <CodeExample path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/definitions.py" language="python" lineStart="2" lineEnd="9"/>
 
-You can see that organizing your project into domain specific definitions leads to a very clean definition. We do this with our own [internal Dagster project](https://github.com/dagster-io/dagster-open-platform/blob/main/dagster_open_platform/definitions.py) that combines over a dozen domain specific definitions for the various tools and services we use.
+You can see that organizing your project into domain specific definitions leads to a clean definition. We do this with our own [internal Dagster project](https://github.com/dagster-io/dagster-open-platform/blob/main/dagster_open_platform/definitions.py) that combines over a dozen domain specific definitions for the various tools and services we use.

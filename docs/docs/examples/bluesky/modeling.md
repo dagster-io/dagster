@@ -23,7 +23,7 @@ Next we can define the `sources.yml` which will be the foundation for our dbt mo
 
 ## Modeling
 
-With dbt configured to read our JSON data, we can start to build the models. We will follow dbt conventions and begin with staging models that map to the tables defined in the `sources.yml`. These will be simple models that extract all the information.
+With dbt configured to read our JSON data, we can start to build the models. We will follow dbt conventions and begin with staging models that map to the tables defined in the `sources.yml`. These will be models that extract all the information.
 
 <CodeExample path="docs_projects/project_atproto_dashboard/dbt_project/models/staging/stg_feed_snapshots.sql" language="sql" lineStart="0" lineEnd="5"/>
 

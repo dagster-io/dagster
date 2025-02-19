@@ -69,6 +69,14 @@ First, set up a new Dagster project.
    uv pip install -e ".[dev]"
    ```
 
+4. Ensure the following environments have been populated in your .env file. Start by copying the template:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   And then populate the fields.
+
 ## Step 2: Launch the Dagster webserver
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
