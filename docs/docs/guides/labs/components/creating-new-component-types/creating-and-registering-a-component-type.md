@@ -1,5 +1,5 @@
 ---
-title: 'Creating and registering a Component type'
+title: 'Creating and registering a component type'
 sidebar_position: 100
 ---
 

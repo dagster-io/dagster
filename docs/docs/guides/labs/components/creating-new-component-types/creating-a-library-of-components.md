@@ -1,5 +1,5 @@
 ---
-title: 'Creating a library of Components'
+title: 'Creating a library of components'
 sidebar_position: 200
 ---
 
