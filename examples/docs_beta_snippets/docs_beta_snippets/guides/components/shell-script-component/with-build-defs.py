@@ -2,13 +2,11 @@ import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated
 
 from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    FieldResolver,
     ResolutionContext,
     ResolvableSchema,
     registered_component_type,
@@ -34,7 +32,7 @@ class ShellCommand(Component):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
-    asset_specs: Annotated[Sequence[dg.AssetSpec], FieldResolver(resolve_asset_specs)]
+    asset_specs: Sequence[dg.AssetSpec]
 
     @classmethod
     def get_schema(cls) -> type[ShellScriptSchema]:
@@ -50,4 +48,4 @@ class ShellCommand(Component):
         return dg.Definitions(assets=[_asset])
 
     def execute(self, resolved_script_path: Path, context: dg.AssetExecutionContext):
-        subprocess.run(["sh", str(resolved_script_path)], check=True)
+        return subprocess.run(["sh", str(resolved_script_path)], check=True)

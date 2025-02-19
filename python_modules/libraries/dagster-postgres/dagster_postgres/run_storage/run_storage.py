@@ -108,12 +108,15 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 # This revision may be shared by any other dagster storage classes using the same DB
                 stamp_alembic_rev(pg_alembic_config(__file__), conn)
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
         kwargs = {
             "isolation_level": "AUTOCOMMIT",
             "pool_size": 1,
             "pool_recycle": pool_recycle,
+            "max_overflow": max_overflow,
         }
         existing_options = self._engine.url.query.get("options")
         if existing_options:

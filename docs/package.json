@@ -16,8 +16,10 @@
     "vale": "vale ./docs --ext=.md,.mdx",
     "lint": "eslint . --ext=.tsx,.ts,.js,.md,.mdx --ignore-pattern 'node_modules/*' --ignore-pattern 'versioned_docs/*' --ignore-pattern 'versioned_sidebars/*' --fix",
     "lint-and-vale": "yarn run lint && yarn run vale",
-    "sync-api-docs": "/bin/sh scripts/vercel-sync-api-docs.sh",
-    "generate-code-imports": "node scripts/generate-code-imports.js"
+    "generate-code-imports": "node scripts/generate-code-imports.js",
+    "rebuild-kinds-tags": "python scripts/rebuild-kinds-tags.py",
+    "sync-api-docs": "/bin/sh scripts/build-api-docs.sh",
+    "build-api-docs": "/bin/sh scripts/build-api-docs.sh"
   },
   "dependencies": {
     "@docusaurus/core": "^3.7.0",

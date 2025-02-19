@@ -2864,7 +2864,11 @@ def test_partitions_def_changed_backfill_retry_envvar_set(
 
 
 def test_asset_backfill_logging(caplog, instance, workspace_context):
-    asset_selection = [AssetKey("asset_a"), AssetKey("asset_b"), AssetKey("asset_c")]
+    asset_selection = [
+        AssetKey("asset_a"),
+        AssetKey("asset_b"),
+        AssetKey("asset_c"),
+    ]
 
     partition_keys = partitions_a.get_partition_keys()
     backfill_id = "backfill_with_multiple_assets_selected"
@@ -2898,6 +2902,7 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
     )
 
     logs = caplog.text
+
     assert "Evaluating asset backfill backfill_with_multiple_assets_selected" in logs
     assert "DefaultPartitionsSubset(subset={'foo_b'})" in logs
     assert "latest_storage_id=None" in logs
@@ -2905,6 +2910,87 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
     assert (
         """Asset partitions to request:
 - asset_a: {foo_a}"""
+        in logs
+    )
+
+
+def test_asset_backfill_failure_logging(caplog, instance, workspace_context):
+    asset_selection = [
+        AssetKey("always_fails"),
+    ]
+
+    partition_keys = static_partitions.get_partition_keys()
+    backfill_id = "backfill_with_failure"
+
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id=backfill_id,
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+
+    logs = caplog.text
+
+    assert (
+        """Overall backfill status:
+**Materialized assets:**
+None
+**Failed assets and their downstream assets:**
+None
+**Assets requested or in progress:**
+- always_fails:"""
+        in logs
+    )
+
+    wait_for_all_runs_to_finish(instance)
+
+    caplog.clear()
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED_FAILED
+
+    logs = caplog.text
+    assert (
+        """Overall backfill status:
+**Materialized assets:**
+None
+**Failed assets and their downstream assets:**
+- always_fails:"""
+    ) in logs
+
+    assert (
+        """**Assets requested or in progress:**
+None"""
         in logs
     )
 

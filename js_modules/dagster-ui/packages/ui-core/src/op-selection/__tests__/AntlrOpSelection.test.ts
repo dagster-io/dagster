@@ -31,7 +31,6 @@ const TEST_GRAPH: GraphQueryItem[] = [
 
 function assertQueryResult(query: string, expectedNames: string[]) {
   const result = parseOpSelectionQuery(TEST_GRAPH, query);
-  expect(result).not.toBeInstanceOf(Error);
   if (result instanceof Error) {
     throw result;
   }
@@ -64,9 +63,9 @@ describe('parseOpSelectionQuery', () => {
       assertQueryResult('name:A', ['A']);
     });
 
-    it('should parse name_substring query', () => {
-      assertQueryResult('name_substring:A', ['A']);
-      assertQueryResult('name_substring:B', ['B', 'B2']);
+    it('should handle name wildcard queries', () => {
+      assertQueryResult('name:*A*', ['A']);
+      assertQueryResult('name:B*', ['B', 'B2']);
     });
 
     it('should parse and query', () => {

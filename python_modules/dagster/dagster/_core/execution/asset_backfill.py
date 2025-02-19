@@ -1124,8 +1124,9 @@ def execute_asset_backfill_iteration(
             updated_backfill_data.failed_and_downstream_subset
             - previous_asset_backfill_data.failed_and_downstream_subset
         )
-        updated_backfill_in_progress = (
-            updated_backfill_data.requested_subset - updated_backfill_data.materialized_subset
+        updated_backfill_in_progress = updated_backfill_data.requested_subset - (
+            updated_backfill_data.materialized_subset
+            | updated_backfill_data.failed_and_downstream_subset
         )
         previous_backfill_in_progress = (
             previous_asset_backfill_data.requested_subset
@@ -1617,7 +1618,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 failed_and_downstream_partitions.get_internal_value(),
-                f"{failed_and_downstream_partitions} has failed or is downstream of a failed asset",
+                "Failed or is downstream of a failed asset",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
@@ -1631,7 +1632,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 materialized_partitions.get_internal_value(),
-                f"{materialized_partitions} already materialized by backfill",
+                "Already materialized by backfill",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
@@ -1646,7 +1647,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 requested_partitions.get_internal_value(),
-                f"{requested_partitions} already requested by backfill",
+                "Already requested by backfill",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)

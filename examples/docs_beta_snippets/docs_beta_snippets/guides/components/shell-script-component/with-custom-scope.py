@@ -2,13 +2,12 @@ import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Any
 
 from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    FieldResolver,
     ResolutionContext,
     ResolvableSchema,
     registered_component_type,
@@ -32,7 +31,7 @@ def resolve_asset_specs(
 @dataclass
 class ShellCommand(Component):
     script_path: str
-    asset_specs: Annotated[Sequence[dg.AssetSpec], FieldResolver(resolve_asset_specs)]
+    asset_specs: Sequence[dg.AssetSpec]
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
@@ -52,4 +51,4 @@ class ShellCommand(Component):
         return dg.Definitions(assets=[_asset])
 
     def execute(self, context: dg.AssetExecutionContext):
-        subprocess.run(["sh", self.script_path], check=True)
+        return subprocess.run(["sh", self.script_path], check=True)
