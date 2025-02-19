@@ -1,5 +1,5 @@
 ---
-title: 'Migrating an existing code location to Components'
+title: 'Migrating an existing code location to components'
 sidebar_position: 200
 ---
 

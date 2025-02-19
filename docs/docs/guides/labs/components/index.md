@@ -22,7 +22,7 @@ Dagster Components is a new way to structure your Dagster projects. It aims to p
 
 ## Installation
 
-To use Components, you must install the `dg` command line tool, which lives in the published Python package `dagster-dg`. `dg` is designed to be globally installed and has no dependency on `dagster` itself. `dg` allows you to quickly scaffold Dagster code locations and populate them with Components. 
+To use the Components framework, you must install the `dg` command line tool, which lives in the published Python package `dagster-dg`. `dg` is designed to be globally installed and has no dependency on `dagster` itself. `dg` allows you to quickly scaffold Dagster code locations and populate them with components. 
 
 ### 1. Install uv
 
@@ -56,5 +56,5 @@ Below is the help message for `dg`, which also serves as the API reference:
 
 ## Next steps
 
-* [Follow the Components ETL pipeline tutorial](components-etl-pipeline-tutorial)
-* [Build your own pipeline with Components](building-pipelines-with-components)
+* [Follow the components ETL pipeline tutorial](components-etl-pipeline-tutorial)
+* [Build your own pipeline with components](building-pipelines-with-components)

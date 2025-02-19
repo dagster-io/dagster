@@ -1,5 +1,5 @@
 ---
-title: 'Migrating existing definitions to Components'
+title: 'Migrating existing definitions to components'
 sidebar_position: 100
 ---
 

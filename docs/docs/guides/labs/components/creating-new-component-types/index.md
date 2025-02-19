@@ -1,5 +1,5 @@
 ---
-title: 'Creating new Component types'
+title: 'Creating new component types'
 sidebar_position: 30
 ---
 

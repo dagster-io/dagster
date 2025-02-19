@@ -1,5 +1,5 @@
 ---
-title: 'Migrating to Components'
+title: 'Migrating to components'
 sidebar_position: 50
 ---
 
