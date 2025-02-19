@@ -352,7 +352,7 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
-        # We need to find the right spot to inject global options. For the `dg component scaffold`
+        # We need to find the right spot to inject global options. For the `dg scaffold component`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
         if args[:2] == ("scaffold", "component"):
