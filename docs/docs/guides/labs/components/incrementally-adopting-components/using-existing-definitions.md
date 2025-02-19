@@ -4,7 +4,7 @@ sidebar_position: 100
 ---
 
 :::note
-This guide covers using existing Python definitions with components. This guide presupposes a components-enabled project. See the [getting started guide](/guides/labs/components/) or [Making an existing code location components-compatible](/guides/labs/components/incrementally-adopting-components/using-an-existing-code-location) guide for more information.
+This guide covers using existing Python definitions with components. This guide presupposes a components-enabled project. See the [getting started guide](/guides/labs/components/) or [Making an existing code location components-compatible](/guides/labs/components/incrementally-adopting-components/existing-code-location) guide for more information.
 :::
 
 When adding components to an existing Dagster code location, it is often useful to restructure your definitions into component folders, making it easier to eventually migrate them entirely to using components.

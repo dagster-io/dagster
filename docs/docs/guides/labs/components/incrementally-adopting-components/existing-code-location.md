@@ -1,5 +1,5 @@
 ---
-title: 'Using an existing code location with components'
+title: 'Using components in an existing code location'
 sidebar_position: 200
 ---
 
