@@ -1505,8 +1505,21 @@ def execute_asset_backfill_iteration_inner(
                 for asset_key in asset_backfill_data.target_subset.asset_keys
             )
         )
-        candidate_asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
+
+        parent_materialized_asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
             parent_materialized_asset_partitions, asset_graph
+        )
+
+        # Filter out parent materializations for partitions outside the range
+        # that existed when the backfill was created
+        full_subsets = [
+            asset_graph_view.get_full_subset(key=asset_key)
+            for asset_key in parent_materialized_asset_graph_subset.asset_keys
+        ]
+
+        candidate_asset_graph_subset = (
+            parent_materialized_asset_graph_subset
+            & AssetGraphSubset.from_entity_subsets(full_subsets)
         )
 
         yield None
