@@ -50,10 +50,10 @@ After installing dependencies, scaffold a components-ready code location for you
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
 
-The `dg code-location scaffold` command builds a code location at `jaffle-platform` and initializes a new Python
+The `dg scaffold code-location` command builds a code location at `jaffle-platform` and initializes a new Python
 virtual environment inside it. When you use `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
-To learn more about the files, directories, and default settings in a code location scaffolded with `dg code-location scaffold`, see "[Creating a code location with components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components#overview-of-files-and-directories)".
+To learn more about the files, directories, and default settings in a code location scaffolded with `dg scaffold code-location`, see "[Creating a code location with components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components#overview-of-files-and-directories)".
 
 ## Ingest data
 
@@ -71,13 +71,13 @@ To make the Sling component available in your environment, install the `sling` e
 
 `dg` always operates in an isolated environment, but it is able to access the set of component types available in your project environment because it attempts to resolve a project root whenever it is run. If `dg` finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory. (This can be confirmed by the presence of a `uv.lock` file.)
 
-When you run commands like `dg component-type list`, `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg code-location scaffold` command.
+When you run commands like `dg list component-type` , `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg scaffold code-location` command.
 
 :::
 
 ### 2. Confirm availability of the Sling component type
 
-To confirm that the `dagster_components.sling_replication` component type is now available, run the `dg component-type list` command again:
+To confirm that the `dagster_components.sling_replication` component type is now available, run the `dg list component-type` command again:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/8-dg-list-component-types.txt" />
 
@@ -147,17 +147,17 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
 
 <CliInvocationExample contents="uv add 'dagster-components[dbt]' dbt-duckdb" />
 
-To confirm that the `dagster_components.dbt_project` component type is now available, run `dg component-type list`:
+To confirm that the `dagster_components.dbt_project` component type is now available, run `dg list component-type`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" />
 
 :::tip
 
-You can access detailed information about a component type with the `dg component-type info` command:
+You can access detailed information about a component type with the `dg info component-type` command:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-component-type-info.txt" />
 
-The output of `dg component-type info` shows the parameters (in JSON schema format) for both component generation and runtime loading of the component. (The runtime parameters have been truncated here due to length.)
+The output of `dg info component-type` shows the parameters (in JSON schema format) for both component generation and runtime loading of the component. (The runtime parameters have been truncated here due to length.)
 
 :::
 
@@ -185,7 +185,7 @@ We need to update the configuration of the `dagster_components.dbt_project` comp
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/22-project-jdbt-incorrect.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-You might notice the typo in the above file--after updating a component file, it's useful to validate that the changes match the component's schema. You can do this by running `dg component check`:
+You might notice the typo in the above file--after updating a component file, it's useful to validate that the changes match the component's schema. You can do this by running `dg check component`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-dg-component-check-error.txt" />
 
@@ -193,7 +193,7 @@ You can see that the error message includes the filename, line number, and a cod
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/24-project-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-Finally, run `dg component check` again to validate the fix:
+Finally, run `dg check component` again to validate the fix:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/25-dg-component-check.txt" />
 

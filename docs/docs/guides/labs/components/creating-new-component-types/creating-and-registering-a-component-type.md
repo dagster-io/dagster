@@ -98,7 +98,7 @@ Now, you can use this component type to create new component instances.
 
 ## Configuring custom scaffolding
 
-Once your component type is registered, instances of the component type can be scaffolded using the `dg component scaffold` command:
+Once your component type is registered, instances of the component type can be scaffolded using the `dg scaffold component` command:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/6-scaffold-instance-of-component.txt" />
 
@@ -108,7 +108,7 @@ In this case, we might want to scaffold a template shell script alongside a fill
 
 <CodeExample  path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-scaffolder.py" language="python" title="my_component_library/lib/shell_command.py"/>
 
-Now, when we run `dg component scaffold`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
+Now, when we run `dg scaffold component`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/7-scaffolded-component.yaml" language="yaml" title="my_component_library/components/my_shell_command/component.yaml" />
 

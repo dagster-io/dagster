@@ -1,4 +1,4 @@
-dg component-type list
+dg list component-type
 
 Using /.../my-deployment/code_locations/code-location-1/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓

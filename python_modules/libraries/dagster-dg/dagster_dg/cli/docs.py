@@ -38,7 +38,7 @@ def component_type_docs_command(
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     component_key = GlobalComponentKey.from_typename(component_type)
     if not registry.has_global(component_key):
-        exit_with_error(f"Component type`{component_type}` not found.")
+        exit_with_error(f"Component type `{component_type}` not found.")
 
     markdown = markdown_for_component_type(registry.get_global(component_key))
     if output == "browser":
