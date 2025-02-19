@@ -9,14 +9,12 @@ from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    ResolvableSchema,
-    registered_component_type,
-)
-from dagster_components.core.component_scaffolder import (
     ComponentScaffolder,
     ComponentScaffoldRequest,
+    ResolvableSchema,
+    registered_component_type,
+    scaffold_component_yaml,
 )
-from dagster_components.scaffold import scaffold_component_yaml
 
 import dagster as dg
 
