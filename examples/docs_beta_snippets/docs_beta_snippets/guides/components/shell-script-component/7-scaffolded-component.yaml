@@ -3,5 +3,5 @@ type: shell_command@my_component_library
 params:
   script_path: script.sh
   asset_specs:
-  - name: my_asset
-    description: My asset
+  - key: my_asset
+    description: Output of running a script

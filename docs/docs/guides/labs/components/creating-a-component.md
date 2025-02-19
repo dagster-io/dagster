@@ -79,12 +79,16 @@ Next, we'll want to translate this schema into fully-resolved python objects. Fo
 
 By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully-resolved types where appropriate.
 
-Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. Whenever we define a field on the component that isn't on the schema, or is a different type, we can add an annotation to that field with `Annotated[<type>, FieldResolver(...)]` to tell the system how to resolve that particular field.
+Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `AssetSpecSchema` implements `ResolvableSchema[AssetSpec]`, which indicates that it can automatically resolve into an `AssetSpec` object, so we don't need to do any additional work to resolve this field for our component.
 
-In our case, we'll just define a single field resolver for the `asset_specs` field on our component. Because `AssetSpecSchema` is a `ResolvableModel`, this can be directly resolved into an `AssetSpec` object using `context.resolve_value()`.
+
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-class-defined.py" language="python" />
 
+:::tip
+
+When defining a field on a component that isn't on the schema, or is of a different type, the components system allows you to provide custom resolution logic for that field. See the [Providing resolution logic for non-standard types](#advanced-providing-resolution-logic-for-non-standard-types) section for more information.
+:::
 
 ### Building definitions
 
@@ -131,6 +135,15 @@ Now, when we run `dg component scaffold`, we'll see that a template shell script
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/8-scaffolded-component-script.sh" language="bash" title="my_component_library/components/my_shell_command/script.sh" />
 
+## [Advanced] Providing resolution logic for non-standard types
+
+In most cases, the types you use in your component schema and in the component class will be the same, or will have out-of-the-box resolution logic, as in the case of `AssetSpecSchema` and `AssetSpec`.
+
+However, in some cases you may want to use a type that doesn't have an existing schema equivalent.  In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, FieldResolver(...)]`.
+
+For example, we might want to provide an API client to our component, which can be configured with an API key in YAML, or a mock client in tests:
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/custom-schema-resolution.py" language="python" />
 
 ## [Advanced] Customize rendering of YAML values
 

@@ -169,24 +169,6 @@ def test_components_docs_index(update_snippets: bool, get_selenium_driver) -> No
             / f"{next_snip_no()}-scaffolded-component-script.sh",
             update_snippets=update_snippets,
         )
-
-        (
-            Path("my_component_library")
-            / "components"
-            / "my_shell_command"
-            / "component.yaml"
-        ).write_text("""type: shell_command@my_component_library
-
-params:
-  script_path: script.sh
-  asset_specs:
-    - key: my_shell_command
-""")
-        Path("my_component_library/components/my_shell_command/script.sh").write_text(
-            """#!/bin/bash
-echo "Hello, world!"
-"""
-        )
         _run_command(
             "dagster asset materialize --select '*' -m my_component_library.definitions"
         )

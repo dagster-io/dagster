@@ -3,14 +3,12 @@ import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Any
 
 from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    FieldResolver,
-    ResolutionContext,
     ResolvableSchema,
     registered_component_type,
 )
@@ -28,19 +26,13 @@ class ShellScriptSchema(ResolvableSchema):
     asset_specs: Sequence[AssetSpecSchema]
 
 
-def resolve_asset_specs(
-    context: ResolutionContext, schema: ShellScriptSchema
-) -> Sequence[dg.AssetSpec]:
-    return context.resolve_value(schema.asset_specs)
-
-
 @registered_component_type(name="shell_command")
 @dataclass
 class ShellCommand(Component):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
-    asset_specs: Annotated[Sequence[dg.AssetSpec], FieldResolver(resolve_asset_specs)]
+    asset_specs: Sequence[dg.AssetSpec]
 
     @classmethod
     def get_schema(cls) -> type[ShellScriptSchema]:
@@ -56,7 +48,7 @@ class ShellCommand(Component):
         return dg.Definitions(assets=[_asset])
 
     def execute(self, resolved_script_path: Path, context: dg.AssetExecutionContext):
-        subprocess.run(["sh", str(resolved_script_path)], check=True)
+        return subprocess.run(["sh", str(resolved_script_path)], check=True)
 
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:
@@ -71,7 +63,9 @@ class ShellCommandScaffolder(ComponentScaffolder):
             request,
             {
                 "script_path": "script.sh",
-                "asset_specs": [{"name": "my_asset", "description": "My asset"}],
+                "asset_specs": [
+                    {"key": "my_asset", "description": "Output of running a script"}
+                ],
             },
         )
         script_path = Path(request.component_instance_root_path) / "script.sh"
