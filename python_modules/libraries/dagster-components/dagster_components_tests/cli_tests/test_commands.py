@@ -114,7 +114,7 @@ def test_list_local_components_types() -> None:
             assert len(result) == 1
             assert set(result.keys()) == {"my_location/components/local_component_sample"}
             assert set(result["my_location/components/local_component_sample"].keys()) == {
-                "my_component@__init__.py"
+                "my_component@file:__init__.py"
             }
 
             # Add a second directory and local component
