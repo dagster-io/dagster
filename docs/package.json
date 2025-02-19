@@ -19,7 +19,8 @@
     "generate-code-imports": "node scripts/generate-code-imports.js",
     "sync-api-docs": "/bin/sh scripts/vercel-sync-api-docs.sh",
     "build-api-docs": "tox -e sphinx-mdx && cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs/api/python-api/",
-    "build-sphinx-object-inv": "tox -e sphinx && cp sphinx/_build/json/objects.inv static/."
+    "build-sphinx-object-inv": "tox -e sphinx && cp sphinx/_build/json/objects.inv static/.",
+    "rebuild-kinds-tags": "python scripts/rebuild-kinds-tags.py"
   },
   "dependencies": {
     "@docusaurus/core": "^3.7.0",
