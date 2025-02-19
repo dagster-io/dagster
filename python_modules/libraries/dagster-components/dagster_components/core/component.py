@@ -30,7 +30,11 @@ from dagster_components.core.component_scaffolder import (
 )
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.utils import load_module_from_path
+from dagster_components.utils import format_error_message, load_module_from_path
+
+
+class ComponentsEntryPointLoadError(DagsterError):
+    pass
 
 
 class ComponentDeclNode(ABC):
@@ -158,7 +162,16 @@ class ComponentTypeRegistry:
             ):
                 continue
 
-            root_module = entry_point.load()
+            try:
+                root_module = entry_point.load()
+            except Exception as e:
+                raise ComponentsEntryPointLoadError(
+                    format_error_message(f"""
+                        Error loading entry point `{entry_point.name}` in group `{COMPONENTS_ENTRY_POINT_GROUP}`.
+                        Please fix the error or uninstall the package that defines this entry point.
+                    """)
+                ) from e
+
             if not isinstance(root_module, ModuleType):
                 raise DagsterError(
                     f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "

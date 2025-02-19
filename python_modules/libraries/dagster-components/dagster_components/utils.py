@@ -1,11 +1,13 @@
 import importlib.util
+import subprocess
 import sys
+import textwrap
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 import click
 from dagster._core.definitions.asset_key import AssetKey
@@ -17,6 +19,8 @@ from dagster._core.errors import DagsterError
 
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetAttributesSchema
+
+T = TypeVar("T")
 
 CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
 
@@ -34,6 +38,13 @@ def ensure_dagster_components_tests_import() -> None:
 def exit_with_error(error_message: str) -> None:
     click.echo(click.style(error_message, fg="red"))
     sys.exit(1)
+
+
+def format_error_message(message: str) -> str:
+    # width=10000 unwraps any hardwrapping
+    dedented = textwrap.dedent(message).strip()
+    paragraphs = [textwrap.fill(p, width=10000) for p in dedented.split("\n\n")]
+    return "\n\n".join(paragraphs)
 
 
 # Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
@@ -143,3 +154,34 @@ def load_module_from_path(module_name, path) -> ModuleType:
     assert spec.loader, "Must have a loader"
     spec.loader.exec_module(module)
     return module
+
+
+# ########################
+# ##### PLATFORM
+# ########################
+
+
+def is_windows() -> bool:
+    return sys.platform == "win32"
+
+
+def is_macos() -> bool:
+    return sys.platform == "darwin"
+
+
+# ########################
+# ##### VENV
+# ########################
+
+
+def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
+    if is_windows():
+        return venv_dir / "Scripts" / f"{executable}.exe"
+    else:
+        return venv_dir / "bin" / executable
+
+
+def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
+    executable = get_venv_executable(venv_dir)
+    command = ["uv", "pip", "install", "--python", str(executable), *install_args]
+    subprocess.run(command, check=True)

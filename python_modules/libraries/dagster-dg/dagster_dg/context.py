@@ -1,3 +1,4 @@
+import shlex
 import shutil
 import subprocess
 from collections.abc import Iterable
@@ -320,7 +321,7 @@ class DgContext:
             code_location_command_prefix = ["uv", "run", "dagster-components"]
             env = strip_activated_venv_from_env_vars()
         else:
-            code_location_command_prefix = [executable_path]
+            code_location_command_prefix = [str(executable_path)]
             env = None
         full_command = [
             *code_location_command_prefix,
@@ -334,8 +335,18 @@ class DgContext:
         with pushd(self.root_path):
             if log:
                 print(f"Using {executable_path}")  # noqa: T201
-            result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=True)
-            return result.stdout.decode("utf-8")
+
+            # We don't capture stderr here-- it will print directly to the console, then we can
+            # add a clean error message at the end explanining what happened.
+            result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=False)
+            if result.returncode != 0:
+                exit_with_error(f"""
+                    An error occurred while executing a `dagster-components` command in the {self.environment_desc}.
+
+                    `{shlex.join(full_command)}` exited with code {result.returncode}. Aborting.
+                """)
+            else:
+                return result.stdout.decode("utf-8")
 
     def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
         path = path or self.root_path
@@ -377,6 +388,13 @@ class DgContext:
             return Path(global_exec)
         else:
             return None
+
+    @property
+    def environment_desc(self) -> str:
+        if self.has_venv:
+            return f"Python environment at {self.venv_path}"
+        else:
+            return "ambient Python environment"
 
 
 # ########################

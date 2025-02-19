@@ -334,7 +334,9 @@ def exit_with_error(error_message: str) -> Never:
 
 def _format_error_message(message: str) -> str:
     # width=10000 unwraps any hardwrapping
-    return textwrap.dedent(textwrap.fill(message, width=10000))
+    dedented = textwrap.dedent(message).strip()
+    paragraphs = [textwrap.fill(p, width=10000) for p in dedented.split("\n\n")]
+    return "\n\n".join(paragraphs)
 
 
 def generate_missing_component_type_error_message(component_key_str: str) -> str:
