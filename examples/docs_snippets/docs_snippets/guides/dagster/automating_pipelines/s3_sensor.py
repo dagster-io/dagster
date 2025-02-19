@@ -5,12 +5,10 @@ from dagster import (
     sensor,
     op,
     job,
-    build_sensor_context,
     RunRequest,
     SkipReason,
     OpExecutionContext,
 )
-import os
 
 
 @op(config_schema={"filename": str})

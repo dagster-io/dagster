@@ -47,7 +47,7 @@ def new_resource_testing_with_nesting() -> None:
     test_my_resource_with_nesting()
 
 
-from typing import TYPE_CHECKING, Dict, Any  # noqa: UP035
+from typing import TYPE_CHECKING, Any
 
 
 def new_resources_assets_defs() -> "Definitions":
@@ -57,7 +57,7 @@ def new_resources_assets_defs() -> "Definitions":
     from dagster import ResourceParam
     import requests
 
-    from typing import Dict, Any  # noqa: UP035
+    from typing import Any
 
     @asset
     def data_from_url(data_url: ResourceParam[str]) -> dict[str, Any]:
@@ -740,10 +740,8 @@ def new_resource_on_sensor() -> None:
         ConfigurableResource,
         job,
         Definitions,
-        RunConfig,
     )
     import requests
-    from typing import List  # noqa: UP035
 
     class UsersAPI(ConfigurableResource):
         url: str
@@ -780,7 +778,7 @@ def new_resource_on_sensor() -> None:
 
     # start_test_resource_on_sensor
 
-    from dagster import build_sensor_context, validate_run_config
+    from dagster import build_sensor_context
 
     def test_process_new_users_sensor():
         class FakeUsersAPI:
@@ -802,11 +800,9 @@ def new_resource_on_schedule() -> None:
         ConfigurableResource,
         job,
         RunRequest,
-        RunConfig,
         Definitions,
     )
     from datetime import datetime
-    from typing import List  # noqa: UP035
 
     class DateFormatter(ConfigurableResource):
         format: str
@@ -837,7 +833,7 @@ def new_resource_on_schedule() -> None:
     # end_new_resource_on_schedule
     # start_test_resource_on_schedule
 
-    from dagster import build_schedule_context, validate_run_config
+    from dagster import build_schedule_context
 
     def test_process_data_schedule():
         context = build_schedule_context(

@@ -6,7 +6,6 @@ from dagster import (
     DefaultSensorStatus,
     SkipReason,
     asset,
-    define_asset_job,
     JobSelector,
     CodeLocationSelector,
     DagsterRunStatus,

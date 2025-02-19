@@ -1,6 +1,6 @@
 # start_resource
 # resources.py
-from typing import Any, Dict, Optional  # noqa: UP035
+from typing import Any, Optional
 
 import requests
 

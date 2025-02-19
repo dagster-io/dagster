@@ -1,5 +1,4 @@
 import random
-from typing import List  # noqa: UP035
 
 from dagster import (
     AssetExecutionContext,

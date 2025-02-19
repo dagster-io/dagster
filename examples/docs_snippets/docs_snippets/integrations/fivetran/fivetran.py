@@ -118,7 +118,6 @@ def scope_add_downstream_assets():
             load_assets_from_fivetran_instance,
         )
         from dagster import (
-            ScheduleDefinition,
             define_asset_job,
             asset,
             AssetIn,

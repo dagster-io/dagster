@@ -227,8 +227,6 @@ def test_op_with_resource():
 
 # end_test_op_resource_marker
 
-from dagster import resource
-
 
 # start_test_job_with_config
 from dagster import RunConfig

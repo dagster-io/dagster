@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Dict  # noqa: UP035
 
 import pandas as pd
 

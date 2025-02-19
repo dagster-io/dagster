@@ -97,7 +97,7 @@ def new_style_resource_on_context() -> Definitions:
 
 
 def new_style_resource_on_param() -> Definitions:
-    from dagster import ConfigurableResource, Definitions, OpExecutionContext, asset
+    from dagster import ConfigurableResource, Definitions, asset
 
     class FancyDbResource(ConfigurableResource):
         conn_string: str

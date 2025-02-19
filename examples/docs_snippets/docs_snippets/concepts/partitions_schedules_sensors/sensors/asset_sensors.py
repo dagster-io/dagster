@@ -1,22 +1,10 @@
-from dagster import (
-    AssetSelection,
-    DailyPartitionsDefinition,
-    RunRequest,
-    SkipReason,
-    WeeklyPartitionsDefinition,
-    asset,
-    define_asset_job,
-    job,
-    multi_asset_sensor,
-)
+from dagster import RunRequest, SkipReason, asset, job
 
 
 @job
 def my_job():
     pass
 
-
-from typing import List  # noqa: UP035
 
 from dagster import Config
 

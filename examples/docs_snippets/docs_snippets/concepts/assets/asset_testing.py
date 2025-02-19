@@ -63,7 +63,7 @@ def test_uses_context():
 # end_test_with_context_asset
 
 
-from typing import Any, Dict  # noqa: UP035
+from typing import Any
 
 import requests
 

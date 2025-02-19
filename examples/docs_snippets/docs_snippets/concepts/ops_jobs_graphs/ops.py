@@ -138,7 +138,6 @@ def return_annotation_op() -> int:
 # end_return_annotation
 # start_tuple_return
 from dagster import op
-from typing import Tuple  # noqa: UP035
 
 
 @op(out={"int_output": Out(), "str_output": Out()})
@@ -150,7 +149,6 @@ def my_multiple_output_annotation_op() -> tuple[int, str]:
 
 # start_single_output_tuple
 from dagster import op
-from typing import Tuple  # noqa: UP035
 
 
 @op

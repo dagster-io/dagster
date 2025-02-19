@@ -1,6 +1,5 @@
 # ruff: isort: skip_file
 
-from typing import List  # noqa: UP035
 from dagster import job, op
 
 
@@ -53,7 +52,6 @@ class MyIOManager(ConfigurableIOManager):
 # start_io_manager_factory_marker
 
 from dagster import IOManager, ConfigurableIOManagerFactory, OutputContext, InputContext
-import requests
 
 
 class ExternalIOManager(IOManager):
@@ -98,7 +96,7 @@ class MyPartitionedIOManager(IOManager):
 # end_partitioned_marker
 
 # start_df_marker
-from dagster import ConfigurableIOManager, io_manager
+from dagster import ConfigurableIOManager
 
 
 class DataframeTableIOManager(ConfigurableIOManager):
