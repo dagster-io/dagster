@@ -26,7 +26,7 @@ def test_configure_editor(editor: str) -> None:
         ),
         isolated_example_code_location_foo_bar(runner, False),
     ):
-        out = runner.invoke("code-location", "configure-editor", editor)
+        out = runner.invoke("configure-editor", "code-location", editor)
 
         assert out.exit_code == 0
 

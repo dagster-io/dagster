@@ -14,7 +14,7 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
 
 def test_scaffold_deployment_command_success() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("deployment", "scaffold", "foo")
+        result = runner.invoke("scaffold", "deployment", "foo")
         assert_runner_result(result)
         assert Path("foo").exists()
         assert Path("foo/code_locations").exists()
@@ -23,6 +23,6 @@ def test_scaffold_deployment_command_success() -> None:
 def test_scaffold_deployment_command_already_exists_fails() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         os.mkdir("foo")
-        result = runner.invoke("deployment", "scaffold", "foo")
+        result = runner.invoke("scaffold", "deployment", "foo")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output

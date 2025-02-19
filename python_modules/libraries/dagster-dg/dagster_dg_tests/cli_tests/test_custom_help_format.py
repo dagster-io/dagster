@@ -178,8 +178,8 @@ def test_dynamic_subcommand_help_message():
     with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         with fixed_panel_width(width=120):
             result = runner.invoke(
-                "component",
                 "scaffold",
+                "component",
                 "simple_pipes_script_asset@dagster_components.test",
                 "--help",
             )
@@ -189,7 +189,7 @@ def test_dynamic_subcommand_help_message():
             output.strip(),
             textwrap.dedent("""
 
-                 Usage: dg component scaffold [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
+                 Usage: dg scaffold component [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
                  COMPONENT_INSTANCE_NAM
                  E                                                                                                         
                                                                                                                                         
