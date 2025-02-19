@@ -55,7 +55,7 @@ Using definition metadata to describe assets can make it easy to provide context
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/definition-metadata.py" language="python" />
 
-To learn more about the different types of metadata you can attach, see the [`MetadataValue`](/api/python-api/metadata#class dagster.MetadataValue) API docs.
+To learn more about the different types of metadata you can attach, see the <PyObject section="metadata" module="dagster" object="MetadataValue" /> API docs.
 
 Some metadata keys will be given special treatment in the Dagster UI. See the [Standard metadata types](#standard-metadata-types) section for more information.
 
