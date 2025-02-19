@@ -48,7 +48,7 @@ If you have a local clone of the `dagster` repo, you can install a local version
 
 :::
 
-## dagster-dg API reference
+## dg API reference
 
 Below is the help message for `dg`, which also serves as the API reference:
 

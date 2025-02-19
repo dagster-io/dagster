@@ -5,7 +5,7 @@ sidebar_position: 10
 
 ## Setup
 
-### Install project dependencies
+### 1. Install project dependencies
 
 :::info Prerequisites
 
@@ -44,7 +44,7 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 :::
 
 
-### Scaffold a new code location
+### 2. Scaffold a new code location
 
 After installing dependencies, scaffold a components-ready code location for your project:
 
