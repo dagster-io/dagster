@@ -104,7 +104,7 @@ def code_location_scaffold_command(
 
     The `<name>.components` directory holds components (which can be created with `dg scaffold
     component`).  The `<name>.lib` directory holds custom component types scoped to the code
-    location (which can be created with `dg component-type scaffold`).
+    location (which can be created with `dg scaffold component-type`).
     """  # noqa: D301
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
