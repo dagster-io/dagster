@@ -1936,24 +1936,12 @@
       "destination": "/guides/labs/components/managing-multiple-code-locations"
     },
     {
-      "source": "/guides/labs/components/creating-a-component",
-      "destination": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type"
-    },
-    {
       "source": "/guides/labs/components/using-a-component",
       "destination": "/guides/labs/components/building-pipelines-with-components/adding-components"
     },
     {
       "source": "/guides/labs/components/using-a-component-python",
       "destination": "/guides/labs/components/building-pipelines-with-components/adding-components-python"
-    },
-    {
-      "source": "/guides/labs/components/migrating-definitions",
-      "destination": "/guides/labs/components/incrementally-adopting-components/using-existing-definitions"
-    },
-    {
-      "source": "/guides/labs/components/setting-up-a-deployment",
-      "destination": "/guides/labs/components/managing-multiple-code-locations"
     },
     {
       "source": "/guides/preview/",
