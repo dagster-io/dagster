@@ -72,6 +72,14 @@ This command generates static content into the `build` directory and can be serv
 
 **NOTE:** the `make sphinx_objects_inv` command needs to be run before creating a new release. We plan to automate this procedure in the future.
 
+### Generated content
+
+Kinds tags are generated programmatically and stored in the `docs/partials/_KindsTags.md` partial. This is done using the following command:
+
+```sh
+yarn rebuild-kinds-tags
+```
+
 ### Linters
 
 The docs site also uses [Vale](https://vale.sh/) to check for issues in the documentation.
