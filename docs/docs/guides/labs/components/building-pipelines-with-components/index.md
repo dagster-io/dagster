@@ -1,5 +1,5 @@
 ---
-title: 'Building pipelines with Components'
+title: 'Building pipelines with components'
 sidebar_position: 20
 ---
 
