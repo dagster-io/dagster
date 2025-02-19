@@ -19,9 +19,7 @@ After [installing dependencies](/guides/labs/components/index.md#installation), 
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
 
-This command builds a code location and initializes a new Python
-virtual environment inside of it. When using `dg`'s default environment
-management behavior, you won't need to worry about activating this virtual environment yourself.
+This command builds a code location and initializes a new Python virtual environment inside of it. When using `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
 ## Overview of files and directories
 
