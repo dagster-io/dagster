@@ -21,6 +21,28 @@ from dagster_components.scaffold import scaffold_component_yaml
 import dagster as dg
 
 
+# highlight-start
+class ShellCommandScaffolder(ComponentScaffolder):
+    """Scaffolds a template shell script alongside a filled-out component YAML file."""
+
+    def scaffold(self, request: ComponentScaffoldRequest, params: Any) -> None:
+        scaffold_component_yaml(
+            request,
+            {
+                "script_path": "script.sh",
+                "asset_specs": [
+                    {"key": "my_asset", "description": "Output of running a script"}
+                ],
+            },
+        )
+        script_path = Path(request.component_instance_root_path) / "script.sh"
+        script_path.write_text("#!/bin/bash\n\necho 'Hello, world!'")
+        os.chmod(script_path, 0o755)
+
+
+# highlight-end
+
+
 class ShellScriptSchema(ResolvableSchema):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
@@ -50,24 +72,10 @@ class ShellCommand(Component):
     def execute(self, resolved_script_path: Path, context: dg.AssetExecutionContext):
         return subprocess.run(["sh", str(resolved_script_path)], check=True)
 
+    # highlight-start
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:
         return ShellCommandScaffolder()
 
 
-class ShellCommandScaffolder(ComponentScaffolder):
-    """Scaffolds a template shell script alongside a filled-out component YAML file."""
-
-    def scaffold(self, request: ComponentScaffoldRequest, params: Any) -> None:
-        scaffold_component_yaml(
-            request,
-            {
-                "script_path": "script.sh",
-                "asset_specs": [
-                    {"key": "my_asset", "description": "Output of running a script"}
-                ],
-            },
-        )
-        script_path = Path(request.component_instance_root_path) / "script.sh"
-        script_path.write_text("#!/bin/bash\n\necho 'Hello, world!'")
-        os.chmod(script_path, 0o755)
+# highlight-end
