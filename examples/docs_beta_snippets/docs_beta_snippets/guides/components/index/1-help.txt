@@ -37,6 +37,8 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ check      Commands for checking the integrity of your Dagster code.                   │
 │ dev        Start a local deployment of your Dagster project.                           │
 │ docs       Commands for generating docs from your Dagster code.                        │
+│ init       Initialize a new Dagster workspace and a first project within that          │
+│            workspace.                                                                  │
 │ inspect    Commands for inspecting Dagster entities.                                   │
 │ list       Commands for listing Dagster entities.                                      │
 │ scaffold   Commands for scaffolding Dagster code.                                      │

@@ -263,8 +263,6 @@ def scaffold_subtree(
                 )
                 f.write("\n")
 
-    click.echo(f"Scaffolded files for Dagster project in {path}.")
-
 
 def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATTERNS):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
