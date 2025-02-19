@@ -480,7 +480,8 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             )
         if parent_partition_key is None:
             return child_partitions_def.get_partition_keys(
-                dynamic_partitions_store=dynamic_partitions_store
+                dynamic_partitions_store=dynamic_partitions_store,
+                current_time=current_time,
             )
 
         if parent_partitions_def is None:
