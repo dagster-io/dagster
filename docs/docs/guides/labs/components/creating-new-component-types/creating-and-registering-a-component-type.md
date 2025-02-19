@@ -1,11 +1,11 @@
 ---
-title: 'Creating a new component type'
+title: 'Creating and registering a component type'
 sidebar_position: 100
 ---
 
 :::info
 
-This feature is still in development and might change in patch releases. It’s not production-ready, and the documentation may also evolve. Stay tuned for updates.
+This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
 
 :::
 
@@ -19,28 +19,7 @@ Refer to the project structuring guide to learn how to create a components-compa
 
 :::
 
-## Making a component library
-
-To let the `dg` cli know that your Python package contains component types, you'll want to update your `pyproject.toml` file with the following configuration:
-
-```toml
-[tool.dg]
-is_component_lib = true
-```
-
-By default, it is assumed that all components types will be defined in `your_package.lib`. If you'd like to define your components in a different directory, you can specify this in your `pyproject.toml` file:
-
-```toml
-[tool.dg]
-is_component_lib = true
-component_lib_package="your_package.other_module"
-```
-
-Once this is done, as long as this package is installed in your environment, you'll be able to use the `dg` command-line utility to interact with your component types.
-
-## Creating a new component type
-
-### Scaffolding component type files
+## Scaffolding component type files
 
 For this example, we'll write a lightweight component that executes a shell command.
 
@@ -57,7 +36,7 @@ This file contains the basic structure for the new component type. There are two
 - `get_schema`: This method should return a Pydantic model that defines the schema for the component. This is the schema for the data that goes into `component.yaml`.
 - `build_defs`: This method should return a `Definitions` object for this component.
 
-### Defining a schema
+## Defining a schema
 
 The first step is to define a schema for the component. This means determining what aspects of the component should be customizable.
 
@@ -73,7 +52,7 @@ We can the schema for our component and add it to our class as follows:
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" title="my_component_library/lib/shell_command.py"/>
 
 
-### Defining the Python class
+## Defining the Python class
 
 Next, we'll want to translate this schema into fully resolved Python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecSchema]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
 
@@ -90,7 +69,7 @@ Our path will still just be a string, but our `asset_specs` will be a list of `A
 When defining a field on a component that isn't on the schema, or is of a different type, the components system allows you to provide custom resolution logic for that field. See the [Providing resolution logic for non-standard types](#advanced-providing-resolution-logic-for-non-standard-types) section for more information.
 :::
 
-### Building definitions
+## Building definitions
 
 Now that we've defined how the component is parameterized, we need to define how to turn those parameters into a `Definitions` object.
 
@@ -100,7 +79,7 @@ Our `build_defs` method will create a single `@asset` that executes the provided
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-build-defs.py" language="python" title="my_component_library/lib/shell_command.py" />
 
-### Component registration
+## Component registration
 
 Following the steps above will automatically register your component type in your environment. You can now run:
 
@@ -167,4 +146,4 @@ params:
 
 ## Next steps
 
-- [Add a new component to your project](./using-a-component.md)
+- [Add a new component to your project](/guides/labs/components/building-pipelines-with-components/adding-components)
