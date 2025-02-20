@@ -32,6 +32,9 @@ sphinx_objects_inv:
 regenerate_cli_snippets:
 	cd ../examples/docs_beta_snippets && tox -e docs_snapshot_update && echo "\nSnippets regenerated!"
 
+regenerate_cli_snippets_and_screenshots:
+	cd ../examples/docs_beta_snippets && EXTRA_PARAMS='--update-screenshots' tox -e docs_snapshot_update && echo "\nSnippets regenerated!"
+
 regenerate_cli_snippets_and_test:
 	cd ../examples/docs_beta_snippets && tox -e docs_snapshot_update && tox -e docs_snapshot_test && echo "\nSnippets regenerated and tested!"
 

@@ -29,7 +29,9 @@ COMPONENTS_SNIPPETS_DIR = (
 )
 
 
-def test_components_docs_index(update_snippets: bool, get_selenium_driver) -> None:
+def test_components_docs_index(
+    update_snippets: bool, update_screenshots: bool, get_selenium_driver
+) -> None:
     snip_no = 0
 
     def next_snip_no():
@@ -130,7 +132,7 @@ def test_components_docs_index(update_snippets: bool, get_selenium_driver) -> No
             / "projects-and-components"
             / "components"
             / "component-type-docs.png",
-            update_snippets=update_snippets,
+            update_screenshots=update_screenshots,
         )
 
         #########################################################
