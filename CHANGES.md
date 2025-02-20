@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.10.2 (core) / 0.26.2 (libraries)
+
+### New
+
+- Turned on run-blocking for concurrency keys / pools by default. For op granularity, runs are dequeued if there exists at least one op that can execute once the run has started. For run granularity, runs are dequeued if all pools have available slots.
+- Performance improvements for backfills of large partition sets.
+- The prefix of temporary directories created when running a temporary Dagster instance (as with `dagster dev`) has been changed from `tmp` to `.tmp_dagster_home_`. Thanks [@chazmo03](https://github.com/chazmo03)!
+- Added sanitation checks on valid pool names.
+- [dagster-aws] Added sample Terraform modules for Dagster deployment on AWS ECS.
+- [dagster-dbt] Added pool support for dbt integrations.
+- [dagster-dlt] Added pool support for dlt integrations.
+- [dagster-sling] Added pool support for sling integrations.
+- [dagster-aws] Added AWS RDSResource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
+- [dagster-mysql] Added MySQLResource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
+- [dagster-azure] Added Azure Blob Storage Resource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
+
+- [ui] Expanding/collapsing groups in the Asset Graph will no longer reset your zoom.
+- [ui] Changed the queue criteria dialog to reference pools instead of concurrency keys.
+- [ui] The Instance Backfills page is being removed in the upcoming March 6 release in favor of the new Runs > Backfills view.
+- [ui] When re-executing a run that is part of a backfill that has completed, Dagster UI notifies you that the re-execution will not update the backfill stats.
+- [ui] The backfill actions menu now includes "Re-execute" and "Re-execute from failure", which create new backfills targeting the same partitions, and the partitions which failed to materialize, respectively.
+- [ui] The latest asset check evaluation is shown in the Evaluation History tab, and `AssetCheckResult` descriptions are rendered in the table making it easier to publish a summary of check evaluation.
+- [ui] The Materialize button appears more quickly on asset pages in the Dagster UI.
+- [ui] The queue details modal for a run no longer closes as new runs arrive and links to the correct concurrency page.
+
+### Bugfixes
+
+- Fixed an issue where if two separate code locations defined the same asset key with an automation condition, duplicate runs could be created by Declarative Automation.
+- Fixed the `psycopg2.errors.UndefinedColumn` database error when trying to set a concurrency key without first having run `dagster instance migrate`.
+- Fixed an issue where Declarative Automation sensors in code locations that included source assets referencing assets with automation conditions in other code locations would sometimes cause duplicate runs to be created.
+- Fixed a bug in the enforcement of global op concurrency limits.
+- Fixed an issue where when using `dagster dev`, some changes were not reflected in the UI after pressing the "Reload Definitions" button.
+- Fixed the issue where a resource initialization error within a sensor definition test incorrectly recommended using `build_schedule_context` instead of `build_sensor_context`.
+- Fixed migration issue where `dagster instance migrate` was failing for instances with non-empty concurrency limits tables.
+- [ui] Fixed an issue where a "Message: Cannot return null for non-nullable field PartitionKeys.partitionKeys." error was raised in the launchpad for jobs with unpartitioned assets.
+- [ui] Fixed concurrency link escaping in the `View queue criteria` dialog.
+- [ui] Fixed an issue where the deployment switcher can become permanently "unset" when navigating from Org Settings back to a deployment.
+- [ui] Fixed an issue with the traversal operators on the asset graph (`asset++`) not including assets connected to the target asset by paths of varying distance.
+
+### Dagster Plus
+
+- Introduced new test utilities `event_log` and `dagster_event` in `dagster-cloud-test-infra` to facilitate the creation of test data with sensible defaults for EventLogEntry and DagsterEvent objects.
+- [bigquery-insights][bugfix] Support querying for insights from the configured `execution_project` if defined.
+- [bigquery-insights][bugfix] When `execution_project` is defined in the dbt profile, fall back to fetching the dataset from the dbt profile's `project` if the dataset cannot be found in the `execution_project`.
+
 ## 1.10.1 (core) / 0.26.1 (libraries)
 
 ### Bugfixes
