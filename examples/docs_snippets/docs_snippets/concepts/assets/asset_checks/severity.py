@@ -1,23 +1,19 @@
-from dagster import (
-    AssetCheckResult,
-    AssetCheckSeverity,
-    Definitions,
-    asset,
-    asset_check,
-)
+import dagster as dg
 
 
-@asset
+@dg.asset
 def my_asset(): ...
 
 
-@asset_check(asset=my_asset)
+@dg.asset_check(asset=my_asset)
 def my_check():
     is_serious = ...
-    return AssetCheckResult(
+    return dg.AssetCheckResult(
         passed=False,
-        severity=AssetCheckSeverity.ERROR if is_serious else AssetCheckSeverity.WARN,
+        severity=dg.AssetCheckSeverity.ERROR
+        if is_serious
+        else dg.AssetCheckSeverity.WARN,
     )
 
 
-defs = Definitions(assets=[my_asset], asset_checks=[my_check])
+defs = dg.Definitions(assets=[my_asset], asset_checks=[my_check])
