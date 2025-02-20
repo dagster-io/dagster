@@ -1,6 +1,3 @@
-from collections.abc import Set
-from typing import Optional
-
 import pytest
 import responses
 from dagster._config.field_utils import EnvVar
@@ -9,7 +6,6 @@ from dagster._core.test_utils import environ
 from dagster_fivetran import (
     DagsterFivetranTranslator,
     FivetranConnectorTableProps,
-    FivetranFilter,
     FivetranWorkspace,
     load_fivetran_asset_specs,
 )
@@ -17,18 +13,13 @@ from dagster_fivetran.asset_defs import build_fivetran_assets_definitions
 from dagster_fivetran.translator import FivetranMetadataSet
 
 from dagster_fivetran_tests.beta.conftest import (
-    FIVETRAN_API_BASE,
-    FIVETRAN_API_VERSION,
     TEST_ACCOUNT_ID,
     TEST_ANOTHER_ACCOUNT_ID,
     TEST_API_KEY,
     TEST_API_SECRET,
     TEST_CONNECTOR_ID,
     TEST_CONNECTOR_NAME,
-    TEST_DESTINATION_DATABASE,
-    TEST_DESTINATION_ID,
     TEST_DESTINATION_SERVICE,
-    get_fivetran_connector_api_url,
 )
 
 
@@ -45,109 +36,42 @@ def test_fetch_fivetran_workspace_data(
 
 
 @pytest.mark.parametrize(
-    "connector_names, connector_ids, databases, services, expected_result, skip_connector_call, skip_schema_config_call",
+    "attribute, value, expected_result",
     [
-        (None, None, None, None, 1, False, False),
-        ({TEST_CONNECTOR_NAME}, None, None, None, 1, False, False),
-        (None, {TEST_CONNECTOR_ID}, None, None, 1, False, False),
-        (None, None, {TEST_DESTINATION_DATABASE}, None, 1, False, False),
-        (None, None, None, {TEST_DESTINATION_SERVICE}, 1, False, False),
-        (
-            {TEST_CONNECTOR_NAME},
-            {TEST_CONNECTOR_ID},
-            {TEST_DESTINATION_DATABASE},
-            {TEST_DESTINATION_SERVICE},
-            1,
-            False,
-            False,
-        ),
-        ({"non_matching_connector_name"}, None, None, None, 0, False, True),
-        (None, {"non_matching_connector_id"}, None, None, 0, False, True),
-        (None, None, {"non_matching_database"}, None, 0, True, True),
-        (None, None, None, {"non_matching_service"}, 0, True, True),
-        (
-            {"non_matching_connector_name"},
-            {"non_matching_connector_id"},
-            {"non_matching_database"},
-            {"non_matching_service"},
-            0,
-            True,
-            True,
-        ),
-        (
-            {TEST_CONNECTOR_NAME},
-            {TEST_CONNECTOR_ID},
-            {"non_matching_database"},
-            None,
-            0,
-            True,
-            True,
-        ),
-        (
-            {"non_matching_connector_name"},
-            None,
-            {TEST_DESTINATION_DATABASE},
-            {TEST_DESTINATION_SERVICE},
-            0,
-            False,
-            True,
-        ),
+        (None, None, 1),
+        ("name", TEST_CONNECTOR_NAME, 1),
+        ("id", TEST_CONNECTOR_ID, 1),
+        ("service", TEST_DESTINATION_SERVICE, 1),
+        ("name", "non_matching_name", 0),
+        ("id", "non_matching_id", 0),
+        ("service", "non_matching_service", 0),
     ],
     ids=[
         "no_filter_present_connector",
         "connector_name_filter_present_connector",
         "connector_id_filter_present_connector",
-        "database_filter_present_connector",
         "service_filter_present_connector",
-        "all_filters_present_connector",
         "connector_name_filter_absent_connector",
         "connector_id_filter_absent_connector",
-        "database_filter_absent_connector",
         "service_filter_absent_connector",
-        "all_filters_absent_connector",
-        "one_non_matching_database_filter_absent_connector",
-        "one_non_matching_connector_filter_absent_connector",
     ],
 )
 def test_fivetran_filter(
-    connector_names: Optional[Set[str]],
-    connector_ids: Optional[Set[str]],
-    databases: Optional[Set[str]],
-    services: Optional[Set[str]],
+    attribute: str,
+    value: str,
     expected_result: int,
-    skip_connector_call: bool,
-    skip_schema_config_call: bool,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     resource = FivetranWorkspace(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    # When a destination is filtered out, all its connector are filtered out
-    # and calls to the `/groups/{group_id}/connectors` endpoint are skipped.
-    # We remove the call from the mock calls to avoid the exception
-    # raised by RequestMock when not all requests are executed.
-    if skip_connector_call:
-        fetch_workspace_data_api_mocks.remove(
-            method_or_response=responses.GET,
-            url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{TEST_DESTINATION_ID}/connectors",
-        )
-    # When a connector is filtered out, the call to the `connectors/{connector_id}/schemas` endpoint is skipped.
-    # We remove the call from the mock calls to avoid the exception
-    # raised by RequestMock when not all requests are executed.
-    if skip_schema_config_call:
-        fetch_workspace_data_api_mocks.remove(
-            method_or_response=responses.GET,
-            url=f"{get_fivetran_connector_api_url(TEST_CONNECTOR_ID)}/schemas",
-        )
-
-    fivetran_filter = FivetranFilter(
-        connector_names=connector_names,
-        connector_ids=connector_ids,
-        databases=databases,
-        services=services,
+    fivetran_filter_fn = (
+        (lambda connector: getattr(connector, attribute) == value) if attribute else None
     )
-    actual_workspace_data = resource.fetch_fivetran_workspace_data(fivetran_filter=fivetran_filter)
+    actual_workspace_data = resource.fetch_fivetran_workspace_data(
+        fivetran_filter_fn=fivetran_filter_fn
+    )
     assert len(actual_workspace_data.connectors_by_id) == expected_result
 
 
