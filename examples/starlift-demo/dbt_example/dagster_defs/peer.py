@@ -14,4 +14,6 @@ airflow_instance = AirflowInstance(
 )
 
 
-defs = build_defs_from_airflow_instance(airflow_instance=airflow_instance)
+defs = build_defs_from_airflow_instance(
+    airflow_instance=airflow_instance, sensor_minimum_interval_seconds=1
+)
