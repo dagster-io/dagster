@@ -34,10 +34,6 @@ from dagster import (
     multi_asset,
 )
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.asset_graph_view.bfs import (
-    AssetGraphViewBfsFilterConditionResult,
-    bfs_filter_asset_graph_view,
-)
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.decorators.repository_decorator import repository
@@ -83,7 +79,6 @@ from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.asset_gra
     two_assets_in_sequence_fan_out_partitions,
 )
 from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.partition_scenarios import (
-    daily_to_hourly_partitions,
     hourly_to_daily_partitions,
     non_partitioned_after_partitioned,
     one_asset_one_partition,
@@ -165,7 +160,7 @@ scenarios = {
     ),
     "unpartitioned_after_dynamic_asset": scenario(unpartitioned_after_dynamic_asset),
     "two_dynamic_assets": scenario(two_dynamic_assets),
-    "hourly_to_daily_partitions": scenario(
+    "hourly_to_daily_partiitons": scenario(
         hourly_to_daily_partitions,
         create_datetime(year=2013, month=1, day=7, hour=0),
         target_root_partition_keys=[
@@ -173,14 +168,6 @@ scenarios = {
             "2013-01-05-23:00",
             "2013-01-06-00:00",
             "2013-01-06-01:00",
-        ],
-    ),
-    "daily_to_hourly_partitions_non_contiguous": scenario(
-        daily_to_hourly_partitions,
-        create_datetime(year=2013, month=1, day=8, hour=0),
-        target_root_partition_keys=[
-            "2013-01-05",
-            "2013-01-07",
         ],
     ),
     "root_assets_different_partitions": scenario(root_assets_different_partitions_same_downstream),
@@ -249,25 +236,15 @@ def test_from_asset_partitions_target_subset(
     )
 
 
-def _get_asset_graph_view(
-    instance: DagsterInstance,
-    asset_graph: BaseAssetGraph,
-    evaluation_time: Optional[datetime.datetime] = None,
-) -> AssetGraphView:
+def _get_instance_queryer(
+    instance: DagsterInstance, asset_graph: BaseAssetGraph, evaluation_time: datetime.datetime
+) -> CachingInstanceQueryer:
     return AssetGraphView(
         temporal_context=TemporalContext(
             effective_dt=evaluation_time or get_current_datetime(), last_event_id=None
         ),
         instance=instance,
         asset_graph=asset_graph,
-    )
-
-
-def _get_instance_queryer(
-    instance: DagsterInstance, asset_graph: BaseAssetGraph, evaluation_time: datetime.datetime
-) -> CachingInstanceQueryer:
-    return _get_asset_graph_view(
-        instance, asset_graph, evaluation_time
     ).get_inner_queryer_for_back_compat()
 
 
@@ -323,21 +300,8 @@ def _single_backfill_iteration_create_but_do_not_submit_runs(
         )
 
 
-@pytest.mark.parametrize(
-    "some_or_all",
-    [
-        "all",
-        "some",
-    ],
-)
-@pytest.mark.parametrize(
-    "failures",
-    [
-        "no_failures",
-        "root_failures",
-        "random_half_failures",
-    ],
-)
+@pytest.mark.parametrize("some_or_all", ["all", "some"])
+@pytest.mark.parametrize("failures", ["no_failures", "root_failures", "random_half_failures"])
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, some_or_all: str):
     with (
@@ -608,21 +572,11 @@ def make_random_subset(
             if i % 2 == 0:
                 root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
 
-    asset_graph_view = _get_asset_graph_view(instance, asset_graph, evaluation_time=evaluation_time)
+    target_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
+        instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
+    )
 
-    return bfs_filter_asset_graph_view(
-        asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
-        ),
-        initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
-            root_asset_partitions, asset_graph
-        ),
-        include_full_execution_set=True,
-    )[0]
+    return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
 
 
 def make_subset_from_partition_keys(
@@ -641,21 +595,11 @@ def make_subset_from_partition_keys(
         else:
             root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
 
-    asset_graph_view = _get_asset_graph_view(instance, asset_graph, evaluation_time=evaluation_time)
+    target_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
+        instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
+    )
 
-    return bfs_filter_asset_graph_view(
-        asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: (
-            AssetGraphViewBfsFilterConditionResult(
-                passed_asset_graph_subset=candidate_asset_graph_subset,
-                excluded_asset_graph_subsets_and_reasons=[],
-            )
-        ),
-        initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
-            root_asset_partitions, asset_graph
-        ),
-        include_full_execution_set=True,
-    )[0]
+    return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
 
 
 def get_asset_graph(
@@ -696,9 +640,10 @@ def execute_asset_backfill_iteration_consume_generator(
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
-            asset_graph_view=_get_asset_graph_view(
+            instance_queryer=_get_instance_queryer(
                 instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
+            asset_graph=asset_graph,
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
         ):
@@ -723,22 +668,11 @@ def run_backfill_to_completion(
     # assert each asset partition only targeted once
     requested_asset_partitions: set[AssetKeyPartitionKey] = set()
 
-    asset_graph_view = _get_asset_graph_view(instance, asset_graph)
-
-    fail_and_downstream_asset_graph_subset, _ = bfs_filter_asset_graph_view(
-        asset_graph_view=asset_graph_view,
-        condition_fn=lambda candidate_asset_graph_subset, _: AssetGraphViewBfsFilterConditionResult(
-            passed_asset_graph_subset=candidate_asset_graph_subset,
-            excluded_asset_graph_subsets_and_reasons=[],
-        ),
-        initial_asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
-            set(fail_asset_partitions), asset_graph
-        ),
-        include_full_execution_set=True,
-    )
-
-    fail_and_downstream_asset_partitions = set(
-        fail_and_downstream_asset_graph_subset.iterate_asset_partitions()
+    fail_and_downstream_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
+        instance,
+        lambda _a, _b: (True, ""),
+        fail_asset_partitions,
+        evaluation_time=backfill_data.backfill_start_datetime,
     )
 
     while not backfill_is_complete(
@@ -1228,7 +1162,7 @@ def test_asset_backfill_throw_error_on_invalid_upstreams():
     )
 
     instance = DagsterInstance.ephemeral()
-    with pytest.raises(DagsterInvariantViolationError, match="depends on invalid partitions"):
+    with pytest.raises(DagsterInvariantViolationError, match="depends on invalid partition keys"):
         run_backfill_to_completion(asset_graph, assets_by_repo_name, backfill_data, [], instance)
 
 
@@ -1254,7 +1188,7 @@ def test_asset_backfill_cancellation():
     asset_graph = get_asset_graph(assets_by_repo_name)
 
     backfill_id = "dummy_backfill_id"
-    backfill_start_datetime = create_datetime(2023, 1, 9, 1, 0, 0)
+    backfill_start_datetime = create_datetime(2023, 1, 9, 0, 0, 0)
     asset_selection = [
         upstream_hourly_partitioned_asset.key,
         downstream_daily_partitioned_asset.key,
