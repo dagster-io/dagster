@@ -579,6 +579,13 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
             remote_asset_check_nodes_by_key=asset_checks_by_key,
         )
 
+    @classmethod
+    def empty(cls):
+        return cls(
+            remote_asset_nodes_by_key={},
+            remote_asset_check_nodes_by_key={},
+        )
+
 
 class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
     def __init__(
