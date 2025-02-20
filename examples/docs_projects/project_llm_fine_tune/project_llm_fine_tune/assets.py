@@ -20,6 +20,7 @@ goodreads = dg.AssetSpec(
 )
 
 
+# start_graphic_novel
 @dg.asset(
     kinds={"duckdb"},
     description="Goodreads graphic novel data",
@@ -39,6 +40,9 @@ def graphic_novels(duckdb_resource: dg_duckdb.DuckDBResource):
     """
     with duckdb_resource.get_connection() as conn:
         conn.execute(query)
+
+
+# end_graphic_novel
 
 
 @dg.asset(
@@ -62,6 +66,7 @@ def authors(duckdb_resource: dg_duckdb.DuckDBResource):
         conn.execute(query)
 
 
+# start_book_category
 @dg.asset(
     kinds={"duckdb"},
     description="Goodreads shelf feature engineering",
@@ -105,6 +110,10 @@ def book_category(
         conn.execute(query)
 
 
+# end_book_category
+
+
+# start_enriched_graphic_novels
 @dg.asset(
     kinds={"duckdb"},
     description="Combined book, author and shelf data",
@@ -134,6 +143,10 @@ def enriched_graphic_novels(
         return conn.execute(query).fetch_df()
 
 
+# end_enriched_graphic_novels
+
+
+# start_prompt_record
 def create_prompt_record(data: dict, categories: list):
     return {
         "messages": [
@@ -154,6 +167,10 @@ def create_prompt_record(data: dict, categories: list):
     }
 
 
+# end_prompt_record
+
+
+# start_training_file
 @dg.asset(
     kinds={"python"},
     group_name="preparation",
@@ -170,6 +187,9 @@ def training_file(
     file_name = "goodreads-training.jsonl"
     utils.write_openai_file(file_name, prompt_data)
     return file_name
+
+
+# end_training_file
 
 
 @dg.asset(
@@ -190,6 +210,7 @@ def validation_file(
     return file_name
 
 
+# start_file_validation
 def openai_file_validation(data: Iterable) -> dg.AssetCheckResult:
     format_errors = defaultdict(int)
     for ex in data:
@@ -237,6 +258,10 @@ def openai_file_validation(data: Iterable) -> dg.AssetCheckResult:
         )
 
 
+# end_file_validation
+
+
+# start_asset_check
 @dg.asset_check(
     asset=training_file,
     description="Validation for fine-tuning data file from OpenAI cookbook",
@@ -247,6 +272,9 @@ def openai_file_validation(data: Iterable) -> dg.AssetCheckResult:
 def training_file_format_check() -> dg.AssetCheckResult:
     data = utils.read_openai_file("goodreads-training.jsonl")
     return openai_file_validation(data)
+
+
+# end_asset_check
 
 
 @dg.asset_check(
@@ -261,6 +289,7 @@ def validation_file_format_check() -> dg.AssetCheckResult:
     return openai_file_validation(data)
 
 
+# start_upload_file
 @dg.asset(
     kinds={"openai"},
     description="Upload training set",
@@ -275,6 +304,9 @@ def upload_training_file(
         with open(training_file, "rb") as file_fd:
             response = client.files.create(file=file_fd, purpose="fine-tune")
     return response.id
+
+
+# end_upload_file
 
 
 @dg.asset(
@@ -293,6 +325,7 @@ def upload_validation_file(
     return response.id
 
 
+# start_fine_tuned_model
 @dg.asset(
     kinds={"openai"},
     description="Exeute model fine-tuning job",
@@ -326,6 +359,9 @@ def fine_tuned_model(
     fine_tuned_model_name = status_job_resp.to_dict()["fine_tuned_model"]
     context.add_output_metadata({"model_name": fine_tuned_model_name})
     return str(fine_tuned_model_name)
+
+
+# end_fine_tuned_model
 
 
 def model_question(
@@ -380,6 +416,7 @@ def model_question(
     return json.loads(content)["category"]
 
 
+# start_model_validation
 @dg.asset_check(
     asset=fine_tuned_model,
     additional_ins={"data": dg.AssetIn("enriched_graphic_novels")},
@@ -424,3 +461,6 @@ def fine_tuned_model_accuracy(
             passed=True,
             metadata=model_accuracy,
         )
+
+
+# end_model_validation

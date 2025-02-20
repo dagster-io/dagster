@@ -13,9 +13,12 @@ from project_atproto_dashboard.ingestion.utils.atproto import (
 AWS_BUCKET_NAME = os.environ.get("AWS_BUCKET_NAME", "dagster-demo")
 
 
+# start_dynamic_partition
 atproto_did_dynamic_partition = dg.DynamicPartitionsDefinition(name="atproto_did_dynamic_partition")
+# end_dynamic_partition
 
 
+# start_starter_pack_dec
 @dg.asset(
     partitions_def=dg.StaticPartitionsDefinition(
         partition_keys=[
@@ -31,6 +34,7 @@ def starter_pack_snapshot(
     atproto_resource: ATProtoResource,
     s3_resource: S3Resource,
 ) -> dg.MaterializeResult:
+    # end_starter_pack_dec
     """Snapshot of members in a Bluesky starter pack partitioned by starter pack ID and written to S3 storage.
 
     Args:
@@ -39,6 +43,7 @@ def starter_pack_snapshot(
         s3_resource (S3Resource) Resource for uploading files to S3 storage
 
     """
+    # start_starter_pack_func
     atproto_client = atproto_resource.get_client()
 
     starter_pack_uri = context.partition_key
@@ -73,13 +78,19 @@ def starter_pack_snapshot(
     )
 
 
+# end_starter_pack_func
+
+
+# start_actor_feed_snapshot
 @dg.asset(
     partitions_def=atproto_did_dynamic_partition,
     deps=[dg.AssetDep(starter_pack_snapshot, partition_mapping=dg.AllPartitionMapping())],
     automation_condition=dg.AutomationCondition.eager(),
     kinds={"python"},
     group_name="ingestion",
+    # start_concurrency
     op_tags={"dagster/concurrency_key": "ingestion"},
+    # end_concurrency
 )
 def actor_feed_snapshot(
     context: dg.AssetExecutionContext,
@@ -117,6 +128,8 @@ def actor_feed_snapshot(
     )
 
 
+# end_actor_feed_snapshot
+
 atproto_resource = ATProtoResource(
     login=dg.EnvVar("BSKY_LOGIN"), password=dg.EnvVar("BSKY_APP_PASSWORD")
 )
@@ -128,7 +141,7 @@ s3_resource = S3Resource(
     region_name="auto",
 )
 
-
+# start_def
 defs = dg.Definitions(
     assets=[starter_pack_snapshot, actor_feed_snapshot],
     resources={
@@ -136,3 +149,4 @@ defs = dg.Definitions(
         "s3_resource": s3_resource,
     },
 )
+# end_def
