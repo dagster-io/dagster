@@ -100,7 +100,7 @@ class DbIOManager(IOManager):
         io_manager_name: Optional[str] = None,
         default_load_type: Optional[type] = None,
     ):
-        self._handlers_by_type: dict[Optional[type[Any]], DbTypeHandler] = {}
+        self._handlers_by_type: dict[type[Any], DbTypeHandler] = {}
         self._io_manager_name = io_manager_name or self.__class__.__name__
         for type_handler in type_handlers:
             for handled_type in type_handler.supported_types:
@@ -143,10 +143,8 @@ class DbIOManager(IOManager):
             self._db_client.ensure_schema_exists(context, table_slice, conn)
             self._db_client.delete_table_slice(context, table_slice, conn)
 
-            handler = next(filter(lambda x: issubclass(obj_type, x[0]), self._handlers_by_type.items()))[1]
-            handler_metadata = handler.handle_output(
-                context, table_slice, obj, conn
-            )
+            handler = self._resolve_handler(obj_type)
+            handler_metadata = handler.handle_output(context, table_slice, obj, conn)
 
         context.add_output_metadata(
             {
@@ -176,7 +174,14 @@ class DbIOManager(IOManager):
         table_slice = self._get_table_slice(context, cast(OutputContext, context.upstream_output))
 
         with self._db_client.connect(context, table_slice) as conn:
-            return self._handlers_by_type[load_type].load_input(context, table_slice, conn)  # type: ignore  # (pyright bug)
+            return self._resolve_handler(load_type).load_input(context, table_slice, conn)  # type: ignore  # (pyright bug)
+
+    def _resolve_handler(self, obj_type: type) -> DbTypeHandler:
+        return next(
+            handler
+            for type_, handler in self._handlers_by_type.items()
+            if issubclass(obj_type, type_)
+        )
 
     def _get_table_slice(
         self, context: Union[OutputContext, InputContext], output_context: OutputContext
