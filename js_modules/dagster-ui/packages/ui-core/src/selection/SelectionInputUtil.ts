@@ -1,6 +1,15 @@
 import {ParserRuleContext} from 'antlr4ts';
 
-import {AttributeValueContext} from './generated/SelectionAutoCompleteParser';
+import {
+  AttributeValueContext,
+  IncompleteLeftQuotedStringValueContext,
+  IncompleteRightQuotedStringValueContext,
+  QuotedStringValueContext,
+  UnclosedExpressionlessFunctionExpressionContext,
+  UnclosedFunctionExpressionContext,
+  UnclosedParenthesizedExpressionContext,
+  UnquotedStringValueContext,
+} from './generated/SelectionAutoCompleteParser';
 
 export const removeQuotesFromString = (value: string) => {
   if (value.length > 1 && value[0] === '"' && value[value.length - 1] === '"') {
@@ -11,28 +20,36 @@ export const removeQuotesFromString = (value: string) => {
 
 export function getValueNodeValue(ctx: ParserRuleContext | null) {
   switch (ctx?.constructor.name) {
-    case 'UnquotedStringValueContext':
+    case UnquotedStringValueContext.name:
       return ctx.text;
-    case 'IncompleteLeftQuotedStringValueContext':
+    case IncompleteLeftQuotedStringValueContext.name:
       return ctx.text.slice(1);
-    case 'IncompleteRightQuotedStringValueContext':
+    case IncompleteRightQuotedStringValueContext.name:
       return ctx.text.slice(0, -1);
-    case 'QuotedStringValueContext':
+    case QuotedStringValueContext.name:
       return ctx.text.slice(1, -1);
-    case 'AttributeValueContext':
+    case AttributeValueContext.name:
       return getValueNodeValue((ctx as AttributeValueContext).value());
     default:
       return ctx?.text ?? '';
   }
 }
 
-export function isInsideExpressionlessParenthesizedExpression(context: ParserRuleContext) {
-  if (context.parent) {
-    const nodeType = context.parent.constructor.name;
-    if (nodeType.startsWith('Unclosed')) {
-      return true;
+export function isInsideExpressionlessParenthesizedExpression(
+  context: ParserRuleContext | undefined,
+) {
+  const parent = context?.parent;
+  if (parent) {
+    const nodeType = parent.constructor.name;
+    switch (nodeType) {
+      case UnclosedParenthesizedExpressionContext.name:
+      case UnclosedFunctionExpressionContext.name:
+      case UnclosedExpressionlessFunctionExpressionContext.name:
+        return true;
+      default:
+        return isInsideExpressionlessParenthesizedExpression(context.parent);
     }
-    return isInsideExpressionlessParenthesizedExpression(context.parent);
+    return isInsideExpressionlessParenthesizedExpression(parent);
   }
   return false;
 }
