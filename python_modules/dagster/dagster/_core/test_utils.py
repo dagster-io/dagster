@@ -73,7 +73,7 @@ from dagster._core.workspace.load_target import (
     InProcessWorkspaceLoadTarget as InProcessTestWorkspaceLoadTarget,
     WorkspaceLoadTarget,
 )
-from dagster._core.workspace.workspace import CodeLocationEntry, WorkspaceSnapshot
+from dagster._core.workspace.workspace import CodeLocationEntry, CurrentWorkspace
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._time import create_datetime, get_timezone
@@ -759,7 +759,7 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
 class TestType: ...
 
 
-def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> WorkspaceSnapshot:
+def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentWorkspace:
     remote_repos = {}
     for repo in repos:
         remote_repos[repo.name] = RemoteRepository(
@@ -774,4 +774,4 @@ def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> Workspac
     mock_location = unittest.mock.MagicMock(spec=CodeLocation)
     mock_location.get_repositories.return_value = remote_repos
     type(mock_entry).code_location = unittest.mock.PropertyMock(return_value=mock_location)
-    return WorkspaceSnapshot(code_location_entries={"test": mock_entry})
+    return CurrentWorkspace(code_location_entries={"test": mock_entry})
