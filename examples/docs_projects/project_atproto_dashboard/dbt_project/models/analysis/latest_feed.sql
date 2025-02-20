@@ -1,3 +1,4 @@
+-- start_latest_feed_cte
 WITH max_update AS (
     SELECT
         max(
@@ -15,6 +16,7 @@ WITH max_update AS (
     GROUP BY
         regexp_extract(filename, 'did:(.*?)\.json')
 ),
+-- end_latest_feed_cte
 
 final AS (
     SELECT

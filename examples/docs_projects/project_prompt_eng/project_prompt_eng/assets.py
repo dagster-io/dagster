@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from project_prompt_eng.resources import NRELResource
 
+# start_location_prompt
 PROMPT_LOCATION = """
 Given a location and vehicle, return the latitude (as a decimal, range -90 to 90)
 and longitude (as a decimal, range -180 to 180) and fuel type of the vehicle
@@ -31,7 +32,10 @@ Output:
 
 Input: {location}
 """
+# end_location_prompt
 
+
+# start_fuel_station_prompt
 PROMPT_FUEL_STATION_OPEN = """
 Given the hours of operation ('hours_of_operation': str) and and timestamp ('datetime': str).
 Determine if the datetime ('%Y-%m-%d %H:%M:%S') falls within the hours of operation.
@@ -64,8 +68,10 @@ Output:
 
 Input: {fuel_station_hours}
 """
+# end_fuel_station_prompt
 
 
+# start_user_input_prompt
 class UserInputSchema(BaseModel):
     latitude: float
     longitude: float
@@ -100,6 +106,10 @@ def user_input_prompt(
     return schema
 
 
+# end_user_input_prompt
+
+
+# start_nearest_fuel_stations
 @dg.asset(
     kinds={"python"},
     description="Find the nearest alt fuel stations",
@@ -119,6 +129,10 @@ def nearest_fuel_stations(nrel: NRELResource, user_input_prompt: UserInputSchema
     return nearest_stations_with_hours
 
 
+# end_nearest_fuel_stations
+
+
+# start_available_fuel_stations
 @dg.asset(
     kinds={"anthropic"},
     description="Determine if the nearest stations are available",
@@ -156,3 +170,6 @@ def available_fuel_stations(
 
     if fuel_stations_open == 0:
         context.log.info("Sorry, no available fuel stations right now")
+
+
+# end_available_fuel_stations
