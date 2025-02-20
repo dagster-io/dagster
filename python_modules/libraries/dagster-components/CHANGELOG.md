@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.16
+
+- Changed top-level key of components schema from `params` to `attributes`.
+
 ## 0.1.15
 
 - Revamped component schema resolution logic, making it easier and more straightforward to convert from a Component's schema to an instance of the Python class. See the docs on creating a custom component to learn more!
