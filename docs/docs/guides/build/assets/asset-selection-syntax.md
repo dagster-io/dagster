@@ -48,7 +48,7 @@ taxi_zones_file
 
 Which would result in the following asset graph:
 
-![TODO]()
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -91,7 +91,7 @@ manhattan/manhattan_stats
 
 Which would result in the following asset graph:
 
-![TODO]()
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -132,7 +132,7 @@ taxi_zones_file taxi_trips_file
 
 Which would result in the following asset graph:
 
-![TODO]()
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -189,7 +189,7 @@ dagster asset materialize --select "+manhattan_map"
 
 Which would result in the following asset graph:
 
-![TODO]()
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -226,7 +226,7 @@ dagster asset materialize --select "2+manhattan_map"
 
 Which would result in the following asset graph:
 
-![TODO]()
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -263,7 +263,7 @@ taxi_zones_file+
 
 Which would result in the following asset graph:
 
-![TODO]()
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -300,7 +300,7 @@ taxi_zones_file++
 
 Which would result in the following asset graph:
 
-![TODO]()
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -337,7 +337,7 @@ dagster asset materialize --select "+taxi_zones+"
 
 Which would result in the following asset graph:
 
-![TODO]()
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
