@@ -11,7 +11,6 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Optional, Union
 
-import tomlkit
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
@@ -22,6 +21,7 @@ from dagster_dg.utils import (
     get_venv_executable,
     install_to_venv,
     is_windows,
+    modify_toml,
     pushd,
     set_toml_value,
 )
@@ -143,7 +143,7 @@ def isolated_example_component_library_foo_bar(
             shutil.rmtree(Path("foo_bar/components"))
 
             # Make it not a code location
-            with modify_pyproject_toml() as toml:
+            with modify_toml(Path("pyproject.toml")) as toml:
                 set_toml_value(toml, ("tool", "dg", "is_code_location"), False)
 
                 # We need to set any alternative lib package name _before_ we install into the
@@ -400,12 +400,3 @@ def print_exception_info(
     formatted_traceback = "".join(traceback.format_tb(exc_traceback))
     print(formatted_traceback)  # noqa: T201
     print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
-
-
-@contextmanager
-def modify_pyproject_toml() -> Iterator[tomlkit.TOMLDocument]:
-    with open("pyproject.toml") as f:
-        toml = tomlkit.parse(f.read())
-    yield toml
-    with open("pyproject.toml", "w") as f:
-        f.write(tomlkit.dumps(toml))

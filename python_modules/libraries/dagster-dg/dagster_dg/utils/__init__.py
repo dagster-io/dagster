@@ -279,6 +279,13 @@ def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATT
     return False
 
 
+@contextlib.contextmanager
+def modify_toml(path: Path) -> Iterator[tomlkit.TOMLDocument]:
+    toml = tomlkit.parse(path.read_text())
+    yield toml
+    path.write_text(tomlkit.dumps(toml))
+
+
 def ensure_dagster_dg_tests_import() -> None:
     from dagster_dg import __file__ as dagster_dg_init_py
 
@@ -470,7 +477,11 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
 # ########################
 
 
-def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type: type[T]) -> T:
+def get_toml_value(
+    doc: tomlkit.TOMLDocument,
+    path: Iterable[str],
+    expected_type: Union[type[T], tuple[type[T], ...]],
+) -> T:
     """Given a tomlkit-parsed document/table (`doc`),retrieve the nested value at `path` and ensure
     it is of type `expected_type`. Returns the value if so, or raises a KeyError / TypeError if not.
     """
@@ -483,11 +494,27 @@ def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type
 
     # Finally, ensure the found value is of the expected type
     if not isinstance(current, expected_type):
+        expected_type_str = (
+            expected_type.__name__
+            if isinstance(expected_type, type)
+            else " or ".join(t.__name__ for t in expected_type)
+        )
         raise TypeError(
-            f"Expected '{'.'.join(path)}' to be {expected_type.__name__}, "
+            f"Expected '{'.'.join(path)}' to be {expected_type_str}, "
             f"but got {type(current).__name__} instead."
         )
     return current
+
+
+def has_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str]) -> bool:
+    """Given a tomlkit-parsed document/table (`doc`), check if a nested value exists at `path`."""
+    current: Any = doc
+    for key in path:
+        # If current is not a table/dict or doesn't have the key, return False
+        if not isinstance(current, dict) or key not in current:
+            return False
+        current = current[key]
+    return True
 
 
 def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object) -> None:

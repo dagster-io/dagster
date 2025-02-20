@@ -1,10 +1,12 @@
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, fields, replace
+from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Optional, TypedDict, TypeVar, cast
+from typing import Any, Callable, Literal, Optional, TypedDict, TypeVar, Union, cast
 
 import click
 import tomlkit
+import tomlkit.items
 from click.core import ParameterSource
 
 from dagster_dg.error import DgError, DgValidationError
@@ -57,6 +59,7 @@ class DgConfig:
     root_package: Optional[str] = None
     component_package: Optional[str] = None
     component_lib_package: Optional[str] = None
+    code_locations: Optional[list["CodeLocationSpec"]] = None
 
     @classmethod
     def discover_config_file(
@@ -105,42 +108,135 @@ class DgPartialConfig(TypedDict, total=False):
     is_code_location: bool
     is_component_lib: bool
     is_deployment: bool
+    code_locations: list["CodeLocationSpec"]
 
 
 def _normalize_dg_partial_config(raw_dict: Mapping[str, object]) -> DgPartialConfig:
     config = {**raw_dict}  # copy so we can modify it
-    if "disable_cache" in config and not isinstance(config["disable_cache"], bool):
-        raise DgValidationError("`disable_cache` must be a boolean.")
-    if "cache_dir" in config:
-        if not isinstance(config["cache_dir"], (Path, str)):
-            raise DgValidationError("`cache_dir` must be a string.")
-        elif isinstance(config["cache_dir"], str):
-            config["cache_dir"] = Path(config["cache_dir"])
-    if "verbose" in config and not isinstance(config["verbose"], bool):
-        raise DgValidationError("`verbose` must be a boolean.")
-    if "builtin_component_lib" in config and not isinstance(config["builtin_component_lib"], str):
-        raise DgValidationError("`builtin_component_lib` must be a string.")
-    if "use_dg_managed_environment" in config and not isinstance(
-        config["use_dg_managed_environment"], bool
-    ):
-        raise DgValidationError("`use_dg_managed_environment` must be a boolean.")
-    if "require_local_venv" in config and not isinstance(config["require_local_venv"], bool):
-        raise DgValidationError("`require_local_venv` must be a boolean.")
-    if "component_package" in config and not isinstance(config["component_package"], str):
-        raise DgValidationError("`component_package` must be a string.")
-    if "component_lib_package" in config and not isinstance(config["component_lib_package"], str):
-        raise DgValidationError("`component_lib_package` must be a string.")
-    if "is_code_location" in config and not isinstance(config["is_code_location"], bool):
-        raise DgValidationError("`is_code_location` must be a boolean.")
-    if "is_component_lib" in config and not isinstance(config["is_component_lib"], bool):
-        raise DgValidationError("`is_component_lib` must be a boolean.")
-    if "is_deployment" in config and not isinstance(config["is_deployment"], bool):
-        raise DgValidationError("`is_deployment` must be a boolean.")
+
+    _normalize_config_entry(config, "disable_cache", bool)
+    _normalize_config_entry(config, "cache_dir", (str, Path), as_path=True)
+    _normalize_config_entry(config, "verbose", bool)
+    _normalize_config_entry(config, "builtin_component_lib", str)
+    _normalize_config_entry(config, "use_dg_managed_environment", bool)
+    _normalize_config_entry(config, "require_local_venv", bool)
+    _normalize_config_entry(config, "component_package", str)
+    _normalize_config_entry(config, "component_lib_package", str)
+    _normalize_config_entry(config, "is_code_location", bool)
+    _normalize_config_entry(config, "is_component_lib", bool)
+    _normalize_config_entry(config, "is_deployment", bool)
+
+    if "code_locations" in config:
+        if not isinstance(config["code_locations"], list):
+            raise DgValidationError("`code_locations` must be a list.")
+        normalized_code_location_specs = []
+        for spec in config["code_locations"]:
+            if not isinstance(spec, dict):
+                raise DgValidationError("`code_locations` must be a list of dictionaries.")
+            normalized_code_location_specs.append(_normalize_code_location_spec(spec))
+        config["code_locations"] = normalized_code_location_specs
 
     if unrecognized_keys := [k for k in config.keys() if k not in DgPartialConfig.__annotations__]:
         raise DgValidationError(f"Unrecognized fields in configuration: {unrecognized_keys}")
     return cast(DgPartialConfig, config)
 
+
+def _normalize_config_entry(
+    spec: dict[str, object],
+    key: str,
+    ttype: Union[type, tuple[type, ...]],
+    is_required: bool = False,
+    as_path: bool = False,
+    error_prefix: str = "",
+) -> None:
+    types = ttype if isinstance(ttype, tuple) else (ttype,)
+    type_str = " or ".join([t.__name__ for t in types])
+    error_msg = f"{error_prefix}`{key}` must be a {type_str}."
+    if key not in spec and is_required:
+        raise DgValidationError(error_msg)
+    elif key in spec:
+        value = spec[key]
+        if not isinstance(value, ttype):
+            raise DgValidationError(error_msg)
+        if as_path:
+            if isinstance(value, Path):
+                pass
+            elif not isinstance(value, str):
+                raise DgError(f"Only string paths are supported for {key}.")
+            else:
+                spec[key] = Path(value)
+
+
+def _normalize_code_location_spec(raw_dict: Mapping[str, object]) -> "CodeLocationSpec":
+    # copy so we can modify it-- replacing string paths with Path objects etc
+    spec = {**raw_dict}
+
+    if "type" not in spec:
+        raise DgValidationError(
+            "CodeLocationSpec `type` must be one of 'python_pointer', 'grpc_server'."
+        )
+    if spec["type"] == "python_pointer":
+        return _normalize_python_pointer_code_location_spec(
+            {k: v for k, v in spec.items() if k != "type"}
+        )
+    elif raw_dict["type"] == "grpc_server":
+        return _normalize_grpc_server_code_location_spec(
+            {k: v for k, v in spec.items() if k != "type"}
+        )
+    else:
+        raise DgValidationError(
+            "CodeLocationSpec `type` must be one of 'python_pointer', 'grpc_server'."
+        )
+
+
+def _normalize_python_pointer_code_location_spec(
+    spec: dict[str, object],
+) -> "PythonPointerCodeLocationSpec":
+    _normalize_code_location_spec_entry(spec, "name", str, is_required=True)
+    _normalize_code_location_spec_entry(spec, "module_name", str, is_required=False)
+    _normalize_code_location_spec_entry(spec, "project_path", str, is_required=False)
+    _normalize_code_location_spec_entry(spec, "attribute", str, is_required=False)
+    _normalize_code_location_spec_entry(spec, "project_path", str, is_required=False, as_path=True)
+    _normalize_code_location_spec_entry(spec, "module_path", str, is_required=False, as_path=True)
+    _normalize_code_location_spec_entry(
+        spec, "executable_path", str, is_required=False, as_path=True
+    )
+
+    if sum([1 for k in ["module_name", "project_path", "module_path"] if k in spec]) != 1:
+        raise DgValidationError(
+            "Exactly one of `module_name`, `project_path`, or `module_path` must be specified."
+        )
+
+    valid_fields = [f.name for f in fields(PythonPointerCodeLocationSpec)]
+    if unrecognized_keys := [k for k in spec.keys() if k not in valid_fields]:
+        raise DgValidationError(f"Unrecognized fields in configuration: {unrecognized_keys}")
+
+    # Validation on the args performed above.
+    return PythonPointerCodeLocationSpec(**spec)  # type: ignore
+
+
+def _normalize_grpc_server_code_location_spec(
+    spec: dict[str, object],
+) -> "GrpcServerCodeLocationSpec":
+    _normalize_code_location_spec_entry(spec, "name", str, is_required=True)
+    _normalize_code_location_spec_entry(spec, "socket", str, is_required=False)
+    _normalize_code_location_spec_entry(spec, "host", str, is_required=False)
+    _normalize_code_location_spec_entry(spec, "port", int, is_required=False)
+
+    if sum([1 for k in ["port", "socket"] if k in spec]) != 1:
+        raise DgValidationError("Exactly one of `socket` or `port` must be specified.")
+
+    valid_fields = [f.name for f in fields(GrpcServerCodeLocationSpec)]
+    if unrecognized_keys := [k for k in spec.keys() if k not in valid_fields]:
+        raise DgValidationError(f"Unrecognized fields in configuration: {unrecognized_keys}")
+
+    # Validation on the args performed above.
+    return GrpcServerCodeLocationSpec(**spec)  # type: ignore
+
+
+_normalize_code_location_spec_entry = partial(
+    _normalize_config_entry, error_prefix="CodeLocationSpec "
+)
 
 # ########################
 # ##### CONFIG CLI OPTIONS
@@ -197,25 +293,66 @@ def _validate_dg_partial_file_config(
                 file_path,
             )
     try:
-        _normalize_dg_partial_config({k: v for k, v in raw_dict.items() if k not in ["extend"]})
+        normalized = _normalize_dg_partial_config(
+            {k: v for k, v in raw_dict.items() if k not in ["extend"]}
+        )
     except DgValidationError as e:
         _raise_file_config_validation_error(str(e), file_path)
-    return cast(DgPartialFileConfig, raw_dict)
+    # Normalized will overwrite any values in raw_dict.
+    return cast(DgPartialFileConfig, {**raw_dict, **normalized})
 
 
 def is_dg_config_file(
     path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
 ) -> bool:
-    toml = tomlkit.parse(path.read_text())
-    return "dg" in toml.get("tool", {}) and (
-        predicate(get_toml_value(toml, ["tool", "dg"], dict)) if predicate else True
-    )
+    toml = tomlkit.parse(path.read_text()).unwrap()
+    return "dg" in toml.get("tool", {}) and (predicate(toml["tool"]["dg"]) if predicate else True)
 
 
 def load_dg_config_file(path: Path) -> DgPartialFileConfig:
     toml = tomlkit.parse(path.read_text())
-    return _validate_dg_partial_file_config(get_toml_value(toml, ["tool", "dg"], dict), path)
+    dg_section = get_toml_value(toml, ["tool", "dg"], tomlkit.items.Table).unwrap()
+    return _validate_dg_partial_file_config(dg_section, path)
 
 
 def _raise_file_config_validation_error(message: str, file_path: Path) -> None:
     raise DgError(f"Error in configuration file {file_path}: {message}")
+
+
+# ########################
+# ##### CODE LOCATION SPECIFICATION
+# ########################
+
+
+@dataclass
+class RawCodeLocationSpec:
+    name: str
+    type: Literal["python_pointer", "grpc_server"]
+    module_name: Optional[str] = None
+    project_path: Optional[str] = None
+    module_path: Optional[str] = None
+    executable_path: Optional[str] = None
+    attribute: Optional[str] = None
+    host: Optional[str] = None
+    port: Optional[int] = None
+
+
+@dataclass
+class CodeLocationSpec:
+    name: str
+
+
+@dataclass
+class PythonPointerCodeLocationSpec(CodeLocationSpec):
+    module_name: Optional[str] = None
+    project_path: Optional[Path] = None
+    module_path: Optional[Path] = None
+    executable_path: Optional[Path] = None
+    attribute: Optional[str] = None
+
+
+@dataclass
+class GrpcServerCodeLocationSpec(CodeLocationSpec):
+    socket: Optional[str]
+    host: Optional[str]
+    port: Optional[int]

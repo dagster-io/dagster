@@ -7,6 +7,7 @@ import pytest
 from dagster_dg.utils import (
     cross_platfrom_string_path,
     ensure_dagster_dg_tests_import,
+    modify_toml,
     set_toml_value,
 )
 
@@ -16,7 +17,6 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_code_location_foo_bar,
-    modify_pyproject_toml,
     standardize_box_characters,
 )
 
@@ -181,7 +181,7 @@ def test_component_scaffold_succeeds_non_default_component_package() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
         alt_lib_path = Path("foo_bar/_components")
         alt_lib_path.mkdir(parents=True)
-        with modify_pyproject_toml() as toml:
+        with modify_toml(Path("pyproject.toml")) as toml:
             set_toml_value(toml, ("tool", "dg", "component_package"), "foo_bar._components")
         result = runner.invoke(
             "component",
@@ -201,7 +201,7 @@ def test_component_scaffold_succeeds_non_default_component_package() -> None:
 
 def test_component_scaffold_fails_components_package_does_not_exist() -> None:
     with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        with modify_pyproject_toml() as toml:
+        with modify_toml(Path("pyproject.toml")) as toml:
             set_toml_value(toml, ("tool", "dg", "component_package"), "bar._components")
         result = runner.invoke(
             "component",
