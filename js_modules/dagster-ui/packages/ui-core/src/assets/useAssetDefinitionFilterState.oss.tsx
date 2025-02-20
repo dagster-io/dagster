@@ -8,6 +8,7 @@ import {
   AssetOwner,
   ChangeReason,
   DefinitionTag,
+  StaleStatus,
 } from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {doesFilterArrayMatchValueArray} from '../ui/Filters/doesFilterArrayMatchValueArray';
@@ -21,7 +22,10 @@ type Nullable<T> = {
 
 export type FilterableAssetDefinition = Nullable<
   Partial<
-    Pick<AssetNode, 'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds'> & {
+    Pick<
+      AssetNode,
+      'changedReasons' | 'owners' | 'groupName' | 'tags' | 'kinds' | 'staleStatus'
+    > & {
       repository: Pick<AssetNode['repository'], 'name'> & {
         location: Pick<AssetNode['repository']['location'], 'name'>;
       };
@@ -36,6 +40,7 @@ export type AssetFilterBaseType = {
   owners: AssetOwner[];
   tags: Omit<DefinitionTag, '__typename'>[];
   codeLocations: RepoAddress[];
+  staleStatuses: StaleStatus[];
 };
 
 export type AssetFilterType = AssetFilterBaseType & {
@@ -45,13 +50,23 @@ export type AssetFilterType = AssetFilterBaseType & {
 export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: boolean}) => {
   const [filters, setFilters] = useQueryPersistedState<AssetFilterType>({
     encode: isEnabled
-      ? ({groups, kinds, changedInBranch, owners, tags, codeLocations, selectAllFilters}) => ({
+      ? ({
+          groups,
+          kinds,
+          changedInBranch,
+          owners,
+          tags,
+          codeLocations,
+          staleStatuses,
+          selectAllFilters,
+        }) => ({
           groups: groups?.length ? JSON.stringify(groups) : undefined,
           kinds: kinds?.length ? JSON.stringify(kinds) : undefined,
           changedInBranch: changedInBranch?.length ? JSON.stringify(changedInBranch) : undefined,
           owners: owners?.length ? JSON.stringify(owners) : undefined,
           tags: tags?.length ? JSON.stringify(tags) : undefined,
           codeLocations: codeLocations?.length ? JSON.stringify(codeLocations) : undefined,
+          staleStatuses: staleStatuses?.length ? JSON.stringify(staleStatuses) : undefined,
           selectAllFilters: selectAllFilters?.length ? JSON.stringify(selectAllFilters) : undefined,
         })
       : () => ({}),
@@ -67,6 +82,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
               buildRepoAddress(repo.name, repo.location),
             )
           : [],
+      staleStatuses: qs.staleStatuses && isEnabled ? JSON.parse(qs.staleStatuses) : [],
       selectAllFilters: qs.selectAllFilters ? JSON.parse(qs.selectAllFilters) : [],
     }),
   });
@@ -83,6 +99,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
     setOwners,
     setAssetTags,
     setCodeLocations,
+    setStaleStatuses,
     setSelectAllFilters,
   } = useMemo(() => {
     function makeSetter<T extends keyof AssetFilterType>(field: T) {
@@ -100,6 +117,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
       setOwners: makeSetter('owners'),
       setAssetTags: makeSetter('tags'),
       setCodeLocations: makeSetter('codeLocations'),
+      setStaleStatuses: makeSetter('staleStatuses'),
       setSelectAllFilters: makeSetter('selectAllFilters'),
     };
   }, [setFilters]);
@@ -114,6 +132,7 @@ export const useAssetDefinitionFilterState = ({isEnabled = true}: {isEnabled?: b
     setOwners,
     setAssetTags,
     setCodeLocations,
+    setStaleStatuses,
     setSelectAllFilters,
   };
 };
@@ -234,6 +253,17 @@ export function filterAssetDefinition(
     }
   }
 
+  const isAllStaleStatusSelected = filters.selectAllFilters?.includes('staleStatuses');
+  if (isAllStaleStatusSelected) {
+    if (!definition?.staleStatus?.length) {
+      return false;
+    }
+  } else if (filters.staleStatuses?.length) {
+    if (!definition?.staleStatus || !filters.staleStatuses.includes(definition.staleStatus)) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -245,6 +275,7 @@ const KEYS: Record<keyof AssetFilterType, '1'> = {
   tags: '1',
   codeLocations: '1',
   selectAllFilters: '1',
+  staleStatuses: '1',
 };
 export function getAssetFilterStateQueryString() {
   const params = new URLSearchParams(location.search);
