@@ -11,7 +11,8 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useLocation} from 'react-router-dom';
+import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
@@ -57,17 +58,21 @@ export const AssetPageHeader = ({
     }, 2000);
   }, [copy, copyableString]);
 
+  const location = useLocation();
+
   const breadcrumbs = React.useMemo(() => {
     const list: BreadcrumbProps[] = [...headerBreadcrumbs];
 
     assetKey.path.reduce((accum: string, elem: string) => {
-      const href = `${accum}/${encodeURIComponent(elem)}`;
+      const href = `${accum}/${encodeURIComponent(elem)}?${getAssetFilterStateQueryString(
+        location.search,
+      )}`;
       list.push({text: elem, href});
       return href;
     }, '/assets');
 
     return list;
-  }, [assetKey.path, headerBreadcrumbs]);
+  }, [assetKey.path, headerBreadcrumbs, location.search]);
 
   return (
     <PageHeader
