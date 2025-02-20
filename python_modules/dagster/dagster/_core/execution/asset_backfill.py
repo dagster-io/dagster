@@ -1124,9 +1124,8 @@ def execute_asset_backfill_iteration(
             updated_backfill_data.failed_and_downstream_subset
             - previous_asset_backfill_data.failed_and_downstream_subset
         )
-        updated_backfill_in_progress = updated_backfill_data.requested_subset - (
-            updated_backfill_data.materialized_subset
-            | updated_backfill_data.failed_and_downstream_subset
+        updated_backfill_in_progress = (
+            updated_backfill_data.requested_subset - updated_backfill_data.materialized_subset
         )
         previous_backfill_in_progress = (
             previous_asset_backfill_data.requested_subset
