@@ -1,10 +1,11 @@
+import glob
 import importlib
 from pathlib import Path
 from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
-    load_definitions_from_module,
+    load_definitions_from_modules,
 )
 from dagster._utils import pushd
 from pydantic import Field
@@ -49,12 +50,17 @@ class DefinitionsComponent(Component):
             ]
             component_module_name = ".".join([context.module_name, *component_module_relative_path])
 
-            defs_file_path = (
-                Path(self.definitions_path) if self.definitions_path else Path("definitions.py")
-            ).absolute()
-            if defs_file_path.name != "__init__.py":
-                component_module_name = f"{component_module_name}.{defs_file_path.stem}"
+            defs_file_glob = self.definitions_path if self.definitions_path else "definitions.py"
 
-            module = importlib.import_module(component_module_name)
+            files = glob.glob(defs_file_glob)
 
-        return load_definitions_from_module(module)
+            module_names = []
+            for file in files:
+                module_names.append(f"{component_module_name}.{Path(file).stem}")
+
+            modules = []
+            for module_name in module_names:
+                module = importlib.import_module(module_name)
+                modules.append(module)
+
+        return load_definitions_from_modules(modules)
