@@ -48,7 +48,7 @@ taxi_zones_file
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-single-asset.png)
+![TODO]()
 
 </TabItem>
 </Tabs>
@@ -91,7 +91,7 @@ manhattan/manhattan_stats
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-multiple-components.png)
+![TODO]()
 
 </TabItem>
 </Tabs>
@@ -132,7 +132,7 @@ taxi_zones_file taxi_trips_file
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-disjointed-lineages.png)
+![TODO]()
 
 </TabItem>
 </Tabs>
@@ -189,7 +189,7 @@ dagster asset materialize --select "+manhattan_map"
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-upstream-dependencies.png)
+![TODO]()
 
 </TabItem>
 </Tabs>
@@ -226,7 +226,7 @@ dagster asset materialize --select "2+manhattan_map"
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-two-upstream-layers.png)
+![TODO]()
 
 </TabItem>
 </Tabs>
@@ -263,7 +263,7 @@ taxi_zones_file+
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-downstream-dependencies.png)
+![TODO]()
 
 </TabItem>
 </Tabs>
@@ -300,7 +300,7 @@ taxi_zones_file++
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-two-downstream-layers.png)
+![TODO]()
 
 </TabItem>
 </Tabs>
@@ -337,7 +337,7 @@ dagster asset materialize --select "+taxi_zones+"
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-entire-lineage.png)
+![TODO]()
 
 </TabItem>
 </Tabs>
