@@ -34,11 +34,6 @@ if [ "$VERCEL" = "1" ]; then
   uv_activate_venv
 fi
 
-# Required to resolve `locale.Error: unsupported locale setting`
-if [[ -z "$LC_ALL" && "$(uname)" == "Darwin" ]]; then
-  export LC_ALL=en_US.UTF-8
-fi
-
 echo "Running sphinx-mdx and copying files to \`docs/api/python-api\`"
 tox -e sphinx-mdx
 cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs/api/python-api/
