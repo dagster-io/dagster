@@ -1,8 +1,10 @@
 import {IconName} from '@dagster-io/ui-components';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {NO_LAUNCH_PERMISSION_MESSAGE} from 'shared/launchpad/LaunchRootExecutionButton.oss';
 
 import {buildRepoPathForURL} from './buildRepoAddress';
 import {RepoAddress} from './types';
+import {featureEnabled} from '../app/Flags';
 import {isHiddenAssetGroupJob, tokenForAssetKey} from '../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../assets/globalAssetGraphPathToString';
 import {Run} from '../graphql/types';
@@ -64,8 +66,18 @@ export const workspacePipelineLinkForRun = ({
   repositoryLocationName,
   isJob,
 }: RunDetails) => {
+  debugger;
   if (isHiddenAssetGroupJob(run.pipelineName)) {
-    const opsQuery = (run.assetSelection || []).map(tokenForAssetKey).join(', ');
+    const opsQuery = (() => {
+      if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+        return (run.assetSelection || [])
+          .map((key) => `key:"${tokenForAssetKey(key)}"`)
+          .join(' or ');
+      }
+      return (run.assetSelection || []).map(tokenForAssetKey).join(', ');
+    })();
+
+    debugger;
     return {
       disabledReason: null,
       label: `View asset lineage`,
