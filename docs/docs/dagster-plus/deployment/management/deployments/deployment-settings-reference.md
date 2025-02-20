@@ -38,7 +38,7 @@ sso_default_role: EDITOR
 
 For each deployment, you can configure settings for:
 
-- [Concurency](#concurrency-concurrency)
+- [Concurrency](#concurrency-concurrency)
 - [Run monitoring](#run-monitoring-run_monitoring)
 - [Run retries](#run-retries-run_retries)
 - [SSO default role](#sso-default-role)
