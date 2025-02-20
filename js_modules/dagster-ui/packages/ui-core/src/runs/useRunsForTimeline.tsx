@@ -507,6 +507,7 @@ export const useRunsForTimeline = ({
 
           const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
 
+          addedJobKeys.add(jobKey);
           const jobRuns = Object.values(runsByJobKey[jobKey] || {});
           if (!jobTicks.length && !jobRuns.length) {
             continue;
@@ -515,7 +516,6 @@ export const useRunsForTimeline = ({
           const runs = [...jobRuns, ...jobTicks];
 
           let row = jobsWithCompletedRunsAndOngoingRuns[jobKey];
-          addedJobKeys.add(jobKey);
           if (row) {
             row = {...row, runs};
           } else {
