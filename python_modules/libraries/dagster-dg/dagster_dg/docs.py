@@ -1,3 +1,4 @@
+import copy
 import tempfile
 import webbrowser
 from collections.abc import Iterator, Mapping, Sequence, Set
@@ -79,9 +80,15 @@ def _dereference_schema(
 
 
 def _sample_value_for_subschema(
-    json_schema: Mapping[str, Any], subschema: Mapping[str, Any]
+    json_schema: Mapping[str, Any],
+    subschema: Mapping[str, Any],
 ) -> Any:
+    example_value = next(iter(subschema.get("examples", [])), None)
+
     subschema = _dereference_schema(json_schema, subschema)
+
+    if example_value:
+        return copy.deepcopy(example_value)
     if "anyOf" in subschema:
         # TODO: handle anyOf fields more gracefully, for now just choose first option
         return _sample_value_for_subschema(json_schema, subschema["anyOf"][0])
