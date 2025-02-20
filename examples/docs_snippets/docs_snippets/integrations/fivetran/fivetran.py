@@ -108,7 +108,7 @@ def scope_add_downstream_assets():
         import json
 
         import dagster as dg
-        
+
         from dagster_fivetran import (
             FivetranResource,
             load_assets_from_fivetran_instance,

@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 import pandas as pd
-import dagster as dg
 
+import dagster as dg
 
 from .asset_input_managers import (
     load_numpy_array,

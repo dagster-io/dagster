@@ -90,7 +90,7 @@ def new_style_resource_on_context() -> dg.Definitions:
     return defs
 
 
-  def new_style_resource_on_param() -> dg.Definitions:
+def new_style_resource_on_param() -> dg.Definitions:
     import dagster as dg
 
     class FancyDbResource(dg.ConfigurableResource):
