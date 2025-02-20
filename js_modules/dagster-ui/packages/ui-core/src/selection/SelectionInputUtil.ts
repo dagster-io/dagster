@@ -47,9 +47,8 @@ export function isInsideExpressionlessParenthesizedExpression(
       case UnclosedExpressionlessFunctionExpressionContext.name:
         return true;
       default:
-        return isInsideExpressionlessParenthesizedExpression(context.parent);
+        return isInsideExpressionlessParenthesizedExpression(parent);
     }
-    return isInsideExpressionlessParenthesizedExpression(parent);
   }
   return false;
 }
