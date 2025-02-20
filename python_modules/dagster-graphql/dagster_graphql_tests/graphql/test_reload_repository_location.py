@@ -492,7 +492,7 @@ class TestReloadLocationCodeServerCliGrpc(CodeServerCliTestSuite):
         assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
 
         new_location = (
-            graphql_context.process_context.get_workspace_snapshot()
+            graphql_context.process_context.get_current_workspace()
             .code_location_entries[main_repo_location_name()]
             .code_location
         )
