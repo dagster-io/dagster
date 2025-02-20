@@ -39,7 +39,7 @@ def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("code-location", "scaffold", "foo-bar", "--use-editable-dagster")
+        result = runner.invoke("scaffold", "code-location", "foo-bar", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("code_locations/foo-bar").exists()
         assert Path("code_locations/foo-bar/foo_bar").exists()
@@ -68,7 +68,7 @@ def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
 
         # Check cache was populated
         with pushd("code_locations/foo-bar"):
-            result = runner.invoke("component-type", "list", "--verbose")
+            result = runner.invoke("list", "component-type", "--verbose")
             assert_runner_result(result)
             assert "CACHE [hit]" in result.output
 
@@ -79,7 +79,7 @@ def test_code_location_scaffold_outside_deployment_success(monkeypatch) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
     with ProxyRunner.test() as runner, runner.isolated_filesystem(), clear_module_from_cache("bar"):
-        result = runner.invoke("code-location", "scaffold", "foo-bar", "--use-editable-dagster")
+        result = runner.invoke("scaffold", "code-location", "foo-bar", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
@@ -102,7 +102,7 @@ def test_code_location_scaffold_editable_dagster_success(mode: str, monkeypatch)
     else:
         editable_args = ["--use-editable-dagster", str(dagster_git_repo_dir)]
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("code-location", "scaffold", *editable_args, "foo-bar")
+        result = runner.invoke("scaffold", "code-location", *editable_args, "foo-bar")
         assert_runner_result(result)
         assert Path("code_locations/foo-bar").exists()
         assert Path("code_locations/foo-bar/pyproject.toml").exists()
@@ -136,7 +136,7 @@ def test_code_location_scaffold_editable_dagster_success(mode: str, monkeypatch)
 
 def test_code_location_scaffold_skip_venv_success() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("code-location", "scaffold", "--skip-venv", "foo-bar")
+        result = runner.invoke("scaffold", "code-location", "--skip-venv", "foo-bar")
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
@@ -152,7 +152,7 @@ def test_code_location_scaffold_skip_venv_success() -> None:
 
 def test_code_location_scaffold_no_populate_cache_success() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("code-location", "scaffold", "--no-populate-cache", "foo-bar")
+        result = runner.invoke("scaffold", "code-location", "--no-populate-cache", "foo-bar")
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
@@ -166,7 +166,7 @@ def test_code_location_scaffold_no_populate_cache_success() -> None:
         assert Path("foo-bar/uv.lock").exists()
 
         with pushd("foo-bar"):
-            result = runner.invoke("component-type", "list", "--verbose")
+            result = runner.invoke("list", "component-type", "--verbose")
             assert_runner_result(result)
             assert "CACHE [miss]" in result.output
 
@@ -174,7 +174,7 @@ def test_code_location_scaffold_no_populate_cache_success() -> None:
 def test_code_location_scaffold_no_use_dg_managed_environment_success() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
-            "code-location", "scaffold", "--no-use-dg-managed-environment", "foo-bar"
+            "scaffold", "code-location", "--no-use-dg-managed-environment", "foo-bar"
         )
         assert_runner_result(result)
         assert Path("foo-bar").exists()
@@ -192,16 +192,16 @@ def test_code_location_scaffold_no_use_dg_managed_environment_success() -> None:
 def test_code_location_scaffold_editable_dagster_no_env_var_no_value_fails(monkeypatch) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("code-location", "scaffold", "--use-editable-dagster", "--", "bar")
+        result = runner.invoke("scaffold", "code-location", "--use-editable-dagster", "--", "bar")
         assert_runner_result(result, exit_0=False)
         assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
 
 
 def test_code_location_scaffold_already_exists_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("code-location", "scaffold", "bar", "--skip-venv")
+        result = runner.invoke("scaffold", "code-location", "bar", "--skip-venv")
         assert_runner_result(result)
-        result = runner.invoke("code-location", "scaffold", "bar", "--skip-venv")
+        result = runner.invoke("scaffold", "code-location", "bar", "--skip-venv")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
@@ -213,9 +213,9 @@ def test_code_location_scaffold_already_exists_fails() -> None:
 
 def test_code_location_list_success():
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        runner.invoke("code-location", "scaffold", "foo")
-        runner.invoke("code-location", "scaffold", "bar")
-        result = runner.invoke("code-location", "list")
+        runner.invoke("scaffold", "code-location", "foo")
+        runner.invoke("scaffold", "code-location", "bar")
+        result = runner.invoke("list", "code-location")
         assert_runner_result(result)
         assert (
             result.output.strip()

@@ -24,13 +24,13 @@ Before adding a component with Python, you must either [create a project with co
 You can view the available component types in your environment by running the following command:
 
 ```bash
-dg component-type list
+dg list component-type
 ```
 
 This will display a list of all the component types that are available in your project. To see more information about a specific component type, you can run:
 
 ```bash
-dg component-type docs <component-name>
+dg docs component-type <component-name>
 ```
 
 This will display a webpage containing documentation for the specified component type.
@@ -40,7 +40,7 @@ This will display a webpage containing documentation for the specified component
 Once you've decided on the component type that you'd like to use, you can instantiate it by running:
 
 ```bash
-dg component generate <component-type> <component-name>
+dg scaffold component <component-type> <component-name>
 ```
 
 This will create a new directory inside your `components/` folder that contains a `component.yaml` file. Some component types may also generate additional files as needed.
@@ -57,7 +57,7 @@ The `component.yaml` is the primary configuration file for a component. It conta
 To see a sample `component.yaml` file for your specific component, you can run:
 
 ```bash
-dg component-type docs <component-name>
+dg docs component-type <component-name>
 ```
 
 ### Component templating

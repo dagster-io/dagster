@@ -11,7 +11,7 @@ This feature is still in development and might change in patch releases. It’s 
 
 :::note
 
-This guide is only relevant if you are starting from an _existing_ Dagster code location. This setup is unnecessary if you used `dg code-location generate` to create your code location.
+This guide is only relevant if you are starting from an _existing_ Dagster code location. This setup is unnecessary if you used `dg scaffold code-location` to create your code location.
 
 :::
 

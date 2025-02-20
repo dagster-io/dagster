@@ -57,7 +57,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Scaffold deployment
         run_command_and_snippet_output(
-            cmd="dg deployment scaffold my-deployment",
+            cmd="dg scaffold deployment my-deployment",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-deployment-scaffold.txt",
             update_snippets=update_snippets,
@@ -84,7 +84,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Scaffold code location
         run_command_and_snippet_output(
-            cmd="dg code-location scaffold code-location-1 --use-editable-dagster",
+            cmd="dg scaffold code-location code-location-1 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-code-location-scaffold.txt",
             update_snippets=update_snippets,
@@ -123,7 +123,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Check component types
         run_command_and_snippet_output(
-            cmd="cd code_locations/code-location-1 && dg component-type list",
+            cmd="cd code_locations/code-location-1 && dg list component-type",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
@@ -133,7 +133,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[sling]'"
         )
         run_command_and_snippet_output(
-            cmd="dg component-type list",
+            cmd="dg list component-type",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
@@ -142,7 +142,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Scaffold new code location
         run_command_and_snippet_output(
-            cmd="cd ../.. && dg code-location scaffold code-location-2 --use-editable-dagster",
+            cmd="cd ../.. && dg scaffold code-location code-location-2 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-code-location-scaffold.txt",
             update_snippets=update_snippets,
@@ -155,7 +155,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # List code locations
         run_command_and_snippet_output(
-            cmd="dg code-location list",
+            cmd="dg list code-location",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-code-location-list.txt",
             update_snippets=update_snippets,
@@ -163,7 +163,7 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Check component types in new code location
         run_command_and_snippet_output(
-            cmd="cd code_locations/code-location-2 && dg component-type list",
+            cmd="cd code_locations/code-location-2 && dg list component-type",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,

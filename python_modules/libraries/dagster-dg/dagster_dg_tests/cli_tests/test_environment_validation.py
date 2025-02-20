@@ -31,30 +31,30 @@ class CommandSpec:
 DEFAULT_COMPONENT_TYPE = "simple_asset@dagster_components.test"
 
 NO_REQUIRED_CONTEXT_COMMANDS = [
-    CommandSpec(("code-location", "scaffold"), "foo"),
-    CommandSpec(("deployment", "scaffold"), "foo"),
+    CommandSpec(("scaffold", "code-location"), "foo"),
+    CommandSpec(("scaffold", "deployment"), "foo"),
 ]
 
 COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
-    CommandSpec(("component-type", "scaffold"), "foo"),
+    CommandSpec(("scaffold", "component-type"), "foo"),
 ]
 
 REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(tuple(), "--rebuild-component-registry"),
-    CommandSpec(("component-type", "info"), DEFAULT_COMPONENT_TYPE),
-    CommandSpec(("component-type", "docs"), DEFAULT_COMPONENT_TYPE),
-    CommandSpec(("component-type", "list")),
+    CommandSpec(("info", "component-type"), DEFAULT_COMPONENT_TYPE),
+    CommandSpec(("docs", "component-type"), DEFAULT_COMPONENT_TYPE),
+    CommandSpec(("list", "component-type")),
 ]
 
 CODE_LOCATION_CONTEXT_COMMANDS = [
-    CommandSpec(("code-location", "configure-editor"), "vscode"),
-    CommandSpec(("component", "check")),
-    CommandSpec(("component", "list")),
-    CommandSpec(("component", "scaffold"), DEFAULT_COMPONENT_TYPE, "foot"),
+    CommandSpec(("configure-editor", "code-location"), "vscode"),
+    CommandSpec(("check", "component")),
+    CommandSpec(("list", "component")),
+    CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
 ]
 
 DEPLOYMENT_CONTEXT_COMMANDS = [
-    CommandSpec(("code-location", "list")),
+    CommandSpec(("list", "code-location")),
 ]
 
 DEPLOYMENT_OR_CODE_LOCATION_CONTEXT_COMMANDS = [
@@ -76,7 +76,7 @@ def test_all_commands_represented_in_env_check_tests() -> None:
     def crawl(command: click.Command, path: tuple[str, ...]) -> None:
         assert command.name
         new_path = (*path, command.name)
-        if isinstance(command, click.Group) and not new_path == ("dg", "component", "scaffold"):
+        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold", "component"):
             for subcommand in command.commands.values():
                 assert subcommand.name
                 crawl(subcommand, new_path)
@@ -203,7 +203,7 @@ def test_no_deployment_or_code_location_failure(spec: CommandSpec) -> None:
 # `dg component scaffold` is special because global options have to be inserted before the
 # subcommand name, instead of just at the end.
 def _add_global_cli_options(cli_args: tuple[str, ...], *global_opts: str) -> list[str]:
-    if cli_args[:2] == ("component", "scaffold"):
+    if cli_args[:2] == ("scaffold", "component"):
         return [*cli_args[:2], *global_opts, *cli_args[2:]]
     else:
         return [*cli_args, *global_opts]

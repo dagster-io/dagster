@@ -30,7 +30,7 @@ def test_component_type_scaffold_success() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("component-type", "scaffold", "baz")
+        result = runner.invoke("scaffold", "component-type", "baz")
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
         dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), {})
@@ -43,9 +43,9 @@ def test_component_type_scaffold_already_exists_fails() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("component-type", "scaffold", "baz")
+        result = runner.invoke("scaffold", "component-type", "baz")
         assert_runner_result(result)
-        result = runner.invoke("component-type", "scaffold", "baz")
+        result = runner.invoke("scaffold", "component-type", "baz")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
@@ -56,8 +56,8 @@ def test_component_type_scaffold_succeeds_non_default_component_lib_package() ->
         isolated_example_component_library_foo_bar(runner, lib_package_name="foo_bar._lib"),
     ):
         result = runner.invoke(
-            "component-type",
             "scaffold",
+            "component-type",
             "baz",
         )
         assert_runner_result(result)
@@ -75,8 +75,8 @@ def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -
         with modify_pyproject_toml() as toml:
             set_toml_value(toml, ("tool", "dg", "component_lib_package"), "foo_bar._lib")
         result = runner.invoke(
-            "component-type",
             "scaffold",
+            "component-type",
             "baz",
         )
         assert_runner_result(result, exit_0=False)
@@ -90,15 +90,15 @@ def test_component_type_scaffold_fails_components_lib_package_does_not_exist() -
 
 def test_component_type_docs_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
-        result = runner.invoke("component-type", "docs", "simple_asset@dagster_components.test")
+        result = runner.invoke("docs", "component-type", "simple_asset@dagster_components.test")
         assert_runner_result(result)
 
 
 def test_component_type_docs_success_output_console():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "component-type",
             "docs",
+            "component-type",
             "complex_schema_asset@dagster_components.test",
             "--output",
             "cli",
@@ -168,8 +168,8 @@ _EXPECTED_COMPONENT_TYPE_INFO_FULL = textwrap.dedent("""
 def test_component_type_info_all_metadata_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "component-type",
             "info",
+            "component-type",
             "simple_pipes_script_asset@dagster_components.test",
         )
         assert_runner_result(result)
@@ -179,8 +179,8 @@ def test_component_type_info_all_metadata_success():
 def test_component_type_info_all_metadata_empty_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "component-type",
             "info",
+            "component-type",
             "all_metadata_empty_asset@dagster_components.test",
         )
         assert_runner_result(result)
@@ -194,8 +194,8 @@ def test_component_type_info_all_metadata_empty_success():
 def test_component_type_info_flag_fields_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "component-type",
             "info",
+            "component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--description",
         )
@@ -209,8 +209,8 @@ def test_component_type_info_flag_fields_success():
         )
 
         result = runner.invoke(
-            "component-type",
             "info",
+            "component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--scaffold-params-schema",
         )
@@ -239,8 +239,8 @@ def test_component_type_info_flag_fields_success():
         )
 
         result = runner.invoke(
-            "component-type",
             "info",
+            "component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--component-params-schema",
         )
@@ -272,8 +272,8 @@ def test_component_type_info_flag_fields_success():
 def test_component_type_info_multiple_flags_fails() -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "component-type",
             "info",
+            "component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--description",
             "--scaffold-params-schema",
@@ -288,8 +288,8 @@ def test_component_type_info_multiple_flags_fails() -> None:
 def test_component_type_info_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "component-type",
             "info",
+            "component-type",
             "fake@fake",
         )
         assert_runner_result(result, exit_0=False)
@@ -338,7 +338,7 @@ _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
 def test_list_component_types_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         with fixed_panel_width(width=120):
-            result = runner.invoke("component-type", "list")
+            result = runner.invoke("list", "component-type")
             assert_runner_result(result)
             # strip the first line of logging output
             output = "\n".join(result.output.split("\n")[1:])
@@ -347,14 +347,14 @@ def test_list_component_types_success():
 
 def test_component_type_list_json_succeeds():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
-        result = runner.invoke("component-type", "list", "--json")
+        result = runner.invoke("list", "component-type", "--json")
         assert_runner_result(result)
         # strip the first line of logging output
         output = "\n".join(result.output.split("\n")[1:])
         assert output.strip() == _EXPECTED_COMPONENT_TYPES_JSON
 
 
-# Need to use capfd here to capture stderr from the subprocess invoked by the `component-type list`
+# Need to use capfd here to capture stderr from the subprocess invoked by the `list component-type`
 # command. This subprocess inherits stderr from the parent process, for whatever reason `capsys` does
 # not work.
 def test_component_type_list_bad_entry_point_fails(capfd):
@@ -363,7 +363,7 @@ def test_component_type_list_bad_entry_point_fails(capfd):
         shutil.rmtree("foo_bar/lib")
 
         # Disable cache to force re-discovery of deleted entry point
-        result = runner.invoke("component-type", "list", "--disable-cache", "--json")
+        result = runner.invoke("list", "component-type", "--disable-cache", "--json")
         assert_runner_result(result, exit_0=False)
 
         expected_error_message = format_error_message("""
