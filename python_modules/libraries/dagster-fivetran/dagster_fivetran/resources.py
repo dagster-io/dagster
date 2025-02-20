@@ -1146,7 +1146,7 @@ def load_fivetran_asset_specs(
 class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: FivetranWorkspace
     translator: DagsterFivetranTranslator
-    fivetran_filter_fn: Optional[Any] = None
+    fivetran_filter_fn: Optional[FivetranFilterFn] = None
 
     @property
     def defs_key(self) -> str:
