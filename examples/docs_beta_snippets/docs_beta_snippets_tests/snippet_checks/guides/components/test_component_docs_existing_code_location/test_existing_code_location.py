@@ -150,7 +150,7 @@ defs = dg.Definitions.merge(
         )
 
         run_command_and_snippet_output(
-            cmd="dg component-type list",
+            cmd="dg list component-type",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-list-component-types.txt",
             update_snippets=update_snippets,

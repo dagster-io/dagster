@@ -1,4 +1,4 @@
-dg component-type list
+dg list component-type
 
 Using /.../my-existing-project/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓

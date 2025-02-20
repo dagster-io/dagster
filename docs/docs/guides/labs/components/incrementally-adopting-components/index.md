@@ -1,5 +1,5 @@
 ---
-title: 'Migrating to components'
+title: 'Incrementally adopting components'
 sidebar_position: 50
 ---
 

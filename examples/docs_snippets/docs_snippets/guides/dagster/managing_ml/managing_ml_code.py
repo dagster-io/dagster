@@ -17,7 +17,7 @@ def my_ml_model(my_data): ...
 
 ## lazy_materlization_start
 
-from dagster import AutoMaterializePolicy, asset, FreshnessPolicy
+from dagster import asset
 
 
 @asset
@@ -85,7 +85,6 @@ slack_token = "782823"
 
 ## fail_slack_start
 
-import os
 from dagster import define_asset_job
 from dagster_slack import make_slack_on_run_failure_sensor
 
@@ -118,10 +117,6 @@ def make_plot(eval_metric):
 
 ## ui_plot_end
 
-from docs_snippets.guides.dagster.ml_pipelines.ml_pipeline import (
-    transformed_test_data,
-    transformed_train_data,
-)
 
 ## metadata_use_start
 

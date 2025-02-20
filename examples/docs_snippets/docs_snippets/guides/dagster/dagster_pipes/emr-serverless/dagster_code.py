@@ -1,7 +1,5 @@
 # start_asset_marker
-import os
 
-import boto3
 from dagster_aws.pipes import PipesEMRServerlessClient
 
 from dagster import AssetExecutionContext, asset

@@ -162,7 +162,6 @@ def get_pages():
 
 # dyn_out_return_start
 from dagster import DynamicOut, DynamicOutput, op
-from typing import List  # noqa: UP035
 
 
 @op(out=DynamicOut())

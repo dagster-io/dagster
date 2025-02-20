@@ -2,7 +2,7 @@
 # code_location_2.py
 import json
 
-from dagster import AssetKey, Definitions, asset
+from dagster import Definitions, asset
 
 
 @asset(deps=["code_location_1_asset"])

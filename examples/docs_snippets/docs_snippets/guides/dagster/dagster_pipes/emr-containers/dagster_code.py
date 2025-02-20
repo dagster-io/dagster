@@ -35,7 +35,7 @@ def emr_containers_asset(
 
 # start_definitions_marker
 import boto3
-from dagster_aws.pipes import PipesS3ContextInjector, PipesS3MessageReader
+from dagster_aws.pipes import PipesS3MessageReader
 
 from dagster import Definitions
 

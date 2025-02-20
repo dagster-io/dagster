@@ -286,11 +286,11 @@ def screenshot_page(
     get_webdriver: "Callable[[], webdriver.Chrome]",
     url: str,
     path: Path,
-    update_snippets: bool,
+    update_screenshots: bool,
     width: Optional[int] = 1024,
     height: Optional[int] = 768,
 ) -> None:
-    if not update_snippets:
+    if not update_screenshots:
         return
     webdriver = get_webdriver()
     webdriver.set_window_size(width, height)

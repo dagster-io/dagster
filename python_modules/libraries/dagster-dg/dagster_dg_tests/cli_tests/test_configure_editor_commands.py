@@ -15,7 +15,7 @@ def mock_vscode_cli_command(editor, args: list[str]) -> bytes:
 
 
 @pytest.mark.parametrize("editor", ["vscode", "cursor"])
-def test_configure_editor(editor: str) -> None:
+def test_configure_editor_code_location(editor: str) -> None:
     with (
         ProxyRunner.test() as runner,
         TemporaryDirectory() as extension_dir,
@@ -26,7 +26,7 @@ def test_configure_editor(editor: str) -> None:
         ),
         isolated_example_code_location_foo_bar(runner, False),
     ):
-        out = runner.invoke("code-location", "configure-editor", editor)
+        out = runner.invoke("configure-editor", "code-location", editor)
 
         assert out.exit_code == 0
 

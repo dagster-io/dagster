@@ -5,6 +5,7 @@ import {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
+import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
 import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';
@@ -276,7 +277,11 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
 
   if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
     // Redirect to the asset catalog
-    return <Redirect to={`/assets/${currentPath.join('/')}?view=folder`} />;
+    return (
+      <Redirect
+        to={`/assets/${currentPath.join('/')}?view=folder${getAssetFilterStateQueryString()}`}
+      />
+    );
   }
 
   return (

@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 import boto3

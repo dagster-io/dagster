@@ -1,6 +1,7 @@
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
+import {RunAlertNotifications} from 'shared/runs/RunAlertNotifications.oss';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
 import {DeletionDialog} from './DeletionDialog';
@@ -81,6 +82,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   return (
     <div>
       <Group direction="row" spacing={8}>
+        <RunAlertNotifications runId={run.id} />
         {jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason} useDisabledButtonTooltipFix>
             <Button icon={<Icon name={jobLink.icon} />} disabled>

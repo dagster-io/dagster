@@ -1,7 +1,6 @@
 import requests
 
 import dagster as dg
-from dagster import json_console_logger
 
 LOGGER_CONFIG = {"loggers": {"console": {"config": {"log_level": "INFO"}}}}
 
@@ -19,7 +18,7 @@ def get_hackernews_topstory_ids(context: dg.OpExecutionContext):
     return top_500_newstories
 
 
-@dg.job(logger_defs={"console": json_console_logger}, config=LOGGER_CONFIG)
+@dg.job(logger_defs={"console": dg.json_console_logger}, config=LOGGER_CONFIG)
 def hackernews_topstory_ids_job():
     get_hackernews_topstory_ids()
 

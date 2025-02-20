@@ -82,9 +82,9 @@ Tracking changes becomes more powerful when there are dependencies in play. Let'
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only.py" />
 
-In the Dagster UI, click **Reload definitions**. The `multipled_number` asset will be marked as **Never materialized**.
+In the Dagster UI, click **Reload definitions**. The `multiplied_number` asset will be marked as **Never materialized**.
 
-Next, click the toggle to the right side of the **Materialize** button to display the **Propagate changes** option. As the **Materialize** button ignores versioning, we need this option to ensure the `multipled_number` asset is properly materialized.
+Next, click the toggle to the right side of the **Materialize** button to display the **Propagate changes** option. As the **Materialize** button ignores versioning, we need this option to ensure the `multiplied_number` asset is properly materialized.
 
 In the created run, only the step associated with `multiplied_number` is run. The system knows that `versioned_number` is up to date and therefore can safely skip that computation. You can see this on the details page for the run:
 
