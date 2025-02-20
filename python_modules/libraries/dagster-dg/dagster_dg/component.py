@@ -104,14 +104,12 @@ class RemoteComponentRegistry:
         if dg_context.has_cache:
             cache_key = dg_context.get_cache_key("component_registry_data")
             raw_registry_data = dg_context.cache.get(cache_key)
-            print(f"Returned from cache: {raw_registry_data}")
         else:
             cache_key = None
             raw_registry_data = None
 
         if not raw_registry_data:
             raw_registry_data = dg_context.external_components_command(["list", "component-types"])
-            print(f"Returned from external_components_command: {raw_registry_data}")
             if dg_context.has_cache and cache_key and is_valid_json(raw_registry_data):
                 dg_context.cache.set(cache_key, raw_registry_data)
 
