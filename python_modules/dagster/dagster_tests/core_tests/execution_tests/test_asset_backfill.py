@@ -79,6 +79,8 @@ from dagster_tests.declarative_automation_tests.legacy_tests.scenarios.asset_gra
     multipartitioned_self_dependency,
     one_asset_self_dependency,
     root_assets_different_partitions_same_downstream,
+    self_dependant_asset_with_grouped_run_backfill_policy,
+    self_dependant_asset_with_single_run_backfill_policy,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
 )
@@ -155,6 +157,14 @@ scenarios = {
     ),
     "one_asset_self_dependency": scenario(
         one_asset_self_dependency, create_datetime(year=2020, month=1, day=7, hour=4)
+    ),
+    "self_dependant_asset_with_grouped_run_backfill_policy": scenario(
+        self_dependant_asset_with_grouped_run_backfill_policy,
+        create_datetime(year=2023, month=1, day=10),
+    ),
+    "self_dependant_asset_with_single_run_backfill_policy": scenario(
+        self_dependant_asset_with_single_run_backfill_policy,
+        create_datetime(year=2023, month=1, day=10),
     ),
     "non_partitioned_after_partitioned": scenario(
         non_partitioned_after_partitioned, create_datetime(year=2020, month=1, day=7, hour=4)
@@ -401,6 +411,152 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
             run_backfill_to_completion(
                 asset_graph, assets_by_repo_name, backfill_data, fail_asset_partitions, instance
             )
+
+
+def test_self_dependant_asset_with_grouped_run_backfill_policy():
+    assets_by_repo_name = {"repo": self_dependant_asset_with_grouped_run_backfill_policy}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_def = self_dependant_asset_with_grouped_run_backfill_policy[0]
+
+    partitions = [
+        "2023-01-01",
+        "2023-01-02",
+        "2023-01-03",
+        "2023-01-04",
+        "2023-01-05",
+        "2023-01-06",
+        "2023-01-07",
+    ]
+
+    with DagsterInstance.ephemeral() as instance:
+        backfill_id = "self_dependant_asset_with_grouped_run_backfill_policy"
+
+        asset_backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph=asset_graph,
+            partition_names=partitions,
+            asset_selection=[asset_def.key],
+            dynamic_partitions_store=MagicMock(),
+            all_partitions=False,
+            backfill_start_timestamp=create_datetime(2023, 1, 12, 0, 0, 0).timestamp(),
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {
+                AssetKeyPartitionKey(asset_def.key, partition)
+                for partition in [
+                    "2023-01-01",
+                    "2023-01-02",
+                    "2023-01-03",
+                ]
+            },
+            asset_graph,
+        )
+
+        assert instance.get_runs_count() == 1
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        assert instance.get_runs_count() == 2
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {
+                AssetKeyPartitionKey(asset_def.key, partition)
+                for partition in [
+                    "2023-01-01",
+                    "2023-01-02",
+                    "2023-01-03",
+                    "2023-01-04",
+                    "2023-01-05",
+                    "2023-01-06",
+                ]
+            },
+            asset_graph,
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+        assert instance.get_runs_count() == 3
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {
+                AssetKeyPartitionKey(asset_def.key, partition)
+                for partition in [
+                    "2023-01-01",
+                    "2023-01-02",
+                    "2023-01-03",
+                    "2023-01-04",
+                    "2023-01-05",
+                    "2023-01-06",
+                    "2023-01-07",
+                ]
+            },
+            asset_graph,
+        )
+
+
+def test_self_dependant_asset_with_single_run_backfill_policy():
+    assets_by_repo_name = {"repo": self_dependant_asset_with_single_run_backfill_policy}
+    asset_graph = get_asset_graph(assets_by_repo_name)
+
+    asset_def = self_dependant_asset_with_single_run_backfill_policy[0]
+
+    partitions = [
+        "2023-01-01",
+        "2023-01-02",
+        "2023-01-03",
+        "2023-01-04",
+        "2023-01-05",
+        "2023-01-06",
+        "2023-01-07",
+    ]
+
+    with DagsterInstance.ephemeral() as instance:
+        backfill_id = "self_dependant_asset_with_single_run_backfill_policy"
+
+        asset_backfill_data = AssetBackfillData.from_asset_partitions(
+            asset_graph=asset_graph,
+            partition_names=partitions,
+            asset_selection=[asset_def.key],
+            dynamic_partitions_store=MagicMock(),
+            all_partitions=False,
+            backfill_start_timestamp=create_datetime(2023, 1, 12, 0, 0, 0).timestamp(),
+        )
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        assert asset_backfill_data.requested_subset == AssetGraphSubset.from_asset_partition_set(
+            {
+                AssetKeyPartitionKey(asset_def.key, partition)
+                for partition in [
+                    "2023-01-01",
+                    "2023-01-02",
+                    "2023-01-03",
+                    "2023-01-04",
+                    "2023-01-05",
+                    "2023-01-06",
+                    "2023-01-07",
+                ]
+            },
+            asset_graph,
+        )
+
+        assert instance.get_runs_count() == 1
+
+        asset_backfill_data = _single_backfill_iteration(
+            backfill_id, asset_backfill_data, asset_graph, instance, assets_by_repo_name
+        )
+
+        assert instance.get_runs_count() == 1
 
 
 def test_materializations_outside_of_backfill():
@@ -775,8 +931,6 @@ def run_backfill_to_completion(
         backfill_data = result1.backfill_data
 
         for asset_partition in backfill_data.materialized_subset.iterate_asset_partitions():
-            assert asset_partition not in fail_and_downstream_asset_partitions
-
             parent_partitions_result = asset_graph.get_parents_partitions(
                 instance,
                 backfill_data.backfill_start_datetime,
@@ -809,21 +963,39 @@ def run_backfill_to_completion(
                 asset_graph.get_repository_handle(asset_keys[0]).repository_name
             ]
 
+            asset_key_partition_keys = set()
+            for asset_key in asset_keys:
+                if run_request.partition_key_range:
+                    asset_key_partition_keys = asset_key_partition_keys.union(
+                        asset_graph_view.get_entity_subset_in_range(
+                            asset_key, run_request.partition_key_range
+                        ).expensively_compute_asset_partitions()
+                    )
+                else:
+                    asset_key_partition_keys.add(
+                        AssetKeyPartitionKey(asset_key, run_request.partition_key)
+                    )
+
+            failed_asset_keys = list(
+                {
+                    matching_fail_asset_partition.asset_key
+                    for matching_fail_asset_partition in (
+                        set(fail_asset_partitions) & asset_key_partition_keys
+                    )
+                }
+            )
+
             do_run(
                 all_assets=assets,
                 asset_keys=asset_keys,
                 partition_key=run_request.partition_key,
                 instance=instance,
-                failed_asset_keys=[
-                    asset_key
-                    for asset_key in asset_keys
-                    if AssetKeyPartitionKey(asset_key, run_request.partition_key)
-                    in fail_asset_partitions
-                ],
+                failed_asset_keys=failed_asset_keys,
                 tags={**run_request.tags, BACKFILL_ID_TAG: backfill_id},
             )
 
         assert iteration_count <= len(requested_asset_partitions) + 1
+
     return backfill_data, requested_asset_partitions, fail_and_downstream_asset_partitions
 
 

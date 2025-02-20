@@ -1,4 +1,5 @@
 from dagster import (
+    BackfillPolicy,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
     HourlyPartitionsDefinition,
@@ -44,6 +45,24 @@ one_asset_self_dependency = [
         "asset1",
         partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"),
         deps={"asset1": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+    )
+]
+
+self_dependant_asset_with_grouped_run_backfill_policy = [
+    asset_def(
+        "self_dependant",
+        partitions_def=DailyPartitionsDefinition("2023-01-01"),
+        deps={"self_dependant": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+        backfill_policy=BackfillPolicy.multi_run(3),
+    )
+]
+
+self_dependant_asset_with_single_run_backfill_policy = [
+    asset_def(
+        "self_dependant",
+        partitions_def=DailyPartitionsDefinition("2023-01-01"),
+        deps={"self_dependant": TimeWindowPartitionMapping(start_offset=-1, end_offset=-1)},
+        backfill_policy=BackfillPolicy.single_run(),
     )
 ]
 
