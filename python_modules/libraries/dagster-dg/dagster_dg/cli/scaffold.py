@@ -1,4 +1,3 @@
-import os
 from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
@@ -114,21 +113,10 @@ def project_scaffold_command(
     else:
         project_path = Path.cwd() / name
 
-    if use_editable_dagster == "TRUE":
-        if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
-            exit_with_error(
-                "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
-            )
-        editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
-    elif use_editable_dagster:  # a string value was passed
-        editable_dagster_root = use_editable_dagster
-    else:
-        editable_dagster_root = None
-
     scaffold_project(
         project_path,
         dg_context,
-        editable_dagster_root,
+        use_editable_dagster=use_editable_dagster,
         skip_venv=skip_venv,
         populate_cache=populate_cache,
     )

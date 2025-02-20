@@ -81,7 +81,7 @@ def dev_command(
     live_data_poll_rate: int,
     **global_options: Mapping[str, object],
 ) -> None:
-    """Start a local workspace of your Dagster project.
+    """Start a local instance of Dagster.
 
     If run inside a workspace directory, this command will launch all projects in the
     workspace. If launched inside a project directory, it will launch only that project.

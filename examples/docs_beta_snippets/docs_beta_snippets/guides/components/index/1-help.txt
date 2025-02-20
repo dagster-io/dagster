@@ -35,7 +35,7 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ─────────────────────────────────────────────────────────────────────────────╮
 │ check      Commands for checking the integrity of your Dagster code.                   │
-│ dev        Start a local deployment of your Dagster project.                           │
+│ dev        Start a local instance of Dagster.                                          │
 │ docs       Commands for generating docs from your Dagster code.                        │
 │ init       Initialize a new Dagster workspace and a first project within that          │
 │            workspace.                                                                  │

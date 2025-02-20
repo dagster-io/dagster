@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 import click
 
@@ -10,10 +11,23 @@ from dagster_dg.utils import DgClickCommand, exit_with_error
 
 
 @click.command(name="init", cls=DgClickCommand)
+@click.option(
+    "--use-editable-dagster",
+    type=str,
+    flag_value="TRUE",
+    is_flag=False,
+    default=None,
+    help=(
+        "Install Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
+        " may be set as a flag (no value is passed). If set as a flag,"
+        " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
+    ),
+)
 @dg_global_options
 @click.pass_context
 def init_command(
     context: click.Context,
+    use_editable_dagster: Optional[str],
     **global_options: object,
 ):
     """Initialize a new Dagster workspace and a first project within that workspace.
@@ -47,7 +61,7 @@ def init_command(
     project_name = click.prompt(
         "Enter the name of your first Dagster project (or press Enter to continue without creating a project)",
         type=str,
-    )
+    ).strip()
 
     if not project_name:
         click.echo(
@@ -65,7 +79,7 @@ def init_command(
         scaffold_project(
             project_path,
             workspace_dg_context,
-            editable_dagster_root=None,
+            use_editable_dagster=use_editable_dagster,
             skip_venv=False,
             populate_cache=True,
         )

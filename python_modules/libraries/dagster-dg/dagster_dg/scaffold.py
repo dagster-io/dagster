@@ -8,7 +8,7 @@ import click
 
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.context import DgContext
-from dagster_dg.utils import camelcase, scaffold_subtree
+from dagster_dg.utils import camelcase, exit_with_error, scaffold_subtree
 
 # ########################
 # ##### PROJECT
@@ -93,11 +93,22 @@ def scaffold_workspace(
 def scaffold_project(
     path: Path,
     dg_context: DgContext,
-    editable_dagster_root: Optional[str] = None,
+    use_editable_dagster: Optional[str],
     skip_venv: bool = False,
     populate_cache: bool = True,
 ) -> None:
     click.echo(f"Creating a Dagster project at {path}.")
+
+    if use_editable_dagster == "TRUE":
+        if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
+            exit_with_error(
+                "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
+            )
+        editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
+    elif use_editable_dagster:  # a string value was passed
+        editable_dagster_root = use_editable_dagster
+    else:
+        editable_dagster_root = None
 
     dependencies = get_pyproject_toml_dependencies(use_editable_dagster=bool(editable_dagster_root))
     dev_dependencies = get_pyproject_toml_dev_dependencies(
@@ -115,7 +126,7 @@ def scaffold_project(
         ),
         dependencies=dependencies,
         dev_dependencies=dev_dependencies,
-        project_name=path.name,
+        code_location_name=path.name,
         uv_sources=uv_sources,
     )
     click.echo(f"Scaffolded files for Dagster project at {path}.")
