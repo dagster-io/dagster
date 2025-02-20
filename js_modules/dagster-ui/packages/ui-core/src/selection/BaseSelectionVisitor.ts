@@ -6,6 +6,11 @@ import {RuleNode} from 'antlr4ts/tree/RuleNode';
 import {
   ParenthesizedExpressionContext,
   PostAttributeValueWhitespaceContext,
+  PostExpressionWhitespaceContext,
+  PostLogicalOperatorWhitespaceContext,
+  PostNeighborTraversalWhitespaceContext,
+  PostNotOperatorWhitespaceContext,
+  PostUpwardTraversalWhitespaceContext,
 } from './generated/SelectionAutoCompleteParser';
 import {SelectionAutoCompleteVisitor as _SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
 
@@ -79,10 +84,9 @@ export class BaseSelectionVisitor
       // If child's start..stop doesn't include the cursor, skip
       // (unless forced)
       if (child.start && child.stop) {
-        const isWhitespace = child.constructor.name.endsWith('WhitespaceContext');
         if (
           !this.nodeIncludesCursor(child) &&
-          (!isWhitespace || child.start.startIndex !== this.cursorIndex) &&
+          (!isWhitespaceContext(child) || child.start.startIndex !== this.cursorIndex) &&
           !this.forceVisitCtx.has(child)
         ) {
           continue;
@@ -91,7 +95,8 @@ export class BaseSelectionVisitor
         const nextChild = i + 1 < childCount ? (node.getChild(i + 1) as ParserRuleContext) : null;
         if (
           !this.nodeIncludesCursor(child, 0) &&
-          nextChild?.constructor.name.endsWith('WhitespaceContext') &&
+          nextChild &&
+          isWhitespaceContext(nextChild) &&
           !this.forceVisitCtx.has(child)
         ) {
           continue;
@@ -151,4 +156,18 @@ export class BaseSelectionVisitor
   protected handleCursorOutsideAnyNode(): void {}
 
   public visitPostExpressionWhitespace(_ctx: any) {}
+}
+
+function isWhitespaceContext(ctx: ParserRuleContext) {
+  switch (ctx.constructor.name) {
+    case PostAttributeValueWhitespaceContext.name:
+    case PostExpressionWhitespaceContext.name:
+    case PostLogicalOperatorWhitespaceContext.name:
+    case PostNeighborTraversalWhitespaceContext.name:
+    case PostNotOperatorWhitespaceContext.name:
+    case PostUpwardTraversalWhitespaceContext.name:
+      return true;
+    default:
+      return false;
+  }
 }
