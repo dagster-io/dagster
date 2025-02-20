@@ -1,8 +1,10 @@
 import copy
+import json
 import tempfile
+import textwrap
 import webbrowser
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import markdown
 import yaml
@@ -158,19 +160,38 @@ def html_from_markdown(markdown_content: str) -> str:
     html_content = markdown.markdown(markdown_content)
 
     # Add basic HTML structure
-    full_html = f"""
+    full_html = (
+        """
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Markdown Preview</title>
+        <style>
+            body {
+                font-weight: 400;
+                font-family: "Geist", "Inter", "Arial", sans-serif;
+                font-size: 16px;
+            }
+            textarea {
+                max-width: 100%;
+                font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+                border: none;
+                background-color: rgb(246, 248, 250);
+                border-radius: 6px;
+                padding: 16px;
+            }
+        </style>
     </head>
     <body>
-        {html_content}
+        <div style="max-width: 75%; margin: 0 auto;">"""
+        + html_content
+        + """</div>
     </body>
     </html>
     """
+    )
     return full_html
 
 
@@ -184,6 +205,84 @@ def open_html_in_browser(html_content: str) -> None:
     webbrowser.open(f"file://{temp_file_path}")
 
 
+# code blocks are of the format ..code-block:: <language>
+import re
+
+# match lines of the form
+# ..code-block:: <language>
+#   foo
+#   bar
+#   baz
+CODE_BLOCK_REGEX = re.compile(r"(\.\. code-block::.*?\n(:?[\s\S]+))", re.DOTALL | re.MULTILINE)
+
+
+def process_description(description: str) -> str:
+    # replace code blocks with <code> tags
+    description = CODE_BLOCK_REGEX.sub(r"", description)
+    return description.replace("\n", "<br>")
+
+
+def markdown_for_json_schema(
+    key: str,
+    json_schema: Mapping[str, Any],
+    subschema: Mapping[str, Any],
+    anyof_parent_subschema: Optional[Mapping[str, Any]] = None,
+    indent: int = 0,
+) -> str:
+    subschema = _dereference_schema(json_schema, subschema)
+
+    if "anyOf" in subschema:
+        # TODO: handle anyOf fields more gracefully, for now just choose first option
+        return markdown_for_json_schema(
+            key, json_schema, subschema["anyOf"][0], anyof_parent_subschema=subschema, indent=indent
+        )
+
+    objtype = subschema["type"]
+
+    children = ""
+    if objtype == "object":
+        children = "\n".join(
+            [
+                markdown_for_json_schema(k, json_schema, v, indent=indent + 2)
+                for k, v in subschema.get("properties", {}).items()
+            ]
+        )
+    elif objtype == "array":
+        return markdown_for_json_schema(key, json_schema, subschema["items"])
+
+    description = process_description(
+        subschema.get("description", "") or (anyof_parent_subschema or {}).get("description", "")
+    )
+    children_segment = (
+        f"""<details>
+<summary>Subfields</summary>
+\n\n
+<ul>
+{children}
+</ul>
+</details>
+    """
+        if children
+        else ""
+    )
+    examples = subschema.get("examples", []) or (anyof_parent_subschema or {}).get("examples", [])
+    examples_segment = (
+        f"Example: <code>{json.dumps(examples[0], indent=2)}</code>" if examples else ""
+    )
+
+    body = "<br/>".join(x for x in [description, examples_segment, children_segment] if x)
+    body = textwrap.indent("<br/>" + body + "", prefix="  ") if body else ""
+
+    output = f"""<li><strong>{key}</strong>{body}</li>\n"""
+    # indent the output with textwrap
+    return textwrap.indent(output, " " * indent)
+
+
+def markdown_for_param_types(remote_component_type: RemoteComponentType) -> str:
+    schema = remote_component_type.component_params_schema or {}
+    return f"<ul>{markdown_for_json_schema('params', schema, schema)}</ul>"
+
+
 def markdown_for_component_type(remote_component_type: RemoteComponentType) -> str:
     component_type_name = f"{remote_component_type.namespace}.{remote_component_type.name}"
     sample_yaml = generate_sample_yaml(
@@ -195,6 +294,10 @@ def markdown_for_component_type(remote_component_type: RemoteComponentType) -> s
 
 ### Description:
 {remote_component_type.description}
+
+### Component Params Schema:
+
+{markdown_for_param_types(remote_component_type)}
 
 ### Sample Component Params:
 
