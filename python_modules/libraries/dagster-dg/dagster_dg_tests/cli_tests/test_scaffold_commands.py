@@ -163,7 +163,13 @@ def test_scaffold_code_location_skip_venv_success() -> None:
 
 def test_scaffold_code_location_no_populate_cache_success() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("scaffold", "code-location", "--no-populate-cache", "foo-bar")
+        result = runner.invoke(
+            "scaffold",
+            "code-location",
+            "--no-populate-cache",
+            "foo-bar",
+            "--use-editable-dagster",
+        )
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
@@ -185,7 +191,11 @@ def test_scaffold_code_location_no_populate_cache_success() -> None:
 def test_scaffold_code_location_no_use_dg_managed_environment_success() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
-            "scaffold", "code-location", "--no-use-dg-managed-environment", "foo-bar"
+            "scaffold",
+            "code-location",
+            "--no-use-dg-managed-environment",
+            "foo-bar",
+            "--use-editable-dagster",
         )
         assert_runner_result(result)
         assert Path("foo-bar").exists()

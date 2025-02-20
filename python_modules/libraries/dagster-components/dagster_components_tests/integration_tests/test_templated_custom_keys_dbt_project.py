@@ -61,12 +61,12 @@ def dbt_path() -> Iterator[Path]:
         yield Path(temp_dir)
 
 
-def test_python_params_node_rename(dbt_path: Path) -> None:
+def test_python_attributes_node_rename(dbt_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="dbt_project",
-            params={
+            attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
                 "asset_attributes": {
                     "key": "some_prefix/{{ node.name }}",
@@ -75,17 +75,17 @@ def test_python_params_node_rename(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(DbtProjectComponent.get_schema())
-    component = DbtProjectComponent.load(params=params, context=context)
+    attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+    component = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
 
-def test_python_params_group(dbt_path: Path) -> None:
+def test_python_attributes_group(dbt_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="dbt_project",
-            params={
+            attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
                 "asset_attributes": {
                     "group_name": "some_group",
@@ -94,8 +94,8 @@ def test_python_params_group(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(DbtProjectComponent.get_schema())
-    comp = DbtProjectComponent.load(params=params, context=context)
+    attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+    comp = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
     defs: Definitions = comp.build_defs(script_load_context(None))
     for key in get_asset_keys(comp):
@@ -126,7 +126,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
             path=dbt_path / COMPONENT_RELPATH,
             component_file_model=ComponentFileModel(
                 type="dbt_project",
-                params={
+                attributes={
                     "dbt": {"project_dir": "jaffle_shop"},
                     "asset_attributes": {
                         "group_name": "{{ env('GROUP_AS_ENV') }}",
@@ -135,8 +135,8 @@ def test_render_vars_root(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        params = decl_node.get_params(DbtProjectComponent.get_schema())
-        comp = DbtProjectComponent.load(params=params, context=context)
+        attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+        comp = DbtProjectComponent.load(attributes=attributes, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
         defs: Definitions = comp.build_defs(script_load_context())
         for key in get_asset_keys(comp):
@@ -149,7 +149,7 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             path=dbt_path / COMPONENT_RELPATH,
             component_file_model=ComponentFileModel(
                 type="dbt_project",
-                params={
+                attributes={
                     "dbt": {"project_dir": "jaffle_shop"},
                     "asset_attributes": {
                         "key": "{{ env('ASSET_KEY_PREFIX') }}/{{ node.name }}",
@@ -158,6 +158,6 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        params = decl_node.get_params(DbtProjectComponent.get_schema())
-        comp = DbtProjectComponent.load(params=params, context=context)
+        attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+        comp = DbtProjectComponent.load(attributes=attributes, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS_WITH_PREFIX

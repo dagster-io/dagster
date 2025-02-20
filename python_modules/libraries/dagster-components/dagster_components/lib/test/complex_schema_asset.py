@@ -32,7 +32,7 @@ class ComplexAssetSchema(ResolvableSchema):
 
 @registered_component_type(name="complex_schema_asset")
 class ComplexSchemaAsset(Component):
-    """An asset that has a complex params schema."""
+    """An asset that has a complex schema."""
 
     @classmethod
     def get_schema(cls):

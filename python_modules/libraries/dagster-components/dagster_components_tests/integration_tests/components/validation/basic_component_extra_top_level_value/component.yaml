@@ -1,6 +1,6 @@
 type: my_component@__init__.py
 
-params:
+attributes:
   a_string: "a string"
   an_int: 5
 
