@@ -8,11 +8,20 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--update-snippets",
         action="store_true",
     )
+    parser.addoption(
+        "--update-screenshots",
+        action="store_true",
+    )
 
 
 @pytest.fixture
 def update_snippets(request: pytest.FixtureRequest) -> bool:
     return bool(request.config.getoption("--update-snippets"))
+
+
+@pytest.fixture
+def update_screenshots(request: pytest.FixtureRequest) -> bool:
+    return bool(request.config.getoption("--update-screenshots"))
 
 
 @pytest.fixture(scope="session")
