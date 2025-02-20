@@ -40,7 +40,7 @@ _EXPECTED_info_component_type_FULL = textwrap.dedent("""
         "type": "object"
     }
 
-    Component params schema:
+    Component schema:
 
     {
         "properties": {
@@ -140,7 +140,7 @@ def test_info_component_type_flag_fields_success():
             "info",
             "component-type",
             "simple_pipes_script_asset@dagster_components.test",
-            "--component-params-schema",
+            "--component-schema",
         )
         assert_runner_result(result)
         assert result.output.strip().endswith(
@@ -178,7 +178,7 @@ def test_info_component_type_multiple_flags_fails() -> None:
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Only one of --description, --scaffold-params-schema, and --component-params-schema can be specified."
+            "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
             in result.output
         )
 

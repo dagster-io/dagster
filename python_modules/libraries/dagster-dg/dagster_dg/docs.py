@@ -177,7 +177,7 @@ def open_html_in_browser(html_content: str) -> None:
 def markdown_for_component_type(remote_component_type: RemoteComponentType) -> str:
     component_type_name = f"{remote_component_type.namespace}.{remote_component_type.name}"
     sample_yaml = generate_sample_yaml(
-        component_type_name, remote_component_type.component_params_schema or {}
+        component_type_name, remote_component_type.component_schema or {}
     )
     rows = len(sample_yaml.split("\n")) + 1
     return f"""
