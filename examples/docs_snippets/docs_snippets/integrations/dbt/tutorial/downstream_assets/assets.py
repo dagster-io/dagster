@@ -28,7 +28,7 @@ def raw_customers(context: AssetExecutionContext) -> None:
     context.add_output_metadata({"num_rows": data.shape[0]})
 
 
-@dbt_assets(manifest=dbt_project.manifest_path)
+@dbt_assets(manifest=jaffle_shop_project.manifest_path)
 def jaffle_shop_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
