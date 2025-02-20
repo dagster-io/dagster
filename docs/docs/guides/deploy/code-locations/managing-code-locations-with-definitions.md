@@ -43,7 +43,7 @@ defs = Definitions(
 )
 ```
 
-It is recommenced to include definitions in a Python module named `definitions.py`.
+It is recommended to include definitions in a Python module named `definitions.py`.
 
 
 ## Deploying and loading code locations
