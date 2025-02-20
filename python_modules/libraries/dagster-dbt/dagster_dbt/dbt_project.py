@@ -233,15 +233,16 @@ class DbtProject(IHaveNew):
         if not project_dir.exists():
             raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
 
+        packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
+        if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
+            project_dir = packaged_project_dir
+
+        # Handling the profiles_dir must be done after the packaged_project_dir is handled
         profiles_dir = Path(profiles_dir) if profiles_dir else project_dir
         if not profiles_dir.exists():
             raise DagsterDbtProfilesDirectoryNotFoundError(
                 f"profiles {profiles_dir} does not exist."
             )
-
-        packaged_project_dir = Path(packaged_project_dir) if packaged_project_dir else None
-        if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
-            project_dir = packaged_project_dir
 
         preparer = DagsterDbtProjectPreparer()
 
