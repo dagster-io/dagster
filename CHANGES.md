@@ -15,7 +15,6 @@
 - [dagster-aws] Added AWS RDSResource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
 - [dagster-mysql] Added MySQLResource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
 - [dagster-azure] Added Azure Blob Storage Resource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
-
 - [ui] Expanding/collapsing groups in the Asset Graph will no longer reset your zoom.
 - [ui] Changed the queue criteria dialog to reference pools instead of concurrency keys.
 - [ui] The Instance Backfills page is being removed in the upcoming March 6 release in favor of the new Runs > Backfills view.
@@ -41,6 +40,7 @@
 
 ### Dagster Plus
 
+- A setting is available in agent configuration `direct_snapshot_uploads` (`directSnapshotUploads` in helm) which opts in to a new more efficient scheme for how definitions are handled during code location updates.
 - Introduced new test utilities `event_log` and `dagster_event` in `dagster-cloud-test-infra` to facilitate the creation of test data with sensible defaults for EventLogEntry and DagsterEvent objects.
 - [bigquery-insights][bugfix] Support querying for insights from the configured `execution_project` if defined.
 - [bigquery-insights][bugfix] When `execution_project` is defined in the dbt profile, fall back to fetching the dataset from the dbt profile's `project` if the dataset cannot be found in the `execution_project`.
