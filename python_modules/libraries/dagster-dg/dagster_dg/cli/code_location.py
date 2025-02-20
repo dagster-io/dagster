@@ -47,6 +47,13 @@ def code_location_group():
     default=False,
     help="Do not create a virtual environment for the code location.",
 )
+@click.option(
+    "--populate-cache/--no-populate-cache",
+    is_flag=True,
+    default=True,
+    help="Whether to automatically populate the component type cache for the code location.",
+    hidden=True,
+)
 @dg_global_options
 @click.pass_context
 def code_location_scaffold_command(
@@ -54,6 +61,7 @@ def code_location_scaffold_command(
     name: str,
     use_editable_dagster: Optional[str],
     skip_venv: bool,
+    populate_cache: bool,
     **global_options: object,
 ) -> None:
     """Scaffold a Dagster code location file structure and a uv-managed virtual environment scoped
@@ -101,7 +109,11 @@ def code_location_scaffold_command(
         editable_dagster_root = None
 
     scaffold_code_location(
-        code_location_path, dg_context, editable_dagster_root, skip_venv=skip_venv
+        code_location_path,
+        dg_context,
+        editable_dagster_root,
+        skip_venv=skip_venv,
+        populate_cache=populate_cache,
     )
 
 
@@ -138,7 +150,7 @@ def configure_editor(
     executable_name = "code" if editor == "vscode" else "cursor"
 
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
 
     recommend_yaml_extension(executable_name)
 

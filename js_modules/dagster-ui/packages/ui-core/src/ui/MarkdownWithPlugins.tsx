@@ -133,7 +133,10 @@ export const MarkdownWithPlugins = (props: Props) => {
         {...props}
         className="dagster-markdown"
         remarkPlugins={[gfm]}
-        rehypePlugins={[rehypeHighlight, [rehypeSanitize, sanitizeConfig]]}
+        rehypePlugins={[
+          [rehypeHighlight, {ignoreMissing: true}],
+          [rehypeSanitize, sanitizeConfig],
+        ]}
       />
     </>
   );

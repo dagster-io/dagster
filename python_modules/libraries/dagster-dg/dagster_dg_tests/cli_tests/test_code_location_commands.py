@@ -150,6 +150,27 @@ def test_code_location_scaffold_skip_venv_success() -> None:
         assert not Path("foo-bar/uv.lock").exists()
 
 
+def test_code_location_scaffold_no_populate_cache_success() -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("code-location", "scaffold", "--no-populate-cache", "foo-bar")
+        assert_runner_result(result)
+        assert Path("foo-bar").exists()
+        assert Path("foo-bar/foo_bar").exists()
+        assert Path("foo-bar/foo_bar/lib").exists()
+        assert Path("foo-bar/foo_bar/components").exists()
+        assert Path("foo-bar/foo_bar_tests").exists()
+        assert Path("foo-bar/pyproject.toml").exists()
+
+        # Check venv created
+        assert Path("foo-bar/.venv").exists()
+        assert Path("foo-bar/uv.lock").exists()
+
+        with pushd("foo-bar"):
+            result = runner.invoke("component-type", "list", "--verbose")
+            assert_runner_result(result)
+            assert "CACHE [miss]" in result.output
+
+
 def test_code_location_scaffold_no_use_dg_managed_environment_success() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
@@ -203,10 +224,3 @@ def test_code_location_list_success():
                 foo
             """).strip()
         )
-
-
-def test_code_location_list_outside_deployment_fails() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("code-location", "list")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster deployment directory" in result.output

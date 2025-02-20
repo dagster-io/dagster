@@ -26,12 +26,14 @@ downTraversal: PLUS DIGITS?;
 functionName: SINKS | ROOTS;
 
 // Attribute expressions for specific attributes
-attributeExpr:
-	NAME COLON value				# NameExpr
-	| NAME_SUBSTRING COLON value	# NameSubstringExpr;
+attributeExpr: NAME COLON keyValue # NameExpr;
 
 // Value can be a quoted or unquoted string
 value: QUOTED_STRING | UNQUOTED_STRING;
+keyValue:
+	QUOTED_STRING
+	| UNQUOTED_STRING
+	| UNQUOTED_REGEX_STRING;
 
 // Tokens for operators and keywords
 AND: 'and';
@@ -50,7 +52,6 @@ RPAREN: ')';
 
 // Tokens for attributes
 NAME: 'name';
-NAME_SUBSTRING: 'name_substring';
 
 // Tokens for function names
 SINKS: 'sinks';
@@ -59,6 +60,7 @@ ROOTS: 'roots';
 // Tokens for strings
 QUOTED_STRING: '"' (~["\\\r\n])* '"';
 UNQUOTED_STRING: [a-zA-Z_][a-zA-Z0-9_]*;
+UNQUOTED_REGEX_STRING: [a-zA-Z_*][a-zA-Z0-9_*]*;
 
 // Whitespace
 WS: [ \t\r\n]+ -> skip;

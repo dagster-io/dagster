@@ -26,8 +26,11 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/components/index/5-definitions.py",
     f"{snippets_folder}/guides/components/existing-project/6-initial-definitions.py",
     f"{snippets_folder}/guides/components/existing-project/7-updated-definitions.py",
+    f"{snippets_folder}/guides/components/migrating-definitions/2-definitions-before.py",
+    f"{snippets_folder}/guides/components/migrating-definitions/5-elt-nested-definitions.py",
+    f"{snippets_folder}/guides/components/migrating-definitions/7-definitions-after.py",
+    f"{snippets_folder}/guides/components/migrating-definitions/10-definitions-after-all.py",
 }
-
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in
     # a separate tox environment

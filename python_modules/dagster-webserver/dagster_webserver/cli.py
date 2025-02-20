@@ -22,7 +22,9 @@ from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._serdes import deserialize_value
+from dagster._serdes.ipc import interrupt_on_ipc_shutdown_message
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
+from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
 from dagster_webserver.app import create_app_from_workspace_process_context
@@ -41,6 +43,7 @@ DEFAULT_WEBSERVER_PORT = 3000
 
 DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
 DEFAULT_POOL_RECYCLE = 3600  # 1 hr
+DEFAULT_POOL_MAX_OVERFLOW = 20
 
 
 @click.command(
@@ -120,6 +123,16 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     show_default=True,
 )
 @click.option(
+    "--db-pool-max-overflow",
+    help=(
+        "The maximum overflow size of the sqlalchemy pool. Set to -1 to disable."
+        "Not respected in all configurations."
+    ),
+    default=DEFAULT_POOL_MAX_OVERFLOW,
+    type=click.INT,
+    show_default=True,
+)
+@click.option(
     "--read-only",
     help=(
         "Start server in read-only mode, where all mutations such as launching runs and "
@@ -179,6 +192,13 @@ DEFAULT_POOL_RECYCLE = 3600  # 1 hr
     default=2000,
     show_default=True,
 )
+@click.option(
+    "--shutdown-pipe",
+    type=click.INT,
+    required=False,
+    hidden=True,
+    help="Internal use only. Pass a readable pipe file descriptor to the webserver process that will be monitored for a shutdown signal.",
+)
 @click.version_option(version=__version__, prog_name="dagster-webserver")
 @workspace_options
 def dagster_webserver(
@@ -187,6 +207,7 @@ def dagster_webserver(
     path_prefix: str,
     db_statement_timeout: int,
     db_pool_recycle: int,
+    db_pool_max_overflow: int,
     read_only: bool,
     suppress_warnings: bool,
     uvicorn_log_level: str,
@@ -195,6 +216,7 @@ def dagster_webserver(
     code_server_log_level: str,
     instance_ref: Optional[str],
     live_data_poll_rate: int,
+    shutdown_pipe: Optional[int],
     **other_opts: object,
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -212,13 +234,22 @@ def dagster_webserver(
             " `dagster-webserver` instead."
         )
 
-    with get_possibly_temporary_instance_for_cli(
-        cli_command="dagster-webserver",
-        instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
-        logger=logger,
-    ) as instance:
+    # Set up windows interrupt signals to raise KeyboardInterrupt. Note that these handlers are
+    # not used if we are using the shutdown pipe.
+    setup_interrupt_handlers()
+
+    with contextlib.ExitStack() as stack:
+        if shutdown_pipe:
+            stack.enter_context(interrupt_on_ipc_shutdown_message(shutdown_pipe))
+        instance = stack.enter_context(
+            get_possibly_temporary_instance_for_cli(
+                cli_command="dagster-webserver",
+                instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
+                logger=logger,
+            )
+        )
         # Allow the instance components to change behavior in the context of a long running server process
-        instance.optimize_for_webserver(db_statement_timeout, db_pool_recycle)
+        instance.optimize_for_webserver(db_statement_timeout, db_pool_recycle, db_pool_max_overflow)
 
         with WorkspaceProcessContext(
             instance,

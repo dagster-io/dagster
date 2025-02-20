@@ -17,7 +17,7 @@ from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
-from dagster_dg.utils import DgClickCommand, exit_with_error, get_uv_run_executable_path, pushd
+from dagster_dg.utils import DgClickCommand, exit_with_error, pushd
 
 T = TypeVar("T")
 
@@ -88,7 +88,7 @@ def dev_command(
     location.
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    dg_context = DgContext.for_deployment_or_code_location_environment(Path.cwd(), cli_config)
 
     forward_options = [
         *_format_forwarded_option("--code-server-log-level", code_server_log_level),
@@ -102,8 +102,11 @@ def dev_command(
     # In a code location context, we can just run `dagster dev` directly, using `dagster` from the
     # code location's environment.
     if dg_context.is_code_location:
-        cmd = ["uv", "run", "dagster", "dev", *forward_options]
-        cmd_location = get_uv_run_executable_path("dagster")
+        cmd_location = dg_context.get_executable("dagster")
+        if dg_context.use_dg_managed_environment:
+            cmd = ["uv", "run", "dagster", "dev", *forward_options]
+        else:
+            cmd = [cmd_location, "dev", *forward_options]
         temp_workspace_file_cm = nullcontext()
 
     # In a deployment context, dg dev will construct a temporary

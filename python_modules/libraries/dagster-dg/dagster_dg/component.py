@@ -36,7 +36,7 @@ def _get_local_type_mapping_from_raw_data(
 ) -> Mapping[LocalComponentKey, RemoteComponentType]:
     data = {}
     for typename, metadata in raw_data.items():
-        data[LocalComponentKey.from_type(typename, dirpath)] = RemoteComponentType(**metadata)
+        data[LocalComponentKey.from_typename(typename, dirpath)] = RemoteComponentType(**metadata)
     return data
 
 

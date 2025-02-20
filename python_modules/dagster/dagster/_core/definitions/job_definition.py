@@ -637,11 +637,11 @@ class JobDefinition(IHasInternalInit):
 
 
         Args:
-            run_config (Optional[Mapping[str, Any]]:
+            run_config (Optional[Mapping[str, Any]]):
                 The configuration for the run
             instance (Optional[DagsterInstance]):
                 The instance to execute against, an ephemeral one will be used if none provided.
-            partition_key: (Optional[str])
+            partition_key (Optional[str]):
                 The string partition key that specifies the run config to execute. Can only be used
                 to select run config for jobs with partitioned config.
             raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.

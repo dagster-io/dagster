@@ -183,8 +183,10 @@ def test_dynamic_subcommand_help_message():
                 "simple_pipes_script_asset@dagster_components.test",
                 "--help",
             )
+            # Strip interpreter logging line
+            output = "\n".join(result.output.split("\n")[1:])
         assert match_terminal_box_output(
-            result.output.strip(),
+            output.strip(),
             textwrap.dedent("""
 
                  Usage: dg component scaffold [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
@@ -208,6 +210,9 @@ def test_dynamic_subcommand_help_message():
                 │                                                                          use.                                        │
                 │ --use-dg-managed-environment    --no-use-dg-managed-environment          Enable management of the virtual            │
                 │                                                                          environment with uv.                        │
+                │ --require-local-venv            --no-require-local-venv                  Require use of a local virtual environment  │
+                │                                                                          (`.venv` found in ancestors of the working  │
+                │                                                                          directory).                                 │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
         """).strip(),
         )

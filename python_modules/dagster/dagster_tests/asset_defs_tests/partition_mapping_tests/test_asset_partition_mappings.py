@@ -183,7 +183,7 @@ def test_from_graph():
     ).success
 
 
-def test_identity_mapping_between_time_window_partitions():
+def test_downstream_identity_mapping_between_time_window_partitions():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=1))
     def asset1():
         pass
@@ -215,6 +215,41 @@ def test_identity_mapping_between_time_window_partitions():
 
         assert child_subset.expensively_compute_asset_partitions() == {
             AssetKeyPartitionKey(asset2.key, "2025-02-05"),
+        }
+
+
+def test_upstream_identity_mapping_between_time_window_partitions():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=0))
+    def asset1():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=1),
+        ins={"asset1": AssetIn(partition_mapping=IdentityPartitionMapping())},
+    )
+    def asset2(asset1):
+        pass
+
+    defs = Definitions(assets=[asset1, asset2])
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(
+            defs, instance, effective_dt=create_datetime(2025, 2, 6)
+        )
+
+        # at midnight on 2025-02-06, 2025-02-06 exists on child asset but not on parent asset
+        child_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            asset2.key,
+            {
+                AssetKeyPartitionKey(asset2.key, "2025-02-05"),
+                AssetKeyPartitionKey(asset2.key, "2025-02-06"),
+            },
+        )
+
+        parent_subset = asset_graph_view.compute_parent_subset(asset1.key, child_subset)
+
+        assert parent_subset.expensively_compute_asset_partitions() == {
+            AssetKeyPartitionKey(asset1.key, "2025-02-05"),
         }
 
 

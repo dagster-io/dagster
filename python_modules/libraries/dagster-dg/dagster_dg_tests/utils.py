@@ -28,20 +28,23 @@ from dagster_dg.utils import (
 from typing_extensions import Self
 
 
+def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    install_args: list[str] = []
+    for path in libraries_rel_paths:
+        full_path = Path(dagster_git_repo_dir) / "python_modules" / path
+        install_args.extend(["-e", str(full_path)])
+    install_to_venv(venv_path, install_args)
+
+
 @contextmanager
 def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
-    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    libraries_paths = [
-        Path(dagster_git_repo_dir) / "python_modules" / name
-        for name in ["dagster", "libraries/dagster-components", "dagster-pipes"]
-    ]
     with runner.isolated_filesystem():
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
-        install_args: list[str] = []
-        for path in libraries_paths:
-            install_args.extend(["-e", str(path)])
-        install_to_venv(venv_path, install_args)
+        _install_libraries_to_venv(
+            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes"]
+        )
 
         venv_exec_path = get_venv_executable(venv_path).parent
         assert (venv_exec_path / "python").exists() or (venv_exec_path / "python.exe").exists()
@@ -59,8 +62,13 @@ def isolated_example_deployment_foo(
     with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
         runner.invoke("deployment", "scaffold", "foo")
         with pushd("foo"):
+            # Create a venv capable of running dagster dev
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
+                venv_path = Path.cwd() / ".venv"
+                _install_libraries_to_venv(
+                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql"]
+                )
             yield
 
 
@@ -71,6 +79,7 @@ def isolated_example_code_location_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_deployment: bool = True,
     skip_venv: bool = False,
+    populate_cache: bool = True,
     component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
     """Scaffold a code location named foo_bar in an isolated filesystem.
@@ -96,6 +105,7 @@ def isolated_example_code_location_foo_bar(
             "--use-editable-dagster",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
+            *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
         )
         with clear_module_from_cache("foo_bar"), pushd(code_loc_path):
@@ -111,13 +121,16 @@ def isolated_example_code_location_foo_bar(
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     lib_package_name: Optional[str] = None,
+    skip_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    with isolated_components_venv(runner) as venv_path:
+    with (
+        runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
+    ) as venv_path:
         # We just use the code location generation function and then modify it to be a component library
         # only.
-        runner.invoke(
+        result = runner.invoke(
             "code-location",
             "scaffold",
             "--use-editable-dagster",
@@ -125,6 +138,7 @@ def isolated_example_component_library_foo_bar(
             "--skip-venv",
             "foo-bar",
         )
+        assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
             shutil.rmtree(Path("foo_bar/components"))
 
@@ -144,7 +158,9 @@ def isolated_example_component_library_foo_bar(
                     Path(*lib_package_name.split(".")).mkdir(exist_ok=True)
 
             # Install the component library into our venv
-            install_to_venv(venv_path, ["-e", "."])
+            if not skip_venv:
+                assert venv_path
+                install_to_venv(venv_path, ["-e", "."])
             yield
 
 
@@ -268,6 +284,35 @@ def match_terminal_box_output(output: str, expected_output: str):
     return True
 
 
+# Windows sometimes provides short (8.3) paths in output, which can be difficult to match exactly.
+def normalize_windows_path(path: str) -> str:
+    """Convert a Windows short (8.3) path to its long form.
+    If the path does not exist or conversion fails, returns the original path.
+    """
+    import ctypes
+
+    if sys.platform != "win32":
+        raise RuntimeError("This function is only supported on Windows.")
+    # Create a buffer for the result
+    buffer_len = 260  # MAX_PATH typically 260 for Windows, though can be longer in practice
+    buffer_ = ctypes.create_unicode_buffer(buffer_len)
+
+    # Call GetLongPathNameW
+    get_len = ctypes.windll.kernel32.GetLongPathNameW(path, buffer_, buffer_len)
+
+    # If the buffer wasn't large enough, retry with bigger size
+    if get_len > buffer_len:
+        buffer_len = get_len
+        buffer_ = ctypes.create_unicode_buffer(buffer_len)
+        get_len = ctypes.windll.kernel32.GetLongPathNameW(path, buffer_, buffer_len)
+
+    # get_len == 0 indicates error (e.g. file not found, path doesn't exist)
+    if get_len == 0:
+        return path
+
+    return buffer_.value
+
+
 # ########################
 # ##### CLI RUNNER
 # ########################
@@ -287,6 +332,7 @@ class ProxyRunner:
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
+        require_local_venv: bool = True,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
@@ -300,6 +346,7 @@ class ProxyRunner:
                 "--cache-dir",
                 str(cache_dir),
                 *(["--verbose"] if verbose else []),
+                *(["--no-require-local-venv"] if not require_local_venv else []),
                 *(["--disable-cache"] if disable_cache else []),
             ]
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
@@ -321,7 +368,10 @@ class ProxyRunner:
         # For some reason the context setting `max_content_width` is not respected when using the
         # CliRunner, so we have to set it manually.
         return self.original.invoke(
-            dg_cli, all_args, terminal_width=self.console_width, **invoke_kwargs
+            dg_cli,
+            all_args,
+            terminal_width=self.console_width,
+            **invoke_kwargs,
         )
 
     @contextmanager

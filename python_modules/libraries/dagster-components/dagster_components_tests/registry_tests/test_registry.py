@@ -1,13 +1,20 @@
+import json
 import os
 import subprocess
-import sys
 import tempfile
 import textwrap
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Callable, Optional
 
-from dagster_dg.component import GlobalComponentKey
+from dagster._utils import pushd
+from dagster_components.utils import ensure_dagster_components_tests_import
+from dagster_dg.utils import get_venv_executable
+
+ensure_dagster_components_tests_import()
+
+from dagster_components_tests.utils import modify_toml, set_toml_value
 
 
 @contextmanager
@@ -16,15 +23,17 @@ def _temp_venv(install_args: Sequence[str]) -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as tmpdir:
         venv_dir = Path(tmpdir) / ".venv"
         subprocess.check_call(["uv", "venv", str(venv_dir)])
-        python_executable = (
-            venv_dir
-            / ("Scripts" if sys.platform == "win32" else "bin")
-            / ("python.exe" if sys.platform == "win32" else "python")
-        )
         subprocess.check_call(
-            ["uv", "pip", "install", "--python", str(python_executable), *install_args]
+            [
+                "uv",
+                "pip",
+                "install",
+                "--python",
+                str(get_venv_executable(venv_dir, "python")),
+                *install_args,
+            ]
         )
-        yield python_executable
+        yield venv_dir
 
 
 COMPONENT_PRINT_SCRIPT = """
@@ -36,14 +45,22 @@ for component_key in list(registry.keys()):
 """
 
 
-def _get_component_types_in_python_environment(python_executable: Path) -> Sequence[str]:
-    with tempfile.NamedTemporaryFile(mode="w") as f:
-        f.write(COMPONENT_PRINT_SCRIPT)
-        f.flush()
-        result = subprocess.run(
-            [str(python_executable), f.name], capture_output=True, text=True, check=False
-        )
-        return result.stdout.strip().split("\n")
+def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedProcess:
+    assert venv_root.exists()
+    dagster_components_path = get_venv_executable(venv_root, "dagster-components")
+    assert dagster_components_path.exists()
+    result = subprocess.run(
+        [str(dagster_components_path), "list", "component-types"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result
+
+
+def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]:
+    result = _get_component_print_script_result(venv_root)
+    return list(json.loads(result.stdout).keys())
 
 
 def _find_repo_root():
@@ -151,40 +168,65 @@ from dagster_foo.lib.sub import TestComponent2
 """
 
 
-def test_components_from_third_party_lib(tmpdir):
-    with tmpdir.as_cwd():
-        # Create test package that defines some components
-        os.makedirs("dagster-foo")
-        with open("dagster-foo/pyproject.toml", "w") as f:
-            f.write(DAGSTER_FOO_PYPROJECT_TOML)
+@contextmanager
+def isolated_venv_with_component_lib_dagster_foo(
+    pre_install_hook: Optional[Callable[[], None]] = None,
+):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with pushd(tmpdir):
+            # Create test package that defines some components
+            os.makedirs("dagster-foo")
+            with open("dagster-foo/pyproject.toml", "w") as f:
+                f.write(DAGSTER_FOO_PYPROJECT_TOML)
 
-        os.makedirs("dagster-foo/dagster_foo/lib/sub")
+            os.makedirs("dagster-foo/dagster_foo/lib/sub")
 
-        with open("dagster-foo/dagster_foo/lib/__init__.py", "w") as f:
-            f.write(DAGSTER_FOO_LIB_ROOT)
+            with open("dagster-foo/dagster_foo/lib/__init__.py", "w") as f:
+                f.write(DAGSTER_FOO_LIB_ROOT)
 
-        with open("dagster-foo/dagster_foo/lib/sub/__init__.py", "w") as f:
-            f.write(_generate_test_component_source(2))
+            with open("dagster-foo/dagster_foo/lib/sub/__init__.py", "w") as f:
+                f.write(_generate_test_component_source(2))
 
-        # Need pipes because dependency of dagster
-        deps = [
-            "-e",
-            _get_editable_package_root("dagster"),
-            "-e",
-            _get_editable_package_root("dagster-components"),
-            "-e",
-            _get_editable_package_root("dagster-pipes"),
-            "-e",
-            "dagster-foo",
-        ]
+            if pre_install_hook:
+                pre_install_hook()
 
-        with _temp_venv(deps) as python_executable:
-            component_types = _get_component_types_in_python_environment(python_executable)
-            assert (
-                GlobalComponentKey(name="test_component_1", namespace="dagster_foo").to_typename()
-                in component_types
+            # Need pipes because dependency of dagster
+            deps = [
+                "-e",
+                _get_editable_package_root("dagster"),
+                "-e",
+                _get_editable_package_root("dagster-components"),
+                "-e",
+                _get_editable_package_root("dagster-pipes"),
+                "-e",
+                "dagster-foo",
+            ]
+
+            with _temp_venv(deps) as venv_root:
+                yield venv_root
+
+
+def test_components_from_third_party_lib():
+    with isolated_venv_with_component_lib_dagster_foo() as venv_root:
+        component_types = _get_component_types_in_python_environment(venv_root)
+        assert "test_component_1@dagster_foo" in component_types
+        assert "test_component_2@dagster_foo" in component_types
+
+
+def test_bad_entry_point_error_message():
+    # Modify the entry point to point to a non-existent module. This has to be done before the
+    # package is installed, which is why we use a pre-install hook.
+    def pre_install_hook():
+        with modify_toml(Path("dagster-foo/pyproject.toml")) as toml:
+            set_toml_value(
+                toml,
+                ("project", "entry-points", "dagster.components", "dagster_foo"),
+                "fake.module",
             )
-            assert (
-                GlobalComponentKey(name="test_component_2", namespace="dagster_foo").to_typename()
-                in component_types
-            )
+
+    with isolated_venv_with_component_lib_dagster_foo(pre_install_hook) as venv_root:
+        result = _get_component_print_script_result(venv_root)
+        assert (
+            "Error loading entry point `dagster_foo` in group `dagster.components`" in result.stderr
+        )
+        assert result.returncode != 0

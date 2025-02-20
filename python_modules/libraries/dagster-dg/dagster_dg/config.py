@@ -39,6 +39,10 @@ class DgConfig:
         builitin_component_lib (str): The name of the builtin component library to load.
         use_dg_managed_environment (bool): If True, `dg` will build and manage a virtual environment
             using `uv`. Note that disabling the managed enviroment will also disable caching.
+        require_local_venv (bool): If True, commands that access an environment with
+            dagster-components will only use a `.venv` directory discovered in the ancestor tree. If no
+            `.venv` directory is discovered, an error will be raised. Note that this disallows the use
+            of both the system python environment and non-local but activated virtual environments.
     """
 
     disable_cache: bool = False
@@ -46,6 +50,7 @@ class DgConfig:
     verbose: bool = False
     builtin_component_lib: str = DEFAULT_BUILTIN_COMPONENT_LIB
     use_dg_managed_environment: bool = True
+    require_local_venv: bool = True
     is_component_lib: bool = False
     is_code_location: bool = False
     is_deployment: bool = False
@@ -94,6 +99,7 @@ class DgPartialConfig(TypedDict, total=False):
     verbose: bool
     builtin_component_lib: str
     use_dg_managed_environment: bool
+    require_local_venv: bool
     component_package: str
     component_lib_package: str
     is_code_location: bool
@@ -118,6 +124,8 @@ def _normalize_dg_partial_config(raw_dict: Mapping[str, object]) -> DgPartialCon
         config["use_dg_managed_environment"], bool
     ):
         raise DgValidationError("`use_dg_managed_environment` must be a boolean.")
+    if "require_local_venv" in config and not isinstance(config["require_local_venv"], bool):
+        raise DgValidationError("`require_local_venv` must be a boolean.")
     if "component_package" in config and not isinstance(config["component_package"], str):
         raise DgValidationError("`component_package` must be a string.")
     if "component_lib_package" in config and not isinstance(config["component_lib_package"], str):

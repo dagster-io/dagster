@@ -4,7 +4,6 @@ import json
 import os
 import posixpath
 import re
-import shutil
 import subprocess
 import sys
 import textwrap
@@ -37,6 +36,16 @@ def is_windows() -> bool:
 
 def is_macos() -> bool:
     return sys.platform == "darwin"
+
+
+def resolve_local_venv(start_path: Path) -> Optional[Path]:
+    path = start_path
+    while path != path.parent:
+        venv_path = path / ".venv"
+        if venv_path.exists():
+            return venv_path
+        path = path.parent
+    return None
 
 
 def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
@@ -100,10 +109,6 @@ def is_valid_json(value: str) -> bool:
         return True
     except json.JSONDecodeError:
         return False
-
-
-def is_executable_available(command: str) -> bool:
-    return bool(shutil.which(command)) or bool(get_uv_run_executable_path(command))
 
 
 # Short for "normalize path"-- use this to get the platform-correct string representation of an
@@ -329,7 +334,9 @@ def exit_with_error(error_message: str) -> Never:
 
 def _format_error_message(message: str) -> str:
     # width=10000 unwraps any hardwrapping
-    return textwrap.dedent(textwrap.fill(message, width=10000))
+    dedented = textwrap.dedent(message).strip()
+    paragraphs = [textwrap.fill(p, width=10000) for p in dedented.split("\n\n")]
+    return "\n\n".join(paragraphs)
 
 
 def generate_missing_component_type_error_message(component_key_str: str) -> str:
@@ -339,6 +346,22 @@ def generate_missing_component_type_error_message(component_key_str: str) -> str
         that provides `{component_key_str}` into your environment.
     """
 
+
+def generate_missing_dagster_components_in_local_venv_error_message(venv_path: str) -> str:
+    return f"""
+        Could not find the `dagster-components` executable in the virtual environment at {venv_path}.
+        The `dagster-components` executable is necessary for `dg` to interface with Python environments
+        containing Dagster definitions. Ensure that the virtual environment has the `dagster-components`
+        package installed.
+    """
+
+
+NO_LOCAL_VENV_ERROR_MESSAGE = """
+This command resolves the `dagster-components` executable from a virtual environment in an ancestor
+directory, but no virtual environment (`.venv` dir) could be found. Please create a virtual
+environment in an ancestor directory or use the `--no-require-local-venv` flag to allow use of
+`dagster-components` from the ambient Python environment.
+"""
 
 NOT_DEPLOYMENT_ERROR_MESSAGE = """
 This command must be run inside a Dagster deployment directory. Ensure that there is a
@@ -351,11 +374,15 @@ This command must be run inside a Dagster code location directory. Ensure that t
 pyproject.toml has `tool.dg.is_code_location = true` set.
 """
 
+NOT_DEPLOYMENT_OR_CODE_LOCATION_ERROR_MESSAGE = """
+This command must be run inside a Dagster deployment or code location directory. Ensure that the
+nearest pyproject.toml has `tool.dg.is_code_location = true` or `tool.dg.is_deployment = true` set.
+"""
+
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
 pyproject.toml has `tool.dg.is_component_lib = true` set.
 """
-
 
 MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = """
 Could not find the `dagster-components` executable on the system path.
@@ -470,15 +497,3 @@ def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object
     path_list = list(path)
     inner_dict = get_toml_value(doc, path_list[:-1], dict)
     inner_dict[path_list[-1]] = value
-
-
-def get_executable_path(executable_name: str) -> Optional[str]:
-    return shutil.which(executable_name)
-
-
-def get_uv_run_executable_path(executable_name: str) -> Optional[str]:
-    uv_run_cmd = ["uv", "run", "which", executable_name]
-    try:
-        return subprocess.check_output(uv_run_cmd).decode("utf-8").strip()
-    except (subprocess.CalledProcessError, NotADirectoryError, FileNotFoundError):
-        return None

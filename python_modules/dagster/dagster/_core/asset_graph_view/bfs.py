@@ -58,7 +58,7 @@ def bfs_filter_asset_graph_view(
 
     visited_graph_subset = initial_asset_graph_subset
 
-    result: AssetGraphSubset = AssetGraphSubset.empty()
+    result: AssetGraphSubset = AssetGraphSubset.create_empty_subset()
     failed_reasons: Sequence[tuple[AssetGraphSubset, str]] = []
 
     asset_graph = asset_graph_view.asset_graph

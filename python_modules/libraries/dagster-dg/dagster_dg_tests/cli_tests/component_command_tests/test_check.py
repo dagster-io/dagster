@@ -7,6 +7,7 @@ from typing import Optional
 
 import pytest
 from dagster_components.test.test_cases import (
+    BASIC_COMPONENT_TYPE_FILEPATH,
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
     BASIC_VALID_VALUE,
@@ -21,7 +22,6 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_code_location_foo_bar,
-    isolated_example_deployment_foo,
     modify_pyproject_toml,
 )
 
@@ -41,7 +41,16 @@ CLI_TEST_CASES = [
         should_error=True,
         check_error_msg=msg_includes_all_of(
             "component.yaml:1",
-            "Component type 'my_component_does_not_exist@__init__.py' not found",
+            "Component type 'my_component_does_not_exist@file:__init__.py' not found",
+        ),
+    ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_extra_top_level_value",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:7",
+            "'an_extra_top_level_value' was unexpected",
         ),
     ),
 ]
@@ -62,20 +71,6 @@ def create_code_location_from_components(
                 shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
 
         yield Path.cwd()
-
-
-def test_component_check_outside_code_location_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("component", "check")
-        assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster code location directory" in result.output
-
-
-def test_list_components_with_no_dagster_components_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        result = runner.invoke("component", "check", env={"PATH": "/dev/null"})
-        assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
 
 
 def test_component_check_succeeds_non_default_component_package() -> None:

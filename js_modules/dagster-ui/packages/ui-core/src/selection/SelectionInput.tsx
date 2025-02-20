@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
-import CodeMirror, {Editor} from 'codemirror';
+import CodeMirror, {Editor, EditorChange} from 'codemirror';
 import type {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
 import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
@@ -70,6 +70,7 @@ export const SelectionAutoCompleteInput = ({
   const [showResults, setShowResults] = useState({current: false});
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
+  const cursorPositionRef = useUpdatingRef(cursorPosition);
 
   const {autoCompleteResults, loading} = useAutoComplete({
     line: innerValue,
@@ -126,7 +127,7 @@ export const SelectionAutoCompleteInput = ({
         }
       });
 
-      cmInstance.current.on('change', (instance: Editor) => {
+      cmInstance.current.on('change', (instance: Editor, changeObj: EditorChange) => {
         const newValue = instance.getValue().replace(/\s+/g, ' ');
         const cursor = instance.getCursor();
         if (instance.getValue() !== newValue) {
@@ -137,7 +138,11 @@ export const SelectionAutoCompleteInput = ({
           instance.setCursor({...cursor, ch: cursor.ch - difference});
         }
         setInnerValue(newValue);
-        setShowResults({current: true});
+        if (changeObj.origin !== 'setValue') {
+          // If we're programmatically setting the value, we don't want to display the dropdown
+          // automatically.
+          setShowResults({current: true});
+        }
         adjustHeight();
         setCursorPosition(instance.getCursor().ch);
       });
@@ -156,8 +161,13 @@ export const SelectionAutoCompleteInput = ({
 
       cmInstance.current.on('cursorActivity', (instance: Editor) => {
         applyStaticSyntaxHighlighting(instance);
-        setCursorPosition(instance.getCursor().ch);
-        setShowResults({current: true});
+        const nextCursorPosition = instance.getCursor().ch;
+        if (cursorPositionRef.current !== nextCursorPosition) {
+          // If the cursor has moved then update the cursor position
+          // and show the auto-complete results.
+          setCursorPosition(nextCursorPosition);
+          setShowResults({current: true});
+        }
       });
 
       requestAnimationFrame(() => {
@@ -190,13 +200,13 @@ export const SelectionAutoCompleteInput = ({
   // Update CodeMirror when value prop changes
   useLayoutEffect(() => {
     const noNewLineValue = value.replace(/\n/g, ' ');
-    if (cmInstance.current && cmInstance.current.getValue() !== noNewLineValue) {
+    const currentValue = cmInstance.current?.getValue();
+    if (cmInstance.current && currentValue !== noNewLineValue) {
       const instance = cmInstance.current;
       const cursor = instance.getCursor();
       instance.setValue(noNewLineValue);
       instance.setCursor(cursor);
       setCursorPosition(cursor.ch);
-      setShowResults({current: true});
       requestAnimationFrame(() => {
         // Reset selected index on value change
         setSelectedIndex({current: 0});
