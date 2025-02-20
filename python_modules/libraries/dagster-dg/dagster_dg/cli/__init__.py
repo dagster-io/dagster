@@ -8,6 +8,7 @@ from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.cli.info import info_group
+from dagster_dg.cli.init import init_command
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.component import RemoteComponentRegistry
@@ -30,6 +31,7 @@ def create_dg_cli():
             "list": list_group,
             "scaffold": scaffold_group,
             "dev": dev_command,
+            "init": init_command,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,

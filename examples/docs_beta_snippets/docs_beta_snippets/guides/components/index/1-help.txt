@@ -39,6 +39,8 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ dev                Start a local deployment of your Dagster project.                   │
 │ docs               Commands for generating docs from your Dagster code.                │
 │ info               Commands for operating on components types.                         │
+│ init               Initialize a new Dagster workspace and a first project within that  │
+│                    workspace.                                                          │
 │ list               Commands for listing Dagster entities.                              │
 │ scaffold           Commands for scaffolding Dagster code.                              │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯

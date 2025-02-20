@@ -33,7 +33,9 @@ DEFAULT_COMPONENT_TYPE = "simple_asset@dagster_components.test"
 NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold", "code-location"), "foo"),
     CommandSpec(("scaffold", "deployment"), "foo"),
+    CommandSpec(("init",), "foo"),
 ]
+
 
 COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold", "component-type"), "foo"),

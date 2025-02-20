@@ -25,6 +25,7 @@ def scaffold_deployment(path: Path, dg_context: DgContext) -> None:
             os.path.dirname(__file__), "templates", "DEPLOYMENT_NAME_PLACEHOLDER"
         ),
     )
+    click.echo(f"Scaffolded files for Dagster deployment in {path}.")
 
 
 # ########################
@@ -93,6 +94,20 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> Sequence[Path]:
     ]
 
 
+def scaffold_workspace(
+    path: Path,
+) -> None:
+    scaffold_subtree(
+        path=path,
+        name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
+        templates_path=os.path.join(
+            os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER"
+        ),
+        project_name="workspace",  # Allow customization?
+    )
+    click.echo(f"Scaffolded files for Dagster workspace at {path}.")
+
+
 def scaffold_code_location(
     path: Path,
     dg_context: DgContext,
@@ -121,6 +136,7 @@ def scaffold_code_location(
         code_location_name=path.name,
         uv_sources=uv_sources,
     )
+    click.echo(f"Scaffolded files for Dagster project in {path}.")
 
     # Build the venv
     cl_dg_context = dg_context.with_root_path(path)
