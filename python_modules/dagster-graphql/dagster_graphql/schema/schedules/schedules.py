@@ -1,6 +1,6 @@
 import time
 from collections.abc import Sequence
-from typing import Optional
+from typing import List, Optional
 
 import dagster._check as check
 import graphene
@@ -145,33 +145,18 @@ class GrapheneSchedule(graphene.ObjectType):
         limit: Optional[int] = None,
         until: Optional[float] = None,
     ):
+        # Default cursor to current time
         cursor = cursor or time.time()
+        # Default limit to 10 ticks if no other bound is provided
+        limit = (limit or 10) if until is None else limit
+        
+        future_ticks: List[GrapheneDryRunInstigationTick] = []
+        for val in self._remote_schedule.execution_time_iterator(cursor):
+            # Add ticks before until timestamp and/or before limit is reached
+            if (until is None or val.timestamp() < until) and (limit is None or len(future_ticks) < limit):
+                future_ticks.append(GrapheneDryRunInstigationTick(self._remote_schedule.schedule_selector, val.timestamp()))
 
-        tick_times: list[float] = []
-        time_iter = self._remote_schedule.execution_time_iterator(cursor)
-
-        if until:
-            currentTime = None
-            while (not currentTime or currentTime < until) and (
-                limit is None or len(tick_times) < limit
-            ):
-                try:
-                    currentTime = next(time_iter).timestamp()
-                    if currentTime < until:
-                        tick_times.append(currentTime)
-                except StopIteration:
-                    break
-        else:
-            limit = limit or 10
-            for _ in range(limit):
-                tick_times.append(next(time_iter).timestamp())
-
-        schedule_selector = self._remote_schedule.schedule_selector
-        future_ticks = [
-            GrapheneDryRunInstigationTick(schedule_selector, tick_time) for tick_time in tick_times
-        ]
-
-        new_cursor = tick_times[-1] + 1 if tick_times else cursor
+        new_cursor = future_ticks[-1].timestamp + 1 if future_ticks else cursor
         return GrapheneDryRunInstigationTicks(results=future_ticks, cursor=new_cursor)
 
     def resolve_futureTick(self, _graphene_info: ResolveInfo, tick_timestamp: int):
