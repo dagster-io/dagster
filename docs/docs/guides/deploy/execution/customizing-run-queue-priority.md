@@ -3,11 +3,11 @@ title: "Customizing run queue priority"
 sidebar_position: 400
 ---
 
-When using a [run coordinator](run-coordinators), you can define custom prioritization rules for your Dagster instance.
+You can define custom prioritization rules for your Dagster instance using concurrency settings.
 
 By the end of this guide, you’ll:
 
-- Understand how the run queue works
+- Understand how run concurrency works
 - Learn how to define custom prioritization rules
 - Understand how prioritization rules and concurrency limits work together
 
@@ -21,7 +21,7 @@ For example, if three runs are submitted in the following order:
 2. Run `B`
 3. Run `C`
 
-Then the runs will be launched in the same order: Run `A`, then `B`, then `C`. This will be true unless there are [tag concurrency limits](/guides/operate/managing-concurrency) or prioritization rules in place, which we’ll cover later in this guide.
+Then the runs will be launched in the same order: Run `A`, then `B`, then `C`. This will be true unless there are [pool or run tag concurrency limits](/guides/operate/managing-concurrency) in place.  The launch order can also be customized using prioritization rules, which we’ll cover later in this guide.
 
 By default, all runs have a priority of `0`. Dagster launches runs with higher priority first. If multiple runs have the same priority, Dagster will launch the runs in the order they're submitted to the queue.
 
@@ -72,9 +72,12 @@ Without configured limits, these runs will be launched in the order they were su
 Before any more runs are launched, let’s add the following configuration to our instance’s settings:
 
 ```yaml
-tag_concurrency_limits:
-  - key: "team"
-    limit: 1
+concurrency:
+  runs:
+    tag_concurrency_limits:
+      - key: "team"
+        limit: 1
+
 ```
 
 Now, runs `A` and `B` can’t execute concurrently, while there isn’t a limit on run `C`. Assuming each run executes for a minimum of five minutes, the order in which the runs are launched will change.

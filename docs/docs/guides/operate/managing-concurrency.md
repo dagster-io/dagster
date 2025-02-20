@@ -122,7 +122,7 @@ When limiting concurrency, you might run into some issues until you get the conf
 This only applies to Dagster Open Source.
 :::
 
-The `run_queue` key may not be set in your instance's settings. In the Dagster UI, navigate to **Deployment > Configuration** and verify that the `run_queue` key is set.
+If you are running a version older than `1.10.0`, you may need to manually configure your deployment to enable run queueing by setting the `run_queue` key in your instance's settings. In the Dagster UI, navigate to **Deployment > Configuration** and verify that the `run_queue` key is set.
 
 ### Runs remaining in QUEUED status
 

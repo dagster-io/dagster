@@ -12,12 +12,16 @@ Refer to the [Managing deployments in Dagster+ guide](managing-deployments) for 
 Settings are formatted using YAML. For example:
 
 ```yaml
-run_queue:
-  max_concurrent_runs: 10
-  tag_concurrency_limits:
-    - key: "database"
-      value: "redshift"
-      limit: 5
+concurrency:
+  pools:
+    granularity: "run"
+    default_limit: 1
+  runs:
+    max_concurrent_runs: 10
+    tag_concurrency_limits:
+      - key: "database"
+        value: "redshift"
+        limit: 5
 
 run_monitoring:
   start_timeout_seconds: 1200
@@ -34,29 +38,36 @@ sso_default_role: EDITOR
 
 For each deployment, you can configure settings for:
 
-- [Run queue](#run-queue-run_queue)
+- [Concurrency](#concurrency-concurrency)
 - [Run monitoring](#run-monitoring-run_monitoring)
 - [Run retries](#run-retries-run_retries)
 - [SSO default role](#sso-default-role)
 - [Non-isolated runs](#non-isolated-runs)
 
-### Run queue (run_queue)
+### Concurrency (concurrency)
 
-The `run_queue` settings allow you to specify how many runs can execute concurrently in the deployment.
+The `concurrency` settings allow you to specify concurrency controls for runs and pools in the deployment. Refer to the [Managing concurrency guide](../../../../guides/operate/managing-concurrency.md) for more information about concurrency.
 
 ```yaml
-run_queue:
-  max_concurrent_runs: 10
-  tag_concurrency_limits:
-    - key: "database"
-      value: "redshift"
-      limit: 5
+concurrency:
+  pools:
+    granularity: "run"
+    default_limit: 1
+  runs:
+    max_concurrent_runs: 10
+    tag_concurrency_limits:
+      - key: "database"
+        value: "redshift"
+        limit: 5
 ```
 
 | Property | Description |
 | --- | --- |
-| run_queue.max_concurrent_runs | The maximum number of runs that are allowed to be in progress at once. Set to 0 to stop any runs from launching. Negative values aren't permitted. <ul><li>**Default** - `10` (20 minutes)</li><li>**Maximum** - `500` ([Hybrid](/dagster-plus/deployment/deployment-types/hybrid/)), `50` ([Serverless](/dagster-plus/deployment/deployment-types/serverless/))</li></ul> |
-| run_queue.tag_concurrency_limits | A list of limits applied to runs with particular tags. <ul><li>**Defaults** - `[]`</li></ul> Each list item may have the following properties: <ul><li>`key`</li><li>`value`</li><ul><li>If defined, the `limit` is applied only to the `key-value` pair.</li><li>If set to a dict with applyLimitPerUniqueValue: true, the `limit` is applied to the number of unique values for the `key`.</li><li>If set to a dict with `applyLimitPerUniqueValue: true`, the limit is applied to the number of unique values for the `key`.</li></ul><li>`limit`</li></ul> |
+| concurrency.pools.default_limit | The default limit for pools that do not have an explicitly set limit. |
+| concurrency.pools.granularity | The granularity at which pool limits are applied. Can be one of `op` or `run`.<ul><li>**Defaults** - `op`</li></ul> If set to `run`, the pool limit caps the number of runs that can be in progress that contain an op marked with the given pool.  If set to `op`, the pool limit caps the number of ops that can be in progress across all runs.|
+| concurrency.pools.op_granularity_run_buffer | The number of runs over the available pool limit that can be in progress when the pool granularity is set to `op`. Even though the pool granularity is set to `op`, runs are only dequeued if there is at least one op in the run that will not be blocked by a pool limit, to limit the number of active run workers. |
+| concurrency.runs.max_concurrent_runs | The maximum number of runs that are allowed to be in progress at once. Set to 0 to stop any runs from launching. Negative values aren't permitted. <ul><li>**Default** - `10` (20 minutes)</li><li>**Maximum** - `500` ([Hybrid](/dagster-plus/deployment/deployment-types/hybrid/)), `50` ([Serverless](/dagster-plus/deployment/deployment-types/serverless/))</li></ul> |
+| concurrency.runs.tag_concurrency_limits | A list of limits applied to runs with particular tags. <ul><li>**Defaults** - `[]`</li></ul> Each list item may have the following properties: <ul><li>`key`</li><li>`value`</li><ul><li>If defined, the `limit` is applied only to the `key-value` pair.</li><li>If set to a dict with applyLimitPerUniqueValue: true, the `limit` is applied to the number of unique values for the `key`.</li><li>If set to a dict with `applyLimitPerUniqueValue: true`, the limit is applied to the number of unique values for the `key`.</li></ul><li>`limit`</li></ul> |
 
 ### Run monitoring (run_monitoring)
 
