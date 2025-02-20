@@ -36,6 +36,7 @@ def docker_compose_cm(
             # and our network and then yield a dict of container name to the container's
             # hostname.
             with buildkite_hostnames_cm(network_name) as hostnames:
+                logging.info(f"Got hostnames for {docker_compose_yml}: {hostnames}")
                 yield hostnames
         else:
             # When running locally, we don't need to jump through any special networking hoops;
@@ -143,6 +144,8 @@ def list_containers():
 
 def current_container():
     container_id = subprocess.check_output(["cat", "/etc/hostname"]).strip().decode()
+    if not container_id:
+        logging.warning("Unable to find container ID")
     container = (
         subprocess.check_output(
             ["docker", "ps", "--filter", f"id={container_id}", "--format", "{{.Names}}"]
@@ -150,6 +153,8 @@ def current_container():
         .strip()
         .decode()
     )
+    if not container:
+        logging.warning("Unable to find container")
     return container
 
 
