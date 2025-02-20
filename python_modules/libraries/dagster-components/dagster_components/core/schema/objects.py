@@ -102,7 +102,7 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
         FieldResolver(
             lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
         ),
-    ] = Field(None, description="A unique identifier for the asset.")
+    ] = Field(default=None, description="A unique identifier for the asset.")
 
     def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
         # only include fields that are explcitly set
