@@ -66,18 +66,16 @@ export const workspacePipelineLinkForRun = ({
   repositoryLocationName,
   isJob,
 }: RunDetails) => {
-  debugger;
   if (isHiddenAssetGroupJob(run.pipelineName)) {
-    const opsQuery = (() => {
-      if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-        return (run.assetSelection || [])
-          .map((key) => `key:"${tokenForAssetKey(key)}"`)
-          .join(' or ');
-      }
-      return (run.assetSelection || []).map(tokenForAssetKey).join(', ');
-    })();
+    let opsQuery;
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+      opsQuery = (run.assetSelection || [])
+        .map((key) => `key:"${tokenForAssetKey(key)}"`)
+        .join(' or ');
+    } else {
+      opsQuery = (run.assetSelection || []).map(tokenForAssetKey).join(', ');
+    }
 
-    debugger;
     return {
       disabledReason: null,
       label: `View asset lineage`,
