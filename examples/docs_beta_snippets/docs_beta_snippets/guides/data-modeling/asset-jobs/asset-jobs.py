@@ -1,11 +1,11 @@
+import dagster as dg
+
+
 def execute_query(query):
     del query
 
 
-# start_marker
-import dagster as dg
-
-
+# start_marker_assets
 @dg.asset
 def sugary_cereals() -> None:
     execute_query(
@@ -18,16 +18,18 @@ def shopping_list() -> None:
     execute_query("CREATE TABLE shopping_list AS SELECT * FROM sugary_cereals")
 
 
-# start_marker
-import dagster as dg
+# end_marker_assets
 
+
+# start_marker_jobs
 all_assets_job = dg.define_asset_job(name="all_assets_job")
+
 sugary_cereals_job = dg.define_asset_job(
     name="sugary_cereals_job", selection="sugary_cereals"
 )
-
 
 defs = dg.Definitions(
     assets=[sugary_cereals, shopping_list],
     jobs=[all_assets_job, sugary_cereals_job],
 )
+# end_marker_jobs
