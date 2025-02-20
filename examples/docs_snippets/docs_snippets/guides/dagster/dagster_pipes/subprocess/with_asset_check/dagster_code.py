@@ -4,7 +4,6 @@ from dagster import (
     AssetCheckExecutionContext,
     AssetCheckResult,
     Definitions,
-    MaterializeResult,
     PipesSubprocessClient,
     asset,
     asset_check,

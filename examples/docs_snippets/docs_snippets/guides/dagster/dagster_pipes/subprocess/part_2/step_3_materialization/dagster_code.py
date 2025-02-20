@@ -1,7 +1,6 @@
 import shutil
 
 from dagster import (
-    AssetCheckSpec,
     AssetExecutionContext,
     Definitions,
     PipesSubprocessClient,

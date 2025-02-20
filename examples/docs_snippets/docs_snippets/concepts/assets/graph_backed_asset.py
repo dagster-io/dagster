@@ -1,13 +1,11 @@
 # ruff: isort: skip_file
 from dagster import (
-    AssetKey,
     load_assets_from_current_module,
     Out,
     Output,
     AssetSelection,
     define_asset_job,
     Definitions,
-    OpExecutionContext,
 )
 from unittest.mock import MagicMock
 

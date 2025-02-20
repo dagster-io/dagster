@@ -1,5 +1,4 @@
-from collections.abc import Mapping, Sequence
-from typing import Any
+from collections.abc import Mapping
 from unittest.mock import MagicMock
 
 from dagster import (

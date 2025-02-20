@@ -62,7 +62,6 @@ def my_metadata_output(context: OpExecutionContext) -> Output:
 
 # start_op_output_4
 from dagster import Output, op
-from typing import Tuple  # noqa: UP035
 
 
 # Using Output as type annotation without inner type

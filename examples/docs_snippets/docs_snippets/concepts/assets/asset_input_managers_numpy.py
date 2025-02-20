@@ -8,10 +8,8 @@ from dagster import (
     ConfigurableIOManager,
     Definitions,
     InputContext,
-    IOManager,
     OutputContext,
     asset,
-    io_manager,
 )
 
 from .asset_input_managers import (

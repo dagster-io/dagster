@@ -1,6 +1,4 @@
-from typing import Any, Dict, Optional  # noqa: UP035
-
-from dagster import ConfigurableResource
+from typing import Any, Optional
 
 # start_mock
 # resources.py

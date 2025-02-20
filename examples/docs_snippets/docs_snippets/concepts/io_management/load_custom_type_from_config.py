@@ -1,5 +1,5 @@
 # def_start_marker
-from typing import Dict, Union  # noqa: UP035
+from typing import Union
 
 from dagster import (
     DagsterTypeLoaderContext,

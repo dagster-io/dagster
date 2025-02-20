@@ -12,7 +12,6 @@ import pandas as pd
 from dagster import (
     AssetExecutionContext,
     DailyPartitionsDefinition,
-    MultiPartitionKey,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     asset,

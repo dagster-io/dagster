@@ -1,5 +1,3 @@
-from typing import List  # noqa: UP035
-
 import pandas as pd
 
 from dagster import AssetIn, Definitions, asset

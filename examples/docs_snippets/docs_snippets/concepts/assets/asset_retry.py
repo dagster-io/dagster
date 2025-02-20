@@ -1,11 +1,4 @@
-from dagster import (
-    AssetExecutionContext,
-    Backoff,
-    Jitter,
-    RetryPolicy,
-    RetryRequested,
-    asset,
-)
+from dagster import AssetExecutionContext, Backoff, Jitter, RetryPolicy, asset
 
 
 @asset(

@@ -1,6 +1,5 @@
 # ruff: noqa: I001
 # start_defs
-import os
 
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
