@@ -15,7 +15,7 @@ def mock_vscode_cli_command(editor, args: list[str]) -> bytes:
 
 
 @pytest.mark.parametrize("editor", ["vscode", "cursor"])
-def test_configure_editor(editor: str) -> None:
+def test_configure_editor_code_location(editor: str) -> None:
     with (
         ProxyRunner.test() as runner,
         TemporaryDirectory() as extension_dir,

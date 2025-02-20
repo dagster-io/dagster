@@ -26,7 +26,7 @@ from dagster_dg_tests.utils import (
 )
 
 COMPONENT_INTEGRATION_TEST_DIR = (
-    Path(__file__).parent.parent.parent.parent.parent
+    Path(__file__).parent.parent.parent.parent
     / "dagster-components"
     / "dagster_components_tests"
     / "integration_tests"
@@ -73,7 +73,7 @@ def create_code_location_from_components(
         yield Path.cwd()
 
 
-def test_component_check_succeeds_non_default_component_package() -> None:
+def test_check_component_succeeds_non_default_component_package() -> None:
     with (
         ProxyRunner.test() as runner,
         create_code_location_from_components(
