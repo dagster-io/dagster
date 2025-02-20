@@ -9,8 +9,12 @@ from project_ask_ai_dagster.assets.ingestion import (
 from project_ask_ai_dagster.resources.pinecone import PineconeResource
 
 
+# start_config
 class AskAI(dg.Config):
     question: str
+
+
+# end_config
 
 
 @dg.asset(
@@ -40,6 +44,7 @@ def query(
     pinecone: PineconeResource,
     openai: OpenAIResource,
 ) -> dg.MaterializeResult:
+    # start_query
     with openai.get_client(context) as client:
         question_embedding = (
             client.embeddings.create(model="text-embedding-3-small", input=config.question)
@@ -57,6 +62,7 @@ def query(
 
     results.sort(key=lambda x: x.score, reverse=True)
     results = results[:3]
+    # end_query
 
     if not search_results.matches:
         return dg.MaterializeResult(
@@ -82,6 +88,7 @@ def query(
             }
         )
 
+    # start_prompt
     # Create prompt with context
     prompt_template = """
     You are a experienced data engineer and Dagster expert.  
@@ -105,6 +112,7 @@ def query(
         response = client.chat.completions.create(
             model="gpt-4-turbo-preview", messages=[{"role": "user", "content": formatted_prompt}]
         )
+    # end_prompt
 
     return dg.MaterializeResult(
         metadata={

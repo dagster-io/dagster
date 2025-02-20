@@ -20,6 +20,7 @@ USAGE
 
 import dagster as dg
 
+# start_factory
 from project_dagster_modal_pipes.pipeline_factory import RSSFeedDefinition, rss_pipeline_factory
 from project_dagster_modal_pipes.resources import modal_resource, openai_resource, s3_resource
 
@@ -39,8 +40,9 @@ feeds = [
 ]
 
 pipeline_definitions = [rss_pipeline_factory(feed) for feed in feeds]
+# end_factory
 
-
+# start_def
 defs = dg.Definitions.merge(
     *pipeline_definitions,
     dg.Definitions(
@@ -51,3 +53,4 @@ defs = dg.Definitions.merge(
         }
     ),
 )
+# end_def

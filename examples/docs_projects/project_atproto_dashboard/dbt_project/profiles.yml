@@ -1,3 +1,4 @@
+# start_profile
 bluesky:
   target: prod
   outputs:
@@ -25,3 +26,4 @@ bluesky:
         s3_access_key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
         s3_secret_access_key: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
         s3_endpoint: "{{ env_var('AWS_ENDPOINT_URL') | replace('https://', '') }}"
+# end_profile

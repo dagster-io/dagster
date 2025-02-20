@@ -7,6 +7,7 @@ from dagster_powerbi import (
 )
 from dagster_powerbi.translator import PowerBITranslatorData
 
+# start_powerbi
 power_bi_workspace = PowerBIWorkspace(
     credentials=PowerBIServicePrincipal(
         client_id=dg.EnvVar("AZURE_POWERBI_CLIENT_ID"),
@@ -15,8 +16,10 @@ power_bi_workspace = PowerBIWorkspace(
     ),
     workspace_id=dg.EnvVar("AZURE_POWERBI_WORKSPACE_ID"),
 )
+# end_powerbi
 
 
+# start_dbt
 class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
     def get_report_spec(self, data: PowerBITranslatorData) -> dg.AssetSpec:
         return (
@@ -41,9 +44,13 @@ class CustomDagsterPowerBITranslator(DagsterPowerBITranslator):
         )
 
 
+# end_dbt
+
+# start_def
 power_bi_specs = load_powerbi_asset_specs(
     power_bi_workspace,
     dagster_powerbi_translator=CustomDagsterPowerBITranslator(),
 )
 
 defs = dg.Definitions(assets=[*power_bi_specs], resources={"power_bi": power_bi_workspace})
+# end_def

@@ -5,6 +5,7 @@ from pydantic import Field
 BASE_URL = "https://developer.nrel.gov/api/alt-fuel-stations/v1.json"
 
 
+# start_resource
 class NRELResource(dg.ConfigurableResource):
     api_key: str = Field(description=("NREL API key. See https://developer.nrel.gov/signup/"))
 
@@ -25,3 +26,6 @@ class NRELResource(dg.ConfigurableResource):
 
         resp = requests.get(url, params=params)
         return resp.json()["fuel_stations"]
+
+
+# end_resource

@@ -6,12 +6,14 @@ from typing import Any, Optional
 import dagster as dg
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
 
+# start_dbt_project
 dbt_project = DbtProject(
     project_dir=Path(__file__).joinpath("..", "..", "..", "dbt_project").resolve(),
     target=os.getenv("DBT_TARGET"),
 )
 dbt_project.prepare_if_dev()
 dbt_resource = DbtCliResource(project_dir=dbt_project)
+# end_dbt_project
 
 
 class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
@@ -30,6 +32,7 @@ class CustomizedDagsterDbtTranslator(DagsterDbtTranslator):
             return super().get_asset_key(dbt_resource_props)
 
 
+# start_dbt_assets
 @dbt_assets(
     manifest=dbt_project.manifest_path,
     dagster_dbt_translator=CustomizedDagsterDbtTranslator(),
@@ -44,3 +47,4 @@ defs = dg.Definitions(
         "dbt": dbt_resource,
     },
 )
+# end_dbt_assets

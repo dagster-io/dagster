@@ -5,6 +5,7 @@ from pinecone import Pinecone
 from pydantic import Field
 
 
+# start_resource
 class PineconeResource(dg.ConfigurableResource):
     pinecone_api_key: str = Field(description="Pinecone API key")
     openai_api_key: str = Field(description="OpenAI API key")
@@ -28,6 +29,10 @@ class PineconeResource(dg.ConfigurableResource):
         return index, {}
 
 
+# end_resource
+
+# start_resource_int
 pinecone_resource = PineconeResource(
     pinecone_api_key=dg.EnvVar("PINECONE_API_KEY"), openai_api_key=dg.EnvVar("OPENAI_API_KEY")
 )
+# end_resource_int

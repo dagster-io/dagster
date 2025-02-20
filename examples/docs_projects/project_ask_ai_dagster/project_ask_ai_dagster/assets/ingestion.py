@@ -9,10 +9,13 @@ from project_ask_ai_dagster.resources.github import GithubResource
 from project_ask_ai_dagster.resources.pinecone import PineconeResource
 from project_ask_ai_dagster.resources.scraper import SitemapScraper
 
+# start_partition
 START_TIME = "2023-01-01"
 weekly_partition = dg.WeeklyPartitionsDefinition(start_date=START_TIME)
+# end_partition
 
 
+# start_github_issues_raw
 @dg.asset(
     group_name="ingestion",
     kinds={"github"},
@@ -53,6 +56,10 @@ def github_issues_raw(
     return github.convert_issues_to_documents(issues)
 
 
+# end_github_issues_raw
+
+
+# start_github_issues_embeddings
 @dg.asset(
     group_name="embeddings",
     kinds={"github", "openai", "pinecone"},
@@ -123,6 +130,9 @@ def github_issues_embeddings(
             "number_of_issues": len(github_issues_raw),
         }
     )
+
+
+# end_github_issues_embeddings
 
 
 @dg.asset(
@@ -393,6 +403,7 @@ def docs_embedding(
         all_embeddings.extend(batch_embeddings)
         time.sleep(1)
 
+    # start_batch
     # Create vectors with metadata
     vectors = []
     for i, embedding in enumerate(all_embeddings):
@@ -408,6 +419,7 @@ def docs_embedding(
             index.upsert(vectors=vectors, **namespace_kwargs)
             vectors = []
             time.sleep(1)
+    # end_batch
 
     return dg.MaterializeResult(
         metadata={

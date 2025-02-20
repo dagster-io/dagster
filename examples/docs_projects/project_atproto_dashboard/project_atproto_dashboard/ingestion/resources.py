@@ -4,6 +4,7 @@ import dagster as dg
 from atproto import Client
 
 
+# start_resource
 class ATProtoResource(dg.ConfigurableResource):
     login: str
     password: str
@@ -27,3 +28,6 @@ class ATProtoResource(dg.ConfigurableResource):
         client = Client()
         self._login(client)
         return client
+
+
+# end_resource

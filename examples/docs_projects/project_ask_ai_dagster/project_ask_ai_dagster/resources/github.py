@@ -11,6 +11,7 @@ from project_ask_ai_dagster.resources.github_gql_queries import (
 )
 
 
+# start_resource
 class GithubResource(dg.ConfigurableResource):
     """Resource for fetching Github issues and discussions."""
 
@@ -41,6 +42,8 @@ class GithubResource(dg.ConfigurableResource):
             "END_DATE", end_date
         )
         return self._fetch_results(discussion_query_str, "discussions")
+
+    # end_resource
 
     def _fetch_results(self, query_str: str, object_type: str) -> list[dict]:
         log = dg.get_dagster_logger()
@@ -210,4 +213,6 @@ class GithubResource(dg.ConfigurableResource):
         return documents
 
 
+# start_resource_init
 github_resource = GithubResource(github_token=dg.EnvVar("GITHUB_TOKEN"))
+# end_resource_init

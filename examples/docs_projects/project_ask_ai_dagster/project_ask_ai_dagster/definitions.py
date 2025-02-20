@@ -19,6 +19,7 @@ from project_ask_ai_dagster.resources.pinecone import pinecone_resource
 from project_ask_ai_dagster.resources.scraper import scraper_resource
 
 
+# start_io_manager
 class DocumentIOManager(dg.IOManager):
     def __init__(self, base_dir):
         self.base_dir = base_dir
@@ -52,11 +53,15 @@ class DocumentIOManager(dg.IOManager):
         ]
 
 
+# end_io_manager
+
+
 @dg.io_manager(config_schema={"base_dir": str})
 def document_io_manager(init_context):
     return DocumentIOManager(base_dir=init_context.resource_config["base_dir"])
 
 
+# start_def
 defs = dg.Definitions(
     assets=[
         docs_embedding,
@@ -75,3 +80,4 @@ defs = dg.Definitions(
         "document_io_manager": document_io_manager.configured({"base_dir": "data/documents"}),
     },
 )
+# end_def
