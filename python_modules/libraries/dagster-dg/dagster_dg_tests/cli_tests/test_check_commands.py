@@ -93,7 +93,7 @@ def test_check_component_succeeds_non_default_component_package() -> None:
         assert BASIC_VALID_VALUE.component_type_filepath
         shutil.copy(BASIC_VALID_VALUE.component_type_filepath, components_dir / "__init__.py")
 
-        result = runner.invoke("check", "component")
+        result = runner.invoke("check", "yaml")
         assert_runner_result(result, exit_0=True)
 
 
@@ -115,7 +115,7 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
         ) as tmpdir,
     ):
         with pushd(tmpdir):
-            result = runner.invoke("check", "component")
+            result = runner.invoke("check", "yaml")
             if test_case.should_error:
                 assert result.exit_code != 0, str(result.stdout)
 
@@ -150,7 +150,7 @@ def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
         with pushd(str(tmpdir)):
             result = runner.invoke(
                 "check",
-                "component",
+                "yaml",
                 *(
                     [
                         str(Path("foo_bar") / "components" / "basic_component_missing_value"),
@@ -181,7 +181,7 @@ def test_validation_cli_multiple_components_filter() -> None:
         with pushd(tmpdir):
             result = runner.invoke(
                 "check",
-                "component",
+                "yaml",
                 str(Path("foo_bar") / "components" / "basic_component_missing_value"),
             )
             assert result.exit_code != 0, str(result.stdout)
@@ -206,7 +206,7 @@ def test_validation_cli_local_component_cache() -> None:
         ) as code_location_dir,
     ):
         with pushd(code_location_dir):
-            result = runner.invoke("check", "component")
+            result = runner.invoke("check", "yaml")
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )
@@ -216,7 +216,7 @@ def test_validation_cli_local_component_cache() -> None:
             )
 
             # Local components should all be cached
-            result = runner.invoke("check", "component")
+            result = runner.invoke("check", "yaml")
             assert not re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )
@@ -242,7 +242,7 @@ def test_validation_cli_local_component_cache() -> None:
             ).write_text(contents + "\n")
 
             # basic_component_success local component is now be invalidated and needs to be re-cached, the other one should still be cached
-            result = runner.invoke("check", "component")
+            result = runner.invoke("check", "yaml")
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )

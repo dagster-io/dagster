@@ -3,7 +3,9 @@
 ## 0.1.16
 
 - The entire dg CLI has been changed from noun-first to verb-first, e.g. dg code-location scaffold is now dg scaffold code-location.
-- The `info` command has been renamed to `inspect`. Combining this change with the new verb-first orientation, `dg component-type info` is now `dg inspect component-type`.
+- Some commands have also been renamed beyond the switch in order:
+  - The `info` command has been renamed to `inspect`. `dg component-type info` is now `dg inspect component-type`.
+  - `dg component check` command is now `dg check yaml`.
 
 ## 0.1.15
 

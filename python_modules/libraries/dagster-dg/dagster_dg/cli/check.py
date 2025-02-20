@@ -41,10 +41,6 @@ COMPONENT_FILE_SCHEMA = {
 }
 
 
-def _is_local_component(component_name: str) -> bool:
-    return component_name.endswith(".py")
-
-
 def _scaffold_value_and_source_position_tree(
     filename: str, row: int, col: int
 ) -> ValueAndSourcePositionTree:
@@ -65,16 +61,16 @@ class ErrorInput(NamedTuple):
     source_position_tree: ValueAndSourcePositionTree
 
 
-@check_group.command(name="component", cls=DgClickCommand)
+@check_group.command(name="yaml", cls=DgClickCommand)
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @dg_global_options
 @click.pass_context
-def component_check_command(
+def check_yaml_command(
     context: click.Context,
     paths: Sequence[str],
     **global_options: object,
 ) -> None:
-    """Check component files against their schemas, showing validation errors."""
+    """Check component.yaml files against their schemas, showing validation errors."""
     resolved_paths = [Path(path).absolute() for path in paths]
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
