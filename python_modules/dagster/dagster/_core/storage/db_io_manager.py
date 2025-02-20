@@ -143,7 +143,8 @@ class DbIOManager(IOManager):
             self._db_client.ensure_schema_exists(context, table_slice, conn)
             self._db_client.delete_table_slice(context, table_slice, conn)
 
-            handler_metadata = self._handlers_by_type[obj_type].handle_output(
+            handler = next(filter(lambda x: issubclass(obj_type, x[0]), self._handlers_by_type.items()))[1]
+            handler_metadata = handler.handle_output(
                 context, table_slice, obj, conn
             )
 
@@ -271,7 +272,7 @@ class DbIOManager(IOManager):
         )
 
     def _check_supported_type(self, obj_type):
-        if obj_type not in self._handlers_by_type:
+        if not issubclass(obj_type, tuple(self._handlers_by_type.keys())):
             msg = (
                 f"{self._io_manager_name} does not have a handler for type '{obj_type}'. Has"
                 " handlers for types"
