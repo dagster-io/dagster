@@ -48,6 +48,13 @@ def resolve_local_venv(start_path: Path) -> Optional[Path]:
     return None
 
 
+def clear_screen():
+    if is_windows():
+        os.system("cls")
+    else:
+        os.system("clear")
+
+
 def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
     if is_windows():
         return venv_dir / "Scripts" / f"{executable}.exe"
@@ -306,10 +313,13 @@ def hash_directory_metadata(
 
 
 def hash_file_metadata(hasher: Hash, path: Union[str, Path]) -> None:
-    stat = os.stat(path=path)
-    hasher.update(str(path).encode())
-    hasher.update(str(stat.st_mtime).encode())  # Last modified time
-    hasher.update(str(stat.st_size).encode())  # File size
+    try:
+        stat = os.stat(path=path)
+        hasher.update(str(path).encode())
+        hasher.update(str(stat.st_mtime).encode())  # Last modified time
+        hasher.update(str(stat.st_size).encode())  # File size
+    except FileNotFoundError:
+        pass
 
 
 T = TypeVar("T")
