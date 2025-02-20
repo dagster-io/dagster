@@ -10,7 +10,12 @@
 set -e
 
 # Vercel-specific commands and configurations
-if ! [[ "$OSTYPE" =~ "darwin"* ]]; then
+if [[ "$OSTYPE" =~ "darwin"* ]]; then
+  # Required to resolve `locale.Error: unsupported locale setting`
+  if [ -z "$LC_ALL" ]; then
+      export LC_ALL=en_US.UTF-8
+  fi
+else
   echo "Detected non-Darwin host. Running Vercel-specific commands and configurations"
 
   # Required to resolve `locale.Error: unsupported locale setting`
