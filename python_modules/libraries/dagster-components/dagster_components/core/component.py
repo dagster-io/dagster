@@ -66,8 +66,8 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, params: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
-        return params.resolve_as(cls, context.resolution_context) if params else cls()
+    def load(cls, attributes: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
+        return attributes.resolve_as(cls, context.resolution_context) if attributes else cls()
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
@@ -81,7 +81,7 @@ class Component(ABC):
                 f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
             )
 
-        component_params = cls.get_schema()
+        component_schema = cls.get_schema()
         scaffold_params = scaffolder.get_schema()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
@@ -89,9 +89,9 @@ class Component(ABC):
             "scaffold_params_schema": None
             if scaffold_params is None
             else scaffold_params.model_json_schema(),
-            "component_params_schema": None
-            if component_params is None
-            else component_params.model_json_schema(),
+            "component_schema": None
+            if component_schema is None
+            else component_schema.model_json_schema(),
         }
 
     @classmethod
@@ -113,7 +113,7 @@ class ComponentTypeInternalMetadata(TypedDict):
     summary: Optional[str]
     description: Optional[str]
     scaffold_params_schema: Optional[Any]  # json schema
-    component_params_schema: Optional[Any]  # json schema
+    component_schema: Optional[Any]  # json schema
 
 
 class ComponentTypeMetadata(ComponentTypeInternalMetadata):
