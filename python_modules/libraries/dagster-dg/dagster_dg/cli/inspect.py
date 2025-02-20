@@ -18,9 +18,9 @@ from dagster_dg.utils import (
 )
 
 
-@click.group(name="info", cls=DgClickGroup)
-def info_group():
-    """Commands for operating on components types."""
+@click.group(name="inspect", cls=DgClickGroup)
+def inspect_group():
+    """Commands for inspecting Dagster entities."""
 
 
 # ########################
@@ -28,14 +28,14 @@ def info_group():
 # ########################
 
 
-@info_group.command(name="component-type", cls=DgClickCommand)
+@inspect_group.command(name="component-type", cls=DgClickCommand)
 @click.argument("component_type", type=str)
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-params-schema", is_flag=True, default=False)
 @dg_global_options
 @click.pass_context
-def component_type_info_command(
+def component_type_inspect_command(
     context: click.Context,
     component_type: str,
     description: bool,

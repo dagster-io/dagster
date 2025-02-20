@@ -153,11 +153,11 @@ To confirm that the `dagster_components.dbt_project` component type is now avail
 
 :::tip
 
-You can access detailed information about a component type with the `dg info component-type` command:
+You can access detailed information about a component type with the `dg inspect component-type` command:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-component-type-info.txt" />
 
-The output of `dg info component-type` shows the parameters (in JSON schema format) for both component generation and runtime loading of the component. (The runtime parameters have been truncated here due to length.)
+The output of `dg inspect component-type` shows the parameters (in JSON schema format) for both component generation and runtime loading of the component. (The runtime parameters have been truncated here due to length.)
 
 :::
 

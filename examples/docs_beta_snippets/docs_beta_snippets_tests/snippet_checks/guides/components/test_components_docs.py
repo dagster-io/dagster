@@ -254,7 +254,7 @@ streams:
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
             )
             run_command_and_snippet_output(
-                cmd="dg info component-type 'dbt_project@dagster_components'",
+                cmd="dg inspect component-type 'dbt_project@dagster_components'",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-type-info.txt",
                 update_snippets=update_snippets,

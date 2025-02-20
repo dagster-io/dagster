@@ -10,7 +10,7 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_c
 # ##### COMPONENT TYPE
 # ########################
 
-_EXPECTED_info_component_type_FULL = textwrap.dedent("""
+_EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
     simple_pipes_script_asset@dagster_components.test
 
     Description:
@@ -63,21 +63,21 @@ _EXPECTED_info_component_type_FULL = textwrap.dedent("""
 """).strip()
 
 
-def test_info_component_type_all_metadata_success():
+def test_inspect_component_type_all_metadata_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "info",
+            "inspect",
             "component-type",
             "simple_pipes_script_asset@dagster_components.test",
         )
         assert_runner_result(result)
-        assert result.output.strip().endswith(_EXPECTED_info_component_type_FULL)
+        assert result.output.strip().endswith(_EXPECTED_INSPECT_COMPONENT_TYPE_FULL)
 
 
-def test_info_component_type_all_metadata_empty_success():
+def test_inspect_component_type_all_metadata_empty_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "info",
+            "inspect",
             "component-type",
             "all_metadata_empty_asset@dagster_components.test",
         )
@@ -89,10 +89,10 @@ def test_info_component_type_all_metadata_empty_success():
         )
 
 
-def test_info_component_type_flag_fields_success():
+def test_inspect_component_type_flag_fields_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "info",
+            "inspect",
             "component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--description",
@@ -107,7 +107,7 @@ def test_info_component_type_flag_fields_success():
         )
 
         result = runner.invoke(
-            "info",
+            "inspect",
             "component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--scaffold-params-schema",
@@ -137,7 +137,7 @@ def test_info_component_type_flag_fields_success():
         )
 
         result = runner.invoke(
-            "info",
+            "inspect",
             "component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--component-params-schema",
@@ -167,10 +167,10 @@ def test_info_component_type_flag_fields_success():
         )
 
 
-def test_info_component_type_multiple_flags_fails() -> None:
+def test_inspect_component_type_multiple_flags_fails() -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "info",
+            "inspect",
             "component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--description",
@@ -183,10 +183,10 @@ def test_info_component_type_multiple_flags_fails() -> None:
         )
 
 
-def test_info_component_type_undefined_component_type_fails() -> None:
+def test_inspect_component_type_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "info",
+            "inspect",
             "component-type",
             "fake@fake",
         )

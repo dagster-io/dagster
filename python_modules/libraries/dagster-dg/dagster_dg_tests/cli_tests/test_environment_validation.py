@@ -41,7 +41,7 @@ COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
 
 REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(tuple(), "--rebuild-component-registry"),
-    CommandSpec(("info", "component-type"), DEFAULT_COMPONENT_TYPE),
+    CommandSpec(("inspect", "component-type"), DEFAULT_COMPONENT_TYPE),
     CommandSpec(("docs", "component-type"), DEFAULT_COMPONENT_TYPE),
     CommandSpec(("list", "component-type")),
 ]

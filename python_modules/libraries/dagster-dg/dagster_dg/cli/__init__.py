@@ -7,7 +7,7 @@ from dagster_dg.cli.configure_editor import configure_editor_group
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.cli.info import info_group
+from dagster_dg.cli.inspect import inspect_group
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.component import RemoteComponentRegistry
@@ -25,7 +25,7 @@ def create_dg_cli():
         commands={
             "check": check_group,
             "docs": docs_group,
-            "info": info_group,
+            "inspect": inspect_group,
             "configure-editor": configure_editor_group,
             "list": list_group,
             "scaffold": scaffold_group,

@@ -38,7 +38,7 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ configure-editor   Commands for configuring your editor.                               │
 │ dev                Start a local deployment of your Dagster project.                   │
 │ docs               Commands for generating docs from your Dagster code.                │
-│ info               Commands for operating on components types.                         │
+│ inspect            Commands for inspecting Dagster entities.                           │
 │ list               Commands for listing Dagster entities.                              │
 │ scaffold           Commands for scaffolding Dagster code.                              │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
