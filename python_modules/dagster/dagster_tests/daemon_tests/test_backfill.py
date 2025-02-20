@@ -449,6 +449,20 @@ def asset_with_multi_run_backfill_policy() -> None:
 
 @asset(
     partitions_def=daily_partitions_def,
+    backfill_policy=BackfillPolicy.multi_run(max_partitions_per_run=3),
+    deps=[
+        AssetDep(
+            "self_dependant_asset_with_grouped_run_backfill_policy",
+            partition_mapping=TimeWindowPartitionMapping(start_offset=-1, end_offset=-1),
+        )
+    ],
+)
+def self_dependant_asset_with_grouped_run_backfill_policy() -> None:
+    pass
+
+
+@asset(
+    partitions_def=daily_partitions_def,
     backfill_policy=BackfillPolicy.single_run(),
     deps=[
         asset_with_single_run_backfill_policy,
@@ -548,6 +562,7 @@ def the_repo():
         asset_with_single_run_backfill_policy,
         asset_with_multi_run_backfill_policy,
         complex_asset_with_backfill_policy,
+        self_dependant_asset_with_grouped_run_backfill_policy,
         bp_single_run,
         bp_single_run_config,
         bp_multi_run,
@@ -2545,6 +2560,109 @@ def test_asset_backfill_with_multi_run_backfill_policy(
         AssetKeyPartitionKey(asset_with_multi_run_backfill_policy.key, partition)
         for partition in partitions
     ]
+
+
+def test_self_dependant_asset_with_grouped_run_backfill_policy(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+):
+    partitions = [
+        "2023-01-01",
+        "2023-01-02",
+        "2023-01-03",
+        "2023-01-04",
+        "2023-01-05",
+        "2023-01-06",
+        "2023-01-07",
+        "2023-01-08",
+        "2023-01-09",
+        "2023-01-10",
+    ]
+
+    asset_graph = workspace_context.create_request_context().asset_graph
+
+    backfill_id = "self_dependant_asset_with_grouped_run_backfill_policy"
+    backfill = PartitionBackfill.from_partitions_by_assets(
+        backfill_id=backfill_id,
+        asset_graph=asset_graph,
+        backfill_timestamp=get_current_timestamp(),
+        tags={},
+        dynamic_partitions_store=instance,
+        partitions_by_assets=[
+            PartitionsByAssetSelector(
+                asset_key=self_dependant_asset_with_grouped_run_backfill_policy.key,
+                partitions=PartitionsSelector(
+                    [PartitionRangeSelector(partitions[0], partitions[-1])]
+                ),
+            ),
+        ],
+        title=None,
+        description=None,
+    )
+    instance.add_backfill(backfill)
+
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.asset_selection == [
+        self_dependant_asset_with_grouped_run_backfill_policy.key,
+    ]
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 1
+    backfill = check.not_none(instance.get_backfill(backfill_id))
+    assert check.not_none(
+        backfill.asset_backfill_data
+    ).requested_subset == AssetGraphSubset.from_asset_partition_set(
+        {
+            AssetKeyPartitionKey(
+                AssetKey("self_dependant_asset_with_grouped_run_backfill_policy"), key
+            )
+            for key in [
+                "2023-01-01",
+                "2023-01-02",
+                "2023-01-03",
+            ]
+        },
+        asset_graph,
+    )
+
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+    assert instance.get_runs_count() == 2
+    backfill = check.not_none(instance.get_backfill(backfill_id))
+    assert check.not_none(
+        backfill.asset_backfill_data
+    ).requested_subset == AssetGraphSubset.from_asset_partition_set(
+        {
+            AssetKeyPartitionKey(
+                AssetKey("self_dependant_asset_with_grouped_run_backfill_policy"), key
+            )
+            for key in [
+                "2023-01-01",
+                "2023-01-02",
+                "2023-01-03",
+                "2023-01-04",
+                "2023-01-05",
+                "2023-01-06",
+            ]
+        },
+        asset_graph,
+    )
 
 
 def test_complex_asset_with_backfill_policy(
