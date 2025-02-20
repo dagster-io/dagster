@@ -55,3 +55,10 @@ def test_definitions_component_validation_error() -> None:
         load_test_component_defs("definitions/validation_error_file")
 
     assert "component.yaml:4" in str(e.value)
+
+
+def test_definitions_explicit_glob() -> None:
+    defs = load_test_component_defs("definitions/explicit_glob")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("file_one_asset"),
+    }
