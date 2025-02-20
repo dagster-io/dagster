@@ -151,10 +151,14 @@ class GrapheneSchedule(graphene.ObjectType):
         limit = (limit or 10) if until is None else limit
         
         future_ticks: List[GrapheneDryRunInstigationTick] = []
-        for val in self._remote_schedule.execution_time_iterator(cursor):
-            # Add ticks before until timestamp and/or before limit is reached
-            if (until is None or val.timestamp() < until) and (limit is None or len(future_ticks) < limit):
-                future_ticks.append(GrapheneDryRunInstigationTick(self._remote_schedule.schedule_selector, val.timestamp()))
+        try: 
+            for val in self._remote_schedule.execution_time_iterator(cursor):
+                # Add ticks before until timestamp and/or before limit is reached
+                if (until is None or val.timestamp() < until) and (limit is None or len(future_ticks) < limit):
+                    future_ticks.append(GrapheneDryRunInstigationTick(self._remote_schedule.schedule_selector, val.timestamp()))
+        except check.CheckError:
+            # If the schedule is not valid, we will return an empty list
+            pass
 
         new_cursor = future_ticks[-1].timestamp + 1 if future_ticks else cursor
         return GrapheneDryRunInstigationTicks(results=future_ticks, cursor=new_cursor)
