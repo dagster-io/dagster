@@ -70,7 +70,7 @@ _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
     ┃ Component Type                                    ┃ Summary                                                          ┃
     ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
     │ all_metadata_empty_asset@dagster_components.test  │                                                                  │
-    │ complex_schema_asset@dagster_components.test      │ An asset that has a complex schema.                       │
+    │ complex_schema_asset@dagster_components.test      │ An asset that has a complex schema.                              │
     │ simple_asset@dagster_components.test              │ A simple asset that returns a constant string value.             │
     │ simple_pipes_script_asset@dagster_components.test │ A simple asset that runs a Python script with the Pipes          │
     │                                                   │ subprocess client.                                               │

@@ -128,7 +128,10 @@ def _get_source_position_comments(
 
 def generate_sample_yaml(component_type: str, json_schema: Mapping[str, Any]) -> str:
     raw = yaml.dump(
-        {"type": component_type, "params": _sample_value_for_subschema(json_schema, json_schema)},
+        {
+            "type": component_type,
+            "attributes": _sample_value_for_subschema(json_schema, json_schema),
+        },
         Dumper=ComponentDumper,
         sort_keys=False,
     )
