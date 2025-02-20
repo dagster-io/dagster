@@ -4,6 +4,7 @@ from typing import Annotated, Optional
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
+from pydantic import Field
 
 from dagster_components import Component, ComponentLoadContext, registered_component_type
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
@@ -17,7 +18,11 @@ from dagster_components.core.schema.objects import (
 
 
 class ComplexAssetSchema(ResolvableSchema):
-    value: str
+    value: str = Field(..., examples=["example_for_value"])
+    list_value: list[str] = Field(
+        ..., examples=[["example_for_list_value_1", "example_for_list_value_2"]]
+    )
+    obj_value: dict[str, str] = Field(..., examples=[{"key_1": "value_1", "key_2": "value_2"}])
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
         Optional[AssetAttributesSchema], ResolvableFieldInfo(required_scope={"node"})
