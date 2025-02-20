@@ -1617,7 +1617,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 failed_and_downstream_partitions.get_internal_value(),
-                "Failed or is downstream of a failed asset",
+                f"{failed_and_downstream_partitions} has failed or is downstream of a failed asset",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
@@ -1631,7 +1631,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 materialized_partitions.get_internal_value(),
-                "Already materialized by backfill",
+                f"{materialized_partitions} already materialized by backfill",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
@@ -1646,7 +1646,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 requested_partitions.get_internal_value(),
-                "Already requested by backfill",
+                f"{requested_partitions} already requested by backfill",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
