@@ -5,7 +5,7 @@ import click
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.scaffold import scaffold_code_location, scaffold_workspace
+from dagster_dg.scaffold import scaffold_project, scaffold_workspace
 from dagster_dg.utils import DgClickCommand, exit_with_error
 
 
@@ -43,17 +43,31 @@ def init_command(
     workspace_dg_context = DgContext.from_config_file_discovery_and_cli_config(
         workspace_path, cli_config
     )
-    project_name = click.prompt("Enter the name of your first Dagster project", type=str)
 
-    if workspace_dg_context.has_project(project_name):
-        exit_with_error(f"A project named {project_name} already exists.")
-
-    project_path = workspace_dg_context.get_workspace_project_path(project_name)
-
-    scaffold_code_location(
-        project_path,
-        workspace_dg_context,
-        editable_dagster_root=None,
-        skip_venv=False,
-        populate_cache=True,
+    project_name = click.prompt(
+        "Enter the name of your first Dagster project (or press Enter to continue without creating a project)",
+        type=str,
     )
+
+    if not project_name:
+        click.echo(
+            "Continuing without adding a project. You can create one later by running `dg scaffold project`."
+        )
+    else:
+        workspace_dg_context = DgContext.from_config_file_discovery_and_cli_config(
+            workspace_path, cli_config
+        )
+        if workspace_dg_context.has_project(project_name):
+            exit_with_error(f"A project named {project_name} already exists.")
+
+        project_path = workspace_dg_context.get_workspace_project_path(project_name)
+
+        scaffold_project(
+            project_path,
+            workspace_dg_context,
+            editable_dagster_root=None,
+            skip_venv=False,
+            populate_cache=True,
+        )
+
+        click.echo("You can create additional projects later by running `dg scaffold project`.")

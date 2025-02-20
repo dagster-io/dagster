@@ -361,20 +361,20 @@ environment in an ancestor directory or use the `--no-require-local-venv` flag t
 `dagster-components` from the ambient Python environment.
 """
 
-NOT_DEPLOYMENT_ERROR_MESSAGE = """
-This command must be run inside a Dagster deployment directory. Ensure that there is a
-`pyproject.toml` file with `tool.dg.is_deployment = true` set in the root deployment directory.
+NOT_WORKSPACE_ERROR_MESSAGE = """
+This command must be run inside a Dagster workspace directory. Ensure that there is a
+`pyproject.toml` file with `tool.dg.is_workspace = true` set in the root workspace directory.
 """
 
 
-NOT_CODE_LOCATION_ERROR_MESSAGE = """
-This command must be run inside a Dagster code location directory. Ensure that the nearest
-pyproject.toml has `tool.dg.is_code_location = true` set.
+NOT_PROJECT_ERROR_MESSAGE = """
+This command must be run inside a Dagster project directory. Ensure that the nearest
+pyproject.toml has `tool.dg.is_project = true` set.
 """
 
-NOT_DEPLOYMENT_OR_CODE_LOCATION_ERROR_MESSAGE = """
-This command must be run inside a Dagster deployment or code location directory. Ensure that the
-nearest pyproject.toml has `tool.dg.is_code_location = true` or `tool.dg.is_deployment = true` set.
+NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE = """
+This command must be run inside a Dagster workspace or project directory. Ensure that the
+nearest pyproject.toml has `tool.dg.is_project = true` or `tool.dg.is_workspace = true` set.
 """
 
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
@@ -387,8 +387,8 @@ Could not find the `dagster-components` executable on the system path.
 
 The `dagster-components` executable is installed with the `dagster-components` PyPI package and is
 necessary for `dg` to interface with Python environments containing Dagster definitions.
-`dagster-components` is installed by default when a code location is scaffolded by `dg`. However, if
-you are using `dg` in a non-managed environment (either outside of a code location or using the
+`dagster-components` is installed by default when a project is scaffolded by `dg`. However, if
+you are using `dg` in a non-managed environment (either outside of a Dagster project or using the
 `--no-use-dg-managed-environment` flag), you need to independently ensure `dagster-components` is
 installed.
 """

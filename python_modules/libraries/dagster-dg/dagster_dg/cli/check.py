@@ -75,7 +75,7 @@ def check_yaml_command(
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     validation_errors: list[ErrorInput] = []
 

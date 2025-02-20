@@ -7,7 +7,7 @@ from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import ProxyRunner, isolated_example_code_location_foo_bar
+from dagster_dg_tests.utils import ProxyRunner, isolated_example_project_foo_bar
 
 
 def mock_vscode_cli_command(editor, args: list[str]) -> bytes:
@@ -24,7 +24,7 @@ def test_utils_configure_editor(editor: str) -> None:
             "dagster_dg.utils.editor.get_default_extension_dir",
             return_value=Path(extension_dir),
         ),
-        isolated_example_code_location_foo_bar(runner, False),
+        isolated_example_project_foo_bar(runner, False),
     ):
         out = runner.invoke("utils", "configure-editor", editor)
 

@@ -10,7 +10,7 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_c
 # The tests in this file are designed to check error messages for basic precondition checks for
 # command execution across all CLI commands. Many commands require execution with
 # `dagster-components` available in some environment. Other commands additionally require execution
-# in the context of a code location, deployment, or component library package. As a rule, checks for
+# in the context of a project, workspace, or component library package. As a rule, checks for
 # these preconditions should run before any command logic. These tests ensure such checks are done.
 #
 # There is a test (`test_all_commands_represented_in_env_check_tests`) to ensure that all commands
@@ -31,8 +31,7 @@ class CommandSpec:
 DEFAULT_COMPONENT_TYPE = "simple_asset@dagster_components.test"
 
 NO_REQUIRED_CONTEXT_COMMANDS = [
-    CommandSpec(("scaffold", "code-location"), "foo"),
-    CommandSpec(("scaffold", "deployment"), "foo"),
+    CommandSpec(("scaffold", "project"), "foo"),
     CommandSpec(("init",), "foo"),
 ]
 
@@ -48,18 +47,19 @@ REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(("list", "component-type")),
 ]
 
-CODE_LOCATION_CONTEXT_COMMANDS = [
+
+PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("utils", "configure-editor"), "vscode"),
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
     CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
 ]
 
-DEPLOYMENT_CONTEXT_COMMANDS = [
-    CommandSpec(("list", "code-location")),
+WORKSPACE_CONTEXT_COMMANDS = [
+    CommandSpec(("list", "project")),
 ]
 
-DEPLOYMENT_OR_CODE_LOCATION_CONTEXT_COMMANDS = [
+WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("dev",)),
 ]
 
@@ -92,9 +92,9 @@ def test_all_commands_represented_in_env_check_tests() -> None:
         for spec in [
             *NO_REQUIRED_CONTEXT_COMMANDS,
             *COMPONENT_LIBRARY_CONTEXT_COMMANDS,
-            *CODE_LOCATION_CONTEXT_COMMANDS,
-            *DEPLOYMENT_CONTEXT_COMMANDS,
-            *DEPLOYMENT_OR_CODE_LOCATION_CONTEXT_COMMANDS,
+            *PROJECT_CONTEXT_COMMANDS,
+            *WORKSPACE_CONTEXT_COMMANDS,
+            *WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS,
             *REGISTRY_CONTEXT_COMMANDS,
         ]
     ]
@@ -108,7 +108,7 @@ def test_all_commands_represented_in_env_check_tests() -> None:
     [
         *COMPONENT_LIBRARY_CONTEXT_COMMANDS,
         *REGISTRY_CONTEXT_COMMANDS,
-        *CODE_LOCATION_CONTEXT_COMMANDS,
+        *PROJECT_CONTEXT_COMMANDS,
     ],
     ids=lambda spec: "-".join(spec.command),
 )
@@ -124,7 +124,7 @@ def test_no_local_venv_failure(spec: CommandSpec) -> None:
     [
         *COMPONENT_LIBRARY_CONTEXT_COMMANDS,
         *REGISTRY_CONTEXT_COMMANDS,
-        *CODE_LOCATION_CONTEXT_COMMANDS,
+        *PROJECT_CONTEXT_COMMANDS,
     ],
     ids=lambda spec: "-".join(spec.command),
 )
@@ -144,7 +144,7 @@ def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
     [
         *COMPONENT_LIBRARY_CONTEXT_COMMANDS,
         *REGISTRY_CONTEXT_COMMANDS,
-        *CODE_LOCATION_CONTEXT_COMMANDS,
+        *PROJECT_CONTEXT_COMMANDS,
     ],
     ids=lambda spec: "-".join(spec.command),
 )
@@ -157,14 +157,12 @@ def test_no_ambient_dagster_components_failure(spec: CommandSpec) -> None:
         assert "Could not find the `dagster-components` executable" in result.output
 
 
-@pytest.mark.parametrize(
-    "spec", CODE_LOCATION_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
-)
-def test_no_code_location_failure(spec: CommandSpec) -> None:
+@pytest.mark.parametrize("spec", PROJECT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command))
+def test_no_project_failure(spec: CommandSpec) -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster code location directory" in result.output
+        assert "must be run inside a Dagster project directory" in result.output
 
 
 @pytest.mark.parametrize(
@@ -178,23 +176,23 @@ def test_no_component_library_failure(spec: CommandSpec) -> None:
 
 
 @pytest.mark.parametrize(
-    "spec", DEPLOYMENT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
+    "spec", WORKSPACE_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
 )
-def test_no_deployment_failure(spec: CommandSpec) -> None:
+def test_no_workspace_failure(spec: CommandSpec) -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster deployment directory" in result.output
+        assert "must be run inside a Dagster workspace directory" in result.output
 
 
 @pytest.mark.parametrize(
-    "spec", DEPLOYMENT_OR_CODE_LOCATION_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
+    "spec", WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
 )
-def test_no_deployment_or_code_location_failure(spec: CommandSpec) -> None:
+def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
-        assert "must be run inside a Dagster deployment or code location directory" in result.output
+        assert "must be run inside a Dagster workspace or project directory" in result.output
 
 
 # ########################

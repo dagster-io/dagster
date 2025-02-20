@@ -11,25 +11,7 @@ from dagster_dg.context import DgContext
 from dagster_dg.utils import camelcase, scaffold_subtree
 
 # ########################
-# ##### DEPLOYMENT
-# ########################
-
-
-def scaffold_deployment(path: Path, dg_context: DgContext) -> None:
-    click.echo(f"Creating a Dagster deployment at {path}.")
-
-    scaffold_subtree(
-        path=path,
-        name_placeholder="DEPLOYMENT_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "DEPLOYMENT_NAME_PLACEHOLDER"
-        ),
-    )
-    click.echo(f"Scaffolded files for Dagster deployment at {path}.")
-
-
-# ########################
-# ##### CODE LOCATION
+# ##### PROJECT
 # ########################
 
 # Despite the fact that editable dependencies are resolved through tool.uv.sources, we need to set
@@ -108,14 +90,14 @@ def scaffold_workspace(
     click.echo(f"Scaffolded files for Dagster workspace at {path}.")
 
 
-def scaffold_code_location(
+def scaffold_project(
     path: Path,
     dg_context: DgContext,
     editable_dagster_root: Optional[str] = None,
     skip_venv: bool = False,
     populate_cache: bool = True,
 ) -> None:
-    click.echo(f"Creating a Dagster code location at {path}.")
+    click.echo(f"Creating a Dagster project at {path}.")
 
     dependencies = get_pyproject_toml_dependencies(use_editable_dagster=bool(editable_dagster_root))
     dev_dependencies = get_pyproject_toml_dev_dependencies(
@@ -127,13 +109,13 @@ def scaffold_code_location(
 
     scaffold_subtree(
         path=path,
-        name_placeholder="CODE_LOCATION_NAME_PLACEHOLDER",
+        name_placeholder="PROJECT_NAME_PLACEHOLDER",
         templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "CODE_LOCATION_NAME_PLACEHOLDER"
+            os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER"
         ),
         dependencies=dependencies,
         dev_dependencies=dev_dependencies,
-        code_location_name=path.name,
+        project_name=path.name,
         uv_sources=uv_sources,
     )
     click.echo(f"Scaffolded files for Dagster project at {path}.")
@@ -183,11 +165,11 @@ def scaffold_component_instance(
 ) -> None:
     click.echo(f"Creating a Dagster component instance folder at {path}.")
     os.makedirs(path, exist_ok=True)
-    code_location_command = [
+    scaffold_command = [
         "scaffold",
         "component",
         component_type,
         path,
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
     ]
-    dg_context.external_components_command(code_location_command)
+    dg_context.external_components_command(scaffold_command)

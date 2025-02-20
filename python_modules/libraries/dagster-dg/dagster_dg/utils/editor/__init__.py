@@ -66,7 +66,7 @@ def install_or_update_yaml_schema_extension(
     extension_working_dir.mkdir(parents=True, exist_ok=True)
 
     # Merge with existing yamlValidation entries, so we can provide schema completions for many
-    # code locations.
+    # projects.
     if extension_package_json_path.exists():
         existing_package_json = json.loads(extension_package_json_path.read_text())
         existing_yaml_validation = existing_package_json["contributes"].get("yamlValidation")

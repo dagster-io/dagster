@@ -11,22 +11,22 @@ from dagster_dg_tests.utils import (
     assert_runner_result,
     fixed_panel_width,
     isolated_components_venv,
-    isolated_example_code_location_foo_bar,
     isolated_example_component_library_foo_bar,
-    isolated_example_deployment_foo,
+    isolated_example_project_foo_bar,
+    isolated_example_workspace,
     match_terminal_box_output,
 )
 
 # ########################
-# ##### CODE LOCATION
+# ##### PROJECT
 # ########################
 
 
-def test_list_code_location_success():
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        runner.invoke("scaffold", "code-location", "foo")
-        runner.invoke("scaffold", "code-location", "bar")
-        result = runner.invoke("list", "code-location")
+def test_list_project_success():
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
+        runner.invoke("scaffold", "project", "foo")
+        runner.invoke("scaffold", "project", "bar")
+        result = runner.invoke("list", "project")
         assert_runner_result(result)
         assert (
             result.output.strip()
@@ -43,7 +43,7 @@ def test_list_code_location_success():
 
 
 def test_list_components_succeeds():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke(
             "scaffold",
             "component",
