@@ -222,6 +222,12 @@ def run_key_sensor(_context):
 
 
 @sensor(job_name="the_job")
+def dup_run_key_sensor(_context):
+    yield RunRequest(run_key="only_once", tags={"foo": "bar"})
+    yield RunRequest(run_key="only_once")
+
+
+@sensor(job_name="the_job")
 def only_once_cursor_sensor(context):
     if not context.cursor:
         context.update_cursor("cursor")
@@ -867,6 +873,7 @@ def the_repo():
         wrong_config_sensor,
         always_on_sensor,
         run_key_sensor,
+        dup_run_key_sensor,
         only_once_cursor_sensor,
         custom_interval_sensor,
         skip_cursor_sensor,
@@ -1747,6 +1754,62 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
             sensor,
             freeze_datetime,
             TickStatus.SKIPPED,
+        )
+
+
+def test_duplicate_run_key_within_tick_launches_once(
+    executor: ThreadPoolExecutor,
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    freeze_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    )
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
+        sensor = remote_repo.get_sensor("dup_run_key_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                sensor.get_remote_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        assert mock_get_ticks.call_count == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert mock_get_ticks.call_count == 1
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, executor)
+
+        # call another time to get previous tick
+        assert mock_get_ticks.call_count == 2
+
+        wait_for_all_runs_to_start(instance)
+
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.tags["foo"] == "bar"
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert mock_get_ticks.call_count == 3
+
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            expected_run_ids=[run.run_id],
         )
 
 
