@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    Now when the default value of an option is a string it will be rendered with
+    quotes around it.
+fixes:
+  - |
+    If an option has an empty string default, docutils will no longer emit
+    warnings saying ``CRITICAL: Unexpected section title or transition.``

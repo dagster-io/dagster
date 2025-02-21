@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Added support for ``show_default`` as defined in click context settings.
+    This allows for option defaults to be rendered in the output. Consistent
+    with click version 8.1.x, ``show_default`` is overridden by
+    ``Command.show_default``.

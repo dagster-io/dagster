@@ -1,0 +1,7 @@
+---
+upgrade:
+  - |
+    click 7.x is no longer supported. The minimum click version now supported
+    is 8.0.0.
+  - |
+    sphinx < 4.0.0 is no longer supported.

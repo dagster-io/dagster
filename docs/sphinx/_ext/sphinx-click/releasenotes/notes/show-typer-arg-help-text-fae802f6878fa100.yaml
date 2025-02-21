@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    ``typer.main.TyperArgument`` is a subclass of ``click.Argument`` that,
+    among other things, adds a ``help`` attribute. If present this attribute
+    will now be included in output.

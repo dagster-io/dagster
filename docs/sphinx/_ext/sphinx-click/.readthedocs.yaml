@@ -1,0 +1,15 @@
+---
+version: 2
+python:
+  install:
+    - method: pip
+      path: .
+sphinx:
+  builder: "dirhtml"
+build:
+  os: "ubuntu-22.04"
+  tools:
+    python: "3.11"
+  jobs:
+    post_checkout:
+      - git fetch --unshallow

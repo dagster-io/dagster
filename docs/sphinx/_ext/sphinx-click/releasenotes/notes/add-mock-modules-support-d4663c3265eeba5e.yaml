@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Added support for mocking imported modules during the build process. Mocked
+    modules can either be specified from a ``sphinx_click_mock_imports`` variable,
+    if specified, or by default using ``autodoc_mock_imports``.

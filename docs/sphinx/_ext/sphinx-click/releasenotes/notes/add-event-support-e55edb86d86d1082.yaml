@@ -1,0 +1,17 @@
+---
+features:
+  - |
+    A number of events are now supported:
+
+    - ``sphinx-click-process-description``
+    - ``sphinx-click-process-usage``
+    - ``sphinx-click-process-options``
+    - ``sphinx-click-process-arguments``
+    - ``sphinx-click-process-envvars``
+    - ``sphinx-click-process-epilog``
+
+    These allow you to plug in to the build process for documentation and
+    post-process the generated command documentation. For more information,
+    refer to the `documentation`__.
+
+    .. __: https://sphinx-click.readthedocs.io/en/latest/usage/#docstring-processing

@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    The ``auto_envvar_prefix`` parameter, which enables automatic environment
+    variables for all parameters in a click application, is now supported. For
+    more information on this feature, refer to the `click documentation`__.
+
+    .. __: https://click.palletsprojects.com/en/8.1.x/options/#values-from-environment-variables
