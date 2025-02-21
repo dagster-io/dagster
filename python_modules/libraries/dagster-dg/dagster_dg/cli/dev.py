@@ -90,12 +90,12 @@ def dev_command(
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
     forward_options = [
-        *_format_forwarded_option("--code-server-log-level", code_server_log_level),
-        *_format_forwarded_option("--log-level", log_level),
-        *_format_forwarded_option("--log-format", log_format),
-        *_format_forwarded_option("--port", port),
-        *_format_forwarded_option("--host", host),
-        *_format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
+        *format_forwarded_option("--code-server-log-level", code_server_log_level),
+        *format_forwarded_option("--log-level", log_level),
+        *format_forwarded_option("--log-format", log_format),
+        *format_forwarded_option("--port", port),
+        *format_forwarded_option("--host", host),
+        *format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
     ]
 
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
@@ -129,7 +129,7 @@ def dev_command(
             *forward_options,
         ]
         cmd_location = "ephemeral dagster dev"
-        temp_workspace_file_cm = _temp_workspace_file(dg_context)
+        temp_workspace_file_cm = temp_workspace_file(dg_context)
     else:
         exit_with_error("This command must be run inside a project or workspace directory.")
 
@@ -166,7 +166,7 @@ def dev_command(
 
 
 @contextmanager
-def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
+def temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
         entries = []
         for project_name in dg_context.get_project_names():
@@ -185,7 +185,7 @@ def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
         yield temp_workspace_file.name
 
 
-def _format_forwarded_option(option: str, value: object) -> list[str]:
+def format_forwarded_option(option: str, value: object) -> list[str]:
     return [] if value is None else [option, str(value)]
 
 

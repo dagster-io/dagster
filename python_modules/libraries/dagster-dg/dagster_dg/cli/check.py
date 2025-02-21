@@ -9,6 +9,7 @@ from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
+from dagster_dg.cli.dev import format_forwarded_option, temp_workspace_file
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey, LocalComponentKey
@@ -22,8 +23,6 @@ from dagster_dg.yaml_utils.source_position import (
     SourcePositionTree,
     ValueAndSourcePositionTree,
 )
-
-from .dev import _format_forwarded_option, _temp_workspace_file
 
 
 @click.group(name="check", cls=DgClickGroup)
@@ -208,8 +207,8 @@ def check_definitions_command(
     dg_context = DgContext.for_deployment_or_code_location_environment(Path.cwd(), cli_config)
 
     forward_options = [
-        *_format_forwarded_option("--log-level", log_level),
-        *_format_forwarded_option("--log-format", log_format),
+        *format_forwarded_option("--log-level", log_level),
+        *format_forwarded_option("--log-format", log_format),
     ]
 
     # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
@@ -234,7 +233,7 @@ def check_definitions_command(
             *forward_options,
         ]
         cmd_location = "ephemeral dagster definitions validate"
-        temp_workspace_file_cm = _temp_workspace_file(dg_context)
+        temp_workspace_file_cm = temp_workspace_file(dg_context)
     else:
         exit_with_error("This command must be run inside a code location or deployment directory.")
 
