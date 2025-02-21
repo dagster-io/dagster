@@ -81,8 +81,8 @@ def error_dict_to_formatted_error(
         source_position_tree: The SourcePositionTree object, which contains the source position of
             each line in the YAML file.
         prefix: A prefix to the JSON path of the location of the error in the YAML file. Used because
-            we validate params separately from the top-level component YAML fields, so this is often
-            set to e.g. ["params"] when validating the internal params of a component.
+            we validate attributes separately from the top-level component YAML fields, so this is often
+            set to e.g. ["attributes"] when validating the internal attributes of a component.
     """
     error_path = augment_error_path(error_details)
 
@@ -91,7 +91,7 @@ def error_dict_to_formatted_error(
     )
 
     # Retrieves dotted path representation of the location of the error in the YAML file, e.g.
-    # params.nested.foo.an_int
+    # attributes.nested.foo.an_int
     location = ".".join([*prefix, *[str(part) for part in error_path]]).split(" at ")[0]
 
     # Find the first source position that has a different start line than the current source position

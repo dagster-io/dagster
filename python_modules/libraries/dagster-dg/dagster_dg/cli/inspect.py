@@ -32,7 +32,7 @@ def inspect_group():
 @click.argument("component_type", type=str)
 @click.option("--description", is_flag=True, default=False)
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
-@click.option("--component-params-schema", is_flag=True, default=False)
+@click.option("--component-schema", is_flag=True, default=False)
 @dg_global_options
 @click.pass_context
 def component_type_inspect_command(
@@ -40,7 +40,7 @@ def component_type_inspect_command(
     component_type: str,
     description: bool,
     scaffold_params_schema: bool,
-    component_params_schema: bool,
+    component_schema: bool,
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
@@ -50,9 +50,9 @@ def component_type_inspect_command(
     component_key = GlobalComponentKey.from_typename(component_type)
     if not registry.has_global(component_key):
         exit_with_error(generate_missing_component_type_error_message(component_type))
-    elif sum([description, scaffold_params_schema, component_params_schema]) > 1:
+    elif sum([description, scaffold_params_schema, component_schema]) > 1:
         exit_with_error(
-            "Only one of --description, --scaffold-params-schema, and --component-params-schema can be specified."
+            "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
         )
 
     component_type_metadata = registry.get_global(component_key)
@@ -67,11 +67,11 @@ def component_type_inspect_command(
             click.echo(_serialize_json_schema(component_type_metadata.scaffold_params_schema))
         else:
             click.echo("No scaffold params schema defined.")
-    elif component_params_schema:
-        if component_type_metadata.component_params_schema:
-            click.echo(_serialize_json_schema(component_type_metadata.component_params_schema))
+    elif component_schema:
+        if component_type_metadata.component_schema:
+            click.echo(_serialize_json_schema(component_type_metadata.component_schema))
         else:
-            click.echo("No component params schema defined.")
+            click.echo("No component schema defined.")
 
     # print all available metadata
     else:
@@ -82,9 +82,9 @@ def component_type_inspect_command(
         if component_type_metadata.scaffold_params_schema:
             click.echo("\nScaffold params schema:\n")
             click.echo(_serialize_json_schema(component_type_metadata.scaffold_params_schema))
-        if component_type_metadata.component_params_schema:
-            click.echo("\nComponent params schema:\n")
-            click.echo(_serialize_json_schema(component_type_metadata.component_params_schema))
+        if component_type_metadata.component_schema:
+            click.echo("\nComponent schema:\n")
+            click.echo(_serialize_json_schema(component_type_metadata.component_schema))
 
 
 def _serialize_json_schema(schema: Mapping[str, Any]) -> str:

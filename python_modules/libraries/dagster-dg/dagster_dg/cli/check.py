@@ -35,7 +35,7 @@ COMPONENT_FILE_SCHEMA = {
     "type": "object",
     "properties": {
         "type": {"type": "string"},
-        "params": {"type": "object"},
+        "attributes": {"type": "object"},
     },
     "additionalProperties": False,
 }
@@ -131,10 +131,10 @@ def check_yaml_command(
     )
     for component_key, component_doc_tree in component_contents_by_key.items():
         try:
-            json_schema = component_registry.get(component_key).component_params_schema or {}
+            json_schema = component_registry.get(component_key).component_schema or {}
 
             v = Draft202012Validator(json_schema)
-            for err in v.iter_errors(component_doc_tree.value["params"]):
+            for err in v.iter_errors(component_doc_tree.value["attributes"]):
                 validation_errors.append(ErrorInput(component_key, err, component_doc_tree))
         except KeyError:
             # No matching component type found
@@ -156,7 +156,7 @@ def check_yaml_command(
                     component_key,
                     error,
                     source_position_tree=component_doc_tree.source_position_tree,
-                    prefix=["params"] if component_key else [],
+                    prefix=["attributes"] if component_key else [],
                 )
             )
         context.exit(1)

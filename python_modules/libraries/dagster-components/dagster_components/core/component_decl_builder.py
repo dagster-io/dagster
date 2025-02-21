@@ -27,7 +27,7 @@ from dagster_components.utils import load_module_from_path
 
 class ComponentFileModel(BaseModel):
     type: str
-    params: Optional[Mapping[str, Any]] = None
+    attributes: Optional[Mapping[str, Any]] = None
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -102,25 +102,25 @@ class YamlComponentDecl(ComponentDeclNode):
         key = ComponentKey.from_typename(parsed_defs.type, self.path)
         return registry.get(key)
 
-    def get_params(self, params_schema: type[T]) -> T:
+    def get_attributes(self, schema: type[T]) -> T:
         with pushd(str(self.path)):
             if self.source_position_tree:
-                source_position_tree_of_params = self.source_position_tree.children["params"]
+                source_position_tree_of_attributes = self.source_position_tree.children[
+                    "attributes"
+                ]
                 with enrich_validation_errors_with_source_position(
-                    source_position_tree_of_params, ["params"]
+                    source_position_tree_of_attributes, ["attributes"]
                 ):
-                    return TypeAdapter(params_schema).validate_python(
-                        self.component_file_model.params
-                    )
+                    return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
             else:
-                return TypeAdapter(params_schema).validate_python(self.component_file_model.params)
+                return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         component_type = self.get_component_type(context.registry)
         component_schema = component_type.get_schema()
         context = context.with_rendering_scope(component_type.get_additional_scope())
-        loaded_params = self.get_params(component_schema) if component_schema else None
-        return [component_type.load(loaded_params, context)]
+        attributes = self.get_attributes(component_schema) if component_schema else None
+        return [component_type.load(attributes, context)]
 
 
 @record

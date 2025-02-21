@@ -120,7 +120,7 @@ defs = dg.Definitions(
             / "component.yaml",
             """type: definitions@dagster_components
 
-params:
+attributes:
   definitions_path: definitions.py
 """,
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-yaml.txt",
@@ -166,7 +166,7 @@ defs = dg.Definitions.merge(
 
         # validate loads
         _run_command(
-            "uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+            "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
         )
 
         # migrate analytics
@@ -200,7 +200,7 @@ defs = dg.Definitions(
             / "component.yaml",
             """type: definitions@dagster_components
 
-params:
+attributes:
   definitions_path: definitions.py
 """,
         )

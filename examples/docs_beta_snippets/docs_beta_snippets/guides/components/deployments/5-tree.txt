@@ -4,9 +4,9 @@ tree
 ├── code_locations
 │   └── code-location-1
 │       ├── code_location_1
-│       │   ├── __init__.py
 │       │   ├── components
 │       │   ├── definitions.py
+│       │   ├── __init__.py
 │       │   └── lib
 │       │       └── __init__.py
 │       ├── code_location_1_tests

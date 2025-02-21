@@ -1,6 +1,6 @@
 type: dbt_project@dagster_components
 
-params:
+attributes:
   dbt:
     project_dir: ../../../dbt/jdbt
   asset_attributes:

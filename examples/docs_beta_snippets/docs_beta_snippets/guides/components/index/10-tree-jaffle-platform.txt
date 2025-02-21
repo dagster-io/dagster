@@ -1,11 +1,11 @@
 tree jaffle_platform
 
 jaffle_platform
-├── __init__.py
 ├── components
 │   └── ingest_files
 │       └── component.yaml
 ├── definitions.py
+├── __init__.py
 └── lib
     └── __init__.py
 
