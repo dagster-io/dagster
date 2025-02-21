@@ -1,19 +1,19 @@
 tree
 
 .
-├── README.md
 ├── my_existing_project
-│   ├── __init__.py
 │   ├── analytics
-│   │   ├── __init__.py
 │   │   ├── assets.py
+│   │   ├── __init__.py
 │   │   └── jobs.py
 │   ├── components
 │   ├── definitions.py
-│   └── elt
-│       ├── __init__.py
-│       ├── assets.py
-│       └── jobs.py
-└── pyproject.toml
+│   ├── elt
+│   │   ├── assets.py
+│   │   ├── __init__.py
+│   │   └── jobs.py
+│   └── __init__.py
+├── pyproject.toml
+└── README.md
 
 5 directories, 10 files

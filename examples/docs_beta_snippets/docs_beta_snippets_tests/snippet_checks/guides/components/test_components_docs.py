@@ -258,7 +258,7 @@ streams:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-type-info.txt",
                 update_snippets=update_snippets,
-                snippet_replace_regex=[re_ignore_after("Component params schema:")],
+                snippet_replace_regex=[re_ignore_after("Component schema:")],
             )
 
             # Scaffold dbt project components
@@ -282,7 +282,7 @@ streams:
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
                 contents="""type: dagster_components.dbt_project
 
-params:
+attributes:
   dbt:
     project_dir: ../../../dbt/jdbt
   asset_attributes:
@@ -306,7 +306,7 @@ params:
                 / f"{next_snip_no()}-project-jdbt.yaml",
                 contents="""type: dbt_project@dagster_components
 
-params:
+attributes:
   dbt:
     project_dir: ../../../dbt/jdbt
   asset_attributes:
