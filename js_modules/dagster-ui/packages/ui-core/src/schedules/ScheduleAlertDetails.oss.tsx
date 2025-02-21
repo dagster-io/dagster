@@ -1,8 +1,8 @@
 import {RepoAddress} from '../workspace/types';
 
-export interface Config {
+export interface Props {
   repoAddress: RepoAddress;
   scheduleName: string;
 }
 
-export const useScheduleAlertDetails = (_config: Config) => null;
+export const ScheduleAlertDetails = (_props: Props) => null;

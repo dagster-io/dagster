@@ -11,16 +11,16 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
-import {useSensorAlertDetails} from 'shared/sensors/useSensorAlertDetails.oss';
+import {SensorAlertDetails} from 'shared/sensors/SensorAlertDetails.oss';
 import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
 import {SensorFragment} from './types/SensorFragment.types';
-import {usePermissionsForLocation} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
@@ -79,11 +79,6 @@ export const SensorDetails = ({
     loading: loadingPermissions,
   } = usePermissionsForLocation(repoAddress.location);
   const {canUpdateSensorCursor} = permissions;
-
-  const alertDetails = useSensorAlertDetails({
-    repoAddress,
-    sensorName: sensor.name,
-  });
 
   const [isCursorEditing, setCursorEditing] = useState(false);
   const sensorSelector = {
@@ -239,7 +234,7 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
-          {alertDetails}
+          <SensorAlertDetails repoAddress={repoAddress} sensorName={name} />
         </tbody>
       </MetadataTableWIP>
     </>
