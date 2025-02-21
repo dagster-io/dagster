@@ -8,7 +8,7 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import {useScheduleAlertDetails} from 'shared/schedules/useScheduleAlertDetails.oss';
+import {ScheduleAlertDetails} from 'shared/schedules/ScheduleAlertDetails.oss';
 import styled from 'styled-components';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
@@ -40,11 +40,6 @@ export const ScheduleDetails = (props: {
   const {status, ticks} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
   const running = status === InstigationStatus.RUNNING;
-
-  const alertDetails = useScheduleAlertDetails({
-    repoAddress,
-    scheduleName: name,
-  });
 
   return (
     <>
@@ -173,7 +168,7 @@ export const ScheduleDetails = (props: {
               <td>{executionTimezone}</td>
             </tr>
           ) : null}
-          {alertDetails}
+          <ScheduleAlertDetails repoAddress={repoAddress} scheduleName={name} />
         </tbody>
       </MetadataTableWIP>
     </>

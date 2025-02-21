@@ -1,8 +1,8 @@
 import {RepoAddress} from '../workspace/types';
 
-export interface Config {
+export interface Props {
   repoAddress: RepoAddress;
   sensorName: string;
 }
 
-export const useSensorAlertDetails = (_config: Config) => null;
+export const SensorAlertDetails = (_props: Props) => null;
