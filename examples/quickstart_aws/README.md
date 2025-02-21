@@ -147,7 +147,7 @@ You'll see an indicator pop up with the launched run ID. Click **View** to monit
 
 The process will run for a bit. While it's running, you should see the real-time compute logs printed in the UI. _(It may take 1-2 minutes to fetch all top 500 stories from HackerNews in the `hackernews_topstories` step)._
 
-## 
+## Step 2: Viewing and monitoring assets
 
 When you materialize an asset, the object returned by your asset function is saved. Dagster makes it easy to save these results to disk, to blob storage, to a database, or to any other system. In this example the assets are saved to the file system. In addition to the asset materialization, your asset functions can also generate metadata that is directly visible in Dagster. To view the materialization details and metadata, click on the "ASSET_MATERIALIZATION" event. In this example, the `hackernews_stories_word_cloud` asset materializes a plot that is saved to disk, but we also add the plot as metadata to make it visible in Dagster.
 
