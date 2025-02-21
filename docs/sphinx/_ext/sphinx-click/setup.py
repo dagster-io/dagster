@@ -6,7 +6,6 @@ setup(
     name="sphinx-click",
     version="0.0.1",
     description="Sphinx extension that automatically documents click applications",
-    long_description=open("README.rst").read(),
     long_description_content_type="text/x-rst; charset=UTF-8",
     author="Stephen Finucane",
     author_email="stephen@that.guru",
