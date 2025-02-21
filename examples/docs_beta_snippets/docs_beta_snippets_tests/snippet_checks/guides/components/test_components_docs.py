@@ -66,9 +66,9 @@ def test_components_docs_index(update_snippets: bool) -> None:
             update_snippets=update_snippets,
         )
 
-        # Scaffold code location
+        # Scaffold project
         run_command_and_snippet_output(
-            cmd="dg scaffold code-location jaffle-platform --use-editable-dagster",
+            cmd="dg scaffold project jaffle-platform --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[

@@ -1,5 +1,6 @@
-cd code_locations/code-location-2 && dg list component-type
+dg list component-type
 
+Using /.../workspace/projects/project-1/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Component Type                                        ┃ Summary                        ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
@@ -9,4 +10,7 @@ cd code_locations/code-location-2 && dg list component-type
 │                                                       │ scripts executed with          │
 │                                                       │ Dagster's                      │
 │                                                       │ PipesSubprocessClient.         │
+│ sling_replication_collection@dagster_components       │ Expose one or more Sling       │
+│                                                       │ replications to Dagster as     │
+│                                                       │ assets.                        │
 └───────────────────────────────────────────────────────┴────────────────────────────────┘

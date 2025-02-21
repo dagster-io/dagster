@@ -72,7 +72,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # Add components section to pyproject.toml
         pyproject_contents = Path("pyproject.toml").read_text()
         tool_dg_section = """[tool.dg]
-is_code_location = true
+is_project = true
 """
         pyproject_contents = pyproject_contents.replace(
             "[tool.dagster]", f"{tool_dg_section}\n[tool.dagster]"

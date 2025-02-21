@@ -28,12 +28,12 @@ COMPONENTS_SNIPPETS_DIR = (
     / "docs_beta_snippets"
     / "guides"
     / "components"
-    / "deployments"
+    / "workspace"
 )
-MASK_MY_DEPLOYMENT = (r"\/.*?\/my-deployment", "/.../my-deployment")
+MASK_MY_WORKSPACE = (r"\/.*?\/workspace", "/.../workspace")
 
 
-def test_components_docs_deployments(update_snippets: bool) -> None:
+def test_components_docs_workspace(update_snippets: bool) -> None:
     snip_no = 0
 
     def next_snip_no():
@@ -55,19 +55,18 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
     ):
         os.chdir(tempdir)
 
-        # Scaffold deployment
+        # Scaffold workspace
         run_command_and_snippet_output(
-            cmd="dg scaffold deployment my-deployment",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-deployment-scaffold.txt",
+            cmd="dg init",
+            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-dg-init.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_DEPLOYMENT],
+            snippet_replace_regex=[MASK_MY_WORKSPACE],
         )
 
         # Validate scaffolded files
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="cd my-deployment && tree",
+            cmd="cd workspace && tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
@@ -82,22 +81,22 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             ],
         )
 
-        # Scaffold code location
+        # Scaffold project
         run_command_and_snippet_output(
-            cmd="dg scaffold code-location code-location-1 --use-editable-dagster",
+            cmd="dg scaffold project project-1 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-code-location-scaffold.txt",
+            / f"{next_snip_no()}-scaffold-project.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
-                MASK_MY_DEPLOYMENT,
+                MASK_MY_WORKSPACE,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
         )
 
         # Validate scaffolded files
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name code_location_1.egg-info -exec rm -r {} \+")
+        _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
         run_command_and_snippet_output(
             cmd="tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
@@ -110,10 +109,10 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             custom_comparison_fn=compare_tree_output,
         )
 
-        # Validate code location toml
+        # Validate project toml
         check_file(
-            "code_locations/code-location-1/pyproject.toml",
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-code-location-pyproject.toml",
+            "projects/project-1/pyproject.toml",
+            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-project-pyproject.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[tool.dagster]"),
@@ -123,11 +122,11 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
 
         # Check component types
         run_command_and_snippet_output(
-            cmd="cd code_locations/code-location-1 && dg list component-type",
+            cmd="cd projects/project-1 && dg list component-type",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_DEPLOYMENT],
+            snippet_replace_regex=[MASK_MY_WORKSPACE],
         )
         _run_command(
             f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[sling]'"
@@ -137,37 +136,36 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_DEPLOYMENT],
+            snippet_replace_regex=[MASK_MY_WORKSPACE],
         )
 
-        # Scaffold new code location
+        # Scaffold new project
         run_command_and_snippet_output(
-            cmd="cd ../.. && dg scaffold code-location code-location-2 --use-editable-dagster",
+            cmd="cd ../.. && dg scaffold project project-2 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-code-location-scaffold.txt",
+            / f"{next_snip_no()}-scaffold-project.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
-                MASK_MY_DEPLOYMENT,
+                MASK_MY_WORKSPACE,
                 (r"\nUsing[\s\S]*", "\n..."),
             ],
         )
 
-        # List code locations
+        # List projects
         run_command_and_snippet_output(
-            cmd="dg list code-location",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-code-location-list.txt",
+            cmd="dg list project",
+            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-project-list.txt",
             update_snippets=update_snippets,
         )
 
-        # Check component types in new code location
+        # Check component types in new project
         run_command_and_snippet_output(
-            cmd="cd code_locations/code-location-2 && dg list component-type",
+            cmd="cd projects/project-2 && dg list component-type",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-component-type-list.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_DEPLOYMENT],
+            snippet_replace_regex=[MASK_MY_WORKSPACE],
         )
 
         # Create workspace.yaml file
@@ -176,18 +174,18 @@ def test_components_docs_deployments(update_snippets: bool) -> None:
             "workspace.yaml",
             """load_from:
   - python_file:
-      relative_path: code_locations/code-location-1/code_location_1/definitions.py
-      location_name: code_location_1
-      executable_path: code_locations/code-location-1/.venv/bin/python
+      relative_path: projects/project-1/project_1/definitions.py
+      location_name: project_1
+      executable_path: projects/project-1/.venv/bin/python
   - python_file:
-      relative_path: code_locations/code-location-2/code_location_2/definitions.py
-      location_name: code_location_2
-      executable_path: code_locations/code-location-2/.venv/bin/python
+      relative_path: projects/project-2/project_2/definitions.py
+      location_name: project_2
+      executable_path: projects/project-2/.venv/bin/python
 """,
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-workspace.yaml",
         )
 
         # Ensure dagster loads
         output = _run_command("uv tool run dagster definitions validate")
-        assert "Validation successful for code location code_location_1" in output
-        assert "Validation successful for code location code_location_2" in output
+        assert "Validation successful for project project_1" in output
+        assert "Validation successful for project project_2" in output

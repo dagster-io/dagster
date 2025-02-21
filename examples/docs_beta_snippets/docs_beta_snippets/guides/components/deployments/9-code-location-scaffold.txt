@@ -1,5 +1,0 @@
-cd ../.. && dg scaffold code-location code-location-2
-
-Creating a Dagster code location at /.../my-deployment/code_locations/code-location-2.
-Scaffolded files for Dagster project at /.../my-deployment/code_locations/code-location-2.
-...

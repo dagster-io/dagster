@@ -1,0 +1,6 @@
+dg init
+
+Scaffolded files for Dagster workspace at /../workspace.
+Enter the name of your first Dagster project (or press Enter to continue without creating a project): myproject
+Creating a Dagster project at /../workspace/projects/myproject.
+Scaffolded files for Dagster project at /../workspace/projects/myproject.
