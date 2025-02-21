@@ -16,16 +16,16 @@ from dagster_dg.utils.editor import (
 _DEFAULT_SCHEMA_FOLDER_NAME = ".vscode"
 
 
-@click.group(name="configure-editor", cls=DgClickGroup)
-def configure_editor_group():
-    """Commands for configuring your editor."""
+@click.group(name="utils", cls=DgClickGroup)
+def utils_group():
+    """Assorted utility commands."""
 
 
-@configure_editor_group.command(name="code-location", cls=DgClickCommand)
+@utils_group.command(name="configure-editor", cls=DgClickCommand)
 @dg_global_options
 @click.argument("editor", type=click.Choice(["vscode", "cursor"]))
 @click.pass_context
-def configure_editor_code_location_command(
+def configure_editor_command(
     context: click.Context,
     editor: str,
     **global_options: object,
