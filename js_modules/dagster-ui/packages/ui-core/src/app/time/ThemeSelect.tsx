@@ -20,7 +20,7 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
     },
     {
       key: DagsterTheme.System,
-      label: 'Match system setting',
+      label: 'Use system setting',
       icon: 'daemon',
     },
     {
@@ -35,7 +35,7 @@ export const ThemeSelect = ({theme, onChange}: Props) => {
     },
     {
       key: DagsterTheme.SystemNoRedGreen,
-      label: 'Match system setting (no red or green)',
+      label: 'Use system setting (no red or green)',
       icon: 'daemon',
     },
   ];
