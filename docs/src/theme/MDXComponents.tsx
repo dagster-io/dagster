@@ -7,15 +7,17 @@ import TabItem from '@theme/TabItem';
 import TOCInline from '@theme/TOCInline';
 import Link from '@docusaurus/Link';
 import CliInvocationExample from '../components/CliInvocationExample';
+import {CodeReferenceLink} from '../components/CodeReferenceLink';
 
 export default {
   // Re-use the default mapping
   ...MDXComponents,
-  PyObject,
-  Tabs,
-  TabItem,
-  CodeExample,
   CliInvocationExample,
-  TOCInline,
+  CodeExample,
+  CodeReferenceLink,
   Link,
+  PyObject,
+  TOCInline,
+  TabItem,
+  Tabs,
 };
