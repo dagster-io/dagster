@@ -172,7 +172,7 @@ To create a custom admonition linking GitHub at the specific version of code use
 <CodeReferenceLink filePath="examples/tutorial_notebook_assets/" />
 ```
 
-On the 1.10 version of docs, this creates a link to `https://github.com/dagster-io/dagster/tree/1.10.0/examples/tutorial_notebook_assets/`.
+On the 1.10 version of docs this creates a link to `https://github.com/dagster-io/dagster/tree/1.10.0/examples/tutorial_notebook_assets/`.
 
 ### Diagrams
 
