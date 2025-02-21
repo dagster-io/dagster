@@ -161,7 +161,9 @@ def test_scaffold_code_location_skip_venv_success() -> None:
         assert not Path("foo-bar/uv.lock").exists()
 
 
-def test_scaffold_code_location_no_populate_cache_success() -> None:
+def test_scaffold_code_location_no_populate_cache_success(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
             "scaffold",
@@ -188,7 +190,9 @@ def test_scaffold_code_location_no_populate_cache_success() -> None:
             assert "CACHE [miss]" in result.output
 
 
-def test_scaffold_code_location_no_use_dg_managed_environment_success() -> None:
+def test_scaffold_code_location_no_use_dg_managed_environment_success(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
             "scaffold",
