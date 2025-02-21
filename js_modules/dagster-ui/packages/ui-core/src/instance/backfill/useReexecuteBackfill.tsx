@@ -1,5 +1,5 @@
 import {Group} from '@dagster-io/ui-components';
-import {useHistory} from 'react-router';
+import {useHistory} from 'react-router-dom';
 
 import {gql, useMutation} from '../../apollo-client';
 import {BackfillActionsBackfillFragment} from './types/BackfillFragments.types';
