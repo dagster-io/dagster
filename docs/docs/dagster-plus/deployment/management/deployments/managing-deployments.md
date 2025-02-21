@@ -103,11 +103,16 @@ Create a file with the settings you'd like to configure. For example:
 ```yaml
 # my-settings.yaml
 
-run_queue:
-  max_concurrent_runs: 10
-  tag_concurrency_limits:
-    - key: "special-runs"
-      limit: 5
+concurrency:
+  pools:
+    granularity: "run"
+    default_limit: 1
+  runs:
+    max_concurrent_runs: 10
+    tag_concurrency_limits:
+      - key: "database"
+        value: "redshift"
+        limit: 5
 
 run_monitoring:
   start_timeout_seconds: 1200
