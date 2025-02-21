@@ -59,6 +59,7 @@ DEPLOYMENT_CONTEXT_COMMANDS = [
 
 DEPLOYMENT_OR_CODE_LOCATION_CONTEXT_COMMANDS = [
     CommandSpec(("dev",)),
+    CommandSpec(("check", "definitions")),
 ]
 
 # ########################
