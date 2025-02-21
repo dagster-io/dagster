@@ -34,7 +34,7 @@ def test_docs_component_type_success_output_console():
         )
         assert_runner_result(result)
         assert "<html" in result.output
-        assert "An asset that has a complex params schema." in result.output
+        assert "An asset that has a complex schema." in result.output
 
         # Test that examples propagate into docs
         assert "value: example_for_value" in result.output
