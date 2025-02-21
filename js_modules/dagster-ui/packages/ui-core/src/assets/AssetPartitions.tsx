@@ -81,6 +81,7 @@ export const AssetPartitions = ({
     modifyQueryString: true,
     assetHealth,
     shouldReadPartitionQueryStringParam: false,
+    defaultSelection: 'all',
   });
 
   const [sortTypes, setSortTypes] = useState<Array<SortType>>([]);
