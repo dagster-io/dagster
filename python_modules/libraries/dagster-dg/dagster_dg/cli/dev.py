@@ -81,14 +81,13 @@ def dev_command(
     live_data_poll_rate: int,
     **global_options: Mapping[str, object],
 ) -> None:
-    """Start a local deployment of your Dagster project.
+    """Start a local instance of Dagster.
 
-    If run inside a deployment directory, this command will launch all code locations in the
-    deployment. If launched inside a code location directory, it will launch only that code
-    location.
+    If run inside a workspace directory, this command will launch all projects in the
+    workspace. If launched inside a project directory, it will launch only that project.
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_deployment_or_code_location_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
     forward_options = [
         *_format_forwarded_option("--code-server-log-level", code_server_log_level),
@@ -99,9 +98,9 @@ def dev_command(
         *_format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
     ]
 
-    # In a code location context, we can just run `dagster dev` directly, using `dagster` from the
-    # code location's environment.
-    if dg_context.is_code_location:
+    # In a project context, we can just run `dagster dev` directly, using `dagster` from the
+    # project's environment.
+    if dg_context.is_project:
         cmd_location = dg_context.get_executable("dagster")
         if dg_context.use_dg_managed_environment:
             cmd = ["uv", "run", "dagster", "dev", *forward_options]
@@ -109,8 +108,8 @@ def dev_command(
             cmd = [cmd_location, "dev", *forward_options]
         temp_workspace_file_cm = nullcontext()
 
-    # In a deployment context, dg dev will construct a temporary
-    # workspace file that points at all defined code locations and invoke:
+    # In a workspace context, dg dev will construct a temporary
+    # workspace file that points at all defined projects and invoke:
     #
     #     uv tool run --with dagster-webserver dagster dev
     #
@@ -118,7 +117,7 @@ def dev_command(
     # installed in the isolated environment that `uv` will install `dagster` in.
     # `dagster-webserver` is not a dependency of `dagster` but is required to run the `dev`
     # command.
-    elif dg_context.is_deployment:
+    elif dg_context.is_workspace:
         cmd = [
             "uv",
             "tool",
@@ -132,7 +131,7 @@ def dev_command(
         cmd_location = "ephemeral dagster dev"
         temp_workspace_file_cm = _temp_workspace_file(dg_context)
     else:
-        exit_with_error("This command must be run inside a code location or deployment directory.")
+        exit_with_error("This command must be run inside a project or workspace directory.")
 
     with pushd(dg_context.root_path), temp_workspace_file_cm as workspace_file:
         print(f"Using {cmd_location}")  # noqa: T201
@@ -170,16 +169,16 @@ def dev_command(
 def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
         entries = []
-        for location in dg_context.get_code_location_names():
-            code_location_root = dg_context.get_code_location_path(location)
-            loc_context = dg_context.with_root_path(code_location_root)
+        for project_name in dg_context.get_project_names():
+            project_root = dg_context.get_project_path(project_name)
+            project_context: DgContext = dg_context.with_root_path(project_root)
             entry = {
-                "working_directory": str(dg_context.deployment_root_path),
-                "relative_path": str(loc_context.definitions_path),
-                "location_name": loc_context.code_location_name,
+                "working_directory": str(dg_context.workspace_root_path),
+                "relative_path": str(project_context.definitions_path),
+                "location_name": project_context.project_name,
             }
-            if loc_context.use_dg_managed_environment:
-                entry["executable_path"] = str(loc_context.code_location_python_executable)
+            if project_context.use_dg_managed_environment:
+                entry["executable_path"] = str(project_context.project_python_executable)
             entries.append({"python_file": entry})
         yaml.dump({"load_from": entries}, temp_workspace_file)
         temp_workspace_file.flush()

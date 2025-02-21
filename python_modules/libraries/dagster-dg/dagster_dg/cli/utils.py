@@ -34,7 +34,7 @@ def configure_editor_command(
     executable_name = "code" if editor == "vscode" else "cursor"
 
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     recommend_yaml_extension(executable_name)
 
