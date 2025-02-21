@@ -1,5 +1,5 @@
 dg scaffold code-location jaffle-platform
 
 Creating a Dagster code location at /.../jaffle-platform.
-Scaffolded files for Dagster project in /.../jaffle-platform.
+Scaffolded files for Dagster project at /.../jaffle-platform.
 ...

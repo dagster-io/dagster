@@ -1,22 +1,22 @@
 tree
 
 .
+├── README.md
 ├── my_existing_project
+│   ├── __init__.py
 │   ├── analytics
-│   │   ├── assets.py
 │   │   ├── __init__.py
+│   │   ├── assets.py
 │   │   └── jobs.py
 │   ├── components
 │   │   └── elt-definitions
+│   │       ├── __init__.py
 │   │       ├── assets.py
 │   │       ├── component.yaml
 │   │       ├── definitions.py
-│   │       ├── __init__.py
 │   │       └── jobs.py
-│   ├── definitions.py
-│   └── __init__.py
+│   └── definitions.py
 ├── pyproject.toml
-├── README.md
 └── uv.lock
 
 5 directories, 13 files

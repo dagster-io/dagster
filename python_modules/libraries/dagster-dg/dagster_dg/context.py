@@ -39,6 +39,9 @@ _DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code_locations"
 _DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE: Final = "lib"
 _DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE: Final = "components"
 
+# Workspace
+_WORKSPACE_PROJECTS_DIR: Final = "projects"
+
 
 class DgContext:
     root_path: Path
@@ -166,6 +169,10 @@ class DgContext:
     def is_deployment(self) -> bool:
         return self.config.is_deployment
 
+    @property
+    def is_workspace(self) -> bool:
+        return self.config.is_workspace
+
     @cached_property
     def deployment_root_path(self) -> Path:
         if not self.is_deployment:
@@ -177,12 +184,33 @@ class DgContext:
             raise DgError("Cannot find deployment configuration file")
         return deployment_config_path.parent
 
+    @cached_property
+    def workspace_root_path(self) -> Path:
+        if not self.is_workspace:
+            raise DgError("`workspace_root_path` is only available in a workspace context")
+        workspace_config_path = DgConfig.discover_config_file(
+            self.root_path, lambda x: x.get("is_workspace", False)
+        )
+        if not workspace_config_path:
+            raise DgError("Cannot find workspace configuration file")
+        return workspace_config_path.parent
+
     def has_code_location(self, name: str) -> bool:
         if not self.is_deployment:
             raise DgError(
                 "`deployment_has_code_location` is only available in a deployment context"
             )
+
         return (self.deployment_root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR / name).is_dir()
+
+    def get_workspace_project_path(self, name: str) -> Path:
+        return self.workspace_root_path / _WORKSPACE_PROJECTS_DIR / name
+
+    def has_project(self, name: str) -> bool:
+        if not self.is_workspace:
+            raise DgError("`has_project` is only available in a workspace context")
+
+        return self.get_workspace_project_path(name).is_dir()
 
     @property
     def code_location_root_path(self) -> Path:

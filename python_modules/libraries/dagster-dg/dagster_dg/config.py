@@ -54,6 +54,7 @@ class DgConfig:
     is_component_lib: bool = False
     is_code_location: bool = False
     is_deployment: bool = False
+    is_workspace: bool = False
     root_package: Optional[str] = None
     component_package: Optional[str] = None
     component_lib_package: Optional[str] = None
@@ -105,6 +106,7 @@ class DgPartialConfig(TypedDict, total=False):
     is_code_location: bool
     is_component_lib: bool
     is_deployment: bool
+    is_workspace: bool
 
 
 def _normalize_dg_partial_config(raw_dict: Mapping[str, object]) -> DgPartialConfig:
@@ -136,6 +138,8 @@ def _normalize_dg_partial_config(raw_dict: Mapping[str, object]) -> DgPartialCon
         raise DgValidationError("`is_component_lib` must be a boolean.")
     if "is_deployment" in config and not isinstance(config["is_deployment"], bool):
         raise DgValidationError("`is_deployment` must be a boolean.")
+    if "is_workspace" in config and not isinstance(config["is_workspace"], bool):
+        raise DgValidationError("`is_workspace` must be a boolean.")
 
     if unrecognized_keys := [k for k in config.keys() if k not in DgPartialConfig.__annotations__]:
         raise DgValidationError(f"Unrecognized fields in configuration: {unrecognized_keys}")

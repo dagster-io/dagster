@@ -1,4 +1,4 @@
 dg scaffold deployment my-deployment
 
 Creating a Dagster deployment at my-deployment.
-Scaffolded files for Dagster project in my-deployment.
+Scaffolded files for Dagster deployment at my-deployment.
