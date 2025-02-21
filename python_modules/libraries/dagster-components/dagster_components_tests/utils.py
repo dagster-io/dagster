@@ -47,7 +47,7 @@ def assert_assets(component: Component, expected_assets: int) -> None:
     assert result.success
 
 
-def generate_component_lib_pyproject_toml(name: str, is_code_location: bool = False) -> str:
+def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -> str:
     pkg_name = name.replace("-", "_")
     base = textwrap.dedent(f"""
         [build-system]
@@ -68,13 +68,13 @@ def generate_component_lib_pyproject_toml(name: str, is_code_location: bool = Fa
         is_component_lib = true
 
     """)
-    if is_code_location:
+    if is_project:
         return base + textwrap.dedent("""
-        is_code_location = true
+        is_project = true
 
         [tool.dagster]
         module_name = "{ pkg_name }.definitions"
-        project_name = "{ pkg_name }"
+        code_location_name = "{ pkg_name }"
         """)
     else:
         return base
@@ -86,7 +86,7 @@ def temp_code_location_bar() -> Iterator[None]:
         Path("bar/bar/lib").mkdir(parents=True)
         Path("bar/bar/components").mkdir(parents=True)
         with open("bar/pyproject.toml", "w") as f:
-            f.write(generate_component_lib_pyproject_toml("bar", is_code_location=True))
+            f.write(generate_component_lib_pyproject_toml("bar", is_project=True))
         Path("bar/bar/__init__.py").touch()
         Path("bar/bar/definitions.py").touch()
         Path("bar/bar/lib/__init__.py").touch()
@@ -125,7 +125,7 @@ def create_code_location_from_components(
         code_location_dir = Path(tmpdir) / "my_location"
         code_location_dir.mkdir()
         with open(code_location_dir / "pyproject.toml", "w") as f:
-            f.write(generate_component_lib_pyproject_toml("my_location", is_code_location=True))
+            f.write(generate_component_lib_pyproject_toml("my_location", is_project=True))
 
         for src_path in src_paths:
             component_name = src_path.split("/")[-1]

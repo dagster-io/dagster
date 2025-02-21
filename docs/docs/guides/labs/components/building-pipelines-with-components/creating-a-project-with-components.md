@@ -1,5 +1,5 @@
 ---
-title: 'Creating a code location with components'
+title: 'Creating a project with components'
 sidebar_position: 100
 ---
 
@@ -15,11 +15,11 @@ Before creating a project with components, you must follow the [steps to install
 
 :::
 
-After [installing dependencies](/guides/labs/components/index.md#installation), you can scaffold a components-ready code location for your project. In the example below, we scaffold a code location called `jaffle-platform`:
+After [installing dependencies](/guides/labs/components/index.md#installation), you can scaffold a components-ready project. In the example below, we scaffold a project called `jaffle-platform`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
 
-This command builds a code location and initializes a new Python virtual environment inside of it. When using `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
+This command builds a project and initializes a new Python virtual environment inside of it. When using `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
 ## Overview of files and directories
 
@@ -48,11 +48,11 @@ The `tool.dagster` section of `pyproject.toml` is not `dg`-specific. This sectio
 
 #### tool.dg section
 
-The `tool.dg` section contains two settings requiring more explanation: `is_code_location` and `is_component_lib`.
+The `tool.dg` section contains two settings requiring more explanation: `is_project` and `is_component_lib`.
 
-##### is_code_location setting
+##### is_project setting
 
-`is_code_location = true` specifies that this project is a `dg`-managed Dagster code location. Code locations created with components are regular Dagster code locations with a particular structure.
+`is_project = true` specifies that this project is a `dg`-managed Dagster project. Projects created with components are regular Dagster projects with a particular structure.
 
 To understand the structure, let's look at the content of `jaffle_platform/definitions.py`:
 
@@ -64,13 +64,13 @@ This call to `build_component_defs` will:
 - compute a set of `Definitions` from each component
 - merge the component-specific definitions into a single `Definitions` object
 
-`is_code_location` is telling `dg` that the project is structured in this way and therefore contains component instances. In the current project, component instances will be placed in the default location at `jaffle_platform/components`.
+`is_project` is telling `dg` that the project is structured in this way and therefore contains component instances. In the current project, component instances will be placed in the default location at `jaffle_platform/components`.
 
 ##### is_component_lib setting
 
 `is_component_lib = true` specifies that the project is a component library. This means that the project may contain component types that can be referenced when generating component instances.
 
-In a typical code location, most components are likely to be instances of types defined in external libraries (e.g. `dagster-components`), but you can also define custom component types scoped to your project. That is why `is_component_lib` is set to `true` by default. Any scaffolded component types in `jaffle_platform` will be placed in the default location at `jaffle_platform/lib`.
+In a typical project, most components are likely to be instances of types defined in external libraries (e.g. `dagster-components`), but you can also define custom component types scoped to your project. That is why `is_component_lib` is set to `true` by default. Any scaffolded component types in `jaffle_platform` will be placed in the default location at `jaffle_platform/lib`.
 
 You can also see that this module is registered under the `dagster.components` entry point in `pyproject.toml`. This is what makes the components discoverable to `dg`:
 
@@ -78,4 +78,4 @@ You can also see that this module is registered under the `dagster.components` e
 
 ## Next steps
 
-After scaffolding your code location with components, you can [add more components](adding-components) to complete your pipeline.
+After scaffolding your project with components, you can [add more components](adding-components) to complete your pipeline.

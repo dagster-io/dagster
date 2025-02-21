@@ -44,22 +44,22 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 :::
 
 
-### 2. Scaffold a new code location
+### 2. Scaffold a new project
 
-After installing dependencies, scaffold a components-ready code location for your project:
+After installing dependencies, scaffold a components-ready project:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
 
-The `dg scaffold code-location` command builds a code location at `jaffle-platform` and initializes a new Python
+The `dg scaffold project` command builds a project at `jaffle-platform` and initializes a new Python
 virtual environment inside it. When you use `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
-To learn more about the files, directories, and default settings in a code location scaffolded with `dg scaffold code-location`, see "[Creating a code location with components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components#overview-of-files-and-directories)".
+To learn more about the files, directories, and default settings in a project scaffolded with `dg scaffold project`, see "[Creating a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components#overview-of-files-and-directories)".
 
 ## Ingest data
 
 ### 1. Add the Sling component type to your environment
 
-To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the basic `dagster-components` package that was installed when you scaffolded your code location doesn't include components for specific integrations (like Sling):
+To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the basic `dagster-components` package that was installed when you scaffolded your project doesn't include components for specific integrations (like Sling):
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/7-dg-list-component-types.txt" />
 
@@ -69,9 +69,9 @@ To make the Sling component available in your environment, install the `sling` e
 
 :::note
 
-`dg` always operates in an isolated environment, but it is able to access the set of component types available in your project environment because it attempts to resolve a project root whenever it is run. If `dg` finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory. (This can be confirmed by the presence of a `uv.lock` file.)
+`dg` always operates in an isolated environment, but it is able to access the set of component types available in your project environment because it attempts to resolve a project root whenever it is run. If `dg` finds a `pyproject.toml` file with a `tool.dg.is_project = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory. (This can be confirmed by the presence of a `uv.lock` file.)
 
-When you run commands like `dg list component-type` , `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg scaffold code-location` command.
+When you run commands like `dg list component-type` , `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg scaffold project` command.
 
 :::
 
@@ -121,7 +121,7 @@ Finally, create a `replication.yaml` file that references the downloaded files:
 
 ### 6. View and materialize assets in the Dagster UI
 
-Load your code location in the Dagster UI to see what you've built so far. To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
+Load your project in the Dagster UI to see what you've built so far. To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
 
 <CliInvocationExample contents="uv run dagster dev # will be dg dev in the future" />
 
@@ -197,7 +197,7 @@ Finally, run `dg check yaml` again to validate the fix:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/25-dg-component-check.txt" />
 
-Reload the code location in Dagster UI to verify that the keys load properly:
+Reload the project in Dagster UI to verify that the keys load properly:
 
 ![](/images/guides/build/projects-and-components/components/dbt-2.png)
 
@@ -251,4 +251,4 @@ params:
 
 ## Next steps
 
-To continue your journey with components, you can [add more components to your project](/guides/labs/components/building-pipelines-with-components/adding-components) or learn how to [manage multiple code locations with components](/guides/labs/components/managing-multiple-code-locations).
+To continue your journey with components, you can [add more components to your project](/guides/labs/components/building-pipelines-with-components/adding-components) or learn how to [manage multiple projects with components](/guides/labs/components/managing-multiple-projects).

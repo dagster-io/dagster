@@ -1,5 +1,5 @@
 ---
-title: 'Using components in an existing code location'
+title: 'Using components in an existing project'
 sidebar_position: 200
 ---
 
@@ -11,11 +11,11 @@ This feature is still in development and might change in patch releases. It’s 
 
 :::note
 
-This guide is only relevant if you are starting from an _existing_ Dagster code location. This setup is unnecessary if you used `dg scaffold code-location` to create your code location.
+This guide is only relevant if you are starting from an _existing_ Dagster project. This setup is unnecessary if you used `dg scaffold project` to create your project.
 
 :::
 
-Let's begin with a Dagster code location that has some assets, but no components:
+Let's begin with a Dagster project that has some assets, but no components:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/existing-project/1-tree.txt"  />
 
@@ -31,7 +31,7 @@ We'll need to install the `dg` command line tool, which is used to scaffold comp
 
 Next, we'll need to install the `dagster-components` package.
 
-Though this is optional, we generally recommend using a separate virtual environment for each code location, which can be accomplished using `uv`:
+Though this is optional, we generally recommend using a separate virtual environment for each project, which can be accomplished using `uv`:
 
 <Tabs>
     <TabItem value='before' label='Using uv virtual environment'>
@@ -49,20 +49,20 @@ Though this is optional, we generally recommend using a separate virtual environ
 
 ### Update `pyproject.toml`
 
-Add a `tool.dg` section to your `pyproject.toml` file. This will tell the `dg` command line tool that this code location is a valid Dagster code location.
+Add a `tool.dg` section to your `pyproject.toml` file. This will tell the `dg` command line tool that this project is a valid Dagster project.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/existing-project/2-pyproject.toml" language="toml" title="pyproject.toml" />
 
 
 ### Create a `components` directory
 
-Next, you'll want to create a directory to contain any new components you add to your code location. By convention, this directory is named `components`, and exists at the top level of your code location's Python module.
+Next, you'll want to create a directory to contain any new components you add to your project. By convention, this directory is named `components`, and exists at the top level of your project's Python module.
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/existing-project/5-mkdir-components.txt" />
 
 ## Modify top-level definitions
 
-`dagster-components` provides a utility to create a `Definitions` object from your components directory. Because you're working with an existing code location, you'll want to combine your existing definitions with the ones from your components directory.
+`dagster-components` provides a utility to create a `Definitions` object from your components directory. Because you're working with an existing project, you'll want to combine your existing definitions with the ones from your components directory.
 
 To do so, you'll need to modify your `definitions.py` file, or whichever file contains your top-level `Definitions` object.
 
@@ -77,10 +77,10 @@ You can manually construct a set of definitions for your components using `build
     </TabItem>
 </Tabs>
 
-Now, your code location is ready to use components! `dg` can be used to scaffold new components directly into the existing code location.
+Now, your project is ready to use components! `dg` can be used to scaffold new components directly into the existing project.
 
 ## Next steps
 
 - [Migrate existing definitions to components](existing-definitions)
-- [Add a new component to your code location](/guides/labs/components/building-pipelines-with-components/adding-components)
+- [Add a new component to your project](/guides/labs/components/building-pipelines-with-components/adding-components)
 - [Create a new component type](/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type)

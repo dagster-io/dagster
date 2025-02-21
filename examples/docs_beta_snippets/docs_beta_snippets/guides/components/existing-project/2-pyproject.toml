@@ -1,6 +1,6 @@
 ...
 [tool.dg]
-is_code_location = true
+is_project = true
 
 [tool.dagster]
 module_name = "my_existing_project.definitions"

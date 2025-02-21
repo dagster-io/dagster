@@ -4,10 +4,10 @@ sidebar_position: 100
 ---
 
 :::note
-This guide covers using existing Python definitions with components. This guide presupposes a components-enabled project. See the [getting started guide](/guides/labs/components/) or [Making an existing code location components-compatible](/guides/labs/components/incrementally-adopting-components/existing-code-location) guide for more information.
+This guide covers using existing Python definitions with components. This guide presupposes a components-enabled project. See the [getting started guide](/guides/labs/components/) or [Making an existing project components-compatible](/guides/labs/components/incrementally-adopting-components/existing-project) guide for more information.
 :::
 
-When adding components to an existing Dagster code location, it is often useful to restructure your definitions into component folders, making it easier to eventually migrate them entirely to using components.
+When adding components to an existing Dagster project, it is often useful to restructure your definitions into component folders, making it easier to eventually migrate them entirely to using components.
 
 ## Example project
 
@@ -65,5 +65,5 @@ Our project root now only constructs Definitions from components:
 
 ## Next steps
 
-- [Add a new component to your code location](/guides/labs/components/building-pipelines-with-components/adding-components)
+- [Add a new component to your project](/guides/labs/components/building-pipelines-with-components/adding-components)
 - [Create a new component type](/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type)
