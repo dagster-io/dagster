@@ -4,7 +4,7 @@ import logging
 import sys
 import threading
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
@@ -1254,7 +1254,7 @@ def _fetch_existing_runs(
     instance: DagsterInstance,
     remote_sensor: RemoteSensor,
     run_requests: Sequence[RunRequest],
-):
+) -> dict[str, DagsterRun]:
     run_keys = [run_request.run_key for run_request in run_requests if run_request.run_key]
 
     if not run_keys:
@@ -1286,10 +1286,12 @@ def _fetch_existing_runs(
         ):
             valid_runs.append(run)
 
-    existing_runs = {}
+    existing_runs: dict[str, DagsterRun] = {}
     for run in valid_runs:
         tags = run.tags or {}
-        run_key = tags.get(RUN_KEY_TAG)
+        # Guaranteed to have non-null run key because the source set of runs is `runs_with_run_keys`
+        # above.
+        run_key = check.not_none(tags.get(RUN_KEY_TAG))
         existing_runs[run_key] = run
 
     return existing_runs
@@ -1304,9 +1306,10 @@ def _get_or_create_sensor_run(
     run_id: str,
     run_request: RunRequest,
     target_data: TargetSnap,
-    existing_runs_by_key: Mapping[Optional[str], DagsterRun],
+    existing_runs_by_key: dict[str, DagsterRun],
 ) -> Union[DagsterRun, SkippedSensorRun]:
-    run = existing_runs_by_key.get(run_request.run_key) or instance.get_run_by_id(run_id)
+    run_key = run_request.run_key
+    run = (run_key and existing_runs_by_key.get(run_key)) or instance.get_run_by_id(run_id)
 
     if run:
         if run.status != DagsterRunStatus.NOT_STARTED:
@@ -1316,15 +1319,20 @@ def _get_or_create_sensor_run(
         else:
             logger.info(
                 f"Run {run.run_id} already created with the run key "
-                f"`{run_request.run_key}` for {remote_sensor.name}"
+                f"`{run_key}` for {remote_sensor.name}"
             )
             return run
 
     logger.info(f"Creating new run for {remote_sensor.name}")
 
-    return _create_sensor_run(
+    run = _create_sensor_run(
         instance, code_location, remote_sensor, remote_job, run_id, run_request, target_data
     )
+
+    # Make sure that runs from the same tick are also unique by run key
+    if run_key:
+        existing_runs_by_key[run_key] = run
+    return run
 
 
 def _create_sensor_run(
