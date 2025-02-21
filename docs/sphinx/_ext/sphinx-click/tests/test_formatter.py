@@ -4,7 +4,7 @@ import unittest
 import click
 from sphinx_click import ext
 
-CLICK_VERSION = tuple(int(x) for x in click.__version__.split('.')[0:2])
+CLICK_VERSION = tuple(int(x) for x in click.__version__.split(".")[0:2])
 
 
 class CommandTestCase(unittest.TestCase):
@@ -24,8 +24,8 @@ class CommandTestCase(unittest.TestCase):
             """A sample command."""
             pass
 
-        ctx = click.Context(foobar, info_name='foobar')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(foobar, info_name="foobar")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -38,7 +38,7 @@ class CommandTestCase(unittest.TestCase):
             foobar [OPTIONS]
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_basic_parameters(self):
@@ -49,31 +49,31 @@ class CommandTestCase(unittest.TestCase):
         """
 
         @click.command()
-        @click.option('--param', envvar='PARAM', help='A sample option')
-        @click.option('--another', metavar='[FOO]', help='Another option')
+        @click.option("--param", envvar="PARAM", help="A sample option")
+        @click.option("--another", metavar="[FOO]", help="Another option")
         @click.option(
-            '--choice',
-            help='A sample option with choices',
-            type=click.Choice(['Option1', 'Option2']),
+            "--choice",
+            help="A sample option with choices",
+            type=click.Choice(["Option1", "Option2"]),
         )
         @click.option(
-            '--numeric-choice',
-            metavar='<choice>',
-            help='A sample option with numeric choices',
+            "--numeric-choice",
+            metavar="<choice>",
+            help="A sample option with numeric choices",
             type=click.Choice([1, 2, 3]),
         )
         @click.option(
-            '--flag',
+            "--flag",
             is_flag=True,
-            help='A boolean flag',
+            help="A boolean flag",
         )
-        @click.argument('ARG', envvar='ARG')
+        @click.argument("ARG", envvar="ARG")
         def foobar(bar):
             """A sample command."""
             pass
 
-        ctx = click.Context(foobar, info_name='foobar')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(foobar, info_name="foobar")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -134,19 +134,19 @@ class CommandTestCase(unittest.TestCase):
             Provide a default for :option:`ARG`
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_help_epilog(self):
         """Validate formatting of explicit help and epilog strings."""
 
-        @click.command(help='A sample command.', epilog='A sample epilog.')
-        @click.option('--param', help='A sample option')
+        @click.command(help="A sample command.", epilog="A sample epilog.")
+        @click.option("--param", help="A sample option")
         def foobar(bar):
             pass
 
-        ctx = click.Context(foobar, info_name='foobar')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(foobar, info_name="foobar")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -167,7 +167,7 @@ class CommandTestCase(unittest.TestCase):
         A sample epilog.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_help_argument(self):
@@ -178,20 +178,20 @@ class CommandTestCase(unittest.TestCase):
         """
 
         class CustomArgument(click.Argument):
-            def __init__(self, *args, help=None, **kwargs):
+            def __init__(self, *args, help=None, **kwargs):  # noqa
                 super().__init__(*args, **kwargs)
                 self.help = help
 
         @click.command()
-        @click.option('--option', help='A sample option')
-        @click.argument('ARG', help='A sample argument', cls=CustomArgument)
-        @click.argument('ARG_NO_HELP', cls=CustomArgument)
+        @click.option("--option", help="A sample option")
+        @click.argument("ARG", help="A sample argument", cls=CustomArgument)
+        @click.argument("ARG_NO_HELP", cls=CustomArgument)
         def foobar(bar):
             """A sample command."""
             pass
 
-        ctx = click.Context(foobar, info_name='foobar')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(foobar, info_name="foobar")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -223,39 +223,39 @@ class CommandTestCase(unittest.TestCase):
             Required argument
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_defaults(self):
         """Validate formatting of user documented defaults."""
 
         @click.command()
-        @click.option('--num-param', type=int, default=42, show_default=True)
+        @click.option("--num-param", type=int, default=42, show_default=True)
         @click.option(
-            '--param',
+            "--param",
             default=lambda: None,
-            show_default='Something computed at runtime',
+            show_default="Something computed at runtime",
         )
         @click.option(
-            '--group',
-            default=[('foo', 'bar')],
+            "--group",
+            default=[("foo", "bar")],
             nargs=2,
             type=click.Tuple([str, str]),
             multiple=True,
             show_default=True,
         )
         @click.option(
-            '--only-show-default',
+            "--only-show-default",
             show_default="Some default computed at runtime!",
         )
-        @click.option('--string-default', default="abc", show_default=True)
-        @click.option('--empty-string-default', default="", show_default=True)
+        @click.option("--string-default", default="abc", show_default=True)
+        @click.option("--empty-string-default", default="", show_default=True)
         def foobar(bar):
             """A sample command."""
             pass
 
-        ctx = click.Context(foobar, info_name='foobar')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(foobar, info_name="foobar")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -294,21 +294,21 @@ class CommandTestCase(unittest.TestCase):
             :default: ``''``
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_show_default(self):
         """Validate formatting of show_default via context_settings."""
 
         @click.command(context_settings={"show_default": True})
-        @click.option('--no-set', default=0)
-        @click.option('--set-false', default=0, show_default=False)
+        @click.option("--no-set", default=0)
+        @click.option("--set-false", default=0, show_default=False)
         def foobar():
             """A sample command."""
             pass
 
-        ctx = click.Context(foobar, info_name='foobar', show_default=True)
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(foobar, info_name="foobar", show_default=True)
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
         self.assertEqual(
             textwrap.dedent(
                 """
@@ -328,7 +328,7 @@ class CommandTestCase(unittest.TestCase):
         .. option:: --set-false <set_false>
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_hidden(self):
@@ -339,20 +339,20 @@ class CommandTestCase(unittest.TestCase):
             """A sample command."""
             pass
 
-        ctx = click.Context(foobar, info_name='foobar')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(foobar, info_name="foobar")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
-        self.assertEqual('', '\n'.join(output))
+        self.assertEqual("", "\n".join(output))
 
     def test_titles(self):
         """Validate a `click.Command` with nested titles."""
 
         @click.command()
-        @click.option('--name', help='Name to say hello to.', required=True, type=str)
+        @click.option("--name", help="Name to say hello to.", required=True, type=str)
         def hello(name):
             """Prints hello to name given.
 
-            Examples
+            Examples:
             --------
 
             .. code:: bash
@@ -360,8 +360,8 @@ class CommandTestCase(unittest.TestCase):
                 my_cli hello --name "Jack"
             """
 
-        ctx = click.Context(hello, info_name='hello')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(hello, info_name="hello")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -387,39 +387,39 @@ class CommandTestCase(unittest.TestCase):
             **Required** Name to say hello to.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_ansi_escape_sequences(self):
         """Validate that ANSI escape sequences are stripped."""
 
-        @click.command(epilog='\033[31mA sample epilog.\033[0m')
+        @click.command(epilog="\033[31mA sample epilog.\033[0m")
         @click.option(
-            '--name',
-            help='Name to say \033[94mhello\033[0m to.',
+            "--name",
+            help="Name to say \033[94mhello\033[0m to.",
             required=True,
             type=str,
         )
         @click.option(
-            '--choice',
-            help='A sample option with choices',
-            type=click.Choice(['\033[94mOption1\033[0m', '\033[94mOption2\033[0m']),
+            "--choice",
+            help="A sample option with choices",
+            type=click.Choice(["\033[94mOption1\033[0m", "\033[94mOption2\033[0m"]),
         )
         @click.option(
-            '--param',
+            "--param",
             default=lambda: None,
-            show_default='Something computed at \033[94mruntime\033[0m',
+            show_default="Something computed at \033[94mruntime\033[0m",
         )
         def foobar():
-            """A sample command with **sparkles**.
+            r"""A sample command with **sparkles**.
 
             We've got \033[31mred text\033[0m, \033[104mblue backgrounds\033[0m, a
             dash of \033[1mbold\033[0m and even some \033[4munderlined words\033[0m.
             """
             pass
 
-        ctx = click.Context(foobar, info_name='foobar')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(foobar, info_name="foobar")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -453,12 +453,10 @@ class CommandTestCase(unittest.TestCase):
         A sample epilog.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
-    @unittest.skipIf(
-        CLICK_VERSION < (8, 1), 'Click < 8.1.0 stores the modified help string'
-    )
+    @unittest.skipIf(CLICK_VERSION < (8, 1), "Click < 8.1.0 stores the modified help string")
     def test_no_truncation(self):
         r"""Validate behavior when a \f character is present.
 
@@ -467,7 +465,7 @@ class CommandTestCase(unittest.TestCase):
 
         @click.command()
         def cli():
-            """First paragraph.
+            r"""First paragraph.
 
             This is a very long second
             paragraph and not correctly
@@ -478,8 +476,8 @@ class CommandTestCase(unittest.TestCase):
             """
             pass
 
-        ctx = click.Context(cli, info_name='cli')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(cli, info_name="cli")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         # note that we have an extra newline because we're using
         # docutils.statemachine.string2lines under the hood, which is
@@ -502,7 +500,7 @@ class CommandTestCase(unittest.TestCase):
             cli [OPTIONS]
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_no_line_wrapping(self):
@@ -525,7 +523,7 @@ that will be rewrapped again.
 """
         )
         @click.option(
-            '--param',
+            "--param",
             help="""An option containing pre-wrapped text.
 
             \b
@@ -538,7 +536,7 @@ that will be rewrapped again.
             """,
         )
         def cli():
-            """A command containing pre-wrapped text.
+            r"""A command containing pre-wrapped text.
 
             \b
             This is
@@ -550,8 +548,8 @@ that will be rewrapped again.
             """
             pass
 
-        ctx = click.Context(cli, info_name='cli')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(cli, info_name="cli")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -593,7 +591,7 @@ that will be rewrapped again.
         that will be rewrapped again.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
 
@@ -614,8 +612,8 @@ class GroupTestCase(unittest.TestCase):
             """A sample command group."""
             pass
 
-        ctx = click.Context(cli, info_name='cli')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(cli, info_name="cli")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -628,7 +626,7 @@ class GroupTestCase(unittest.TestCase):
             cli [OPTIONS] COMMAND [ARGS]...
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_basic_parameters(self):
@@ -639,14 +637,14 @@ class GroupTestCase(unittest.TestCase):
         """
 
         @click.group()
-        @click.option('--param', envvar='PARAM', help='A sample option')
-        @click.argument('ARG', envvar='ARG')
+        @click.option("--param", envvar="PARAM", help="A sample option")
+        @click.argument("ARG", envvar="ARG")
         def cli():
             """A sample command group."""
             pass
 
-        ctx = click.Context(cli, info_name='cli')
-        output = list(ext._format_command(ctx, nested='short'))
+        ctx = click.Context(cli, info_name="cli")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -687,7 +685,7 @@ class GroupTestCase(unittest.TestCase):
             Provide a default for :option:`ARG`
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
 
@@ -708,7 +706,7 @@ class NestedCommandsTestCase(unittest.TestCase):
             """A sample command."""
             pass
 
-        return click.Context(cli, info_name='cli')
+        return click.Context(cli, info_name="cli")
 
     def test_nested_short(self):
         """Validate a nested command with 'nested' of 'short' (default).
@@ -716,9 +714,8 @@ class NestedCommandsTestCase(unittest.TestCase):
         We should list minimal help texts for sub-commands since they're not
         being handled separately.
         """
-
         ctx = self._get_ctx()
-        output = list(ext._format_command(ctx, nested='short'))
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -737,7 +734,7 @@ class NestedCommandsTestCase(unittest.TestCase):
             A sample command.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_nested_full(self):
@@ -745,9 +742,8 @@ class NestedCommandsTestCase(unittest.TestCase):
 
         We should not list sub-commands since they're being handled separately.
         """
-
         ctx = self._get_ctx()
-        output = list(ext._format_command(ctx, nested='full'))
+        output = list(ext._format_command(ctx, nested="full"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -760,7 +756,7 @@ class NestedCommandsTestCase(unittest.TestCase):
             cli [OPTIONS] COMMAND [ARGS]...
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_nested_none(self):
@@ -768,9 +764,8 @@ class NestedCommandsTestCase(unittest.TestCase):
 
         We should not list sub-commands.
         """
-
         ctx = self._get_ctx()
-        output = list(ext._format_command(ctx, nested='none'))
+        output = list(ext._format_command(ctx, nested="none"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -783,7 +778,7 @@ class NestedCommandsTestCase(unittest.TestCase):
             cli [OPTIONS] COMMAND [ARGS]...
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
 
@@ -806,13 +801,12 @@ class CommandFilterTestCase(unittest.TestCase):
         def world():
             """A world command."""
 
-        return click.Context(cli, info_name='cli')
+        return click.Context(cli, info_name="cli")
 
     def test_no_commands(self):
         """Validate an empty command group."""
-
         ctx = self._get_ctx()
-        output = list(ext._format_command(ctx, nested='short', commands=[]))
+        output = list(ext._format_command(ctx, nested="short", commands=[]))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -825,16 +819,13 @@ class CommandFilterTestCase(unittest.TestCase):
             cli [OPTIONS] COMMAND [ARGS]...
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_order_of_commands(self):
         """Validate the order of commands."""
-
         ctx = self._get_ctx()
-        output = list(
-            ext._format_command(ctx, nested='short', commands=['world', 'hello'])
-        )
+        output = list(ext._format_command(ctx, nested="short", commands=["world", "hello"]))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -857,7 +848,7 @@ class CommandFilterTestCase(unittest.TestCase):
             A sample command.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
 
@@ -883,19 +874,19 @@ class CustomMultiCommandTestCase(unittest.TestCase):
 
         class MyCLI(click.MultiCommand):
             _command_mapping = {
-                'hello': hello,
-                'world': world,
+                "hello": hello,
+                "world": world,
             }
 
             def list_commands(self, ctx):
-                return ['hello', 'world']
+                return ["hello", "world"]
 
             def get_command(self, ctx, name):
                 return self._command_mapping[name]
 
-        cli = MyCLI(help='A sample custom multicommand.')
-        ctx = click.Context(cli, info_name='cli')
-        output = list(ext._format_command(ctx, nested='short'))
+        cli = MyCLI(help="A sample custom multicommand.")
+        ctx = click.Context(cli, info_name="cli")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -918,7 +909,7 @@ class CustomMultiCommandTestCase(unittest.TestCase):
             A world command.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
     def test_hidden(self):
@@ -938,20 +929,20 @@ class CustomMultiCommandTestCase(unittest.TestCase):
 
         class MyCLI(click.MultiCommand):
             _command_mapping = {
-                'hello': hello,
-                'world': world,
-                'hidden': hidden,
+                "hello": hello,
+                "world": world,
+                "hidden": hidden,
             }
 
             def list_commands(self, ctx):
-                return ['hello', 'world', 'hidden']
+                return ["hello", "world", "hidden"]
 
             def get_command(self, ctx, name):
                 return self._command_mapping[name]
 
-        cli = MyCLI(help='A sample custom multicommand.')
-        ctx = click.Context(cli, info_name='cli')
-        output = list(ext._format_command(ctx, nested='short'))
+        cli = MyCLI(help="A sample custom multicommand.")
+        ctx = click.Context(cli, info_name="cli")
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         # Note that we do NOT expect this to show the 'hidden' command
         self.assertEqual(
@@ -975,7 +966,7 @@ class CustomMultiCommandTestCase(unittest.TestCase):
             A world command.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
 
@@ -985,7 +976,7 @@ class CommandCollectionTestCase(unittest.TestCase):
     maxDiff = None
 
     def test_basics(self):
-        "Validate a ``click.CommandCollection`` with grouped outputs."
+        """Validate a ``click.CommandCollection`` with grouped outputs."""
 
         @click.group()
         def grp1():
@@ -1006,10 +997,10 @@ class CommandCollectionTestCase(unittest.TestCase):
             """A world command."""
 
         cli = click.CommandCollection(
-            name='cli', sources=[grp1, grp2], help='A simple CommandCollection.'
+            name="cli", sources=[grp1, grp2], help="A simple CommandCollection."
         )
-        ctx = click.Context(cli, info_name='cli')
-        output = list(ext._format_command(ctx, nested='full'))
+        ctx = click.Context(cli, info_name="cli")
+        output = list(ext._format_command(ctx, nested="full"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -1022,10 +1013,10 @@ class CommandCollectionTestCase(unittest.TestCase):
             cli [OPTIONS] COMMAND [ARGS]...
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
-        output = list(ext._format_command(ctx, nested='short'))
+        output = list(ext._format_command(ctx, nested="short"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -1048,7 +1039,7 @@ class CommandCollectionTestCase(unittest.TestCase):
             A world command.
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )
 
 
@@ -1063,19 +1054,19 @@ class AutoEnvvarPrefixTestCase(unittest.TestCase):
         @click.command(
             context_settings={"auto_envvar_prefix": "PREFIX"},
         )
-        @click.option('--param', help='Help for param')
-        @click.option('--other-param', help='Help for other-param')
+        @click.option("--param", help="Help for param")
+        @click.option("--other-param", help="Help for other-param")
         @click.option(
-            '--param-with-explicit-envvar',
-            help='Help for param-with-explicit-envvar',
+            "--param-with-explicit-envvar",
+            help="Help for param-with-explicit-envvar",
             envvar="EXPLICIT_ENVVAR",
         )
         def cli_with_auto_envvars():
             """A simple CLI with auto-env vars ."""
 
         cli = cli_with_auto_envvars
-        ctx = click.Context(cli, info_name='cli', auto_envvar_prefix="PREFIX")
-        output = list(ext._format_command(ctx, nested='full'))
+        ctx = click.Context(cli, info_name="cli", auto_envvar_prefix="PREFIX")
+        output = list(ext._format_command(ctx, nested="full"))  # noqa
 
         self.assertEqual(
             textwrap.dedent(
@@ -1125,5 +1116,5 @@ class AutoEnvvarPrefixTestCase(unittest.TestCase):
             Provide a default for :option:`--param-with-explicit-envvar`
         """
             ).lstrip(),
-            '\n'.join(output),
+            "\n".join(output),
         )

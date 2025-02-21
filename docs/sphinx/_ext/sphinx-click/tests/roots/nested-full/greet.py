@@ -10,13 +10,13 @@ def greet():
 
 
 @greet.command()
-@click.argument('user', envvar='USER')
+@click.argument("user", envvar="USER")
 def hello(user):
     """Greet a user."""
-    click.echo('Hello %s' % user)
+    click.echo("Hello %s" % user)  # noqa
 
 
 @greet.command()
 def world():
     """Greet the world."""
-    click.echo('Hello world!')
+    click.echo("Hello world!")

@@ -1,5 +1,5 @@
-import inspect
 import functools
+import inspect
 import re
 import traceback
 import typing as ty
@@ -10,23 +10,24 @@ try:
 except ImportError:
     import click
 import click.core
-from docutils import nodes
+from docutils import nodes, statemachine
 from docutils.parsers import rst
 from docutils.parsers.rst import directives
-from docutils import statemachine
 from sphinx import application
-from sphinx.util import logging
-from sphinx.util import nodes as sphinx_nodes
 from sphinx.ext.autodoc import mock
+from sphinx.util import (
+    logging,
+    nodes as sphinx_nodes,
+)
 
 LOG = logging.getLogger(__name__)
 
-NESTED_FULL = 'full'
-NESTED_SHORT = 'short'
-NESTED_NONE = 'none'
-NestedT = ty.Literal['full', 'short', 'none', None]
+NESTED_FULL = "full"
+NESTED_SHORT = "short"
+NESTED_NONE = "none"
+NestedT = ty.Literal["full", "short", "none", None]
 
-ANSI_ESC_SEQ_RE = re.compile(r'\x1B\[\d+(;\d+){0,2}m', flags=re.MULTILINE)
+ANSI_ESC_SEQ_RE = re.compile(r"\x1B\[\d+(;\d+){0,2}m", flags=re.MULTILINE)
 
 _T_Formatter = ty.Callable[[click.Context], ty.Generator[str, None, None]]
 
@@ -38,8 +39,7 @@ def _process_lines(event_name: str) -> ty.Callable[[_T_Formatter], _T_Formatter]
             lines = list(func(ctx))
             if "sphinx-click-env" in ctx.meta:
                 ctx.meta["sphinx-click-env"].app.events.emit(event_name, ctx, lines)
-            for line in lines:
-                yield line
+            yield from lines
 
         return process_lines
 
@@ -47,24 +47,24 @@ def _process_lines(event_name: str) -> ty.Callable[[_T_Formatter], _T_Formatter]
 
 
 def _indent(text: str, level: int = 1) -> str:
-    prefix = ' ' * (4 * level)
+    prefix = " " * (4 * level)
 
     def prefixed_lines() -> ty.Generator[str, None, None]:
         for line in text.splitlines(True):
             yield (prefix + line if line.strip() else line)
 
-    return ''.join(prefixed_lines())
+    return "".join(prefixed_lines())
 
 
 def _get_usage(ctx: click.Context) -> str:
     """Alternative, non-prefixed version of 'get_usage'."""
     formatter = ctx.make_formatter()
     pieces = ctx.command.collect_usage_pieces(ctx)
-    formatter.write_usage(ctx.command_path, ' '.join(pieces), prefix='')
-    return formatter.getvalue().rstrip('\n')  # type: ignore
+    formatter.write_usage(ctx.command_path, " ".join(pieces), prefix="")
+    return formatter.getvalue().rstrip("\n")  # type: ignore
 
 
-def _get_help_record(ctx: click.Context, opt: click.core.Option) -> ty.Tuple[str, str]:
+def _get_help_record(ctx: click.Context, opt: click.core.Option) -> tuple[str, str]:
     """Re-implementation of click.Opt.get_help_record.
 
     The variant of 'get_help_record' found in Click makes uses of slashes to
@@ -75,13 +75,13 @@ def _get_help_record(ctx: click.Context, opt: click.core.Option) -> ty.Tuple[str
     [1] http://www.sphinx-doc.org/en/stable/domains.html#directive-option
     """
 
-    def _write_opts(opts: ty.List[str]) -> str:
+    def _write_opts(opts: ty.List[str]) -> str:  # noqa
         rv, _ = click.formatting.join_options(opts)
         if not opt.is_flag and not opt.count:
             name = opt.name
             if opt.metavar:
-                name = opt.metavar.lstrip('<[{($').rstrip('>]})$')
-            rv += ' <{}>'.format(name)
+                name = opt.metavar.lstrip("<[{($").rstrip(">]})$")
+            rv += f" <{name}>"
         return rv  # type: ignore
 
     rv = [_write_opts(opt.opts)]
@@ -91,12 +91,12 @@ def _get_help_record(ctx: click.Context, opt: click.core.Option) -> ty.Tuple[str
     out = []
     if opt.help:
         if opt.required:
-            out.append('**Required** %s' % opt.help)
+            out.append("**Required** %s" % opt.help)  # noqa
         else:
             out.append(opt.help)
     else:
         if opt.required:
-            out.append('**Required**')
+            out.append("**Required**")
 
     extras = []
 
@@ -109,44 +109,42 @@ def _get_help_record(ctx: click.Context, opt: click.core.Option) -> ty.Tuple[str
         # Starting from Click 7.0 show_default can be a string. This is
         # mostly useful when the default is not a constant and
         # documentation thus needs a manually written string.
-        extras.append(':default: ``%r``' % ANSI_ESC_SEQ_RE.sub('', show_default))
+        extras.append(":default: ``%r``" % ANSI_ESC_SEQ_RE.sub("", show_default))  # noqa
     elif show_default and opt.default is not None:
         extras.append(
-            ':default: ``%s``'
+            ":default: ``%s``"
             % (
-                ', '.join(repr(d) for d in opt.default)
+                ", ".join(repr(d) for d in opt.default)
                 if isinstance(opt.default, (list, tuple))
                 else repr(opt.default)
             )
         )
 
     if isinstance(opt.type, click.Choice):
-        extras.append(':options: %s' % ' | '.join(str(x) for x in opt.type.choices))
+        extras.append(":options: %s" % " | ".join(str(x) for x in opt.type.choices))  # noqa
 
     if extras:
         if out:
-            out.append('')
+            out.append("")
 
         out.extend(extras)
 
-    return ', '.join(rv), '\n'.join(out)
+    return ", ".join(rv), "\n".join(out)
 
 
 def _format_help(help_string: str) -> ty.Generator[str, None, None]:
-    help_string = inspect.cleandoc(ANSI_ESC_SEQ_RE.sub('', help_string))
+    help_string = inspect.cleandoc(ANSI_ESC_SEQ_RE.sub("", help_string))
 
     bar_enabled = False
-    for line in statemachine.string2lines(
-        help_string, tab_width=4, convert_whitespace=True
-    ):
-        if line == '\b':
+    for line in statemachine.string2lines(help_string, tab_width=4, convert_whitespace=True):
+        if line == "\b":
             bar_enabled = True
             continue
-        if line == '':
+        if line == "":
             bar_enabled = False
-        line = '| ' + line if bar_enabled else line
+        line = "| " + line if bar_enabled else line  # noqa
         yield line
-    yield ''
+    yield ""
 
 
 @_process_lines("sphinx-click-process-description")
@@ -164,32 +162,30 @@ def _format_description(ctx: click.Context) -> ty.Generator[str, None, None]:
 @_process_lines("sphinx-click-process-usage")
 def _format_usage(ctx: click.Context) -> ty.Generator[str, None, None]:
     """Format the usage for a `click.Command`."""
-    yield '.. code-block:: shell'
-    yield ''
+    yield ".. code-block:: shell"
+    yield ""
     for line in _get_usage(ctx).splitlines():
         yield _indent(line)
-    yield ''
+    yield ""
 
 
-def _format_option(
-    ctx: click.Context, opt: click.core.Option
-) -> ty.Generator[str, None, None]:
+def _format_option(ctx: click.Context, opt: click.core.Option) -> ty.Generator[str, None, None]:
     """Format the output for a `click.core.Option`."""
     opt_help = _get_help_record(ctx, opt)
 
-    yield '.. option:: {}'.format(opt_help[0])
+    yield f".. option:: {opt_help[0]}"
     if opt_help[1]:
-        yield ''
+        yield ""
         bar_enabled = False
         for line in statemachine.string2lines(
-            ANSI_ESC_SEQ_RE.sub('', opt_help[1]), tab_width=4, convert_whitespace=True
+            ANSI_ESC_SEQ_RE.sub("", opt_help[1]), tab_width=4, convert_whitespace=True
         ):
-            if line == '\b':
+            if line == "\b":
                 bar_enabled = True
                 continue
-            if line == '':
+            if line == "":
                 bar_enabled = False
-            line = '| ' + line if bar_enabled else line
+            line = "| " + line if bar_enabled else line  # noqa
             yield _indent(line)
 
 
@@ -200,29 +196,28 @@ def _format_options(ctx: click.Context) -> ty.Generator[str, None, None]:
     params = [
         param
         for param in ctx.command.params
-        if isinstance(param, click.core.Option) and not getattr(param, 'hidden', False)
+        if isinstance(param, click.core.Option) and not getattr(param, "hidden", False)
     ]
 
     for param in params:
-        for line in _format_option(ctx, param):
-            yield line
-        yield ''
+        yield from _format_option(ctx, param)
+        yield ""
 
 
 def _format_argument(arg: click.Argument) -> ty.Generator[str, None, None]:
     """Format the output of a `click.Argument`."""
-    yield '.. option:: {}'.format(arg.human_readable_name)
-    yield ''
+    yield f".. option:: {arg.human_readable_name}"
+    yield ""
     yield _indent(
-        '{} argument{}'.format(
-            'Required' if arg.required else 'Optional', '(s)' if arg.nargs != 1 else ''
+        "{} argument{}".format(
+            "Required" if arg.required else "Optional", "(s)" if arg.nargs != 1 else ""
         )
     )
     # Subclasses of click.Argument may add a `help` attribute (like typer.main.TyperArgument)
-    help = getattr(arg, 'help', None)
+    help = getattr(arg, "help", None)  # noqa
     if help:
-        yield ''
-        help_string = ANSI_ESC_SEQ_RE.sub('', help)
+        yield ""
+        help_string = ANSI_ESC_SEQ_RE.sub("", help)
         for line in _format_help(help_string):
             yield _indent(line)
 
@@ -233,18 +228,17 @@ def _format_arguments(ctx: click.Context) -> ty.Generator[str, None, None]:
     params = [x for x in ctx.command.params if isinstance(x, click.Argument)]
 
     for param in params:
-        for line in _format_argument(param):
-            yield line
-        yield ''
+        yield from _format_argument(param)
+        yield ""
 
 
 def _format_envvar(
     param: ty.Union[click.core.Option, click.Argument],
 ) -> ty.Generator[str, None, None]:
     """Format the envvars of a `click.Option` or `click.Argument`."""
-    yield '.. envvar:: {}'.format(param.envvar)
-    yield '   :noindex:'
-    yield ''
+    yield f".. envvar:: {param.envvar}"
+    yield "   :noindex:"
+    yield ""
     if isinstance(param, click.Argument):
         param_ref = param.human_readable_name
     else:
@@ -252,13 +246,12 @@ def _format_envvar(
         # first. For example, if '--foo' or '-f' are possible, use '--foo'.
         param_ref = param.opts[0]
 
-    yield _indent('Provide a default for :option:`{}`'.format(param_ref))
+    yield _indent(f"Provide a default for :option:`{param_ref}`")
 
 
 @_process_lines("sphinx-click-process-envars")
 def _format_envvars(ctx: click.Context) -> ty.Generator[str, None, None]:
     """Format all envvars for a `click.Command`."""
-
     auto_envvar_prefix = ctx.auto_envvar_prefix
     if auto_envvar_prefix is not None:
         params = []
@@ -270,28 +263,25 @@ def _format_envvars(ctx: click.Context) -> ty.Generator[str, None, None]:
         params = [x for x in ctx.command.params if x.envvar]
 
     for param in params:
-        yield '.. _{command_name}-{param_name}-{envvar}:'.format(
-            command_name=ctx.command_path.replace(' ', '-'),
+        yield ".. _{command_name}-{param_name}-{envvar}:".format(
+            command_name=ctx.command_path.replace(" ", "-"),
             param_name=param.name,
             envvar=param.envvar,
         )
-        yield ''
-        for line in _format_envvar(param):
-            yield line
-        yield ''
+        yield ""
+        yield from _format_envvar(param)
+        yield ""
 
 
 def _format_subcommand(command: click.Command) -> ty.Generator[str, None, None]:
     """Format a sub-command of a `click.Command` or `click.Group`."""
-    yield '.. object:: {}'.format(command.name)
+    yield f".. object:: {command.name}"
 
     short_help = command.get_short_help_str()
 
     if short_help:
-        yield ''
-        for line in statemachine.string2lines(
-            short_help, tab_width=4, convert_whitespace=True
-        ):
+        yield ""
+        for line in statemachine.string2lines(short_help, tab_width=4, convert_whitespace=True):
             yield _indent(line)
 
 
@@ -306,7 +296,7 @@ def _format_epilog(ctx: click.Context) -> ty.Generator[str, None, None]:
         yield from _format_help(ctx.command.epilog)
 
 
-def _get_lazyload_commands(ctx: click.Context) -> ty.Dict[str, click.Command]:
+def _get_lazyload_commands(ctx: click.Context) -> ty.Dict[str, click.Command]:  # noqa
     commands = {}
     for command in ctx.command.list_commands(ctx):
         commands[command] = ctx.command.get_command(ctx, command)
@@ -316,10 +306,10 @@ def _get_lazyload_commands(ctx: click.Context) -> ty.Dict[str, click.Command]:
 
 def _filter_commands(
     ctx: click.Context,
-    commands: ty.Optional[ty.List[str]] = None,
-) -> ty.List[click.Command]:
+    commands: ty.Optional[ty.List[str]] = None,  # noqa
+) -> ty.List[click.Command]:  # noqa
     """Return list of used commands."""
-    lookup = getattr(ctx.command, 'commands', {})
+    lookup = getattr(ctx.command, "commands", {})
     if not lookup and isinstance(ctx.command, click.MultiCommand):
         lookup = _get_lazyload_commands(ctx)
 
@@ -332,7 +322,7 @@ def _filter_commands(
 def _format_command(
     ctx: click.Context,
     nested: NestedT,
-    commands: ty.Optional[ty.List[str]] = None,
+    commands: ty.Optional[ty.List[str]] = None,  # noqa
 ) -> ty.Generator[str, None, None]:
     """Format the output of `click.Command`."""
     if ctx.command.hidden:
@@ -343,7 +333,7 @@ def _format_command(
     for line in _format_description(ctx):
         yield line
 
-    yield '.. program:: {}'.format(ctx.command_path)
+    yield f".. program:: {ctx.command_path}"
 
     # usage
 
@@ -356,8 +346,8 @@ def _format_command(
     if lines:
         # we use rubric to provide some separation without exploding the table
         # of contents
-        yield '.. rubric:: Options'
-        yield ''
+        yield ".. rubric:: Options"
+        yield ""
 
     for line in lines:
         yield line
@@ -366,8 +356,8 @@ def _format_command(
 
     lines = list(_format_arguments(ctx))
     if lines:
-        yield '.. rubric:: Arguments'
-        yield ''
+        yield ".. rubric:: Arguments"
+        yield ""
 
     for line in lines:
         yield line
@@ -376,8 +366,8 @@ def _format_command(
 
     lines = list(_format_envvars(ctx))
     if lines:
-        yield '.. rubric:: Environment variables'
-        yield ''
+        yield ".. rubric:: Environment variables"
+        yield ""
 
     for line in lines:
         yield line
@@ -394,8 +384,8 @@ def _format_command(
     command_objs = _filter_commands(ctx, commands)
 
     if command_objs:
-        yield '.. rubric:: Commands'
-        yield ''
+        yield ".. rubric:: Commands"
+        yield ""
 
     for command_obj in command_objs:
         # Don't show hidden subcommands
@@ -404,7 +394,7 @@ def _format_command(
 
         for line in _format_subcommand(command_obj):
             yield line
-        yield ''
+        yield ""
 
 
 def nested(argument: ty.Optional[str]) -> NestedT:
@@ -412,7 +402,7 @@ def nested(argument: ty.Optional[str]) -> NestedT:
 
     if argument not in values:
         raise ValueError(
-            "%s is not a valid value for ':nested:'; allowed values: %s"
+            "%s is not a valid value for ':nested:'; allowed values: %s"  # noqa
             % directives.format_values(values)
         )
 
@@ -423,47 +413,40 @@ class ClickDirective(rst.Directive):
     has_content = False
     required_arguments = 1
     option_spec = {
-        'prog': directives.unchanged_required,
-        'nested': nested,
-        'commands': directives.unchanged,
-        'show-nested': directives.flag,
+        "prog": directives.unchanged_required,
+        "nested": nested,
+        "commands": directives.unchanged,
+        "show-nested": directives.flag,
     }
 
     def _load_module(self, module_path: str) -> ty.Union[click.Command, click.Group]:
         """Load the module."""
-
         try:
-            module_name, attr_name = module_path.split(':', 1)
-        except ValueError:  # noqa
-            raise self.error(
-                '"{}" is not of format "module:parser"'.format(module_path)
-            )
+            module_name, attr_name = module_path.split(":", 1)
+        except ValueError:
+            raise self.error(f'"{module_path}" is not of format "module:parser"')
 
         try:
             with mock(self.env.config.sphinx_click_mock_imports):
                 mod = __import__(module_name, globals(), locals(), [attr_name])
-        except (Exception, SystemExit) as exc:  # noqa
-            err_msg = 'Failed to import "{}" from "{}". '.format(attr_name, module_name)
+        except (Exception, SystemExit) as exc:
+            err_msg = f'Failed to import "{attr_name}" from "{module_name}". '
             if isinstance(exc, SystemExit):
-                err_msg += 'The module appeared to call sys.exit()'
+                err_msg += "The module appeared to call sys.exit()"
             else:
-                err_msg += 'The following exception was raised:\n{}'.format(
-                    traceback.format_exc()
-                )
+                err_msg += f"The following exception was raised:\n{traceback.format_exc()}"
 
             raise self.error(err_msg)
 
         if not hasattr(mod, attr_name):
-            raise self.error(
-                'Module "{}" has no attribute "{}"'.format(module_name, attr_name)
-            )
+            raise self.error(f'Module "{module_name}" has no attribute "{attr_name}"')
 
         parser = getattr(mod, attr_name)
 
         if not isinstance(parser, (click.Command, click.Group)):
             raise self.error(
-                '"{}" of type "{}" is not click.Command or click.Group.'
-                '"click.BaseCommand"'.format(type(parser), module_path)
+                f'"{type(parser)}" of type "{module_path}" is not click.Command or click.Group.'
+                '"click.BaseCommand"'
             )
         return parser
 
@@ -473,9 +456,9 @@ class ClickDirective(rst.Directive):
         command: click.Command,
         parent: ty.Optional[click.Context],
         nested: NestedT,
-        commands: ty.Optional[ty.List[str]] = None,
+        commands: ty.Optional[ty.List[str]] = None,  # noqa
         semantic_group: bool = False,
-    ) -> ty.List[nodes.section]:
+    ) -> ty.List[nodes.section]:  # noqa
         """Generate the relevant Sphinx nodes.
 
         Format a `click.Group` or `click.Command`.
@@ -498,7 +481,7 @@ class ClickDirective(rst.Directive):
         # Title
 
         section = nodes.section(
-            '',
+            "",
             nodes.title(text=name),
             ids=[nodes.make_id(ctx.command_path)],
             names=[nodes.fully_normalize_name(ctx.command_path)],
@@ -539,9 +522,7 @@ class ClickDirective(rst.Directive):
                 for command in commands:
                     parent = ctx if not semantic_group else ctx.parent
                     section.extend(
-                        self._generate_nodes(
-                            command.name, command, parent=parent, nested=nested
-                        )
+                        self._generate_nodes(command.name, command, parent=parent, nested=nested)
                     )
 
         return [section]
@@ -551,18 +532,16 @@ class ClickDirective(rst.Directive):
 
         command = self._load_module(self.arguments[0])
 
-        if 'prog' not in self.options:
-            raise self.error(':prog: must be specified')
+        if "prog" not in self.options:
+            raise self.error(":prog: must be specified")
 
-        prog_name = self.options['prog']
-        show_nested = 'show-nested' in self.options
-        nested = self.options.get('nested')
+        prog_name = self.options["prog"]
+        show_nested = "show-nested" in self.options
+        nested = self.options.get("nested")
 
         if show_nested:
             if nested:
-                raise self.error(
-                    "':nested:' and ':show-nested:' are mutually exclusive"
-                )
+                raise self.error("':nested:' and ':show-nested:' are mutually exclusive")
             else:
                 warnings.warn(
                     "':show-nested:' is deprecated; use ':nested: full'",
@@ -571,18 +550,16 @@ class ClickDirective(rst.Directive):
                 nested = NESTED_FULL if show_nested else NESTED_SHORT
 
         commands = None
-        if self.options.get('commands'):
-            commands = [
-                command.strip() for command in self.options['commands'].split(',')
-            ]
+        if self.options.get("commands"):
+            commands = [command.strip() for command in self.options["commands"].split(",")]
 
         return self._generate_nodes(prog_name, command, None, nested, commands)
 
 
-def setup(app: application.Sphinx) -> ty.Dict[str, ty.Any]:
+def setup(app: application.Sphinx) -> ty.Dict[str, ty.Any]:  # noqa
     # Need autodoc to support mocking modules
-    app.setup_extension('sphinx.ext.autodoc')
-    app.add_directive('click', ClickDirective)
+    app.setup_extension("sphinx.ext.autodoc")
+    app.add_directive("click", ClickDirective)
 
     app.add_event("sphinx-click-process-description")
     app.add_event("sphinx-click-process-usage")
@@ -591,10 +568,10 @@ def setup(app: application.Sphinx) -> ty.Dict[str, ty.Any]:
     app.add_event("sphinx-click-process-envvars")
     app.add_event("sphinx-click-process-epilog")
     app.add_config_value(
-        'sphinx_click_mock_imports', lambda config: config.autodoc_mock_imports, 'env'
+        "sphinx_click_mock_imports", lambda config: config.autodoc_mock_imports, "env"
     )
 
     return {
-        'parallel_read_safe': True,
-        'parallel_write_safe': True,
+        "parallel_read_safe": True,
+        "parallel_write_safe": True,
     }
