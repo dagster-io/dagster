@@ -1,4 +1,0 @@
----
-upgrade:
-  - |
-    Python 3.7 is no longer supported as it has reached end-of-life.
