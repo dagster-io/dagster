@@ -3,17 +3,17 @@ cd workspace && tree
 .
 ├── libraries
 ├── projects
-│   └── myproject
-│       ├── myproject
+│   └── project-1
+│       ├── project_1
 │       │   ├── __init__.py
 │       │   ├── components
 │       │   ├── definitions.py
 │       │   └── lib
 │       │       └── __init__.py
-│       ├── myproject_tests
+│       ├── project_1_tests
 │       │   └── __init__.py
 │       ├── pyproject.toml
 │       └── uv.lock
 └── pyproject.toml
 
-11 directories, 15 files
+...

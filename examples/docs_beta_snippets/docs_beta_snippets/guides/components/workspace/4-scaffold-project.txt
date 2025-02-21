@@ -1,5 +1,0 @@
-dg scaffold project project-1
-
-Creating a Dagster project at /.../workspace/projects/project-1.
-Scaffolded files for Dagster project at /.../my-workspace/projects/project-1.
-...

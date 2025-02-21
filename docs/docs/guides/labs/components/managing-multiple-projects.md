@@ -15,29 +15,17 @@ A workspace directory contains a root `pyproject.toml` containing workspace-leve
 
 ## Scaffold a new workspace
 
-To scaffold a new workspace, run:
+To scaffold a new workspace with an initial project called `project-1`, run:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/1-dg-init.txt" />
 
-This will create a new directory called `workspace`. Let's look at the structure:
+This will create a new directory called `workspace`, as well a new directory `project-1` within the `projects` folder. It will also setup a new uv-managed Python environment for the project. Let's look at the structure:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/2-tree.txt" />
 
-Importantly, the `pyproject.toml` file contains an `is_workspace` setting marking this directory as a workspace:
+Importantly, the `pyproject.toml` file for the `workspace` folder contains an `is_workspace` setting marking this directory as a workspace:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/3-pyproject.toml" language="TOML" title="workspace/pyproject.toml" />
-
-## Add a project to the workspace
-
-To add a project to the workspace, run:
-
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/4-scaffold-project.txt" />
-
-This will create a new directory `project-1` within the `projects` folder.
-It will also setup a new uv-managed Python environment for the project. Let's have a look:
-
-
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/5-tree.txt" />
 
 :::note
 
@@ -46,13 +34,13 @@ It will also setup a new uv-managed Python environment for the project. Let's ha
 :::
 
 The `project-1` directory contains a `pyproject.toml` file that defines
-it as a Dagster project and component library:
+it as a Dagster project:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/6-project-pyproject.toml" language="TOML" title="workspace/projects/project-1/pyproject.toml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/4-project-pyproject.toml" language="TOML" title="workspace/projects/project-1/pyproject.toml" />
 
 Let's enter this directory and search for registered component types:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/7-component-type-list.txt"  />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/5-component-type-list.txt"  />
 
 This is the default set of component types available in every new project. We can add to it by installing `dagster-components[sling]`:
 
@@ -66,7 +54,7 @@ Due to a bug in `sling` package metadata, if you are on a macOS machine with App
 
 And now we have a new available component:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/8-component-type-list.txt"  />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/6-component-type-list.txt"  />
 
 ## Add a second project to the workspace
 
@@ -74,15 +62,15 @@ As stated above, environments are scoped per project.  `dg` commands will only u
 
 Let's create another project to demonstrate this:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/9-scaffold-project.txt"  />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/7-scaffold-project.txt"  />
 
 Now we have two projects. We can list them with:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/10-list-project.txt"  />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/8-project-list.txt"  />
 
 And finally, let's check the available component types in `project-2`:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/11-component-type-list.txt"  />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/9-component-type-list.txt"  />
 
 
 As you can see, we are back to only the default list of component types. This is because we are now using the environment of `project-2`, in which we have not installed `dagster-components[sling]`.

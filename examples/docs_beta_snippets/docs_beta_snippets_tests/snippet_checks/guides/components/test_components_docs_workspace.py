@@ -57,18 +57,35 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
 
         # Scaffold workspace
         run_command_and_snippet_output(
-            cmd="dg init",
+            cmd='echo "project-1\n" | dg init --use-editable-dagster',
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-dg-init.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_WORKSPACE],
+            snippet_replace_regex=[
+                MASK_EDITABLE_DAGSTER,
+                MASK_MY_WORKSPACE,
+                (r"\nUsing[\s\S]*", "\n..."),
+                (r"\nUsing[\s\S]*", "\n..."),
+                (
+                    r"\(or press Enter to continue without creating a project\): ",
+                    "(or press Enter to continue without creating a project): project-1\n",
+                ),
+            ],
+            print_cmd="dg init",
         )
 
-        # Validate scaffolded files
+        # Remove files we don't want to show up in the tree
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
+        _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
+
         run_command_and_snippet_output(
             cmd="cd workspace && tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
             update_snippets=update_snippets,
+            # Remove --sort size from tree output, sadly OSX and Linux tree
+            # sort differently when using alpha sort
+            snippet_replace_regex=[
+                (r"\d+ directories, \d+ files", "..."),
+            ],
             custom_comparison_fn=compare_tree_output,
         )
         check_file(
@@ -79,34 +96,6 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
                 re_ignore_before("[tool.dagster]"),
                 re_ignore_after("is_component_lib = true"),
             ],
-        )
-
-        # Scaffold project
-        run_command_and_snippet_output(
-            cmd="dg scaffold project project-1 --use-editable-dagster",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-scaffold-project.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_EDITABLE_DAGSTER,
-                MASK_MY_WORKSPACE,
-                (r"\nUsing[\s\S]*", "\n..."),
-            ],
-        )
-
-        # Validate scaffolded files
-        _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
-        _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
-        run_command_and_snippet_output(
-            cmd="tree",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
-            update_snippets=update_snippets,
-            # Remove --sort size from tree output, sadly OSX and Linux tree
-            # sort differently when using alpha sort
-            snippet_replace_regex=[
-                (r"\d+ directories, \d+ files", "..."),
-            ],
-            custom_comparison_fn=compare_tree_output,
         )
 
         # Validate project toml
@@ -187,5 +176,5 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
 
         # Ensure dagster loads
         output = _run_command("uv tool run dagster definitions validate")
-        assert "Validation successful for project project_1" in output
-        assert "Validation successful for project project_2" in output
+        assert "Validation successful for code location project_1" in output
+        assert "Validation successful for code location project_2" in output

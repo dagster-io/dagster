@@ -243,6 +243,7 @@ def run_command_and_snippet_output(
     custom_comparison_fn: Optional[Callable[[str, str], bool]] = None,
     ignore_output: bool = False,
     expect_error: bool = False,
+    print_cmd: Optional[str] = None,
 ):
     """Run the given command and check that the output matches the contents of the snippet
     at `snippet_path`. If `update_snippets` is `True`, updates the snippet file with the
@@ -268,10 +269,12 @@ def run_command_and_snippet_output(
     if snippet_path:
         assert update_snippets is not None
 
+        print_cmd = print_cmd if print_cmd else str(cmd)
+
         if ignore_output:
-            contents = str(cmd)
+            contents = print_cmd
         else:
-            contents = f"{cmd}\n\n{output}"
+            contents = f"{print_cmd}\n\n{output}"
 
         _assert_matches_or_update_snippet(
             contents=contents,
