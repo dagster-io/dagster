@@ -55,8 +55,6 @@ To complete this tutorial, you'll need:
     - `assets`, a subfolder containing Dagster assets. We'll use `/assets.py` to write these.
     - `notebooks`, a subfolder containing Jupyter notebooks. We'll use `/notebooks/iris-kmeans.ipynb` to write a Jupyter notebook.
 
-
-
 ## Step 1: Explore the Jupyter notebook
 
 In this tutorial, we'll analyze the Iris dataset, collected in 1936 by the American botanist Edgar Anderson and made famous by statistician Ronald Fisher. The Iris dataset is a basic example of machine learning because it contains three classes of observation: one class is straightforwardly linearly separable from the other two, which can only be distinguished by more sophisticated methods.
