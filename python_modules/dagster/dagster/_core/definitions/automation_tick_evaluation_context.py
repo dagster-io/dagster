@@ -503,10 +503,9 @@ def _build_run_request_for_partition_key_range(
         ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
         ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
     }
-    partition_key = partition_range_start if partition_range_start == partition_range_end else None
     return RunRequest(
         asset_selection=asset_keys,
-        partition_key=partition_key,
+        partition_key=None,
         tags=tags,
         asset_check_keys=asset_check_keys,
     )

@@ -14,7 +14,7 @@ Each asset check should test only a single asset property to keep tests uncompli
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/)
+This article assumes familiarity with [assets](/guides/build/assets/).
 
 :::
 

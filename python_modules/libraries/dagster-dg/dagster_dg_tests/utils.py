@@ -60,7 +60,7 @@ def isolated_example_deployment_foo(
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
-        runner.invoke("deployment", "scaffold", "foo")
+        runner.invoke("scaffold", "deployment", "foo")
         with pushd("foo"):
             # Create a venv capable of running dagster dev
             if create_venv:
@@ -79,6 +79,7 @@ def isolated_example_code_location_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_deployment: bool = True,
     skip_venv: bool = False,
+    populate_cache: bool = True,
     component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
     """Scaffold a code location named foo_bar in an isolated filesystem.
@@ -99,11 +100,12 @@ def isolated_example_code_location_foo_bar(
         code_loc_path = Path("foo-bar")
     with fs_context:
         runner.invoke(
-            "code-location",
             "scaffold",
+            "code-location",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
+            *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
         )
         with clear_module_from_cache("foo_bar"), pushd(code_loc_path):
@@ -128,14 +130,15 @@ def isolated_example_component_library_foo_bar(
     ) as venv_path:
         # We just use the code location generation function and then modify it to be a component library
         # only.
-        runner.invoke(
-            "code-location",
+        result = runner.invoke(
             "scaffold",
+            "code-location",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "--skip-venv",
             "foo-bar",
         )
+        assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
             shutil.rmtree(Path("foo_bar/components"))
 
@@ -281,6 +284,35 @@ def match_terminal_box_output(output: str, expected_output: str):
     return True
 
 
+# Windows sometimes provides short (8.3) paths in output, which can be difficult to match exactly.
+def normalize_windows_path(path: str) -> str:
+    """Convert a Windows short (8.3) path to its long form.
+    If the path does not exist or conversion fails, returns the original path.
+    """
+    import ctypes
+
+    if sys.platform != "win32":
+        raise RuntimeError("This function is only supported on Windows.")
+    # Create a buffer for the result
+    buffer_len = 260  # MAX_PATH typically 260 for Windows, though can be longer in practice
+    buffer_ = ctypes.create_unicode_buffer(buffer_len)
+
+    # Call GetLongPathNameW
+    get_len = ctypes.windll.kernel32.GetLongPathNameW(path, buffer_, buffer_len)
+
+    # If the buffer wasn't large enough, retry with bigger size
+    if get_len > buffer_len:
+        buffer_len = get_len
+        buffer_ = ctypes.create_unicode_buffer(buffer_len)
+        get_len = ctypes.windll.kernel32.GetLongPathNameW(path, buffer_, buffer_len)
+
+    # get_len == 0 indicates error (e.g. file not found, path doesn't exist)
+    if get_len == 0:
+        return path
+
+    return buffer_.value
+
+
 # ########################
 # ##### CLI RUNNER
 # ########################
@@ -320,10 +352,10 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
-        # We need to find the right spot to inject global options. For the `dg component scaffold`
+        # We need to find the right spot to inject global options. For the `dg scaffold component`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[:2] == ("component", "scaffold"):
+        if args[:2] == ("scaffold", "component"):
             index = 2
         elif "--help" in args:
             index = args.index("--help")
@@ -336,7 +368,10 @@ class ProxyRunner:
         # For some reason the context setting `max_content_width` is not respected when using the
         # CliRunner, so we have to set it manually.
         return self.original.invoke(
-            dg_cli, all_args, terminal_width=self.console_width, **invoke_kwargs
+            dg_cli,
+            all_args,
+            terminal_width=self.console_width,
+            **invoke_kwargs,
         )
 
     @contextmanager

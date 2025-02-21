@@ -1,5 +1,4 @@
 from collections.abc import Iterator, Sequence
-from dataclasses import dataclass, field
 from typing import Annotated, Callable, Optional
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -11,7 +10,8 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
-from pydantic import computed_field
+from pydantic import ConfigDict, Field, computed_field
+from pydantic.dataclasses import dataclass
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.core.component import registered_component_type
@@ -52,13 +52,15 @@ def resolve_translator(
 
 
 @registered_component_type(name="dbt_project")
-@dataclass
+@dataclass(config=ConfigDict(arbitrary_types_allowed=True))  # omits translator prop from schema
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
     dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
-    op: Optional[OpSpecSchema] = None
-    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = field(
+    op: Optional[OpSpecSchema] = Field(
+        None, description="Customizations to the op underlying the dbt run."
+    )
+    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = Field(
         default_factory=lambda: DagsterDbtTranslator()
     )
     transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None

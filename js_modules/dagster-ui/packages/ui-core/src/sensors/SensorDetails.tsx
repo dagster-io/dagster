@@ -11,6 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
+import {useSensorAlertDetails} from 'shared/sensors/useSensorAlertDetails.oss';
 import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
@@ -78,6 +79,11 @@ export const SensorDetails = ({
     loading: loadingPermissions,
   } = usePermissionsForLocation(repoAddress.location);
   const {canUpdateSensorCursor} = permissions;
+
+  const alertDetails = useSensorAlertDetails({
+    repoAddress,
+    sensorName: sensor.name,
+  });
 
   const [isCursorEditing, setCursorEditing] = useState(false);
   const sensorSelector = {
@@ -233,6 +239,7 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
+          {alertDetails}
         </tbody>
       </MetadataTableWIP>
     </>

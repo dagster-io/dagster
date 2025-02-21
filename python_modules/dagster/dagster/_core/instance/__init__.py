@@ -1005,16 +1005,24 @@ class DagsterInstance(DynamicPartitionsStore):
             self._schedule_storage.upgrade()  # type: ignore  # (possible none)
             self._schedule_storage.migrate(print_fn)  # type: ignore  # (possible none)
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         if self._schedule_storage:
             self._schedule_storage.optimize_for_webserver(
-                statement_timeout=statement_timeout, pool_recycle=pool_recycle
+                statement_timeout=statement_timeout,
+                pool_recycle=pool_recycle,
+                max_overflow=max_overflow,
             )
         self._run_storage.optimize_for_webserver(
-            statement_timeout=statement_timeout, pool_recycle=pool_recycle
+            statement_timeout=statement_timeout,
+            pool_recycle=pool_recycle,
+            max_overflow=max_overflow,
         )
         self._event_storage.optimize_for_webserver(
-            statement_timeout=statement_timeout, pool_recycle=pool_recycle
+            statement_timeout=statement_timeout,
+            pool_recycle=pool_recycle,
+            max_overflow=max_overflow,
         )
 
     def reindex(self, print_fn: PrintFn = lambda _: None) -> None:

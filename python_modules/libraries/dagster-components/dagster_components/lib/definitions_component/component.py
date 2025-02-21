@@ -1,5 +1,4 @@
 import importlib
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -8,6 +7,8 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
 )
 from dagster._utils import pushd
+from pydantic import Field
+from pydantic.dataclasses import dataclass
 
 from dagster_components import (
     Component,
@@ -27,7 +28,9 @@ class DefinitionsParamSchema(ResolvableSchema):
 class DefinitionsComponent(Component):
     """Wraps an arbitrary set of Dagster definitions."""
 
-    definitions_path: Optional[str]
+    definitions_path: Optional[str] = Field(
+        ..., description="Relative path to a file containing Dagster definitions."
+    )
 
     @classmethod
     def get_scaffolder(cls) -> DefinitionsComponentScaffolder:

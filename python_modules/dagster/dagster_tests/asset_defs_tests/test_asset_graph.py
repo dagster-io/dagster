@@ -126,6 +126,30 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(
         )
 
 
+def test_get_children_partitions_unpartitioned_parent_time_partitioned_child(
+    asset_graph_from_assets,
+) -> None:
+    @asset
+    def parent(): ...
+
+    @asset(partitions_def=DailyPartitionsDefinition("2023-01-01"))
+    def child(parent): ...
+
+    with instance_for_test() as instance:
+        current_time = create_datetime(2023, 1, 3, 0, 0, 0)
+
+        asset_graph = asset_graph_from_assets([parent, child])
+
+        expected_asset_partitions = {
+            AssetKeyPartitionKey(asset_key=AssetKey(["child"]), partition_key="2023-01-01"),
+            AssetKeyPartitionKey(asset_key=AssetKey(["child"]), partition_key="2023-01-02"),
+        }
+        assert (
+            asset_graph.get_children_partitions(instance, current_time, parent.key)
+            == expected_asset_partitions
+        )
+
+
 def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
     asset_graph_from_assets: Callable[..., BaseAssetGraph],
 ):

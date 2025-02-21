@@ -28,12 +28,15 @@ class RSSFeedDefinition:
     max_backfill_size: int = 1
 
 
+# start_factory
 def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
+    # end_factory
     rss_entry_partition = dg.DynamicPartitionsDefinition(name=f"{feed_definition.name}_entry")
 
     class AudioRunConfig(dg.Config):
         audio_file_url: str
 
+    # start_podcast_audio
     audio_asset_name = f"{feed_definition.name}_audio"
 
     @dg.asset(
@@ -60,6 +63,9 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
 
         return dg.MaterializeResult(metadata=metadata)
 
+    # end_podcast_audio
+
+    # start_transcription
     @dg.asset(
         name=f"{feed_definition.name}_transcript",
         partitions_def=rss_entry_partition,
@@ -91,6 +97,9 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
             extras={"audio_file_path": audio_key},
         ).get_materialize_result()
 
+    # end_transcription
+
+    # start_summary
     @dg.asset(
         name=f"{feed_definition.name}_summary",
         partitions_def=rss_entry_partition,
@@ -118,6 +127,8 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
             Body=summary.encode("utf-8"), Bucket=R2_BUCKET_NAME, Key=summary_key
         )
         return dg.MaterializeResult(metadata={"summary": summary, "summary_key": summary_key})
+
+    # end_summary
 
     @dg.asset(
         name=f"{feed_definition.name}_email",
@@ -165,6 +176,7 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         partitions_def=rss_entry_partition,
     )
 
+    # start_sensor
     @dg.sensor(
         name=f"rss_sensor_{feed_definition.name}",
         minimum_interval_seconds=DEFAULT_POLLING_INTERVAL,
@@ -207,6 +219,9 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
             cursor=feed.etag,
         )
 
+    # end_sensor
+
+    # start_def
     return dg.Definitions(
         assets=[
             _podcast_audio,
@@ -217,3 +232,6 @@ def rss_pipeline_factory(feed_definition: RSSFeedDefinition) -> dg.Definitions:
         jobs=[_job],
         sensors=[_sensor],
     )
+
+
+# end_def

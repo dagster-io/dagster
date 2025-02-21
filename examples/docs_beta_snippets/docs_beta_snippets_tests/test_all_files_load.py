@@ -3,9 +3,9 @@ import os
 
 import pytest
 
-from dagster import file_relative_path
+import dagster as dg
 
-snippets_folder = file_relative_path(__file__, "../docs_beta_snippets/")
+snippets_folder = dg.file_relative_path(__file__, "../docs_beta_snippets/")
 
 EXCLUDED_FILES = {
     # see DOC-375

@@ -1,6 +1,0 @@
-run_coordinator:
-  module: dagster.core.run_coordinator
-  class: QueuedRunCoordinator
-
-concurrency:
-  default_op_concurrency_limit: 1

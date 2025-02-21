@@ -147,7 +147,7 @@ const StyledInput = styled.input<StyledInputProps>`
   box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderDefault()} inset 0px 0px 0px 1px;
   padding: ${({$hasIcon}) => ($hasIcon ? '6px 6px 6px 28px' : '6px 6px 6px 12px')};
 
-  :hover {
+  :hover:not(:disabled) {
     box-shadow: ${({$strokeColor}) => $strokeColor || Colors.borderHover()} inset 0px 0px 0px 1px;
   }
 

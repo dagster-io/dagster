@@ -1,17 +1,11 @@
-from dagster import (
-    DagsterRunStatus,
-    RunRequest,
-    SkipReason,
-    run_failure_sensor,
-    run_status_sensor,
-)
+import dagster as dg
 
 status_reporting_job = None
 
 
 # start
-@run_status_sensor(
-    run_status=DagsterRunStatus.SUCCESS,
+@dg.run_status_sensor(
+    run_status=dg.DagsterRunStatus.SUCCESS,
     request_job=status_reporting_job,
 )
 def report_status_sensor(context):
@@ -22,9 +16,9 @@ def report_status_sensor(context):
                 "status_report": {"config": {"job_name": context.dagster_run.job_name}}
             }
         }
-        return RunRequest(run_key=None, run_config=run_config)
+        return dg.RunRequest(run_key=None, run_config=run_config)
     else:
-        return SkipReason("Don't report status of status_reporting_job")
+        return dg.SkipReason("Don't report status of status_reporting_job")
 
 
 # end
@@ -32,12 +26,12 @@ def report_status_sensor(context):
 # start_job_failure
 
 
-@run_failure_sensor(request_job=status_reporting_job)
+@dg.run_failure_sensor(request_job=status_reporting_job)
 def report_failure_sensor(context):
     run_config = {
         "ops": {"status_report": {"config": {"job_name": context.dagster_run.job_name}}}
     }
-    return RunRequest(run_key=None, run_config=run_config)
+    return dg.RunRequest(run_key=None, run_config=run_config)
 
 
 # end_job_failure

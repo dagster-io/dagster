@@ -64,7 +64,7 @@ from dagster._core.workspace.workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
     CodeLocationStatusEntry,
-    WorkspaceSnapshot,
+    CurrentWorkspace,
     location_status_from_location_entry,
 )
 from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
@@ -104,20 +104,20 @@ class BaseWorkspaceRequestContext(LoadingContext):
     def instance(self) -> DagsterInstance: ...
 
     @abstractmethod
-    def get_workspace_snapshot(self) -> WorkspaceSnapshot: ...
+    def get_current_workspace(self) -> CurrentWorkspace: ...
 
-    # abstracted since they may be calculated without the full WorkspaceSnapshot
+    # abstracted since they may be calculated without the full CurrentWorkspace
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]: ...
 
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]: ...
 
-    # implemented here since they require the full WorkspaceSnapshot
+    # implemented here since they require the full CurrentWorkspace
     def get_code_location_entries(self) -> Mapping[str, CodeLocationEntry]:
-        return self.get_workspace_snapshot().code_location_entries
+        return self.get_current_workspace().code_location_entries
 
     @property
     def asset_graph(self) -> "RemoteWorkspaceAssetGraph":
-        return self.get_workspace_snapshot().asset_graph
+        return self.get_current_workspace().asset_graph
 
     @cached_property
     def instance_queryer(self) -> CachingInstanceQueryer:
@@ -350,7 +350,7 @@ class BaseWorkspaceRequestContext(LoadingContext):
         code_location = self.get_code_location(code_location_name)
         return code_location.get_notebook_data(notebook_path=notebook_path)
 
-    def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
+    def get_base_deployment_asset_graph(self) -> Optional["RemoteWorkspaceAssetGraph"]:
         return None
 
     def get_repository(
@@ -475,7 +475,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
         self,
         instance: DagsterInstance,
-        workspace_snapshot: WorkspaceSnapshot,
+        current_workspace: CurrentWorkspace,
         process_context: "IWorkspaceProcessContext",
         version: Optional[str],
         source: Optional[object],
@@ -483,7 +483,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         read_only_locations: Optional[Mapping[str, bool]] = None,
     ):
         self._instance = instance
-        self._workspace_snapshot = workspace_snapshot
+        self._current_workspace = current_workspace
         self._process_context = process_context
         self._version = version
         self._source = source
@@ -497,7 +497,7 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def reset_for_test(self) -> "WorkspaceRequestContext":
         return WorkspaceRequestContext(
             instance=self.instance,
-            workspace_snapshot=self._workspace_snapshot,
+            current_workspace=self._current_workspace,
             process_context=self._process_context,
             version=self._version,
             source=self._source,
@@ -509,16 +509,16 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def instance(self) -> DagsterInstance:
         return self._instance
 
-    def get_workspace_snapshot(self) -> WorkspaceSnapshot:
-        return self._workspace_snapshot
+    def get_current_workspace(self) -> CurrentWorkspace:
+        return self._current_workspace
 
     def get_location_entry(self, name: str) -> Optional[CodeLocationEntry]:
-        return self._workspace_snapshot.code_location_entries.get(name)
+        return self._current_workspace.code_location_entries.get(name)
 
     def get_code_location_statuses(self) -> Sequence[CodeLocationStatusEntry]:
         return [
             location_status_from_location_entry(entry)
-            for entry in self._workspace_snapshot.code_location_entries.values()
+            for entry in self._current_workspace.code_location_entries.values()
         ]
 
     @property
@@ -655,7 +655,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         self._version = version
 
-        # Guards changes to _workspace_snapshot, _watch_thread_shutdown_events and _watch_threads
+        # Guards changes to _current_workspace, _watch_thread_shutdown_events and _watch_threads
         self._lock = threading.Lock()
         self._watch_thread_shutdown_events: dict[str, threading.Event] = {}
         self._watch_threads: dict[str, threading.Thread] = {}
@@ -682,7 +682,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                 )
             )
 
-        self._workspace_snapshot: WorkspaceSnapshot = WorkspaceSnapshot(code_location_entries={})
+        self._current_workspace: CurrentWorkspace = CurrentWorkspace(code_location_entries={})
         self._update_workspace(
             {
                 origin.location_name: self._load_location(origin, reload=False)
@@ -841,27 +841,27 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             version_key=version_key,
         )
 
-    def get_workspace_snapshot(self) -> WorkspaceSnapshot:
+    def get_current_workspace(self) -> CurrentWorkspace:
         with self._lock:
-            return self._workspace_snapshot
+            return self._current_workspace
 
     @property
     def code_locations_count(self) -> int:
         with self._lock:
-            return len(self._workspace_snapshot.code_location_entries)
+            return len(self._current_workspace.code_location_entries)
 
     @property
     def code_location_names(self) -> Sequence[str]:
         with self._lock:
-            return list(self._workspace_snapshot.code_location_entries)
+            return list(self._current_workspace.code_location_entries)
 
     def has_code_location(self, location_name: str) -> bool:
         check.str_param(location_name, "location_name")
 
         with self._lock:
             return (
-                location_name in self._workspace_snapshot.code_location_entries
-                and self._workspace_snapshot.code_location_entries[location_name].code_location
+                location_name in self._current_workspace.code_location_entries
+                and self._current_workspace.code_location_entries[location_name].code_location
                 is not None
             )
 
@@ -869,23 +869,23 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         check.str_param(location_name, "location_name")
         with self._lock:
             return (
-                location_name in self._workspace_snapshot.code_location_entries
-                and self._workspace_snapshot.code_location_entries[location_name].load_error
+                location_name in self._current_workspace.code_location_entries
+                and self._current_workspace.code_location_entries[location_name].load_error
                 is not None
             )
 
     def reload_code_location(self, name: str) -> None:
         new_entry = self._load_location(
-            self._workspace_snapshot.code_location_entries[name].origin, reload=True
+            self._current_workspace.code_location_entries[name].origin, reload=True
         )
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
-            self._workspace_snapshot = self._workspace_snapshot.with_code_location(name, new_entry)
+            self._current_workspace = self._current_workspace.with_code_location(name, new_entry)
 
     def shutdown_code_location(self, name: str) -> None:
         with self._lock:
-            self._workspace_snapshot.code_location_entries[name].origin.shutdown_server()
+            self._current_workspace.code_location_entries[name].origin.shutdown_server()
 
     def refresh_workspace(self) -> None:
         updated_locations = {
@@ -910,8 +910,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             previous_threads = self._watch_threads
             self._watch_threads = {}
 
-            previous_locations = self._workspace_snapshot.code_location_entries
-            self._workspace_snapshot = WorkspaceSnapshot(code_location_entries=new_locations)
+            previous_locations = self._current_workspace.code_location_entries
+            self._current_workspace = CurrentWorkspace(code_location_entries=new_locations)
 
             # start monitoring for new locations
             for entry in new_locations.values():
@@ -932,7 +932,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
     def create_request_context(self, source: Optional[object] = None) -> WorkspaceRequestContext:
         return WorkspaceRequestContext(
             instance=self._instance,
-            workspace_snapshot=self.get_workspace_snapshot(),
+            current_workspace=self.get_current_workspace(),
             process_context=self,
             version=self.version,
             source=source,
@@ -959,12 +959,12 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         # This method reloads the webserver's copy of the code from the remote gRPC server without
         # restarting it, and returns a new request context created from the updated process context
         new_entry = self._load_location(
-            self._workspace_snapshot.code_location_entries[name].origin, reload=False
+            self._current_workspace.code_location_entries[name].origin, reload=False
         )
         with self._lock:
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
-            self._workspace_snapshot = self._workspace_snapshot.with_code_location(name, new_entry)
+            self._current_workspace = self._current_workspace.with_code_location(name, new_entry)
 
     def __enter__(self) -> Self:
         return self

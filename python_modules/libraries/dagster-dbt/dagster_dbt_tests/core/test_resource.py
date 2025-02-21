@@ -27,6 +27,7 @@ from dagster_dbt_tests.dbt_projects import (
     test_exceptions_path,
     test_jaffle_shop_path,
     test_jaffle_with_profile_vars_path,
+    test_pre_packaged_jaffle_shop_path,
 )
 
 
@@ -269,6 +270,18 @@ def test_dbt_profiles_dir_configuration(profiles_dir: Union[str, Path]) -> None:
     assert (
         DbtCliResource(
             project_dir=DbtProject(os.fspath(test_jaffle_shop_path), profiles_dir=profiles_dir)
+        )
+        .cli(["parse"])
+        .is_successful()
+    )
+
+    assert (
+        DbtCliResource(
+            project_dir=DbtProject(
+                os.fspath(test_pre_packaged_jaffle_shop_path),
+                packaged_project_dir=os.fspath(test_jaffle_shop_path),
+                profiles_dir=profiles_dir,
+            )
         )
         .cli(["parse"])
         .is_successful()

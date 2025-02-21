@@ -25,8 +25,8 @@ def test_dev_command_deployment_context_success():
     # pull the `dagster` package from PyPI. To avoid this, we ensure the deployment directory has a
     # venv with `dagster` and `dagster-webserver` installed.
     with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner, create_venv=True):
-        runner.invoke("code-location", "scaffold", "code-location-1")
-        runner.invoke("code-location", "scaffold", "code-location-2")
+        runner.invoke("scaffold", "code-location", "code-location-1")
+        runner.invoke("scaffold", "code-location", "code-location-2")
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         code_locations = {"code-location-1", "code-location-2"}

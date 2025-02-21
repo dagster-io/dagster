@@ -659,7 +659,7 @@ def _get_requested_asset_graph_subset_from_run_requests(
     asset_graph_view: AssetGraphView,
 ) -> AssetGraphSubset:
     asset_graph = asset_graph_view.asset_graph
-    requested_subset = AssetGraphSubset.empty()
+    requested_subset = AssetGraphSubset.create_empty_subset()
     for run_request in run_requests:
         # Run request targets a range of partitions
         range_start = run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG)
@@ -1124,8 +1124,9 @@ def execute_asset_backfill_iteration(
             updated_backfill_data.failed_and_downstream_subset
             - previous_asset_backfill_data.failed_and_downstream_subset
         )
-        updated_backfill_in_progress = (
-            updated_backfill_data.requested_subset - updated_backfill_data.materialized_subset
+        updated_backfill_in_progress = updated_backfill_data.requested_subset - (
+            updated_backfill_data.materialized_subset
+            | updated_backfill_data.failed_and_downstream_subset
         )
         previous_backfill_in_progress = (
             previous_asset_backfill_data.requested_subset
@@ -1492,7 +1493,7 @@ def execute_asset_backfill_iteration_inner(
         )
         logger.info(
             f"Assets materialized since last tick:\n{_asset_graph_subset_to_str(materialized_since_last_tick, asset_graph)}"
-            if not materialized_since_last_tick.empty
+            if not materialized_since_last_tick.is_empty
             else "No relevant assets materialized since last tick."
         )
 
@@ -1538,7 +1539,7 @@ def execute_asset_backfill_iteration_inner(
 
     logger.info(
         f"Asset partitions to request:\n{_asset_graph_subset_to_str(asset_subset_to_request, asset_graph)}"
-        if not asset_subset_to_request.empty
+        if not asset_subset_to_request.is_empty
         else "No asset partitions to request."
     )
 
@@ -1617,7 +1618,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 failed_and_downstream_partitions.get_internal_value(),
-                f"{failed_and_downstream_partitions} has failed or is downstream of a failed asset",
+                "Failed or is downstream of a failed asset",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
@@ -1631,7 +1632,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 materialized_partitions.get_internal_value(),
-                f"{materialized_partitions} already materialized by backfill",
+                "Already materialized by backfill",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(
@@ -1646,7 +1647,7 @@ def _should_backfill_atomic_asset_subset_unit(
         failure_subsets_with_reasons.append(
             (
                 requested_partitions.get_internal_value(),
-                f"{requested_partitions} already requested by backfill",
+                "Already requested by backfill",
             )
         )
         entity_subset_to_filter = entity_subset_to_filter.compute_difference(requested_partitions)
@@ -1709,6 +1710,65 @@ def _should_backfill_atomic_asset_subset_unit(
             entity_subset_to_filter = not_waiting_for_parent_subset.compute_union(
                 can_run_with_parent_subset
             )
+
+            is_self_dependency = parent_key == asset_key
+
+            if is_self_dependency:
+                self_dependent_node = asset_graph.get(asset_key)
+                # ensure that we don't produce more than max_partitions_per_run partitions
+                # if a backfill policy is set
+                if (
+                    self_dependent_node.backfill_policy is not None
+                    and self_dependent_node.backfill_policy.max_partitions_per_run is not None
+                ):
+                    num_partitions_already_being_requested_this_tick = (
+                        asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                            asset_graph_subset_matched_so_far, asset_key
+                        )
+                    ).size
+
+                    # only the first N partitions can be requested
+                    num_allowed_partitions = max(
+                        0,
+                        self_dependent_node.backfill_policy.max_partitions_per_run
+                        - num_partitions_already_being_requested_this_tick,
+                    )
+                    # TODO add a method for paginating through the keys in order
+                    # and returning the first N instead of listing all of them
+                    # (can't use expensively_compute_asset_partitions because it returns
+                    # an unordered set)
+                    internal_value = entity_subset_to_filter.get_internal_value()
+                    partition_keys_to_include = (
+                        list(internal_value.get_partition_keys())
+                        if isinstance(internal_value, PartitionsSubset)
+                        else [None]
+                    )[:num_allowed_partitions]
+                    partition_subset_to_include = AssetGraphSubset.from_asset_partition_set(
+                        {
+                            AssetKeyPartitionKey(self_dependent_node.key, partition_key)
+                            for partition_key in partition_keys_to_include
+                        },
+                        asset_graph=asset_graph,
+                    )
+                    entity_subset_to_include = (
+                        asset_graph_view.get_entity_subset_from_asset_graph_subset(
+                            partition_subset_to_include, self_dependent_node.key
+                        )
+                    )
+
+                    entity_subset_to_reject = entity_subset_to_filter.compute_difference(
+                        entity_subset_to_include
+                    )
+
+                    if not entity_subset_to_reject.is_empty:
+                        failure_subsets_with_reasons.append(
+                            (
+                                entity_subset_to_reject.get_internal_value(),
+                                "Respecting the maximum number of partitions per run for the backfill policy of a self-dependant asset",
+                            )
+                        )
+
+                    entity_subset_to_filter = entity_subset_to_include
 
     return (
         entity_subset_to_filter.convert_to_serializable_subset(),
@@ -1845,8 +1905,9 @@ def get_can_run_with_parent_subsets(
 
     # We now know that the parent and child are eligible to happen in the same run, so pass
     # any children of parents that actually are being requested in this iteration (by
-    # being in either the asset_graph_subset_matched_so_far subset, or more rarely in
-    # candidate_asset_graph_subset_unit if they are part of a non-subsettable multi-asset)
+    # being in either the parent_being_requested_this_tick_subset subset, or more rarely in
+    # candidate_asset_graph_subset_unit if they are part of a non-subsettable multi-asset
+    # or a self-dependant asset)
     failure_subsets_with_reasons = []
 
     candidate_subset = asset_graph_view.get_entity_subset_from_asset_graph_subset(
@@ -1992,7 +2053,7 @@ def _get_failed_asset_graph_subset(
         )
     )
 
-    result: AssetGraphSubset = AssetGraphSubset.empty()
+    result: AssetGraphSubset = AssetGraphSubset.create_empty_subset()
     for run in runs:
         planned_asset_keys = instance_queryer.get_planned_materializations_for_run(
             run_id=run.run_id

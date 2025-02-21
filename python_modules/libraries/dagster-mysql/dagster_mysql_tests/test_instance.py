@@ -131,7 +131,9 @@ def test_statement_timeouts(conn_string):
     port = parse_result.port
 
     with instance_for_test(overrides=yaml.safe_load(full_mysql_config(hostname, port))) as instance:
-        instance.optimize_for_webserver(statement_timeout=500, pool_recycle=-1)  # 500ms
+        instance.optimize_for_webserver(
+            statement_timeout=500, pool_recycle=-1, max_overflow=20
+        )  # 500ms
 
         # ensure migration error is not raised by being up to date
         instance.upgrade()

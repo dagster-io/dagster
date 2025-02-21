@@ -1708,6 +1708,14 @@ BUILD_CASES = [
     (Literal["apple", "manzana"], ["apple", "manzana"], ["banana"]),
     (Callable, [lambda x: x, int], [4]),
     (Callable[[], int], [lambda x: x, int], [4]),
+    (
+        Optional[Callable[[], int]],
+        [
+            None,
+            lambda x: x,
+        ],
+        [4],
+    ),
     # fwd refs
     ("Foo", [Foo()], [Bar()]),
     (Optional["Foo"], [Foo()], [Bar()]),
