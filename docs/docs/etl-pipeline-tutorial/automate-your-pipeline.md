@@ -25,7 +25,7 @@ Copy the following code underneath the `product performance` asset:
 
 Now `monthly_sales_performance` should be executed once a month, but setting up an independent monthly schedule for this asset isn't exactly what we want -- if we do it naively, then this asset will execute exactly on the month boundary, before the last week's data has had a chance to complete. We could delay the monthly schedule by a couple of hours to give the upstream assets a chance to finish, but what if the upstream computation fails or takes too long to complete? this is where we can use [declarative automation](/guides/automate/declarative-automation), which understands the status of an asset and all of its dependencies. 
 
-For `monthly_sales_performance` we want it to update on a monthly basis when all the dependencies are updated. To accomplish this we will use the `on_cron` automation condition. Update the `monthly_sales_performance` asset to add the automation condition to the decorator:
+For `monthly_sales_performance` we want it to update when all the dependencies are updated. To accomplish this we will use the `eager` automation condition. Update the `monthly_sales_performance` asset to add the automation condition to the decorator:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="155" lineEnd="209"/>
 
