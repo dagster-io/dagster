@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "graphql.macro": "^1.4.2",
+    "next": "^15.1.7",
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0"
   },

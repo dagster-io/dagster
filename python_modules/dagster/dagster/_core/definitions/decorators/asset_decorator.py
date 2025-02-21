@@ -90,6 +90,7 @@ def asset(
     owners: Optional[Sequence[str]] = ...,
     kinds: Optional[AbstractSet[str]] = ...,
     pool: Optional[str] = ...,
+    location: Optional[str] = None,
     **kwargs,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
@@ -167,6 +168,7 @@ def asset(
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
     pool: Optional[str] = None,
+    location: Optional[str] = None,
     **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
@@ -322,6 +324,7 @@ def asset(
         key=key,
         owners=owners,
         pool=pool,
+        location=location,
     )
 
     if compute_fn is not None:
@@ -395,6 +398,7 @@ class AssetDecoratorArgs(NamedTuple):
     check_specs: Optional[Sequence[AssetCheckSpec]]
     owners: Optional[Sequence[str]]
     pool: Optional[str]
+    location: Optional[str]
 
 
 class ResourceRelatedState(NamedTuple):
@@ -506,6 +510,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,
                     tags=normalize_tags(args.tags or {}, strict=True),
+                    location=args.location,
                 )
             },
             upstream_asset_deps=args.deps,
