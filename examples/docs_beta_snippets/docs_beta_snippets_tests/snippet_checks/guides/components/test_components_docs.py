@@ -290,7 +290,7 @@ params:
 """,
             )
             run_command_and_snippet_output(
-                cmd="dg check component",
+                cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check-error.txt",
                 update_snippets=update_snippets,
@@ -314,7 +314,7 @@ params:
 """,
             )
             run_command_and_snippet_output(
-                cmd="dg check component",
+                cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check.txt",
                 update_snippets=update_snippets,

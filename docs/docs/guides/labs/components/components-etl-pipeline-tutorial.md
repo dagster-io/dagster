@@ -185,7 +185,7 @@ We need to update the configuration of the `dagster_components.dbt_project` comp
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/22-project-jdbt-incorrect.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-You might notice the typo in the above file--after updating a component file, it's useful to validate that the changes match the component's schema. You can do this by running `dg check component`:
+You might notice the typo in the above file--after updating a component file, it's useful to validate that the changes match the component's schema. You can do this by running `dg check yaml`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-dg-component-check-error.txt" />
 
@@ -193,7 +193,7 @@ You can see that the error message includes the filename, line number, and a cod
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/24-project-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-Finally, run `dg check component` again to validate the fix:
+Finally, run `dg check yaml` again to validate the fix:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/25-dg-component-check.txt" />
 

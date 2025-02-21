@@ -48,7 +48,7 @@ REGISTRY_CONTEXT_COMMANDS = [
 
 CODE_LOCATION_CONTEXT_COMMANDS = [
     CommandSpec(("configure-editor", "code-location"), "vscode"),
-    CommandSpec(("check", "component")),
+    CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
     CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
 ]
