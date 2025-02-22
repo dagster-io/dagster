@@ -1,77 +1,94 @@
 ---
-title: 'Asset selection syntax'
+title: "Asset selection syntax"
 sidebar_position: 1000
 ---
 
-# Asset selection syntax
+Dagster's asset selection syntax allows you to query and view assets within your data lineage graph. You can select upstream and downstream layers of the graph, use filters to narrow down your selection, and use functions to return the root or sink assets of a given selection.
 
-This reference contains information about the syntax for asset selections, including a variety of examples for selecting assets and their downstream and upstream dependencies.
+With asset selection, you can:
 
-Asset selection may be used to:
-
-- Define a job that targets a selection of assets
 - Select a set of assets to view in the Dagster UI
-- Select a set of assets for an adhoc run
+- Define a job in Python that targets a selection of assets
+- List or materialize a set of assets using the [Dagster CLI](/api/python-api/cli#dagster-asset)
 
-## Syntax usage
+## Basic syntax
 
-A query includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of the following methods. In these cases, each clause is a separate element in a list:
+| Asset selection | Syntax | Description |
+| --- | --- | --- |
+| **Specific asset** | `key:"my_asset"` | Selects assets with key `my_key`. |
+| **Entire graph** | `*` | Displays all assets and connections. |
 
-- `define_asset_job`
-- `materialize`
-- `materialize_to_memory`
+## Upstream and downstream layers
 
-| Clause syntax         | Description                                                                                                                                                                                                                                                                                                               |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ASSET_KEY`           | Selects a single asset by asset key. [See an example](#single-asset).                                                                                                                                                                                                                                                                                       |
-| `COMPONENT/COMPONENT` | Selects an asset key with multiple components, such as a prefix, where slashes (`/`) are inserted between components. [See an example](#multiple-key-components).                    |
-| `*ASSET_KEY`          | Selects an asset and all of its upstream dependencies. [See an example](#all-upstream).                                                                                                                                                                                                                             |
-| `ASSET_KEY*`          | Selects an asset and all of its downstream dependencies. [See an example](#all-downstream).                                                                                                                                                                                                                           |
-| `+ASSET_KEY`          | Selects an asset and one layer upstream of the asset. Including multiple `+`s will select that number of upstream layers from the asset. Any number of `+`s is supported. [See an example](#specific-upstream).    |
-| `ASSET_KEY+`          | Selects an asset and one layer downstream of the asset. Including multiple `+`s will select that number of downstream layers from the asset. Any number of `+`s is supported. [See an example](#specific-downstream). |
+Filtering by upstream and downstream layers can help you understand the data flow within your assets.
+
+- **Upstream assets** provide input to a given asset.
+- **Downstream assets** receive input from a given asset.
+- A **layer** is a level of connection in the graph. One layer up or down means a direct connection, "two layers" means connections two steps away, and so on.
+
+| Asset selection | Syntax | Description |
+|------|--------|-------------|
+| **All layers upstream of an asset** | `+key:"my_asset"` | Selects all upstream assets that provide input into `my_asset`. |
+| **One layer upstream of an asset** | `1+key:"my_asset"` | Selects assets that directly provide input to `my_asset`. |
+| **Two layers upstream of an asset** | `2+key:"my_asset"` | Selects assets two steps upstream from `my_asset`. |
+| **All layers downstream of an asset** | `key:"my_asset"+` | Selects all downstream assets that depend on `my_asset`. |
+| **One layer downstream of an asset** | `key:"my_asset"+1` | Selects assets that directly receive input from `my_asset`. |
+| **Two layers downstream of an asset** | `key:"my_asset"+2` | Selects assets two steps downstream from `my_asset`. |
+| **One layer upstream and downstream of an asset** | `1+key:"my_asset"+1` | Selects one layer of assets providing input to and receiving input from `my_asset`. |
+| **Two layers upstream and downstream of an asset** | `2+key:"my_asset"+2` | Selects two layers of assets providing input to and receiving input from `my_asset`. |
+| **All layers upstream and downstream of an asset** | `+key:"my_asset"+ ` | Selects all assets upstream and downstream of `my_asset`. |
+
+## Filters, operands, and grouping
+
+Filters allow you to narrow your asset selection using specific criteria.
+
+| Filter | Syntax | Description | Supported views |
+|--------|--------|-------------|-----------------|
+| **Exact key** | `key:"my_key"` | Selects assets with the exact key `my_key`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Key substring with wildcard filter** | `key:partial_key_*`| Selects assets whose key contains `partial_key`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Tag (exact)** | `tag:"stage"` | Selects assets tagged with `stage`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Tag (with value)** | `tag:"stage"="value"` | Selects assets tagged with `stage` having a specific `value`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Owner** | `owner:"alice"` | Selects assets owned by `alice`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Group** | `group:"team1"` | Selects assets in the group `team1`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Kind** |  `kind:"table"` |  Selects assets of kind `table`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Code location** | `code_location:"repo1"` | Selects assets located in code location `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Column tag** | `column:tag: "my_tag"` | TODO | Dagster+ |
+| **Columns** | `columns: "column_name"` | TODO | Dagster+ |
+| **Table name** | `table_name: "my_table"` | TODO | Dagster+ |
+| **Changed in branch** | `changed_in_branch: | TODO | Dagster+ branch deployments |
+
+:::note Wildcard matching in the `key` filter
+
+Only the `key` filter supports wildcard matching.
+
+:::
+
+You can combine multiple filters with operands to further refine your asset selection:
+
+| Operand | Syntax | Description |
+|---------|--------|-------------|
+| **`and`** | `owner:"alice" and kind:"dbt"` | Selects assets owned by `alice` of kind `dbt`. |
+| **`or`** | `owner:"billing" or owner:"sales"` | Selects assets owned by either `billing` or `sales`. |
+| **`not`** | `not tag:"obsolete"` | Excludes assets tagged with `obsolete`. |
+| **Grouping with parentheses `()`** | `(owner:"alice" and kind:"table") or group:"analytics"` | Symbols `(` and `)` used to group expressions and control the order of evaluation in queries. This example selects assets that are both owned by `alice` and of kind `table`, or that belong to the `analytics` group. |
+
+## Functions
+
+Functions allow you to perform specific operations on your asset selection. You can use `sink()` and `root()` functions to return the sink and root assets of the specified expression.
+
+- **Sink assets** are assets without any downstream dependencies (leaf nodes), which means they don't provide input to any other assets.
+- **Root assets** are assets without any upstream dependencies (root nodes), which means no assets provide input to them.
+
+| Function | Syntax | Description |
+|--------|-------------|-----------|
+| **`sinks(expr)`** | `sinks(expr)` | Selects only "sink" assets from the specified expression. |
+| **`roots(expr)`** | `roots(expr)` | Selects only "root" assets from the specified expression. |
+
+TODO - what are allowed expressions here?
 
 ## Examples
 
-The examples in this section use the following asset graph from the [Dagster University Essentials project](https://github.com/dagster-io/project-dagster-university) to demonstrate how to use the selection syntax:
-
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/asset-selection-syntax-dag.png)
-
-### Selecting a single asset \{#single-asset}
-
-To select a single asset, use the asset's asset key. This example selects the `taxi_zones_file` asset:
-
-<Tabs>
-<TabItem value="python" label="Python">
-
-```python
-raw_data_job = define_asset_job(name="raw_data_job", selection="taxi_zones_file")
-```
-
-</TabItem>
-<TabItem value="cli" label="CLI">
-
-```shell
-dagster asset list --select taxi_zones_file
-dagster asset materialize --select taxi_zones_file
-```
-
-</TabItem>
-<TabItem value="dagster-ui" label="Dagster UI">
-
-```shell
-taxi_zones_file
-```
-
-Which would result in the following asset graph:
-
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-single-asset.png)
-
-</TabItem>
-</Tabs>
-
----
-
-### Selecting assets with multiple key components \{#multiple-key-components}
+### Select assets with multiple key components \{#multiple-key-components}
 
 To select an asset with a key containing multiple components, such as a prefix, insert slashes (`/`) between the components.
 
@@ -85,19 +102,19 @@ def manhattan_stats(database: DuckDBResource):
  ...
 ```
 
-<Tabs>
+<Tabs groupId="examples">
 <TabItem value="python" label="Python">
 
 ```python
-manhattan_job = define_asset_job(name="manhattan_job", selection="manhattan/manhattan_stats")
+manhattan_stats = AssetSelection.from_string('key:"manhattan/manhattan_stats"')
 ```
 
 </TabItem>
 <TabItem value="cli" label="CLI">
 
 ```shell
-dagster asset list --select manhattan/manhattan_stats
-dagster asset materialize --select manhattan/manhattan_stats
+dagster asset list --select 'key:"manhattan/manhattan_stats"'
+dagster asset materialize --select 'key:"manhattan/manhattan_stats"'
 ```
 
 </TabItem>
@@ -109,26 +126,26 @@ manhattan/manhattan_stats
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-multiple-components.png)
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
 
----
+### Select multiple assets \{#multiple-assets}
 
-### Selecting multiple assets \{#multiple-assets}
+TODO how would you do this in new syntax?
 
 To select multiple assets, use a list of the assets' asset keys. The assets don't have to be dependent on each other.
 
 This example selects the `taxi_zones_file` and `taxi_trips_file` assets, which are defined below:
 
-<Tabs>
+<Tabs groupId="examples">
 <TabItem value="python" label="Python">
 
+When selecting multiple assets, enclose the list of asset keys in double quotes (`"`) and separate each asset key with a comma:
+
 ```python
-raw_data_job = define_asset_job(
-    name="taxi_zones_job", selection=["taxi_zones_file", "taxi_trips_file"]
-)
+taxi_zones_and_trips = AssetSelection.from_string("taxi_zones_file, taxi_trips_file")
 ```
 
 </TabItem>
@@ -150,202 +167,145 @@ taxi_zones_file taxi_trips_file
 
 Which would result in the following asset graph:
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-disjointed-lineages.png)
+{/* TODO: Add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
 
----
-
-### Selecting an asset's entire lineage \{#full-lineage}
-
-To select an asset's entire lineage, add an asterisk (`*`) before and after the asset key in the query.
-
-This example selects the entire lineage for the `taxi_zones` asset.
-
-<Tabs>
-<TabItem value="python" label="Python">
-
-```python
-taxi_zones_job = define_asset_job(name="taxi_zones_job", selection="*taxi_zones*")
-```
-
-</TabItem>
-<TabItem value="cli" label="CLI">
-
-When selecting an asset's entire lineage using the CLI, enclose the asterisk (`*`) and the asset key in double quotes (`"`):
+### Select upstream and downstream assets with filters \{#filters}
 
 ```shell
-dagster asset list --select "*taxi_zones*"
-dagster asset materialize --select "*taxi_zones*"
++key:"data_pipeline" and kind:"table"+
 ```
 
-</TabItem>
-<TabItem value="dagster-ui" label="Dagster UI">
+Selects one layer upstream and one layer downstream of `data_pipeline`, limited to assets of kind `table`.
 
-```shell
-*taxi_zones*
-```
-
-Which would result in the following asset graph:
-
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-entire-lineage.png)
-
-</TabItem>
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TK - Python
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TK - UI
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TK - CLI
+    </TabItem>
 </Tabs>
 
----
-
-### Selecting upstream dependencies
-
-#### Selecting all upstream dependencies \{#all-upstream}
-
-To select an asset and all its upstream dependencies, add an asterisk (`*`) before the asset key in the query.
-
-This example selects the `manhattan_map` asset and all its upstream dependencies.
-
-<Tabs>
-<TabItem value="python" label="Python">
-
-```python
-manhattan_job = define_asset_job(name="manhattan_job", selection="*manhattan_map")
-```
-
-</TabItem>
-<TabItem value="cli" label="CLI">
-
-When selecting an asset's dependencies using the CLI, enclose the asterisk (`*`) and the asset key in double quotes (`"`):
+### Select assets without specific tags \{#not-tag}
 
 ```shell
-dagster asset list --select "*manhattan_map"
-dagster asset materialize --select "*manhattan_map"
+owner:"billing" and not tag:"enterprise"
 ```
 
-</TabItem>
-<TabItem value="dagster-ui" label="Dagster UI">
+Selects everything owned by `billing` **excluding** any assets tagged with `enterprise`.
 
-```shell
-*manhattan_map
-```
-
-Which would result in the following asset graph:
-
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-upstream-dependencies.png)
-
-</TabItem>
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+    ```python
+    billing_assets = AssetSelection.from_string('owner:"billing" and not tag:"enterprise"')
+    ```
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TK - UI
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    ```shell
+    dagster asset list --select owner:"billing" and not tag:"enterprise"
+    ```
+    </TabItem>
 </Tabs>
 
-#### Selecting a specific number of upstream layers \{#specific-upstream}
-
-To select an asset and multiple upstream layers, add a plus sign (`+`) for each layer you want to select before the asset key in the query.
-
-This example selects the `manhattan_map` asset and two upstream layers.
-
-<Tabs>
-<TabItem value="python" label="Python">
-
-```python
-manhattan_job = define_asset_job(name="manhattan_job", selection="++manhattan_map")
-```
-
-</TabItem>
-<TabItem value="cli" label="CLI">
-
-When selecting an asset's dependencies using the CLI, enclose the plus sign (`+`) and the asset key in double quotes (`"`):
+### Select all assets on the path between two groups of assets \{#asset-path}
 
 ```shell
-dagster asset list --select "++manhattan_map"
-dagster asset materialize --select "++manhattan_map"
+group:"sensitive_data"* and *group:"public_data"
 ```
 
-</TabItem>
-<TabItem value="dagster-ui" label="Dagster UI">
+Selects all assets on the paths from the `sensitive_data` group to the `public_data` group.
 
-```shell
-++manhattan_map
-```
-
-Which would result in the following asset graph:
-
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-two-upstream-layers.png)
-
-</TabItem>
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TK - Python
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TK - UI
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TK - CLI
+    </TabItem>
 </Tabs>
 
----
+### Select assets with parentheses grouping and filters \{#grouping-filters}
 
-### Selecting downstream dependencies
-
-#### Selecting all downstream dependencies \{#all-downstream}
-
-To select an asset and all its downstream dependencies, add an asterisk (`*`) after the asset key in the query.
-
-This example selects the `taxi_zones_file` asset and all its downstream dependencies.
-
-<Tabs>
-<TabItem value="python" label="Python">
-
-```python
-taxi_zones_job = define_asset_job(name="taxi_zones_job", selection="taxi_zones_file*")
-```
-
-</TabItem>
-<TabItem value="cli" label="CLI">
-
-When selecting an asset's dependencies using the CLI, enclose the asterisk (`*`) and the asset key in double quotes (`"`):
+#### Example 1
 
 ```shell
-dagster asset list --select "taxi_zones_file*"
-dagster asset materialize --select "taxi_zones_file*"
+(owner:"alice" and kind:"table") or group:"analytics"
 ```
 
-</TabItem>
-<TabItem value="dagster-ui" label="Dagster UI">
+Selects assets that are either owned by `alice` and of kind `table`, **or** belong to the `analytics` group.
 
-```shell
-taxi_zones_file*
-```
-
-Which would result in the following asset graph:
-
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-downstream-dependencies.png)
-
-</TabItem>
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TK
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TK - UI
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TK - CLI
+    </TabItem>
 </Tabs>
 
-#### Selecting a specific number of downstream layers \{#specific-downstream}
-
-To select an asset and multiple downstream layers, add plus sign (`+`) for each layer you want to select after the asset key in the query.
-
-This example selects the `taxi_trips_file` asset and two downstream layers.
-
-<Tabs>
-<TabItem value="python" label="Python">
-
-```python
-taxi_zones_job = define_asset_job(name="taxi_zones_job", selection="taxi_zones_file++")
-```
-
-</TabItem>
-<TabItem value="cli" label="CLI">
-
-When selecting an asset's dependencies using the CLI, enclose the plus sign (`+`) and the asset key in double quotes (`"`):
+#### Example 2
 
 ```shell
-dagster asset list --select "taxi_zones_file++"
-dagster asset materialize --select "taxi_zones_file++"
+not (tag:"obsolete" or tag:"deprecated") and key_substring:"data"
 ```
 
-</TabItem>
-<TabItem value="dagster-ui" label="Dagster UI">
+Selects assets whose keys contain `data` and are **not** tagged as `obsolete` or `deprecated`.
 
-```shell
-taxi_zones_file++
-```
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TK - Python
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TK - UI
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TK - CLI
+    </TabItem>
+</Tabs>
 
-Which would result in the following asset graph:
+### Select all sinks \{#sinks}
 
-![Screenshot of Daggy U project graph](/images/guides/build/assets/asset-selection-syntax/select-two-downstream-layers.png)
+`sinks(*)`
 
-</TabItem>
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TK - Python
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TK - UI
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TK - CLI
+    </TabItem>
+</Tabs>
+
+### Select all roots \{#roots}
+
+`roots(*)`
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TK - Python
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TK - UI
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TK - CLI
+    </TabItem>
 </Tabs>
