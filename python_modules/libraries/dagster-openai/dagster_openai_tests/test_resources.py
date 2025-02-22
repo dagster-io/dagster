@@ -21,6 +21,9 @@ from dagster._core.execution.context.init import build_init_resource_context
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_openai import OpenAIResource, with_usage_metadata
 
+TEST_MODEL = "test_model"
+TEST_ANOTHER_MODEL = "test_another_model"
+
 
 @patch("dagster_openai.resources.Client")
 def test_openai_client(mock_client) -> None:
@@ -290,6 +293,7 @@ def test_openai_wrapper_with_asset(mock_client, mock_context, mock_wrapper):
         assert openai_resource
 
         mock_completion = MagicMock()
+        mock_completion.model = TEST_MODEL
         mock_usage = MagicMock()
         mock_usage.prompt_tokens = 1
         mock_usage.total_tokens = 1
@@ -303,16 +307,76 @@ def test_openai_wrapper_with_asset(mock_client, mock_context, mock_wrapper):
                 output_name="openai_asset",
                 func=client.fine_tuning.jobs.create,
             )
-            client.fine_tuning.jobs.create(
-                model="gpt-3.5-turbo", training_file="some_training_file"
-            )
+            client.fine_tuning.jobs.create(model=TEST_MODEL, training_file="some_training_file")
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
+                    "openai.models": [TEST_MODEL],
                     "openai.calls": 1,
                     "openai.total_tokens": 1,
                     "openai.prompt_tokens": 1,
                     "openai.completion_tokens": 1,
+                },
+                output_name="openai_asset",
+            )
+
+    result = materialize_to_memory(
+        [openai_asset],
+        resources={
+            "openai_resource": OpenAIResource(api_key="xoxp-1234123412341234-12341234-1234")
+        },
+    )
+
+    assert result.success
+
+
+@patch("dagster_openai.resources.OpenAIResource._wrap_with_usage_metadata")
+@patch("dagster.AssetExecutionContext", autospec=AssetExecutionContext)
+@patch("dagster_openai.resources.Client")
+def test_openai_wrapper_with_multiple_models_per_output(mock_client, mock_context, mock_wrapper):
+    @asset
+    def openai_asset(openai_resource: OpenAIResource):
+        assert openai_resource
+
+        mock_completion_1 = MagicMock()
+        mock_completion_1.model = TEST_MODEL
+        mock_usage = MagicMock()
+        mock_usage.prompt_tokens = 1
+        mock_usage.total_tokens = 1
+        mock_usage.completion_tokens = 1
+        mock_completion_1.usage = mock_usage
+
+        mock_completion_2 = MagicMock()
+        mock_completion_2.model = TEST_ANOTHER_MODEL
+        mock_usage = MagicMock()
+        mock_usage.prompt_tokens = 1
+        mock_usage.total_tokens = 1
+        mock_usage.completion_tokens = 1
+        mock_completion_2.usage = mock_usage
+
+        mock_client.return_value.fine_tuning.jobs.create.side_effect = [
+            mock_completion_1,
+            mock_completion_2,
+        ]
+
+        with openai_resource.get_client(context=mock_context) as client:
+            client.fine_tuning.jobs.create = with_usage_metadata(
+                context=mock_context,
+                output_name="openai_asset",
+                func=client.fine_tuning.jobs.create,
+            )
+            client.fine_tuning.jobs.create(model=TEST_MODEL, training_file="some_training_file")
+            client.fine_tuning.jobs.create(
+                model=TEST_ANOTHER_MODEL, training_file="some_training_file"
+            )
+
+            mock_context.add_output_metadata.assert_called_with(
+                metadata={
+                    "openai.models": [TEST_ANOTHER_MODEL, TEST_MODEL],
+                    "openai.calls": 2,
+                    "openai.total_tokens": 2,
+                    "openai.prompt_tokens": 2,
+                    "openai.completion_tokens": 2,
                 },
                 output_name="openai_asset",
             )
@@ -344,6 +408,7 @@ def test_openai_wrapper_with_graph_backed_asset(mock_client, mock_context, mock_
         assert openai_resource
 
         mock_completion = MagicMock()
+        mock_completion.model = TEST_MODEL
         mock_usage = MagicMock()
         mock_usage.prompt_tokens = 1
         mock_usage.total_tokens = 1
@@ -361,6 +426,7 @@ def test_openai_wrapper_with_graph_backed_asset(mock_client, mock_context, mock_
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
+                    "openai.models": [TEST_MODEL],
                     "openai.calls": 1,
                     "openai.total_tokens": 1,
                     "openai.prompt_tokens": 1,
@@ -394,6 +460,7 @@ def test_openai_wrapper_with_multi_asset(mock_client, mock_context, mock_wrapper
         assert openai_resource
 
         mock_completion = MagicMock()
+        mock_completion.model = TEST_MODEL
         mock_usage = MagicMock()
         mock_usage.prompt_tokens = 1
         mock_usage.total_tokens = 1
@@ -409,12 +476,11 @@ def test_openai_wrapper_with_multi_asset(mock_client, mock_context, mock_wrapper
                 output_name="result",
                 func=client.fine_tuning.jobs.create,
             )
-            client.fine_tuning.jobs.create(
-                model="gpt-3.5-turbo", training_file="some_training_file"
-            )
+            client.fine_tuning.jobs.create(model=TEST_MODEL, training_file="some_training_file")
 
             mock_context.add_output_metadata.assert_called_with(
                 metadata={
+                    "openai.models": [TEST_MODEL],
                     "openai.calls": 1,
                     "openai.total_tokens": 1,
                     "openai.prompt_tokens": 1,
@@ -455,6 +521,7 @@ def test_openai_wrapper_with_partitioned_asset(mock_client, mock_wrapper):
             mock_context.__class__ = AssetExecutionContext
 
             mock_completion = MagicMock()
+            mock_completion.model = TEST_MODEL
             mock_usage = MagicMock()
             mock_usage.prompt_tokens = 1
             mock_usage.total_tokens = 1
@@ -468,17 +535,16 @@ def test_openai_wrapper_with_partitioned_asset(mock_client, mock_wrapper):
                     output_name=None,
                     func=client.fine_tuning.jobs.create,
                 )
-                client.fine_tuning.jobs.create(
-                    model="gpt-3.5-turbo", training_file="some_training_file"
-                )
+                client.fine_tuning.jobs.create(model=TEST_MODEL, training_file="some_training_file")
                 mock_context.add_output_metadata.assert_called_with(
-                    {
+                    metadata={
+                        "openai.models": [TEST_MODEL],
                         "openai.calls": 1,
                         "openai.total_tokens": 1,
                         "openai.prompt_tokens": 1,
                         "openai.completion_tokens": 1,
                     },
-                    None,
+                    output_name=None,
                 )
 
         openai_partitioned_assets.append(openai_partitioned_asset)
