@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta
 
-from dagster_fivetran.resources import FivetranWorkspace
+from dagster_fivetran.resources import FivetranFilterFn, FivetranWorkspace
 from dagster_fivetran.translator import DagsterFivetranTranslator, FivetranMetadataSet
 
 
@@ -15,6 +15,7 @@ def fivetran_assets(
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
+    fivetran_filter_fn: Optional[FivetranFilterFn] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to sync the tables of a given Fivetran connector.
 
@@ -27,6 +28,8 @@ def fivetran_assets(
         dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
+        fivetran_filter_fn (Optional[FivetranFilterFn]):
+                A function that allows for filtering which Fivetran connector assets are created for.
 
     Examples:
         Sync the tables of a Fivetran connector:
@@ -102,6 +105,7 @@ def fivetran_assets(
 
     """
     dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
+    fivetran_filter_fn = fivetran_filter_fn or (lambda connector: connector.id == connector_id)
 
     return multi_asset(
         name=name,
@@ -110,7 +114,8 @@ def fivetran_assets(
         specs=[
             spec
             for spec in workspace.load_asset_specs(
-                dagster_fivetran_translator=dagster_fivetran_translator
+                dagster_fivetran_translator=dagster_fivetran_translator,
+                fivetran_filter_fn=fivetran_filter_fn,
             )
             if FivetranMetadataSet.extract(spec.metadata).connector_id == connector_id
         ],
