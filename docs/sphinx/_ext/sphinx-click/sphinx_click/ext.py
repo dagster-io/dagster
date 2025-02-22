@@ -275,14 +275,31 @@ def _format_envvars(ctx: click.Context) -> ty.Generator[str, None, None]:
 
 def _format_subcommand(command: click.Command) -> ty.Generator[str, None, None]:
     """Format a sub-command of a `click.Command` or `click.Group`."""
+    # yield f".. object:: {command.name}"
+
+    # short_help = command.get_short_help_str()
+    #
+    # if short_help:
+    #     yield ""
+    #     for line in statemachine.string2lines(short_help, tab_width=4, convert_whitespace=True):
+    #         yield _indent(line)
+
+    # NOTE: this was overriden from the default implementation to show the entirety of the help
+    # text, similar to the formatting logic for `.. option`s. The commented code above was the
+    # original implementation using `get_short_help_str()`. See open issue here:
+    #
+    # https://github.com/click-contrib/sphinx-click/issues/150
+
     yield f".. object:: {command.name}"
-
-    short_help = command.get_short_help_str()
-
-    if short_help:
+    if command.help:
         yield ""
-        for line in statemachine.string2lines(short_help, tab_width=4, convert_whitespace=True):
+        for line in statemachine.string2lines(
+            ANSI_ESC_SEQ_RE.sub("", command.help), tab_width=4, convert_whitespace=True
+        ):
+            if "\\b" in line:
+                continue
             yield _indent(line)
+            yield ""  # workaround to display lines on their own line in MDX, eventually this should be improved
 
 
 @_process_lines("sphinx-click-process-epilog")
@@ -392,8 +409,7 @@ def _format_command(
         if command_obj.hidden:
             continue
 
-        for line in _format_subcommand(command_obj):
-            yield line
+        yield from _format_subcommand(command_obj)
         yield ""
 
 
