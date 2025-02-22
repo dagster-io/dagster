@@ -198,7 +198,7 @@ def markdown_for_component_type(remote_component_type: RemoteComponentType) -> s
 
 ### Sample Component Params:
 
-<textarea rows={rows} cols=100>
+```yaml
 {sample_yaml}
-</textarea>
+```
 """
