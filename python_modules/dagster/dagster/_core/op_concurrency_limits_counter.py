@@ -35,13 +35,21 @@ def compute_run_op_concurrency_info_for_snapshot(
     """Utility function called at run creation time to add the concurrency info needed to keep track
     of concurrency limits for each in-flight run.
     """
+    step_keys_to_execute = set(plan_snapshot.step_keys_to_execute)
     root_step_keys = set(
-        [step_key for step_key, deps in plan_snapshot.step_deps.items() if not deps]
+        [
+            step_key
+            for step_key, deps in plan_snapshot.step_deps.items()
+            if not deps.intersection(step_keys_to_execute)
+        ]
     )
     root_key_counts: Mapping[str, int] = defaultdict(int)
     all_pools: set[str] = set()
     has_unconstrained_root_nodes = False
     for step in plan_snapshot.steps:
+        if step.key not in step_keys_to_execute:
+            continue
+
         step_pool = _pool_key_for_step(step)
         if step_pool is None and step.key in root_step_keys:
             has_unconstrained_root_nodes = True
