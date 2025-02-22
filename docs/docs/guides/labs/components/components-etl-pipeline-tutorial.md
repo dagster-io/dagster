@@ -53,7 +53,7 @@ After installing dependencies, scaffold a components-ready project:
 The `dg scaffold project` command builds a project at `jaffle-platform` and initializes a new Python
 virtual environment inside it. When you use `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
-To learn more about the files, directories, and default settings in a project scaffolded with `dg scaffold project`, see "[Creating a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components#overview-of-files-and-directories)".
+To learn more about the files, directories, and default settings in a project scaffolded with `dg scaffold project`, see "[Creating a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components#project-structure)".
 
 ## Ingest data
 
