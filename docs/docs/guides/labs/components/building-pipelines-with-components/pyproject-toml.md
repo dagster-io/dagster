@@ -9,34 +9,20 @@ This article assumes you have already [created a project with components](creati
 
 :::
 
-Running `dg scaffold project <project-name>` creates a fairly standard Python project structure. In the following example, we have created a project called `jaffle-platform`:
-
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/3-tree.txt" />
-
-The following files and directories are included:
-
-- A Python package `jaffle_platform`-- the name is an underscored inflection of the
-project root directory (`jaffle_platform`).
-- An (empty) `jaffle_platform_tests` test package
-- A `uv.lock` file
-- A `pyproject.toml` file
-
-### pyproject.toml
-
-The `pyproject.toml` contains a `tool.dagster` and `tool.dg` section that look like
+`pyproject.toml` contains a `tool.dagster` and `tool.dg` section that look like
 this:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/4-pyproject.toml" language="TOML" title="jaffle-platform/pyproject.toml" />
 
-#### tool.dagster section
+### tool.dagster section
 
 The `tool.dagster` section of `pyproject.toml` is not `dg`-specific. This section specifies that a set of definitions can be loaded from the `jaffle_platform.definitions` module.
 
-#### tool.dg section
+### tool.dg section
 
 The `tool.dg` section contains two settings requiring more explanation: `is_project` and `is_component_lib`.
 
-##### is_project setting
+#### is_project setting
 
 `is_project = true` specifies that this project is a `dg`-managed Dagster project. Projects created with components are regular Dagster projects with a particular structure.
 
@@ -52,7 +38,7 @@ This call to `build_component_defs` will:
 
 `is_project` is telling `dg` that the project is structured in this way and therefore contains component instances. In the current project, component instances will be placed in the default location at `jaffle_platform/components`.
 
-##### is_component_lib setting
+#### is_component_lib setting
 
 `is_component_lib = true` specifies that the project is a component library. This means that the project may contain component types that can be referenced when generating component instances.
 

@@ -21,9 +21,23 @@ After [installing dependencies](/guides/labs/components/index.md#installation), 
 
 This command builds a project and initializes a new Python virtual environment inside of it. When using `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
+## Project structure
+
+Running `dg scaffold project <project-name>` creates a fairly standard Python project structure:
+
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/3-tree.txt" />
+
+The following files and directories are included:
+
+- A Python package `jaffle_platform`-- the name is an underscored inflection of the
+project root directory (`jaffle_platform`).
+- An (empty) `jaffle_platform_tests` test package.
+- A `uv.lock` file.
+- A `pyproject.toml` file.
+
 :::note
 
-For more information about the files, directories, and default configuration in a components project, see "[Files and directories in a components project](files-and-directories-in-a-components-project)".
+For more information about the configuration sections and settings in pyproject.toml, see "[pyproject.toml configuration](pyproject-toml)".
 
 :::
 
