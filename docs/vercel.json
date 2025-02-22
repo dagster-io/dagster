@@ -1920,28 +1920,39 @@
       "permanent": false
     },
     {
+      "source": "/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components",
+      "destination": "//guides/labs/components/building-pipelines-with-components/creating-a-project-with-components",
+      "permanent": false
+    },
+    {
       "source": "/guides/labs/components/creating-a-component",
-      "destination": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type"
+      "destination": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type",
+      "permanent": false
     },
     {
       "source": "/guides/labs/components/existing-code-location",
-      "destination": "guides/labs/components/incrementally-adopting-components/existing-project"
+      "destination": "guides/labs/components/incrementally-adopting-components/existing-project",
+      "permanent": false
     },
     {
       "source": "/guides/labs/components/migrating-definitions",
-      "destination": "/guides/labs/components/incrementally-adopting-components/existing-definitions"
+      "destination": "/guides/labs/components/incrementally-adopting-components/existing-definitions",
+      "permanent": false
     },
     {
       "source": "/guides/labs/components/setting-up-a-deployment",
-      "destination": "/guides/labs/components/managing-multiple-projects"
+      "destination": "/guides/labs/components/managing-multiple-projects",
+      "permanent": false
     },
     {
       "source": "/guides/labs/components/using-a-component",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components"
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components",
+      "permanent": false
     },
     {
       "source": "/guides/labs/components/using-a-component-python",
-      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components-python"
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components-python",
+      "permanent": false
     },
     {
       "source": "/guides/labs/components/incrementally-adopting-components/existing-code-location",
@@ -1955,15 +1966,18 @@
     },
     {
       "source": "/guides/preview/",
-      "destination": "/guides/labs/"
+      "destination": "/guides/labs/",
+      "permanent": false
     },
     {
       "source": "/guides/preview",
-      "destination": "/guides/labs/"
+      "destination": "/guides/labs/",
+      "permanent": false
     },
     {
       "source": "/guides/preview/:path*",
-      "destination": "/guides/labs/:path*"
+      "destination": "/guides/labs/:path*",
+      "permanent": false
     }
   ]
 }
