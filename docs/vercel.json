@@ -1921,7 +1921,7 @@
     },
     {
       "source": "/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components",
-      "destination": "//guides/labs/components/building-pipelines-with-components/creating-a-project-with-components",
+      "destination": "/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components",
       "permanent": false
     },
     {
