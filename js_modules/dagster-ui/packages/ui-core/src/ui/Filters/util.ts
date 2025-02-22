@@ -4,7 +4,8 @@ import {BaseConfig as ChangedFilterBaseConfig} from './useChangedFilter';
 import {BaseConfig as CodeLocationFilterBaseConfig} from './useCodeLocationFilter';
 import {BaseConfig as AssetTagFilterBaseConfig, Tag} from './useDefinitionTagFilter';
 import {BaseConfig as KindFilterBaseConfig} from './useKindFilter';
-import {AssetGroupSelector, AssetOwner, ChangeReason} from '../../graphql/types';
+import {BaseConfig as StaleStatusFilterBaseConfig} from './useStaleStatusFilter';
+import {AssetGroupSelector, AssetOwner, ChangeReason, StaleStatus} from '../../graphql/types';
 import {RepoAddress} from '../../workspace/types';
 import {StaticBaseConfig} from '../BaseFilters/useStaticSetFilter';
 
@@ -15,6 +16,7 @@ export const STATIC_FILTER_CONFIGS: {
   owners: StaticBaseConfig<AssetOwner>;
   tags: StaticBaseConfig<Tag>;
   codeLocations: StaticBaseConfig<RepoAddress>;
+  staleStatuses: StaticBaseConfig<StaleStatus>;
 } = {
   groups: AssetGroupsFilterBaseConfig,
   kinds: KindFilterBaseConfig,
@@ -22,4 +24,5 @@ export const STATIC_FILTER_CONFIGS: {
   owners: AssetOwnerFilterBaseConfig,
   tags: AssetTagFilterBaseConfig,
   codeLocations: CodeLocationFilterBaseConfig,
+  staleStatuses: StaleStatusFilterBaseConfig,
 };
