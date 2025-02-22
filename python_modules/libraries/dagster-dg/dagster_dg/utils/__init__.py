@@ -363,18 +363,20 @@ environment in an ancestor directory or use the `--no-require-local-venv` flag t
 
 NOT_WORKSPACE_ERROR_MESSAGE = """
 This command must be run inside a Dagster workspace directory. Ensure that there is a
-`pyproject.toml` file with `tool.dg.is_workspace = true` set in the root workspace directory.
+`pyproject.toml` file with `tool.dg.directory_type = "workspace"` set in the root workspace
+directory.
 """
 
 
 NOT_PROJECT_ERROR_MESSAGE = """
 This command must be run inside a Dagster project directory. Ensure that the nearest
-pyproject.toml has `tool.dg.is_project = true` set.
+pyproject.toml has `tool.dg.directory_type = "project"` set.
 """
 
 NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE = """
 This command must be run inside a Dagster workspace or project directory. Ensure that the
-nearest pyproject.toml has `tool.dg.is_project = true` or `tool.dg.is_workspace = true` set.
+nearest pyproject.toml has `tool.dg.directory_type = "project"` or `tool.dg.directory_type =
+"workspace"` set.
 """
 
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
@@ -505,10 +507,26 @@ def has_toml_value(doc: tomlkit.TOMLDocument, path: Sequence[str]) -> bool:
     return isinstance(current, dict) and key in current
 
 
+def delete_toml_value(doc: tomlkit.TOMLDocument, path: Sequence[str]) -> None:
+    """Given a tomlkit-parsed document/table (`doc`), delete the nested value at `path`. Raises
+    an error if the leading keys do not already lead to a dictionary.
+    """
+    dct = get_toml_value(doc, path[:-1], dict) if len(path) > 1 else doc
+    del dct[path[-1]]
+
+
 def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object) -> None:
     """Given a tomlkit-parsed document/table (`doc`),set a nested value at `path` to `value`. Raises
     an error if the leading keys do not already lead to a dictionary.
     """
     path_list = list(path)
-    inner_dict = get_toml_value(doc, path_list[:-1], dict)
-    inner_dict[path_list[-1]] = value
+    current: Any = doc
+    for key in path_list[:-1]:
+        if key not in current:
+            current[key] = {}
+        elif not isinstance(current[key], dict):
+            raise TypeError(
+                f"Expected '{key}' to be a table, but got {type(current[key]).__name__}."
+            )
+        current = current[key]
+    current[path_list[-1]] = value

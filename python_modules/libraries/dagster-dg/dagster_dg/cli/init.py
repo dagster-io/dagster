@@ -50,7 +50,7 @@ def init_command(
     ).strip()
 
     workspace_path = scaffold_workspace(workspace_name)
-    workspace_dg_context = DgContext.from_config_file_discovery_and_cli_config(
+    workspace_dg_context = DgContext.from_file_discovery_and_command_line_config(
         workspace_path, cli_config
     )
 
@@ -66,7 +66,7 @@ def init_command(
             "Continuing without adding a project. You can create one later by running `dg scaffold project`."
         )
     else:
-        workspace_dg_context = DgContext.from_config_file_discovery_and_cli_config(
+        workspace_dg_context = DgContext.from_file_discovery_and_command_line_config(
             workspace_path, cli_config
         )
         if workspace_dg_context.has_project(project_name):

@@ -46,7 +46,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
         pyproject_contents = Path("pyproject.toml").read_text()
         tool_dg_section = format_multiline("""
             [tool.dg]
-            is_project = true
+            directory_type = "project"
+
+            [tool.dg.project]
+            root_module = "my_existing_project"
+            components_module = "my_existing_project.components"
         """)
         pyproject_contents = pyproject_contents.replace(
             "[tool.dagster]", f"{tool_dg_section}\n\n[tool.dagster]"
