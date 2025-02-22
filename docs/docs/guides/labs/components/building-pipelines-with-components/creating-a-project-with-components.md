@@ -37,7 +37,7 @@ project root directory (`jaffle_platform`).
 
 :::note
 
-For more information about the configuration sections and settings in pyproject.toml, see "[pyproject.toml configuration](pyproject-toml)".
+For more information about the sections and settings in pyproject.toml, see "[pyproject.toml settings](pyproject-toml)".
 
 :::
 
