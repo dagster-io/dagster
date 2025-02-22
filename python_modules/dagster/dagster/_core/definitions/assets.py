@@ -385,6 +385,12 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 specs=specs,
                 execution_type=execution_type,
             )
+        
+    def render_asset_graph(self) -> None:
+        sorted_assets = sorted(self.specs, key=lambda spec: spec.key)
+        for spec in sorted_assets:
+            location = spec.metadata.get("location", "unknown")
+            print(f"Asset: {spec.key}, Location: {location}")
 
     def __call__(self, *args: object, **kwargs: object) -> object:
         from dagster._core.definitions.composition import is_in_composition
