@@ -19,8 +19,11 @@ module_name = "{{ project_name }}.definitions"
 code_location_name = "{{ code_location_name }}"
 
 [tool.dg]
-is_project = true
-is_component_lib = true
+type = "project"
+
+[tool.dg.project]
+package_name = "{{ project_name }}"
+components_lib_package_name = "{{ project_name }}.lib"
 
 [tool.setuptools.packages.find]
 exclude=["{{ project_name }}_tests"]

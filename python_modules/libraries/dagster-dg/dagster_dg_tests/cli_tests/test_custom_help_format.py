@@ -203,7 +203,7 @@ def test_dynamic_subcommand_help_message():
                 │ --help         -h            Show this message and exit.                                                             │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ --cache-dir                                                        PATH  Specify a directory to use for the cache.   │
+                │ --cache-dir                                                        TEXT  Specify a directory to use for the cache.   │
                 │ --disable-cache                                                          Disable the cache..                         │
                 │ --verbose                                                                Enable verbose output for debugging.        │
                 │ --builtin-component-lib                                            TEXT  Specify a builitin component library to     │
