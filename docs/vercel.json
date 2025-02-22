@@ -1931,7 +1931,7 @@
     },
     {
       "source": "/guides/labs/components/existing-code-location",
-      "destination": "guides/labs/components/incrementally-adopting-components/existing-project",
+      "destination": "/guides/labs/components/incrementally-adopting-components/existing-project",
       "permanent": false
     },
     {
