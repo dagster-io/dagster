@@ -1,7 +1,7 @@
 import {css} from 'styled-components';
 
-export const lightThemeColors = css`
-  --browser-color-scheme: 'light';
+export const lightNoRedGreenThemeColors = css`
+  --browser-color-scheme: light;
   --color-keyline-default: var(--color-translucent-gray20);
   --color-link-default: var(--color-core-blue700);
   --color-link-hover: var(--color-core-blue500);
@@ -10,13 +10,13 @@ export const lightThemeColors = css`
   --color-text-light: var(--color-core-gray700);
   --color-text-lighter: var(--color-core-gray500);
   --color-text-disabled: var(--color-core-gray400);
-  --color-text-red: var(--color-core-red700);
-  --color-text-yellow: var(--color-core-yellow700);
-  --color-text-green: var(--color-core-green700);
-  --color-text-blue: var(--color-core-blue700);
-  --color-text-olive: var(--color-core-olive700);
-  --color-text-cyan: var(--color-core-cyan700);
-  --color-text-lime: var(--color-core-lime700);
+  --color-text-red: var(--color-core-yellow800);
+  --color-text-yellow: var(--color-core-yellow800);
+  --color-text-green: var(--color-core-cobalt800);
+  --color-text-blue: var(--color-core-gray800);
+  --color-text-olive: var(--color-core-olive800);
+  --color-text-cyan: var(--color-core-cyan800);
+  --color-text-lime: var(--color-core-lime800);
   --color-background-default: var(--color-core-white);
   --color-background-default-hover: var(--color-core-gray10);
   --color-background-light: var(--color-core-gray10);
@@ -24,14 +24,14 @@ export const lightThemeColors = css`
   --color-background-lighter: var(--color-core-gray50);
   --color-background-lighter-hover: var(--color-core-gray100);
   --color-background-disabled: var(--color-core-gray150);
-  --color-background-red: var(--color-translucent-red12);
-  --color-background-red-hover: var(--color-translucent-red15);
-  --color-background-yellow: var(--color-translucent-yellow12);
-  --color-background-yellow-hover: var(--color-translucent-yellow15);
-  --color-background-green: var(--color-translucent-green12);
-  --color-background-green-hover: var(--color-translucent-green15);
-  --color-background-blue: var(--color-translucent-blue12);
-  --color-background-blue-hover: var(--color-translucent-blue15);
+  --color-background-red: var(--color-translucent-yellow12);
+  --color-background-red-hover: var(--color-translucent-yellow15);
+  --color-background-yellow: var(--color-translucent-yellow15);
+  --color-background-yellow-hover: var(--color-translucent-yellow20);
+  --color-background-green: var(--color-translucent-cobalt12);
+  --color-background-green-hover: var(--color-translucent-cobalt15);
+  --color-background-blue: var(--color-translucent-gray15);
+  --color-background-blue-hover: var(--color-translucent-gray20);
   --color-background-olive: var(--color-translucent-olive12);
   --color-background-oliver-hover: var(--color-translucent-olive15);
   --color-background-cyan: var(--color-translucent-cyan12);
@@ -43,25 +43,25 @@ export const lightThemeColors = css`
   --color-border-default: var(--color-core-gray200);
   --color-border-hover: var(--color-core-gray300);
   --color-border-disabled: var(--color-core-gray500);
-  --color-focus-ring: var(--color-core-blue300);
+  --color-focus-ring: var(--color-core-gray950);
   --color-accent-primary: var(--color-core-gray950);
   --color-accent-primary-hover: var(--color-core-gray800);
   --color-accent-reversed: var(--color-core-gray10);
   --color-accent-reversed-hover: var(--color-core-white);
-  --color-accent-red: var(--color-core-red500);
-  --color-accent-red-hover: var(--color-core-red400);
-  --color-accent-yellow: var(--color-core-yellow500);
-  --color-accent-yellow-hover: var(--color-core-yellow400);
-  --color-accent-green: var(--color-core-green500);
-  --color-accent-green-hover: var(--color-core-green400);
-  --color-accent-blue: var(--color-core-blue500);
-  --color-accent-blue-hover: var(--color-core-blue400);
+  --color-accent-red: var(--color-core-yellow500);
+  --color-accent-red-hover: var(--color-core-yellow600);
+  --color-accent-yellow: var(--color-core-yellow800);
+  --color-accent-yellow-hover: var(--color-core-yellow900);
+  --color-accent-green: var(--color-core-cobalt500);
+  --color-accent-green-hover: var(--color-core-cobalt400);
+  --color-accent-blue: var(--color-core-gray500);
+  --color-accent-blue-hover: var(--color-core-gray400);
   --color-accent-cyan: var(--color-core-cyan500);
   --color-accent-cyan-hover: var(--color-core-cyan400);
   --color-accent-lime: var(--color-core-lime500);
   --color-accent-lime-hover: var(--color-core-lime400);
-  --color-accent-lavender: var(--color-core-blue200);
-  --color-accent-lavender-hover: var(--color-core-blue100);
+  --color-accent-lavender: var(--color-core-cyan500);
+  --color-accent-lavender-hover: var(--color-core-cyan400);
   --color-accent-olive: var(--color-core-olive500);
   --color-accent-olive-hover: var(--color-core-olive400);
   --color-accent-gray: var(--color-core-gray500);
@@ -91,7 +91,7 @@ export const lightThemeColors = css`
   --color-lineage-node-background-hover: var(--color-core-gray100);
   --color-lineage-node-border: var(--color-core-gray150);
   --color-lineage-node-border-hover: var(--color-core-gray300);
-  --color-lineage-node-border-selected: var(--color-core-blue500);
+  --color-lineage-node-border-selected: var(--color-core-gray990);
   --color-data-viz-blue: var(--color-dataviz-blue200);
   --color-data-viz-blue-alt: var(--color-dataviz-blue300);
   --color-data-viz-blurple: var(--color-dataviz-blurple200);
@@ -119,7 +119,9 @@ export const lightThemeColors = css`
   --color-data-viz-yellow: var(--color-dataviz-yellow200);
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow300);
   --color-checkbox-unchecked: var(--color-core-gray400);
-  --color-checkbox-checked: var(--color-core-blue500);
+  --color-checkbox-checked: var(--color-core-cobalt500);
+  --color-checkbox-disabled: var(--color-core-gray150);
+
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray10),
     var(--color-translucent-blue10) 100%
