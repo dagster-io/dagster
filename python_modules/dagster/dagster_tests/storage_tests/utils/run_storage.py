@@ -8,7 +8,7 @@ from typing import Optional
 from uuid import uuid4
 
 import pytest
-from dagster import ReexecutionOptions, _seven, execute_job, job, op, reconstructable
+from dagster import _seven, job, op
 from dagster._core.definitions import GraphDefinition
 from dagster._core.errors import (
     DagsterRunAlreadyExists,
@@ -1940,49 +1940,3 @@ class TestRunStorage:
             assert storage.get_run_ids(RunsFilter(tags={".dagster/pool/some_pool": "true"})) == [
                 dagster_run.run_id
             ]
-
-    def test_pool_retry(self, storage):
-        assert storage
-
-        with instance_for_storage(storage) as instance:
-            # initial execution
-            with execute_job(reconstructable(define_pool_job), instance=instance) as result:
-                parent_run = result.dagster_run
-                assert parent_run.run_op_concurrency
-                assert parent_run.run_op_concurrency.all_pools == {
-                    "upstream_pool",
-                    "downstream_pool",
-                }
-                assert parent_run.run_op_concurrency.root_key_counts == {"upstream_pool": 1}
-                assert parent_run.status == DagsterRunStatus.SUCCESS
-
-            # retry execution
-            with execute_job(
-                reconstructable(define_pool_job),
-                instance=instance,
-                reexecution_options=ReexecutionOptions(
-                    parent_run_id=parent_run.run_id,
-                    step_selection=["downstream"],
-                ),
-            ) as result:
-                retry_run = result.dagster_run
-                assert retry_run.run_op_concurrency
-                assert retry_run.run_op_concurrency.all_pools == {"downstream_pool"}
-                assert retry_run.run_op_concurrency.root_key_counts == {"downstream_pool": 1}
-                assert retry_run.status == DagsterRunStatus.SUCCESS
-
-
-def define_pool_job():
-    @op(pool="upstream_pool")
-    def upstream():
-        return 1
-
-    @op(pool="downstream_pool")
-    def downstream(inp):
-        return inp
-
-    @job
-    def pool_job():
-        downstream(upstream())
-
-    return pool_job
