@@ -193,11 +193,18 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>In progress</Subheading>
+                  <Subheading>In progress steps</Subheading>
                 </Box>
                 <Box style={{marginLeft: -1}}>
                   <PendingStepsTable keyInfo={concurrencyLimit} refresh={refetch} />
                 </Box>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                >
+                  <Subheading>Queued runs</Subheading>
+                </Box>
+                <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
               </>
             ) : (
               <>
