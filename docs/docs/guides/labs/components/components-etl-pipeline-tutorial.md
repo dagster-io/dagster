@@ -218,7 +218,7 @@ Navigate to `components/ingest_files/component.yaml` and add the `automation_con
 ```yaml create=jaffle_platform/components/ingest_files/component.yaml title="jaffle-platform/jaffle_platform/components/ingest_files/component.yaml"
 type: dagster_components.sling_replication_collection
 
-params:
+attributes:
   replications:
     - path: replication.yaml
   asset_attributes:
@@ -236,7 +236,7 @@ Next, update the dbt project so it executes after the Sling replication runs. Na
 ```yaml create=jaffle_platform/components/jdbt/component.yaml title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml"
 type: dagster_components.dbt_project
 
-params:
+attributes:
   dbt:
     project_dir: ../../../dbt/jdbt
   asset_attributes:

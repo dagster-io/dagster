@@ -137,7 +137,7 @@ When a user instantiates this component, they will be able to use this custom sc
 ```yaml
 component_type: my_component
 
-params:
+attributes:
   script_path: script.sh
   asset_specs:
     - key: a
