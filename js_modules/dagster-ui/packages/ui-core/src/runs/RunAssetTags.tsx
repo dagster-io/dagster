@@ -1,18 +1,14 @@
 import {useMemo} from 'react';
 
 import {AssetKeyTagCollection} from './AssetTagCollections';
-import {assetKeysForRun} from './RunUtils';
 import {gql, useQuery} from '../apollo-client';
 import {RunAssetsQuery, RunAssetsQueryVariables} from './types/RunAssetTags.types';
 import {RunFragment} from './types/RunFragments.types';
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 export const RunAssetTags = (props: {run: RunFragment}) => {
   const {run} = props;
-  const skip = isHiddenAssetGroupJob(run.pipelineName);
   const queryResult = useQuery<RunAssetsQuery, RunAssetsQueryVariables>(RUN_ASSETS_QUERY, {
     variables: {runId: run.id},
-    skip,
     fetchPolicy: 'no-cache',
   });
 
@@ -22,8 +18,8 @@ export const RunAssetTags = (props: {run: RunFragment}) => {
       return null;
     }
 
-    return skip ? assetKeysForRun(run) : data.pipelineRunOrError.assets.map((a) => a.key);
-  }, [queryResult, run, skip]);
+    return data.pipelineRunOrError.assets.map((a) => a.key);
+  }, [queryResult]);
 
   return <AssetKeyTagCollection useTags assetKeys={assetKeys} />;
 };
