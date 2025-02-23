@@ -15,7 +15,7 @@ from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._utils import snakecase
+from dagster._utils import pushd, snakecase
 from typing_extensions import Self
 
 from dagster_components.core.component_key import (
@@ -280,6 +280,44 @@ class ComponentLoadContext:
 
     def resolve(self, value: ResolvableSchema, as_type: type[T]) -> T:
         return self.resolution_context.resolve_value(value, as_type=as_type)
+
+    def load_component_relative_python_module(self, file_path: Path) -> ModuleType:
+        """Load a python module relative to the component's context path. This is useful for loading code
+        the resides within the component directory, loaded during `build_defs` method of a component.
+
+        Example:
+            .. code-block:: python
+
+                def build_defs(self, context: ComponentLoadContext) -> Definitions:
+                    return load_definitions_from_module(
+                        context.load_component_relative_python_module(
+                            Path(self.definitions_path) if self.definitions_path else Path("definitions.py")
+                        )
+                    )
+
+        In a typical setup you end up with module names such as "a_project.components.my_component.my_python_file".
+
+        This handles "__init__.py" files by ending the module name at the parent directory
+        (e.g "a_project.components.my_component") if the file resides at "a_project/components/my_component/__init__.py".
+
+        This calls importlib.import_module with that module name, going through the python module import system.
+
+        It is as if one typed "import a_project.components.my_component.my_python_file" in the python interpreter.
+        """
+        abs_file_path = file_path.absolute()
+        with pushd(str(self.path)):
+            abs_context_path = self.path.absolute()
+
+            # Problematic
+            # See https://linear.app/dagster-labs/issue/BUILD-736/highly-suspect-hardcoding-of-components-string-is-component-relative
+            component_module_relative_path = abs_context_path.parts[
+                abs_context_path.parts.index("components") + 1 :
+            ]
+            component_module_name = ".".join([self.module_name, *component_module_relative_path])
+            if abs_file_path.name != "__init__.py":
+                component_module_name = f"{component_module_name}.{abs_file_path.stem}"
+
+            return importlib.import_module(component_module_name)
 
 
 COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
