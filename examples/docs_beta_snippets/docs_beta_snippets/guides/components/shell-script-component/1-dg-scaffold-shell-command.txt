@@ -1,0 +1,4 @@
+dg scaffold component-type shell_command
+
+Creating a Dagster component type at /.../my-component-library/my_component_library/lib/shell_command.py.
+Scaffolded files for Dagster component type at /.../my-component-library/my_component_library/lib/shell_command..

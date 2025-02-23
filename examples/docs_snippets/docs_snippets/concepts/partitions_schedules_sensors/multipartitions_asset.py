@@ -1,22 +1,16 @@
 # start_multi_partitions_marker
-from dagster import (
-    AssetExecutionContext,
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-    asset,
-)
+import dagster as dg
 
 
-@asset(
-    partitions_def=MultiPartitionsDefinition(
+@dg.asset(
+    partitions_def=dg.MultiPartitionsDefinition(
         {
-            "date": DailyPartitionsDefinition(start_date="2022-01-01"),
-            "color": StaticPartitionsDefinition(["red", "yellow", "blue"]),
+            "date": dg.DailyPartitionsDefinition(start_date="2022-01-01"),
+            "color": dg.StaticPartitionsDefinition(["red", "yellow", "blue"]),
         }
     )
 )
-def multi_partitions_asset(context: AssetExecutionContext):
+def multi_partitions_asset(context: dg.AssetExecutionContext):
     if isinstance(context.partition_key, MultiPartitionKey):
         context.log.info(context.partition_key.keys_by_dimension)
 

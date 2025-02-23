@@ -20,7 +20,7 @@ def scope_compile_dbt_manifest_with_dbt_project(manifest):
 
 
 def scope_schedule_assets_dbt_only(manifest):
-    from dagster import Config, RunConfig
+    from dagster import Config
 
     class MyDbtConfig(Config):
         full_refresh: bool
@@ -497,7 +497,6 @@ def scope_build_incremental_model():
 
 def scope_use_dbt_defer_with_dbt_project(manifest):
     # start_use_dbt_defer_with_dbt_project
-    import os
     from pathlib import Path
 
     from dagster import AssetExecutionContext

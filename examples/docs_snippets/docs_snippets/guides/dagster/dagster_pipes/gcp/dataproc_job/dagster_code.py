@@ -2,9 +2,7 @@
 # gcloud dataproc clusters create dagster --enable-component-gateway --bucket dagster-pipes --region us-central1 --subnet default --single-node --master-machine-type n2-standard-4 --master-boot-disk-type pd-balanced --master-boot-disk-size 100 --public-ip-address --image-version 2.2-debian12 --optional-components DOCKER --initialization-actions 'gs://dagster-pipes/init.sh' --metadata PEX_ENV_FILE_URI=gs://dagster-pipes/venv.pex --project dagster-infra
 
 # start_asset_marker
-import os
 
-import boto3
 from dagster_gcp.pipes import (
     PipesDataprocJobClient,
     PipesGCSContextInjector,

@@ -1,6 +1,7 @@
 import pytest
 from dagster import DagsterInstance, __version__
-from dagster._cli.workspace.cli_target import get_workspace_process_context_from_kwargs
+from dagster._cli.workspace.cli_target import WorkspaceOpts
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster_webserver.webserver import DagsterWebserver
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -29,11 +30,11 @@ class TestDagsterWebserver(DagsterWebserver):
 
 @pytest.fixture(scope="session")
 def test_client(instance):
-    process_context = get_workspace_process_context_from_kwargs(
+    process_context = WorkspaceProcessContext(
         instance=instance,
         version=__version__,
         read_only=False,
-        kwargs={"empty_workspace": True},  # pyright: ignore[reportArgumentType]
+        workspace_load_target=WorkspaceOpts(empty_workspace=True).to_load_target(),
     )
 
     app = TestDagsterWebserver(process_context).create_asgi_app(debug=True)

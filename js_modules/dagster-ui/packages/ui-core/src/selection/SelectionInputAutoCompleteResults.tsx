@@ -119,7 +119,13 @@ export const SelectionInputAutoCompleteResults = React.memo(
                 <BodySmall>to search</BodySmall>
               </Box>
             </Box>
-            <Box as="a" href="#TODO" flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+            <Box
+              as="a"
+              href="https://docs.dagster.io/guides/build/assets/asset-selection-syntax"
+              target="_blank"
+              rel="noopener noreferrer"
+              flex={{direction: 'row', alignItems: 'center', gap: 4}}
+            >
               <BodySmall>View documentation</BodySmall>
               <Icon name="open_in_new" color={Colors.linkDefault()} />
             </Box>

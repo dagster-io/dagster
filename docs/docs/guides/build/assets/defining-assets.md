@@ -35,7 +35,7 @@ The simplest way to define a data asset in Dagster is by using the <PyObject sec
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/data-assets/asset_decorator.py" language="python" title="Using @dg.asset decorator" />
 
-In this example, `my_data_asset` is an asset that logs its output. Dagster automatically tracks its dependencies and handles its execution within the pipeline.
+In this example, `weekly_sales_report` is an asset that logs its output. Dagster automatically tracks its dependencies and handles its execution within the pipeline.
 
 ## Defining operations that create multiple assets \{#multi-asset}
 
@@ -51,6 +51,20 @@ In this example, `my_multi_asset` produces two assets: `asset_one` and `asset_tw
 This example could be expressed as:
 
 ```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+
 flowchart LR
   multi(my_multi_asset) --> one(asset_one)
   multi(my_multi_asset) --> two(asset_two)
@@ -67,6 +81,21 @@ In this example, `complex_asset` is an asset that's the result of two operations
 This example could be expressed as:
 
 ```mermaid
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+
+}%%
+
 flowchart LR
   one((step_one)) --> asset(complex_asset)
   two((step_two)) --> asset(complex_asset)

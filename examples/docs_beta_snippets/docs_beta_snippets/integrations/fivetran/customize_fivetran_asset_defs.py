@@ -10,6 +10,7 @@ fivetran_workspace = FivetranWorkspace(
 
 
 @fivetran_assets(
+    # Replace with your connector ID
     connector_id="fivetran_connector_id",
     name="fivetran_connector_id",
     group_name="fivetran_connector_id",

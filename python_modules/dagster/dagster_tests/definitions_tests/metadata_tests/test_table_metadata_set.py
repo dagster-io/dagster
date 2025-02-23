@@ -63,7 +63,7 @@ def test_row_count() -> None:
     AssetMaterialization(asset_key="a", metadata=splat_table_metadata)
 
 
-@ignore_warning("Class `TableColumnLineage` is experimental")
+@ignore_warning("Class `TableColumnLineage` is currently in beta")
 def test_invalid_column_lineage() -> None:
     with pytest.raises(CheckError):
         TableColumnLineage(
@@ -82,7 +82,7 @@ def test_invalid_column_lineage() -> None:
         )
 
 
-@ignore_warning("Class `TableColumnLineage` is experimental")
+@ignore_warning("Class `TableColumnLineage` is currently in beta")
 def test_column_lineage() -> None:
     expected_deps = [
         TableColumnDep(

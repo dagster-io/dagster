@@ -1,6 +1,6 @@
 import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
-import CodeMirror, {Editor} from 'codemirror';
+import CodeMirror, {Editor, EditorChange} from 'codemirror';
 import type {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
 import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
@@ -70,6 +70,7 @@ export const SelectionAutoCompleteInput = ({
   const [showResults, setShowResults] = useState({current: false});
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
+  const cursorPositionRef = useUpdatingRef(cursorPosition);
 
   const {autoCompleteResults, loading} = useAutoComplete({
     line: innerValue,
@@ -113,6 +114,7 @@ export const SelectionAutoCompleteInput = ({
       });
 
       cmInstance.current.setSize('100%', 20);
+      setCurrentHeight(20);
 
       // Enforce single line by preventing newlines
       cmInstance.current.on('beforeChange', (_instance: Editor, change) => {
@@ -125,7 +127,7 @@ export const SelectionAutoCompleteInput = ({
         }
       });
 
-      cmInstance.current.on('change', (instance: Editor) => {
+      cmInstance.current.on('change', (instance: Editor, changeObj: EditorChange) => {
         const newValue = instance.getValue().replace(/\s+/g, ' ');
         const cursor = instance.getCursor();
         if (instance.getValue() !== newValue) {
@@ -136,7 +138,11 @@ export const SelectionAutoCompleteInput = ({
           instance.setCursor({...cursor, ch: cursor.ch - difference});
         }
         setInnerValue(newValue);
-        setShowResults({current: true});
+        if (changeObj.origin !== 'setValue') {
+          // If we're programmatically setting the value, we don't want to display the dropdown
+          // automatically.
+          setShowResults({current: true});
+        }
         adjustHeight();
         setCursorPosition(instance.getCursor().ch);
       });
@@ -155,8 +161,13 @@ export const SelectionAutoCompleteInput = ({
 
       cmInstance.current.on('cursorActivity', (instance: Editor) => {
         applyStaticSyntaxHighlighting(instance);
-        setCursorPosition(instance.getCursor().ch);
-        setShowResults({current: true});
+        const nextCursorPosition = instance.getCursor().ch;
+        if (cursorPositionRef.current !== nextCursorPosition) {
+          // If the cursor has moved then update the cursor position
+          // and show the auto-complete results.
+          setCursorPosition(nextCursorPosition);
+          setShowResults({current: true});
+        }
       });
 
       requestAnimationFrame(() => {
@@ -170,6 +181,8 @@ export const SelectionAutoCompleteInput = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const [currentHeight, setCurrentHeight] = useState(20);
+
   const adjustHeight = useCallback(() => {
     const lines = cmInstance.current?.getWrapperElement().querySelector('.CodeMirror-lines');
     if (!lines || !cmInstance.current || !focusRef.current) {
@@ -179,6 +192,7 @@ export const SelectionAutoCompleteInput = ({
       const linesHeight = lines?.clientHeight;
       if (linesHeight && focusRef.current) {
         cmInstance.current?.setSize('100%', `${linesHeight}px`);
+        setCurrentHeight(linesHeight);
       }
     });
   }, []);
@@ -186,13 +200,13 @@ export const SelectionAutoCompleteInput = ({
   // Update CodeMirror when value prop changes
   useLayoutEffect(() => {
     const noNewLineValue = value.replace(/\n/g, ' ');
-    if (cmInstance.current && cmInstance.current.getValue() !== noNewLineValue) {
+    const currentValue = cmInstance.current?.getValue();
+    if (cmInstance.current && currentValue !== noNewLineValue) {
       const instance = cmInstance.current;
       const cursor = instance.getCursor();
       instance.setValue(noNewLineValue);
       instance.setCursor(cursor);
       setCursorPosition(cursor.ch);
-      setShowResults({current: true});
       requestAnimationFrame(() => {
         // Reset selected index on value change
         setSelectedIndex({current: 0});
@@ -318,6 +332,7 @@ export const SelectionAutoCompleteInput = ({
     focusRef.current = false;
     cmInstance.current?.setOption('lineWrapping', false);
     cmInstance.current?.setSize('100%', '20px');
+    setCurrentHeight(20);
   }, []);
 
   useResizeObserver(inputRef, adjustHeight);
@@ -355,13 +370,13 @@ export const SelectionAutoCompleteInput = ({
             setShowResults({current: true});
           }}
         >
-          <div style={{alignSelf: 'flex-start'}}>
+          <div style={{alignSelf: currentHeight > 20 ? 'flex-start' : 'center'}}>
             <Icon name="search" style={{marginTop: 2}} />
           </div>
           <div ref={editorRef} />
           <Box
             flex={{direction: 'row', alignItems: 'center', gap: 4}}
-            style={{alignSelf: 'flex-end'}}
+            style={{alignSelf: currentHeight > 20 ? 'flex-end' : 'center'}}
           >
             {innerValue !== '' && (
               <UnstyledButton

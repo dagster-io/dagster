@@ -77,12 +77,10 @@ def import_command(input_files: tuple[str, ...]):
             if not instance.has_snapshot(run.execution_plan_snapshot_id):  # type: ignore  # (possible none)
                 instance.add_snapshot(
                     debug_payload.execution_plan_snapshot,
-                    run.execution_plan_snapshot_id,
                 )
             if not instance.has_snapshot(run.job_snapshot_id):  # type: ignore  # (possible none)
                 instance.add_snapshot(
                     debug_payload.job_snapshot,
-                    run.job_snapshot_id,
                 )
 
             if not instance.has_run(run.run_id):

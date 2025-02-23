@@ -17,7 +17,7 @@ The provided `context` argument for `handle_output` is an <PyObject section="io-
 
 If your I/O manager is more complex, or needs to manage internal state, it may make sense to split out the I/O manager definition from its configuration. In this case, you can use <PyObject section="io-managers" module="dagster" object="ConfigurableIOManagerFactory"/>, which specifies config schema and implements a factory function that takes the config and returns an I/O manager.
 
-In this case, we implement a stateful I/O manager which maintains a cache.
+In this case, we implement a stateful I/O manager which maintains a cache:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/io_management/custom_io_manager.py" startAfter="start_io_manager_factory_marker" endBefore="end_io_manager_factory_marker" />
 

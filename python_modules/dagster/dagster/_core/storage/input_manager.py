@@ -146,7 +146,7 @@ def input_manager(
             If not set, Dagster will accept any config provided.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the input
             manager.
-        version (Optional[str]): (Experimental) the version of the input manager definition.
+        version (Optional[str]): The version of the input manager definition.
 
     **Examples:**
 

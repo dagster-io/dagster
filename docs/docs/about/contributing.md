@@ -91,7 +91,10 @@ To run the Dagster documentation website locally, run the following commands:
 
 ```bash
 cd docs
-make next-watch-build   # Serves the docs website on http://localhost:3001
+```
+
+```sh
+yarn start
 ```
 
 Troubleshooting tip: You may need to run `make next-dev-install` first to install dependencies. Also make sure that your Node version is >=12.13.0.
@@ -101,23 +104,18 @@ The API documentation is generated from ReStructured Text files (`.rst`), which 
 If you change any `.rst` files, be sure to run the following command in the `docs` directory:
 
 ```bash
-make apidoc-build
+yarn build-api-docs
 ```
 
 The majority of our code snippets are pulled from real Python files. This allows us to test our code snippets and ensure they remain up-to-date.
 
-In `.mdx` files, you'll see a code snippet with `python file=/path/to/file.py startafter=start_marker endbefore=end_marker` at the beginning of the block. For example:
+This is done through the use of the `CodeExample` component, where `path` specifies a relative path to a file in the `examples/` directory.
 
-![Code snippet](/images/about/community/md-code-block.png)
-
-You can find the corresponding Python file at `dagster/examples/docs_snippets/docs_snippets/concepts/asset/asset_dependency.py`. The code included in each snippet is the code in the file between the `# start_marker` and `# end_marker` comments.
-
-![Code snippet between marker comments](/images/about/community/py-code-block.png)
-
-To change the code snippet, update the `.py` file, then run the following from the `docs` directory:
-
-```bash
-make mdx-format
+```
+<CodeExample
+  path="tutorial/tutorial/resources.py"
+  language="python"
+/>
 ```
 
 You can find more information about developing documentation in `docs/README.md`.

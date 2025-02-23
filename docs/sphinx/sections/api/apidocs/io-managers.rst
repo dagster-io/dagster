@@ -49,8 +49,8 @@ The ``UPathIOManager`` can be used to easily define filesystem-based IO Managers
 .. autoclass:: UPathIOManager
 
 
-Input Managers (Experimental)
-----------------------------------
+Input Managers
+--------------
 
 Input managers load inputs from either upstream outputs or from provided default values.
 

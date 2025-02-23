@@ -56,13 +56,13 @@ def test_list_component_types_command():
         "summary": "A simple asset that returns a constant string value.",
         "description": "A simple asset that returns a constant string value.",
         "scaffold_params_schema": None,
-        "component_params_schema": {
+        "component_schema": {
             "properties": {
                 "asset_key": {"title": "Asset Key", "type": "string"},
                 "value": {"title": "Value", "type": "string"},
             },
             "required": ["asset_key", "value"],
-            "title": "SimpleAssetParams",
+            "title": "SimpleAssetSchema",
             "type": "object",
         },
     }
@@ -73,7 +73,7 @@ def test_list_component_types_command():
             "filename": {"title": "Filename", "type": "string"},
         },
         "required": ["asset_key", "filename"],
-        "title": "SimplePipesScriptAssetParams",
+        "title": "SimplePipesScriptAssetSchema",
         "type": "object",
     }
 
@@ -83,7 +83,7 @@ def test_list_component_types_command():
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         "scaffold_params_schema": pipes_script_params_schema,
-        "component_params_schema": pipes_script_params_schema,
+        "component_schema": pipes_script_params_schema,
     }
 
 
@@ -114,7 +114,7 @@ def test_list_local_components_types() -> None:
             assert len(result) == 1
             assert set(result.keys()) == {"my_location/components/local_component_sample"}
             assert set(result["my_location/components/local_component_sample"].keys()) == {
-                "my_component@__init__.py"
+                "my_component@file:__init__.py"
             }
 
             # Add a second directory and local component

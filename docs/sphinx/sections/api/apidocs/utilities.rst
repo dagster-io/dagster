@@ -13,11 +13,11 @@ Utilities
 
 .. autofunction:: get_dagster_logger
 
-.. autoclass:: ExperimentalWarning
-
 .. autoclass:: dagster._utils.warnings.PreviewWarning
 
 .. autoclass:: dagster._utils.warnings.BetaWarning
+
+.. autoclass:: dagster._utils.warnings.SupersessionWarning
 
 .. autofunction:: make_email_on_run_failure_sensor
 

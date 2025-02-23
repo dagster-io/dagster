@@ -1,6 +1,5 @@
 # start_marker
 
-from typing import List  # noqa: UP035
 
 from dagster import job, op
 

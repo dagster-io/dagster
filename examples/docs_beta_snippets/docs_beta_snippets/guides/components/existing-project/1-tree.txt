@@ -6,9 +6,6 @@ tree
 │   ├── __init__.py
 │   ├── assets.py
 │   └── definitions.py
-├── my_existing_project_tests
-│   ├── __init__.py
-│   └── test_assets.py
 └── pyproject.toml
 
-3 directories, 7 files
+2 directories, 5 files

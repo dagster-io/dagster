@@ -1,10 +1,14 @@
 import click
 import pytest
 from click.testing import CliRunner
+from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import (
-    get_remote_repository_from_kwargs,
-    get_workspace_from_kwargs,
+    RepositoryOpts,
+    WorkspaceOpts,
+    get_repository_from_cli_opts,
+    get_workspace_from_cli_opts,
     repository_options,
+    workspace_options,
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteRepository
@@ -15,12 +19,17 @@ from dagster._utils import file_relative_path
 
 def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
     @click.command(name="test_repository_command")
+    @workspace_options
     @repository_options
-    def command(**kwargs):
-        with get_remote_repository_from_kwargs(
+    def command(**opts: object):
+        workspace_opts = WorkspaceOpts.extract_from_cli_options(opts)
+        repository_opts = RepositoryOpts.extract_from_cli_options(opts)
+        assert_no_remaining_opts(opts)
+        with get_repository_from_cli_opts(
             DagsterInstance.get(),
             version="",
-            kwargs=kwargs,
+            workspace_opts=workspace_opts,
+            repository_opts=repository_opts,
         ) as repo:
             if repo_assert_fn:
                 repo_assert_fn(repo)
@@ -34,12 +43,14 @@ def load_repository_via_cli_runner(cli_args, repo_assert_fn=None):
 
 def load_workspace_via_cli_runner(cli_args, workspace_assert_fn=None):
     @click.command(name="test_workspace_command")
-    @repository_options
-    def command(**kwargs):
-        with get_workspace_from_kwargs(
+    @workspace_options
+    def command(**opts: object):
+        workspace_opts = WorkspaceOpts.extract_from_cli_options(opts)
+        assert_no_remaining_opts(opts)
+        with get_workspace_from_cli_opts(
             DagsterInstance.get(),
             version="",
-            kwargs=kwargs,
+            workspace_opts=workspace_opts,
         ) as workspace:
             assert isinstance(workspace, WorkspaceRequestContext)
             if workspace_assert_fn:

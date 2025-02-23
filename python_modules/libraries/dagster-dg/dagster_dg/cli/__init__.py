@@ -2,12 +2,15 @@ from pathlib import Path
 
 import click
 
-from dagster_dg.cli.code_location import code_location_group
-from dagster_dg.cli.component import component_group
-from dagster_dg.cli.component_type import component_type_group
-from dagster_dg.cli.deployment import deployment_group
+from dagster_dg.cli.check import check_group
 from dagster_dg.cli.dev import dev_command
+from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.init import init_command
+from dagster_dg.cli.inspect import inspect_group
+from dagster_dg.cli.list import list_group
+from dagster_dg.cli.scaffold import scaffold_group
+from dagster_dg.cli.utils import utils_group
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
@@ -21,11 +24,14 @@ def create_dg_cli():
     @click.group(
         name="dg",
         commands={
-            "code-location": code_location_group,
-            "component": component_group,
-            "component-type": component_type_group,
-            "deployment": deployment_group,
+            "check": check_group,
+            "docs": docs_group,
+            "inspect": inspect_group,
+            "utils": utils_group,
+            "list": list_group,
+            "scaffold": scaffold_group,
             "dev": dev_command,
+            "init": init_command,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,
@@ -81,7 +87,7 @@ def create_dg_cli():
                 context.exit(0)
         elif rebuild_component_registry:
             cli_config = normalize_cli_config(global_options, context)
-            dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+            dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
             if context.invoked_subcommand is not None:
                 exit_with_error("Cannot specify --rebuild-component-registry with a subcommand.")
             _rebuild_component_registry(dg_context)
@@ -93,9 +99,7 @@ def create_dg_cli():
 
 
 def _rebuild_component_registry(dg_context: DgContext):
-    if not dg_context.is_code_location:
-        exit_with_error("This command must be run inside a Dagster code location directory.")
-    elif not dg_context.has_cache:
+    if not dg_context.has_cache:
         exit_with_error("Cache is disabled. This command cannot be run without a cache.")
     elif not dg_context.config.use_dg_managed_environment:
         exit_with_error(

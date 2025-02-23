@@ -6,8 +6,9 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import AbstractSet, Optional  # noqa: UP035
+from typing import AbstractSet, Any, Iterable, Optional, TypeVar  # noqa: UP035
 
+import tomlkit
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import pushd
 from dagster_components.core.component import (
@@ -16,6 +17,8 @@ from dagster_components.core.component import (
     ComponentLoadContext,
     ComponentTypeRegistry,
 )
+
+T = TypeVar("T")
 
 
 def registry() -> ComponentTypeRegistry:
@@ -44,7 +47,7 @@ def assert_assets(component: Component, expected_assets: int) -> None:
     assert result.success
 
 
-def generate_component_lib_pyproject_toml(name: str, is_code_location: bool = False) -> str:
+def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -> str:
     pkg_name = name.replace("-", "_")
     base = textwrap.dedent(f"""
         [build-system]
@@ -65,13 +68,13 @@ def generate_component_lib_pyproject_toml(name: str, is_code_location: bool = Fa
         is_component_lib = true
 
     """)
-    if is_code_location:
+    if is_project:
         return base + textwrap.dedent("""
-        is_code_location = true
+        is_project = true
 
         [tool.dagster]
         module_name = "{ pkg_name }.definitions"
-        project_name = "{ pkg_name }"
+        code_location_name = "{ pkg_name }"
         """)
     else:
         return base
@@ -83,7 +86,7 @@ def temp_code_location_bar() -> Iterator[None]:
         Path("bar/bar/lib").mkdir(parents=True)
         Path("bar/bar/components").mkdir(parents=True)
         with open("bar/pyproject.toml", "w") as f:
-            f.write(generate_component_lib_pyproject_toml("bar", is_code_location=True))
+            f.write(generate_component_lib_pyproject_toml("bar", is_project=True))
         Path("bar/bar/__init__.py").touch()
         Path("bar/bar/definitions.py").touch()
         Path("bar/bar/lib/__init__.py").touch()
@@ -122,7 +125,7 @@ def create_code_location_from_components(
         code_location_dir = Path(tmpdir) / "my_location"
         code_location_dir.mkdir()
         with open(code_location_dir / "pyproject.toml", "w") as f:
-            f.write(generate_component_lib_pyproject_toml("my_location", is_code_location=True))
+            f.write(generate_component_lib_pyproject_toml("my_location", is_project=True))
 
         for src_path in src_paths:
             component_name = src_path.split("/")[-1]
@@ -137,3 +140,48 @@ def create_code_location_from_components(
             )
 
         yield code_location_dir
+
+
+# ########################
+# ##### TOML MANIPULATION
+# ########################
+
+# Copied from dagster-dg
+
+
+@contextmanager
+def modify_toml(path: Path) -> Iterator[tomlkit.TOMLDocument]:
+    with open(path) as f:
+        toml = tomlkit.parse(f.read())
+    yield toml
+    with open(path, "w") as f:
+        f.write(tomlkit.dumps(toml))
+
+
+def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type: type[T]) -> T:
+    """Given a tomlkit-parsed document/table (`doc`),retrieve the nested value at `path` and ensure
+    it is of type `expected_type`. Returns the value if so, or raises a KeyError / TypeError if not.
+    """
+    current: Any = doc
+    for key in path:
+        # If current is not a table/dict or doesn't have the key, error out
+        if not isinstance(current, dict) or key not in current:
+            raise KeyError(f"Key '{key}' not found in path: {'.'.join(path)}")
+        current = current[key]
+
+    # Finally, ensure the found value is of the expected type
+    if not isinstance(current, expected_type):
+        raise TypeError(
+            f"Expected '{'.'.join(path)}' to be {expected_type.__name__}, "
+            f"but got {type(current).__name__} instead."
+        )
+    return current
+
+
+def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object) -> None:
+    """Given a tomlkit-parsed document/table (`doc`),set a nested value at `path` to `value`. Raises
+    an error if the leading keys do not already lead to a dictionary.
+    """
+    path_list = list(path)
+    inner_dict = get_toml_value(doc, path_list[:-1], dict)
+    inner_dict[path_list[-1]] = value

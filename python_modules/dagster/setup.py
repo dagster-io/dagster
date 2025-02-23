@@ -133,6 +133,7 @@ setup(
             "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
             "flaky",
+            "psutil",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [

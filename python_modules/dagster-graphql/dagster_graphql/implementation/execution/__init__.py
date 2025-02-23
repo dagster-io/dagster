@@ -25,6 +25,7 @@ from starlette.concurrency import (
 if TYPE_CHECKING:
     from dagster_graphql.schema.errors import (
         GrapheneAssetNotFoundError,
+        GrapheneUnauthorizedError,
         GrapheneUnsupportedOperationError,
     )
     from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
@@ -81,8 +82,10 @@ def terminate_pipeline_execution(
     graphene_info: "ResolveInfo",
     run_id: str,
     terminate_policy: "GrapheneTerminateRunPolicy",
-) -> Union["GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure"]:
-    from dagster_graphql.schema.errors import GrapheneRunNotFoundError
+) -> Union[
+    "GrapheneTerminateRunSuccess", "GrapheneTerminateRunFailure", "GrapheneUnauthorizedError"
+]:
+    from dagster_graphql.schema.errors import GrapheneRunNotFoundError, GrapheneUnauthorizedError
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
     from dagster_graphql.schema.roots.mutation import (
         GrapheneTerminateRunFailure,
@@ -101,7 +104,8 @@ def terminate_pipeline_execution(
     )
 
     if not record:
-        assert_permission(graphene_info, Permissions.TERMINATE_PIPELINE_EXECUTION)
+        if not graphene_info.context.has_permission(Permissions.TERMINATE_PIPELINE_EXECUTION):
+            return GrapheneUnauthorizedError()
         return GrapheneRunNotFoundError(run_id)
 
     run = record.dagster_run

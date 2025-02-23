@@ -1,3 +1,5 @@
+import shlex
+import shutil
 import subprocess
 from collections.abc import Iterable
 from dataclasses import replace
@@ -13,25 +15,29 @@ from dagster_dg.config import DgConfig, DgPartialConfig, load_dg_config_file
 from dagster_dg.error import DgError
 from dagster_dg.utils import (
     MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE,
-    NOT_CODE_LOCATION_ERROR_MESSAGE,
+    NO_LOCAL_VENV_ERROR_MESSAGE,
     NOT_COMPONENT_LIBRARY_ERROR_MESSAGE,
-    NOT_DEPLOYMENT_ERROR_MESSAGE,
+    NOT_PROJECT_ERROR_MESSAGE,
+    NOT_WORKSPACE_ERROR_MESSAGE,
+    NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     ensure_loadable_path,
     exit_with_error,
+    generate_missing_dagster_components_in_local_venv_error_message,
     get_path_for_module,
     get_path_for_package,
-    get_uv_command_env,
-    is_executable_available,
+    get_venv_executable,
     is_package_installed,
     pushd,
+    resolve_local_venv,
+    strip_activated_venv_from_env_vars,
 )
 
-# Deployment
-_DEPLOYMENT_CODE_LOCATIONS_DIR: Final = "code_locations"
+# Project
+_DEFAULT_PROJECT_COMPONENTS_LIB_SUBMODULE: Final = "lib"
+_DEFAULT_PROJECT_COMPONENTS_SUBMODULE: Final = "components"
 
-# Code location
-_DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE: Final = "lib"
-_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE: Final = "components"
+# Workspace
+_WORKSPACE_PROJECTS_DIR: Final = "projects"
 
 
 class DgContext:
@@ -49,36 +55,46 @@ class DgContext:
         self.component_registry = RemoteComponentRegistry.empty()
 
     @classmethod
-    def for_deployment_environment(cls, path: Path, cli_config: DgPartialConfig) -> Self:
+    def for_workspace_environment(cls, path: Path, cli_config: DgPartialConfig) -> Self:
         context = cls.from_config_file_discovery_and_cli_config(path, cli_config)
 
-        # Commands that operate on a deployment need to be run inside a deployment context.
-        if not context.is_deployment:
-            exit_with_error(NOT_DEPLOYMENT_ERROR_MESSAGE)
+        # Commands that operate on a workspace need to be run inside a workspace context.
+        if not context.is_workspace:
+            exit_with_error(NOT_WORKSPACE_ERROR_MESSAGE)
         return context
 
     @classmethod
-    def for_code_location_environment(cls, path: Path, cli_config: DgPartialConfig) -> Self:
+    def for_project_environment(cls, path: Path, cli_config: DgPartialConfig) -> Self:
         context = cls.from_config_file_discovery_and_cli_config(path, cli_config)
 
-        # Commands that operate on a code location need to be run (a) inside a code location
-        # context; and (b) with dagster-components available on $PATH.
-        if not context.is_code_location:
-            exit_with_error(NOT_CODE_LOCATION_ERROR_MESSAGE)
-        elif not is_executable_available("dagster-components"):
-            exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)
+        # Commands that operate on a project need to be run (a) with dagster-components
+        # available; and (b) inside a Dagster project context.
+        _validate_dagster_components_availability(context)
+
+        if not context.is_project:
+            exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
+        return context
+
+    @classmethod
+    def for_workspace_or_project_environment(cls, path: Path, cli_config: DgPartialConfig) -> Self:
+        context = cls.from_config_file_discovery_and_cli_config(path, cli_config)
+
+        # Commands that operate on a workspace need to be run inside a workspace or project
+        # context.
+        if not (context.is_workspace or context.is_project):
+            exit_with_error(NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE)
         return context
 
     @classmethod
     def for_component_library_environment(cls, path: Path, cli_config: DgPartialConfig) -> Self:
         context = cls.from_config_file_discovery_and_cli_config(path, cli_config)
 
-        # Commands that operate on a component library need to be run (a) inside a component
-        # library context; and (b) with dagster-components available on $PATH.
+        # Commands that operate on a component library need to be run (a) with dagster-components
+        # available; (b) in a component library context.
+        _validate_dagster_components_availability(context)
+
         if not context.is_component_library:
             exit_with_error(NOT_COMPONENT_LIBRARY_ERROR_MESSAGE)
-        elif not is_executable_available("dagster-components"):
-            exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)
         return context
 
     @classmethod
@@ -86,9 +102,8 @@ class DgContext:
         context = cls.from_config_file_discovery_and_cli_config(path, cli_config)
 
         # Commands that access the component registry need to be run with dagster-components
-        # available on $PATH.
-        if not is_executable_available("dagster-components"):
-            exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)
+        # available.
+        _validate_dagster_components_availability(context)
         return context
 
     @classmethod
@@ -105,7 +120,7 @@ class DgContext:
     def default(cls) -> Self:
         return cls(DgConfig.default(), Path.cwd())
 
-    # Use to derive a new context for a code location while preserving existing settings
+    # Use to derive a new context for a project while preserving existing settings
     def with_root_path(self, root_path: Path) -> Self:
         config_path = root_path / "pyproject.toml"
         if not root_path / "pyproject.toml":
@@ -128,7 +143,7 @@ class DgContext:
         return self._cache is not None
 
     def get_cache_key(self, data_type: CachableDataType) -> tuple[str, str, str]:
-        path_parts = [str(part) for part in self.root_path.parts if part != "/"]
+        path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
             *([self.components_lib_path] if self.is_component_library else []),
@@ -142,47 +157,47 @@ class DgContext:
         return ("_".join(path_parts), env_hash, "local_component_registry")
 
     # ########################
-    # ##### DEPLOYMENT METHODS
+    # ##### WORKSPACE METHODS
     # ########################
 
     @property
-    def is_deployment(self) -> bool:
-        return self.config.is_deployment
+    def is_workspace(self) -> bool:
+        return self.config.is_workspace
 
     @cached_property
-    def deployment_root_path(self) -> Path:
-        if not self.is_deployment:
-            raise DgError("`deployment_root_path` is only available in a deployment context")
-        deployment_config_path = DgConfig.discover_config_file(
-            self.root_path, lambda x: x.get("is_deployment", False)
+    def workspace_root_path(self) -> Path:
+        if not self.is_workspace:
+            raise DgError("`workspace_root_path` is only available in a workspace context")
+        workspace_config_path = DgConfig.discover_config_file(
+            self.root_path, lambda x: x.get("is_workspace", False)
         )
-        if not deployment_config_path:
-            raise DgError("Cannot find deployment configuration file")
-        return deployment_config_path.parent
+        if not workspace_config_path:
+            raise DgError("Cannot find workspace configuration file")
+        return workspace_config_path.parent
 
-    def has_code_location(self, name: str) -> bool:
-        if not self.is_deployment:
-            raise DgError(
-                "`deployment_has_code_location` is only available in a deployment context"
-            )
-        return (self.deployment_root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR / name).is_dir()
+    def get_workspace_project_path(self, name: str) -> Path:
+        return self.workspace_root_path / _WORKSPACE_PROJECTS_DIR / name
+
+    def has_project(self, name: str) -> bool:
+        if not self.is_workspace:
+            raise DgError("`has_project` is only available in a workspace context")
+
+        return self.get_workspace_project_path(name).is_dir()
 
     @property
-    def code_location_root_path(self) -> Path:
-        if not self.is_deployment:
-            raise DgError(
-                "`deployment_code_location_root_path` is only available in a deployment context"
-            )
-        return self.deployment_root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR
+    def project_root_path(self) -> Path:
+        if not self.is_workspace:
+            raise DgError("`project_root_path` is only available in a workspace context")
+        return self.workspace_root_path / _WORKSPACE_PROJECTS_DIR
 
-    def get_code_location_names(self) -> Iterable[str]:
-        return [loc.name for loc in sorted(self.code_location_root_path.iterdir())]
+    def get_project_names(self) -> Iterable[str]:
+        return [loc.name for loc in sorted(self.project_root_path.iterdir())]
 
-    def get_code_location_path(self, name: str) -> Path:
-        return self.code_location_root_path / name
+    def get_project_path(self, name: str) -> Path:
+        return self.project_root_path / name
 
-    def get_code_location_root_module(self, name: str) -> Path:
-        return self.code_location_root_path / name
+    def get_project_root_module(self, name: str) -> Path:
+        return self.project_root_path / name
 
     # ########################
     # ##### GENERAL PYTHON PACKAGE METHODS
@@ -193,44 +208,46 @@ class DgContext:
         return self.config.root_package or self.root_path.name.replace("-", "_")
 
     # ########################
-    # ##### CODE LOCATION METHODS
+    # ##### PROJECT METHODS
     # ########################
 
     @property
-    def is_code_location(self) -> bool:
-        return self.config.is_code_location
+    def is_project(self) -> bool:
+        return self.config.is_project
 
     @property
-    def code_location_name(self) -> str:
-        if not self.is_code_location:
-            raise DgError("`code_location_name` is only available in a code location context")
+    def project_name(self) -> str:
+        if not self.is_project:
+            raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
 
     @property
-    def code_location_python_executable(self) -> Path:
-        if not self.is_code_location:
+    def project_python_executable(self) -> Path:
+        if not self.is_project:
             raise DgError(
-                "`code_location_python_executable` is only available in a code location context"
+                "`project_python_executable` is only available in a Dagster project context"
             )
-        return self.root_path / ".venv" / "bin" / "python"
+        return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property
     def components_package_name(self) -> str:
-        if not self.is_code_location:
-            raise DgError("`components_package_name` is only available in a code location context")
+        if not self.is_project:
+            raise DgError(
+                "`components_package_name` is only available in a Dagster project context"
+            )
         return (
             self.config.component_package
-            or f"{self.root_package_name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_SUBMODULE}"
+            or f"{self.root_package_name}.{_DEFAULT_PROJECT_COMPONENTS_SUBMODULE}"
         )
 
     @cached_property
     def components_path(self) -> Path:
-        if not self.is_code_location:
-            raise DgError("`components_path` is only available in a code location context")
+        if not self.is_project:
+            raise DgError("`components_path` is only available in a Dagster project context")
         with ensure_loadable_path(self.root_path):
             if not is_package_installed(self.root_package_name):
                 raise DgError(
-                    f"Could not find expected package `{self.root_package_name}` in the current environment. Components expects the package name to match the directory name of the code location."
+                    f"Could not find expected package `{self.root_package_name}` in the current environment. Components expects the package name to match the directory name of the project."
                 )
             if not is_package_installed(self.components_package_name):
                 raise DgError(
@@ -246,8 +263,10 @@ class DgContext:
 
     @property
     def definitions_package_name(self) -> str:
-        if not self.is_code_location:
-            raise DgError("`definitions_package_name` is only available in a code location context")
+        if not self.is_project:
+            raise DgError(
+                "`definitions_package_name` is only available in a Dagster project context"
+            )
         return f"{self.root_package_name}.definitions"
 
     @cached_property
@@ -275,7 +294,7 @@ class DgContext:
             )
         return (
             self.config.component_lib_package
-            or f"{self.root_package_name}.{_DEFAULT_CODE_LOCATION_COMPONENTS_LIB_SUBMODULE}"
+            or f"{self.root_package_name}.{_DEFAULT_PROJECT_COMPONENTS_LIB_SUBMODULE}"
         )
 
     @cached_property
@@ -285,7 +304,7 @@ class DgContext:
         with ensure_loadable_path(self.root_path):
             if not is_package_installed(self.root_package_name):
                 raise DgError(
-                    f"Could not find expected package `{self.root_package_name}` in the current environment. Components expects the package name to match the directory name of the code location."
+                    f"Could not find expected package `{self.root_package_name}` in the current environment. Components expects the package name to match the directory name of the project."
                 )
             if not is_package_installed(self.components_lib_package_name):
                 raise DgError(
@@ -297,15 +316,17 @@ class DgContext:
     # ##### HELPERS
     # ########################
 
-    def external_components_command(self, command: list[str]) -> str:
+    def external_components_command(self, command: list[str], log: bool = True) -> str:
+        executable_path = self.get_executable("dagster-components")
         if self.use_dg_managed_environment:
-            code_location_command_prefix = ["uv", "run", "dagster-components"]
-            env = get_uv_command_env()
+            # uv run will resolve to the same dagster-components as we resolve above
+            project_command_prefix = ["uv", "run", "dagster-components"]
+            env = strip_activated_venv_from_env_vars()
         else:
-            code_location_command_prefix = ["dagster-components"]
+            project_command_prefix = [str(executable_path)]
             env = None
         full_command = [
-            *code_location_command_prefix,
+            *project_command_prefix,
             *(
                 ["--builtin-component-lib", self.config.builtin_component_lib]
                 if self.config.builtin_component_lib
@@ -314,27 +335,84 @@ class DgContext:
             *command,
         ]
         with pushd(self.root_path):
-            result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=True)
-            return result.stdout.decode("utf-8")
+            if log:
+                print(f"Using {executable_path}")  # noqa: T201
+
+            # We don't capture stderr here-- it will print directly to the console, then we can
+            # add a clean error message at the end explanining what happened.
+            result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=False)
+            if result.returncode != 0:
+                exit_with_error(f"""
+                    An error occurred while executing a `dagster-components` command in the {self.environment_desc}.
+
+                    `{shlex.join(full_command)}` exited with code {result.returncode}. Aborting.
+                """)
+            else:
+                return result.stdout.decode("utf-8")
 
     def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
         path = path or self.root_path
         with pushd(path):
             if not (path / "uv.lock").exists():
-                subprocess.run(["uv", "sync"], check=True, env=get_uv_command_env())
+                subprocess.run(["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars())
 
     @property
     def use_dg_managed_environment(self) -> bool:
-        return self.config.use_dg_managed_environment and self.is_code_location
+        return self.config.use_dg_managed_environment and self.is_project
 
-    def validate_deployment_command_environment(self) -> None:
-        """Commands that operate on a deployment need to be run inside a deployment context."""
-        if not self.is_deployment:
-            exit_with_error(NOT_DEPLOYMENT_ERROR_MESSAGE)
+    @property
+    def has_venv(self) -> bool:
+        return resolve_local_venv(self.root_path) is not None
 
-    def validate_registry_command_environment(self) -> None:
-        """Commands that access the component registry need to be run with dagster-components
-        available on $PATH.
-        """
-        if not is_executable_available("dagster-components"):
-            exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)
+    @cached_property
+    def venv_path(self) -> Path:
+        path = resolve_local_venv(self.root_path)
+        if not path:
+            raise DgError("Cannot find .venv")
+        return path
+
+    def has_executable(self, command: str) -> bool:
+        return self._resolve_executable(command) is not None
+
+    def get_executable(self, command: str) -> Path:
+        if not (executable := self._resolve_executable(command)):
+            raise DgError(f"Cannot find executable {command}")
+        return executable
+
+    def _resolve_executable(self, command: str) -> Optional[Path]:
+        if (
+            self.has_venv
+            and (venv_exec := get_venv_executable(self.venv_path, command))
+            and venv_exec.exists()
+        ):
+            return venv_exec
+        elif not self.use_dg_managed_environment and (global_exec := shutil.which(command)):
+            return Path(global_exec)
+        else:
+            return None
+
+    @property
+    def environment_desc(self) -> str:
+        if self.has_venv:
+            return f"Python environment at {self.venv_path}"
+        else:
+            return "ambient Python environment"
+
+
+# ########################
+# ##### HELPERS
+# ########################
+
+
+def _validate_dagster_components_availability(context: DgContext) -> None:
+    if context.config.require_local_venv:
+        if not context.has_venv:
+            exit_with_error(NO_LOCAL_VENV_ERROR_MESSAGE)
+        elif not get_venv_executable(context.venv_path, "dagster-components").exists():
+            exit_with_error(
+                generate_missing_dagster_components_in_local_venv_error_message(
+                    str(context.venv_path)
+                )
+            )
+    elif not context.has_executable("dagster-components"):
+        exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)

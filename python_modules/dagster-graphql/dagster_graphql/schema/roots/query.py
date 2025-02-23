@@ -702,7 +702,11 @@ class GrapheneQuery(graphene.ObjectType):
         graphene_info: ResolveInfo,
         selector: Optional[GrapheneGraphSelector] = None,
     ):
-        assert selector is not None
+        if selector is None:
+            raise DagsterInvariantViolationError(
+                "Must pass graph selector",
+            )
+
         graph_selector = graph_selector_from_graphql(selector)
         return get_graph_or_error(graphene_info, graph_selector)
 

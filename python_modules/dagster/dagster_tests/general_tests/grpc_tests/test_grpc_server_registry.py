@@ -40,7 +40,6 @@ def _can_connect(origin, endpoint, instance):
     try:
         with GrpcServerCodeLocation(
             origin=origin,
-            server_id=endpoint.server_id,
             port=endpoint.port,
             socket=endpoint.socket,
             host=endpoint.host,
@@ -80,7 +79,6 @@ def test_error_repo_in_registry(instance):
         with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
             with GrpcServerCodeLocation(
                 origin=error_origin,
-                server_id=endpoint.server_id,
                 port=endpoint.port,
                 socket=endpoint.socket,
                 host=endpoint.host,
@@ -93,7 +91,6 @@ def test_error_repo_in_registry(instance):
         with pytest.raises(DagsterUserCodeProcessError, match="object is not callable"):
             with GrpcServerCodeLocation(
                 origin=error_origin,
-                server_id=endpoint.server_id,
                 port=endpoint.port,
                 socket=endpoint.socket,
                 host=endpoint.host,
@@ -131,6 +128,33 @@ def test_server_unexpectedly_killed(instance: DagsterInstance):
             time.sleep(5)
             endpoint_one = registry.get_grpc_endpoint(origin)
             assert _can_connect(origin, endpoint_one, instance)
+
+
+def test_reload_updates_server_id(instance: DagsterInstance):
+    origin = ManagedGrpcPythonEnvCodeLocationOrigin(
+        loadable_target_origin=LoadableTargetOrigin(
+            executable_path=sys.executable,
+            attribute="repo",
+            python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+        ),
+    )
+
+    with GrpcServerRegistry(
+        server_command=GrpcServerCommand.CODE_SERVER_START,
+        instance_ref=instance.get_ref(),
+        heartbeat_ttl=10,
+        startup_timeout=5,
+        wait_for_processes_on_shutdown=True,
+    ) as registry:
+        endpoint_one = registry.get_grpc_endpoint(origin)
+
+        assert _can_connect(origin, endpoint_one, instance)
+
+        initial_server_id = endpoint_one.create_client().get_server_id()
+
+        endpoint_one.create_client().reload_code(timeout=60)
+
+        assert endpoint_one.create_client().get_server_id() != initial_server_id
 
 
 @pytest.mark.parametrize(
@@ -268,7 +292,7 @@ def test_custom_loadable_target_origin(instance):
         registry.mocked_loadable_target_origin = first_loadable_target_origin
 
         endpoint_one = registry.get_grpc_endpoint(origin)
-        assert registry.get_grpc_endpoint(origin).server_id == endpoint_one.server_id
+        assert registry.get_grpc_endpoint(origin) == endpoint_one
 
         # Swap in a new LoadableTargetOrigin - the same origin new returns a different
         # endpoint
@@ -276,7 +300,7 @@ def test_custom_loadable_target_origin(instance):
 
         endpoint_two = registry.get_grpc_endpoint(origin)
 
-        assert endpoint_two.server_id != endpoint_one.server_id
+        assert endpoint_two != endpoint_one
 
     registry.wait_for_processes()
     assert not _can_connect(origin, endpoint_one, instance)

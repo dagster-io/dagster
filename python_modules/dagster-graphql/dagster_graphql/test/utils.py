@@ -133,7 +133,7 @@ def define_out_of_process_context(
     ) as workspace_process_context:
         yield WorkspaceRequestContext(
             instance=instance,
-            workspace_snapshot=workspace_process_context.get_workspace_snapshot(),
+            current_workspace=workspace_process_context.get_current_workspace(),
             process_context=workspace_process_context,
             version=workspace_process_context.version,
             source=None,

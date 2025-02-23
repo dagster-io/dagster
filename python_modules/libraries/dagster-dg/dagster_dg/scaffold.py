@@ -8,27 +8,10 @@ import click
 
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.context import DgContext
-from dagster_dg.utils import camelcase, scaffold_subtree
+from dagster_dg.utils import camelcase, exit_with_error, scaffold_subtree
 
 # ########################
-# ##### DEPLOYMENT
-# ########################
-
-
-def scaffold_deployment(path: Path, dg_context: DgContext) -> None:
-    click.echo(f"Creating a Dagster deployment at {path}.")
-
-    scaffold_subtree(
-        path=path,
-        name_placeholder="DEPLOYMENT_NAME_PLACEHOLDER",
-        templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "DEPLOYMENT_NAME_PLACEHOLDER"
-        ),
-    )
-
-
-# ########################
-# ##### CODE LOCATION
+# ##### PROJECT
 # ########################
 
 # Despite the fact that editable dependencies are resolved through tool.uv.sources, we need to set
@@ -72,7 +55,7 @@ def get_pyproject_toml_dev_dependencies(use_editable_dagster: bool) -> str:
 
 def get_pyproject_toml_uv_sources(editable_dagster_root: Path) -> str:
     lib_lines = [
-        f'{path.name} = {{ path = "{path}", editable = true }}'
+        f"{path.name} = {{ path = '{path}', editable = true }}"
         for path in _gather_dagster_packages(editable_dagster_root)
     ]
     return "\n".join(
@@ -93,13 +76,39 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> Sequence[Path]:
     ]
 
 
-def scaffold_code_location(
+def scaffold_workspace(
+    path: Path,
+) -> None:
+    scaffold_subtree(
+        path=path,
+        name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
+        templates_path=os.path.join(
+            os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER"
+        ),
+        project_name="workspace",  # Allow customization?
+    )
+    click.echo(f"Scaffolded files for Dagster workspace at {path}.")
+
+
+def scaffold_project(
     path: Path,
     dg_context: DgContext,
-    editable_dagster_root: Optional[str] = None,
+    use_editable_dagster: Optional[str],
     skip_venv: bool = False,
+    populate_cache: bool = True,
 ) -> None:
-    click.echo(f"Creating a Dagster code location at {path}.")
+    click.echo(f"Creating a Dagster project at {path}.")
+
+    if use_editable_dagster == "TRUE":
+        if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
+            exit_with_error(
+                "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
+            )
+        editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
+    elif use_editable_dagster:  # a string value was passed
+        editable_dagster_root = use_editable_dagster
+    else:
+        editable_dagster_root = None
 
     dependencies = get_pyproject_toml_dependencies(use_editable_dagster=bool(editable_dagster_root))
     dev_dependencies = get_pyproject_toml_dev_dependencies(
@@ -111,21 +120,23 @@ def scaffold_code_location(
 
     scaffold_subtree(
         path=path,
-        name_placeholder="CODE_LOCATION_NAME_PLACEHOLDER",
+        name_placeholder="PROJECT_NAME_PLACEHOLDER",
         templates_path=os.path.join(
-            os.path.dirname(__file__), "templates", "CODE_LOCATION_NAME_PLACEHOLDER"
+            os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER"
         ),
         dependencies=dependencies,
         dev_dependencies=dev_dependencies,
         code_location_name=path.name,
         uv_sources=uv_sources,
     )
+    click.echo(f"Scaffolded files for Dagster project at {path}.")
 
     # Build the venv
     cl_dg_context = dg_context.with_root_path(path)
     if cl_dg_context.use_dg_managed_environment and not skip_venv:
         cl_dg_context.ensure_uv_lock()
-        RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+        if populate_cache:
+            RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
 
 # ########################
@@ -140,7 +151,7 @@ def scaffold_component_type(dg_context: DgContext, name: str) -> None:
     scaffold_subtree(
         path=root_path,
         name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
-        templates_path=os.path.join(os.path.dirname(__file__), "templates", "COMPONENT_TYPE"),
+        templates_path=str(Path(__file__).parent / "templates" / "COMPONENT_TYPE"),
         project_name=name,
         component_type_class_name=camelcase(name),
         name=name,
@@ -148,6 +159,8 @@ def scaffold_component_type(dg_context: DgContext, name: str) -> None:
 
     with open(root_path / "__init__.py", "a") as f:
         f.write(f"from {dg_context.components_lib_package_name}.{name} import {camelcase(name)}\n")
+
+    click.echo(f"Scaffolded files for Dagster component type at {root_path}/{name}..")
 
 
 # ########################
@@ -163,11 +176,11 @@ def scaffold_component_instance(
 ) -> None:
     click.echo(f"Creating a Dagster component instance folder at {path}.")
     os.makedirs(path, exist_ok=True)
-    code_location_command = [
+    scaffold_command = [
         "scaffold",
         "component",
         component_type,
         path,
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
     ]
-    dg_context.external_components_command(code_location_command)
+    dg_context.external_components_command(scaffold_command)

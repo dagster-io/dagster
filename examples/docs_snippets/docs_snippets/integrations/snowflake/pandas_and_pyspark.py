@@ -13,7 +13,7 @@ def rose_dataset():
 
 # start_example
 
-from typing import Optional, Type  # noqa: UP035
+from typing import Optional
 
 import pandas as pd
 from dagster_snowflake import SnowflakeIOManager

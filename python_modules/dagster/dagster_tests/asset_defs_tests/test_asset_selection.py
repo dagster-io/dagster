@@ -39,6 +39,7 @@ from dagster._core.definitions.asset_selection import (
     GroupsAssetSelection,
     KeyPrefixesAssetSelection,
     KeysAssetSelection,
+    KeyWildCardAssetSelection,
     OrAssetSelection,
     ParentSourcesAssetSelection,
     RequiredNeighborsAssetSelection,
@@ -846,6 +847,39 @@ def test_tag_string():
     assert AssetSelection.tag_string("baz").resolve([assets]) == {
         AssetKey("asset5"),
         AssetKey("asset6"),
+    }
+
+
+def test_key_wildcard():
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1"),
+            AssetSpec("asset2"),
+            AssetSpec("asset3"),
+            AssetSpec("asset4"),
+            AssetSpec(["prefix", "asset1"]),
+            AssetSpec(["prefix", "asset2"]),
+            AssetSpec(["prefix", "asset3"]),
+        ]
+    )
+    def assets(): ...
+
+    assert KeyWildCardAssetSelection(selected_key_wildcard="asset").resolve([assets]) == set()
+
+    assert KeyWildCardAssetSelection(selected_key_wildcard="asset1").resolve([assets]) == {
+        AssetKey("asset1"),
+    }
+
+    assert KeyWildCardAssetSelection(selected_key_wildcard="prefix/*").resolve([assets]) == {
+        AssetKey(["prefix", "asset1"]),
+        AssetKey(["prefix", "asset2"]),
+        AssetKey(["prefix", "asset3"]),
+    }
+
+    assert KeyWildCardAssetSelection(selected_key_wildcard="*/asset*").resolve([assets]) == {
+        AssetKey(["prefix", "asset1"]),
+        AssetKey(["prefix", "asset2"]),
+        AssetKey(["prefix", "asset3"]),
     }
 
 

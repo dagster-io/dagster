@@ -19,7 +19,7 @@ class RemoteComponentType:
     summary: Optional[str]
     description: Optional[str]
     scaffold_params_schema: Optional[Mapping[str, Any]]  # json schema
-    component_params_schema: Optional[Mapping[str, Any]]  # json schema
+    component_schema: Optional[Mapping[str, Any]]  # json schema
 
 
 def _get_remote_type_mapping_from_raw_data(
@@ -36,7 +36,7 @@ def _get_local_type_mapping_from_raw_data(
 ) -> Mapping[LocalComponentKey, RemoteComponentType]:
     data = {}
     for typename, metadata in raw_data.items():
-        data[LocalComponentKey.from_type(typename, dirpath)] = RemoteComponentType(**metadata)
+        data[LocalComponentKey.from_typename(typename, dirpath)] = RemoteComponentType(**metadata)
     return data
 
 
@@ -113,7 +113,9 @@ class RemoteComponentRegistry:
             if dg_context.has_cache and cache_key and is_valid_json(raw_registry_data):
                 dg_context.cache.set(cache_key, raw_registry_data)
 
-        component_data.update(_get_remote_type_mapping_from_raw_data(json.loads(raw_registry_data)))
+        raw_registry_dict = json.loads(raw_registry_data)
+
+        component_data.update(_get_remote_type_mapping_from_raw_data(raw_registry_dict))
 
         if local_component_type_dirs:
             component_data.update(

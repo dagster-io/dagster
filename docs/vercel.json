@@ -56,6 +56,140 @@
       "permanent": false
     },
     {
+      "source": "/_apidocs/:path*/",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/sections/api/apidocs/:path*/",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/sections/api/apidocs/:path*",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/docs/apidocs/:path*",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/master/_apidocs/:path*",
+      "destination": "/api/python-api/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/api/libraries/:path*",
+      "destination": "/api/python-api/libraries/:path*"
+    },
+    {
+      "source": "/api/asset-checks",
+      "destination": "/api/python-api/asset-checks",
+      "permanent": false
+    },
+    {
+      "source": "/api/assets",
+      "destination": "/api/python-api/assets",
+      "permanent": false
+    },
+    {
+      "source": "/api/cli",
+      "destination": "/api/python-api/cli",
+      "permanent": false
+    },
+    {
+      "source": "/api/definitions",
+      "destination": "/api/python-api/definitions",
+      "permanent": false
+    },
+    {
+      "source": "/api/dynamic",
+      "destination": "/api/python-api/dynamic",
+      "permanent": false
+    },
+    {
+      "source": "/api/errors",
+      "destination": "/api/python-api/errors",
+      "permanent": false
+    },
+    {
+      "source": "/api/execution",
+      "destination": "/api/python-api/execution",
+      "permanent": false
+    },
+    {
+      "source": "/api/external-assets",
+      "destination": "/api/python-api/external-assets",
+      "permanent": false
+    },
+    {
+      "source": "/api/hooks",
+      "destination": "/api/python-api/hooks",
+      "permanent": false
+    },
+    {
+      "source": "/api/internals",
+      "destination": "/api/python-api/internals",
+      "permanent": false
+    },
+    {
+      "source": "/api/io-managers",
+      "destination": "/api/python-api/io-managers",
+      "permanent": false
+    },
+    {
+      "source": "/api/jobs",
+      "destination": "/api/python-api/jobs",
+      "permanent": false
+    },
+    {
+      "source": "/api/loggers",
+      "destination": "/api/python-api/loggers",
+      "permanent": false
+    },
+    {
+      "source": "/api/metadata",
+      "destination": "/api/python-api/metadata",
+      "permanent": false
+    },
+    {
+      "source": "/api/ops",
+      "destination": "/api/python-api/ops",
+      "permanent": false
+    },
+    {
+      "source": "/api/partitions",
+      "destination": "/api/python-api/partitions",
+      "permanent": false
+    },
+    {
+      "source": "/api/pipes",
+      "destination": "/api/python-api/pipes",
+      "permanent": false
+    },
+    {
+      "source": "/api/repositories",
+      "destination": "/api/python-api/repositories",
+      "permanent": false
+    },
+    {
+      "source": "/api/resources",
+      "destination": "/api/python-api/resources",
+      "permanent": false
+    },
+    {
+      "source": "/api/schedules-sensors",
+      "destination": "/api/python-api/schedules-sensors",
+      "permanent": false
+    },
+    {
+      "source": "/api/types",
+      "destination": "/api/python-api/types",
+      "permanent": false
+    },
+    {
       "source": "/deploying/celery",
       "destination": "/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery",
       "permanent": false
@@ -481,8 +615,13 @@
       "permanent": false
     },
     {
+      "source": "/tutorials/:path*",
+      "destination": "/examples/:path*",
+      "permanent": false
+    },
+    {
       "source": "/concepts",
-      "destination": "/",
+      "destination": "/getting-started/concepts",
       "permanent": false
     },
     {
@@ -1737,32 +1876,32 @@
     },
     {
       "source": "/next/guides/build/components",
-      "destination": "/guides/preview/components/",
+      "destination": "/guides/labs/components/",
       "permanent": false
     },
     {
       "source": "/next/guides/build/components/",
-      "destination": "/guides/preview/components/",
+      "destination": "/guides/labs/components/",
       "permanent": false
     },
     {
       "source": "/next/guides/build/components/:path",
-      "destination": "/guides/preview/components/:path",
+      "destination": "/guides/labs/components/:path",
       "permanent": false
     },
     {
       "source": "/guides/build/components",
-      "destination": "/guides/preview/components/",
+      "destination": "/guides/labs/components/",
       "permanent": false
     },
     {
       "source": "/guides/build/components/",
-      "destination": "/guides/preview/components/",
+      "destination": "/guides/labs/components/",
       "permanent": false
     },
     {
       "source": "/guides/build/components/:path",
-      "destination": "/guides/preview/components/:path",
+      "destination": "/guides/labs/components/:path",
       "permanent": false
     },
     {
@@ -1774,6 +1913,57 @@
       "source": "/next/:path*/",
       "destination": "/:path*/",
       "permanent": false
+    },
+    {
+      "source": "/integrations/airlift/tutorial/migrate",
+      "destination": "/integrations/libraries/airlift/airflow-to-dagster",
+      "permanent": false
+    },
+    {
+      "source": "/guides/labs/components/creating-a-component",
+      "destination": "/guides/labs/components/creating-new-component-types/creating-and-registering-a-component-type"
+    },
+    {
+      "source": "/guides/labs/components/existing-code-location",
+      "destination": "guides/labs/components/incrementally-adopting-components/existing-project"
+    },
+    {
+      "source": "/guides/labs/components/migrating-definitions",
+      "destination": "/guides/labs/components/incrementally-adopting-components/existing-definitions"
+    },
+    {
+      "source": "/guides/labs/components/setting-up-a-deployment",
+      "destination": "/guides/labs/components/managing-multiple-projects"
+    },
+    {
+      "source": "/guides/labs/components/using-a-component",
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components"
+    },
+    {
+      "source": "/guides/labs/components/using-a-component-python",
+      "destination": "/guides/labs/components/building-pipelines-with-components/adding-components-python"
+    },
+    {
+      "source": "/guides/labs/components/incrementally-adopting-components/existing-code-location",
+      "destination": "/guides/labs/components/incrementally-adopting-components/existing-project",
+      "permanent": false
+    },
+    {
+      "source": "/guides/labs/components/managing-multiple-code-locations",
+      "destination": "/guides/labs/components/managing-multiple-projects",
+      "permanent": false
+    },
+    {
+      "source": "/guides/preview/",
+      "destination": "/guides/labs/"
+    },
+    {
+      "source": "/guides/preview",
+      "destination": "/guides/labs/"
+    },
+    {
+      "source": "/guides/preview/:path*",
+      "destination": "/guides/labs/:path*"
     }
   ]
 }

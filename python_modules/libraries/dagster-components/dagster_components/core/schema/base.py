@@ -1,125 +1,119 @@
-from collections.abc import Mapping, Set
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Optional, TypeVar
+from collections.abc import Mapping
+from dataclasses import fields, is_dataclass
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Callable,
+    Generic,
+    Optional,
+    TypeVar,
+    get_args,
+    get_origin,
+)
 
-from dagster._record import record
+from dagster._core.errors import DagsterInvalidDefinitionError
 from pydantic import BaseModel, ConfigDict
+
+from dagster_components.core.schema.metadata import FieldInfo
 
 if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
 
 
-T_ResolverType = TypeVar("T_ResolverType", bound=type["Resolver"])
-T_ResolvableModel = TypeVar("T_ResolvableModel", bound="ResolvableModel")
-
 T = TypeVar("T")
-T_ResolveAs = TypeVar("T_ResolveAs")
 
 
-@record
-class _ResolverData:
-    """Container for configuration of a Resolver that is set when using the @resolver decorator."""
+class ResolvableSchema(BaseModel, Generic[T]):
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    resolved_type: Optional[type]
-    exclude_fields: Set[str]
-    additional_fields: Set[str]
-
-    def fields(self, model: "ResolvableModel") -> Set[str]:
-        return set(model.model_fields.keys()) - self.exclude_fields | self.additional_fields
-
-
-class Resolver(Generic[T_ResolvableModel]):
-    """A Resolver is a class that can convert data contained within a ResolvableModel into an
-    arbitrary output type.
-
-    Methods on the Resolver class should be named `resolve_{fieldname}` and should return the
-    resolved value for that field.
-
-
-    Usage:
-
-        .. code-block:: python
-
-            class MyModel(ResolvableModel):
-                str_val: str
-                int_val: int
-
-            class TargetType:
-                def __init__(self, str_val: str, int_val_doubled: int): ...
-
-            @resolver(
-                fromtype=MyModel,
-                totype=TargetType,
-                exclude_fields={"int_val"},
-                additional_fields={"int_val_doubled"},
+    def _get_resolved_type(self) -> Optional[type]:
+        generic_base = next(
+            base for base in self.__class__.__bases__ if issubclass(base, ResolvableSchema)
+        )
+        generic_args = generic_base.__pydantic_generic_metadata__["args"]
+        if len(generic_args) == 0:
+            # if no generic type is specified, resolve back to the base type
+            return self.__class__
+        elif len(generic_args) > 1:
+            raise DagsterInvalidDefinitionError(
+                f"Expected at most one generic argument for type: `{self.__class__}`"
             )
-            class MyModelResolver(Resolver):
-                def resolve_int_val_doubled(self, context: ResolutionContext) -> int:
-                    return self.model.int_val * 2
+        resolved_type = next(iter(generic_args))
+        return resolved_type if isinstance(resolved_type, type) else None
 
-    """
-
-    __resolver_data__: ClassVar[_ResolverData] = _ResolverData(
-        resolved_type=None, exclude_fields=set(), additional_fields=set()
-    )
-
-    def __init__(self, model: T_ResolvableModel):
-        self.model: T_ResolvableModel = model
-
-    def _resolve_field(self, context: "ResolutionContext", field: str) -> Any:
-        field_resolver = getattr(self, f"resolve_{field}", None)
-        if field_resolver is not None:
-            return field_resolver(context)
-        else:
-            return context.resolve_value(getattr(self.model, field))
-
-    def get_resolved_fields(self, context: "ResolutionContext") -> Mapping[str, Any]:
-        """Returns a mapping of field names to resolved values for those fields."""
+    def _get_field_resolvers(self, target_type: type) -> Mapping[str, "FieldResolver"]:
         return {
-            field: self._resolve_field(context, field)
-            for field in self.__resolver_data__.fields(self.model)
+            # extract field resolvers from annotations if possible, otherwise extract from the schema type
+            **(
+                _get_annotation_field_resolvers(target_type)
+                or _get_annotation_field_resolvers(self.__class__)
+            )
         }
 
-    def resolve_as(self, as_type: type[T_ResolveAs], context: "ResolutionContext") -> T_ResolveAs:
-        """Returns an instance of `as_type` instantiated with the resolved data contained within
-        this Resolver's model.
-        """
-        return as_type(**self.get_resolved_fields(context))
-
-    def resolve(self, context: "ResolutionContext") -> Any:
-        resolved_type = self.__resolver_data__.resolved_type or self.model.__class__
-        return self.resolve_as(resolved_type, context)
-
-
-class ResolvableModel(BaseModel, Generic[T]):
-    __dagster_resolver__: ClassVar[type[Resolver]] = Resolver
-
-    model_config = ConfigDict(extra="forbid")
-
     @property
-    def _resolver(self) -> Resolver:
-        return self.__dagster_resolver__(self)
+    def _resolved_type(self) -> type:
+        resolved_type = self._get_resolved_type()
+        if resolved_type is None:
+            raise DagsterInvalidDefinitionError(
+                f"Could not extract resolved type instance from `{self.__class__}`. "
+                "This can happen when using a ForwardRef when defining your ResolvableModel "
+                '(`ResolvableModel["SomeType"]`). Consider using a concrete type or calling '
+                "`resolve_as` instead."
+            )
+        return resolved_type
 
-    def resolve_as(self, as_type: type[T_ResolveAs], context: "ResolutionContext") -> T_ResolveAs:
-        return self._resolver.resolve_as(as_type, context)
+    def resolve_fields(self, target_type: type, context: "ResolutionContext") -> Mapping[str, Any]:
+        """Returns a mapping of field names to resolved values for those fields."""
+        return {
+            field_name: resolver.fn(context, self)
+            for field_name, resolver in self._get_field_resolvers(target_type).items()
+        }
+
+    def resolve_as(self, target_type: type[T], context: "ResolutionContext") -> T:
+        return target_type(**self.resolve_fields(target_type, context))
 
     def resolve(self, context: "ResolutionContext") -> T:
-        return self._resolver.resolve(context)
+        return self.resolve_as(self._resolved_type, context)
 
 
-def resolver(
-    *,
-    fromtype: type[ResolvableModel],
-    totype: Optional[type] = None,
-    exclude_fields: Optional[Set[str]] = None,
-    additional_fields: Optional[Set[str]] = None,
-) -> Callable[[T_ResolverType], T_ResolverType]:
-    def inner(resolver_type: T_ResolverType) -> T_ResolverType:
-        resolver_type.__resolver_data__ = _ResolverData(
-            resolved_type=totype,
-            exclude_fields=exclude_fields or set(),
-            additional_fields=additional_fields or set(),
+class FieldResolver(FieldInfo):
+    """Contains information on how to resolve this field from a ResolvableSchema."""
+
+    def __init__(self, fn: Callable[["ResolutionContext", Any], Any]):
+        self.fn = fn
+        super().__init__()
+
+    @staticmethod
+    def from_annotation(annotation: Any, field_name: str) -> "FieldResolver":
+        if get_origin(annotation) is Annotated:
+            args = get_args(annotation)
+            resolver = next((arg for arg in args if isinstance(arg, FieldResolver)), None)
+            if resolver:
+                return resolver
+        return FieldResolver(
+            lambda context, schema: context.resolve_value(getattr(schema, field_name))
         )
-        fromtype.__dagster_resolver__ = resolver_type
-        return resolver_type
 
-    return inner
+
+def _get_annotation_field_resolvers(cls: type) -> dict[str, FieldResolver]:
+    if issubclass(cls, BaseModel):
+        # neither pydantic's Field.annotation nor Field.rebuild_annotation() actually
+        # return the original annotation, so we have to walk the mro to get them
+        annotations = {}
+        for field_name in cls.model_fields:
+            for base in cls.__mro__:
+                if field_name in getattr(base, "__annotations__", {}):
+                    annotations[field_name] = base.__annotations__[field_name]
+                    break
+        return {
+            field_name: FieldResolver.from_annotation(annotation, field_name)
+            for field_name, annotation in annotations.items()
+        }
+    elif is_dataclass(cls):
+        return {
+            field.name: FieldResolver.from_annotation(field.type, field.name)
+            for field in fields(cls)
+        }
+    else:
+        return {}

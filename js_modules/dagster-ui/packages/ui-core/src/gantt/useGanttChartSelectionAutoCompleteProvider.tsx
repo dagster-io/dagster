@@ -8,6 +8,8 @@ import {
   createProvider,
 } from '../selection/SelectionAutoCompleteProvider';
 
+export const ganttChartSelectionSyntaxSupportedAttributes = ['name', 'status'] as const;
+
 export function useGanttChartSelectionAutoCompleteProvider(
   items: RunGraphQueryItem[],
 ): Pick<SelectionAutoCompleteProvider, 'useAutoComplete'> {

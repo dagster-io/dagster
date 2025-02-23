@@ -3,17 +3,15 @@ from typing import List, Tuple, Type, TypeVar  # noqa: F401, UP035
 import docutils.nodes as nodes
 from dagster._annotations import (
     get_beta_info,
+    get_beta_params,
     get_deprecated_info,
     get_deprecated_params,
-    get_experimental_info,
-    get_experimental_params,
     get_preview_info,
     get_superseded_info,
+    has_beta_params,
     has_deprecated_params,
-    has_experimental_params,
     is_beta,
     is_deprecated,
-    is_experimental,
     is_preview,
     is_public,
     is_superseded,
@@ -137,7 +135,7 @@ def process_docstring(
     assert app.env is not None
 
     if has_attrs(lines):
-        record_error(f'Object {name} has "Attributes:" in docstring. Use "Args:" insetad.')
+        record_error(f'Object {name} has "Attributes:" in docstring. Use "Args:" instead.')
 
     if is_deprecated(obj):
         inject_object_flag(obj, get_deprecated_info(obj), lines)
@@ -151,16 +149,13 @@ def process_docstring(
     if is_beta(obj):
         inject_object_flag(obj, get_beta_info(obj), lines)
 
-    if has_deprecated_params(obj):
-        params = get_deprecated_params(obj)
+    if has_beta_params(obj):
+        params = get_beta_params(obj)
         for param, info in params.items():
             inject_param_flag(lines, param, info)
 
-    if is_experimental(obj):
-        inject_object_flag(obj, get_experimental_info(obj), lines)
-
-    if has_experimental_params(obj):
-        params = get_experimental_params(obj)
+    if has_deprecated_params(obj):
+        params = get_deprecated_params(obj)
         for param, info in params.items():
             inject_param_flag(lines, param, info)
 

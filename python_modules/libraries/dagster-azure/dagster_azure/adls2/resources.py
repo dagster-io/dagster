@@ -18,6 +18,7 @@ from pydantic import Field
 from typing_extensions import Literal
 
 from dagster_azure.adls2.file_manager import ADLS2FileManager
+from dagster_azure.adls2.io_manager import InitResourceContext
 from dagster_azure.adls2.utils import DataLakeServiceClient, create_adls2_client
 from dagster_azure.blob.utils import BlobServiceClient, create_blob_client
 
@@ -164,7 +165,7 @@ class ADLS2Resource(ADLS2BaseResource):
 # to construct the new config and then use that to construct the resource.
 @dagster_maintained_resource
 @resource(ADLS2_CLIENT_CONFIG)
-def adls2_resource(context):
+def adls2_resource(context: InitResourceContext) -> ADLS2Resource:
     """Resource that gives ops access to Azure Data Lake Storage Gen2.
 
     The underlying client is a :py:class:`~azure.storage.filedatalake.DataLakeServiceClient`.
@@ -228,7 +229,7 @@ def adls2_resource(context):
         },
     )
 )
-def adls2_file_manager(context):
+def adls2_file_manager(context: InitResourceContext) -> ADLS2FileManager:
     """FileManager that provides abstract access to ADLS2.
 
     Implements the :py:class:`~dagster._core.storage.file_manager.FileManager` API.

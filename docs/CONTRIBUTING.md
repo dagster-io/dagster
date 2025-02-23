@@ -27,7 +27,6 @@ After:
 
 Note that the `method` property causes the build to break -- use `object` instead, and prepend the class name to the method, if it is different from the module.
 
-
 ### Images
 
 #### Location
@@ -165,6 +164,16 @@ Some CLI invocations may be brief enough that we don't want to include them in a
 
 For more information on testing the CLI commands used in docs, see [the README in docs tests](../../examples/docs_beta_snippets/docs_beta_snippets_tests/snippet_checks/README.md).
 
+### Code reference links
+
+To create a custom admonition linking GitHub at the specific version of code used in the docs, the `CodeReferenceLink` component can be used.
+
+```
+<CodeReferenceLink filePath="examples/tutorial_notebook_assets/" />
+```
+
+On the 1.10 version of docs this creates a link to `https://github.com/dagster-io/dagster/tree/1.10.0/examples/tutorial_notebook_assets/`.
+
 ### Diagrams
 
 You can use [Mermaid.js](https://mermaid.js.org/syntax/flowchart.html) to create diagrams. For example:
@@ -175,6 +184,24 @@ flowchart LR
 ```
 
 Refer to the [Mermaid.js documentation](https://mermaid.js.org/) for more info.
+
+Generally try and match the Dagster color palette:
+
+```
+%%{
+  init: {
+    'theme': 'base',
+    'themeVariables': {
+      'primaryColor': '#4F43DD',
+      'primaryTextColor': '#FFFFFF',
+      'primaryBorderColor': '#231F1B',
+      'lineColor': '#DEDDFF',
+      'secondaryColor': '#BDBAB7',
+      'tertiaryColor': '#FFFFFF'
+    }
+  }
+}%%
+```
 
 ### Tabs
 

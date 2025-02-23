@@ -132,3 +132,21 @@ def get_task_logs(ecs, logs_client, cluster, task_arn, container_name, limit=10)
     ).get("events")
 
     return [event.get("message") for event in events]
+
+
+def is_transient_task_stopped_reason(stopped_reason: str) -> bool:
+    if "Timeout waiting for network interface provisioning to complete" in stopped_reason:
+        return True
+
+    if "Timeout waiting for EphemeralStorage provisioning to complete" in stopped_reason:
+        return True
+
+    if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
+        return True
+
+    if "CannotPullContainerError" in stopped_reason and (
+        "invalid argument" in stopped_reason or "EOF" in stopped_reason
+    ):
+        return True
+
+    return False

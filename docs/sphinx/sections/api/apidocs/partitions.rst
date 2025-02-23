@@ -54,8 +54,8 @@ Partition Mapping
 
 .. autoclass:: MultiPartitionMapping
 
-Backfill Policy (Experimental)
-==============================
+Backfill Policy
+===============
 
 .. autoclass:: BackfillPolicy
 

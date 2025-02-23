@@ -104,7 +104,10 @@ export const VirtualizedAssetCheckRow = ({assetNode, height, start, row}: AssetC
           )}
         </RowCell>
         <RowCell>
-          <MetadataCell metadataEntries={execution?.evaluation?.metadataEntries} />
+          <MetadataCell
+            metadataEntries={execution?.evaluation?.metadataEntries}
+            type="inline-or-dialog"
+          />
         </RowCell>
         <RowCell>
           <Box flex={{justifyContent: 'flex-end'}}>

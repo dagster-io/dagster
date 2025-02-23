@@ -1,6 +1,6 @@
 import collections.abc
 import sys
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (
@@ -29,6 +29,7 @@ except ImportError:
 NoneType = type(None)
 
 _contextual_ns: ContextVar[Mapping[str, type]] = ContextVar("_contextual_ns", default={})
+INJECTED_DEFAULT_VALS_LOCAL_VAR = "__injected_defaults__"
 
 
 class ImportFrom(NamedTuple):
@@ -381,6 +382,9 @@ def build_check_call_str(
                     elif is_record(inner_origin):
                         it = _name(inner_origin)
                         return f'{name} if {name} is None or isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
+                    elif inner_origin is Callable or inner_origin is collections.abc.Callable:
+                        return f'{name} if {name} is None else check.opt_callable_param({name}, "{name}")'
+
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)
@@ -396,3 +400,42 @@ def build_check_call_str(
                 return f'{name} if isinstance({name}, {it}) else check.inst_param({name}, "{name}", {it})'
 
         failed(f"Unhandled {ttype}")
+
+
+def build_args_and_assignment_strs(
+    fn_args: Iterable[str],
+    defaults: Mapping[str, Any],
+    kw_only: bool,
+) -> tuple[str, str]:
+    """Utility function to create the arguments to the function as well as any
+    assignment calls that need to happen for default values.
+    """
+    args = []
+    set_calls = []
+    for arg in fn_args:
+        if arg in defaults:
+            default = defaults[arg]
+            if default is None:
+                args.append(f"{arg} = None")
+            # dont share class instance of default empty containers
+            elif default == []:
+                args.append(f"{arg} = None")
+                set_calls.append(f"{arg} = {arg} if {arg} is not None else []")
+            elif default == {}:
+                args.append(f"{arg} = None")
+                set_calls.append(f"{arg} = {arg} if {arg} is not None else {'{}'}")
+            # fallback to direct reference if unknown
+            else:
+                args.append(f"{arg} = {INJECTED_DEFAULT_VALS_LOCAL_VAR}['{arg}']")
+        else:
+            args.append(arg)
+
+    args_str = ""
+    if args:
+        args_str = f", {'*,' if kw_only else ''} {', '.join(args)}"
+
+    set_calls_str = ""
+    if set_calls:
+        set_calls_str = "\n    ".join(set_calls)
+
+    return args_str, set_calls_str

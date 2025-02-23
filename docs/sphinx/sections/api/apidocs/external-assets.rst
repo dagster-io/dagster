@@ -1,5 +1,5 @@
-External assets (Experimental)
-==============================
+External assets
+===============
 
 As Dagster doesn't control scheduling or materializing `external assets <https://docs.dagster.io/guides/build/assets/external-assets>`_, it's up to you to keep their metadata updated. The APIs in this reference can be used to keep external assets updated in Dagster.
 

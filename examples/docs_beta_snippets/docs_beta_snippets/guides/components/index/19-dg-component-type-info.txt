@@ -1,4 +1,4 @@
-dg component-type info 'dbt_project@dagster_components'
+dg inspect component-type 'dbt_project@dagster_components'
 
 dbt_project@dagster_components
 
@@ -28,9 +28,9 @@ Scaffold params schema:
             "title": "Project Path"
         }
     },
-    "title": "DbtScaffoldParams",
+    "title": "DbtScaffoldSchema",
     "type": "object"
 }
 
-Component params schema:
+Component schema:
 ...

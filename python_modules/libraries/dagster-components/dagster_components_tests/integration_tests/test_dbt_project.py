@@ -48,7 +48,7 @@ def test_python_params(dbt_path: Path) -> None:
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="dbt_project",
-            params={
+            attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
                 "op": {"name": "some_op", "tags": {"tag1": "value"}},
             },
@@ -56,8 +56,7 @@ def test_python_params(dbt_path: Path) -> None:
     )
     context = script_load_context(decl_node)
     component = DbtProjectComponent.load(
-        params=decl_node.get_params(context, DbtProjectComponent.get_schema()),
-        context=context,
+        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
     )
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
     defs = component.build_defs(script_load_context())

@@ -1,6 +1,4 @@
 import textwrap
-from collections.abc import Iterator
-from contextlib import contextmanager
 
 import click
 from click.testing import CliRunner
@@ -16,8 +14,9 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
-    isolated_example_code_location_foo_bar,
-    set_env_var,
+    fixed_panel_width,
+    isolated_example_project_foo_bar,
+    match_terminal_box_output,
 )
 
 # ########################
@@ -76,38 +75,17 @@ for cmd in [root, sub_group, sub_group_command, sub_command]:
 # ########################
 
 
-# Typer's rich help output is difficult to match exactly, as it contains blank lines with extraneous
-# whitespace. So we use this helper function to compare the output of the help message with the
-# expected output. Comparing line-by-line also helps debugging.
-def _match_output(output: str, expected_output: str):
-    output_lines = output.split("\n")
-    expected_output_lines = expected_output.split("\n")
-    for i in range(len(output_lines)):
-        assert output_lines[i].strip() == expected_output_lines[i].strip()
-    return True
-
-
-@contextmanager
-def _fixed_panel_width(width: int = 80) -> Iterator[None]:
-    # The width of panels in the help output is determined by the `COLUMNS` environment variable.
-    # Unclear to me whether this controls the width of the terminal as a whole or just the width of
-    # the panels rendered by `rich`, but regardless it is enough to achieve consistent output in the
-    # below tests.
-    with set_env_var("COLUMNS", str(width)):
-        yield
-
-
 def test_root_help_message():
     runner = CliRunner()
-    with _fixed_panel_width():
+    with fixed_panel_width():
         result = runner.invoke(root, ["--help"])
     assert_runner_result(result)
-    assert _match_output(
+    assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
-             Usage: root [OPTIONS] COMMAND [ARGS]...                                        
+             Usage: root [OPTIONS] COMMAND [ARGS]...
 
-             Root group.                                                                    
+             Root group.
 
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --root-opt        TEXT  Root option.                                         │
@@ -126,16 +104,16 @@ def test_root_help_message():
 
 def test_sub_group_with_option_help_message():
     runner = CliRunner()
-    with _fixed_panel_width():
+    with fixed_panel_width():
         result = runner.invoke(root, ["sub-group", "--help"])
     assert_runner_result(result)
-    assert _match_output(
+    assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
-             Usage: root sub-group [OPTIONS] COMMAND [ARGS]...                              
-                                                                                    
-             Sub-group.                                                                     
-                                                                                    
+             Usage: root sub-group [OPTIONS] COMMAND [ARGS]...
+
+             Sub-group.
+
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-group-opt        TEXT  Sub-group option.                               │
             │ --help                       Show this message and exit.                     │
@@ -152,16 +130,16 @@ def test_sub_group_with_option_help_message():
 
 def test_sub_group_command_with_option_help_message():
     runner = CliRunner()
-    with _fixed_panel_width():
+    with fixed_panel_width():
         result = runner.invoke(root, ["sub-group", "sub-group-command", "--help"])
     assert_runner_result(result)
-    assert _match_output(
+    assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
-             Usage: root sub-group sub-group-command [OPTIONS]                              
-                                                                                            
-             Sub-group-command.                                                             
-                                                                                            
+             Usage: root sub-group sub-group-command [OPTIONS]
+
+             Sub-group-command.
+
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-group-command-opt        TEXT  Sub-group-command option.               │
             │ --help                               Show this message and exit.             │
@@ -175,16 +153,16 @@ def test_sub_group_command_with_option_help_message():
 
 def test_sub_command_with_option_help_message():
     runner = CliRunner()
-    with _fixed_panel_width():
+    with fixed_panel_width():
         result = runner.invoke(root, ["sub-command", "--help"])
     assert_runner_result(result)
-    assert _match_output(
+    assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
-             Usage: root sub-command [OPTIONS] COMMAND [ARGS]...                            
-                                                                                            
-             Sub-command.                                                                   
-                                                                                            
+             Usage: root sub-command [OPTIONS] COMMAND [ARGS]...
+
+             Sub-command.
+
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-command-opt        TEXT  Sub-command option.                           │
             │ --help                         Show this message and exit.                   │
@@ -197,22 +175,24 @@ def test_sub_command_with_option_help_message():
 
 
 def test_dynamic_subcommand_help_message():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        with _fixed_panel_width(width=120):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        with fixed_panel_width(width=120):
             result = runner.invoke(
-                "component",
                 "scaffold",
+                "component",
                 "simple_pipes_script_asset@dagster_components.test",
                 "--help",
             )
-        assert _match_output(
-            result.output.strip(),
+            # Strip interpreter logging line
+            output = "\n".join(result.output.split("\n")[1:])
+        assert match_terminal_box_output(
+            output.strip(),
             textwrap.dedent("""
 
-                 Usage: dg component scaffold [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
+                 Usage: dg scaffold component [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
                  COMPONENT_INSTANCE_NAM
-                 E                                                                                                         
-                                                                                                                                        
+                 E
+
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ *    component_instance_name      TEXT  [required]                                                                   │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
@@ -230,6 +210,9 @@ def test_dynamic_subcommand_help_message():
                 │                                                                          use.                                        │
                 │ --use-dg-managed-environment    --no-use-dg-managed-environment          Enable management of the virtual            │
                 │                                                                          environment with uv.                        │
+                │ --require-local-venv            --no-require-local-venv                  Require use of a local virtual environment  │
+                │                                                                          (`.venv` found in ancestors of the working  │
+                │                                                                          directory).                                 │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
         """).strip(),
         )

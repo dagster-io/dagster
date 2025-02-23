@@ -1,9 +1,6 @@
 # ruff: isort: skip_file
 
 
-from typing import Dict, List  # noqa: UP035
-
-
 class Engine:
     def execute(self, query: str): ...
 
@@ -15,7 +12,7 @@ def get_engine(connection_url: str) -> Engine:
 def basic_resource_config() -> None:
     # start_basic_resource_config
 
-    from dagster import op, ConfigurableResource
+    from dagster import ConfigurableResource
 
     class MyDatabaseResource(ConfigurableResource):
         connection_url: str
@@ -115,7 +112,6 @@ def execute_with_config() -> None:
 def basic_data_structures_config() -> None:
     # start_basic_data_structures_config
     from dagster import Config, materialize, asset, RunConfig
-    from typing import List, Dict  # noqa: UP035
 
     class MyDataStructuresConfig(Config):
         user_names: list[str]
@@ -142,7 +138,6 @@ def basic_data_structures_config() -> None:
 def nested_schema_config() -> None:
     # start_nested_schema_config
     from dagster import asset, materialize, Config, RunConfig
-    from typing import Dict  # noqa: UP035
 
     class UserData(Config):
         age: int

@@ -25,13 +25,7 @@ Using these Dagster concepts we will:
 
 ## Setup
 
-{/* TODO turn back into <CodeReferenceLink path="docs_beta_snippets/docs_beta_snippets/examples/development_to_production/" /> once that's implemented */}
-
-:::tip
-
-You can find the code for this example on [GitHub](https://github.com/dagster-io/dagster/tree/master/examples/development_to_production/).
-
-:::
+<CodeReferenceLink filePath="examples/development_to_production" />
 
 To follow along with this guide, you can copy the full code example and install a few additional pip libraries:
 

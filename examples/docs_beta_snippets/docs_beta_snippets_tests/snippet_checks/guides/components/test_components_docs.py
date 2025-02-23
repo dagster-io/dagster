@@ -54,6 +54,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 "NO_COLOR": "1",
                 "HOME": "/tmp",
                 "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
+                "VIRTUAL_ENV": "",
             }
         ),
     ):
@@ -65,9 +66,9 @@ def test_components_docs_index(update_snippets: bool) -> None:
             update_snippets=update_snippets,
         )
 
-        # Scaffold code location
+        # Scaffold project
         run_command_and_snippet_output(
-            cmd="dg code-location scaffold jaffle-platform --use-editable-dagster",
+            cmd="dg scaffold project jaffle-platform --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -112,10 +113,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="dg component-type list",
+            cmd="dg list component-type",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-list-component-types.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
         )
 
         _run_command(
@@ -123,15 +125,16 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
         _run_command("uv tree")
         run_command_and_snippet_output(
-            cmd="dg component-type list",
+            cmd="dg list component-type",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-list-component-types.txt",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
         )
 
         # Scaffold new ingestion, validate new files
         run_command_and_snippet_output(
-            cmd="dg component scaffold 'sling_replication_collection@dagster_components' ingest_files",
+            cmd="dg scaffold component 'sling_replication_collection@dagster_components' ingest_files",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
             update_snippets=update_snippets,
@@ -244,22 +247,23 @@ streams:
                 f"uv add --editable '{EDITABLE_DIR / 'dagster-dbt'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[dbt]'; uv add dbt-duckdb"
             )
             run_command_and_snippet_output(
-                cmd="dg component-type list",
+                cmd="dg list component-type",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-list-component-types.txt",
                 update_snippets=update_snippets,
+                snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
             )
             run_command_and_snippet_output(
-                cmd="dg component-type info 'dbt_project@dagster_components'",
+                cmd="dg inspect component-type 'dbt_project@dagster_components'",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-type-info.txt",
                 update_snippets=update_snippets,
-                snippet_replace_regex=[re_ignore_after("Component params schema:")],
+                snippet_replace_regex=[re_ignore_after("Component schema:")],
             )
 
             # Scaffold dbt project components
             run_command_and_snippet_output(
-                cmd="dg component scaffold dbt_project@dagster_components jdbt --project-path dbt/jdbt",
+                cmd="dg scaffold component dbt_project@dagster_components jdbt --project-path dbt/jdbt",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-scaffold-jdbt.txt",
                 update_snippets=update_snippets,
@@ -278,7 +282,7 @@ streams:
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
                 contents="""type: dagster_components.dbt_project
 
-params:
+attributes:
   dbt:
     project_dir: ../../../dbt/jdbt
   asset_attributes:
@@ -286,12 +290,11 @@ params:
 """,
             )
             run_command_and_snippet_output(
-                cmd="dg component check --no-use-dg-managed-environment",
+                cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check-error.txt",
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
-                    ("--no-use-dg-managed-environment", ""),
                     MASK_JAFFLE_PLATFORM,
                 ],
                 expect_error=True,
@@ -303,7 +306,7 @@ params:
                 / f"{next_snip_no()}-project-jdbt.yaml",
                 contents="""type: dbt_project@dagster_components
 
-params:
+attributes:
   dbt:
     project_dir: ../../../dbt/jdbt
   asset_attributes:
@@ -311,12 +314,12 @@ params:
 """,
             )
             run_command_and_snippet_output(
-                cmd="dg component check --no-use-dg-managed-environment",
+                cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check.txt",
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
-                    ("--no-use-dg-managed-environment", ""),
+                    MASK_JAFFLE_PLATFORM,
                 ],
             )
 

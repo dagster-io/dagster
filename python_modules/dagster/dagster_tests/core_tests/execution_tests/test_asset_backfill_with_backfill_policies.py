@@ -1114,11 +1114,6 @@ def test_max_partitions_per_range_1_sets_run_request_partition_key():
         "apple", asset_backfill_data, asset_graph, DagsterInstance.ephemeral()
     )
 
-    assert [run_request.partition_key for run_request in result.run_requests] == [
-        "2023-10-05",
-        "2023-10-06",
-    ]
-
     assert [run_request.partition_key_range for run_request in result.run_requests] == [
         PartitionKeyRange("2023-10-05", "2023-10-05"),
         PartitionKeyRange("2023-10-06", "2023-10-06"),

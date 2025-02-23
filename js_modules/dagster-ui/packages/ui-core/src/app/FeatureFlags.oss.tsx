@@ -6,7 +6,6 @@ export enum FeatureFlag {
   flagLegacyRunsPage = 'flagLegacyRunsPage',
   flagSelectionSyntax = 'flagSelectionSyntax',
   flagAssetSelectionWorker = 'flagAssetSelectionWorker',
-  flagPoolUI = 'flagPoolUI',
 
   // Flags for tests
   __TestFlagDefaultNone = '__TestFlagDefaultNone',

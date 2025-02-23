@@ -37,7 +37,7 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
-from dagster._core.workspace.workspace import WorkspaceSnapshot
+from dagster._core.workspace.workspace import CurrentWorkspace
 from dagster._record import ImportFrom, record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
@@ -216,7 +216,7 @@ class RepositoryScopedAssetInfo:
 @whitelist_for_serdes
 @record
 class RemoteWorkspaceAssetNode(RemoteAssetNode):
-    """Asset nodes constructed from a WorkspaceSnapshot, containing nodes from potentially several RemoteRepositories."""
+    """Asset nodes constructed from a CurrentWorkspace, containing nodes from potentially several RemoteRepositories."""
 
     repo_scoped_asset_infos: Sequence[RepositoryScopedAssetInfo]
 
@@ -579,6 +579,13 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
             remote_asset_check_nodes_by_key=asset_checks_by_key,
         )
 
+    @classmethod
+    def empty(cls):
+        return cls(
+            remote_asset_nodes_by_key={},
+            remote_asset_check_nodes_by_key={},
+        )
+
 
 class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
     def __init__(
@@ -639,18 +646,23 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         return list(keys_by_repo.values())
 
     @classmethod
-    def build(cls, workspace: WorkspaceSnapshot):
+    def build(cls, workspace: CurrentWorkspace):
         # Combine repository scoped asset graphs with additional context to form the global graph
 
-        code_locations = (
-            location_entry.code_location
-            for location_entry in workspace.code_location_entries.values()
-            if location_entry.code_location
+        code_locations = sorted(
+            (
+                location_entry.code_location
+                for location_entry in workspace.code_location_entries.values()
+                if location_entry.code_location
+            ),
+            key=lambda code_location: code_location.name,
         )
         repos = (
             repo
             for code_location in code_locations
-            for repo in code_location.get_repositories().values()
+            for repo in sorted(
+                code_location.get_repositories().values(), key=lambda repo: repo.name
+            )
         )
 
         asset_infos_by_key: dict[AssetKey, list[RepositoryScopedAssetInfo]] = defaultdict(list)

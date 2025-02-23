@@ -1,6 +1,6 @@
 type: dbt_project@dagster_components
 
-params:
+attributes:
   dbt:
     project_dir: jaffle_shop
 
@@ -11,5 +11,5 @@ params:
         something: 1
       automation_condition:
         type: on_cron
-        params:
+        attributes:
           cron_schedule: "@daily"

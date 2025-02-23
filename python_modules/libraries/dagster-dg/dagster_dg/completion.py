@@ -25,7 +25,7 @@ def install_completion(context: click.Context):
     shell, _ = shellingham.detect_shell()
     comp_class = click.shell_completion.get_completion_class(shell)
     if comp_class is None:
-        exit_with_error(f"Shell {shell} is not supported.")
+        exit_with_error(f"Shell `{shell}` is not supported.")
     else:
         comp_inst = comp_class(
             cli=context.command, ctx_args={}, prog_name="dg", complete_var="_DG_COMPLETE"

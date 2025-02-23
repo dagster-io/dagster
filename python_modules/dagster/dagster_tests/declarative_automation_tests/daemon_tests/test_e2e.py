@@ -4,7 +4,7 @@ import sys
 import time
 from collections.abc import Mapping, Sequence
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
+from typing import AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 import pytest
@@ -94,19 +94,21 @@ def _setup_instance(context: WorkspaceProcessContext) -> None:
 
 @contextmanager
 def get_workspace_request_context(
-    filenames: Sequence[str], overrides: Optional[dict[str, Any]] = None
+    filenames: Sequence[Union[str, tuple[str, str]]], overrides: Optional[dict[str, Any]] = None
 ):
     with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-            **(overrides or {}),
-        }
+        overrides=overrides,
+        synchronous_run_launcher=True,
+        synchronous_run_coordinator=True,
     ) as instance:
         target = InProcessTestWorkspaceLoadTarget(
-            [get_code_location_origin(filename) for filename in filenames]
+            [
+                get_code_location_origin(
+                    filename[0] if isinstance(filename, tuple) else filename,
+                    filename[1] if isinstance(filename, tuple) else None,
+                )
+                for filename in filenames
+            ]
         )
         with create_test_daemon_workspace_context(
             workspace_load_target=target, instance=instance
@@ -318,6 +320,62 @@ def test_checks_and_assets_in_same_run() -> None:
             assert run.asset_check_selection == {
                 AssetCheckKey(AssetKey("processed_files"), "row_count")
             }
+
+
+def _get_location_name(run: DagsterRun):
+    return check.not_none(
+        run.remote_job_origin
+    ).repository_origin.code_location_origin.location_name
+
+
+def test_cross_location_source_assets() -> None:
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(["defs_with_source_assets", "always_evaluates"]) as context,
+        get_threadpool_executor() as executor,
+    ):
+        assert _get_latest_evaluation_ids(context) == {0}
+        assert _get_runs_for_latest_ticks(context) == []
+
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            # observable source asset executes
+            assert _get_latest_evaluation_ids(context) == {1, 2}
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 2
+            assert any(
+                run.asset_selection == {AssetKey("foo_source_asset")}
+                and _get_location_name(run) == "defs_with_source_assets"
+                for run in runs
+            )
+            assert any(
+                run.asset_selection == {AssetKey("always")}
+                and _get_location_name(run) == "always_evaluates"
+                for run in runs
+            )
+
+
+def test_multiple_materializable_breaks_ties() -> None:
+    time = get_current_datetime()
+    with (
+        get_workspace_request_context(
+            [("always_evaluates", "always_1"), ("always_evaluates", "always_2")]
+        ) as context,
+        get_threadpool_executor() as executor,
+    ):
+        assert _get_latest_evaluation_ids(context) == {0}
+        assert _get_runs_for_latest_ticks(context) == []
+
+        with freeze_time(time):
+            _execute_ticks(context, executor)  # pyright: ignore[reportArgumentType]
+            # observable source asset executes
+            assert _get_latest_evaluation_ids(context) == {
+                0,
+                1,
+            }  # only one sensor has assets to evaluate
+            runs = _get_runs_for_latest_ticks(context)
+            assert len(runs) == 1
+            assert runs[0].asset_selection == {AssetKey("always")}
 
 
 def test_cross_location_checks() -> None:
@@ -594,12 +652,8 @@ def test_backfill_with_runs_and_checks() -> None:
 def test_toggle_user_code() -> None:
     with (
         instance_for_test(
-            overrides={
-                "run_launcher": {
-                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                },
-            }
+            synchronous_run_launcher=True,
+            synchronous_run_coordinator=True,
         ) as instance,
         get_threadpool_executor() as executor,
     ):

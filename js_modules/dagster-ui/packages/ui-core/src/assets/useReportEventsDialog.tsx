@@ -158,6 +158,7 @@ const ReportEventDialogBody = ({
     modifyQueryString: false,
     skipPartitionKeyValidation: isDynamic,
     shouldReadPartitionQueryStringParam: true,
+    defaultSelection: 'empty',
   });
 
   const keysFiltered = useMemo(() => {

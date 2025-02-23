@@ -9,9 +9,11 @@ from dagster import (
     AssetIn,
     AssetMaterialization,
     AssetsDefinition,
+    DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DailyPartitionsDefinition,
+    Definitions,
     IdentityPartitionMapping,
     IOManager,
     IOManagerDefinition,
@@ -32,11 +34,12 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
     DynamicPartitionsDefinition,
@@ -50,6 +53,7 @@ from dagster._core.definitions.partition_mapping import (
 )
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import assert_namedtuple_lists_equal
+from dagster._time import create_datetime
 
 
 def test_access_partition_keys_from_context_non_identity_partition_mapping():
@@ -177,6 +181,76 @@ def test_from_graph():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
         partition_key="a",
     ).success
+
+
+def test_downstream_identity_mapping_between_time_window_partitions():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=1))
+    def asset1():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=0),
+        ins={"asset1": AssetIn(partition_mapping=IdentityPartitionMapping())},
+    )
+    def asset2(asset1):
+        pass
+
+    defs = Definitions(assets=[asset1, asset2])
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(
+            defs, instance, effective_dt=create_datetime(2025, 2, 6)
+        )
+
+        # at midnight on 2025-02-06, 2025-02-06 exists on parent asset but not on child asset
+        parent_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            asset1.key,
+            {
+                AssetKeyPartitionKey(asset1.key, "2025-02-05"),
+                AssetKeyPartitionKey(asset1.key, "2025-02-06"),
+            },
+        )
+
+        child_subset = asset_graph_view.compute_child_subset(asset2.key, parent_subset)
+
+        assert child_subset.expensively_compute_asset_partitions() == {
+            AssetKeyPartitionKey(asset2.key, "2025-02-05"),
+        }
+
+
+def test_upstream_identity_mapping_between_time_window_partitions():
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=0))
+    def asset1():
+        pass
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date="2025-02-01", end_offset=1),
+        ins={"asset1": AssetIn(partition_mapping=IdentityPartitionMapping())},
+    )
+    def asset2(asset1):
+        pass
+
+    defs = Definitions(assets=[asset1, asset2])
+
+    with DagsterInstance.ephemeral() as instance:
+        asset_graph_view = AssetGraphView.for_test(
+            defs, instance, effective_dt=create_datetime(2025, 2, 6)
+        )
+
+        # at midnight on 2025-02-06, 2025-02-06 exists on child asset but not on parent asset
+        child_subset = asset_graph_view.get_asset_subset_from_asset_partitions(
+            asset2.key,
+            {
+                AssetKeyPartitionKey(asset2.key, "2025-02-05"),
+                AssetKeyPartitionKey(asset2.key, "2025-02-06"),
+            },
+        )
+
+        parent_subset = asset_graph_view.compute_parent_subset(asset1.key, child_subset)
+
+        assert parent_subset.expensively_compute_asset_partitions() == {
+            AssetKeyPartitionKey(asset1.key, "2025-02-05"),
+        }
 
 
 def test_non_partitioned_depends_on_last_partition():

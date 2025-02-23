@@ -864,13 +864,13 @@ def test_removing_schedule_state(instance: DagsterInstance, executor: ThreadPool
         remove_datetime = successful_iteration_time + relativedelta(days=1)
         with freeze_time(remove_datetime):
             new_location_entry = copy(
-                workspace_context._workspace_snapshot.code_location_entries["test_location"],  # noqa
+                workspace_context._current_workspace.code_location_entries["test_location"],  # noqa
                 code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
 
-            workspace_context._workspace_snapshot = (  # noqa
-                workspace_context._workspace_snapshot.with_code_location(  # noqa
+            workspace_context._current_workspace = (  # noqa
+                workspace_context._current_workspace.with_code_location(  # noqa
                     "test_location",
                     new_location_entry,
                 )
@@ -1063,13 +1063,13 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         day_after_last_evaluation = freeze_datetime + relativedelta(days=1)
         with freeze_time(day_after_last_evaluation):
             new_location_entry = copy(
-                workspace_context._workspace_snapshot.code_location_entries["test_location"],  # noqa
+                workspace_context._current_workspace.code_location_entries["test_location"],  # noqa
                 code_location=None,
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
 
-            workspace_context._workspace_snapshot = (  # noqa
-                workspace_context._workspace_snapshot.with_code_location(  # noqa
+            workspace_context._current_workspace = (  # noqa
+                workspace_context._current_workspace.with_code_location(  # noqa
                     "test_location",
                     new_location_entry,
                 )
@@ -1322,6 +1322,7 @@ def test_launch_failure(
                 "class": "ExplodingRunLauncher",
             },
         },
+        synchronous_run_coordinator=True,
     ) as scheduler_instance:
         schedule = remote_repo.get_schedule("simple_schedule")
 

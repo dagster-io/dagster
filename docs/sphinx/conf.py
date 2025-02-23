@@ -152,3 +152,6 @@ autosectionlabel_prefix_document = True
 
 # Only support Google-style docstrings
 napoleon_numpy_docstring = False
+
+# Prevent docs generation for Sphinx-specific files
+exclude_patterns = ["_build", "_ext"]

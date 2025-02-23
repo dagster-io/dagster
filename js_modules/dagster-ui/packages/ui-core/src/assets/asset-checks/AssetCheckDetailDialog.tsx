@@ -7,8 +7,10 @@ import {
   DialogBody,
   DialogFooter,
   FontFamily,
+  Icon,
   Mono,
   NonIdealState,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
@@ -17,18 +19,30 @@ import {MetadataEntries} from '../../metadata/MetadataEntry';
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntryFragment';
 import {MetadataEntryFragment} from '../../metadata/types/MetadataEntryFragment.types';
 
-export function MetadataCell({metadataEntries}: {metadataEntries?: MetadataEntryFragment[]}) {
+export function MetadataCell({
+  metadataEntries,
+  type,
+}: {
+  type: 'inline-or-dialog' | 'dialog';
+  metadataEntries?: MetadataEntryFragment[];
+}) {
   const [showMetadata, setShowMetadata] = useState(false);
 
   if (!metadataEntries || !metadataEntries.length) {
     return <span>{' - '}</span>;
   }
-  if (canShowMetadataInline(metadataEntries)) {
+  if (canShowMetadataInline(metadataEntries) && type === 'inline-or-dialog') {
     return <MetadataEntries entries={metadataEntries} />;
   }
   return (
     <div>
-      <Button onClick={() => setShowMetadata(true)}>View metadata</Button>
+      {type === 'inline-or-dialog' ? (
+        <Button onClick={() => setShowMetadata(true)}>View metadata</Button>
+      ) : (
+        <Tooltip content="View metadata">
+          <Button onClick={() => setShowMetadata(true)} icon={<Icon name="metadata" />} />
+        </Tooltip>
+      )}
       <Dialog
         title="Metadata"
         isOpen={showMetadata}

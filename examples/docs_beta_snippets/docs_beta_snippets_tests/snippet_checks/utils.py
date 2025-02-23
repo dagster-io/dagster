@@ -4,7 +4,10 @@ import re
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
+
+if TYPE_CHECKING:
+    from selenium import webdriver
 
 # https://stackoverflow.com/a/14693789
 ANSI_ESCAPE = re.compile(
@@ -240,6 +243,7 @@ def run_command_and_snippet_output(
     custom_comparison_fn: Optional[Callable[[str, str], bool]] = None,
     ignore_output: bool = False,
     expect_error: bool = False,
+    print_cmd: Optional[str] = None,
 ):
     """Run the given command and check that the output matches the contents of the snippet
     at `snippet_path`. If `update_snippets` is `True`, updates the snippet file with the
@@ -265,10 +269,12 @@ def run_command_and_snippet_output(
     if snippet_path:
         assert update_snippets is not None
 
+        print_cmd = print_cmd if print_cmd else str(cmd)
+
         if ignore_output:
-            contents = str(cmd)
+            contents = print_cmd
         else:
-            contents = f"{cmd}\n\n{output}"
+            contents = f"{print_cmd}\n\n{output}"
 
         _assert_matches_or_update_snippet(
             contents=contents,
@@ -277,3 +283,19 @@ def run_command_and_snippet_output(
             snippet_replace_regex=snippet_replace_regex,
             custom_comparison_fn=custom_comparison_fn,
         )
+
+
+def screenshot_page(
+    get_webdriver: "Callable[[], webdriver.Chrome]",
+    url: str,
+    path: Path,
+    update_screenshots: bool,
+    width: Optional[int] = 1024,
+    height: Optional[int] = 768,
+) -> None:
+    if not update_screenshots:
+        return
+    webdriver = get_webdriver()
+    webdriver.set_window_size(width, height)
+    webdriver.get(url)
+    webdriver.save_screenshot(path)
