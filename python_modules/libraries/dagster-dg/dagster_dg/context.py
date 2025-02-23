@@ -111,9 +111,22 @@ class DgContext:
         cls, path: Path, cli_config: DgPartialConfig
     ) -> Self:
         config_path = DgConfig.discover_config_file(path)
-        root_path = config_path.parent if config_path else path
-        base_config = DgConfig.from_config_file(config_path) if config_path else DgConfig.default()
-        config = replace(base_config, **cli_config)
+        workspace_config_path = DgConfig.discover_config_file(
+            path, lambda x: bool(x.get("is_workspace"))
+        )
+
+        # Build the config in the following order: defaults, workspace, project, CLI
+        config = DgConfig.default()
+        if config_path:
+            # Add workspace config only if it's different from the project config
+            if workspace_config_path and config_path != workspace_config_path:
+                config = replace(config, **load_dg_config_file(workspace_config_path))
+            config = replace(config, **load_dg_config_file(config_path))
+            root_path = config_path.parent
+        else:
+            root_path = path
+        config = replace(config, **cli_config)
+
         return cls(config=config, root_path=root_path)
 
     @classmethod

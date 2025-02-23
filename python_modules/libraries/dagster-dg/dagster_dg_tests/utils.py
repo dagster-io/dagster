@@ -56,11 +56,13 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
 
 @contextmanager
 def isolated_example_workspace(
-    runner: Union[CliRunner, "ProxyRunner"], create_venv: bool = False
+    runner: Union[CliRunner, "ProxyRunner"],
+    project_name: Optional[str] = None,
+    create_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
-        runner.invoke("init", input=" \n")
+        runner.invoke("init", input=f" {project_name or ''}\n")
         with pushd("workspace"):
             # Create a venv capable of running dagster dev
             if create_venv:
