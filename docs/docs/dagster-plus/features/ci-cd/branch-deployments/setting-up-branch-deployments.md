@@ -29,8 +29,8 @@ Using this approach to branch deployments may be a good fit if:
 - You use **GitHub** for version control
 - You want Dagster to fully automate Branch Deployments
 
-  </TabItem>
-  <TabItem value="gitlab" label="GitLab">
+</TabItem>
+<TabItem value="gitlab" label="GitLab">
 
 You can set up GitLab to automatically create branch deployments for new PRs, using GitLab's CI/CD workflow.
 
@@ -39,8 +39,8 @@ Using this approach to branch deployments may be a good fit if:
 - You use **GitLab** for version control
 - You want Dagster to fully automate Branch Deployments
 
-  </TabItem>
-  <TabItem value="cli" label="dagster-cloud CLI">
+</TabItem>
+<TabItem value="cli" label="dagster-cloud CLI">
 
 You can manually execute dagster-cloud CLI commands to deploy and manage branch deployments.
 
@@ -71,7 +71,7 @@ Keep the token somewhere handy - you'll need it to complete the setup.
 
 :::note
 
-If using [Serverless deployment](/dagster-plus/deployment/deployment-types/serverless), this step can be skipped.
+If you are using [Serverless deployment](/dagster-plus/deployment/deployment-types/serverless), you can skip this step.
 
 :::
 
@@ -131,7 +131,7 @@ While you can use your existing production agent, we recommend creating a dedica
 <Tabs groupId="method">
   <TabItem value="github" label="GitHub">
 
-### Step 4.1: Add GitHub CI/CD script to your project
+**Step 4.1: Add GitHub CI/CD script to your project**
 :::note
 If you used the GitHub app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-github-action-runs)
 :::
@@ -144,7 +144,7 @@ Copy the following files to your project, and **replace** all references to `qui
 
 In the next step, you'll modify these files to work with your Dagster+ setup.
 
-### Step 4.2: Add the agent registry to dagster_cloud.yaml
+**Step 4.2: Add the agent registry to dagster_cloud.yaml**
 
 :::note
 If you used the GitHub app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-github-action-runs)
@@ -156,7 +156,7 @@ For example:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
 
-### Step 4.3: Configure GitHub Action secrets
+**Step 4.3: Configure GitHub Action secrets**
 
 :::note
 If you used the GitHub app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-github-action-runs)
@@ -175,7 +175,7 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 
 <TabItem value="docker" label="Docker">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in [Step 2](#step-2-generate-a-dagster-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `DOCKERHUB_USERNAME` - Your DockerHub username
 - `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
@@ -184,17 +184,17 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 
 <TabItem value="ecr" label="Amazon ECR">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in [Step 2](#step-2-generate-a-dagster-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
-- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in [Step 3](#step-3-create-and-configure-an-agent)
-- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in [Step 3](#step-3-create-and-configure-an-agent)
+- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
+- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
 - `AWS_REGION` - The AWS region where your ECR registry is located
 
 </TabItem>
 
 <TabItem value="gcr" label="Google Container Registry (GCR)">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in [Step 2](#step-2-generate-a-dagster-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `GCR_JSON_KEY` - Your GCR JSON credentials
 
@@ -202,7 +202,7 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 
 </Tabs>
 
-### Step 4.4: Configure GitHub Action
+**Step 4.4: Configure GitHub Action**
 
 :::note
 If you used the GitHub app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-github-action-runs)
@@ -226,7 +226,7 @@ jobs:
 
 Save and commit the file to your repository.
 
-### Step 4.5: Verify GitHub action runs
+**Step 4.5: Verify GitHub action runs**
 
 The last step is to verify that the GitHub Action runs successfully.
 
@@ -238,7 +238,7 @@ The last step is to verify that the GitHub Action runs successfully.
   </TabItem>
   <TabItem value="gitlab" label="GitLab">
 
-### Step 4.1: add GitLab CI/CD script to your project
+**Step 4.1: add GitLab CI/CD script to your project**
 
 :::note
 If you used the GitLab app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-gitlab-pipeline-runs)
@@ -252,7 +252,7 @@ Copy the following files to your project, and **replace** all references to `qui
 
 In the next step, you'll modify these files to work with your Dagster+ setup.
 
-### Step 4.2: add the agent registry to dagster_cloud.yaml
+**Step 4.2: add the agent registry to dagster_cloud.yaml**
 
 :::note
 If you used the GitLab app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-gitlab-pipeline-runs)
@@ -265,7 +265,7 @@ For example:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
 
-### Step 4.3: configure GitLab CI/CD variables
+**Step 4.3: configure GitLab CI/CD variables**
 
 :::note
 If you used the GitLab app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-gitlab-pipeline-runs)
@@ -285,14 +285,14 @@ Repeat steps 3-6 for each of the secrets required for your registry type:
 
 <TabItem value="gitlab" label="GitLab Container Registry">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in [Step 2](#step-2-generate-a-dagster-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 
 </TabItem>
 
 <TabItem value="docker" label="Docker">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in [Step 2](#step-2-generate-a-dagster-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `DOCKERHUB_USERNAME` - Your DockerHub username
 - `DOCKERHUB_TOKEN` - A DockerHub [access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token)
@@ -301,17 +301,17 @@ Repeat steps 3-6 for each of the secrets required for your registry type:
 
 <TabItem value="ecr" label="Amazon ECR">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in [Step 2](#step-2-generate-a-dagster-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
-- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in [Step 3](#step-3-create-and-configure-an-agent)
-- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in [Step 3](#step-3-create-and-configure-an-agent)
+- `AWS_ACCESS_KEY` - The **Access key ID** of the AWS IAM user you created in step 3
+- `AWS_SECRET_ACCESS_KEY` - The **Secret access key** of the AWS IAM user you created in step 3
 - `AWS_REGION` - The AWS region where your ECR registry is located
 
 </TabItem>
 
 <TabItem value="gcr" label="Google Container Registry (GCR)">
 
-- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in [Step 2](#step-2-generate-a-dagster-agent-token)
+- `DAGSTER_CLOUD_API_TOKEN` - The Dagster+ agent token you created in step 2
 - `DAGSTER_CLOUD_URL` - Your Dagster+ base URL (`https://my_org.dagster.cloud`)
 - `GCR_JSON_KEY` - Your GCR JSON credentials
 
@@ -319,7 +319,7 @@ Repeat steps 3-6 for each of the secrets required for your registry type:
 
 </Tabs>
 
-### Step 4.4: configure GitLab CI/CD script
+**Step 4.4: configure GitLab CI/CD script**
 
 :::note
 If you used the GitLab app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-gitlab-pipeline-runs)
@@ -339,7 +339,7 @@ build-image:
 
 Save and commit the files to the project.
 
-### Step 4.5: verify GitLab pipeline runs
+**Step 4.5: verify GitLab pipeline runs**
 
 The last step is to verify that the GitLab pipeline runs successfully.
 
@@ -365,7 +365,7 @@ The following examples assume the registry URL and image tag are stored in the `
 
 :::
 
-### Step 4.1 Create a branch deployment associated with the branch
+**Step 4.1 Create a branch deployment associated with the branch**
 
 Execute the following command within your CI/CD process:
 
@@ -419,7 +419,7 @@ BRANCH_DEPLOYMENT_NAME=$(
 )
 ```
 
-### Step 4.2 Deploy your code to the branch deployment
+**Step 4.2 Deploy your code to the branch deployment**
 
 Execute the following command within your CI/CD process:
 
