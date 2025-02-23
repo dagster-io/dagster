@@ -1,4 +1,6 @@
-SPHINXOPTS    ?= -j auto -W --keep-going -v
+#SPHINXOPTS    ?= -j auto -W --keep-going -v
+# All SPHINXOPTS should be specified in tox.ini or command line
+SPHINXOPTS	  ?=
 SPHINXBUILD   ?= sphinx-build 
 SOURCEDIR     = .
 BUILDDIR      = _build
