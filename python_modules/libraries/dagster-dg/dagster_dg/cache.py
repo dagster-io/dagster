@@ -51,8 +51,8 @@ class DgCache:
     @classmethod
     def from_config(cls, config: DgConfig) -> Self:
         return cls.from_parent_path(
-            parent_path=config.cache_dir,
-            logging_enabled=config.verbose,
+            parent_path=config.global_.cache_dir,
+            logging_enabled=config.global_.verbose,
         )
 
     # This is the preferred constructor to use when creating a cache. It ensures that all data is
