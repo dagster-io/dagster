@@ -75,7 +75,7 @@ def list_all_components_schema_command(ctx: click.Context) -> None:
         if schema_type:
             schemas.append(
                 create_model(
-                    key.name, type=(Literal[key_string], key_string), params=(schema_type, None)
+                    key.name, type=(Literal[key_string], key_string), attributes=(schema_type, None)
                 )
             )
     union_type = Union[tuple(schemas)]  # type: ignore

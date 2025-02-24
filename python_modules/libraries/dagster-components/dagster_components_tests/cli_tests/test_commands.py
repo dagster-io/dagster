@@ -5,6 +5,7 @@ from click.testing import CliRunner
 from dagster._core.test_utils import new_cwd
 from dagster_components.cli import cli
 from dagster_components.utils import ensure_dagster_components_tests_import
+from jsonschema import Draft202012Validator
 
 ensure_dagster_components_tests_import()
 
@@ -187,6 +188,15 @@ def test_all_components_schema_command():
             component_type_schema_def["properties"]["type"]["const"]
             == f"{component_type_key}@dagster_components.test"
         )
+        assert "attributes" in component_type_schema_def["properties"]
+
+    top_level_component_validator = Draft202012Validator(schema=result)
+    top_level_component_validator.validate(
+        {
+            "type": "simple_asset@dagster_components.test",
+            "attributes": {"asset_key": "my_asset", "value": "my_value"},
+        }
+    )
 
 
 def test_scaffold_component_command():
