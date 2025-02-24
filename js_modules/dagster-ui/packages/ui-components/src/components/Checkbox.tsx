@@ -86,9 +86,9 @@ const SwitchIcon = ({checked, indeterminate, fillColor, disabled}: IconProps) =>
       fill={
         checked && !indeterminate
           ? disabled
-            ? Colors.accentBlueHover()
+            ? Colors.checkboxDisabled()
             : fillColor
-          : Colors.accentGray()
+          : Colors.checkboxUnchecked()
       }
       style={{
         transition: 'fill 100ms linear',
@@ -180,7 +180,7 @@ const Base = ({
   format = 'check',
   disabled = false,
   indeterminate = false,
-  fillColor = Colors.accentBlue(),
+  fillColor = Colors.checkboxChecked(),
   children: _children, // not passed to input
   size: _size,
   onClick,
