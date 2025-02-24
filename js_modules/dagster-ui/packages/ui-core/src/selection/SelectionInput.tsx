@@ -1,17 +1,15 @@
 import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-components';
 import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor, EditorChange} from 'codemirror';
-import type {Linter} from 'codemirror/addon/lint/lint';
 import debounce from 'lodash/debounce';
 import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 
+import {SyntaxError} from './CustomErrorListener';
 import {SelectionAutoCompleteProvider} from './SelectionAutoCompleteProvider';
 import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteResults';
-import {
-  SelectionAutoCompleteInputCSS,
-  applyStaticSyntaxHighlighting,
-} from './SelectionInputHighlighter';
+import {SelectionAutoCompleteInputCSS} from './SelectionInputHighlighter';
+import {useSelectionInputLintingAndHighlighting} from './useSelectionInputLintingAndHighlighting';
 import {useTrackEvent} from '../app/analytics';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
@@ -25,7 +23,7 @@ import 'codemirror/addon/display/placeholder';
 type SelectionAutoCompleteInputProps = {
   id: string; // Used for logging
   placeholder: string;
-  linter: Linter<any>;
+  linter: (content: string) => SyntaxError[];
   value: string;
   onChange: (value: string) => void;
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
@@ -100,10 +98,6 @@ export const SelectionAutoCompleteInput = ({
         lineWrapping: false, // Initially false; enable during focus
         scrollbarStyle: 'native',
         autoCloseBrackets: true,
-        lint: {
-          getAnnotations: linter,
-          async: false,
-        },
         placeholder,
         extraKeys: {
           'Ctrl-Space': 'autocomplete',
@@ -160,7 +154,6 @@ export const SelectionAutoCompleteInput = ({
       });
 
       cmInstance.current.on('cursorActivity', (instance: Editor) => {
-        applyStaticSyntaxHighlighting(instance);
         const nextCursorPosition = instance.getCursor().ch;
         if (cursorPositionRef.current !== nextCursorPosition) {
           // If the cursor has moved then update the cursor position
@@ -169,17 +162,15 @@ export const SelectionAutoCompleteInput = ({
           setShowResults({current: true});
         }
       });
-
-      requestAnimationFrame(() => {
-        if (!cmInstance.current) {
-          return;
-        }
-
-        applyStaticSyntaxHighlighting(cmInstance.current);
-      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const errorTooltip = useSelectionInputLintingAndHighlighting({
+    cmInstance,
+    value: innerValue,
+    linter,
+  });
 
   const [currentHeight, setCurrentHeight] = useState(20);
 
@@ -392,6 +383,7 @@ export const SelectionAutoCompleteInput = ({
           </Box>
         </InputDiv>
       </Popover>
+      {errorTooltip}
     </div>
   );
 };
