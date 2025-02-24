@@ -123,7 +123,7 @@ Finally, create a `replication.yaml` file that references the downloaded files:
 
 Load your project in the Dagster UI to see what you've built so far. To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
 
-<CliInvocationExample contents="uv run dagster dev # will be dg dev in the future" />
+<CliInvocationExample contents="dg dev" />
 
 ![](/images/guides/build/projects-and-components/components/sling.png)
 
@@ -175,7 +175,7 @@ This creates a new component instance in the project at `jaffle_platform/compone
 
 Let’s see the project in the Dagster UI:
 
-<CliInvocationExample contents="uv run dagster dev" />
+<CliInvocationExample contents="dg dev" />
 
 ![](/images/guides/build/projects-and-components/components/dbt-1.png)
 
