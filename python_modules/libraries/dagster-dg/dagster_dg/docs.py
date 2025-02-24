@@ -205,20 +205,7 @@ def open_html_in_browser(html_content: str) -> None:
     webbrowser.open(f"file://{temp_file_path}")
 
 
-# code blocks are of the format ..code-block:: <language>
-import re
-
-# match lines of the form
-# ..code-block:: <language>
-#   foo
-#   bar
-#   baz
-CODE_BLOCK_REGEX = re.compile(r"(\.\. code-block::.*?\n(:?[\s\S]+))", re.DOTALL | re.MULTILINE)
-
-
 def process_description(description: str) -> str:
-    # replace code blocks with <code> tags
-    description = CODE_BLOCK_REGEX.sub(r"", description)
     return description.replace("\n", "<br>")
 
 
@@ -228,16 +215,33 @@ def markdown_for_json_schema(
     subschema: Mapping[str, Any],
     anyof_parent_subschema: Optional[Mapping[str, Any]] = None,
     indent: int = 0,
+    is_list: bool = False,
+    is_nullable: bool = False,
 ) -> str:
     """Produces a nested markdown list of the subschema, including component-author-provided description and examples.
     Uses <details> blocks to collapse nested fields by default.
+
+    Args:
+        key: The key of the current field in the schema.
+        json_schema: The complete schema.
+        subschema: The current field's schema.
+        anyof_parent_subschema: The parent schema, if the current field is part of an anyOf.
+        indent: The indentation level for the current field.
+        is_list: Whether the current field is a list.
+        is_nullable: Whether the current field is nullable.
     """
     subschema = _dereference_schema(json_schema, subschema)
 
     if "anyOf" in subschema:
         # TODO: handle anyOf fields more gracefully, for now just choose first option
+        is_nullable = any(nested.get("type") == "null" for nested in subschema["anyOf"])
         return markdown_for_json_schema(
-            key, json_schema, subschema["anyOf"][0], anyof_parent_subschema=subschema, indent=indent
+            key,
+            json_schema,
+            subschema["anyOf"][0],
+            anyof_parent_subschema=subschema,
+            indent=indent,
+            is_nullable=is_nullable,
         )
 
     objtype = subschema["type"]
@@ -251,7 +255,7 @@ def markdown_for_json_schema(
             ]
         )
     elif objtype == "array":
-        return markdown_for_json_schema(key, json_schema, subschema["items"])
+        return markdown_for_json_schema(key, json_schema, subschema["items"], is_list=True)
 
     description = process_description(
         subschema.get("description", "") or (anyof_parent_subschema or {}).get("description", "")
@@ -276,7 +280,10 @@ def markdown_for_json_schema(
     body = "<br/>".join(x for x in [description, examples_segment, children_segment] if x)
     body = textwrap.indent("<br/>" + body + "", prefix="  ") if body else ""
 
-    output = f"""<li><strong>{key}</strong> ({subschema["type"]}){body}</li>\n"""
+    type_str = f"[{subschema['type']}]" if is_list else subschema["type"]
+    if is_nullable:
+        type_str = f"{type_str} | null"
+    output = f"""<li><strong>{key}</strong> - <code>{type_str}</code>{body}</li>\n"""
     # indent the output with textwrap
     return textwrap.indent(output, " " * indent)
 
