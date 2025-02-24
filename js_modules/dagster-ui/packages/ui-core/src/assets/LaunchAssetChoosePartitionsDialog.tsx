@@ -192,6 +192,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     skipPartitionKeyValidation:
       displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC,
     shouldReadPartitionQueryStringParam: true,
+    defaultSelection: 'empty',
   });
 
   const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = useState(false);
@@ -378,16 +379,20 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       );
     }
 
+    const disabled = target.type === 'pureAll' ? false : keysFiltered.length === 0;
+
     return (
-      <Button
-        data-testid={testId('launch-button')}
-        intent="primary"
-        onClick={onLaunch}
-        disabled={target.type === 'pureAll' ? false : keysFiltered.length === 0}
-        loading={launching}
-      >
-        {launching ? 'Launching...' : launchAsBackfill ? 'Launch backfill' : `Launch 1 run`}
-      </Button>
+      <Tooltip canShow={disabled} content="Choose one or more partitions to backfill">
+        <Button
+          data-testid={testId('launch-button')}
+          intent="primary"
+          onClick={onLaunch}
+          disabled={disabled}
+          loading={launching}
+        >
+          {launching ? 'Launching...' : launchAsBackfill ? 'Launch backfill' : `Launch 1 run`}
+        </Button>
+      </Tooltip>
     );
   };
 

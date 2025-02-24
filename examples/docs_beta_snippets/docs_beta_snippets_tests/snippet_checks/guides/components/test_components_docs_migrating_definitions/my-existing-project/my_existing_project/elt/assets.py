@@ -1,13 +1,13 @@
-from dagster import asset
+import dagster as dg
 
 
-@asset
+@dg.asset
 def customers_table(): ...
 
 
-@asset
+@dg.asset
 def orders_table(): ...
 
 
-@asset
+@dg.asset
 def products_table(): ...

@@ -56,7 +56,7 @@ def sling_path() -> Iterator[Path]:
             defs_path = Path(temp_dir) / COMPONENT_RELPATH / "component.yaml"
 
             def _update_defs(data: dict[str, Any]) -> Mapping[str, Any]:
-                data["params"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
+                data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
                 return data
 
             _update_yaml(defs_path, _update_defs)
@@ -64,17 +64,17 @@ def sling_path() -> Iterator[Path]:
             yield Path(temp_dir)
 
 
-def test_python_params(sling_path: Path) -> None:
+def test_python_attributes(sling_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=sling_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="sling_replication",
-            params={"sling": {}, "replications": [{"path": "./replication.yaml"}]},
+            attributes={"sling": {}, "replications": [{"path": "./replication.yaml"}]},
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(SlingReplicationCollection.get_schema())
-    component = SlingReplicationCollection.load(params, context)
+    attributes = decl_node.get_attributes(SlingReplicationCollection.get_schema())
+    component = SlingReplicationCollection.load(attributes, context)
 
     replications = component.replications
     assert len(replications) == 1
@@ -90,12 +90,12 @@ def test_python_params(sling_path: Path) -> None:
     assert defs.get_assets_def("input_duckdb").op.name == "replication"
 
 
-def test_python_params_op_name(sling_path: Path) -> None:
+def test_python_attributes_op_name(sling_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=sling_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="sling_replication",
-            params={
+            attributes={
                 "sling": {},
                 "replications": [
                     {"path": "./replication.yaml", "op": {"name": "my_op"}},
@@ -104,8 +104,8 @@ def test_python_params_op_name(sling_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(SlingReplicationCollection.get_schema())
-    component = SlingReplicationCollection.load(params, context=context)
+    attributes = decl_node.get_attributes(SlingReplicationCollection.get_schema())
+    component = SlingReplicationCollection.load(attributes, context=context)
 
     replications = component.replications
     assert len(replications) == 1
@@ -120,12 +120,12 @@ def test_python_params_op_name(sling_path: Path) -> None:
     assert defs.get_assets_def("input_duckdb").op.name == "my_op"
 
 
-def test_python_params_op_tags(sling_path: Path) -> None:
+def test_python_attributes_op_tags(sling_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=sling_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="sling_replication",
-            params={
+            attributes={
                 "sling": {},
                 "replications": [
                     {"path": "./replication.yaml", "op": {"tags": {"tag1": "value1"}}},
@@ -134,8 +134,8 @@ def test_python_params_op_tags(sling_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(SlingReplicationCollection.get_schema())
-    component = SlingReplicationCollection.load(params=params, context=context)
+    attributes = decl_node.get_attributes(SlingReplicationCollection.get_schema())
+    component = SlingReplicationCollection.load(attributes=attributes, context=context)
     replications = component.replications
     assert len(replications) == 1
     op = replications[0].op
@@ -180,12 +180,12 @@ def test_sling_subclass() -> None:
         path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="debug_sling_replication",
-            params={"sling": {}, "replications": [{"path": "./replication.yaml"}]},
+            attributes={"sling": {}, "replications": [{"path": "./replication.yaml"}]},
         ),
     )
     context = script_load_context(decl_node)
-    params = decl_node.get_params(DebugSlingReplicationComponent.get_schema())
-    component_inst = DebugSlingReplicationComponent.load(params=params, context=context)
+    attributes = decl_node.get_attributes(DebugSlingReplicationComponent.get_schema())
+    component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
     assert component_inst.build_defs(context).get_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
         AssetKey("input_duckdb"),

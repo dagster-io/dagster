@@ -55,13 +55,15 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
 
 
 @contextmanager
-def isolated_example_deployment_foo(
-    runner: Union[CliRunner, "ProxyRunner"], create_venv: bool = False
+def isolated_example_workspace(
+    runner: Union[CliRunner, "ProxyRunner"],
+    project_name: Optional[str] = None,
+    create_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
-        runner.invoke("deployment", "scaffold", "foo")
-        with pushd("foo"):
+        runner.invoke("init", input=f" {project_name or ''}\n")
+        with pushd("workspace"):
             # Create a venv capable of running dagster dev
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
@@ -72,43 +74,43 @@ def isolated_example_deployment_foo(
             yield
 
 
-# Preferred example code location is foo-bar instead of a single word so that we can test the effect
+# Preferred example project is foo-bar instead of a single word so that we can test the effect
 # of hyphenation.
 @contextmanager
-def isolated_example_code_location_foo_bar(
+def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
-    in_deployment: bool = True,
+    in_workspace: bool = True,
     skip_venv: bool = False,
     populate_cache: bool = True,
     component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
-    """Scaffold a code location named foo_bar in an isolated filesystem.
+    """Scaffold a project named foo_bar in an isolated filesystem.
 
     Args:
         runner: The runner to use for invoking commands.
-        in_deployment: Whether the code location should be scaffolded inside a deployment directory.
-        skip_venv: Whether to skip creating a virtual environment when scaffolding the code location.
-        component_dirs: A list of component directories that will be copied into the code location component root.
+        in_workspace: Whether the project should be scaffolded inside a workspace directory.
+        skip_venv: Whether to skip creating a virtual environment when scaffolding the project.
+        component_dirs: A list of component directories that will be copied into the project component root.
     """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
-    if in_deployment:
-        fs_context = isolated_example_deployment_foo(runner)
-        code_loc_path = Path("code_locations/foo-bar")
+    if in_workspace:
+        fs_context = isolated_example_workspace(runner)
+        project_path = Path("projects/foo-bar")
     else:
         fs_context = runner.isolated_filesystem()
-        code_loc_path = Path("foo-bar")
+        project_path = Path("foo-bar")
     with fs_context:
         runner.invoke(
-            "code-location",
             "scaffold",
+            "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
         )
-        with clear_module_from_cache("foo_bar"), pushd(code_loc_path):
+        with clear_module_from_cache("foo_bar"), pushd(project_path):
             for src_dir in component_dirs:
                 component_name = src_dir.name
                 components_dir = Path.cwd() / "foo_bar" / "components" / component_name
@@ -128,11 +130,11 @@ def isolated_example_component_library_foo_bar(
     with (
         runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
     ) as venv_path:
-        # We just use the code location generation function and then modify it to be a component library
+        # We just use the project generation function and then modify it to be a component library
         # only.
         result = runner.invoke(
-            "code-location",
             "scaffold",
+            "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
             "--skip-venv",
@@ -142,9 +144,9 @@ def isolated_example_component_library_foo_bar(
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
             shutil.rmtree(Path("foo_bar/components"))
 
-            # Make it not a code location
+            # Make it not a project
             with modify_pyproject_toml() as toml:
-                set_toml_value(toml, ("tool", "dg", "is_code_location"), False)
+                set_toml_value(toml, ("tool", "dg", "is_project"), False)
 
                 # We need to set any alternative lib package name _before_ we install into the
                 # environment, since it affects entry points which are set at install time.
@@ -352,10 +354,10 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
-        # We need to find the right spot to inject global options. For the `dg component scaffold`
+        # We need to find the right spot to inject global options. For the `dg scaffold component`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[:2] == ("component", "scaffold"):
+        if args[:2] == ("scaffold", "component"):
             index = 2
         elif "--help" in args:
             index = args.index("--help")
@@ -367,12 +369,15 @@ class ProxyRunner:
 
         # For some reason the context setting `max_content_width` is not respected when using the
         # CliRunner, so we have to set it manually.
-        return self.original.invoke(
+        result = self.original.invoke(
             dg_cli,
             all_args,
             terminal_width=self.console_width,
             **invoke_kwargs,
         )
+        # Uncomment to get output from CLI invocations
+        # print(str(result.stdout))
+        return result
 
     @contextmanager
     def isolated_filesystem(self) -> Iterator[None]:

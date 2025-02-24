@@ -1,6 +1,6 @@
 type: shell_command@my_component_library
 
-params:
+attributes:
   script_path: script.sh
   asset_specs:
   - key: my_asset

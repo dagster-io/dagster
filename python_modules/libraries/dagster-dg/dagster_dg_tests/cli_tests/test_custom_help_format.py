@@ -15,7 +15,7 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     fixed_panel_width,
-    isolated_example_code_location_foo_bar,
+    isolated_example_project_foo_bar,
     match_terminal_box_output,
 )
 
@@ -83,9 +83,9 @@ def test_root_help_message():
     assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
-             Usage: root [OPTIONS] COMMAND [ARGS]...                                        
+             Usage: root [OPTIONS] COMMAND [ARGS]...
 
-             Root group.                                                                    
+             Root group.
 
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --root-opt        TEXT  Root option.                                         │
@@ -110,10 +110,10 @@ def test_sub_group_with_option_help_message():
     assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
-             Usage: root sub-group [OPTIONS] COMMAND [ARGS]...                              
-                                                                                    
-             Sub-group.                                                                     
-                                                                                    
+             Usage: root sub-group [OPTIONS] COMMAND [ARGS]...
+
+             Sub-group.
+
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-group-opt        TEXT  Sub-group option.                               │
             │ --help                       Show this message and exit.                     │
@@ -136,10 +136,10 @@ def test_sub_group_command_with_option_help_message():
     assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
-             Usage: root sub-group sub-group-command [OPTIONS]                              
-                                                                                            
-             Sub-group-command.                                                             
-                                                                                            
+             Usage: root sub-group sub-group-command [OPTIONS]
+
+             Sub-group-command.
+
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-group-command-opt        TEXT  Sub-group-command option.               │
             │ --help                               Show this message and exit.             │
@@ -159,10 +159,10 @@ def test_sub_command_with_option_help_message():
     assert match_terminal_box_output(
         result.output.strip(),
         textwrap.dedent("""
-             Usage: root sub-command [OPTIONS] COMMAND [ARGS]...                            
-                                                                                            
-             Sub-command.                                                                   
-                                                                                            
+             Usage: root sub-command [OPTIONS] COMMAND [ARGS]...
+
+             Sub-command.
+
             ╭─ Options ────────────────────────────────────────────────────────────────────╮
             │ --sub-command-opt        TEXT  Sub-command option.                           │
             │ --help                         Show this message and exit.                   │
@@ -175,11 +175,11 @@ def test_sub_command_with_option_help_message():
 
 
 def test_dynamic_subcommand_help_message():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         with fixed_panel_width(width=120):
             result = runner.invoke(
-                "component",
                 "scaffold",
+                "component",
                 "simple_pipes_script_asset@dagster_components.test",
                 "--help",
             )
@@ -189,10 +189,10 @@ def test_dynamic_subcommand_help_message():
             output.strip(),
             textwrap.dedent("""
 
-                 Usage: dg component scaffold [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
+                 Usage: dg scaffold component [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
                  COMPONENT_INSTANCE_NAM
-                 E                                                                                                         
-                                                                                                                                        
+                 E
+
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ *    component_instance_name      TEXT  [required]                                                                   │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯

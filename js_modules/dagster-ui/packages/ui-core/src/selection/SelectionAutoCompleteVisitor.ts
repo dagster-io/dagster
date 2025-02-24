@@ -180,7 +180,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
 
     const parentChildren = ctx.parent?.children ?? [];
-    if (parentChildren[0]?.constructor.name === 'AttributeNameContext') {
+    if (parentChildren[0]?.constructor.name === AttributeNameContext.name) {
       const rawValue = getValueNodeValue(ctx.value());
       this.addAttributeValueResults(parentChildren[0].text, rawValue);
     }
@@ -192,12 +192,12 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       let valueNode: ParserRuleContext | null = null;
 
       const parentChildren = ctx.parent?.children ?? [];
-      if (parentChildren[0]?.constructor.name === 'AttributeNameContext') {
+      if (parentChildren[0]?.constructor.name === AttributeNameContext.name) {
         attributeName = parentChildren[0] as ParserRuleContext;
       }
-      if (parentChildren[1]?.constructor.name === 'AttributeValueContext') {
+      if (parentChildren[1]?.constructor.name === AttributeValueContext.name) {
         valueNode = parentChildren[1] as ParserRuleContext;
-      } else if (parentChildren[2]?.constructor.name === 'AttributeValueContext') {
+      } else if (parentChildren[2]?.constructor.name === AttributeValueContext.name) {
         valueNode = parentChildren[2] as ParserRuleContext;
       }
 

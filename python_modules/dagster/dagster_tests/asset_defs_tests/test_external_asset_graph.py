@@ -32,7 +32,7 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import (
     CodeLocationEntry,
     CodeLocationLoadStatus,
-    WorkspaceSnapshot,
+    CurrentWorkspace,
 )
 
 
@@ -165,7 +165,7 @@ def _make_location_entry(defs_attr: str, instance: DagsterInstance):
 def _make_context(instance: DagsterInstance, defs_attrs):
     return WorkspaceRequestContext(
         instance=mock.MagicMock(),
-        workspace_snapshot=WorkspaceSnapshot(
+        current_workspace=CurrentWorkspace(
             code_location_entries={
                 defs_attr: _make_location_entry(defs_attr, instance) for defs_attr in defs_attrs
             }

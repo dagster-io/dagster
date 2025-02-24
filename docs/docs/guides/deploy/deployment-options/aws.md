@@ -31,12 +31,7 @@ Using RDS for run and event log storage doesn't require that the webserver be ru
 
 ## Deploying in ECS
 
-{/* TODO turn back into <CodeReferenceLink> once that's implemented */}
-:::tip
-
-You can find the code for this example on [GitHub](https://github.com/dagster-io/dagster/tree/master/examples/deploy_ecs).
-
-:::
+<CodeReferenceLink filePath="examples/deploy_ecs" />
 
 The Deploying on ECS example on GitHub demonstrates how to configure the [Docker Compose CLI integration with ECS](https://docs.docker.com/cloud/ecs-integration/) to manage all of the required AWS resources that Dagster needs to run on ECS. The example includes:
 

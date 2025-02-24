@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from atproto_client import models
 
 
+# start_all_feed_items
 def get_all_feed_items(client: Client, actor: str) -> list["models.AppBskyFeedDefs.FeedViewPost"]:
     """Retrieves all author feed items for a given `actor`.
 
@@ -40,6 +41,10 @@ def get_all_feed_items(client: Client, actor: str) -> list["models.AppBskyFeedDe
     return feed
 
 
+# end_all_feed_items
+
+
+# start_starter_pack
 def get_all_list_members(client: Client, list_uri: str):
     cursor = None
     members = []
@@ -57,3 +62,6 @@ def get_all_list_members(client: Client, list_uri: str):
 def get_all_starter_pack_members(client: Client, starter_pack_uri: str):
     response = client.app.bsky.graph.get_starter_pack({"starter_pack": starter_pack_uri})
     return get_all_list_members(client, response.starter_pack.list.uri)
+
+
+# end_starter_pack

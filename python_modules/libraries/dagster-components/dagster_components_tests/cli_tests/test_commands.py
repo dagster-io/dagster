@@ -56,7 +56,7 @@ def test_list_component_types_command():
         "summary": "A simple asset that returns a constant string value.",
         "description": "A simple asset that returns a constant string value.",
         "scaffold_params_schema": None,
-        "component_params_schema": {
+        "component_schema": {
             "properties": {
                 "asset_key": {"title": "Asset Key", "type": "string"},
                 "value": {"title": "Value", "type": "string"},
@@ -83,7 +83,7 @@ def test_list_component_types_command():
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         "scaffold_params_schema": pipes_script_params_schema,
-        "component_params_schema": pipes_script_params_schema,
+        "component_schema": pipes_script_params_schema,
     }
 
 

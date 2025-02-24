@@ -1,4 +1,0 @@
-dg code-location list
-
-code-location-1
-code-location-2

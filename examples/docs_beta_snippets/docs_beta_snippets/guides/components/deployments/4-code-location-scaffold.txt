@@ -1,5 +1,0 @@
-dg code-location scaffold code-location-1
-
-Creating a Dagster code location at /.../my-deployment/code_locations/code-location-1.
-Scaffolded files for Dagster project in /.../my-deployment/code_locations/code-location-1.
-...

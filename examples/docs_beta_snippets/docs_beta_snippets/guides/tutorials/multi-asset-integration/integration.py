@@ -5,16 +5,8 @@ from typing import Any, Callable, Optional
 
 import yaml
 
-from dagster import (
-    AssetExecutionContext,
-    AssetKey,
-    AssetMaterialization,
-    AssetsDefinition,
-    AssetSpec,
-    ConfigurableResource,
-    _check as check,
-    multi_asset,
-)
+import dagster as dg
+import dagster._check as check
 from dagster._annotations import public
 
 
@@ -33,9 +25,11 @@ class ReplicationProject:
         return yaml.safe_load(Path(self.replication_configuration_yaml).read_text())
 
 
-class ReplicationResource(ConfigurableResource):
+class ReplicationResource(dg.ConfigurableResource):
     @public
-    def run(self, context: AssetExecutionContext) -> Iterator[AssetMaterialization]:
+    def run(
+        self, context: dg.AssetExecutionContext
+    ) -> Iterator[dg.AssetMaterialization]:
         metadata_by_key = context.assets_def.metadata_by_key
         first_asset_metadata = next(iter(metadata_by_key.values()))
 
@@ -52,7 +46,7 @@ class ReplicationResource(ConfigurableResource):
         results = replicate(Path(project.replication_configuration_yaml))
         for table in results:
             if table.get("status") == "SUCCESS":
-                yield AssetMaterialization(
+                yield dg.AssetMaterialization(
                     asset_key=translator.get_asset_key(table), metadata=table
                 )
 
@@ -60,8 +54,8 @@ class ReplicationResource(ConfigurableResource):
 @dataclass
 class ReplicationTranslator:
     @public
-    def get_asset_key(self, table_definition: Mapping[str, str]) -> AssetKey:
-        return AssetKey(str(table_definition.get("name")))
+    def get_asset_key(self, table_definition: Mapping[str, str]) -> dg.AssetKey:
+        return dg.AssetKey(str(table_definition.get("name")))
 
 
 def custom_replication_assets(
@@ -70,7 +64,7 @@ def custom_replication_assets(
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     translator: Optional[ReplicationTranslator] = None,
-) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+) -> Callable[[Callable[..., Any]], dg.AssetsDefinition]:
     project = replication_project.load()
 
     translator = (
@@ -78,11 +72,11 @@ def custom_replication_assets(
         or ReplicationTranslator()
     )
 
-    return multi_asset(
+    return dg.multi_asset(
         name=name,
         group_name=group_name,
         specs=[
-            AssetSpec(
+            dg.AssetSpec(
                 key=translator.get_asset_key(table),
                 metadata={
                     "replication_project": project,

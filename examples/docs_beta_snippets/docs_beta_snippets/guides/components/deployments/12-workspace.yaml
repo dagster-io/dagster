@@ -1,9 +1,0 @@
-load_from:
-  - python_file:
-      relative_path: code_locations/code-location-1/code_location_1/definitions.py
-      location_name: code_location_1
-      executable_path: code_locations/code-location-1/.venv/bin/python
-  - python_file:
-      relative_path: code_locations/code-location-2/code_location_2/definitions.py
-      location_name: code_location_2
-      executable_path: code_locations/code-location-2/.venv/bin/python

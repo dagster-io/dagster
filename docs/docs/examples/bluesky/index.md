@@ -8,13 +8,13 @@ sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 ---
 
+# Analyzing Bluesky data
+
 :::note
 
 To see [video of this example](https://www.youtube.com/watch?v=z3trqkKPbsI)
 
 :::
-
-# Analyzing Bluesky data
 
 In this example, you'll build a pipeline with Dagster that:
 

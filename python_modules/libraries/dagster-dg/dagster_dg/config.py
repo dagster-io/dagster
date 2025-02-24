@@ -1,10 +1,11 @@
 from collections.abc import Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Optional, TypedDict, TypeVar, cast
 
 import click
 import tomlkit
+import tomlkit.items
 from click.core import ParameterSource
 
 from dagster_dg.error import DgError, DgValidationError
@@ -52,8 +53,8 @@ class DgConfig:
     use_dg_managed_environment: bool = True
     require_local_venv: bool = True
     is_component_lib: bool = False
-    is_code_location: bool = False
-    is_deployment: bool = False
+    is_project: bool = False
+    is_workspace: bool = False
     root_package: Optional[str] = None
     component_package: Optional[str] = None
     component_lib_package: Optional[str] = None
@@ -74,21 +75,6 @@ class DgConfig:
             current_path = current_path.parent
 
     @classmethod
-    def from_config_file(cls, path: Path) -> "DgConfig":
-        current_config = load_dg_config_file(path)
-        current_directory_path = path.parent
-        while "extend" in current_config:
-            extend_path = current_directory_path / current_config["extend"]
-            if not is_dg_config_file(extend_path):
-                raise DgValidationError(
-                    "Config file {extend_path} was specified in `extend` field but does not contain a `tool.dg` section."
-                )
-            extend_config = load_dg_config_file(extend_path)
-            current_config = cast(DgPartialFileConfig, {**extend_config, **current_config})
-            current_directory_path = extend_path.parent
-        return replace(DgConfig.default(), **current_config)
-
-    @classmethod
     def default(cls) -> "DgConfig":
         return cls()
 
@@ -102,9 +88,9 @@ class DgPartialConfig(TypedDict, total=False):
     require_local_venv: bool
     component_package: str
     component_lib_package: str
-    is_code_location: bool
+    is_project: bool
     is_component_lib: bool
-    is_deployment: bool
+    is_workspace: bool
 
 
 def _normalize_dg_partial_config(raw_dict: Mapping[str, object]) -> DgPartialConfig:
@@ -130,12 +116,13 @@ def _normalize_dg_partial_config(raw_dict: Mapping[str, object]) -> DgPartialCon
         raise DgValidationError("`component_package` must be a string.")
     if "component_lib_package" in config and not isinstance(config["component_lib_package"], str):
         raise DgValidationError("`component_lib_package` must be a string.")
-    if "is_code_location" in config and not isinstance(config["is_code_location"], bool):
-        raise DgValidationError("`is_code_location` must be a boolean.")
+    if "is_project" in config and not isinstance(config["is_project"], bool):
+        raise DgValidationError("`is_project` must be a boolean.")
     if "is_component_lib" in config and not isinstance(config["is_component_lib"], bool):
         raise DgValidationError("`is_component_lib` must be a boolean.")
-    if "is_deployment" in config and not isinstance(config["is_deployment"], bool):
-        raise DgValidationError("`is_deployment` must be a boolean.")
+
+    if "is_workspace" in config and not isinstance(config["is_workspace"], bool):
+        raise DgValidationError("`is_workspace` must be a boolean.")
 
     if unrecognized_keys := [k for k in config.keys() if k not in DgPartialConfig.__annotations__]:
         raise DgValidationError(f"Unrecognized fields in configuration: {unrecognized_keys}")
@@ -181,28 +168,6 @@ def get_config_from_cli_context(cli_context: click.Context) -> DgPartialConfig:
 # ########################
 
 
-class DgPartialFileConfig(DgPartialConfig, total=False):
-    extend: str
-
-
-def _validate_dg_partial_file_config(
-    raw_dict: Mapping[str, object], file_path: Path
-) -> DgPartialFileConfig:
-    if "extend" in raw_dict:
-        if not isinstance(raw_dict["extend"], str):
-            _raise_file_config_validation_error("`extend` must be a string.", file_path)
-        elif not (file_path.parent / raw_dict["extend"]).exists():
-            _raise_file_config_validation_error(
-                "Config specifies `extend` setting to non-existent file: {raw_dict['extend']}",
-                file_path,
-            )
-    try:
-        _normalize_dg_partial_config({k: v for k, v in raw_dict.items() if k not in ["extend"]})
-    except DgValidationError as e:
-        _raise_file_config_validation_error(str(e), file_path)
-    return cast(DgPartialFileConfig, raw_dict)
-
-
 def is_dg_config_file(
     path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
 ) -> bool:
@@ -212,9 +177,14 @@ def is_dg_config_file(
     )
 
 
-def load_dg_config_file(path: Path) -> DgPartialFileConfig:
+def load_dg_config_file(path: Path) -> DgPartialConfig:
     toml = tomlkit.parse(path.read_text())
-    return _validate_dg_partial_file_config(get_toml_value(toml, ["tool", "dg"], dict), path)
+    raw_dict = get_toml_value(toml, ["tool", "dg"], tomlkit.items.Table).unwrap()
+    try:
+        _normalize_dg_partial_config({k: v for k, v in raw_dict.items()})
+    except DgValidationError as e:
+        _raise_file_config_validation_error(str(e), path)
+    return cast(DgPartialConfig, raw_dict)
 
 
 def _raise_file_config_validation_error(message: str, file_path: Path) -> None:

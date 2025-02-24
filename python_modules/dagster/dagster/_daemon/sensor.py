@@ -392,7 +392,7 @@ def execute_sensor_iteration(
 ):
     instance = workspace_process_context.instance
 
-    workspace_snapshot = {
+    current_workspace = {
         location_entry.origin.location_name: location_entry
         for location_entry in workspace_process_context.create_request_context()
         .get_code_location_entries()
@@ -407,7 +407,7 @@ def execute_sensor_iteration(
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
 
     sensors: dict[str, RemoteSensor] = {}
-    for location_entry in workspace_snapshot.values():
+    for location_entry in current_workspace.values():
         code_location = location_entry.code_location
         if code_location:
             for repo in code_location.get_repositories().values():

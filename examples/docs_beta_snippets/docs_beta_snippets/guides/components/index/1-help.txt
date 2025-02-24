@@ -34,9 +34,13 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │                                                              use for the cache.        │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Commands ─────────────────────────────────────────────────────────────────────────────╮
-│ code-location    Commands for operating code location directories.                     │
-│ component        Commands for operating on components.                                 │
-│ component-type   Commands for operating on components types.                           │
-│ deployment       Commands for operating on deployment directories.                     │
-│ dev              Start a local deployment of your Dagster project.                     │
+│ check      Commands for checking the integrity of your Dagster code.                   │
+│ dev        Start a local instance of Dagster.                                          │
+│ docs       Commands for generating docs from your Dagster code.                        │
+│ init       Initialize a new Dagster workspace and a first project within that          │
+│            workspace.                                                                  │
+│ inspect    Commands for inspecting Dagster entities.                                   │
+│ list       Commands for listing Dagster entities.                                      │
+│ scaffold   Commands for scaffolding Dagster code.                                      │
+│ utils      Assorted utility commands.                                                  │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯

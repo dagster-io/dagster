@@ -43,7 +43,7 @@ class CodeLocationStatusEntry:
 
 
 @record
-class WorkspaceSnapshot:
+class CurrentWorkspace:
     code_location_entries: Mapping[str, CodeLocationEntry]
 
     @cached_property
@@ -52,8 +52,8 @@ class WorkspaceSnapshot:
 
         return RemoteWorkspaceAssetGraph.build(self)
 
-    def with_code_location(self, name: str, entry: CodeLocationEntry) -> "WorkspaceSnapshot":
-        return WorkspaceSnapshot(code_location_entries={**self.code_location_entries, name: entry})
+    def with_code_location(self, name: str, entry: CodeLocationEntry) -> "CurrentWorkspace":
+        return CurrentWorkspace(code_location_entries={**self.code_location_entries, name: entry})
 
 
 def location_status_from_location_entry(

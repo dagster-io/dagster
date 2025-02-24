@@ -10,7 +10,7 @@ from dagster_components.lib.pipes_subprocess_script_collection import (
 
 @component
 def load(context: ComponentLoadContext) -> PipesSubprocessScriptCollection:
-    params = PipesSubprocessScriptCollectionSchema(
+    attributes = PipesSubprocessScriptCollectionSchema(
         scripts=[
             PipesSubprocessScriptSchema(
                 path="cool_script.py",
@@ -23,4 +23,4 @@ def load(context: ComponentLoadContext) -> PipesSubprocessScriptCollection:
             ),
         ]
     )
-    return PipesSubprocessScriptCollection.load(params=params, context=context)
+    return PipesSubprocessScriptCollection.load(attributes=attributes, context=context)

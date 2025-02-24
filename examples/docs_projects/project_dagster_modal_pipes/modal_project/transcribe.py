@@ -54,6 +54,7 @@ def _merge_segments(left: Segment, right: Segment) -> Segment:
     }
 
 
+# start_app
 app_image = (
     modal.Image.debian_slim(python_version="3.10")
     .apt_install("git")
@@ -77,7 +78,9 @@ app = modal.App(
     "whisper-pod-transcriber",
     image=app_image,
 )
+# end_app
 
+# start_mount
 cloud_bucket_mount = modal.CloudBucketMount(
     "dagster-modal-demo",
     bucket_endpoint_url=os.environ.get("CLOUDFLARE_R2_API"),
@@ -89,6 +92,7 @@ cloud_bucket_mount = modal.CloudBucketMount(
         }
     ),
 )
+# end_mount
 
 
 def split_silences(
@@ -145,6 +149,7 @@ def split_silences(
     logger.info(f"Split {path} into {num_segments} segments")
 
 
+# start_transcribe_segment
 @app.function(
     image=app_image,
     cpu=2,
@@ -193,6 +198,9 @@ def transcribe_segment(
     return result
 
 
+# end_transcribe_segment
+
+
 @app.function(
     image=app_image,
     timeout=900,
@@ -213,6 +221,7 @@ def transcribe_episode(
         logger.info("Transcript already exists, skipping...")
         return
 
+    # start_segment
     segment_gen = split_silences(str(audio_file))
 
     output_text = ""
@@ -222,6 +231,7 @@ def transcribe_episode(
     ):
         output_text += result["text"]
         output_segments += result["segments"]
+    # end_segment
 
     result = {
         "text": output_text,
@@ -234,6 +244,7 @@ def transcribe_episode(
         json.dump(result, f, indent=4)
 
 
+# start_main
 @app.local_entrypoint()
 def main():
     from dagster_pipes import open_dagster_pipes
@@ -259,3 +270,6 @@ def main():
                 "transcription_file": transcription_path,
             }
         )
+
+
+# end_main

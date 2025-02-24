@@ -608,6 +608,7 @@ def asset_def(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     code_version: Optional[str] = None,
     config_schema: Optional[Mapping[str, Field]] = None,
+    **asset_def_kwargs,
 ) -> AssetsDefinition:
     if deps is None:
         non_argument_deps = None
@@ -631,6 +632,7 @@ def asset_def(
         freshness_policy=freshness_policy,
         auto_materialize_policy=auto_materialize_policy,
         code_version=code_version,
+        **asset_def_kwargs,
     )
     def _asset(context, **kwargs):
         del kwargs
@@ -638,7 +640,7 @@ def asset_def(
         if context.op_execution_context.op_config["fail"]:
             raise ValueError("")
 
-    return _asset
+    return _asset  # type: ignore
 
 
 def multi_asset_def(

@@ -8,6 +8,7 @@ import {
   Tag,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
+import {ScheduleAlertDetails} from 'shared/schedules/ScheduleAlertDetails.oss';
 import styled from 'styled-components';
 
 import {SchedulePartitionStatus} from './SchedulePartitionStatus';
@@ -167,6 +168,7 @@ export const ScheduleDetails = (props: {
               <td>{executionTimezone}</td>
             </tr>
           ) : null}
+          <ScheduleAlertDetails repoAddress={repoAddress} scheduleName={name} />
         </tbody>
       </MetadataTableWIP>
     </>

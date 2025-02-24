@@ -1,24 +1,17 @@
 import {Box, ErrorBoundary, Tabs} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useJobSidebarAlertsTabConfig} from 'shared/pipelines/useJobSidebarAlertsTabConfig.oss';
 
 import {RightInfoPanelContent} from './GraphExplorer';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarContainerOverview} from './SidebarContainerOverview';
 import {SidebarOp} from './SidebarOp';
+import {TabDefinition, TabKey} from './types';
 import {SidebarRootContainerFragment} from './types/SidebarContainerOverview.types';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
 import {TabLink} from '../ui/TabLink';
 import {RepoAddress} from '../workspace/types';
-
-type TabKey = 'types' | 'info';
-
-interface TabDefinition {
-  name: string;
-  key: TabKey;
-  content: () => React.ReactNode;
-}
 
 interface SidebarRootProps {
   tab?: TabKey;
@@ -49,10 +42,10 @@ export const SidebarRoot = (props: SidebarRootProps) => {
 
   const activeTab = tab || 'info';
 
-  const TabDefinitions: Array<TabDefinition> = [
+  const tabDefinitions: TabDefinition[] = [
     {
       name: 'Info',
-      key: 'info',
+      key: 'info' as const,
       content: () =>
         opHandleID ? (
           <SidebarOp
@@ -83,7 +76,7 @@ export const SidebarRoot = (props: SidebarRootProps) => {
     },
     {
       name: 'Types',
-      key: 'types',
+      key: 'types' as const,
       content: () =>
         typeName ? (
           <TypeExplorerContainer
@@ -95,20 +88,21 @@ export const SidebarRoot = (props: SidebarRootProps) => {
           <TypeListContainer repoAddress={repoAddress} explorerPath={explorerPath} />
         ),
     },
-  ];
+    useJobSidebarAlertsTabConfig({repoAddress, jobName: container.name}),
+  ].filter((tab) => tab !== null);
 
   return (
     <>
       <Box padding={{horizontal: 24}} border="bottom">
         <Tabs selectedTabId={activeTab}>
-          {TabDefinitions.map(({name, key}) => (
+          {tabDefinitions.map(({name, key}) => (
             <TabLink id={key} key={key} to={{search: `?tab=${key}`}} title={name} />
           ))}
         </Tabs>
       </Box>
       <RightInfoPanelContent>
         <ErrorBoundary region="tab" resetErrorOnChange={[activeTab, explorerPath]}>
-          {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+          {tabDefinitions.find((t) => t.key === activeTab)?.content()}
         </ErrorBoundary>
       </RightInfoPanelContent>
     </>

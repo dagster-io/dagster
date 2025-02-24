@@ -1,6 +1,6 @@
 type: custom_scope_component@file:component.py
 
-params:
+attributes:
   asset_attributes:
     group_name: "{{ custom_str }}"
     tags: "{{ custom_dict }}"

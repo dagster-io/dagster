@@ -15,7 +15,7 @@ If you want to use Python to add components to your project instead, see "[Addin
 
 :::note Prerequisites
 
-Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components) or [migrate an existing code location to components](/guides/labs/components/incrementally-adopting-components/existing-code-location).
+Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to components](/guides/labs/components/incrementally-adopting-components/existing-project).
 
 :::
 
@@ -24,13 +24,13 @@ Before adding a component with Python, you must either [create a project with co
 You can view the available component types in your environment by running the following command:
 
 ```bash
-dg component-type list
+dg list component-type
 ```
 
 This will display a list of all the component types that are available in your project. To see more information about a specific component type, you can run:
 
 ```bash
-dg component-type docs <component-name>
+dg docs component-type <component-name>
 ```
 
 This will display a webpage containing documentation for the specified component type.
@@ -40,7 +40,7 @@ This will display a webpage containing documentation for the specified component
 Once you've decided on the component type that you'd like to use, you can instantiate it by running:
 
 ```bash
-dg component generate <component-type> <component-name>
+dg scaffold component <component-type> <component-name>
 ```
 
 This will create a new directory inside your `components/` folder that contains a `component.yaml` file. Some component types may also generate additional files as needed.
@@ -52,12 +52,12 @@ This will create a new directory inside your `components/` folder that contains 
 The `component.yaml` is the primary configuration file for a component. It contains two top-level fields:
 
 - `type`: The type of the component defined in this directory
-- `params`: A dictionary of parameters that are specific to this component type. The schema for these parameters is defined by the `get_schema` method on the component class.
+- `attributes`: A dictionary of attributes that are specific to this component type. The schema for these attributes is defined by the `get_schema` method on the component class.
 
 To see a sample `component.yaml` file for your specific component, you can run:
 
 ```bash
-dg component-type docs <component-name>
+dg docs component-type <component-name>
 ```
 
 ### Component templating
@@ -71,7 +71,7 @@ A common use case for templating is to avoid exposing environment variables (par
 ```yaml
 component_type: my_snowflake_component
 
-params:
+attributes:
     account: {{ env('SNOWFLAKE_ACCOUNT') }}
     password: {{ env('SNOWFLAKE_PASSWORD') }}
 ```

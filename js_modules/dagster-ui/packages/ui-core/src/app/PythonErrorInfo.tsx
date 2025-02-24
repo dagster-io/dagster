@@ -1,6 +1,7 @@
-import {Button, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
+import {Box, Button, Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import {Fragment, useRef} from 'react';
 import {PythonErrorInfoHeader} from 'shared/app/PythonErrorInfoHeader.oss';
+import {SummarizeErrorWithAIButton} from 'shared/runs/SummarizeErrorWithAIButton.oss';
 import styled from 'styled-components';
 
 import {showSharedToaster} from './DomUtils';
@@ -43,12 +44,15 @@ export const PythonErrorInfo = (props: IPythonErrorInfoProps) => {
         context
       )}
       <Wrapper ref={wrapperRef}>
-        <CopyErrorButton
-          copy={() => {
-            const text = wrapperRef.current?.innerText || '';
-            copy(text.slice(5)); // Strip the word "Copy"
-          }}
-        />
+        <Box flex={{direction: 'row', gap: 6, alignItems: 'center', justifyContent: 'flex-end'}}>
+          <SummarizeErrorWithAIButton error={props.error} />
+          <CopyErrorButton
+            copy={() => {
+              const text = wrapperRef.current?.innerText || '';
+              copy(text.slice(5)); // Strip the word "Copy"
+            }}
+          />
+        </Box>
         <ErrorHeader>{message}</ErrorHeader>
         {metadataEntries ? (
           <div style={{marginTop: 10, marginBottom: 10}}>
@@ -96,36 +100,21 @@ export const UNAUTHORIZED_ERROR_FRAGMENT = gql`
 
 export const CopyErrorButton = ({copy}: {copy: () => void | string}) => {
   return (
-    <div style={{position: 'relative'}}>
-      <CopyErrorButtonWrapper
-        onClick={async () => {
-          const message = copy();
-          await showSharedToaster({
-            message: message ?? <div>Copied value</div>,
-            intent: 'success',
-          });
-        }}
-      >
-        <Icon name="content_copy" /> Copy
-      </CopyErrorButtonWrapper>
-    </div>
+    <Button
+      outlined
+      onClick={async () => {
+        const message = copy();
+        await showSharedToaster({
+          message: message ?? <div>Copied value</div>,
+          intent: 'success',
+        });
+      }}
+      icon={<Icon name="content_copy" />}
+    >
+      Copy
+    </Button>
   );
 };
-
-const CopyErrorButtonWrapper = styled.button`
-  position: absolute;
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  top: 0px;
-  right: -8px;
-  border: 1px solid ${Colors.keylineDefault()};
-  background: transparent;
-  cursor: pointer;
-  border: none;
-  box-shadow: none;
-  outline: none;
-`;
 
 const ContextHeader = styled.h4`
   font-weight: 400;
@@ -161,13 +150,6 @@ export const ErrorWrapper = styled.div`
   max-height: calc(100vh - 250px);
   padding: 1em 2em;
   overflow: auto;
-
-  ${CopyErrorButtonWrapper} {
-    display: none;
-  }
-  &:hover ${CopyErrorButtonWrapper} {
-    display: flex;
-  }
 `;
 
 export const ErrorWrapperCentered = styled(ErrorWrapper)`

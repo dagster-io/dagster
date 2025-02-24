@@ -1,8 +1,6 @@
 # type: ignore
 # start_ex
-from datetime import datetime, timedelta
 
-from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
