@@ -24,9 +24,7 @@ from dagster_dg.utils import DgClickCommand, exit_with_error
     ),
 )
 @dg_global_options
-@click.pass_context
 def init_command(
-    context: click.Context,
     use_editable_dagster: Optional[str],
     **global_options: object,
 ):
@@ -43,7 +41,7 @@ def init_command(
     │   └── pyproject.toml
 
     """  # noqa: D301
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     workspace_path = Path.cwd() / "workspace"
 
