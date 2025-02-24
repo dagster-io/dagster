@@ -1,11 +1,12 @@
 import json
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 from dagster._core.test_utils import new_cwd
 from dagster_components.cli import cli
 from dagster_components.utils import ensure_dagster_components_tests_import
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, ValidationError
 
 ensure_dagster_components_tests_import()
 
@@ -197,6 +198,14 @@ def test_all_components_schema_command():
             "attributes": {"asset_key": "my_asset", "value": "my_value"},
         }
     )
+    with pytest.raises(ValidationError):
+        top_level_component_validator.validate(
+            {
+                "type": "simple_asset@dagster_components.test",
+                "attributes": {"asset_key": "my_asset", "value": "my_value"},
+                "extra_key": "extra_value",
+            }
+        )
 
 
 def test_scaffold_component_command():
