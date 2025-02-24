@@ -1,7 +1,0 @@
-version = 1
-requires-python = ">=3.9, <3.13"
-
-[[package]]
-name = "custom-sling-location"
-version = "0.1.0"
-source = { editable = "." }
