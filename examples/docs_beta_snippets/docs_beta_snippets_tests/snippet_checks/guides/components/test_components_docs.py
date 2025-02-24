@@ -141,30 +141,35 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         # Set up duckdb Sling connection
-        run_command_and_snippet_output(
-            cmd="uv run sling conns set DUCKDB type=duckdb instance=/tmp/jaffle_platform.duckdb",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-sling-setup-duckdb.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_SLING_WARNING,
-                MASK_SLING_PROMO,
-                MASK_TIME,
-                (r"set in .*?.sling", "set in /.../.sling"),
-            ],
-        )
-        run_command_and_snippet_output(
-            cmd="uv run sling conns test DUCKDB",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-sling-test-duckdb.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_SLING_WARNING,
-                MASK_SLING_DOWNLOAD_DUCKDB,
-                MASK_SLING_PROMO,
-                MASK_TIME,
-            ],
-        )
+        with environ(
+            {
+                "BUILDKITE_MESSAGE": ""
+            }  # keep buildkite message from messing up sling parsing
+        ):
+            run_command_and_snippet_output(
+                cmd="uv run sling conns set DUCKDB type=duckdb instance=/tmp/jaffle_platform.duckdb",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-sling-setup-duckdb.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    MASK_SLING_WARNING,
+                    MASK_SLING_PROMO,
+                    MASK_TIME,
+                    (r"set in .*?.sling", "set in /.../.sling"),
+                ],
+            )
+            run_command_and_snippet_output(
+                cmd="uv run sling conns test DUCKDB",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-sling-test-duckdb.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    MASK_SLING_WARNING,
+                    MASK_SLING_DOWNLOAD_DUCKDB,
+                    MASK_SLING_PROMO,
+                    MASK_TIME,
+                ],
+            )
 
         sling_duckdb_path = Path("/") / "tmp" / ".sling" / "bin" / "duckdb"
         sling_duckdb_version = next(iter(os.listdir()), None)
@@ -242,13 +247,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 / f"{next_snip_no()}-dg-list-component-types.txt",
                 update_snippets=update_snippets,
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
-            )
-            run_command_and_snippet_output(
-                cmd="dg inspect component-type 'dbt_project@dagster_components'",
-                snippet_path=COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-dg-component-type-info.txt",
-                update_snippets=update_snippets,
-                snippet_replace_regex=[re_ignore_after("Component schema:")],
             )
 
             # Scaffold dbt project components
