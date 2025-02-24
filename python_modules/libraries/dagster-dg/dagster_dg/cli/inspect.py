@@ -34,9 +34,7 @@ def inspect_group():
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-schema", is_flag=True, default=False)
 @dg_global_options
-@click.pass_context
 def component_type_inspect_command(
-    context: click.Context,
     component_type: str,
     description: bool,
     scaffold_params_schema: bool,
@@ -44,7 +42,7 @@ def component_type_inspect_command(
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     component_key = GlobalComponentKey.from_typename(component_type)

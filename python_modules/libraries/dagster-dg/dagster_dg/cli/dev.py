@@ -70,9 +70,7 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     required=False,
 )
 @dg_global_options
-@click.pass_context
 def dev_command(
-    context: click.Context,
     code_server_log_level: str,
     log_level: str,
     log_format: str,
@@ -86,7 +84,7 @@ def dev_command(
     If run inside a workspace directory, this command will launch all projects in the
     workspace. If launched inside a project directory, it will launch only that project.
     """
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
     forward_options = [

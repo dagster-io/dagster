@@ -24,16 +24,14 @@ def utils_group():
 @utils_group.command(name="configure-editor", cls=DgClickCommand)
 @dg_global_options
 @click.argument("editor", type=click.Choice(["vscode", "cursor"]))
-@click.pass_context
 def configure_editor_command(
-    context: click.Context,
     editor: str,
     **global_options: object,
 ) -> None:
     """Generates and installs a VS Code or Cursor extension which provides JSON schemas for Components types specified by YamlComponentsLoader objects."""
     executable_name = "code" if editor == "vscode" else "cursor"
 
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     recommend_yaml_extension(executable_name)

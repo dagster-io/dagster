@@ -63,15 +63,14 @@ def create_dg_cli():
         default=False,
     )
     @click.version_option(__version__, "--version", "-v")
-    @click.pass_context
     def group(
-        context: click.Context,
         install_completion: bool,
         clear_cache: bool,
         rebuild_component_registry: bool,
         **global_options: object,
     ):
         """CLI for working with Dagster components."""
+        context = click.get_current_context()
         if install_completion:
             import dagster_dg.completion
 

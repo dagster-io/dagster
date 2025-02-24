@@ -67,9 +67,7 @@ class ErrorInput(NamedTuple):
 @check_group.command(name="yaml", cls=DgClickCommand)
 @click.argument("paths", nargs=-1, type=click.Path(exists=True))
 @dg_global_options
-@click.pass_context
 def check_yaml_command(
-    context: click.Context,
     paths: Sequence[str],
     **global_options: object,
 ) -> None:
@@ -77,7 +75,7 @@ def check_yaml_command(
     resolved_paths = [Path(path).absolute() for path in paths]
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     validation_errors: list[ErrorInput] = []
@@ -162,7 +160,7 @@ def check_yaml_command(
                     prefix=["attributes"] if component_key else [],
                 )
             )
-        context.exit(1)
+        click.get_current_context().exit(1)
     else:
         click.echo("All components validated successfully.")
 
