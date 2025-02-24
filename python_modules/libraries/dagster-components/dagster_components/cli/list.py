@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Literal, Union
 
 import click
-from pydantic import TypeAdapter, create_model
+from pydantic import ConfigDict, TypeAdapter, create_model
 
 from dagster_components.core.component import (
     ComponentTypeMetadata,
@@ -75,7 +75,10 @@ def list_all_components_schema_command(ctx: click.Context) -> None:
         if schema_type:
             schemas.append(
                 create_model(
-                    key.name, type=(Literal[key_string], key_string), attributes=(schema_type, None)
+                    key.name,
+                    type=(Literal[key_string], key_string),
+                    attributes=(schema_type, None),
+                    __config__=ConfigDict(extra="forbid"),
                 )
             )
     union_type = Union[tuple(schemas)]  # type: ignore
