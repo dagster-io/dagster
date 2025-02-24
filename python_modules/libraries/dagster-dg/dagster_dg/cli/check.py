@@ -204,7 +204,7 @@ def check_definitions_command(
 
     """
     cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_deployment_or_code_location_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
     forward_options = [
         *format_forwarded_option("--log-level", log_level),
@@ -213,7 +213,7 @@ def check_definitions_command(
 
     # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
     # code location's environment.
-    if dg_context.is_code_location:
+    if dg_context.is_project:
         cmd = ["uv", "run", "dagster", "definitions", "validate", *forward_options]
         cmd_location = dg_context.get_executable("dagster")
         temp_workspace_file_cm = nullcontext()
@@ -222,7 +222,7 @@ def check_definitions_command(
     # workspace file that points at all defined code locations and invoke:
     #
     #     uv tool run --with dagster-webserver dagster definitions validate
-    elif dg_context.is_deployment:
+    elif dg_context.is_workspace:
         cmd = [
             "uv",
             "tool",
