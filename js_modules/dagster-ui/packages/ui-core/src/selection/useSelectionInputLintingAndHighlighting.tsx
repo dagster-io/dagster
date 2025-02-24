@@ -50,7 +50,7 @@ export const useSelectionInputLintingAndHighlighting = ({
   const errorRef = useUpdatingRef(error);
 
   useLayoutEffect(() => {
-    document.body.addEventListener('mousemove', (ev) => {
+    const listener = (ev: MouseEvent) => {
       if (!(ev.target instanceof HTMLElement)) {
         return;
       }
@@ -71,7 +71,11 @@ export const useSelectionInputLintingAndHighlighting = ({
       if (errorRef.current) {
         setError(null);
       }
-    });
+    };
+    document.body.addEventListener('mousemove', listener);
+    return () => {
+      document.body.removeEventListener('mousemove', listener);
+    };
   }, [cmInstance, errorsRef, errorRef]);
 
   const message = useMemo(() => {
