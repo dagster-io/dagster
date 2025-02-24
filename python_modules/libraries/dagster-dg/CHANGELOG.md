@@ -2,7 +2,7 @@
 
 ## 0.1.17
 
-- `dg component-type docs` now provides detailed information on component schema.
+- `dg docs component-type ` now provides detailed information on component schema.
 - `dg check definitions` is now available, which functions similarly to `dagster definitions validate`. When run at the project level, it will ensure all definitions load properly. When run at the workspace level, it will do so for all projects.
 
 ## 0.1.16
