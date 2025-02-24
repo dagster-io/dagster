@@ -3,12 +3,11 @@ import pickle
 
 import dagster._check as check
 import pytest
-from dagster import DependencyDefinition, In, Int, Out, op
+from dagster import DependencyDefinition, In, Int, Out, job, op, reconstructable
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.errors import (
     DagsterExecutionStepNotFoundError,
     DagsterInvariantViolationError,
@@ -23,6 +22,7 @@ from dagster._core.execution.api import (
 )
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance_for_test import instance_for_test
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
 
@@ -261,3 +261,48 @@ def test_job_step_key_subset_execution():
                 run_config=run_config,
                 instance=instance,
             )
+
+
+def define_pool_job() -> JobDefinition:
+    @op(pool="upstream_pool")
+    def upstream():
+        return 1
+
+    @op(pool="downstream_pool")
+    def downstream(inp):
+        return inp
+
+    @job
+    def pool_job():
+        downstream(upstream())
+
+    return pool_job
+
+
+def test_pool_reexecution():
+    with instance_for_test() as instance:
+        # initial execution
+        with execute_job(reconstructable(define_pool_job), instance=instance) as result:
+            parent_run = result.dagster_run
+            assert parent_run.run_op_concurrency
+            assert parent_run.run_op_concurrency.all_pools == {
+                "upstream_pool",
+                "downstream_pool",
+            }
+            assert parent_run.run_op_concurrency.root_key_counts == {"upstream_pool": 1}
+            assert parent_run.status == DagsterRunStatus.SUCCESS
+
+        # retry execution
+        with execute_job(
+            reconstructable(define_pool_job),
+            instance=instance,
+            reexecution_options=ReexecutionOptions(
+                parent_run_id=parent_run.run_id,
+                step_selection=["downstream"],
+            ),
+        ) as result:
+            retry_run = result.dagster_run
+            assert retry_run.run_op_concurrency
+            assert retry_run.run_op_concurrency.all_pools == {"downstream_pool"}
+            assert retry_run.run_op_concurrency.root_key_counts == {"downstream_pool": 1}
+            assert retry_run.status == DagsterRunStatus.SUCCESS
