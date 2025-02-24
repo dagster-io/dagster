@@ -29,6 +29,38 @@ from dagster_dg_tests.utils import (
     standardize_box_characters,
 )
 
+
+# ########################
+# ##### WORKSPACE
+# ########################
+def test_scaffold_workspace_command_success(monkeypatch) -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("scaffold", "workspace")
+        assert_runner_result(result)
+        assert Path("dagster-workspace").exists()
+        assert Path("dagster-workspace/pyproject.toml").exists()
+        assert Path("dagster-workspace/projects").exists()
+        assert Path("dagster-workspace/libraries").exists()
+
+        result = runner.invoke("scaffold", "workspace")
+        assert_runner_result(result, exit_0=False)
+        assert "already exists" in result.output
+
+
+def test_scaffold_workspace_command_name_override_success(monkeypatch) -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("scaffold", "workspace", "my-workspace")
+        assert_runner_result(result)
+        assert Path("my-workspace").exists()
+        assert Path("my-workspace/pyproject.toml").exists()
+        assert Path("my-workspace/projects").exists()
+        assert Path("my-workspace/libraries").exists()
+
+        result = runner.invoke("scaffold", "workspace", "my-workspace")
+        assert_runner_result(result, exit_0=False)
+        assert "already exists" in result.output
+
+
 # ########################
 # ##### PROJECT
 # ########################

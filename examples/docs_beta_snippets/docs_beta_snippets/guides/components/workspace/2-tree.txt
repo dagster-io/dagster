@@ -1,4 +1,4 @@
-cd workspace && tree
+cd dagster-workspace && tree
 
 .
 ├── libraries

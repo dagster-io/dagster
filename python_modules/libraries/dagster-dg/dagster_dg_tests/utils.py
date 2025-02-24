@@ -62,8 +62,8 @@ def isolated_example_workspace(
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
-        runner.invoke("init", input=f" {project_name or ''}\n")
-        with pushd("workspace"):
+        runner.invoke("init", input=f"\n{project_name or ''}\n")
+        with pushd("dagster-workspace"):
             # Create a venv capable of running dagster dev
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)

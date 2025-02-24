@@ -1,9 +1,9 @@
-from pathlib import Path
 from typing import Optional
 
 import click
 
 from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.scaffold import DEFAULT_WORKSPACE_NAME
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_project, scaffold_workspace
@@ -33,7 +33,7 @@ def init_command(
     The scaffolded workspace folder has the following structure:
 
     \b
-    ├── workspace
+    ├── dagster-workspace
     │   ├── projects
     |   |   └── <Dagster projects go here>
     |   ├── libraries
@@ -43,15 +43,13 @@ def init_command(
     """  # noqa: D301
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    workspace_path = Path.cwd() / "workspace"
+    workspace_name = click.prompt(
+        "Enter the name of your Dagster workspace",
+        type=str,
+        default=DEFAULT_WORKSPACE_NAME,
+    ).strip()
 
-    # Check if workspace folder already exists
-    if workspace_path.exists():
-        exit_with_error(
-            f"Workspace directory already exists at {workspace_path}. Run `dg scaffold project` to add a new project to the workspace."
-        )
-
-    scaffold_workspace(workspace_path)
+    workspace_path = scaffold_workspace(workspace_name)
     workspace_dg_context = DgContext.from_config_file_discovery_and_cli_config(
         workspace_path, cli_config
     )
@@ -59,6 +57,8 @@ def init_command(
     project_name = click.prompt(
         "Enter the name of your first Dagster project (or press Enter to continue without creating a project)",
         type=str,
+        default="",
+        show_default=False,
     ).strip()
 
     if not project_name:

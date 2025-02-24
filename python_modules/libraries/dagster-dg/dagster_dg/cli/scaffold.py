@@ -21,6 +21,7 @@ from dagster_dg.scaffold import (
     scaffold_component_instance,
     scaffold_component_type,
     scaffold_project,
+    scaffold_workspace,
 )
 from dagster_dg.utils import (
     DgClickCommand,
@@ -32,10 +33,40 @@ from dagster_dg.utils import (
     parse_json_option,
 )
 
+DEFAULT_WORKSPACE_NAME = "dagster-workspace"
+
 
 @click.group(name="scaffold", cls=DgClickGroup)
 def scaffold_group():
     """Commands for scaffolding Dagster code."""
+
+
+# ########################
+# ##### WORKSPACE
+# ########################
+
+
+@scaffold_group.command(name="workspace", cls=DgClickCommand)
+@click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
+@dg_global_options
+def workspace_scaffold_command(
+    name: str,
+    **global_options: object,
+):
+    """Initialize a new Dagster workspace.
+
+    The scaffolded workspace folder has the following structure:
+
+    \b
+    ├── dagster-workspace
+    │   ├── projects
+    |   |   └── <Dagster projects go here>
+    |   ├── libraries
+    |   |   └── <Shared packages go here>
+    │   └── pyproject.toml
+
+    """  # noqa: D301
+    scaffold_workspace(name)
 
 
 # ########################

@@ -1,6 +1,6 @@
 dg list component-type
 
-Using /.../workspace/projects/project-1/.venv/bin/dagster-components
+Using /.../dagster-workspace/projects/project-1/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Component Type                                        ┃ Summary                        ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩

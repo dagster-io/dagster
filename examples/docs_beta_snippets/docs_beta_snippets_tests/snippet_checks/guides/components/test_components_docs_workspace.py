@@ -25,14 +25,14 @@ COMPONENTS_SNIPPETS_DIR = (
     / "components"
     / "workspace"
 )
-MASK_MY_WORKSPACE = (r"\/.*?\/workspace", "/.../workspace")
+MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
 
 
 def test_components_docs_workspace(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold workspace
         run_command_and_snippet_output(
-            cmd='echo "project-1\n" | dg init --use-editable-dagster',
+            cmd='echo "\nproject-1\n" | dg init --use-editable-dagster',
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-init.txt",
             update_snippets=update_snippets,
@@ -45,6 +45,10 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
                     r"\(or press Enter to continue without creating a project\): ",
                     "(or press Enter to continue without creating a project): project-1\n",
                 ),
+                (
+                    r"\[dagster-workspace\]: ",
+                    "[dagster-workspace]: \n",  # add newline
+                ),
             ],
             print_cmd="dg init",
         )
@@ -54,7 +58,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
         _run_command(r"find . -type d -name project_1.egg-info -exec rm -r {} \+")
 
         run_command_and_snippet_output(
-            cmd="cd workspace && tree",
+            cmd="cd dagster-workspace && tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
             update_snippets=update_snippets,
             # Remove --sort size from tree output, sadly OSX and Linux tree

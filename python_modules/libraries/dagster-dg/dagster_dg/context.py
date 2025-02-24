@@ -107,13 +107,15 @@ class DgContext:
         return context
 
     @classmethod
+    def discover_workspace_path(cls, path: Path) -> Optional[Path]:
+        return DgConfig.discover_config_file(path, lambda x: bool(x.get("is_workspace")))
+
+    @classmethod
     def from_config_file_discovery_and_cli_config(
         cls, path: Path, cli_config: DgPartialConfig
     ) -> Self:
         config_path = DgConfig.discover_config_file(path)
-        workspace_config_path = DgConfig.discover_config_file(
-            path, lambda x: bool(x.get("is_workspace"))
-        )
+        workspace_config_path = DgContext.discover_workspace_path(path)
 
         # Build the config in the following order: defaults, workspace, project, CLI
         config = DgConfig.default()
