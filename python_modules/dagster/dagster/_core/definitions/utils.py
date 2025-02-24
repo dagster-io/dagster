@@ -150,11 +150,15 @@ def struct_to_string(name: str, **kwargs: object) -> str:
 
 
 def validate_asset_owner(owner: str, key: "AssetKey") -> None:
-    if not is_valid_email(owner) and not (owner.startswith("team:") and len(owner) > 5):
+    if not is_valid_asset_owner(owner):
         raise DagsterInvalidDefinitionError(
             f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
         )
+
+
+def is_valid_asset_owner(owner: str) -> bool:
+    return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
 
 
 def validate_group_name(group_name: Optional[str]) -> None:
