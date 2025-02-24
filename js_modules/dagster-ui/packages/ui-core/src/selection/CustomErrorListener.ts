@@ -1,26 +1,16 @@
-import {ANTLRErrorListener, Parser, RecognitionException, Recognizer} from 'antlr4ts';
+import {ANTLRErrorListener, RecognitionException, Recognizer} from 'antlr4ts';
 
 export type SyntaxError = {
   message: string;
   from: number;
   to: number;
-} & (
-  | {
-      mismatchedInput?: undefined;
-      expectedInput?: undefined;
-    }
-  | {
-      mismatchedInput: string;
-      expectedInput: string[];
-    }
-);
+  offendingSymbol?: string | null | undefined;
+};
 
 export class CustomErrorListener implements ANTLRErrorListener<any> {
   private errors: SyntaxError[];
-  private parser: Parser | undefined;
 
-  constructor({parser}: {parser?: Parser}) {
-    this.parser = parser;
+  constructor() {
     this.errors = [];
   }
 
@@ -32,23 +22,11 @@ export class CustomErrorListener implements ANTLRErrorListener<any> {
     msg: string,
     _e: RecognitionException | undefined,
   ): void {
-    const expectedTokens = this.parser?.getExpectedTokens()?.toArray();
-    const message = msg;
-    let mismatchedInput;
-    let expectedInput;
-    if (this.parser && expectedTokens?.length && expectedTokens[0] !== -1 && offendingSymbol) {
-      mismatchedInput = offendingSymbol.text;
-      expectedInput = expectedTokens
-        .map((token) => this.parser?.vocabulary.getLiteralName(token))
-        .filter(Boolean) as string[];
-    }
-
     this.errors.push({
-      message,
+      message: msg,
+      offendingSymbol: offendingSymbol?.text,
       from: charPositionInLine,
       to: charPositionInLine + (offendingSymbol?.text?.length ?? Infinity),
-      mismatchedInput,
-      expectedInput,
     });
   }
 

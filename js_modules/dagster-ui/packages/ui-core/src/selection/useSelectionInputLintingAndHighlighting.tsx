@@ -3,6 +3,7 @@ import {
   Box,
   Colors,
   Icon,
+  MiddleTruncate,
   MonoSmall,
   PopoverContentStyle,
   PopoverWrapperStyle,
@@ -82,20 +83,17 @@ export const useSelectionInputLintingAndHighlighting = ({
     if (!error) {
       return null;
     }
-    if (error.error.mismatchedInput && error.error.expectedInput) {
+    if (error.error.offendingSymbol) {
       return (
-        <Box>
-          Mismatched input{' '}
-          <MonoSmall color={Colors.textRed()}>&apos;{error.error.mismatchedInput}&apos;</MonoSmall>.
-          Expected{' '}
-          {error.error.expectedInput.map((expectedInput, idx) => (
-            <>
-              {idx > 0 && ', '}
-              <MonoSmall key={expectedInput} color={Colors.textBlue()}>
-                {expectedInput}
-              </MonoSmall>
-            </>
-          ))}
+        <Box flex={{direction: 'row', alignItems: 'center'}}>
+          Unexpected input
+          <div style={{width: 4}} />
+          <MonoSmall color={Colors.textRed()}>
+            <div style={{maxWidth: 200}}>
+              <MiddleTruncate text={error.error.offendingSymbol} />
+            </div>
+          </MonoSmall>
+          .
         </Box>
       );
     }
@@ -129,7 +127,6 @@ const PortalElement = styled.div<{$bottom: number; $left: number}>`
   position: absolute;
   top: ${({$bottom}) => $bottom - 32}px;
   left: ${({$left}) => $left + 16}px;
-  min-width: 320px;
   max-width: 600px;
   z-index: 20; // Z-index 20 to match bp5-overlay
   ${PopoverWrapperStyle}
