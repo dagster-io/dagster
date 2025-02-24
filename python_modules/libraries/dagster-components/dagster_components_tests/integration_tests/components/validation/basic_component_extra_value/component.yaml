@@ -1,4 +1,4 @@
-type: my_component@file:__init__.py
+type: dagster_components.test.basic_components.MyComponent
 
 attributes:
   a_string: "a string"
