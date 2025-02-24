@@ -105,7 +105,9 @@ def fivetran_assets(
 
     """
     dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
-    connection_selector_fn = connection_selector_fn or (lambda connection: connection.id == connector_id)
+    connection_selector_fn = connection_selector_fn or (
+        lambda connection: connection.id == connector_id
+    )
 
     return multi_asset(
         name=name,
