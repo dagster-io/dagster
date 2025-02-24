@@ -42,7 +42,7 @@ export const parseInput = memoize((input: string): ParseResult => {
     const parser = new SelectionAutoCompleteParser(tokenStream);
 
     // Attach custom error listener
-    const errorListener = new CustomErrorListener({parser});
+    const errorListener = new CustomErrorListener();
     parser.removeErrorListeners();
 
     // Set the error handler to bail on error to prevent infinite loops

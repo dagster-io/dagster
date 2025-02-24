@@ -33,7 +33,7 @@ export function createSelectionLinter({
     const tokens = new CommonTokenStream(lexer);
     const parser = new ParserKlass(tokens);
 
-    const errorListener = new CustomErrorListener({parser});
+    const errorListener = new CustomErrorListener();
 
     lexer.removeErrorListeners();
     lexer.addErrorListener(errorListener);
