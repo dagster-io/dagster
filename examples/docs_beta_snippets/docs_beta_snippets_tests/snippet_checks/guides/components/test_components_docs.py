@@ -1,10 +1,6 @@
 import os
-import re
-import subprocess
+import textwrap
 from pathlib import Path
-from tempfile import TemporaryDirectory
-
-import pytest
 
 from dagster._utils.env import environ
 from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
@@ -16,6 +12,8 @@ from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
     MASK_SLING_PROMO,
     MASK_SLING_WARNING,
     MASK_TIME,
+    format_multiline,
+    isolated_snippet_generation_environment,
 )
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
@@ -46,20 +44,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         snip_no += 1
         return snip_no
 
-    with (
-        TemporaryDirectory() as tempdir,
-        environ(
-            {
-                "COLUMNS": "90",
-                "NO_COLOR": "1",
-                "HOME": "/tmp",
-                "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
-                "VIRTUAL_ENV": "",
-            }
-        ),
-    ):
-        os.chdir(tempdir)
-
+    with isolated_snippet_generation_environment():
         run_command_and_snippet_output(
             cmd="dg --help",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-help.txt",
@@ -192,9 +177,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
         ):
             # Test sling sync
             run_command_and_snippet_output(
-                cmd="""curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
-curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
-curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv""",
+                cmd=textwrap.dedent("""
+                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
+                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
+                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv
+                """).strip(),
                 snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-curl.txt",
                 update_snippets=update_snippets,
                 ignore_output=True,
@@ -206,21 +193,24 @@ curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/head
                 / "replication.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-replication.yaml",
-                contents="""source: LOCAL
-target: DUCKDB
+                contents=textwrap.dedent(
+                    """
+                    source: LOCAL
+                    target: DUCKDB
 
-defaults:
-  mode: full-refresh
-  object: "{stream_table}"
+                    defaults:
+                      mode: full-refresh
+                      object: "{stream_table}"
 
-streams:
-  file://raw_customers.csv:
-    object: "main.raw_customers"
-  file://raw_orders.csv:
-    object: "main.raw_orders"
-  file://raw_payments.csv:
-    object: "main.raw_payments"
-    """,
+                    streams:
+                      file://raw_customers.csv:
+                        object: "main.raw_customers"
+                      file://raw_orders.csv:
+                        object: "main.raw_orders"
+                      file://raw_payments.csv:
+                        object: "main.raw_payments"
+                """,
+                ).strip(),
             )
             _run_command(
                 "dagster asset materialize --select '*' -m jaffle_platform.definitions"
@@ -231,7 +221,7 @@ streams:
                 / f"{next_snip_no()}-duckdb-select.txt",
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
-                    (r"\d\d\d\d\d\d\d\d\d\d │\n", "...        | \n")
+                    (r"\d\d\d\d\d\d\d\d\d\d │\n", "...        | \n"),
                 ],
             )
 
@@ -280,14 +270,15 @@ streams:
                 Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
-                contents="""type: dagster_components.dbt_project
+                contents=format_multiline("""
+                    type: dagster_components.dbt_project
 
-attributes:
-  dbt:
-    project_dir: ../../../dbt/jdbt
-  asset_attributes:
-    key: "target/main/{{ node.name }}
-""",
+                    attributes:
+                      dbt:
+                        project_dir: ../../../dbt/jdbt
+                      asset_attributes:
+                        key: "target/main/{{ node.name }}
+                """),
             )
             run_command_and_snippet_output(
                 cmd="dg check yaml",
@@ -304,14 +295,15 @@ attributes:
                 Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
-                contents="""type: dbt_project@dagster_components
+                contents=format_multiline("""
+                    type: dbt_project@dagster_components
 
-attributes:
-  dbt:
-    project_dir: ../../../dbt/jdbt
-  asset_attributes:
-    key: "target/main/{{ node.name }}"
-""",
+                    attributes:
+                      dbt:
+                        project_dir: ../../../dbt/jdbt
+                      asset_attributes:
+                        key: "target/main/{{ node.name }}"
+                """),
             )
             run_command_and_snippet_output(
                 cmd="dg check yaml",

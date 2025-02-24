@@ -254,8 +254,10 @@ def run_command_and_snippet_output(
         snippet_path (Optional[Path]): The path to the snippet file to check/update.
         update_snippets (Optional[bool]): Whether to update the snippet file with the output.
         snippet_replace_regex (Optional[Sequence[tuple[str, str]]]): A list of regex
-            substitution pairs to apply to the output before checking it against the snippet.
-            Useful to remove dynamic content, e.g. the temporary directory path or timestamps.
+            substitution pairs to apply to the generated snippet file before checking it against the
+            existing version. Note these will apply to both the command and the output of the
+            command. Useful to remove dynamic content, e.g. the temporary directory path or
+            timestamps.
         custom_comparison_fn (Optional[Callable]): A function that takes the output of the
             command and the snippet contents and returns whether they match. Useful for some
             commands (e.g. tree) where the output is frustratingly platform-dependent.
