@@ -279,8 +279,8 @@ def markdown_for_json_schema(
 
 
 def markdown_for_param_types(remote_component_type: RemoteComponentType) -> str:
-    schema = remote_component_type.component_params_schema or {}
-    return f"<ul>{markdown_for_json_schema('params', schema, schema)}</ul>"
+    schema = remote_component_type.component_schema or {}
+    return f"<ul>{markdown_for_json_schema('attributes', schema, schema)}</ul>"
 
 
 def markdown_for_component_type(remote_component_type: RemoteComponentType) -> str:
@@ -295,11 +295,11 @@ def markdown_for_component_type(remote_component_type: RemoteComponentType) -> s
 ### Description:
 {remote_component_type.description}
 
-### Component Params Schema:
+### Component Schema:
 
 {markdown_for_param_types(remote_component_type)}
 
-### Sample Component Params:
+### Sample Component YAML:
 
 <textarea rows={rows} cols=100>
 {sample_yaml}
