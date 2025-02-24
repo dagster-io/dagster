@@ -48,6 +48,7 @@ def test_all_packages_have_py_typed():
                 "dagster-test",
                 "kitchen-sink",  # in dagster-airlift
                 "perf-harness",  # in dagster-airlift
+                "sphinx-click",  # Sphinx build _ext brought in-house
             ]
 
             # Published packages are additionally required to include py.typed in MANIFEST.in to ensure
