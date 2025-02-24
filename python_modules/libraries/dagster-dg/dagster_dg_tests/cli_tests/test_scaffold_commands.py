@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -524,17 +525,22 @@ def test_scaffold_component_type_succeeds_non_default_component_lib_package() ->
         assert registry.has_global(GlobalComponentKey(name="baz", namespace="foo_bar"))
 
 
-def test_scaffold_component_type_fails_components_lib_package_does_not_exist() -> None:
+def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_component_library_foo_bar(runner),
+        isolated_example_component_library_foo_bar(runner, lib_package_name="foo_bar.fake"),
     ):
-        with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "component_lib_package"), "foo_bar._lib")
+        # Delete the entry point module
+        shutil.rmtree("foo_bar/fake")
+
+        # An entry point load error will occur before we even get to component type scaffolding
+        # code, because the entry points are loaded first.
         result = runner.invoke(
             "scaffold",
             "component-type",
             "baz",
         )
         assert_runner_result(result, exit_0=False)
-        assert "Components lib package `foo_bar._lib` is not installed" in str(result.exception)
+
+        captured = capfd.readouterr()
+        assert "Error loading entry point `foo_bar` in group `dagster.components`." in captured.err

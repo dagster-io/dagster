@@ -4,7 +4,10 @@ from pathlib import Path
 import click
 import pytest
 from dagster_dg.cli import cli
-from dagster_dg.utils import get_venv_executable, resolve_local_venv
+from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable, resolve_local_venv
+
+ensure_dagster_dg_tests_import()
+
 from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_components_venv
 
 # The tests in this file are designed to check error messages for basic precondition checks for
