@@ -23,6 +23,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/fivetran/customize_fivetran_translator_asset_spec.py",
     f"{snippets_folder}/fivetran/multiple_fivetran_workspaces.py",
     f"{snippets_folder}/fivetran/representing_fivetran_assets.py",
+    f"{snippets_folder}/fivetran/select_fivetran_connections.py",
     f"{snippets_folder}/fivetran/sync_and_materialize_fivetran_assets.py",
     f"{snippets_folder}/fivetran/fetch_column_metadata_fivetran_assets.py",
     f"{snippets_folder}/airbyte_cloud/customize_airbyte_cloud_asset_defs.py",
