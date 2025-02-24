@@ -34,7 +34,7 @@ from dagster._utils.log import get_dagster_logger
 from dagster_fivetran.asset_decorator import fivetran_assets
 from dagster_fivetran.resources import (
     DEFAULT_POLL_INTERVAL,
-    FivetranFilterFn,
+    ConnectionSelectorFn,
     FivetranResource,
     FivetranWorkspace,
 )
@@ -738,7 +738,7 @@ def build_fivetran_assets_definitions(
     *,
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-    fivetran_filter_fn: Optional[FivetranFilterFn] = None,
+    connection_selector_fn: Optional[ConnectionSelectorFn] = None,
 ) -> Sequence[AssetsDefinition]:
     """The list of AssetsDefinition for all connectors in the Fivetran workspace.
 
@@ -747,8 +747,8 @@ def build_fivetran_assets_definitions(
         dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
-        fivetran_filter_fn (Optional[FivetranFilterFn]):
-                A function that allows for filtering which Fivetran connector assets are created for.
+        connection_selector_fn (Optional[ConnectionSelectorFn]):
+                A function that allows for filtering which Fivetran connection assets are created for.
 
     Returns:
         List[AssetsDefinition]: The list of AssetsDefinition for all connectors in the Fivetran workspace.
@@ -815,11 +815,11 @@ def build_fivetran_assets_definitions(
 
     """
     dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
-    fivetran_filter_fn = fivetran_filter_fn or (lambda connector: connector)
+    connection_selector_fn = connection_selector_fn or (lambda connection: connection)
 
     all_asset_specs = workspace.load_asset_specs(
         dagster_fivetran_translator=dagster_fivetran_translator,
-        fivetran_filter_fn=fivetran_filter_fn,
+        connection_selector_fn=connection_selector_fn,
     )
 
     connector_ids = {
@@ -836,7 +836,7 @@ def build_fivetran_assets_definitions(
             name=connector_id,
             group_name=connector_id,
             dagster_fivetran_translator=dagster_fivetran_translator,
-            fivetran_filter_fn=fivetran_filter_fn,
+            connection_selector_fn=connection_selector_fn,
         )
         def _asset_fn(context: AssetExecutionContext, fivetran: FivetranWorkspace):
             yield from fivetran.sync_and_poll(context=context)

@@ -66,11 +66,11 @@ def test_fivetran_filter(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    fivetran_filter_fn = (
+    connection_selector_fn = (
         (lambda connector: getattr(connector, attribute) == value) if attribute else None
     )
     actual_workspace_data = resource.fetch_fivetran_workspace_data(
-        fivetran_filter_fn=fivetran_filter_fn
+        connection_selector_fn=connection_selector_fn
     )
     assert len(actual_workspace_data.connectors_by_id) == expected_result
 
