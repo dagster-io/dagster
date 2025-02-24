@@ -229,6 +229,9 @@ def markdown_for_json_schema(
     anyof_parent_subschema: Optional[Mapping[str, Any]] = None,
     indent: int = 0,
 ) -> str:
+    """Produces a nested markdown list of the subschema, including component-author-provided description and examples.
+    Uses <details> blocks to collapse nested fields by default.
+    """
     subschema = _dereference_schema(json_schema, subschema)
 
     if "anyOf" in subschema:
@@ -273,7 +276,7 @@ def markdown_for_json_schema(
     body = "<br/>".join(x for x in [description, examples_segment, children_segment] if x)
     body = textwrap.indent("<br/>" + body + "", prefix="  ") if body else ""
 
-    output = f"""<li><strong>{key}</strong>{body}</li>\n"""
+    output = f"""<li><strong>{key}</strong> ({subschema["type"]}){body}</li>\n"""
     # indent the output with textwrap
     return textwrap.indent(output, " " * indent)
 

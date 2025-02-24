@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.17
+
+- `dg component-type docs` now provides detailed information on component schema.
+- `dg check definitions` is now available, which functions similarly to `dagster definitions validate`. When run at the project level, it will ensure all definitions load properly. When run at the workspace level, it will do so for all projects.
+
 ## 0.1.16
 
 - The entire dg CLI has been changed from noun-first to verb-first, e.g. dg code-location scaffold is now dg scaffold code-location.
