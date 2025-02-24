@@ -187,6 +187,7 @@ def test_all_components_schema_command():
             component_type_schema_def["properties"]["type"]["const"]
             == f"{component_type_key}@dagster_components.test"
         )
+        assert "attributes" in component_type_schema_def["properties"]
 
 
 def test_scaffold_component_command():
