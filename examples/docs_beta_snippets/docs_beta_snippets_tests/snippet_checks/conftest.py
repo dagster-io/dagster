@@ -35,7 +35,7 @@ def get_selenium_driver():
         def _get_driver():
             nonlocal driver
             if driver is None:
-                driver = webdriver.Firefox()
+                driver = webdriver.Chrome()
             return driver
 
         yield _get_driver
