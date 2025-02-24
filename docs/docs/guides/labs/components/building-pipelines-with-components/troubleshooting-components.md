@@ -1,6 +1,6 @@
 ---
 title: 'Troubleshooting Components'
-sidebar_position: 500
+sidebar_position: 600
 unlisted: true
 ---
 
