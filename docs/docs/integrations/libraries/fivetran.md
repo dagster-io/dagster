@@ -92,6 +92,12 @@ To enable this feature, call <PyObject section="libraries" object="fivetran_even
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/fivetran/fetch_column_metadata_fivetran_assets.py" language="python" />
 
+### Load Fivetran asset for selected connectors
+
+To select a subset of Fivetran connectors for which your Fivetran assets will be loaded, you can use the <PyObject section="libraries" module="dagster_fivetran" object="ConnectorSelectorFn" /> callback and define your selection conditions. 
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/fivetran/select_fivetran_connectors.py" language="python" />
+
 ### Load Fivetran assets from multiple workspaces
 
 Definitions from multiple Fivetran workspaces can be combined by instantiating multiple <PyObject section="libraries" module="dagster_fivetran" object="FivetranWorkspace" /> resources and merging their specs. This lets you view all your Fivetran assets in a single asset graph:
