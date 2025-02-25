@@ -20,6 +20,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
+import {CatalogViewSelector} from 'shared/assets/CatalogViewSelector.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -761,7 +762,9 @@ const AssetGraphExplorerWithData = ({
                       />
                     </Tooltip>
                   )}
-                  {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (
+                  {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
+                    <CatalogViewSelector />
+                  ) : (
                     <div>{filterButton}</div>
                   )}
                   <GraphQueryInputFlexWrap>
