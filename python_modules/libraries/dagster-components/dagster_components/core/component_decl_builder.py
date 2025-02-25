@@ -99,8 +99,15 @@ class YamlComponentDecl(ComponentDeclNode):
 
     def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
         parsed_defs = self.component_file_model
-        key = ComponentKey.from_typename(parsed_defs.type, self.path)
-        return registry.get(key)
+        if "@" in parsed_defs.type:
+            key = ComponentKey.from_typename(parsed_defs.type, self.path)
+            return registry.get(key)
+        else:
+            parts = parsed_defs.type.split(".")
+            module_path = ".".join(parts[:-1])
+            class_name = parts[-1]
+            module = __import__(module_path, fromlist=[class_name])
+            return getattr(module, class_name)
 
     def get_attributes(self, schema: type[T]) -> T:
         with pushd(str(self.path)):

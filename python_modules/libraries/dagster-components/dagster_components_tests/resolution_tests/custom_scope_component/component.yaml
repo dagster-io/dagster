@@ -1,4 +1,4 @@
-type: custom_scope_component@file:component.py
+type: dagster_components_tests.resolution_tests.custom_scope_component.component.HasCustomScope
 
 attributes:
   asset_attributes:

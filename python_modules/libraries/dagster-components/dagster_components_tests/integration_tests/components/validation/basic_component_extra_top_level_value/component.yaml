@@ -1,5 +1,4 @@
-type: my_component@__init__.py
-
+type: dagster_components.test.basic_components.MyComponent
 attributes:
   a_string: "a string"
   an_int: 5
