@@ -1,5 +1,5 @@
 ---
-title: 'Managing multiple projects with Components'
+title: 'Managing multiple projects with components'
 sidebar_position: 50
 ---
 
