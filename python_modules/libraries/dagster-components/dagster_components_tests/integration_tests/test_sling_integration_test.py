@@ -7,18 +7,23 @@ from typing import Any, Union
 
 import pytest
 import yaml
+from click.testing import CliRunner
 from dagster import AssetKey
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._utils.env import environ
 from dagster_components import registered_component_type
+from dagster_components.cli import cli
 from dagster_components.core.component_decl_builder import ComponentFileModel, path_to_decl_node
 from dagster_components.core.component_defs_builder import YamlComponentDecl, build_component_defs
 from dagster_components.lib.sling_replication_collection.component import SlingReplicationCollection
+from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_sling import SlingResource
 
-from dagster_components_tests.utils import script_load_context
+ensure_dagster_components_tests_import()
+
+from dagster_components_tests.utils import script_load_context, temp_code_location_bar
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "sling_location"
 COMPONENT_RELPATH = "components/ingest"
@@ -190,3 +195,21 @@ def test_sling_subclass() -> None:
         AssetKey("input_csv"),
         AssetKey("input_duckdb"),
     }
+
+
+def test_scaffold_sling():
+    runner = CliRunner()
+
+    with temp_code_location_bar():
+        result = runner.invoke(
+            cli,
+            [
+                "scaffold",
+                "component",
+                "sling_replication_collection@dagster_components",
+                "bar/components/qux",
+            ],
+        )
+        assert result.exit_code == 0
+        assert Path("bar/components/qux/replication.yaml").exists()
+        assert Path("bar/components/qux/component.yaml").exists()
