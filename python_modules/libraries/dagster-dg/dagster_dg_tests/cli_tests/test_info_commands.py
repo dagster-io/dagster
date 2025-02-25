@@ -66,8 +66,8 @@ _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
 def test_inspect_component_type_all_metadata_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "inspect",
-            "component-type",
+            "utils",
+            "inspect-component-type",
             "simple_pipes_script_asset@dagster_components.test",
         )
         assert_runner_result(result)
@@ -77,8 +77,8 @@ def test_inspect_component_type_all_metadata_success():
 def test_inspect_component_type_all_metadata_empty_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "inspect",
-            "component-type",
+            "utils",
+            "inspect-component-type",
             "all_metadata_empty_asset@dagster_components.test",
         )
         assert_runner_result(result)
@@ -92,8 +92,8 @@ def test_inspect_component_type_all_metadata_empty_success():
 def test_inspect_component_type_flag_fields_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "inspect",
-            "component-type",
+            "utils",
+            "inspect-component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--description",
         )
@@ -107,8 +107,8 @@ def test_inspect_component_type_flag_fields_success():
         )
 
         result = runner.invoke(
-            "inspect",
-            "component-type",
+            "utils",
+            "inspect-component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--scaffold-params-schema",
         )
@@ -137,8 +137,8 @@ def test_inspect_component_type_flag_fields_success():
         )
 
         result = runner.invoke(
-            "inspect",
-            "component-type",
+            "utils",
+            "inspect-component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--component-schema",
         )
@@ -170,8 +170,8 @@ def test_inspect_component_type_flag_fields_success():
 def test_inspect_component_type_multiple_flags_fails() -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "inspect",
-            "component-type",
+            "utils",
+            "inspect-component-type",
             "simple_pipes_script_asset@dagster_components.test",
             "--description",
             "--scaffold-params-schema",
@@ -186,8 +186,8 @@ def test_inspect_component_type_multiple_flags_fails() -> None:
 def test_inspect_component_type_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
         result = runner.invoke(
-            "inspect",
-            "component-type",
+            "utils",
+            "inspect-component-type",
             "fake@fake",
         )
         assert_runner_result(result, exit_0=False)

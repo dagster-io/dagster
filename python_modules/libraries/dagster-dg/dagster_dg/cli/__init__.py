@@ -7,7 +7,6 @@ from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.cli.init import init_command
-from dagster_dg.cli.inspect import inspect_group
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.cli.utils import utils_group
@@ -26,7 +25,6 @@ def create_dg_cli():
         commands={
             "check": check_group,
             "docs": docs_group,
-            "inspect": inspect_group,
             "utils": utils_group,
             "list": list_group,
             "scaffold": scaffold_group,
