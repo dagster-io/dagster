@@ -12,6 +12,8 @@ from dagster._core.definitions.module_loaders.load_assets_from_modules import (
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 
+AUTOLOAD_DEFINITIONS = "<<AUTOLOAD_DEFINITIONS>>"
+
 
 class LoadableTarget(NamedTuple):
     attribute: str
@@ -28,6 +30,7 @@ def loadable_targets_from_python_file(
 def loadable_targets_from_python_module(
     module_name: str,
     working_directory: Optional[str],
+    autoload_definitions: bool,
     remove_from_path_fn: Optional[Callable[[], Sequence[str]]] = None,
 ) -> Sequence[LoadableTarget]:
     module = load_python_module(
@@ -35,7 +38,8 @@ def loadable_targets_from_python_module(
         working_directory=working_directory,
         remove_from_path_fn=remove_from_path_fn,
     )
-    return loadable_targets_from_loaded_module(module)
+
+    return loadable_targets_from_loaded_module(module, autoload_definitions)
 
 
 def loadable_targets_from_python_package(
@@ -46,16 +50,27 @@ def loadable_targets_from_python_package(
     module = load_python_module(
         package_name, working_directory, remove_from_path_fn=remove_from_path_fn
     )
-    return loadable_targets_from_loaded_module(module)
+
+    return loadable_targets_from_loaded_module(module, False)
 
 
 def _format_loadable_def(module: ModuleType, loadable_target: LoadableTarget) -> str:
     return f"{module.__name__}.{loadable_target.attribute}"
 
 
-def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[LoadableTarget]:
+def loadable_targets_from_loaded_module(
+    module: ModuleType, autoload_definitions: bool
+) -> Sequence[LoadableTarget]:
     from dagster._core.definitions import JobDefinition
+    from dagster._core.definitions.module_loaders.load_defs_from_module import (
+        load_definitions_from_package_module,
+    )
     from dagster._utils.test.definitions import LazyDefinitions
+
+    if autoload_definitions:
+        definitions = load_definitions_from_package_module(module)
+        # verify there is at least one definition?
+        return [LoadableTarget(AUTOLOAD_DEFINITIONS, definitions)]
 
     loadable_def_loaders = _loadable_targets_of_type(module, LazyDefinitions)
 
@@ -85,7 +100,6 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
     if loadable_repos:
         return loadable_repos
 
-    loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
     loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
 
     if len(loadable_jobs) == 1:
