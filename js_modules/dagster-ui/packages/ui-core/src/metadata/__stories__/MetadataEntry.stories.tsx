@@ -38,6 +38,7 @@ const MetadataEntryTypes: MetadataEntryFragment['__typename'][] = [
   'TableSchemaMetadataEntry',
   'NotebookMetadataEntry',
   'TimestampMetadataEntry',
+  'PoolMetadataEntry',
 ];
 
 const MetadataTableSchema: TableSchemaMetadataEntry['schema'] = {
@@ -285,6 +286,13 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
             label: 'my_code_reference',
           }),
         ],
+      };
+    case 'PoolMetadataEntry':
+      return {
+        __typename: 'PoolMetadataEntry',
+        description: 'This is the description',
+        label: 'my_pool',
+        pool: 'my_pool',
       };
     default:
       return assertUnreachable(type);
