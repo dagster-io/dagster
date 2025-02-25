@@ -748,12 +748,6 @@ export type AssetViewDefinitionQuery = {
                 description: string | null;
               }
             | {
-                __typename: 'PoolMetadataEntry';
-                pool: string;
-                label: string;
-                description: string | null;
-              }
-            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -943,12 +937,6 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'PipelineRunMetadataEntry';
                             runId: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
                             label: string;
                             description: string | null;
                           }
@@ -2253,12 +2241,6 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -3559,12 +3541,6 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -4848,12 +4824,6 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
-                      label: string;
-                      description: string | null;
-                    }
-                  | {
-                      __typename: 'PoolMetadataEntry';
-                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -6158,12 +6128,6 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -7460,12 +7424,6 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'PipelineRunMetadataEntry';
                             runId: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
                             label: string;
                             description: string | null;
                           }
@@ -8770,12 +8728,6 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -10059,12 +10011,6 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
-                      label: string;
-                      description: string | null;
-                    }
-                  | {
-                      __typename: 'PoolMetadataEntry';
-                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -11369,12 +11315,6 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -12671,12 +12611,6 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'PipelineRunMetadataEntry';
                             runId: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
                             label: string;
                             description: string | null;
                           }
@@ -13981,12 +13915,6 @@ export type AssetViewDefinitionQuery = {
                             description: string | null;
                           }
                         | {
-                            __typename: 'PoolMetadataEntry';
-                            pool: string;
-                            label: string;
-                            description: string | null;
-                          }
-                        | {
                             __typename: 'PythonArtifactMetadataEntry';
                             module: string;
                             name: string;
@@ -15270,12 +15198,6 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
-                      label: string;
-                      description: string | null;
-                    }
-                  | {
-                      __typename: 'PoolMetadataEntry';
-                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -17195,7 +17117,6 @@ export type AssetViewDefinitionNodeFragment = {
         label: string;
         description: string | null;
       }
-    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -17372,12 +17293,6 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -18664,12 +18579,6 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -19952,12 +19861,6 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -21227,12 +21130,6 @@ export type AssetViewDefinitionNodeFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
-              label: string;
-              description: string | null;
-            }
-          | {
-              __typename: 'PoolMetadataEntry';
-              pool: string;
               label: string;
               description: string | null;
             }
@@ -22525,12 +22422,6 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -23809,12 +23700,6 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -25101,12 +24986,6 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -26376,12 +26255,6 @@ export type AssetViewDefinitionNodeFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
-              label: string;
-              description: string | null;
-            }
-          | {
-              __typename: 'PoolMetadataEntry';
-              pool: string;
               label: string;
               description: string | null;
             }
@@ -27674,12 +27547,6 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -28958,12 +28825,6 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -30250,12 +30111,6 @@ export type AssetViewDefinitionNodeFragment = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -31529,12 +31384,6 @@ export type AssetViewDefinitionNodeFragment = {
               description: string | null;
             }
           | {
-              __typename: 'PoolMetadataEntry';
-              pool: string;
-              label: string;
-              description: string | null;
-            }
-          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -32725,4 +32574,4 @@ export type AssetViewDefinitionNodeFragment = {
     | null;
 };
 
-export const AssetViewDefinitionQueryVersion = '6c820a3851557b1cdf92373901107c6d29ea94f9da70e111b8ebe47e561da58b';
+export const AssetViewDefinitionQueryVersion = '4de8b3dc0abaac4f7eebcb753a73e4b70d1b3a4f900a4f0fd609c3a3a593ccc7';

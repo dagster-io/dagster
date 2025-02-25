@@ -96,12 +96,6 @@ export type AssetOverviewMetadataEventsQuery = {
                 description: string | null;
               }
             | {
-                __typename: 'PoolMetadataEntry';
-                pool: string;
-                label: string;
-                description: string | null;
-              }
-            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -274,12 +268,6 @@ export type AssetOverviewMetadataEventsQuery = {
                 description: string | null;
               }
             | {
-                __typename: 'PoolMetadataEntry';
-                pool: string;
-                label: string;
-                description: string | null;
-              }
-            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -372,4 +360,4 @@ export type AssetOverviewMetadataEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetOverviewMetadataEventsQueryVersion = 'ce504cf0820b50aab6cecee3fb4cb5e412af98beef75a80038c83c872d4fb0cd';
+export const AssetOverviewMetadataEventsQueryVersion = '1bf2710b1d02317f55bbda64310593c0d4d6987bd8bac69da7d4d6b103b17691';

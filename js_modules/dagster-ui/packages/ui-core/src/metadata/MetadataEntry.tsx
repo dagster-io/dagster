@@ -22,7 +22,6 @@ import {
   MetadataEntryFragment,
   TableMetadataEntryFragment,
 } from './types/MetadataEntryFragment.types';
-import {PoolTag} from '../../src/instance/PoolTag';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -295,8 +294,6 @@ export const MetadataEntry = ({
           [Show Code References]
         </MetadataEntryDialogAction>
       );
-    case 'PoolMetadataEntry':
-      return <PoolTag pool={entry.pool} />;
     default:
       return assertUnreachable(entry);
   }

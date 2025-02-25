@@ -134,12 +134,6 @@ export type AssetChecksQuery = {
                           description: string | null;
                         }
                       | {
-                          __typename: 'PoolMetadataEntry';
-                          pool: string;
-                          label: string;
-                          description: string | null;
-                        }
-                      | {
                           __typename: 'PythonArtifactMetadataEntry';
                           module: string;
                           name: string;
@@ -256,4 +250,4 @@ export type AssetChecksQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetChecksQueryVersion = '655a37486ebc6427fe969b59420b9590440a901b3b0c7adc4c8a9873c593a7fe';
+export const AssetChecksQueryVersion = '67252db2bc1bfc878d1568008f7e0698a4515d15b4b68c8e88bd1edef4c1f60f';

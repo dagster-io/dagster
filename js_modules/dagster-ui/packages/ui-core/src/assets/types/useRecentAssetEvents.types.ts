@@ -97,7 +97,6 @@ export type AssetMaterializationFragment = {
         label: string;
         description: string | null;
       }
-    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -278,7 +277,6 @@ export type AssetObservationFragment = {
         label: string;
         description: string | null;
       }
-    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -479,12 +477,6 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
-                __typename: 'PoolMetadataEntry';
-                pool: string;
-                label: string;
-                description: string | null;
-              }
-            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -679,12 +671,6 @@ export type AssetEventsQuery = {
                 description: string | null;
               }
             | {
-                __typename: 'PoolMetadataEntry';
-                pool: string;
-                label: string;
-                description: string | null;
-              }
-            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -783,4 +769,4 @@ export type AssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetEventsQueryVersion = '327d2e3b45fa328309610c4b7c691b0b31a4d2f65da029767e2f9da1e458d113';
+export const AssetEventsQueryVersion = 'f570240448cf9d45a5c7f5d08571734d4841c886da4f46ec879a73707f6f29f1';
