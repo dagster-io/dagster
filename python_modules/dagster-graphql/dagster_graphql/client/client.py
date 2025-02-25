@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 
 import dagster._check as check
 import requests.exceptions
+from requests.auth import AuthBase
 from dagster import DagsterRunStatus
 from dagster._annotations import deprecated, public
 from dagster._core.definitions.run_config import RunConfig, convert_config_input
@@ -73,6 +74,7 @@ class DagsterGraphQLClient:
         use_https: bool = False,
         timeout: int = 300,
         headers: Optional[dict[str, str]] = None,
+        auth: Optional[AuthBase] = None
     ):
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
@@ -89,7 +91,7 @@ class DagsterGraphQLClient:
             "transport",
             Transport,
             default=RequestsHTTPTransport(
-                url=self._url, use_json=True, timeout=timeout, headers=headers
+                url=self._url, use_json=True, timeout=timeout, headers=headers, auth=auth
             ),
         )
         try:
