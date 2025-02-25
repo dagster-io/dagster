@@ -4,6 +4,7 @@ import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components
 import {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
@@ -23,6 +24,7 @@ import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {gql, useQuery} from '../apollo-client';
+import {featureEnabled} from '../app/Flags';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
@@ -363,11 +365,35 @@ function getQueryForVisibleAssets(
   const token = tokenForAssetKey(assetKey);
 
   if (view === 'definition' || view === 'overview') {
-    return {query: `+"${token}"+`, requestedDepth: 1};
+    return {
+      query: featureEnabled(FeatureFlag.flagSelectionSyntax)
+        ? `1+key:"${token}"+1`
+        : `+"${token}"+`,
+      requestedDepth: 1,
+    };
   }
   if (view === 'lineage') {
     const defaultDepth = 1;
     const requestedDepth = Number(lineageDepth) || defaultDepth;
+
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+      if (lineageScope === 'upstream') {
+        return {
+          query: `${requestedDepth}+key:"${token}"`,
+          requestedDepth,
+        };
+      } else if (lineageScope === 'downstream') {
+        return {
+          query: `key:"${token}"+${requestedDepth}`,
+          requestedDepth,
+        };
+      }
+      return {
+        query: `${requestedDepth}+key:"${token}"+${requestedDepth}`,
+        requestedDepth,
+      };
+    }
+
     const depthStr = '+'.repeat(requestedDepth);
 
     // Load the asset lineage (for both lineage tab and definition "Upstream" / "Downstream")
