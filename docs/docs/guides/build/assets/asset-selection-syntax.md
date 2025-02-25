@@ -11,6 +11,14 @@ With asset selection, you can:
 - Define a job in Python that targets a selection of assets
 - List or materialize a set of assets using the [Dagster CLI](/api/python-api/cli#dagster-asset)
 
+## Syntax usage
+
+A query includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of the following methods. In these cases, each clause is a separate element in a list:
+
+* <PyObject section="dagster" module="dagster" object="define_asset_job" />
+* <PyObject section="execution" module="dagster" object="materialize" />
+* <PyObject section="execution" module="dagster" object="materialize_to_memory" />
+
 ## Basic syntax
 
 | Asset selection | Syntax | Description |
@@ -44,33 +52,35 @@ Filters allow you to narrow your asset selection using specific criteria.
 
 | Filter | Syntax | Description | Supported views |
 |--------|--------|-------------|-----------------|
-| **Exact key** | `key:"my_key"` | Selects assets with the exact key `my_key`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Key substring with wildcard filter** | `key:partial_key_*`| Selects assets whose key contains `partial_key`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Key (exact)** | `key:"my_key"` | Selects assets with the exact key `my_key`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Key (substring with wildcard)** | `key:partial_key_*`| Selects assets whose key contains `partial_key`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Tag (exact)** | `tag:"stage"` | Selects assets tagged with `stage`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Tag (with value)** | `tag:"stage"="value"` | Selects assets tagged with `stage` having a specific `value`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Owner** | `owner:"alice"` | Selects assets owned by `alice`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Group** | `group:"team1"` | Selects assets in the group `team1`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Kind** |  `kind:"table"` |  Selects assets of kind `table`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Code location** | `code_location:"repo1"` | Selects assets located in code location `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Column tag** | `column:tag: "my_tag"` | TODO | Dagster+ |
-| **Columns** | `columns: "column_name"` | TODO | Dagster+ |
-| **Table name** | `table_name: "my_table"` | TODO | Dagster+ |
-| **Changed in branch** | `changed_in_branch: | TODO | Dagster+ branch deployments |
+| **Column tag** | `column:tag: "my_tag"` | TODO | Dagster+ only |
+| **Columns** | `columns: "column_name"` | TODO | Dagster+ only |
+| **Table name** | `table_name: "my_table"` | TODO | Dagster+ only |
+| **Changed in branch** | `changed_in_branch: "TODO"` | TODO | Dagster+ branch deployments only |
 
-:::note Wildcard matching in the `key` filter
+:::info Wildcard matching
 
 Only the `key` filter supports wildcard matching.
 
 :::
 
-You can combine multiple filters with operands to further refine your asset selection:
+### Operands and grouping
+
+You can combine multiple filters with operands and group them with parentheses to further refine your asset selection:
 
 | Operand | Syntax | Description |
 |---------|--------|-------------|
 | **`and`** | `owner:"alice" and kind:"dbt"` | Selects assets owned by `alice` of kind `dbt`. |
 | **`or`** | `owner:"billing" or owner:"sales"` | Selects assets owned by either `billing` or `sales`. |
 | **`not`** | `not tag:"obsolete"` | Excludes assets tagged with `obsolete`. |
-| **Grouping with parentheses `()`** | `(owner:"alice" and kind:"table") or group:"analytics"` | Symbols `(` and `)` used to group expressions and control the order of evaluation in queries. This example selects assets that are both owned by `alice` and of kind `table`, or that belong to the `analytics` group. |
+| **Grouping `()`** | `(owner:"alice" and kind:"table") or group:"analytics"` | Symbols `(` and `)` used to group expressions and control the order of evaluation in queries. This example selects assets that are both owned by `alice` and of kind `table`, or that belong to the `analytics` group. |
 
 ## Functions
 
