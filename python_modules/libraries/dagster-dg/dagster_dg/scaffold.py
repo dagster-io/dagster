@@ -77,17 +77,34 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> Sequence[Path]:
 
 
 def scaffold_workspace(
-    path: Path,
-) -> None:
+    workspace_name: str,
+) -> Path:
+    # Can't create a workspace that is a child of another workspace
+    existing_workspace_path = DgContext.discover_workspace_path(Path.cwd())
+    if existing_workspace_path:
+        exit_with_error(
+            f"Workspace already found at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
+        )
+
+    new_workspace_path = Path.cwd() / workspace_name
+    if new_workspace_path.exists():
+        if DgContext.discover_workspace_path(new_workspace_path):
+            exit_with_error(
+                f"Workspace already exists at {new_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
+            )
+        else:
+            exit_with_error(f"Folder already exists at {new_workspace_path}.")
+
     scaffold_subtree(
-        path=path,
+        path=new_workspace_path,
         name_placeholder="WORKSPACE_NAME_PLACEHOLDER",
         templates_path=os.path.join(
             os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER"
         ),
-        project_name="workspace",  # Allow customization?
+        project_name=workspace_name,
     )
-    click.echo(f"Scaffolded files for Dagster workspace at {path}.")
+    click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
+    return new_workspace_path
 
 
 def scaffold_project(
