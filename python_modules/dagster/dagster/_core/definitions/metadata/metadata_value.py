@@ -501,6 +501,16 @@ class MetadataValue(ABC, Generic[T_Packable]):
         """
         return CodeLocationReconstructionMetadataValue(data)
 
+    @public
+    @staticmethod
+    def pool(pool: str) -> "PoolMetadataValue":
+        """Static constructor for a metadata value wrapping a reference to a concurrency pool.
+
+        Args:
+            pool (str): The identifier for the pool.
+        """
+        return PoolMetadataValue(pool=pool)
+
 
 # ########################
 # ##### METADATA VALUE TYPES
@@ -1037,3 +1047,18 @@ class CodeLocationReconstructionMetadataValue(
     def value(self) -> str:
         """str: The wrapped code location state data."""
         return self.data
+
+
+@whitelist_for_serdes
+class PoolMetadataValue(
+    NamedTuple("_PoolMetadataValue", [("pool", PublicAttr[str])]),
+    MetadataValue[str],
+):
+    def __new__(cls, pool: str):
+        return super().__new__(cls, check.str_param(pool, "pool"))
+
+    @public
+    @property
+    def value(self) -> str:
+        """str: The wrapped pool string."""
+        return self.pool

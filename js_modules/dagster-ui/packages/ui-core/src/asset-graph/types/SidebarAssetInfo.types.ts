@@ -79,6 +79,7 @@ export type SidebarAssetFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -842,6 +843,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -2128,6 +2135,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -3410,6 +3423,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -4679,6 +4698,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -5971,6 +5996,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -7249,6 +7280,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -8535,6 +8572,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -9804,6 +9847,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -11096,6 +11145,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -12374,6 +12429,12 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -13660,6 +13721,12 @@ export type SidebarAssetFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -14929,6 +14996,12 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -16218,6 +16291,12 @@ export type SidebarAssetQuery = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -16989,6 +17068,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'PipelineRunMetadataEntry';
                           runId: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
                           label: string;
                           description: string | null;
                         }
@@ -18289,6 +18374,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'PythonArtifactMetadataEntry';
                           module: string;
                           name: string;
@@ -19585,6 +19676,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'PythonArtifactMetadataEntry';
                           module: string;
                           name: string;
@@ -20868,6 +20965,12 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -22165,6 +22268,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'PythonArtifactMetadataEntry';
                           module: string;
                           name: string;
@@ -23457,6 +23566,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'PipelineRunMetadataEntry';
                           runId: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
                           label: string;
                           description: string | null;
                         }
@@ -24757,6 +24872,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'PythonArtifactMetadataEntry';
                           module: string;
                           name: string;
@@ -26040,6 +26161,12 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -27337,6 +27464,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'PythonArtifactMetadataEntry';
                           module: string;
                           name: string;
@@ -28629,6 +28762,12 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'PipelineRunMetadataEntry';
                           runId: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
                           label: string;
                           description: string | null;
                         }
@@ -29929,6 +30068,12 @@ export type SidebarAssetQuery = {
                           description: string | null;
                         }
                       | {
+                          __typename: 'PoolMetadataEntry';
+                          pool: string;
+                          label: string;
+                          description: string | null;
+                        }
+                      | {
                           __typename: 'PythonArtifactMetadataEntry';
                           module: string;
                           name: string;
@@ -31216,6 +31361,12 @@ export type SidebarAssetQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -32413,4 +32564,4 @@ export type SidebarAssetQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const SidebarAssetQueryVersion = '5f38c406efbfe5b009416f7f9605072a820228ab893cb774af310f8f162827ae';
+export const SidebarAssetQueryVersion = '5f877e6818194f30b948bda42fea8e5ef954461ce44bb45d7d201a677ec30487';

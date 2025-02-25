@@ -120,6 +120,7 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -299,6 +300,7 @@ export type LogsScrollingTableMessageFragment_EngineEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -483,6 +485,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -651,6 +654,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -811,6 +815,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -968,6 +973,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -1184,6 +1190,7 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1383,6 +1390,7 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1569,6 +1577,7 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1734,6 +1743,7 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -1893,6 +1903,7 @@ export type LogsScrollingTableMessageFragment_ObservationEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2054,6 +2065,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2224,6 +2236,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2384,6 +2397,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2642,6 +2656,7 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -2803,6 +2818,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2963,6 +2979,7 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
