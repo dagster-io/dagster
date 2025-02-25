@@ -8,6 +8,7 @@ import {
   JsonMetadataEntry,
   TableSchemaMetadataEntry,
   buildLocalFileCodeReference,
+  buildPoolMetadataEntry,
   buildUrlCodeReference,
 } from '../../graphql/types';
 import {MetadataEntries} from '../MetadataEntry';
@@ -288,12 +289,7 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         ],
       };
     case 'PoolMetadataEntry':
-      return {
-        __typename: 'PoolMetadataEntry',
-        description: 'This is the description',
-        label: 'my_pool',
-        pool: 'my_pool',
-      };
+      return buildPoolMetadataEntry();
     default:
       return assertUnreachable(type);
   }
