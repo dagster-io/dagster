@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Annotated, Callable, Optional, Union
+from typing import Annotated, Optional, Union
 
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -19,8 +19,9 @@ from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
-    AssetSpecTransformSchema,
+    AssetPostProcessorSchema,
     OpSpecSchema,
+    PostProcessorFn,
 )
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
@@ -61,10 +62,10 @@ class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
     )
 
 
-class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollectionSchema"]):
+class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollection"]):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationSchema]
-    transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
+    asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
 def resolve_resource(
@@ -88,9 +89,9 @@ class SlingReplicationCollection(Component):
     replications: Sequence[SlingReplicationSpec] = Field(
         ..., description="A set of Sling replications to expose as assets."
     )
-    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = Field(
+    asset_post_processors: Optional[Sequence[PostProcessorFn]] = Field(
         default=None,
-        description="Transformations to apply to the Sling definitions produced by this component.",
+        description="Post-processors to apply to the asset definitions produced by this component.",
     )
 
     @classmethod
@@ -130,6 +131,6 @@ class SlingReplicationCollection(Component):
         defs = Definitions(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )
-        for transform in self.transforms or []:
-            defs = transform(defs)
+        for post_processor in self.asset_post_processors or []:
+            defs = post_processor(defs)
         return defs

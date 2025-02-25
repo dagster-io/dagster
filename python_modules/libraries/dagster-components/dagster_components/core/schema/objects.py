@@ -10,6 +10,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
+from typing_extensions import TypeAlias
 
 from dagster_components.core.schema.base import FieldResolver, ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
@@ -20,6 +21,9 @@ def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
     return (
         AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
     )
+
+
+PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
 
 
 class OpSpecSchema(ResolvableSchema):
@@ -110,7 +114,7 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
         return {k: v for k, v in self.resolve_fields(dict, context).items() if k in set_fields}
 
 
-class AssetSpecTransformSchema(ResolvableSchema):
+class AssetPostProcessorSchema(ResolvableSchema):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
