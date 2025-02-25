@@ -1,6 +1,7 @@
+import os
 import time
 from datetime import datetime, timedelta, timezone, tzinfo
-from typing import Union
+from typing import Optional, Union
 
 import dagster._check as check
 from dagster._vendored.dateutil import parser
@@ -11,9 +12,23 @@ try:
 except:
     from dagster._vendored.dateutil.tz import gettz as _timezone_from_string
 
+def _get_frozen_timestamp_from_fs() -> Optional[float]:
+    # If DAGSTER_FROZEN_TIME_PATH is set, timestamp will be read from there instead of 
+    # current time. This allows you to effectively freeze time across all dagster processes.
+    timestamp_file_path = os.getenv("DAGSTER_FROZEN_TIME_PATH")
+    if timestamp_file_path and os.path.exists(timestamp_file_path):
+        with open(timestamp_file_path, 'r') as f:
+            timestamp_str = f.read().strip()
+            return float(timestamp_str)
+    else:
+        return None
+
 
 def _mockable_get_current_datetime() -> datetime:
     # Can be mocked in tests by freeze_time()
+    fs_timestamp = _get_frozen_timestamp_from_fs()
+    if fs_timestamp:
+        return datetime_from_timestamp(fs_timestamp, tz=timezone.utc)
     return datetime.now(tz=timezone.utc)
 
 
