@@ -243,13 +243,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 update_snippets=update_snippets,
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
             )
-            run_command_and_snippet_output(
-                cmd="dg inspect component-type 'dbt_project@dagster_components'",
-                snippet_path=COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-dg-component-type-info.txt",
-                update_snippets=update_snippets,
-                snippet_replace_regex=[re_ignore_after("Component schema:")],
-            )
 
             # Scaffold dbt project components
             run_command_and_snippet_output(
