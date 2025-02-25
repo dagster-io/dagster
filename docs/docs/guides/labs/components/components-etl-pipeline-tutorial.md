@@ -1,6 +1,6 @@
 ---
 title: 'Components ETL pipeline tutorial'
-sidebar_position: 10
+sidebar_position: 20
 ---
 
 ## Setup

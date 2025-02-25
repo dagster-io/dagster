@@ -1,6 +1,6 @@
 ---
 title: 'Managing multiple projects with Components'
-sidebar_position: 40
+sidebar_position: 50
 ---
 
 :::info

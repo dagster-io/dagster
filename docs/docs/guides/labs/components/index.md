@@ -1,6 +1,7 @@
 ---
 title: "Components"
 sidebar_position: 10
+sidebar_class_name: hidden
 ---
 
 :::info
@@ -22,29 +23,29 @@ Dagster Components is a new way to structure your Dagster projects. It aims to p
 
 ## Installation
 
-To use the Components framework, you must install the `dg` command line tool, which lives in the published Python package `dagster-dg`. `dg` is designed to be globally installed and has no dependency on `dagster` itself. `dg` allows you to quickly scaffold Dagster projects and populate them with components.
+To use Dagster Components, you must use `uv` to install the `dg` command line tool. The `dg` tool allows you to quickly scaffold Dagster projects and populate them with components. `dg` is designed to be globally installed and has no dependency on `dagster` itself.
 
 ### 1. Install uv
 
-We will use the Python package manager [`uv`](https://docs.astral.sh/uv/) to install a globally available `dg`:
+First, install the Python package manager [`uv`](https://docs.astral.sh/uv/), which will be used to install a globally available `dg`:
 
 <CliInvocationExample contents="brew install uv" />
 
-### 2. Install the dg command line tool
+:::info Windows or Linux installation
 
-Once you have installed `uv`, use it to install `dg`.
-
-<CliInvocationExample contents="uv tool install dagster-dg" />
-
-:::tip
-
-`uv tool install` installs python packages from PyPI into isolated environments and exposes their executables on your shell path. This means the `dg` command should now be available. It will always execute in an isolated environment separate from any project environment.
+To install `uv` on Windows or Linux, see the [`uv` installation instructions](https://docs.astral.sh/uv/getting-started/installation/).
 
 :::
 
+### 2. Install the dg command line tool
+
+Once you have installed `uv`, use it to install `dg`:
+
+<CliInvocationExample contents="uv tool install dagster-dg" />
+
 :::note
 
-If you have a local clone of the `dagster` repo, you can install a local version of `dg` with `uv tool install -e $DAGSTER_GIT_REPO_DIR/python_modules/libraries/dagster-dg`. This will create an isolated environment for `dg` just like the standard `uv tool install`, but the environment will contain an editable installation of `dagster-dg`.
+`uv tool install` installs Python packages from PyPI into isolated environments and exposes their executables on your shell path. This means the `dg` command will always execute in an isolated environment separate from any project environment.
 
 :::
 
