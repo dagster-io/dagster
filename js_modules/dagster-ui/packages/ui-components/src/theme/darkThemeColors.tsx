@@ -120,6 +120,7 @@ export const darkThemeColors = css`
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow100);
   --color-checkbox-unchecked: var(--color-core-gray500);
   --color-checkbox-checked: var(--color-core-blue400);
+  --color-checkbox-disabled: var(--color-core-gray700);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray950),
     var(--color-translucent-blue15) 100%
