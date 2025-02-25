@@ -260,15 +260,17 @@ def markdown_for_json_schema(
     description = process_description(
         subschema.get("description", "") or (anyof_parent_subschema or {}).get("description", "")
     )
+    # use dedent to remove the leading newline
     children_segment = (
-        f"""<details>
-<summary>Subfields</summary>
-\n\n
-<ul>
-{children}
-</ul>
-</details>
-    """
+        textwrap.dedent(f"""
+            <details>
+            <summary>Subfields</summary>
+            \n\n
+            <ul>
+            {children}
+            </ul>
+            </details>
+        """).strip()
         if children
         else ""
     )
