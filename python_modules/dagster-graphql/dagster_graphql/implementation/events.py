@@ -15,7 +15,6 @@ from dagster import (
     NotebookMetadataValue,
     NullMetadataValue,
     PathMetadataValue,
-    PoolMetadataValue,
     PythonArtifactMetadataValue,
     TableMetadataValue,
     TableSchemaMetadataValue,
@@ -60,7 +59,6 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GrapheneNullMetadataEntry,
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
-        GraphenePoolMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
         GrapheneTableColumnLineageEntry,
         GrapheneTableColumnLineageMetadataEntry,
@@ -205,8 +203,6 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
             )
         elif isinstance(value, TimestampMetadataValue):
             yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
-        elif isinstance(value, PoolMetadataValue):
-            yield GraphenePoolMetadataEntry(label=key, pool=value.pool)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")

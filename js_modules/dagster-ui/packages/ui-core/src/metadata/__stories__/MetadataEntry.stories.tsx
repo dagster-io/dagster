@@ -8,7 +8,6 @@ import {
   JsonMetadataEntry,
   TableSchemaMetadataEntry,
   buildLocalFileCodeReference,
-  buildPoolMetadataEntry,
   buildUrlCodeReference,
 } from '../../graphql/types';
 import {MetadataEntries} from '../MetadataEntry';
@@ -39,7 +38,6 @@ const MetadataEntryTypes: MetadataEntryFragment['__typename'][] = [
   'TableSchemaMetadataEntry',
   'NotebookMetadataEntry',
   'TimestampMetadataEntry',
-  'PoolMetadataEntry',
 ];
 
 const MetadataTableSchema: TableSchemaMetadataEntry['schema'] = {
@@ -288,8 +286,6 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
           }),
         ],
       };
-    case 'PoolMetadataEntry':
-      return buildPoolMetadataEntry();
     default:
       return assertUnreachable(type);
   }

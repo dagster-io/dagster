@@ -103,12 +103,6 @@ export type TypeExplorerContainerQuery = {
                     description: string | null;
                   }
                 | {
-                    __typename: 'PoolMetadataEntry';
-                    pool: string;
-                    label: string;
-                    description: string | null;
-                  }
-                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -1306,4 +1300,4 @@ export type TypeExplorerContainerQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const TypeExplorerContainerQueryVersion = '40bdf55720a8542ddb727910ef82280a8e8e2300d3cc1fb9df11a7d8d957ee06';
+export const TypeExplorerContainerQueryVersion = '06929dd49151d44a43bb7f4ad7d8b77e5be60eb8fe6103585f0aaa12613d74c9';

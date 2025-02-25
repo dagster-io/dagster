@@ -207,14 +207,6 @@ class GrapheneTimestampMetadataEntry(graphene.ObjectType):
         name = "TimestampMetadataEntry"
 
 
-class GraphenePoolMetadataEntry(graphene.ObjectType):
-    pool = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneMetadataEntry,)
-        name = "PoolMetadataEntry"
-
-
 def types():
     return [
         GrapheneMetadataEntry,
@@ -238,5 +230,4 @@ def types():
         GrapheneCodeReferencesMetadataEntry,
         GrapheneNullMetadataEntry,
         GrapheneTimestampMetadataEntry,
-        GraphenePoolMetadataEntry,
     ]

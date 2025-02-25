@@ -96,13 +96,6 @@ export type MetadataEntryFragment_PipelineRunMetadataEntry = {
   description: string | null;
 };
 
-export type MetadataEntryFragment_PoolMetadataEntry = {
-  __typename: 'PoolMetadataEntry';
-  pool: string;
-  label: string;
-  description: string | null;
-};
-
 export type MetadataEntryFragment_PythonArtifactMetadataEntry = {
   __typename: 'PythonArtifactMetadataEntry';
   module: string;
@@ -210,7 +203,6 @@ export type MetadataEntryFragment =
   | MetadataEntryFragment_NullMetadataEntry
   | MetadataEntryFragment_PathMetadataEntry
   | MetadataEntryFragment_PipelineRunMetadataEntry
-  | MetadataEntryFragment_PoolMetadataEntry
   | MetadataEntryFragment_PythonArtifactMetadataEntry
   | MetadataEntryFragment_TableColumnLineageMetadataEntry
   | MetadataEntryFragment_TableMetadataEntry

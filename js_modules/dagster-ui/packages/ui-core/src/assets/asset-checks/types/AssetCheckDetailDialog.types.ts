@@ -99,7 +99,6 @@ export type AssetCheckExecutionFragment = {
           label: string;
           description: string | null;
         }
-      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -281,7 +280,6 @@ export type AssetCheckDetailsQuery = {
             label: string;
             description: string | null;
           }
-        | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
         | {
             __typename: 'PythonArtifactMetadataEntry';
             module: string;
@@ -364,4 +362,4 @@ export type AssetCheckDetailsQuery = {
   }>;
 };
 
-export const AssetCheckDetailsQueryVersion = 'dafb023319ef2c8aa8075c43686b318d3206f5781b8b87cf21130db3172a9f71';
+export const AssetCheckDetailsQueryVersion = 'c448858a73cd66132c2d6f232497570d217ece793897c47aaa1155b15c7ef8e9';

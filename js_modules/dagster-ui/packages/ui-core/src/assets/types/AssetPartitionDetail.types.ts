@@ -126,12 +126,6 @@ export type AssetPartitionDetailQuery = {
                 description: string | null;
               }
             | {
-                __typename: 'PoolMetadataEntry';
-                pool: string;
-                label: string;
-                description: string | null;
-              }
-            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -331,12 +325,6 @@ export type AssetPartitionDetailQuery = {
                 description: string | null;
               }
             | {
-                __typename: 'PoolMetadataEntry';
-                pool: string;
-                label: string;
-                description: string | null;
-              }
-            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -459,6 +447,6 @@ export type AssetPartitionStaleQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetPartitionDetailQueryVersion = '6a4318c128e172a2b76c1a83882d790c4a721237f92f6ae1569361170d30aa20';
+export const AssetPartitionDetailQueryVersion = '7f951ecf11bbeaa37e3444caf175a92feae9cb16dfd09bb8ad46f600f3a7711c';
 
 export const AssetPartitionStaleQueryVersion = '4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764';
