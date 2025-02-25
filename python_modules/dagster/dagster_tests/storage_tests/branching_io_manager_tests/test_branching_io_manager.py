@@ -2,7 +2,15 @@ import math
 import time
 from typing import Any, Optional, cast
 
-from dagster import Definitions, In, asset, job, op
+from dagster import (
+    AssetExecutionContext,
+    Definitions,
+    In,
+    StaticPartitionsDefinition,
+    asset,
+    job,
+    op,
+)
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
@@ -287,3 +295,88 @@ def test_job_op_usecase() -> Any:
             .execute_in_process(instance=runner.instance)
             .success
         )
+
+
+def test_partitions():
+    @asset
+    def upstream_non_partitioned() -> str:
+        return "non_partitioned"
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    def upstream_partitioned(context: AssetExecutionContext) -> str:
+        return context.partition_key
+
+    @asset
+    def downstream_non_partitioned(
+        upstream_non_partitioned: str, upstream_partitioned: dict[str, str]
+    ) -> None:
+        assert upstream_non_partitioned == "non_partitioned"
+        assert upstream_partitioned == {"a": "a", "b": "b"}
+
+    @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    def downstream_partitioned(
+        context: AssetExecutionContext,
+        upstream_non_partitioned: str,
+        upstream_partitioned: str,
+    ) -> None:
+        assert upstream_non_partitioned == "non_partitioned"
+        assert upstream_partitioned == context.partition_key
+
+    with DagsterInstance.ephemeral() as prod_instance, DagsterInstance.ephemeral() as dev_instance:
+        prod_io_manager = AssetBasedInMemoryIOManager()
+        dev_io_manager = AssetBasedInMemoryIOManager()
+
+        dev_t0_runner = DefinitionsRunner(
+            Definitions(
+                assets=[
+                    upstream_non_partitioned,
+                    upstream_partitioned,
+                    downstream_non_partitioned,
+                    downstream_partitioned,
+                ],
+                resources={
+                    "io_manager": BranchingIOManager(
+                        parent_io_manager=prod_io_manager,
+                        branch_io_manager=dev_io_manager,
+                    )
+                },
+            ),
+            dev_instance,
+        )
+
+        assert dev_t0_runner.materialize_asset("upstream_non_partitioned").success
+        assert dev_t0_runner.materialize_asset("upstream_partitioned", partition_key="a").success
+        assert dev_t0_runner.materialize_asset("upstream_partitioned", partition_key="b").success
+
+        assert dev_t0_runner.materialize_asset("downstream_non_partitioned").success
+        assert dev_t0_runner.materialize_asset("downstream_partitioned", partition_key="a").success
+        assert dev_t0_runner.materialize_asset("downstream_partitioned", partition_key="b").success
+
+        prod_runner = DefinitionsRunner(
+            Definitions(
+                assets=[
+                    upstream_non_partitioned,
+                    upstream_partitioned,
+                    downstream_non_partitioned,
+                    downstream_partitioned,
+                ],
+                resources={"io_manager": prod_io_manager},
+            ),
+            prod_instance,
+        )
+
+        assert prod_runner.materialize_asset("upstream_non_partitioned").success
+        assert prod_runner.materialize_asset("upstream_partitioned", partition_key="a").success
+        assert prod_runner.materialize_asset("upstream_partitioned", partition_key="b").success
+
+        assert prod_runner.materialize_asset("downstream_non_partitioned").success
+        assert prod_runner.materialize_asset("downstream_partitioned", partition_key="a").success
+        assert prod_runner.materialize_asset("downstream_partitioned", partition_key="b").success
+
+        assert dev_t0_runner.materialize_asset("upstream_non_partitioned").success
+        assert dev_t0_runner.materialize_asset("upstream_partitioned", partition_key="a").success
+        assert dev_t0_runner.materialize_asset("upstream_partitioned", partition_key="b").success
+
+        assert dev_t0_runner.materialize_asset("downstream_non_partitioned").success
+        assert dev_t0_runner.materialize_asset("downstream_partitioned", partition_key="a").success
+        assert dev_t0_runner.materialize_asset("downstream_partitioned", partition_key="b").success
