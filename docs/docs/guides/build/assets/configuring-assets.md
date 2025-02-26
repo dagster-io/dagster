@@ -1,6 +1,6 @@
 ---
 title: Configuring assets in the UI
-sidebar_position: 600
+sidebar_position: 400
 ---
 
 The Dagster UI is commonly used to manually materialize assets, backfill historical data, debug a production issue, or some other one-off task.

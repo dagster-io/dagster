@@ -17,7 +17,7 @@ Consider these factors when selecting an automation method:
 
 | Method                       | Description                                | Best for                     | Works with                               |
 | ---------------------------- | ------------------------------------------ | ---------------------------- | ---------------------------------------- |
-| [Schedules](schedules/) | Run a selection of assets at specified times with a cron expression | Regular, time-based job runs and basic time-based automation | Assets, Ops, Graphs |
+| [Schedules](schedules/) | Run a [selection of assets](/guides/build/assets/asset-selection-syntax) at specified times with a cron expression | Regular, time-based job runs and basic time-based automation | Assets, Ops, Graphs |
 | [Declarative automation](declarative-automation/) |  A framework that allows you to set automation conditions on assets and asset checks | Asset-centric, condition-based updates | Assets only         |
 | [Sensors](sensors/)     |  Trigger runs based on events or conditions that you define, like the arrival of a new file or a change to an external system | Event-driven automation                | Assets, Ops, Graphs |
 | [Asset sensors](asset-sensors) | Trigger jobs when specified assets are materialized, allowing you to create dependencies between jobs or code locations. | Cross-job/location asset dependencies  | Assets only         |
