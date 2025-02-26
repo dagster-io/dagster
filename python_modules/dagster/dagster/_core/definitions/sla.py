@@ -1,15 +1,61 @@
 # SLA definition stuff
 from collections.abc import Mapping
-from typing import NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Union
 
-import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
-from dagster._core.definitions.events import AssetKey, MetadataValue
-from dagster._core.definitions.metadata import normalize_metadata
+from dagster._core.definitions.events import AssetKey
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
-class SlaViolating():
-    pass
+if TYPE_CHECKING:
+    from dagster._core.events import DagsterEventType
 
-class SlaPassing():
-    pass
+
+@whitelist_for_serdes
+@record
+class SlaViolating:
+    sla_name: str
+    asset_key: AssetKey
+    # The timestamp at which the asset began violating its SLA.
+    violating_since: float
+    metadata: Mapping[str, Any]
+
+    @classmethod
+    def dagster_event_type(cls) -> "DagsterEventType":
+        from dagster._core.events import DagsterEventType
+
+        return DagsterEventType.SLA_VIOLATING
+
+
+@whitelist_for_serdes
+@record
+class SlaPassing:
+    sla_name: str
+    asset_key: AssetKey
+    # The associated event log entry ID which led to the asset passing its SLA.
+    event_log_storage_id: int
+    # Time at which the passing event occurred
+    passing_since: float
+    metadata: Mapping[str, Any]
+
+    @classmethod
+    def dagster_event_type(cls) -> "DagsterEventType":
+        from dagster._core.events import DagsterEventType
+
+        return DagsterEventType.SLA_PASSING
+
+
+# If the asset is missing and therefore the SLA cannot be evaluated.
+@whitelist_for_serdes
+@record
+class SlaUnknown:
+    sla_name: str
+    asset_key: AssetKey
+
+    @classmethod
+    def dagster_event_type(cls) -> "DagsterEventType":
+        from dagster._core.events import DagsterEventType
+
+        return DagsterEventType.SLA_UNKNOWN
+
+
+SlaEvaluationResult = Union[SlaPassing, SlaViolating, SlaUnknown]

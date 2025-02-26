@@ -12,12 +12,13 @@ try:
 except:
     from dagster._vendored.dateutil.tz import gettz as _timezone_from_string
 
+
 def _get_frozen_timestamp_from_fs() -> Optional[float]:
-    # If DAGSTER_FROZEN_TIME_PATH is set, timestamp will be read from there instead of 
+    # If DAGSTER_FROZEN_TIME_PATH is set, timestamp will be read from there instead of
     # current time. This allows you to effectively freeze time across all dagster processes.
     timestamp_file_path = os.getenv("DAGSTER_FROZEN_TIME_PATH")
     if timestamp_file_path and os.path.exists(timestamp_file_path):
-        with open(timestamp_file_path, 'r') as f:
+        with open(timestamp_file_path) as f:
             timestamp_str = f.read().strip()
             return float(timestamp_str)
     else:
