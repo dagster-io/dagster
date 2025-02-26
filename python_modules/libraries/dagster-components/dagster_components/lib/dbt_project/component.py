@@ -10,8 +10,7 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
-from pydantic import ConfigDict, Field, computed_field
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.core.component import registered_component_type
@@ -52,9 +51,10 @@ def resolve_translator(
 
 
 @registered_component_type(name="dbt_project")
-@dataclass(config=ConfigDict(arbitrary_types_allowed=True))  # omits translator prop from schema
-class DbtProjectComponent(Component):
+class DbtProjectComponent(Component, BaseModel):
     """Expose a DBT project to Dagster as a set of assets."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
     op: Optional[OpSpecSchema] = Field(

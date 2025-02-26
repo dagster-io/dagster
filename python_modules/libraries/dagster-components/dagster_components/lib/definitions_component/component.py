@@ -5,8 +5,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.module_loaders.load_defs_from_module import (
     load_definitions_from_module,
 )
-from pydantic import Field
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel, Field
 
 from dagster_components import (
     Component,
@@ -22,8 +21,7 @@ class DefinitionsParamSchema(ResolvableSchema):
 
 
 @registered_component_type(name="definitions")
-@dataclass
-class DefinitionsComponent(Component):
+class DefinitionsComponent(Component, BaseModel):
     """Wraps an arbitrary set of Dagster definitions."""
 
     definitions_path: Optional[str] = Field(

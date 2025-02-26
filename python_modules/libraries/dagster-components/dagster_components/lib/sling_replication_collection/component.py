@@ -9,7 +9,6 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
 from dagster_sling.resources import AssetExecutionContext
 from pydantic import BaseModel, Field
-from pydantic.dataclasses import dataclass
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.core.component import registered_component_type
@@ -78,8 +77,7 @@ def resolve_resource(
 
 
 @registered_component_type
-@dataclass
-class SlingReplicationCollection(Component):
+class SlingReplicationCollection(Component, BaseModel):
     """Expose one or more Sling replications to Dagster as assets."""
 
     resource: Annotated[SlingResource, FieldResolver(resolve_resource)] = Field(
