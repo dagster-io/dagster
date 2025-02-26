@@ -17,6 +17,7 @@ export interface AssetSelectionInputProps {
   useAssetSelectionAutoComplete?: (
     assets: AssetGraphQueryItem[],
   ) => Pick<SelectionAutoCompleteProvider, 'useAutoComplete'>;
+  saveOnBlur?: boolean;
 }
 
 const defaultLinter = createSelectionLinter({
