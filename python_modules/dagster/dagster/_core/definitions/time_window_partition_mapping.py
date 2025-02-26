@@ -171,6 +171,28 @@ class TimeWindowPartitionMapping(
             mapping_downstream_to_upstream=True,
         )
 
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ):
+        check.invariant(
+            isinstance(upstream_partitions_def, TimeWindowPartitionsDefinition),
+            "Upstream partitions definition must be a TimeWindowPartitionsDefinition",
+        )
+        check.invariant(
+            isinstance(downstream_partitions_def, TimeWindowPartitionsDefinition),
+            "Downstream partitions definition must be a TimeWindowPartitionsDefinition",
+        )
+
+        upstream_partitions_def = cast(TimeWindowPartitionsDefinition, upstream_partitions_def)
+        downstream_partitions_def = cast(TimeWindowPartitionsDefinition, downstream_partitions_def)
+
+        if upstream_partitions_def.timezone != downstream_partitions_def.timezone:
+            raise DagsterInvalidDefinitionError(
+                f"Timezones {upstream_partitions_def.timezone} and {downstream_partitions_def.timezone} don't match"
+            )
+
     def get_downstream_partitions_for_partitions(
         self,
         upstream_partitions_subset: PartitionsSubset,
