@@ -598,7 +598,7 @@ class Definitions(IHaveNew):
 
         Raises an error if any of the above are not true.
         """
-        defs.get_repository_def().load_all_definitions()
+        defs.get_repository_def().validate_loadable()
 
     @public
     @staticmethod

@@ -460,7 +460,37 @@ def test_timezone_error_partition_mapping():
     with pytest.raises(Exception, match="Timezones UTC and US/Pacific don't match"):
         partition_mapping.validate_partition_mapping(utc, pacific)
 
-    partition_mapping.validate_partition_mapping(utc, utc)
+    @asset(partitions_def=pacific)
+    def upstream_asset():
+        pass
+
+    @asset(deps=[upstream_asset], partitions_def=utc)
+    def downstream_asset():
+        pass
+
+    @asset(deps=[upstream_asset], partitions_def=pacific)
+    def valid_downstream_asset():
+        pass
+
+    invalid_defs = Definitions(assets=[upstream_asset, downstream_asset])
+
+    with pytest.raises(
+        Exception, match="Invalid partition mapping from downstream_asset to upstream_asset"
+    ):
+        invalid_defs.get_repository_def().validate_loadable()
+
+    valid_defs = Definitions(assets=[upstream_asset, valid_downstream_asset])
+    valid_defs.get_repository_def().validate_loadable()
+
+    # Specs that would otherwise be invalid are not checked in validate_loadable (since they
+    # don't always have the needed partitions information for validation)
+    invalid_upstream_asset_spec = AssetSpec(key=upstream_asset.key, partitions_def=pacific)
+
+    defs_with_invalid_asset_spec = Definitions(
+        assets=[invalid_upstream_asset_spec, downstream_asset]
+    )
+
+    defs_with_invalid_asset_spec.get_repository_def().validate_loadable()
 
 
 def test_dependency_resolution_partition_mapping():

@@ -29,6 +29,7 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -332,6 +333,28 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 *(ad for ad in self._assets_defs_by_check_key.values()),
             }
         )
+
+    def validate_partition_mappings(self):
+        for node in self.asset_nodes:
+            if node.partitions_def is None or node.is_external:
+                continue
+
+            parents = self.get_parents(node)
+            for parent in parents:
+                if parent.partitions_def is None or parent.is_external:
+                    continue
+
+                partition_mapping = self.get_partition_mapping(node.key, parent.key)
+
+                try:
+                    partition_mapping.validate_partition_mapping(
+                        parent.partitions_def,
+                        node.partitions_def,
+                    )
+                except Exception as e:
+                    raise DagsterInvalidDefinitionError(
+                        f"Invalid partition mapping from {node.key.to_user_string()} to {parent.key.to_user_string()}"
+                    ) from e
 
     def assets_defs_for_keys(self, keys: Iterable[EntityKey]) -> Sequence[AssetsDefinition]:
         return list({self.assets_def_for_key(key) for key in keys})
