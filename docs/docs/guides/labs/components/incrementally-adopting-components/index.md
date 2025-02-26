@@ -1,6 +1,6 @@
 ---
 title: 'Incrementally adopting components'
-sidebar_position: 50
+sidebar_position: 60
 ---
 
 :::info
