@@ -178,6 +178,10 @@ class RepositoryDefinition:
         # force load of all lazy constructed code artifacts
         self._repository_data.load_all_definitions()
 
+    def validate_loadable(self):
+        self.load_all_definitions()
+        self.asset_graph.validate_partition_mappings()
+
     @public
     @property
     def job_names(self) -> Sequence[str]:
