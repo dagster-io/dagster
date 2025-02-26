@@ -168,11 +168,10 @@ def get_wrapped_translator_class(translator_type: type):
             )
 
         def get_code_version(self, obj: Any) -> Optional[str]:
-            return str(
-                self.resolving_info.get_resolved_attribute(
-                    "code_version", obj, self.base_translator.get_code_version
-                )
+            version = self.resolving_info.get_resolved_attribute(
+                "code_version", obj, self.base_translator.get_code_version
             )
+            return str(version) if version else None
 
         def get_description(self, obj: Any) -> Optional[str]:
             return self.resolving_info.get_resolved_attribute(
