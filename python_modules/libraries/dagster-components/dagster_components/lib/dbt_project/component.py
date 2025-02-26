@@ -19,6 +19,7 @@ from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
     AssetPostProcessorSchema,
+    OpSpec,
     OpSpecSchema,
     PostProcessorFn,
     ResolutionContext,
@@ -61,7 +62,7 @@ class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
     dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
-    op: Optional[OpSpecSchema] = Field(
+    op: Optional[OpSpec] = Field(
         None, description="Customizations to the op underlying the dbt run."
     )
     translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = Field(
@@ -111,6 +112,7 @@ class DbtProjectComponent(Component):
             dagster_dbt_translator=self.translator,
             select=self.select,
             exclude=self.exclude,
+            backfill_policy=self.op.backfill_policy if self.op else None,
         )
         def _fn(context: AssetExecutionContext):
             yield from self.execute(context=context, dbt=self.dbt)
