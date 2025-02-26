@@ -56,6 +56,7 @@ from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
+    from dagster._core.definitions.sla import SlaPassing, SlaUnknown, SlaViolating
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
 
@@ -80,6 +81,9 @@ EventSpecificData = Union[
     "AssetMaterializationPlannedData",
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
+    "SlaViolating",
+    "SlaPassing",
+    "SlaUnknown",
 ]
 
 
@@ -157,6 +161,7 @@ class DagsterEventType(str, Enum):
 
     SLA_PASSING = "SLA_PASSING"
     SLA_VIOLATING = "SLA_VIOLATING"
+    SLA_UNKNOWN = "SLA_UNKNOWN"
 
 
 EVENT_TYPE_TO_DISPLAY_STRING = {

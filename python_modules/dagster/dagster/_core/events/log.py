@@ -6,6 +6,7 @@ from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.sla import SlaPassing, SlaUnknown, SlaViolating
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
@@ -140,6 +141,18 @@ class EventLogEntry(
                 return materialization
 
         return None
+
+    @property
+    def sla_violating(self) -> Optional[SlaViolating]:
+        pass
+
+    @property
+    def sla_passing(self) -> Optional[SlaPassing]:
+        pass
+
+    @property
+    def sla_unknown(self) -> Optional[SlaUnknown]:
+        pass
 
     @property
     def asset_observation(self) -> Optional[AssetObservation]:

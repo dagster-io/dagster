@@ -112,6 +112,7 @@ if TYPE_CHECKING:
         RepositoryLoadData,
     )
     from dagster._core.definitions.run_request import InstigatorType
+    from dagster._core.definitions.sla import SlaPassing, SlaUnknown, SlaViolating
     from dagster._core.event_api import (
         AssetRecordsFilter,
         EventHandlerFn,
@@ -3278,9 +3279,17 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     def report_runless_asset_event(
         self,
-        asset_event: Union["AssetMaterialization", "AssetObservation", "AssetCheckEvaluation"],
+        asset_event: Union[
+            "AssetMaterialization",
+            "AssetObservation",
+            "AssetCheckEvaluation",
+            "SlaViolating",
+            "SlaPassing",
+            "SlaUnknown",
+        ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
+        from dagster._core.definitions.sla import SlaPassing, SlaUnknown, SlaViolating
         from dagster._core.events import (
             AssetMaterialization,
             AssetObservationData,
@@ -3298,6 +3307,9 @@ class DagsterInstance(DynamicPartitionsStore):
         elif isinstance(asset_event, AssetObservation):
             event_type_value = DagsterEventType.ASSET_OBSERVATION.value
             data_payload = AssetObservationData(asset_event)
+        elif isinstance(asset_event, (SlaViolating, SlaPassing, SlaUnknown)):
+            event_type_value = asset_event.dagster_event_type().value
+            data_payload = asset_event
         else:
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
