@@ -25,6 +25,7 @@ from dagster._core.definitions.metadata.metadata_value import (
     NotebookMetadataValue as NotebookMetadataValue,
     NullMetadataValue as NullMetadataValue,
     PathMetadataValue as PathMetadataValue,
+    PoolMetadataValue as PoolMetadataValue,
     PythonArtifactMetadataValue as PythonArtifactMetadataValue,
     TableColumnLineageMetadataValue as TableColumnLineageMetadataValue,
     TableMetadataValue as TableMetadataValue,

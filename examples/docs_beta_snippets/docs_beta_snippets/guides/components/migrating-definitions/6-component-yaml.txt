@@ -1,4 +1,4 @@
 type: definitions@dagster_components
 
-params:
+attributes:
   definitions_path: definitions.py

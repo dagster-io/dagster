@@ -1,11 +1,11 @@
-import os
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from dagster._utils.env import environ
 from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
     EDITABLE_DIR,
+    format_multiline,
+    isolated_snippet_generation_environment,
 )
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
@@ -33,27 +33,7 @@ MY_EXISTING_PROJECT = Path(__file__).parent / "my-existing-project"
 
 
 def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
-    snip_no = 0
-
-    def next_snip_no():
-        nonlocal snip_no
-        snip_no += 1
-        return snip_no
-
-    with (
-        TemporaryDirectory() as tempdir,
-        environ(
-            {
-                "COLUMNS": "90",
-                "NO_COLOR": "1",
-                "HOME": "/tmp",
-                "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
-                "VIRTUAL_ENV": "",
-            }
-        ),
-    ):
-        os.chdir(tempdir)
-
+    with isolated_snippet_generation_environment() as get_next_snip_number:
         _run_command(f"cp -r {MY_EXISTING_PROJECT} . && cd my-existing-project")
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         _run_command(
@@ -63,14 +43,14 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
 
         run_command_and_snippet_output(
             cmd="tree",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree.txt",
+            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
             update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
         )
 
         check_file(
             Path("my_existing_project") / "definitions.py",
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-definitions-before.py",
+            COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-definitions-before.py",
             update_snippets=update_snippets,
         )
 
@@ -82,14 +62,15 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
 
         run_command_and_snippet_output(
             cmd="dg scaffold component 'definitions@dagster_components' elt-definitions",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffold.txt",
+            snippet_path=COMPONENTS_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_MY_EXISTING_PROJECT],
         )
 
         run_command_and_snippet_output(
             cmd="mv my_existing_project/elt/* my_existing_project/components/elt-definitions",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-mv.txt",
+            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-mv.txt",
             update_snippets=update_snippets,
         )
         _run_command("rm -rf my_existing_project/elt")
@@ -99,18 +80,20 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             / "components"
             / "elt-definitions"
             / "definitions.py",
-            """import dagster as dg
+            format_multiline("""
+                import dagster as dg
 
-from . import assets
-from .jobs import sync_tables_daily_schedule, sync_tables_job
+                from . import assets
+                from .jobs import sync_tables_daily_schedule, sync_tables_job
 
-defs = dg.Definitions(
-    assets=dg.load_assets_from_modules([assets]),
-    jobs=[sync_tables_job],
-    schedules=[sync_tables_daily_schedule],
-)
-""",
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-elt-nested-definitions.py",
+                defs = dg.Definitions(
+                    assets=dg.load_assets_from_modules([assets]),
+                    jobs=[sync_tables_job],
+                    schedules=[sync_tables_daily_schedule],
+                )
+            """),
+            COMPONENTS_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-elt-nested-definitions.py",
         )
 
         create_file(
@@ -118,38 +101,39 @@ defs = dg.Definitions(
             / "components"
             / "elt-definitions"
             / "component.yaml",
-            """type: definitions@dagster_components
+            format_multiline("""
+            type: definitions@dagster_components
 
-params:
-  definitions_path: definitions.py
-""",
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-yaml.txt",
+            attributes:
+              definitions_path: definitions.py
+            """),
+            COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-component-yaml.txt",
         )
 
         create_file(
             Path("my_existing_project") / "definitions.py",
-            """from pathlib import Path
+            format_multiline("""
+            from pathlib import Path
 
-import dagster_components as dg_components
-from my_existing_project.analytics import assets as analytics_assets
-from my_existing_project.analytics.jobs import (
-    regenerate_analytics_hourly_schedule,
-    regenerate_analytics_job,
-)
+            import dagster_components as dg_components
+            from my_existing_project.analytics import assets as analytics_assets
+            from my_existing_project.analytics.jobs import (
+                regenerate_analytics_hourly_schedule,
+                regenerate_analytics_job,
+            )
 
-import dagster as dg
+            import dagster as dg
 
-defs = dg.Definitions.merge(
-    dg.Definitions(
-        assets=dg.load_assets_from_modules([analytics_assets]),
-        jobs=[regenerate_analytics_job],
-        schedules=[regenerate_analytics_hourly_schedule],
-    ),
-    dg_components.build_component_defs(Path(__file__).parent / "components"),
-)
-
-""",
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-definitions-after.py",
+            defs = dg.Definitions.merge(
+                dg.Definitions(
+                    assets=dg.load_assets_from_modules([analytics_assets]),
+                    jobs=[regenerate_analytics_job],
+                    schedules=[regenerate_analytics_hourly_schedule],
+                ),
+                dg_components.build_component_defs(Path(__file__).parent / "components"),
+            )
+        """),
+            COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-definitions-after.py",
         )
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
@@ -159,14 +143,15 @@ defs = dg.Definitions.merge(
 
         run_command_and_snippet_output(
             cmd="tree",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-tree-after.txt",
+            snippet_path=COMPONENTS_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-tree-after.txt",
             update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
         )
 
         # validate loads
         _run_command(
-            "uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+            "uv pip freeze && uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
         )
 
         # migrate analytics
@@ -181,28 +166,30 @@ defs = dg.Definitions.merge(
             / "components"
             / "analytics-definitions"
             / "definitions.py",
-            """import dagster as dg
+            format_multiline("""
+                import dagster as dg
 
-from . import assets
-from .jobs import regenerate_analytics_hourly_schedule, regenerate_analytics_job
+                from . import assets
+                from .jobs import regenerate_analytics_hourly_schedule, regenerate_analytics_job
 
-defs = dg.Definitions(
-    assets=dg.load_assets_from_modules([assets]),
-    jobs=[regenerate_analytics_job],
-    schedules=[regenerate_analytics_hourly_schedule],
-)
-""",
+                defs = dg.Definitions(
+                    assets=dg.load_assets_from_modules([assets]),
+                    jobs=[regenerate_analytics_job],
+                    schedules=[regenerate_analytics_hourly_schedule],
+                )
+            """),
         )
         create_file(
             Path("my_existing_project")
             / "components"
             / "analytics-definitions"
             / "component.yaml",
-            """type: definitions@dagster_components
+            format_multiline("""
+                type: definitions@dagster_components
 
-params:
-  definitions_path: definitions.py
-""",
+                attributes:
+                  definitions_path: definitions.py
+            """),
         )
 
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
@@ -212,18 +199,20 @@ params:
         run_command_and_snippet_output(
             cmd="tree",
             snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-tree-after-all.txt",
+            / f"{get_next_snip_number()}-tree-after-all.txt",
             update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
         )
 
         create_file(
             Path("my_existing_project") / "definitions.py",
-            """from pathlib import Path
+            format_multiline("""
+                from pathlib import Path
 
-import dagster_components as dg_components
+                import dagster_components as dg_components
 
-defs = dg_components.build_component_defs(Path(__file__).parent / "components")
-""",
-            COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-definitions-after-all.py",
+                defs = dg_components.build_component_defs(Path(__file__).parent / "components")
+            """),
+            COMPONENTS_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-definitions-after-all.py",
         )

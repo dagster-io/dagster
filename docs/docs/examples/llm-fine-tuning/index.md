@@ -10,6 +10,12 @@ sidebar_custom_props:
 
 # Fine-tune an LLM
 
+:::note
+
+To see [video of this example](https://www.youtube.com/watch?v=x-1R2z0eEdg)
+
+:::
+
 In this example, you'll build a pipeline with Dagster that:
 
 - Loads a public Goodreads JSON dataset into DuckDB

@@ -361,6 +361,25 @@ def define_multi_run_schedule():
     )
 
 
+def define_dup_run_key_schedule():
+    def gen_runs(context):
+        if not context.scheduled_execution_time:
+            date = get_current_datetime() - relativedelta(days=1)
+        else:
+            date = context.scheduled_execution_time - relativedelta(days=1)
+
+        yield RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "A"})
+        yield RunRequest(run_key="A", run_config=_op_config(date), tags={"label": "B"})
+
+    return ScheduleDefinition(
+        name="dup_run_key_schedule",
+        cron_schedule="0 0 * * *",
+        job_name="the_job",
+        execution_timezone="UTC",
+        execution_fn=gen_runs,
+    )
+
+
 @schedule(
     job_name="the_job",
     cron_schedule="0 0 * * *",
@@ -590,6 +609,7 @@ def the_repo():
         define_multi_run_schedule(),
         multi_run_list_schedule,
         define_multi_run_schedule_with_missing_run_key(),
+        define_dup_run_key_schedule(),
         union_schedule,
         large_schedule,
         two_step_job,
@@ -2641,6 +2661,49 @@ class TestSchedulerRun:
             assert len(ticks) == 2
             assert len([tick for tick in ticks if tick.status == TickStatus.SUCCESS]) == 2
             runs = scheduler_instance.get_runs()
+
+    @pytest.mark.parametrize("executor", get_schedule_executors())
+    def test_multi_run_dup_key(
+        self,
+        scheduler_instance: DagsterInstance,
+        workspace_context: WorkspaceProcessContext,
+        remote_repo: RemoteRepository,
+        executor: ThreadPoolExecutor,
+    ):
+        freeze_datetime = feb_27_2019_one_second_to_midnight()
+        with freeze_time(freeze_datetime):
+            schedule = remote_repo.get_schedule("dup_run_key_schedule")
+            schedule_origin = schedule.get_remote_origin()
+            scheduler_instance.start_schedule(schedule)
+
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+            assert len(ticks) == 0
+
+            # launch_scheduled_runs does nothing before the first tick
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            assert scheduler_instance.get_runs_count() == 0
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+            assert len(ticks) == 0
+
+        freeze_datetime = freeze_datetime + relativedelta(seconds=2)
+        with freeze_time(freeze_datetime):
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
+            assert scheduler_instance.get_runs_count() == 1
+            ticks = scheduler_instance.get_ticks(schedule_origin.get_id(), schedule.selector_id)
+            assert len(ticks) == 1
+
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
+
+            runs = scheduler_instance.get_runs()
+            validate_tick(
+                ticks[0],
+                schedule,
+                expected_datetime,
+                TickStatus.SUCCESS,
+                [run.run_id for run in runs],
+            )
+            assert runs[0].tags["label"] == "A"
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
     def test_multi_run_list(

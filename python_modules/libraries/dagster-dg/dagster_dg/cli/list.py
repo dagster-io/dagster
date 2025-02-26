@@ -18,20 +18,19 @@ def list_group():
 
 
 # ########################
-# ##### CODE LOCATION
+# ##### PROJECT
 # ########################
 
 
-@list_group.command(name="code-location", cls=DgClickCommand)
+@list_group.command(name="project", cls=DgClickCommand)
 @dg_global_options
-@click.pass_context
-def code_location_list_command(context: click.Context, **global_options: object) -> None:
-    """List code locations in the current deployment."""
-    cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_deployment_environment(Path.cwd(), cli_config)
+def project_list_command(**global_options: object) -> None:
+    """List projects in the current workspace."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_workspace_environment(Path.cwd(), cli_config)
 
-    for code_location in dg_context.get_code_location_names():
-        click.echo(code_location)
+    for project in dg_context.get_project_names():
+        click.echo(project)
 
 
 # ########################
@@ -41,11 +40,10 @@ def code_location_list_command(context: click.Context, **global_options: object)
 
 @list_group.command(name="component", cls=DgClickCommand)
 @dg_global_options
-@click.pass_context
-def component_list_command(context: click.Context, **global_options: object) -> None:
-    """List Dagster component instances defined in the current code location."""
-    cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
+def component_list_command(**global_options: object) -> None:
+    """List Dagster component instances defined in the current project."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     for component_instance_name in dg_context.get_component_instance_names():
         click.echo(component_instance_name)
@@ -65,12 +63,9 @@ def component_list_command(context: click.Context, **global_options: object) -> 
     help="Output as JSON instead of a table.",
 )
 @dg_global_options
-@click.pass_context
-def component_type_list(
-    context: click.Context, output_json: bool, **global_options: object
-) -> None:
-    """List registered Dagster components in the current code location environment."""
-    cli_config = normalize_cli_config(global_options, context)
+def component_type_list(output_json: bool, **global_options: object) -> None:
+    """List registered Dagster components in the current project environment."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
 

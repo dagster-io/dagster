@@ -25,15 +25,13 @@ def docs_group():
 @click.argument("component_type", type=str)
 @click.option("--output", type=click.Choice(["browser", "cli"]), default="browser")
 @dg_global_options
-@click.pass_context
 def component_type_docs_command(
-    context: click.Context,
     component_type: str,
     output: str,
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     component_key = GlobalComponentKey.from_typename(component_type)

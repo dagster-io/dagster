@@ -1,6 +1,6 @@
 type: pipes_subprocess_script_collection@dagster_components
 
-params:
+attributes:
   scripts:
     - path: script_one.py
       assets:

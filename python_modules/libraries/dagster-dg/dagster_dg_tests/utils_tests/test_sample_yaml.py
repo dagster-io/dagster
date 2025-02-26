@@ -25,7 +25,7 @@ def test_generate_sample_yaml():
         yaml
         == """type: .sample
 
-params:
+attributes:
   sub_scoped: # Available scope: {'outer_scope'}
     str_field: '...' # Available scope: {'outer_scope'}
     int_field: 0 # Available scope: {'outer_scope'}

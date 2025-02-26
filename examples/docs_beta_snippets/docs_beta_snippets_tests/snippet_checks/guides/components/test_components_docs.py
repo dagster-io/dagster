@@ -1,10 +1,6 @@
 import os
-import re
-import subprocess
+import textwrap
 from pathlib import Path
-from tempfile import TemporaryDirectory
-
-import pytest
 
 from dagster._utils.env import environ
 from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
@@ -16,6 +12,8 @@ from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
     MASK_SLING_PROMO,
     MASK_SLING_WARNING,
     MASK_TIME,
+    format_multiline,
+    isolated_snippet_generation_environment,
 )
 from docs_beta_snippets_tests.snippet_checks.utils import (
     _run_command,
@@ -46,29 +44,16 @@ def test_components_docs_index(update_snippets: bool) -> None:
         snip_no += 1
         return snip_no
 
-    with (
-        TemporaryDirectory() as tempdir,
-        environ(
-            {
-                "COLUMNS": "90",
-                "NO_COLOR": "1",
-                "HOME": "/tmp",
-                "DAGSTER_GIT_REPO_DIR": str(DAGSTER_ROOT),
-                "VIRTUAL_ENV": "",
-            }
-        ),
-    ):
-        os.chdir(tempdir)
-
+    with isolated_snippet_generation_environment():
         run_command_and_snippet_output(
             cmd="dg --help",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-help.txt",
             update_snippets=update_snippets,
         )
 
-        # Scaffold code location
+        # Scaffold project
         run_command_and_snippet_output(
-            cmd="dg scaffold code-location jaffle-platform --use-editable-dagster",
+            cmd="dg scaffold project jaffle-platform --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -92,7 +77,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[tool.dagster]"),
-                re_ignore_after("is_component_lib = true"),
+                re_ignore_after("is_project = true"),
             ],
         )
         check_file(
@@ -156,30 +141,35 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         # Set up duckdb Sling connection
-        run_command_and_snippet_output(
-            cmd="uv run sling conns set DUCKDB type=duckdb instance=/tmp/jaffle_platform.duckdb",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-sling-setup-duckdb.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_SLING_WARNING,
-                MASK_SLING_PROMO,
-                MASK_TIME,
-                (r"set in .*?.sling", "set in /.../.sling"),
-            ],
-        )
-        run_command_and_snippet_output(
-            cmd="uv run sling conns test DUCKDB",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{next_snip_no()}-sling-test-duckdb.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[
-                MASK_SLING_WARNING,
-                MASK_SLING_DOWNLOAD_DUCKDB,
-                MASK_SLING_PROMO,
-                MASK_TIME,
-            ],
-        )
+        with environ(
+            {
+                "BUILDKITE_MESSAGE": ""
+            }  # keep buildkite message from messing up sling parsing
+        ):
+            run_command_and_snippet_output(
+                cmd="uv run sling conns set DUCKDB type=duckdb instance=/tmp/jaffle_platform.duckdb",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-sling-setup-duckdb.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    MASK_SLING_WARNING,
+                    MASK_SLING_PROMO,
+                    MASK_TIME,
+                    (r"set in .*?.sling", "set in /.../.sling"),
+                ],
+            )
+            run_command_and_snippet_output(
+                cmd="uv run sling conns test DUCKDB",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-sling-test-duckdb.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    MASK_SLING_WARNING,
+                    MASK_SLING_DOWNLOAD_DUCKDB,
+                    MASK_SLING_PROMO,
+                    MASK_TIME,
+                ],
+            )
 
         sling_duckdb_path = Path("/") / "tmp" / ".sling" / "bin" / "duckdb"
         sling_duckdb_version = next(iter(os.listdir()), None)
@@ -192,9 +182,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
         ):
             # Test sling sync
             run_command_and_snippet_output(
-                cmd="""curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
-curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
-curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv""",
+                cmd=textwrap.dedent("""
+                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
+                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
+                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv
+                """).strip(),
                 snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-curl.txt",
                 update_snippets=update_snippets,
                 ignore_output=True,
@@ -206,21 +198,24 @@ curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/head
                 / "replication.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-replication.yaml",
-                contents="""source: LOCAL
-target: DUCKDB
+                contents=textwrap.dedent(
+                    """
+                    source: LOCAL
+                    target: DUCKDB
 
-defaults:
-  mode: full-refresh
-  object: "{stream_table}"
+                    defaults:
+                      mode: full-refresh
+                      object: "{stream_table}"
 
-streams:
-  file://raw_customers.csv:
-    object: "main.raw_customers"
-  file://raw_orders.csv:
-    object: "main.raw_orders"
-  file://raw_payments.csv:
-    object: "main.raw_payments"
-    """,
+                    streams:
+                      file://raw_customers.csv:
+                        object: "main.raw_customers"
+                      file://raw_orders.csv:
+                        object: "main.raw_orders"
+                      file://raw_payments.csv:
+                        object: "main.raw_payments"
+                """,
+                ).strip(),
             )
             _run_command(
                 "dagster asset materialize --select '*' -m jaffle_platform.definitions"
@@ -231,7 +226,7 @@ streams:
                 / f"{next_snip_no()}-duckdb-select.txt",
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
-                    (r"\d\d\d\d\d\d\d\d\d\d │\n", "...        | \n")
+                    (r"\d\d\d\d\d\d\d\d\d\d │\n", "...        | \n"),
                 ],
             )
 
@@ -253,13 +248,6 @@ streams:
                 update_snippets=update_snippets,
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
             )
-            run_command_and_snippet_output(
-                cmd="dg info component-type 'dbt_project@dagster_components'",
-                snippet_path=COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-dg-component-type-info.txt",
-                update_snippets=update_snippets,
-                snippet_replace_regex=[re_ignore_after("Component params schema:")],
-            )
 
             # Scaffold dbt project components
             run_command_and_snippet_output(
@@ -280,17 +268,18 @@ streams:
                 Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
-                contents="""type: dagster_components.dbt_project
+                contents=format_multiline("""
+                    type: dagster_components.dbt_project
 
-params:
-  dbt:
-    project_dir: ../../../dbt/jdbt
-  asset_attributes:
-    key: "target/main/{{ node.name }}
-""",
+                    attributes:
+                      dbt:
+                        project_dir: ../../../dbt/jdbt
+                      asset_attributes:
+                        key: "target/main/{{ node.name }}
+                """),
             )
             run_command_and_snippet_output(
-                cmd="dg check component",
+                cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check-error.txt",
                 update_snippets=update_snippets,
@@ -304,17 +293,18 @@ params:
                 Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
-                contents="""type: dbt_project@dagster_components
+                contents=format_multiline("""
+                    type: dbt_project@dagster_components
 
-params:
-  dbt:
-    project_dir: ../../../dbt/jdbt
-  asset_attributes:
-    key: "target/main/{{ node.name }}"
-""",
+                    attributes:
+                      dbt:
+                        project_dir: ../../../dbt/jdbt
+                      asset_attributes:
+                        key: "target/main/{{ node.name }}"
+                """),
             )
             run_command_and_snippet_output(
-                cmd="dg check component",
+                cmd="dg check yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check.txt",
                 update_snippets=update_snippets,

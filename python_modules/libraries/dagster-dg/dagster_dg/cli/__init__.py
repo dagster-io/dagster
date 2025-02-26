@@ -3,13 +3,13 @@ from pathlib import Path
 import click
 
 from dagster_dg.cli.check import check_group
-from dagster_dg.cli.configure_editor import configure_editor_group
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.cli.info import info_group
+from dagster_dg.cli.init import init_command
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.scaffold import scaffold_group
+from dagster_dg.cli.utils import utils_group
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
@@ -25,11 +25,11 @@ def create_dg_cli():
         commands={
             "check": check_group,
             "docs": docs_group,
-            "info": info_group,
-            "configure-editor": configure_editor_group,
+            "utils": utils_group,
             "list": list_group,
             "scaffold": scaffold_group,
             "dev": dev_command,
+            "init": init_command,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,
@@ -61,15 +61,14 @@ def create_dg_cli():
         default=False,
     )
     @click.version_option(__version__, "--version", "-v")
-    @click.pass_context
     def group(
-        context: click.Context,
         install_completion: bool,
         clear_cache: bool,
         rebuild_component_registry: bool,
         **global_options: object,
     ):
         """CLI for working with Dagster components."""
+        context = click.get_current_context()
         if install_completion:
             import dagster_dg.completion
 

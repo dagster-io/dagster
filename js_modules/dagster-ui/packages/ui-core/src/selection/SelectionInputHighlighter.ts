@@ -4,6 +4,7 @@ import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import CodeMirror from 'codemirror';
 import {css} from 'styled-components';
 
+import {SyntaxError} from './CustomErrorListener';
 import {parseInput} from './SelectionInputParser';
 import {
   AllExpressionContext,
@@ -188,15 +189,18 @@ export class SyntaxHighlightingVisitor
   }
 }
 
-export function applyStaticSyntaxHighlighting(cm: CodeMirror.Editor): void {
+export function applyStaticSyntaxHighlighting(cm: CodeMirror.Editor, errors: SyntaxError[]): void {
   const value = cm.getValue();
 
   // Clear existing marks to avoid duplication
   cm.getAllMarks().forEach((mark) => {
-    // Don't clear error marks coming from the linter which uses the real grammar's parser
-    if ((mark as any)?.__annotation?.severity !== 'error') {
-      mark.clear();
-    }
+    mark.clear();
+  });
+
+  errors.forEach((error, idx) => {
+    cm.markText(cm.posFromIndex(error.from), cm.posFromIndex(error.to), {
+      className: `selection-input-error selection-input-error-${idx}`,
+    });
   });
 
   const cursorIndex = cm.getCursor().ch;
@@ -255,7 +259,7 @@ export const SelectionAutoCompleteInputCSS = css`
     font-family: ${FontFamily.monospace};
   }
 
-  .CodeMirror-lint-mark-error {
+  .selection-input-error {
     background: unset;
     text-decoration-line: underline;
     text-decoration-style: wavy;

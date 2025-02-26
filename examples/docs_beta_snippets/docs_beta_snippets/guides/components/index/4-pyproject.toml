@@ -4,6 +4,5 @@ module_name = "jaffle_platform.definitions"
 code_location_name = "jaffle-platform"
 
 [tool.dg]
-is_code_location = true
-is_component_lib = true
+is_project = true
 ...

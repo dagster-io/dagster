@@ -21,7 +21,7 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
-    isolated_example_code_location_foo_bar,
+    isolated_example_project_foo_bar,
     modify_pyproject_toml,
 )
 
@@ -57,14 +57,14 @@ CLI_TEST_CASES = [
 
 
 @contextlib.contextmanager
-def create_code_location_from_components(
+def create_project_from_components(
     runner: ProxyRunner, *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
 ) -> Iterator[Path]:
-    """Scaffolds a code location with the given components in a temporary directory,
+    """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
     origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
-    with isolated_example_code_location_foo_bar(runner, component_dirs=origin_paths):
+    with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
         for src_path in src_paths:
             components_dir = Path.cwd() / "foo_bar" / "components" / src_path.split("/")[-1]
             if local_component_defn_to_inject:
@@ -76,14 +76,14 @@ def create_code_location_from_components(
 def test_check_component_succeeds_non_default_component_package() -> None:
     with (
         ProxyRunner.test() as runner,
-        create_code_location_from_components(
+        create_project_from_components(
             runner,
         ),
     ):
         with modify_pyproject_toml() as toml:
             set_toml_value(toml, ("tool", "dg", "component_package"), "foo_bar._components")
 
-        # We need to do all of this copying here rather than relying on the code location setup
+        # We need to do all of this copying here rather than relying on the project setup
         # fixture because that fixture assumes a default component package.
         component_src_path = COMPONENT_INTEGRATION_TEST_DIR / BASIC_VALID_VALUE.component_path
         component_name = component_src_path.name
@@ -93,7 +93,7 @@ def test_check_component_succeeds_non_default_component_package() -> None:
         assert BASIC_VALID_VALUE.component_type_filepath
         shutil.copy(BASIC_VALID_VALUE.component_type_filepath, components_dir / "__init__.py")
 
-        result = runner.invoke("check", "component")
+        result = runner.invoke("check", "yaml")
         assert_runner_result(result, exit_0=True)
 
 
@@ -108,14 +108,14 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
     """
     with (
         ProxyRunner.test() as runner,
-        create_code_location_from_components(
+        create_project_from_components(
             runner,
             test_case.component_path,
             local_component_defn_to_inject=test_case.component_type_filepath,
         ) as tmpdir,
     ):
         with pushd(tmpdir):
-            result = runner.invoke("check", "component")
+            result = runner.invoke("check", "yaml")
             if test_case.should_error:
                 assert result.exit_code != 0, str(result.stdout)
 
@@ -131,7 +131,7 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
     [True, False],
 )
 def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
-    """Ensure that the check CLI can validate multiple components in a single code location, and
+    """Ensure that the check CLI can validate multiple components in a single project, and
     that error messages from all components are displayed.
 
     The parameter `scope_check_run` determines whether the check CLI is run pointing at both
@@ -140,7 +140,7 @@ def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
     """
     with (
         ProxyRunner.test() as runner,
-        create_code_location_from_components(
+        create_project_from_components(
             runner,
             BASIC_MISSING_VALUE.component_path,
             BASIC_INVALID_VALUE.component_path,
@@ -150,7 +150,7 @@ def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
         with pushd(str(tmpdir)):
             result = runner.invoke(
                 "check",
-                "component",
+                "yaml",
                 *(
                     [
                         str(Path("foo_bar") / "components" / "basic_component_missing_value"),
@@ -171,7 +171,7 @@ def test_validation_cli_multiple_components_filter() -> None:
     """Ensure that the check CLI filters components to validate based on the provided paths."""
     with (
         ProxyRunner.test() as runner,
-        create_code_location_from_components(
+        create_project_from_components(
             runner,
             BASIC_MISSING_VALUE.component_path,
             BASIC_INVALID_VALUE.component_path,
@@ -181,7 +181,7 @@ def test_validation_cli_multiple_components_filter() -> None:
         with pushd(tmpdir):
             result = runner.invoke(
                 "check",
-                "component",
+                "yaml",
                 str(Path("foo_bar") / "components" / "basic_component_missing_value"),
             )
             assert result.exit_code != 0, str(result.stdout)
@@ -198,15 +198,15 @@ def test_validation_cli_local_component_cache() -> None:
     """Tests that the check CLI properly caches local components to avoid re-loading them."""
     with (
         ProxyRunner.test(verbose=True) as runner,
-        create_code_location_from_components(
+        create_project_from_components(
             runner,
             BASIC_VALID_VALUE.component_path,
             BASIC_INVALID_VALUE.component_path,
             local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
-        ) as code_location_dir,
+        ) as project_dir,
     ):
-        with pushd(code_location_dir):
-            result = runner.invoke("check", "component")
+        with pushd(project_dir):
+            result = runner.invoke("check", "yaml")
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )
@@ -216,7 +216,7 @@ def test_validation_cli_local_component_cache() -> None:
             )
 
             # Local components should all be cached
-            result = runner.invoke("check", "component")
+            result = runner.invoke("check", "yaml")
             assert not re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )
@@ -227,22 +227,14 @@ def test_validation_cli_local_component_cache() -> None:
 
             # Update local component type, to invalidate cache
             contents = (
-                code_location_dir
-                / "foo_bar"
-                / "components"
-                / "basic_component_success"
-                / "__init__.py"
+                project_dir / "foo_bar" / "components" / "basic_component_success" / "__init__.py"
             ).read_text()
             (
-                code_location_dir
-                / "foo_bar"
-                / "components"
-                / "basic_component_success"
-                / "__init__.py"
+                project_dir / "foo_bar" / "components" / "basic_component_success" / "__init__.py"
             ).write_text(contents + "\n")
 
             # basic_component_success local component is now be invalidated and needs to be re-cached, the other one should still be cached
-            result = runner.invoke("check", "component")
+            result = runner.invoke("check", "yaml")
             assert re.search(
                 r"CACHE \[write\].*basic_component_success.*local_component_registry", result.stdout
             )

@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Annotated, Callable, Optional, Union
+from typing import Annotated, Literal, Optional, Union
 
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -10,6 +10,7 @@ from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
 from dagster_sling.resources import AssetExecutionContext
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
+from typing_extensions import TypeAlias
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.core.component import registered_component_type
@@ -19,8 +20,9 @@ from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
-    AssetSpecTransformSchema,
+    AssetPostProcessorSchema,
     OpSpecSchema,
+    PostProcessorFn,
 )
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
@@ -37,10 +39,14 @@ def resolve_translator(
     )
 
 
+SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
+
+
 class SlingReplicationSpec(BaseModel):
     path: str
     op: Optional[OpSpecSchema]
     translator: Annotated[Optional[DagsterSlingTranslator], FieldResolver(resolve_translator)]
+    include_metadata: list[SlingMetadataAddons]
 
 
 class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
@@ -52,6 +58,10 @@ class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
         None,
         description="Customizations to the op underlying the Sling replication.",
     )
+    include_metadata: list[SlingMetadataAddons] = Field(
+        ["column_metadata", "row_count"],
+        description="The metadata to include on materializations of the assets produced by the Sling replication.",
+    )
     asset_attributes: Annotated[
         Optional[AssetAttributesSchema],
         ResolvableFieldInfo(required_scope={"stream_definition"}),
@@ -61,10 +71,10 @@ class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
     )
 
 
-class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollectionSchema"]):
+class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollection"]):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationSchema]
-    transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
+    asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
 def resolve_resource(
@@ -88,9 +98,9 @@ class SlingReplicationCollection(Component):
     replications: Sequence[SlingReplicationSpec] = Field(
         ..., description="A set of Sling replications to expose as assets."
     )
-    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = Field(
+    asset_post_processors: Optional[Sequence[PostProcessorFn]] = Field(
         default=None,
-        description="Transformations to apply to the Sling definitions produced by this component.",
+        description="Post-processors to apply to the asset definitions produced by this component.",
     )
 
     @classmethod
@@ -117,19 +127,29 @@ class SlingReplicationCollection(Component):
             dagster_sling_translator=replication_spec.translator,
         )
         def _asset(context: AssetExecutionContext):
-            yield from self.execute(context=context, sling=self.resource)
+            yield from self.execute(
+                context=context, sling=self.resource, replication_spec=replication_spec
+            )
 
         return _asset
 
     def execute(
-        self, context: AssetExecutionContext, sling: SlingResource
+        self,
+        context: AssetExecutionContext,
+        sling: SlingResource,
+        replication_spec: SlingReplicationSpec,
     ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
-        yield from sling.replicate(context=context)
+        iterator = sling.replicate(context=context)
+        if "column_metadata" in replication_spec.include_metadata:
+            iterator = iterator.fetch_column_metadata()
+        if "row_count" in replication_spec.include_metadata:
+            iterator = iterator.fetch_row_count()
+        yield from iterator
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         defs = Definitions(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )
-        for transform in self.transforms or []:
-            defs = transform(defs)
+        for post_processor in self.asset_post_processors or []:
+            defs = post_processor(defs)
         return defs

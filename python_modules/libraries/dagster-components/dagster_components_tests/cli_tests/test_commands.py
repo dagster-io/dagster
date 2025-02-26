@@ -1,10 +1,12 @@
 import json
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 from dagster._core.test_utils import new_cwd
 from dagster_components.cli import cli
 from dagster_components.utils import ensure_dagster_components_tests_import
+from jsonschema import Draft202012Validator, ValidationError
 
 ensure_dagster_components_tests_import()
 
@@ -56,7 +58,7 @@ def test_list_component_types_command():
         "summary": "A simple asset that returns a constant string value.",
         "description": "A simple asset that returns a constant string value.",
         "scaffold_params_schema": None,
-        "component_params_schema": {
+        "component_schema": {
             "properties": {
                 "asset_key": {"title": "Asset Key", "type": "string"},
                 "value": {"title": "Value", "type": "string"},
@@ -83,7 +85,7 @@ def test_list_component_types_command():
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         "scaffold_params_schema": pipes_script_params_schema,
-        "component_params_schema": pipes_script_params_schema,
+        "component_schema": pipes_script_params_schema,
     }
 
 
@@ -186,6 +188,23 @@ def test_all_components_schema_command():
         assert (
             component_type_schema_def["properties"]["type"]["const"]
             == f"{component_type_key}@dagster_components.test"
+        )
+        assert "attributes" in component_type_schema_def["properties"]
+
+    top_level_component_validator = Draft202012Validator(schema=result)
+    top_level_component_validator.validate(
+        {
+            "type": "simple_asset@dagster_components.test",
+            "attributes": {"asset_key": "my_asset", "value": "my_value"},
+        }
+    )
+    with pytest.raises(ValidationError):
+        top_level_component_validator.validate(
+            {
+                "type": "simple_asset@dagster_components.test",
+                "attributes": {"asset_key": "my_asset", "value": "my_value"},
+                "extra_key": "extra_value",
+            }
         )
 
 

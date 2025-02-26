@@ -13,32 +13,32 @@ from dagster_graphql.client import DagsterGraphQLClient
 ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
-    isolated_example_code_location_foo_bar,
-    isolated_example_deployment_foo,
+    isolated_example_project_foo_bar,
+    isolated_example_workspace,
 )
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_deployment_context_success():
-    # The deployment command will use `uv tool run dagster dev` to start the webserver if it
+def test_dev_command_workspace_context_success():
+    # The command will use `uv tool run dagster dev` to start the webserver if it
     # cannot find a venv with `dagster` and `dagster-webserver` installed. `uv tool run` will
-    # pull the `dagster` package from PyPI. To avoid this, we ensure the deployment directory has a
+    # pull the `dagster` package from PyPI. To avoid this, we ensure the workspace directory has a
     # venv with `dagster` and `dagster-webserver` installed.
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner, create_venv=True):
-        runner.invoke("scaffold", "code-location", "code-location-1")
-        runner.invoke("scaffold", "code-location", "code-location-2")
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
+        runner.invoke("scaffold", "project", "project-1")
+        runner.invoke("scaffold", "project", "project-2")
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
-        code_locations = {"code-location-1", "code-location-2"}
-        _assert_code_locations_loaded_and_exit(code_locations, port, dev_process)
+        projects = {"project-1", "project-2"}
+        _assert_projects_loaded_and_exit(projects, port, dev_process)
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_code_location_context_success():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+def test_dev_command_project_context_success():
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
-        _assert_code_locations_loaded_and_exit({"foo-bar"}, port, dev_process)
+        _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
 
 
 @pytest.mark.skipif(
@@ -77,7 +77,7 @@ def test_dev_command_has_options_of_dagster_dev():
 # Modify this test with a new option whenever a new forwarded option is added to `dagster-dev`.
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_command_forwards_options_to_dagster_dev():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         port = _find_free_port()
         options = [
             "--code-server-log-level",
@@ -128,14 +128,12 @@ def _launch_dev_command(options: list[str], capture_output: bool = False) -> sub
     )
 
 
-def _assert_code_locations_loaded_and_exit(
-    code_locations: set[str], port: int, proc: subprocess.Popen
-) -> None:
+def _assert_projects_loaded_and_exit(projects: set[str], port: int, proc: subprocess.Popen) -> None:
     child_processes = []
     try:
         _ping_webserver(port)
         child_processes = _get_child_processes(proc.pid)
-        assert _query_code_locations(port) == code_locations
+        assert _query_code_locations(port) == projects
     finally:
         proc.send_signal(signal.SIGINT)
         proc.communicate()

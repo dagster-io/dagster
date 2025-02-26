@@ -39,7 +39,7 @@ def _get_logs_for_stream(
     corresponding_logs = []
     recording_logs = False
     for log in sling_cli.stream_raw_logs():
-        if (f"running stream {stream_name}") in log:
+        if stream_name in log:
             corresponding_logs.append(log)
             recording_logs = True
         elif recording_logs:

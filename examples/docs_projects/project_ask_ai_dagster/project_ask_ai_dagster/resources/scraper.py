@@ -10,6 +10,7 @@ class SitemapScraper(dg.ConfigurableResource):
     sitemap_url: str
     headers: dict = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
+    # start_sitemap
     def parse_sitemap(self) -> list[str]:
         """Extract URLs from sitemap XML."""
         response = requests.get(self.sitemap_url, headers=self.headers)
@@ -20,6 +21,9 @@ class SitemapScraper(dg.ConfigurableResource):
         urls = list(set(loc.text.strip() for loc in soup.find_all("loc") if loc.text.strip()))
         return urls
 
+    # end_sitemap
+
+    # start_scrape
     def scrape_page(self, url: str) -> Optional[Document]:
         log = dg.get_dagster_logger()
         try:
@@ -51,4 +55,8 @@ class SitemapScraper(dg.ConfigurableResource):
             return None
 
 
+# end_scrape
+
+# start_resource_init
 scraper_resource = SitemapScraper(sitemap_url=dg.EnvVar("DOCS_SITEMAP"))
+# end_resource_init

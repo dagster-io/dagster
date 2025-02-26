@@ -10,6 +10,7 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
+from typing_extensions import TypeAlias
 
 from dagster_components.core.schema.base import FieldResolver, ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
@@ -20,6 +21,9 @@ def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
     return (
         AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
     )
+
+
+PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
 
 
 class OpSpecSchema(ResolvableSchema):
@@ -40,15 +44,20 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     deps: Sequence[str] = Field(
         default_factory=list,
         description="The asset keys for the upstream assets that this asset depends on.",
+        examples=[["my_database/my_schema/upstream_table"]],
     )
     description: Optional[str] = Field(
-        default=None, description="Human-readable description of the asset."
+        default=None,
+        description="Human-readable description of the asset.",
+        examples=["Refined sales data"],
     )
     metadata: Union[str, Mapping[str, Any]] = Field(
         default_factory=dict, description="Additional metadata for the asset."
     )
     group_name: Optional[str] = Field(
-        default=None, description="Used to organize assets into groups, defaults to 'default'."
+        default=None,
+        description="Used to organize assets into groups, defaults to 'default'.",
+        examples=["staging"],
     )
     skippable: bool = Field(
         default=False,
@@ -57,17 +66,22 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     code_version: Optional[str] = Field(
         default=None,
         description="A version representing the code that produced the asset. Increment this value when the code changes.",
+        examples=["3"],
     )
     owners: Sequence[str] = Field(
         default_factory=list,
         description="A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+        examples=[["team:analytics", "nelson@hooli.com"]],
     )
     tags: Union[str, Mapping[str, str]] = Field(
-        default_factory=dict, description="Tags for filtering and organizing."
+        default_factory=dict,
+        description="Tags for filtering and organizing.",
+        examples=[{"tier": "prod", "team": "analytics"}],
     )
     kinds: Optional[Sequence[str]] = Field(
         default=None,
         description="A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+        examples=[["snowflake"]],
     )
     automation_condition: Optional[str] = Field(
         default=None,
@@ -92,7 +106,7 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
         FieldResolver(
             lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
         ),
-    ] = None
+    ] = Field(default=None, description="A unique identifier for the asset.")
 
     def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
         # only include fields that are explcitly set
@@ -100,7 +114,7 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
         return {k: v for k, v in self.resolve_fields(dict, context).items() if k in set_fields}
 
 
-class AssetSpecTransformSchema(ResolvableSchema):
+class AssetPostProcessorSchema(ResolvableSchema):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema

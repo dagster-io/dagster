@@ -11,24 +11,27 @@
 <h3>Description:</h3>
 <p>Models a shell script as a Dagster asset.</p>
 <h3>Sample Component Params:</h3>
-<textarea rows=21 cols=100>
+<textarea rows=24 cols=100>
 type: my_component_library.shell_command
 
-params:
+attributes:
   script_path: '...'
   asset_specs:
     - deps:
-        - '...'
-      description: '...'
+        - my_database/my_schema/upstream_table
+      description: Refined sales data
       metadata: '...'
-      group_name: '...'
+      group_name: staging
       skippable: false
-      code_version: '...'
+      code_version: '3'
       owners:
-        - '...'
-      tags: '...'
+        - team:analytics
+        - nelson@hooli.com
+      tags:
+        team: analytics
+        tier: prod
       kinds:
-        - '...'
+        - snowflake
       automation_condition: '...'
       key: '...'
 

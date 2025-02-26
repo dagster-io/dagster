@@ -20,7 +20,7 @@ You can then update the `type:` field in your `component.yaml` file to reference
 ```yaml
 type: .custom_subclass
 
-params:
+attributes:
     ...
 ```
 
@@ -50,7 +50,7 @@ This can then be used in your `component.yaml` file:
 ```yaml
 component_type: .custom_subclass
 
-params:
+attributes:
     ...
     transforms:
         - attributes:

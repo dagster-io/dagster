@@ -44,22 +44,22 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 :::
 
 
-### 2. Scaffold a new code location
+### 2. Scaffold a new project
 
-After installing dependencies, scaffold a components-ready code location for your project:
+After installing dependencies, scaffold a components-ready project:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
 
-The `dg scaffold code-location` command builds a code location at `jaffle-platform` and initializes a new Python
+The `dg scaffold project` command builds a project at `jaffle-platform` and initializes a new Python
 virtual environment inside it. When you use `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
-To learn more about the files, directories, and default settings in a code location scaffolded with `dg scaffold code-location`, see "[Creating a code location with components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components#overview-of-files-and-directories)".
+To learn more about the files, directories, and default settings in a project scaffolded with `dg scaffold project`, see "[Creating a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components#project-structure)".
 
 ## Ingest data
 
 ### 1. Add the Sling component type to your environment
 
-To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the basic `dagster-components` package that was installed when you scaffolded your code location doesn't include components for specific integrations (like Sling):
+To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the basic `dagster-components` package that was installed when you scaffolded your project doesn't include components for specific integrations (like Sling):
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/7-dg-list-component-types.txt" />
 
@@ -69,9 +69,9 @@ To make the Sling component available in your environment, install the `sling` e
 
 :::note
 
-`dg` always operates in an isolated environment, but it is able to access the set of component types available in your project environment because it attempts to resolve a project root whenever it is run. If `dg` finds a `pyproject.toml` file with a `tool.dg.is_code_location = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory. (This can be confirmed by the presence of a `uv.lock` file.)
+`dg` always operates in an isolated environment, but it is able to access the set of component types available in your project environment because it attempts to resolve a project root whenever it is run. If `dg` finds a `pyproject.toml` file with a `tool.dg.is_project = true` setting, then it will expect a `uv`-managed virtual environment to be present in the same directory. (This can be confirmed by the presence of a `uv.lock` file.)
 
-When you run commands like `dg list component-type` , `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg scaffold code-location` command.
+When you run commands like `dg list component-type` , `dg` obtains the results by identifying the in-scope project environment and querying it. In this case, the project environment was set up as part of the `dg scaffold project` command.
 
 :::
 
@@ -121,9 +121,9 @@ Finally, create a `replication.yaml` file that references the downloaded files:
 
 ### 6. View and materialize assets in the Dagster UI
 
-Load your code location in the Dagster UI to see what you've built so far. To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
+Load your project in the Dagster UI to see what you've built so far. To materialize assets and load tables in the DuckDB instance, click **Materialize All**:
 
-<CliInvocationExample contents="uv run dagster dev # will be dg dev in the future" />
+<CliInvocationExample contents="dg dev" />
 
 ![](/images/guides/build/projects-and-components/components/sling.png)
 
@@ -151,31 +151,22 @@ To confirm that the `dagster_components.dbt_project` component type is now avail
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" />
 
-:::tip
-
-You can access detailed information about a component type with the `dg info component-type` command:
-
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-component-type-info.txt" />
-
-The output of `dg info component-type` shows the parameters (in JSON schema format) for both component generation and runtime loading of the component. (The runtime parameters have been truncated here due to length.)
-
-:::
 
 ### 3. Scaffold a new instance of the dbt project component
 
 Next, scaffold a new instance of the `dagster_components.dbt_project` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/20-dg-scaffold-jdbt.txt"/>
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-scaffold-jdbt.txt"/>
 
 This creates a new component instance in the project at `jaffle_platform/components/jdbt`. To see the component configuration, open `component.yaml` in that directory:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/21-component-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/20-component-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
 ### 4. Update the dbt project component configuration
 
 Let’s see the project in the Dagster UI:
 
-<CliInvocationExample contents="uv run dagster dev" />
+<CliInvocationExample contents="dg dev" />
 
 ![](/images/guides/build/projects-and-components/components/dbt-1.png)
 
@@ -183,21 +174,21 @@ You can see that there appear to be two copies of the `raw_customers`, `raw_orde
 
 We need to update the configuration of the `dagster_components.dbt_project` component to match the keys generated by the Sling component. Update `components/jdbt/component.yaml` with the configuration below:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/22-project-jdbt-incorrect.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/21-project-jdbt-incorrect.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-You might notice the typo in the above file--after updating a component file, it's useful to validate that the changes match the component's schema. You can do this by running `dg check component`:
+You might notice the typo in the above file--after updating a component file, it's useful to validate that the changes match the component's schema. You can do this by running `dg check yaml`:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-dg-component-check-error.txt" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/22-dg-component-check-error.txt" />
 
 You can see that the error message includes the filename, line number, and a code snippet showing the exact nature of the error. Let's fix the typo:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/24-project-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-project-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml" />
 
-Finally, run `dg check component` again to validate the fix:
+Finally, run `dg check yaml` again to validate the fix:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/25-dg-component-check.txt" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/24-dg-component-check.txt" />
 
-Reload the code location in Dagster UI to verify that the keys load properly:
+Reload the project in Dagster UI to verify that the keys load properly:
 
 ![](/images/guides/build/projects-and-components/components/dbt-2.png)
 
@@ -205,7 +196,7 @@ Now the keys generated by the Sling and dbt project components match, and the as
 
 To verify the fix, you can view a sample of the newly materialized assets in DuckDB from the command line:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/26-duckdb-select-orders.txt" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/25-duckdb-select-orders.txt" />
 
 ## Automate the pipeline
 
@@ -218,7 +209,7 @@ Navigate to `components/ingest_files/component.yaml` and add the `automation_con
 ```yaml create=jaffle_platform/components/ingest_files/component.yaml title="jaffle-platform/jaffle_platform/components/ingest_files/component.yaml"
 type: dagster_components.sling_replication_collection
 
-params:
+attributes:
   replications:
     - path: replication.yaml
   asset_attributes:
@@ -236,7 +227,7 @@ Next, update the dbt project so it executes after the Sling replication runs. Na
 ```yaml create=jaffle_platform/components/jdbt/component.yaml title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml"
 type: dagster_components.dbt_project
 
-params:
+attributes:
   dbt:
     project_dir: ../../../dbt/jdbt
   asset_attributes:
@@ -251,4 +242,4 @@ params:
 
 ## Next steps
 
-To continue your journey with components, you can [add more components to your project](/guides/labs/components/building-pipelines-with-components/adding-components) or learn how to [manage multiple code locations with components](/guides/labs/components/managing-multiple-code-locations).
+To continue your journey with components, you can [add more components to your project](/guides/labs/components/building-pipelines-with-components/adding-components) or learn how to [manage multiple projects with components](/guides/labs/components/managing-multiple-projects).

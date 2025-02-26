@@ -263,8 +263,6 @@ def scaffold_subtree(
                 )
                 f.write("\n")
 
-    click.echo(f"Scaffolded files for Dagster project in {path}.")
-
 
 def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATTERNS):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
@@ -363,25 +361,25 @@ environment in an ancestor directory or use the `--no-require-local-venv` flag t
 `dagster-components` from the ambient Python environment.
 """
 
-NOT_DEPLOYMENT_ERROR_MESSAGE = """
-This command must be run inside a Dagster deployment directory. Ensure that there is a
-`pyproject.toml` file with `tool.dg.is_deployment = true` set in the root deployment directory.
+NOT_WORKSPACE_ERROR_MESSAGE = """
+This command must be run inside a Dagster workspace directory. Ensure that there is a
+`pyproject.toml` file with `tool.dg.is_workspace = true` set in the root workspace directory.
 """
 
 
-NOT_CODE_LOCATION_ERROR_MESSAGE = """
-This command must be run inside a Dagster code location directory. Ensure that the nearest
-pyproject.toml has `tool.dg.is_code_location = true` set.
+NOT_PROJECT_ERROR_MESSAGE = """
+This command must be run inside a Dagster project directory. Ensure that the nearest
+pyproject.toml has `tool.dg.is_project = true` set.
 """
 
-NOT_DEPLOYMENT_OR_CODE_LOCATION_ERROR_MESSAGE = """
-This command must be run inside a Dagster deployment or code location directory. Ensure that the
-nearest pyproject.toml has `tool.dg.is_code_location = true` or `tool.dg.is_deployment = true` set.
+NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE = """
+This command must be run inside a Dagster workspace or project directory. Ensure that the
+nearest pyproject.toml has `tool.dg.is_project = true` or `tool.dg.is_workspace = true` set.
 """
 
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
-pyproject.toml has `tool.dg.is_component_lib = true` set.
+pyproject.toml has an entry point defined under the `dagster.components` group.
 """
 
 MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = """
@@ -389,8 +387,8 @@ Could not find the `dagster-components` executable on the system path.
 
 The `dagster-components` executable is installed with the `dagster-components` PyPI package and is
 necessary for `dg` to interface with Python environments containing Dagster definitions.
-`dagster-components` is installed by default when a code location is scaffolded by `dg`. However, if
-you are using `dg` in a non-managed environment (either outside of a code location or using the
+`dagster-components` is installed by default when a project is scaffolded by `dg`. However, if
+you are using `dg` in a non-managed environment (either outside of a Dagster project or using the
 `--no-use-dg-managed-environment` flag), you need to independently ensure `dagster-components` is
 installed.
 """
@@ -470,7 +468,11 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
 # ########################
 
 
-def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type: type[T]) -> T:
+def get_toml_value(
+    doc: tomlkit.TOMLDocument,
+    path: Iterable[str],
+    expected_type: Union[type[T], tuple[type[T], ...]],
+) -> T:
     """Given a tomlkit-parsed document/table (`doc`),retrieve the nested value at `path` and ensure
     it is of type `expected_type`. Returns the value if so, or raises a KeyError / TypeError if not.
     """
@@ -483,11 +485,24 @@ def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type
 
     # Finally, ensure the found value is of the expected type
     if not isinstance(current, expected_type):
+        expected_types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+        type_str = " or ".join(t.__name__ for t in expected_types)
         raise TypeError(
-            f"Expected '{'.'.join(path)}' to be {expected_type.__name__}, "
+            f"Expected '{'.'.join(path)}' to be {type_str}, "
             f"but got {type(current).__name__} instead."
         )
     return current
+
+
+def has_toml_value(doc: tomlkit.TOMLDocument, path: Sequence[str]) -> bool:
+    """Given a tomlkit-parsed document/table (`doc`), return whether a value is defined at `path`."""
+    leading_path, key = path[:-1], path[-1]
+    current = doc
+    for leading_key in leading_path:
+        if not isinstance(current, dict) or leading_key not in current:
+            return False
+        current = current[leading_key]
+    return isinstance(current, dict) and key in current
 
 
 def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object) -> None:

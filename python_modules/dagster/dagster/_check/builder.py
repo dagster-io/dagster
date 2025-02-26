@@ -382,6 +382,9 @@ def build_check_call_str(
                     elif is_record(inner_origin):
                         it = _name(inner_origin)
                         return f'{name} if {name} is None or isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
+                    elif inner_origin is Callable or inner_origin is collections.abc.Callable:
+                        return f'{name} if {name} is None else check.opt_callable_param({name}, "{name}")'
+
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)

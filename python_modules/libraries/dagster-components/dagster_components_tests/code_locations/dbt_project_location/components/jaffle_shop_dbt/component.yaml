@@ -1,10 +1,10 @@
 type: dbt_project@dagster_components
 
-params:
+attributes:
   dbt:
     project_dir: jaffle_shop
 
-  transforms:
+  asset_post_processors:
     - attributes:
         tags:
           foo: bar

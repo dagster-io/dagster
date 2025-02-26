@@ -84,6 +84,9 @@ export const METADATA_ENTRY_FRAGMENT = gql`
         }
       }
     }
+    ... on PoolMetadataEntry {
+      pool
+    }
   }
 
   fragment TableMetadataEntryFragment on TableMetadataEntry {

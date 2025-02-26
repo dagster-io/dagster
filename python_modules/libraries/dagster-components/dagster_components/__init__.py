@@ -22,8 +22,8 @@ from dagster_components.core.schema.context import ResolutionContext as Resoluti
 from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema as AssetAttributesSchema,
+    AssetPostProcessorSchema as AssetPostProcessorSchema,
     AssetSpecSchema as AssetSpecSchema,
-    AssetSpecTransformSchema as AssetSpecTransformSchema,
     OpSpecSchema as OpSpecSchema,
 )
 from dagster_components.scaffold import scaffold_component_yaml as scaffold_component_yaml

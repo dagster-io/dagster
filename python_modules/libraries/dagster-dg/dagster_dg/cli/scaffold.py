@@ -1,4 +1,3 @@
-import os
 from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
@@ -19,10 +18,10 @@ from dagster_dg.config import (
 )
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import (
-    scaffold_code_location,
     scaffold_component_instance,
     scaffold_component_type,
-    scaffold_deployment,
+    scaffold_project,
+    scaffold_workspace,
 )
 from dagster_dg.utils import (
     DgClickCommand,
@@ -34,6 +33,8 @@ from dagster_dg.utils import (
     parse_json_option,
 )
 
+DEFAULT_WORKSPACE_NAME = "dagster-workspace"
+
 
 @click.group(name="scaffold", cls=DgClickGroup)
 def scaffold_group():
@@ -41,11 +42,39 @@ def scaffold_group():
 
 
 # ########################
-# ##### CODE LOCATION
+# ##### WORKSPACE
 # ########################
 
 
-@scaffold_group.command(name="code-location", cls=DgClickCommand)
+@scaffold_group.command(name="workspace", cls=DgClickCommand)
+@click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
+@dg_global_options
+def workspace_scaffold_command(
+    name: str,
+    **global_options: object,
+):
+    """Initialize a new Dagster workspace.
+
+    The scaffolded workspace folder has the following structure:
+
+    \b
+    ├── dagster-workspace
+    │   ├── projects
+    |   |   └── <Dagster projects go here>
+    |   ├── libraries
+    |   |   └── <Shared packages go here>
+    │   └── pyproject.toml
+
+    """  # noqa: D301
+    scaffold_workspace(name)
+
+
+# ########################
+# ##### PROJECT
+# ########################
+
+
+@scaffold_group.command(name="project", cls=DgClickCommand)
 @click.argument("name", type=str)
 @click.option(
     "--use-editable-dagster",
@@ -63,32 +92,30 @@ def scaffold_group():
     "--skip-venv",
     is_flag=True,
     default=False,
-    help="Do not create a virtual environment for the code location.",
+    help="Do not create a virtual environment for the project.",
 )
 @click.option(
     "--populate-cache/--no-populate-cache",
     is_flag=True,
     default=True,
-    help="Whether to automatically populate the component type cache for the code location.",
+    help="Whether to automatically populate the component type cache for the project.",
     hidden=True,
 )
 @dg_global_options
-@click.pass_context
-def code_location_scaffold_command(
-    context: click.Context,
+def project_scaffold_command(
     name: str,
     use_editable_dagster: Optional[str],
     skip_venv: bool,
     populate_cache: bool,
     **global_options: object,
 ) -> None:
-    """Scaffold a Dagster code location file structure and a uv-managed virtual environment scoped
-    to the code location.
+    """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped
+    to the project.
 
-    This command can be run inside or outside of a deployment directory. If run inside a deployment,
-    the code location will be created within the deployment directory's code location directory.
+    This command can be run inside or outside of a workspace directory. If run inside a workspace,
+    the project will be created within the workspace directory's project directory.
 
-    The code location file structure defines a Python package with some pre-existing internal
+    The project file structure defines a Python package with some pre-existing internal
     structure:
 
     \b
@@ -103,33 +130,22 @@ def code_location_scaffold_command(
     └── pyproject.toml
 
     The `<name>.components` directory holds components (which can be created with `dg scaffold
-    component`).  The `<name>.lib` directory holds custom component types scoped to the code
-    location (which can be created with `dg scaffold component-type`).
+    component`).  The `<name>.lib` directory holds custom component types scoped to the project
+    (which can be created with `dg scaffold component-type`).
     """  # noqa: D301
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-    if dg_context.is_deployment:
-        if dg_context.has_code_location(name):
-            exit_with_error(f"A code location named {name} already exists.")
-        code_location_path = dg_context.code_location_root_path / name
+    if dg_context.is_workspace:
+        if dg_context.has_project(name):
+            exit_with_error(f"A project named {name} already exists.")
+        project_path = dg_context.project_root_path / name
     else:
-        code_location_path = Path.cwd() / name
+        project_path = Path.cwd() / name
 
-    if use_editable_dagster == "TRUE":
-        if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
-            exit_with_error(
-                "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
-            )
-        editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
-    elif use_editable_dagster:  # a string value was passed
-        editable_dagster_root = use_editable_dagster
-    else:
-        editable_dagster_root = None
-
-    scaffold_code_location(
-        code_location_path,
+    scaffold_project(
+        project_path,
         dg_context,
-        editable_dagster_root,
+        use_editable_dagster=use_editable_dagster,
         skip_venv=skip_venv,
         populate_cache=populate_cache,
     )
@@ -141,7 +157,7 @@ def code_location_scaffold_command(
 
 
 # The `dg scaffold component` command is special because its subcommands are dynamically generated
-# from the registered component types in the code location. Because the registered component types
+# from the registered component types in the project. Because the registered component types
 # depend on the built-in component library we are using, we cannot resolve them until we have the
 # built-in component library, which can be set via a global option, e.g.:
 #
@@ -223,13 +239,13 @@ class ComponentScaffoldSubCommand(DgClickCommand):
 )
 @click.option("-h", "--help", "help_", is_flag=True, help="Show this message and exit.")
 @dg_global_options
-@click.pass_context
-def component_scaffold_group(context: click.Context, help_: bool, **global_options: object) -> None:
+def component_scaffold_group(help_: bool, **global_options: object) -> None:
     """Scaffold of a Dagster component."""
     # Click attempts to resolve subcommands BEFORE it invokes this callback.
     # Therefore we need to manually invoke this callback during subcommand generation to make sure
     # it runs first. It will be invoked again later by Click. We make it idempotent to deal with
     # that.
+    context = click.get_current_context()
     if not has_config_on_cli_context(context):
         cli_config = normalize_cli_config(global_options, context)
         set_config_on_cli_context(context, cli_config)
@@ -265,8 +281,8 @@ def _create_component_scaffold_subcommand(
     ) -> None:
         f"""Scaffold of a {component_type.name} component.
 
-        This command must be run inside a Dagster code location directory. The component scaffold will be
-        placed in submodule `<code_location_name>.components.<COMPONENT_NAME>`.
+        This command must be run inside a Dagster project directory. The component scaffold will be
+        placed in submodule `<project_name>.components.<COMPONENT_NAME>`.
 
         Components can optionally be passed scaffold parameters. There are two ways to do this:
 
@@ -281,7 +297,7 @@ def _create_component_scaffold_subcommand(
         It is an error to pass both --json-params and key-value pairs as options.
         """
         cli_config = get_config_from_cli_context(cli_context)
-        dg_context = DgContext.for_code_location_environment(Path.cwd(), cli_config)
+        dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
         if not registry.has_global(component_key):
@@ -338,16 +354,13 @@ def _create_component_scaffold_subcommand(
 @scaffold_group.command(name="component-type", cls=DgClickCommand)
 @click.argument("name", type=str)
 @dg_global_options
-@click.pass_context
-def component_type_scaffold_command(
-    context: click.Context, name: str, **global_options: object
-) -> None:
+def component_type_scaffold_command(name: str, **global_options: object) -> None:
     """Scaffold of a custom Dagster component type.
 
-    This command must be run inside a Dagster code location directory. The component type scaffold
-    will be placed in submodule `<code_location_name>.lib.<name>`.
+    This command must be run inside a Dagster project directory. The component type scaffold
+    will be placed in submodule `<project_name>.lib.<name>`.
     """
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
     component_key = GlobalComponentKey(name=name, namespace=dg_context.root_package_name)
@@ -355,31 +368,3 @@ def component_type_scaffold_command(
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
     scaffold_component_type(dg_context, name)
-
-
-# ########################
-# ##### DEPLOYMENT
-# ########################
-
-
-@scaffold_group.command(name="deployment", cls=DgClickCommand)
-@dg_global_options
-@click.argument("path", type=Path)
-@click.pass_context
-def deployment_scaffold_command(
-    context: click.Context, path: Path, **global_options: object
-) -> None:
-    """Scaffold a Dagster deployment file structure.
-
-    The deployment file structure includes a directory for code locations and configuration files
-    for deploying to Dagster Plus.
-    """
-    cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-    dir_abspath = os.path.abspath(path)
-    if os.path.exists(dir_abspath):
-        exit_with_error(
-            f"A file or directory at {dir_abspath} already exists. "
-            + "\nPlease delete the contents of this path or choose another location."
-        )
-    scaffold_deployment(path, dg_context)

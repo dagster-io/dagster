@@ -1,5 +1,5 @@
 import json
-import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -23,74 +23,106 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     clear_module_from_cache,
-    isolated_example_code_location_foo_bar,
     isolated_example_component_library_foo_bar,
-    isolated_example_deployment_foo,
+    isolated_example_project_foo_bar,
+    isolated_example_workspace,
     modify_pyproject_toml,
     standardize_box_characters,
 )
 
+
 # ########################
-# ##### CODE LOCATION
+# ##### WORKSPACE
+# ########################
+def test_scaffold_workspace_command_success(monkeypatch) -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("scaffold", "workspace")
+        assert_runner_result(result)
+        assert Path("dagster-workspace").exists()
+        assert Path("dagster-workspace/pyproject.toml").exists()
+        assert Path("dagster-workspace/projects").exists()
+        assert Path("dagster-workspace/libraries").exists()
+
+        result = runner.invoke("scaffold", "workspace")
+        assert_runner_result(result, exit_0=False)
+        assert "already exists" in result.output
+
+
+def test_scaffold_workspace_command_name_override_success(monkeypatch) -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("scaffold", "workspace", "my-workspace")
+        assert_runner_result(result)
+        assert Path("my-workspace").exists()
+        assert Path("my-workspace/pyproject.toml").exists()
+        assert Path("my-workspace/projects").exists()
+        assert Path("my-workspace/libraries").exists()
+
+        result = runner.invoke("scaffold", "workspace", "my-workspace")
+        assert_runner_result(result, exit_0=False)
+        assert "already exists" in result.output
+
+
+# ########################
+# ##### PROJECT
 # ########################
 
 # At this time all of our tests are against an editable install of dagster-components. The reason
 # for this is that this package should always be tested against the corresponding version of
 # dagster-components (i.e. from the same commit), and the only way to achieve this right now is
-# using the editable install variant of `dg scaffold code-location`.
+# using the editable install variant of `dg scaffold project`.
 #
 # Ideally we would have a way to still use the matching dagster-components without using the
 # editable install variant, but this will require somehow configuring uv to ensure that it builds
 # and returns the local version of the package.
 
 
-def test_scaffold_code_location_inside_deployment_success(monkeypatch) -> None:
+def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
     # Remove when we are able to test without editable install
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("scaffold", "code-location", "foo-bar", "--use-editable-dagster")
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
+        result = runner.invoke("scaffold", "project", "foo-bar", "--use-editable-dagster")
         assert_runner_result(result)
-        assert Path("code_locations/foo-bar").exists()
-        assert Path("code_locations/foo-bar/foo_bar").exists()
-        assert Path("code_locations/foo-bar/foo_bar/lib").exists()
-        assert Path("code_locations/foo-bar/foo_bar/components").exists()
-        assert Path("code_locations/foo-bar/foo_bar_tests").exists()
-        assert Path("code_locations/foo-bar/pyproject.toml").exists()
+        assert Path("projects/foo-bar").exists()
+        assert Path("projects/foo-bar/foo_bar").exists()
+        assert Path("projects/foo-bar/foo_bar/lib").exists()
+        assert Path("projects/foo-bar/foo_bar/components").exists()
+        assert Path("projects/foo-bar/foo_bar_tests").exists()
+        assert Path("projects/foo-bar/pyproject.toml").exists()
 
         # Check TOML content
-        toml = tomlkit.parse(Path("code_locations/foo-bar/pyproject.toml").read_text())
+        toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
         assert (
             get_toml_value(toml, ("tool", "dagster", "module_name"), str) == "foo_bar.definitions"
         )
         assert get_toml_value(toml, ("tool", "dagster", "code_location_name"), str) == "foo-bar"
 
         # Check venv created
-        assert Path("code_locations/foo-bar/.venv").exists()
-        assert Path("code_locations/foo-bar/uv.lock").exists()
+        assert Path("projects/foo-bar/.venv").exists()
+        assert Path("projects/foo-bar/uv.lock").exists()
 
         # Restore when we are able to test without editable install
-        # with open("code_locations/bar/pyproject.toml") as f:
+        # with open("projects/bar/pyproject.toml") as f:
         #     toml = tomlkit.parse(f.read())
         #
         #     # No tool.uv.sources added without --use-editable-dagster
         #     assert "uv" not in toml["tool"]
 
         # Check cache was populated
-        with pushd("code_locations/foo-bar"):
+        with pushd("projects/foo-bar"):
             result = runner.invoke("list", "component-type", "--verbose")
             assert_runner_result(result)
             assert "CACHE [hit]" in result.output
 
 
-def test_scaffold_code_location_outside_deployment_success(monkeypatch) -> None:
+def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
     # Remove when we are able to test without editable install
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
     with ProxyRunner.test() as runner, runner.isolated_filesystem(), clear_module_from_cache("bar"):
-        result = runner.invoke("scaffold", "code-location", "foo-bar", "--use-editable-dagster")
+        result = runner.invoke("scaffold", "project", "foo-bar", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
@@ -105,19 +137,19 @@ def test_scaffold_code_location_outside_deployment_success(monkeypatch) -> None:
 
 
 @pytest.mark.parametrize("mode", ["env_var", "arg"])
-def test_scaffold_code_location_editable_dagster_success(mode: str, monkeypatch) -> None:
+def test_scaffold_project_editable_dagster_success(mode: str, monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     if mode == "env_var":
         monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
         editable_args = ["--use-editable-dagster", "--"]
     else:
         editable_args = ["--use-editable-dagster", str(dagster_git_repo_dir)]
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("scaffold", "code-location", *editable_args, "foo-bar")
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
+        result = runner.invoke("scaffold", "project", *editable_args, "foo-bar")
         assert_runner_result(result)
-        assert Path("code_locations/foo-bar").exists()
-        assert Path("code_locations/foo-bar/pyproject.toml").exists()
-        with open("code_locations/foo-bar/pyproject.toml") as f:
+        assert Path("projects/foo-bar").exists()
+        assert Path("projects/foo-bar/pyproject.toml").exists()
+        with open("projects/foo-bar/pyproject.toml") as f:
             toml = tomlkit.parse(f.read())
             assert get_toml_value(toml, ("tool", "uv", "sources", "dagster"), dict) == {
                 "path": str(dagster_git_repo_dir / "python_modules" / "dagster"),
@@ -145,9 +177,9 @@ def test_scaffold_code_location_editable_dagster_success(mode: str, monkeypatch)
             }
 
 
-def test_scaffold_code_location_skip_venv_success() -> None:
+def test_scaffold_project_skip_venv_success() -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("scaffold", "code-location", "--skip-venv", "foo-bar")
+        result = runner.invoke("scaffold", "project", "--skip-venv", "foo-bar")
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
@@ -161,9 +193,17 @@ def test_scaffold_code_location_skip_venv_success() -> None:
         assert not Path("foo-bar/uv.lock").exists()
 
 
-def test_scaffold_code_location_no_populate_cache_success() -> None:
+def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("scaffold", "code-location", "--no-populate-cache", "foo-bar")
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "--no-populate-cache",
+            "foo-bar",
+            "--use-editable-dagster",
+        )
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
@@ -182,10 +222,16 @@ def test_scaffold_code_location_no_populate_cache_success() -> None:
             assert "CACHE [miss]" in result.output
 
 
-def test_scaffold_code_location_no_use_dg_managed_environment_success() -> None:
+def test_scaffold_project_no_use_dg_managed_environment_success(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
-            "scaffold", "code-location", "--no-use-dg-managed-environment", "foo-bar"
+            "scaffold",
+            "project",
+            "--no-use-dg-managed-environment",
+            "foo-bar",
+            "--use-editable-dagster",
         )
         assert_runner_result(result)
         assert Path("foo-bar").exists()
@@ -200,19 +246,19 @@ def test_scaffold_code_location_no_use_dg_managed_environment_success() -> None:
         assert not Path("foo-bar/uv.lock").exists()
 
 
-def test_scaffold_code_location_editable_dagster_no_env_var_no_value_fails(monkeypatch) -> None:
+def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(monkeypatch) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("scaffold", "code-location", "--use-editable-dagster", "--", "bar")
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
+        result = runner.invoke("scaffold", "project", "--use-editable-dagster", "--", "bar")
         assert_runner_result(result, exit_0=False)
         assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
 
 
-def test_scaffold_code_location_already_exists_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
-        result = runner.invoke("scaffold", "code-location", "bar", "--skip-venv")
+def test_scaffold_project_already_exists_fails() -> None:
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
+        result = runner.invoke("scaffold", "project", "bar", "--skip-venv")
         assert_runner_result(result)
-        result = runner.invoke("scaffold", "code-location", "bar", "--skip-venv")
+        result = runner.invoke("scaffold", "project", "bar", "--skip-venv")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
@@ -223,7 +269,7 @@ def test_scaffold_code_location_already_exists_fails() -> None:
 
 
 def test_scaffold_component_dynamic_subcommand_generation() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke("scaffold", "component", "--help")
         assert_runner_result(result)
 
@@ -239,11 +285,11 @@ def test_scaffold_component_dynamic_subcommand_generation() -> None:
             assert standardize_box_characters(line) in normalized_output
 
 
-@pytest.mark.parametrize("in_deployment", [True, False])
-def test_scaffold_component_no_params_success(in_deployment: bool) -> None:
+@pytest.mark.parametrize("in_workspace", [True, False])
+def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner, in_deployment),
+        isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
@@ -261,11 +307,11 @@ def test_scaffold_component_no_params_success(in_deployment: bool) -> None:
         )
 
 
-@pytest.mark.parametrize("in_deployment", [True, False])
-def test_scaffold_component_json_params_success(in_deployment: bool) -> None:
+@pytest.mark.parametrize("in_workspace", [True, False])
+def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner, in_deployment),
+        isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
@@ -286,11 +332,11 @@ def test_scaffold_component_json_params_success(in_deployment: bool) -> None:
         )
 
 
-@pytest.mark.parametrize("in_deployment", [True, False])
-def test_scaffold_component_key_value_params_success(in_deployment: bool) -> None:
+@pytest.mark.parametrize("in_workspace", [True, False])
+def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner, in_deployment),
+        isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
@@ -312,7 +358,7 @@ def test_scaffold_component_key_value_params_success(in_deployment: bool) -> Non
 
 
 def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke(
             "scaffold",
             "component",
@@ -329,33 +375,33 @@ def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
 
 
 def test_scaffold_component_undefined_component_type_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke("scaffold", "component", "fake@fake", "qux")
         assert_runner_result(result, exit_0=False)
         assert "No component type `fake@fake` is registered" in result.output
 
 
 def test_scaffold_component_command_with_non_matching_package_name():
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
-        #  move the module from foo_bar to module_not_same_as_code_location
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        #  move the module from foo_bar to module_not_same_as_project
         python_module = Path("foo_bar")
-        python_module.rename("module_not_same_as_code_location")
+        python_module.rename("module_not_same_as_project")
 
         result = runner.invoke(
             "scaffold", "component", "all_metadata_empty_asset@dagster_components.test", "qux"
         )
         assert_runner_result(result, exit_0=False)
         assert (
-            "Could not find expected package `foo_bar` in the current environment. Components expects the package name to match the directory name of the code location."
+            "Could not find expected package `foo_bar` in the current environment. Components expects the package name to match the directory name of the project."
             in str(result.exception)
         )
 
 
-@pytest.mark.parametrize("in_deployment", [True, False])
-def test_scaffold_component_already_exists_fails(in_deployment: bool) -> None:
+@pytest.mark.parametrize("in_workspace", [True, False])
+def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_code_location_foo_bar(runner, in_deployment),
+        isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
             "scaffold",
@@ -375,7 +421,7 @@ def test_scaffold_component_already_exists_fails(in_deployment: bool) -> None:
 
 
 def test_scaffold_component_succeeds_non_default_component_package() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         alt_lib_path = Path("foo_bar/_components")
         alt_lib_path.mkdir(parents=True)
         with modify_pyproject_toml() as toml:
@@ -397,7 +443,7 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
 
 
 def test_scaffold_component_fails_components_package_does_not_exist() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         with modify_pyproject_toml() as toml:
             set_toml_value(toml, ("tool", "dg", "component_package"), "bar._components")
         result = runner.invoke(
@@ -411,7 +457,7 @@ def test_scaffold_component_fails_components_package_does_not_exist() -> None:
 
 
 def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
-    with ProxyRunner.test() as runner, isolated_example_code_location_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke("scaffold", "component-type", "baz")
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
@@ -427,7 +473,7 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
 # ##### REAL COMPONENTS
 
 
-dbt_project_path = Path("../stub_code_locations/dbt_project_location/components/jaffle_shop")
+dbt_project_path = Path("../stub_projects/dbt_project_location/components/jaffle_shop")
 
 
 @pytest.mark.parametrize(
@@ -440,7 +486,7 @@ dbt_project_path = Path("../stub_code_locations/dbt_project_location/components/
 def test_scaffold_dbt_project_instance(params) -> None:
     with (
         ProxyRunner.test(use_test_component_lib=False) as runner,
-        isolated_example_code_location_foo_bar(runner),
+        isolated_example_project_foo_bar(runner),
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
@@ -459,9 +505,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
         assert component_yaml_path.exists()
         assert "type: dbt_project@dagster_components" in component_yaml_path.read_text()
         assert (
-            cross_platfrom_string_path(
-                "stub_code_locations/dbt_project_location/components/jaffle_shop"
-            )
+            cross_platfrom_string_path("stub_projects/dbt_project_location/components/jaffle_shop")
             in component_yaml_path.read_text()
         )
 
@@ -513,38 +557,22 @@ def test_scaffold_component_type_succeeds_non_default_component_lib_package() ->
         assert registry.has_global(GlobalComponentKey(name="baz", namespace="foo_bar"))
 
 
-def test_scaffold_component_type_fails_components_lib_package_does_not_exist() -> None:
+def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:
     with (
         ProxyRunner.test() as runner,
-        isolated_example_component_library_foo_bar(runner),
+        isolated_example_component_library_foo_bar(runner, lib_package_name="foo_bar.fake"),
     ):
-        with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "component_lib_package"), "foo_bar._lib")
+        # Delete the entry point module
+        shutil.rmtree("foo_bar/fake")
+
+        # An entry point load error will occur before we even get to component type scaffolding
+        # code, because the entry points are loaded first.
         result = runner.invoke(
             "scaffold",
             "component-type",
             "baz",
         )
         assert_runner_result(result, exit_0=False)
-        assert "Components lib package `foo_bar._lib` is not installed" in str(result.exception)
 
-
-# ########################
-# ##### DEPLOYMENT
-# ########################
-
-
-def test_scaffold_deployment_command_success() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("scaffold", "deployment", "foo")
-        assert_runner_result(result)
-        assert Path("foo").exists()
-        assert Path("foo/code_locations").exists()
-
-
-def test_scaffold_deployment_command_already_exists_fails() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        os.mkdir("foo")
-        result = runner.invoke("scaffold", "deployment", "foo")
-        assert_runner_result(result, exit_0=False)
-        assert "already exists" in result.output
+        captured = capfd.readouterr()
+        assert "Error loading entry point `foo_bar` in group `dagster.components`." in captured.err

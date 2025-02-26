@@ -2817,6 +2817,12 @@ type TimestampMetadataEntry implements MetadataEntry {
   timestamp: Float!
 }
 
+type PoolMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  pool: String!
+}
+
 type Partition {
   name: String!
   partitionSetName: String!
