@@ -7,14 +7,19 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 import click
 import psutil
 import yaml
 
 from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.config import normalize_cli_config
+from dagster_dg.config import (
+    CodeLocationSpec,
+    GrpcServerCodeLocationSpec,
+    PythonPointerCodeLocationSpec,
+    normalize_cli_config,
+)
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, exit_with_error, pushd
@@ -170,20 +175,45 @@ def dev_command(
 def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
         entries = []
-        for location in dg_context.get_code_location_names():
-            code_location_root = dg_context.get_code_location_path(location)
-            loc_context = dg_context.with_root_path(code_location_root)
-            entry = {
-                "working_directory": str(dg_context.deployment_root_path),
-                "relative_path": str(loc_context.definitions_path),
-                "location_name": loc_context.code_location_name,
-            }
-            if loc_context.use_dg_managed_environment:
-                entry["executable_path"] = str(loc_context.code_location_python_executable)
-            entries.append({"python_file": entry})
-        yaml.dump({"load_from": entries}, temp_workspace_file)
+        for location in dg_context.get_code_location_specs():
+            entries.append(_code_location_spec_to_workspace_entry(dg_context, location))
+        content = {"load_from": entries}
+        yaml.dump(content, temp_workspace_file)
         temp_workspace_file.flush()
         yield temp_workspace_file.name
+
+
+def _code_location_spec_to_workspace_entry(
+    dg_context: DgContext, spec: CodeLocationSpec
+) -> dict[str, Any]:
+    if isinstance(spec, PythonPointerCodeLocationSpec):
+        entry = {
+            "location_name": spec.name,
+            "working_directory": str(dg_context.deployment_root_path.resolve()),
+            # workspace.yaml is intolerant of null values
+            **({"executable_path": str(spec.executable_path)} if spec.executable_path else {}),
+            **({"attribute": spec.attribute} if spec.attribute else {}),
+        }
+        if spec.module_name:
+            workspace_type = "python_module"
+            entry["module_name"] = spec.module_name
+        elif spec.module_path:
+            workspace_type = "python_file"
+            entry["relative_path"] = str(spec.module_path.resolve())
+        elif spec.project_path:
+            raise NotImplementedError("project_path not yet supported")
+    elif isinstance(spec, GrpcServerCodeLocationSpec):
+        workspace_type = "grpc_server"
+        entry = {
+            "location_name": spec.name,
+            "grpc_socket": spec.socket,
+            "grpc_host": spec.host,
+            "grpc_port": spec.port,
+        }
+        return {"grpc_server": entry}
+    else:
+        raise NotImplementedError(f"Unsupported code location spec: {spec}")
+    return {workspace_type: entry}
 
 
 def _format_forwarded_option(option: str, value: object) -> list[str]:

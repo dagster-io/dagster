@@ -7,6 +7,7 @@ from dagster_dg.utils import (
     discover_git_root,
     ensure_dagster_dg_tests_import,
     get_toml_value,
+    has_toml_value,
     pushd,
 )
 
@@ -33,7 +34,7 @@ from dagster_dg_tests.utils import (
 # and returns the local version of the package.
 
 
-def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
+def test_code_location_scaffold_inside_deployment_success(monkeypatch):
     # Remove when we are able to test without editable install
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
@@ -58,6 +59,11 @@ def test_code_location_scaffold_inside_deployment_success(monkeypatch) -> None:
         # Check venv created
         assert Path("code_locations/foo-bar/.venv").exists()
         assert Path("code_locations/foo-bar/uv.lock").exists()
+
+        # Check pyproject.toml modified
+        _check_pyproject_toml_has_declared_code_location(
+            Path("pyproject.toml"), has_executable_path=True
+        )
 
         # Restore when we are able to test without editable install
         # with open("code_locations/bar/pyproject.toml") as f:
@@ -135,19 +141,24 @@ def test_code_location_scaffold_editable_dagster_success(mode: str, monkeypatch)
 
 
 def test_code_location_scaffold_skip_venv_success() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke("code-location", "scaffold", "--skip-venv", "foo-bar")
         assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/foo_bar").exists()
-        assert Path("foo-bar/foo_bar/lib").exists()
-        assert Path("foo-bar/foo_bar/components").exists()
-        assert Path("foo-bar/foo_bar_tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
+        assert Path("code_locations/foo-bar").exists()
+        assert Path("code_locations/foo-bar/foo_bar").exists()
+        assert Path("code_locations/foo-bar/foo_bar/lib").exists()
+        assert Path("code_locations/foo-bar/foo_bar/components").exists()
+        assert Path("code_locations/foo-bar/foo_bar_tests").exists()
+        assert Path("code_locations/foo-bar/pyproject.toml").exists()
 
         # Check venv not created
-        assert not Path("foo-bar/.venv").exists()
-        assert not Path("foo-bar/uv.lock").exists()
+        assert not Path("code_locations/foo-bar/.venv").exists()
+        assert not Path("code_locations/foo-bar/uv.lock").exists()
+
+        # Check workspace.yaml modified without executable_path
+        _check_pyproject_toml_has_declared_code_location(
+            Path("pyproject.toml"), has_executable_path=False
+        )
 
 
 def test_code_location_scaffold_no_populate_cache_success() -> None:
@@ -172,21 +183,26 @@ def test_code_location_scaffold_no_populate_cache_success() -> None:
 
 
 def test_code_location_scaffold_no_use_dg_managed_environment_success() -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
         result = runner.invoke(
             "code-location", "scaffold", "--no-use-dg-managed-environment", "foo-bar"
         )
         assert_runner_result(result)
-        assert Path("foo-bar").exists()
-        assert Path("foo-bar/foo_bar").exists()
-        assert Path("foo-bar/foo_bar/lib").exists()
-        assert Path("foo-bar/foo_bar/components").exists()
-        assert Path("foo-bar/foo_bar_tests").exists()
-        assert Path("foo-bar/pyproject.toml").exists()
+        assert Path("code_locations/foo-bar").exists()
+        assert Path("code_locations/foo-bar/foo_bar").exists()
+        assert Path("code_locations/foo-bar/foo_bar/lib").exists()
+        assert Path("code_locations/foo-bar/foo_bar/components").exists()
+        assert Path("code_locations/foo-bar/foo_bar_tests").exists()
+        assert Path("code_locations/foo-bar/pyproject.toml").exists()
 
         # Check venv not created
-        assert not Path("foo-bar/.venv").exists()
-        assert not Path("foo-bar/uv.lock").exists()
+        assert not Path("code_locations/foo-bar/.venv").exists()
+        assert not Path("code_locations/foo-bar/uv.lock").exists()
+
+        # Check workspace.yaml modified without executable_path
+        _check_pyproject_toml_has_declared_code_location(
+            Path("pyproject.toml"), has_executable_path=False
+        )
 
 
 def test_code_location_scaffold_editable_dagster_no_env_var_no_value_fails(monkeypatch) -> None:
@@ -204,6 +220,62 @@ def test_code_location_scaffold_already_exists_fails() -> None:
         result = runner.invoke("code-location", "scaffold", "bar", "--skip-venv")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
+
+
+def test_code_location_scaffold_preserves_existing_pyproject_toml() -> None:
+    with ProxyRunner.test() as runner, isolated_example_deployment_foo(runner):
+        # Overwrite the default pyproject.toml with a custom one
+        pyproject_toml = Path("pyproject.toml")
+        pyproject_toml.write_text(
+            textwrap.dedent(
+                """
+                [tool.dg]
+                is_deployment = true
+
+                # This is a comment
+                code_locations = [
+                    {name = "baz", type = "python_pointer", module_path = "/path/to/baz/definitions.py"}
+                ]
+                """
+            ).strip()
+        )
+
+        result = runner.invoke("code-location", "scaffold", "foo-bar", "--skip-venv")
+        assert_runner_result(result)
+
+        pyproject_toml = Path("pyproject.toml").read_text()
+
+        assert (
+            pyproject_toml
+            == textwrap.dedent("""
+            [tool.dg]
+            is_deployment = true
+
+            # This is a comment
+            code_locations = [
+                {name = "baz", type = "python_pointer", module_path = "/path/to/baz/definitions.py"},
+                {name = "foo-bar", type = "python_pointer", module_path = "code_locations/foo-bar/foo_bar/definitions.py"}
+            ]
+        """).strip()
+        )
+
+
+def _check_pyproject_toml_has_declared_code_location(
+    path: Path, *, has_executable_path: bool
+) -> None:
+    toml = tomlkit.loads(path.read_text())
+    assert has_toml_value(toml, ("tool", "dg", "code_locations"))
+    expected_entry = {
+        "name": "foo-bar",
+        "type": "python_pointer",
+        "module_path": "code_locations/foo-bar/foo_bar/definitions.py",
+        **(
+            {"executable_path": "code_locations/foo-bar/.venv/bin/python"}
+            if has_executable_path
+            else {}
+        ),
+    }
+    assert get_toml_value(toml, ("tool", "dg", "code_locations"), list) == [expected_entry]
 
 
 # ########################

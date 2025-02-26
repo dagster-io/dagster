@@ -10,7 +10,7 @@ from typing_extensions import Self
 
 from dagster_dg.cache import CachableDataType, DgCache, hash_paths
 from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.config import DgConfig, DgPartialConfig, load_dg_config_file
+from dagster_dg.config import CodeLocationSpec, DgConfig, DgPartialConfig, load_dg_config_file
 from dagster_dg.error import DgError
 from dagster_dg.utils import (
     MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE,
@@ -158,6 +158,17 @@ class DgContext:
         return ("_".join(path_parts), env_hash, "local_component_registry")
 
     # ########################
+    # ##### GENERAL PROJECT METHODS
+    # ########################
+
+    @property
+    def pyproject_toml_path(self) -> Path:
+        pyproject_toml_path = self.root_path / "pyproject.toml"
+        if not pyproject_toml_path.exists():
+            raise DgError("No `pyproject.toml` found in the root directory")
+        return pyproject_toml_path
+
+    # ########################
     # ##### DEPLOYMENT METHODS
     # ########################
 
@@ -191,8 +202,11 @@ class DgContext:
             )
         return self.deployment_root_path / _DEPLOYMENT_CODE_LOCATIONS_DIR
 
+    def get_code_location_specs(self) -> Iterable[CodeLocationSpec]:
+        return self.config.code_locations or []
+
     def get_code_location_names(self) -> Iterable[str]:
-        return [loc.name for loc in sorted(self.code_location_root_path.iterdir())]
+        return [loc.name for loc in sorted(self.config.code_locations or [], key=lambda x: x.name)]
 
     def get_code_location_path(self, name: str) -> Path:
         return self.code_location_root_path / name

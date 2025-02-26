@@ -5,10 +5,19 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
+import tomlkit
+import tomlkit.items
 
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.context import DgContext
-from dagster_dg.utils import camelcase, scaffold_subtree
+from dagster_dg.utils import (
+    camelcase,
+    get_toml_value,
+    has_toml_value,
+    modify_toml,
+    scaffold_subtree,
+    set_toml_value,
+)
 
 # ########################
 # ##### DEPLOYMENT
@@ -128,6 +137,39 @@ def scaffold_code_location(
         cl_dg_context.ensure_uv_lock()
         if populate_cache:
             RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+
+    # Update pyproject.toml
+    if cl_dg_context.is_deployment:
+        entry = {
+            "name": cl_dg_context.root_package_name.replace("_", "-"),
+            "type": "python_pointer",
+            "module_path": str(
+                cl_dg_context.definitions_path.relative_to(cl_dg_context.deployment_root_path)
+            ),
+        }
+        if cl_dg_context.use_dg_managed_environment and not skip_venv:
+            entry["executable_path"] = str(
+                cl_dg_context.code_location_python_executable.relative_to(
+                    cl_dg_context.deployment_root_path
+                ),
+            )
+
+        with modify_toml(dg_context.pyproject_toml_path) as toml:
+            if not has_toml_value(toml, ("tool", "dg", "code_locations")):
+                code_locations = tomlkit.aot()
+                set_toml_value(toml, ("tool", "dg", "code_locations"), code_locations)
+                item = tomlkit.table()
+            else:
+                code_locations = get_toml_value(
+                    toml, ("tool", "dg", "code_locations"), (tomlkit.items.AoT, tomlkit.items.Array)
+                )
+                if isinstance(code_locations, tomlkit.items.Array):
+                    item = tomlkit.inline_table()
+                else:
+                    item = tomlkit.table()
+            for key, value in entry.items():
+                item[key] = value
+            code_locations.append(item)
 
 
 # ########################
