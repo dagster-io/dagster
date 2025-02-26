@@ -31,7 +31,6 @@ from dagster_dg.utils import (
     exit_with_error,
     generate_missing_dagster_components_in_local_venv_error_message,
     get_path_for_module,
-    get_path_for_package,
     get_toml_value,
     get_venv_executable,
     has_toml_value,
@@ -215,7 +214,8 @@ class DgContext:
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
 
-    def get_cache_key_for_local_components(self, path: Path) -> tuple[str, str, str]:
+    def get_cache_key_for_module(self, module_name: str) -> tuple[str, str, str]:
+        path = self.get_path_for_module(module_name)
         env_hash = hash_paths([path], includes=["*.py"])
         path_parts = [str(part) for part in path.parts if part != "/"]
         return ("_".join(path_parts), env_hash, "local_component_registry")
@@ -302,19 +302,13 @@ class DgContext:
     def components_path(self) -> Path:
         if not self.is_project:
             raise DgError("`components_path` is only available in a Dagster project context")
-        with ensure_loadable_path(self.root_path):
-            if not is_package_installed(self.root_module_name):
-                raise DgError(
-                    f"Could not find expected package `{self.root_module_name}` in the current environment. Components expects the package name to match the directory name of the project."
-                )
-            if not is_package_installed(self.components_module_name):
-                raise DgError(
-                    f"Components package `{self.components_module_name}` is not installed in the current environment."
-                )
-            return Path(get_path_for_package(self.components_module_name))
+        return self.get_path_for_module(self.components_module_name)
 
     def get_component_instance_names(self) -> Iterable[str]:
         return [str(instance_path.name) for instance_path in self.components_path.iterdir()]
+
+    def get_component_instance_module(self, name: str) -> str:
+        return f"{self.components_module_name}.{name}"
 
     def has_component_instance(self, name: str) -> bool:
         return (self.components_path / name).is_dir()
@@ -329,12 +323,7 @@ class DgContext:
 
     @cached_property
     def definitions_path(self) -> Path:
-        with ensure_loadable_path(self.root_path):
-            if not is_package_installed(self.definitions_module_name):
-                raise DgError(
-                    f"Definitions package `{self.definitions_module_name}` is not installed in the current environment."
-                )
-            return Path(get_path_for_module(self.definitions_module_name))
+        return self.get_path_for_module(self.definitions_module_name)
 
     # ########################
     # ##### COMPONENT LIBRARY METHODS
@@ -360,16 +349,7 @@ class DgContext:
     def default_components_library_path(self) -> Path:
         if not self.is_component_library:
             raise DgError("`components_lib_path` is only available in a component library context")
-        with ensure_loadable_path(self.root_path):
-            if not is_package_installed(self.root_module_name):
-                raise DgError(
-                    f"Could not find expected package `{self.root_module_name}` in the current environment. Components expects the package name to match the directory name of the project."
-                )
-            if not is_package_installed(self.default_components_library_module):
-                raise DgError(
-                    f"Components lib package `{self.default_components_library_module}` is not installed in the current environment."
-                )
-            return Path(get_path_for_package(self.default_components_library_module))
+        return self.get_path_for_module(self.default_components_library_module)
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
@@ -474,6 +454,17 @@ class DgContext:
     @property
     def pyproject_toml_path(self) -> Path:
         return self.root_path / "pyproject.toml"
+
+    def get_path_for_module(self, module_name: str) -> Path:
+        with ensure_loadable_path(self.root_path):
+            parts = module_name.split(".")
+            for i in range(len(parts)):
+                leading_module_name = ".".join(parts[: i + 1])
+                if not is_package_installed(leading_module_name):
+                    raise DgError(
+                        f"Module `{leading_module_name}` is not installed in the current environment."
+                    )
+            return Path(get_path_for_module(module_name))
 
 
 # ########################

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from dagster._utils import pushd
+from dagster_components.core.component import discover_entry_point_component_types
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_dg.utils import get_venv_executable
 
@@ -34,15 +35,6 @@ def _temp_venv(install_args: Sequence[str]) -> Iterator[Path]:
             ]
         )
         yield venv_dir
-
-
-COMPONENT_PRINT_SCRIPT = """
-from dagster_components import ComponentTypeRegistry
-
-registry = ComponentTypeRegistry.from_entry_point_discovery()
-for component_key in list(registry.keys()):
-    print(component_key.to_typename())
-"""
 
 
 def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedProcess:
@@ -77,7 +69,8 @@ def _generate_test_component_source(number: int) -> str:
     from dagster_components import Component, registered_component_type
     @registered_component_type(name="test_component_{number}")
     class TestComponent{number}(Component):
-        pass
+        def build_defs(self, context):
+            pass
     """)
 
 
@@ -109,31 +102,29 @@ def test_components_from_dagster():
     # No extras
     with _temp_venv([*common_deps, "-e", components_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "pipes_subprocess_script_collection@dagster_components" in component_types
-        assert "dbt_project@dagster_components" not in component_types
-        assert "sling_replication_collection@dagster_components" not in component_types
+        assert "dagster_components.lib.PipesSubprocessScriptCollection" in component_types
+        assert "dagster_components.lib.DbtProjectComponent" not in component_types
+        assert "dagster_components.lib.SlingReplicationCollection" not in component_types
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[dbt]", "-e", dbt_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "pipes_subprocess_script_collection@dagster_components" in component_types
-        assert "dbt_project@dagster_components" in component_types
-        assert "sling_replication_collection@dagster_components" not in component_types
+        assert "dagster_components.lib.PipesSubprocessScriptCollection" in component_types
+        assert "dagster_components.lib.DbtProjectComponent" in component_types
+        assert "dagster_components.lib.SlingReplicationCollection" not in component_types
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[sling]", "-e", sling_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "pipes_subprocess_script_collection@dagster_components" in component_types
-        assert "dbt_project@dagster_components" not in component_types
-        assert "sling_replication_collection@dagster_components" in component_types
+        assert "dagster_components.lib.PipesSubprocessScriptCollection" in component_types
+        assert "dagster_components.lib.DbtProjectComponent" not in component_types
+        assert "dagster_components.lib.SlingReplicationCollection" in component_types
 
 
 def test_all_dagster_components_have_defined_summary():
-    from dagster_components import ComponentTypeRegistry
-
-    registry = ComponentTypeRegistry.from_entry_point_discovery()
+    registry = discover_entry_point_component_types()
     for component_name, component_type in registry.items():
         assert component_type.get_metadata()[
             "summary"
@@ -209,8 +200,8 @@ def isolated_venv_with_component_lib_dagster_foo(
 def test_components_from_third_party_lib():
     with isolated_venv_with_component_lib_dagster_foo() as venv_root:
         component_types = _get_component_types_in_python_environment(venv_root)
-        assert "test_component_1@dagster_foo" in component_types
-        assert "test_component_2@dagster_foo" in component_types
+        assert "dagster_foo.lib.TestComponent1" in component_types
+        assert "dagster_foo.lib.TestComponent2" in component_types
 
 
 def test_bad_entry_point_error_message():

@@ -1,4 +1,4 @@
-type: .my_new_component
+type: .MyNewComponent
 
 attributes:
   a_string: "a string"

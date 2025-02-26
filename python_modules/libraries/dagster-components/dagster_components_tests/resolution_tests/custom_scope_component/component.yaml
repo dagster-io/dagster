@@ -1,4 +1,4 @@
-type: custom_scope_component@file:component.py
+type: .component.HasCustomScope
 
 attributes:
   asset_attributes:

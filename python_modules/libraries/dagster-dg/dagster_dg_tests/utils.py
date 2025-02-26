@@ -62,12 +62,18 @@ def isolated_example_workspace(
     create_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with (
         runner.isolated_filesystem(),
         clear_module_from_cache("foo_bar"),
         clear_module_from_cache(project_name) if project_name else nullcontext(),
     ):
-        result = runner.invoke("init", input=f"\n{project_name or ''}\n")
+        result = runner.invoke(
+            "init",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            input=f"\n{project_name or ''}\n",
+        )
         assert_runner_result(result)
         with pushd("dagster-workspace"):
             # Create a venv capable of running dagster dev
@@ -135,8 +141,11 @@ def isolated_example_component_library_foo_bar(
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with (
-        runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
-    ) as venv_path:
+        (
+            runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
+        ) as venv_path,
+        # clear_module_from_cache("foo_bar"),
+    ):
         # We just use the project generation function and then modify it to be a component library
         # only.
         result = runner.invoke(
@@ -185,11 +194,13 @@ def modify_environment_variable(name: str, value: str) -> Iterator[None]:
 
 @contextmanager
 def clear_module_from_cache(module_name: str) -> Iterator[None]:
-    if module_name in sys.modules:
-        del sys.modules[module_name]
+    matches = {key for key in sys.modules if key.startswith(module_name)}
+    for match in matches:
+        del sys.modules[match]
     yield
-    if module_name in sys.modules:
-        del sys.modules[module_name]
+    matches = {key for key in sys.modules if key.startswith(module_name)}
+    for match in matches:
+        del sys.modules[match]
 
 
 @contextmanager

@@ -34,10 +34,10 @@ def test_context_in_workspace():
 
 
 def test_context_in_project_in_workspace():
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner, project_name="foo"):
-        project_path = Path.cwd() / "projects" / "foo"
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, project_name="foo-bar"):
+        project_path = Path.cwd() / "projects" / "foo-bar"
         # go into a project subdirectory to make sure root resolution works
-        path_arg = project_path / "foo_tests"
+        path_arg = project_path / "foo_bar_tests"
 
         context = DgContext.for_project_environment(path_arg, {})
         assert context.root_path == project_path
