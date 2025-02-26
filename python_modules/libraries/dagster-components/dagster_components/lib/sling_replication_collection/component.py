@@ -21,6 +21,7 @@ from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
     AssetPostProcessorSchema,
+    OpSpec,
     OpSpecSchema,
     PostProcessorFn,
 )
@@ -44,7 +45,7 @@ SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
 class SlingReplicationSpec(BaseModel):
     path: str
-    op: Optional[OpSpecSchema]
+    op: Optional[OpSpec]
     translator: Annotated[Optional[DagsterSlingTranslator], FieldResolver(resolve_translator)]
     include_metadata: list[SlingMetadataAddons]
 
@@ -118,13 +119,14 @@ class SlingReplicationCollection(Component):
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec
     ) -> AssetsDefinition:
-        op_spec = replication_spec.op or OpSpecSchema()
+        op_spec = replication_spec.op or OpSpec()
 
         @sling_assets(
             name=op_spec.name or Path(replication_spec.path).stem,
             op_tags=op_spec.tags,
             replication_config=context.path / replication_spec.path,
             dagster_sling_translator=replication_spec.translator,
+            backfill_policy=op_spec.backfill_policy,
         )
         def _asset(context: AssetExecutionContext):
             yield from self.execute(
