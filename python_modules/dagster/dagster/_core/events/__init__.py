@@ -1062,15 +1062,17 @@ class DagsterEvent(
         step_context: IStepContext, concurrency_key: str, initial=True
     ) -> "DagsterEvent":
         message = (
-            f"Step blocked by concurrency limit for key {concurrency_key}"
+            f"Step blocked by limit for pool {concurrency_key}"
             if initial
-            else f"Step still blocked by concurrency limit for key {concurrency_key}"
+            else f"Step still blocked by limit for pool {concurrency_key}"
         )
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ENGINE_EVENT,
             step_context=step_context,
             message=message,
-            event_specific_data=EngineEventData(metadata={"concurrency_key": concurrency_key}),
+            event_specific_data=EngineEventData(
+                metadata={"pool": MetadataValue.pool(concurrency_key)}
+            ),
         )
 
     @staticmethod
