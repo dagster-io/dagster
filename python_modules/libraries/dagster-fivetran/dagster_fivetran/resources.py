@@ -474,7 +474,7 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
 # Reworked resources
 # ------------------
 
-ConnectionSelectorFn = Callable[[FivetranConnector], bool]
+ConnectorSelectorFn = Callable[[FivetranConnector], bool]
 
 
 @beta
@@ -876,13 +876,13 @@ class FivetranWorkspace(ConfigurableResource):
 
     def fetch_fivetran_workspace_data(
         self,
-        connection_selector_fn: Optional[ConnectionSelectorFn] = None,
+            connector_selector_fn: Optional[ConnectorSelectorFn] = None,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
 
         Args:
-            connection_selector_fn (Optional[ConnectionSelectorFn]):
-                A function that allows for filtering which Fivetran connection assets are created for.
+            connector_selector_fn (Optional[ConnectorSelectorFn]):
+                A function that allows for filtering which Fivetran connector assets are created for.
 
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
@@ -918,7 +918,7 @@ class FivetranWorkspace(ConfigurableResource):
                 )
 
                 if (
-                    connection_selector_fn and not connection_selector_fn(connector)
+                    connector_selector_fn and not connector_selector_fn(connector)
                 ) or not connector.is_connected:
                     continue
 
@@ -935,7 +935,7 @@ class FivetranWorkspace(ConfigurableResource):
     def load_asset_specs(
         self,
         dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-        connection_selector_fn: Optional[ConnectionSelectorFn] = None,
+            connector_selector_fn: Optional[ConnectorSelectorFn] = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -943,8 +943,8 @@ class FivetranWorkspace(ConfigurableResource):
             dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
                 to convert Fivetran content into :py:class:`dagster.AssetSpec`.
                 Defaults to :py:class:`DagsterFivetranTranslator`.
-            connection_selector_fn (Optional[ConnectionSelectorFn]):
-                A function that allows for filtering which Fivetran connection assets are created for.
+            connector_selector_fn (Optional[ConnectorSelectorFn]):
+                A function that allows for filtering which Fivetran connector assets are created for.
 
         Returns:
             List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -969,7 +969,7 @@ class FivetranWorkspace(ConfigurableResource):
         return load_fivetran_asset_specs(
             workspace=self,
             dagster_fivetran_translator=dagster_fivetran_translator or DagsterFivetranTranslator(),
-            connection_selector_fn=connection_selector_fn,
+            connector_selector_fn=connector_selector_fn,
         )
 
     def _generate_materialization(
@@ -1089,7 +1089,7 @@ class FivetranWorkspace(ConfigurableResource):
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-    connection_selector_fn: Optional[ConnectionSelectorFn] = None,
+        connector_selector_fn: Optional[ConnectorSelectorFn] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -1098,8 +1098,8 @@ def load_fivetran_asset_specs(
         dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
-        connection_selector_fn (Optional[ConnectionSelectorFn]):
-                A function that allows for filtering which Fivetran connection assets are created for.
+        connector_selector_fn (Optional[ConnectorSelectorFn]):
+                A function that allows for filtering which Fivetran connector assets are created for.
 
     Returns:
         List[AssetSpec]: The set of assets representing the Fivetran content in the workspace.
@@ -1133,7 +1133,7 @@ def load_fivetran_asset_specs(
                 FivetranWorkspaceDefsLoader(
                     workspace=initialized_workspace,
                     translator=dagster_fivetran_translator,
-                    connection_selector_fn=connection_selector_fn,
+                    connector_selector_fn=connector_selector_fn,
                 )
                 .build_defs()
                 .assets,
@@ -1146,7 +1146,7 @@ def load_fivetran_asset_specs(
 class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     workspace: FivetranWorkspace
     translator: DagsterFivetranTranslator
-    connection_selector_fn: Optional[ConnectionSelectorFn] = None
+    connector_selector_fn: Optional[ConnectorSelectorFn] = None
 
     @property
     def defs_key(self) -> str:
@@ -1154,7 +1154,7 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
 
     def fetch_state(self) -> FivetranWorkspaceData:
         return self.workspace.fetch_fivetran_workspace_data(
-            connection_selector_fn=self.connection_selector_fn
+            connector_selector_fn=self.connector_selector_fn
         )
 
     def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:

@@ -47,16 +47,16 @@ def test_fetch_fivetran_workspace_data(
         ("service", "non_matching_service", 0),
     ],
     ids=[
-        "no_filter_present_connector",
-        "connector_name_filter_present_connector",
-        "connector_id_filter_present_connector",
-        "service_filter_present_connector",
-        "connector_name_filter_absent_connector",
-        "connector_id_filter_absent_connector",
-        "service_filter_absent_connector",
+        "no_selector_present_connector",
+        "connector_name_selector_present_connector",
+        "connector_id_selector_present_connector",
+        "service_selector_present_connector",
+        "connector_name_selector_absent_connector",
+        "connector_id_selector_absent_connector",
+        "service_selector_absent_connector",
     ],
 )
-def test_fivetran_filter(
+def test_fivetran_connector_selector(
     attribute: str,
     value: str,
     expected_result: int,
@@ -66,11 +66,11 @@ def test_fivetran_filter(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    connection_selector_fn = (
+    connector_selector_fn = (
         (lambda connector: getattr(connector, attribute) == value) if attribute else None
     )
     actual_workspace_data = resource.fetch_fivetran_workspace_data(
-        connection_selector_fn=connection_selector_fn
+        connector_selector_fn=connector_selector_fn
     )
     assert len(actual_workspace_data.connectors_by_id) == expected_result
 

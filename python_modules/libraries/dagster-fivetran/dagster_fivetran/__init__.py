@@ -11,7 +11,7 @@ from dagster_fivetran.ops import (
     fivetran_sync_op as fivetran_sync_op,
 )
 from dagster_fivetran.resources import (
-    ConnectionSelectorFn as ConnectionSelectorFn,
+    ConnectorSelectorFn as ConnectorSelectorFn,
     FivetranResource as FivetranResource,
     FivetranWorkspace as FivetranWorkspace,
     fivetran_resource as fivetran_resource,

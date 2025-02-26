@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import beta
 
-from dagster_fivetran.resources import ConnectionSelectorFn, FivetranWorkspace
+from dagster_fivetran.resources import ConnectorSelectorFn, FivetranWorkspace
 from dagster_fivetran.translator import DagsterFivetranTranslator, FivetranMetadataSet
 
 
@@ -15,7 +15,7 @@ def fivetran_assets(
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-    connection_selector_fn: Optional[ConnectionSelectorFn] = None,
+    connector_selector_fn: Optional[ConnectorSelectorFn] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to sync the tables of a given Fivetran connector.
 
@@ -28,8 +28,8 @@ def fivetran_assets(
         dagster_fivetran_translator (Optional[DagsterFivetranTranslator], optional): The translator to use
             to convert Fivetran content into :py:class:`dagster.AssetSpec`.
             Defaults to :py:class:`DagsterFivetranTranslator`.
-        connection_selector_fn (Optional[ConnectionSelectorFn]):
-                A function that allows for filtering which Fivetran connection assets are created for.
+        connector_selector_fn (Optional[ConnectorSelectorFn]):
+                A function that allows for filtering which Fivetran connector assets are created for.
 
     Examples:
         Sync the tables of a Fivetran connector:
@@ -105,8 +105,8 @@ def fivetran_assets(
 
     """
     dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
-    connection_selector_fn = connection_selector_fn or (
-        lambda connection: connection.id == connector_id
+    connector_selector_fn = connector_selector_fn or (
+        lambda connector: connector.id == connector_id
     )
 
     return multi_asset(
@@ -117,7 +117,7 @@ def fivetran_assets(
             spec
             for spec in workspace.load_asset_specs(
                 dagster_fivetran_translator=dagster_fivetran_translator,
-                connection_selector_fn=connection_selector_fn,
+                connector_selector_fn=connector_selector_fn,
             )
             if FivetranMetadataSet.extract(spec.metadata).connector_id == connector_id
         ],
