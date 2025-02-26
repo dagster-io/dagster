@@ -52,12 +52,10 @@ class DgConfig:
     builtin_component_lib: str = DEFAULT_BUILTIN_COMPONENT_LIB
     use_dg_managed_environment: bool = True
     require_local_venv: bool = True
-    is_component_lib: bool = False
     is_project: bool = False
     is_workspace: bool = False
     root_package: Optional[str] = None
     component_package: Optional[str] = None
-    component_lib_package: Optional[str] = None
 
     @classmethod
     def discover_config_file(
@@ -87,9 +85,7 @@ class DgPartialConfig(TypedDict, total=False):
     use_dg_managed_environment: bool
     require_local_venv: bool
     component_package: str
-    component_lib_package: str
     is_project: bool
-    is_component_lib: bool
     is_workspace: bool
 
 
@@ -114,12 +110,8 @@ def _normalize_dg_partial_config(raw_dict: Mapping[str, object]) -> DgPartialCon
         raise DgValidationError("`require_local_venv` must be a boolean.")
     if "component_package" in config and not isinstance(config["component_package"], str):
         raise DgValidationError("`component_package` must be a string.")
-    if "component_lib_package" in config and not isinstance(config["component_lib_package"], str):
-        raise DgValidationError("`component_lib_package` must be a string.")
     if "is_project" in config and not isinstance(config["is_project"], bool):
         raise DgValidationError("`is_project` must be a boolean.")
-    if "is_component_lib" in config and not isinstance(config["is_component_lib"], bool):
-        raise DgValidationError("`is_component_lib` must be a boolean.")
 
     if "is_workspace" in config and not isinstance(config["is_workspace"], bool):
         raise DgValidationError("`is_workspace` must be a boolean.")

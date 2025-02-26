@@ -151,7 +151,6 @@ def isolated_example_component_library_foo_bar(
                 # We need to set any alternative lib package name _before_ we install into the
                 # environment, since it affects entry points which are set at install time.
                 if lib_package_name:
-                    set_toml_value(toml, ("tool", "dg", "component_lib_package"), lib_package_name)
                     set_toml_value(
                         toml,
                         ("project", "entry-points", "dagster.components", "foo_bar"),

@@ -162,7 +162,7 @@ def scaffold_project(
 
 
 def scaffold_component_type(dg_context: DgContext, name: str) -> None:
-    root_path = Path(dg_context.components_lib_path)
+    root_path = Path(dg_context.default_components_library_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
 
     scaffold_subtree(
@@ -175,7 +175,9 @@ def scaffold_component_type(dg_context: DgContext, name: str) -> None:
     )
 
     with open(root_path / "__init__.py", "a") as f:
-        f.write(f"from {dg_context.components_lib_package_name}.{name} import {camelcase(name)}\n")
+        f.write(
+            f"from {dg_context.default_components_library_module}.{name} import {camelcase(name)}\n"
+        )
 
     click.echo(f"Scaffolded files for Dagster component type at {root_path}/{name}..")
 

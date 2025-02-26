@@ -1,12 +1,14 @@
 import shlex
 import shutil
 import subprocess
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import replace
 from functools import cached_property
 from pathlib import Path
 from typing import Final, Optional
 
+import tomlkit
+import tomlkit.items
 from typing_extensions import Self
 
 from dagster_dg.cache import CachableDataType, DgCache, hash_paths
@@ -25,7 +27,9 @@ from dagster_dg.utils import (
     generate_missing_dagster_components_in_local_venv_error_message,
     get_path_for_module,
     get_path_for_package,
+    get_toml_value,
     get_venv_executable,
+    has_toml_value,
     is_package_installed,
     pushd,
     resolve_local_venv,
@@ -161,7 +165,7 @@ class DgContext:
         path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
-            *([self.components_lib_path] if self.is_component_library else []),
+            *([self.default_components_library_path] if self.is_component_library else []),
         ]
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
@@ -297,23 +301,24 @@ class DgContext:
     # ##### COMPONENT LIBRARY METHODS
     # ########################
 
+    # It is possible for a single package to define multiple entry points under the
+    # `dagster.components` entry point group. At present, `dg` only cares about the first one, which
+    # it uses for all component type scaffolding operations.
+
     @property
     def is_component_library(self) -> bool:
-        return self.config.is_component_lib
+        return bool(self._dagster_components_entry_points)
 
     @cached_property
-    def components_lib_package_name(self) -> str:
-        if not self.is_component_library:
+    def default_components_library_module(self) -> str:
+        if not self._dagster_components_entry_points:
             raise DgError(
                 "`components_lib_package_name` is only available in a component library context"
             )
-        return (
-            self.config.component_lib_package
-            or f"{self.root_package_name}.{_DEFAULT_PROJECT_COMPONENTS_LIB_SUBMODULE}"
-        )
+        return next(iter(self._dagster_components_entry_points.values()))
 
     @cached_property
-    def components_lib_path(self) -> Path:
+    def default_components_library_path(self) -> Path:
         if not self.is_component_library:
             raise DgError("`components_lib_path` is only available in a component library context")
         with ensure_loadable_path(self.root_path):
@@ -321,11 +326,25 @@ class DgContext:
                 raise DgError(
                     f"Could not find expected package `{self.root_package_name}` in the current environment. Components expects the package name to match the directory name of the project."
                 )
-            if not is_package_installed(self.components_lib_package_name):
+            if not is_package_installed(self.default_components_library_module):
                 raise DgError(
-                    f"Components lib package `{self.components_lib_package_name}` is not installed in the current environment."
+                    f"Components lib package `{self.default_components_library_module}` is not installed in the current environment."
                 )
-            return Path(get_path_for_package(self.components_lib_package_name))
+            return Path(get_path_for_package(self.default_components_library_module))
+
+    @cached_property
+    def _dagster_components_entry_points(self) -> Mapping[str, str]:
+        if not self.pyproject_toml_path.exists():
+            return {}
+        toml = tomlkit.parse(self.pyproject_toml_path.read_text())
+        if not has_toml_value(toml, ("project", "entry-points", "dagster.components")):
+            return {}
+        else:
+            return get_toml_value(
+                toml,
+                ("project", "entry-points", "dagster.components"),
+                (tomlkit.items.Table, tomlkit.items.InlineTable),
+            ).unwrap()
 
     # ########################
     # ##### HELPERS
@@ -412,6 +431,10 @@ class DgContext:
             return f"Python environment at {self.venv_path}"
         else:
             return "ambient Python environment"
+
+    @property
+    def pyproject_toml_path(self) -> Path:
+        return self.root_path / "pyproject.toml"
 
 
 # ########################

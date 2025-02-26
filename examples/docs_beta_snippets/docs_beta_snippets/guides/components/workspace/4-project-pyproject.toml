@@ -5,5 +5,4 @@ code_location_name = "project-1"
 
 [tool.dg]
 is_project = true
-is_component_lib = true
 ...
