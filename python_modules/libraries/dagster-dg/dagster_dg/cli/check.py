@@ -12,7 +12,7 @@ from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.dev import format_forwarded_option, temp_workspace_file
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.component_key import ComponentKey, LocalComponentKey
+from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
@@ -81,7 +81,7 @@ def check_yaml_command(
     validation_errors: list[ErrorInput] = []
 
     component_contents_by_key: dict[ComponentKey, Any] = {}
-    local_component_dirs = set()
+    modules_to_fetch = set()
     for component_dir in dg_context.components_path.iterdir():
         if resolved_paths and not any(
             path == component_dir or path in component_dir.parents for path in resolved_paths
@@ -109,6 +109,7 @@ def check_yaml_command(
                     )
                 )
                 continue
+
             # First, validate the top-level structure of the component file
             # (type and params keys) before we try to validate the params themselves.
             top_level_errs = list(
@@ -119,45 +120,47 @@ def check_yaml_command(
             if top_level_errs:
                 continue
 
-            component_key = ComponentKey.from_typename(
-                component_doc_tree.value.get("type"), dirpath=component_path.parent
+            raw_key = component_doc_tree.value.get("type")
+            component_instance_module = dg_context.get_component_instance_module(component_dir.name)
+            qualified_key = (
+                f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
             )
-            component_contents_by_key[component_key] = component_doc_tree
-            if isinstance(component_key, LocalComponentKey):
-                local_component_dirs.add(component_dir)
+            key = ComponentKey.from_typename(qualified_key)
+            component_contents_by_key[key] = component_doc_tree
+
+            # We need to fetch components from any modules local to the project because these are
+            # not cached with the components from the general environment.
+            if key.namespace.startswith(dg_context.components_module_name):
+                modules_to_fetch.add(key.namespace)
 
     # Fetch the local component types, if we need any local components
     component_registry = RemoteComponentRegistry.from_dg_context(
-        dg_context, local_component_type_dirs=list(local_component_dirs)
+        dg_context, extra_modules=list(modules_to_fetch)
     )
-    for component_key, component_doc_tree in component_contents_by_key.items():
+    for key, component_doc_tree in component_contents_by_key.items():
         try:
-            json_schema = component_registry.get(component_key).component_schema or {}
+            json_schema = component_registry.get(key).component_schema or {}
 
             v = Draft202012Validator(json_schema)
             for err in v.iter_errors(component_doc_tree.value["attributes"]):
-                validation_errors.append(ErrorInput(component_key, err, component_doc_tree))
+                validation_errors.append(ErrorInput(key, err, component_doc_tree))
         except KeyError:
             # No matching component type found
             validation_errors.append(
                 ErrorInput(
                     None,
-                    ValidationError(
-                        f"Component type '{component_key.to_typename()}' not found in {component_key.python_file}."
-                        if isinstance(component_key, LocalComponentKey)
-                        else f"Component type '{component_key.to_typename()}' not found."
-                    ),
+                    ValidationError(f"Component type '{key.to_typename()}' not found."),
                     component_doc_tree,
                 )
             )
     if validation_errors:
-        for component_key, error, component_doc_tree in validation_errors:
+        for key, error, component_doc_tree in validation_errors:
             click.echo(
                 error_dict_to_formatted_error(
-                    component_key,
+                    key,
                     error,
                     source_position_tree=component_doc_tree.source_position_tree,
-                    prefix=["attributes"] if component_key else [],
+                    prefix=["attributes"] if key else [],
                 )
             )
         click.get_current_context().exit(1)

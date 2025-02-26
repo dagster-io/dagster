@@ -10,7 +10,7 @@ from dagster_components import (
 class ShellCommandSchema(ResolvableSchema):
     ...
 
-@registered_component_type(name="shell_command")
+@registered_component_type
 class ShellCommand(Component):
     """COMPONENT SUMMARY HERE.
 

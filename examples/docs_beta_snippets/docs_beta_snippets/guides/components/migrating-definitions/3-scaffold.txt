@@ -1,4 +1,4 @@
-dg scaffold component 'definitions@dagster_components' elt-definitions
+dg scaffold component 'dagster_components.lib.DefinitionsComponent' elt-definitions
 
 Using /.../my-existing-project/.venv/bin/dagster-components
 Creating a Dagster component instance folder at /.../my-existing-project/my_existing_project/components/elt-definitions.

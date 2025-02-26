@@ -61,7 +61,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="dg scaffold component 'definitions@dagster_components' elt-definitions",
+            cmd="dg scaffold component 'dagster_components.lib.DefinitionsComponent' elt-definitions",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold.txt",
             update_snippets=update_snippets,
@@ -102,7 +102,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             / "elt-definitions"
             / "component.yaml",
             format_multiline("""
-            type: definitions@dagster_components
+            type: dagster_components.lib.DefinitionsComponent
 
             attributes:
               definitions_path: definitions.py
@@ -156,7 +156,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
 
         # migrate analytics
         _run_command(
-            cmd="dg scaffold component 'definitions@dagster_components' analytics-definitions",
+            cmd="dg scaffold component 'dagster_components.lib.DefinitionsComponent' analytics-definitions",
         )
         _run_command(
             cmd="mv my_existing_project/analytics/* my_existing_project/components/analytics-definitions && rm -rf my_existing_project/analytics",
@@ -185,7 +185,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             / "analytics-definitions"
             / "component.yaml",
             format_multiline("""
-                type: definitions@dagster_components
+                type: dagster_components.lib.DefinitionsComponent
 
                 attributes:
                   definitions_path: definitions.py
