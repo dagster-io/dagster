@@ -1,8 +1,10 @@
 import copy
+import json
 import tempfile
+import textwrap
 import webbrowser
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import markdown
 import yaml
@@ -158,19 +160,38 @@ def html_from_markdown(markdown_content: str) -> str:
     html_content = markdown.markdown(markdown_content)
 
     # Add basic HTML structure
-    full_html = f"""
+    full_html = (
+        """
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Markdown Preview</title>
+        <style>
+            body {
+                font-weight: 400;
+                font-family: "Geist", "Inter", "Arial", sans-serif;
+                font-size: 16px;
+            }
+            textarea {
+                max-width: 100%;
+                font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+                border: none;
+                background-color: rgb(246, 248, 250);
+                border-radius: 6px;
+                padding: 16px;
+            }
+        </style>
     </head>
     <body>
-        {html_content}
+        <div style="max-width: 75%; margin: 0 auto;">"""
+        + html_content
+        + """</div>
     </body>
     </html>
     """
+    )
     return full_html
 
 
@@ -182,6 +203,96 @@ def open_html_in_browser(html_content: str) -> None:
 
     # Open the temporary file in the default web browser
     webbrowser.open(f"file://{temp_file_path}")
+
+
+def process_description(description: str) -> str:
+    return description.replace("\n", "<br>")
+
+
+def markdown_for_json_schema(
+    key: str,
+    json_schema: Mapping[str, Any],
+    subschema: Mapping[str, Any],
+    anyof_parent_subschema: Optional[Mapping[str, Any]] = None,
+    indent: int = 0,
+    is_list: bool = False,
+    is_nullable: bool = False,
+) -> str:
+    """Produces a nested markdown list of the subschema, including component-author-provided description and examples.
+    Uses <details> blocks to collapse nested fields by default.
+
+    Args:
+        key: The key of the current field in the schema.
+        json_schema: The complete schema.
+        subschema: The current field's schema.
+        anyof_parent_subschema: The parent schema, if the current field is part of an anyOf.
+        indent: The indentation level for the current field.
+        is_list: Whether the current field is a list.
+        is_nullable: Whether the current field is nullable.
+    """
+    subschema = _dereference_schema(json_schema, subschema)
+
+    if "anyOf" in subschema:
+        # TODO: handle anyOf fields more gracefully, for now just choose first option
+        is_nullable = any(nested.get("type") == "null" for nested in subschema["anyOf"])
+        return markdown_for_json_schema(
+            key,
+            json_schema,
+            subschema["anyOf"][0],
+            anyof_parent_subschema=subschema,
+            indent=indent,
+            is_nullable=is_nullable,
+        )
+
+    objtype = subschema["type"]
+
+    children = ""
+    if objtype == "object":
+        children = "\n".join(
+            [
+                markdown_for_json_schema(k, json_schema, v, indent=indent + 2)
+                for k, v in subschema.get("properties", {}).items()
+            ]
+        )
+    elif objtype == "array":
+        return markdown_for_json_schema(key, json_schema, subschema["items"], is_list=True)
+
+    description = process_description(
+        subschema.get("description", "") or (anyof_parent_subschema or {}).get("description", "")
+    )
+    # use dedent to remove the leading newline
+    children_segment = (
+        textwrap.dedent(f"""
+            <details>
+            <summary>Subfields</summary>
+            \n\n
+            <ul>
+            {children}
+            </ul>
+            </details>
+        """).strip()
+        if children
+        else ""
+    )
+    examples = subschema.get("examples", []) or (anyof_parent_subschema or {}).get("examples", [])
+    examples_segment = (
+        f"Example: <code>{json.dumps(examples[0], indent=2)}</code>" if examples else ""
+    )
+
+    body = "<br/>".join(x for x in [description, examples_segment, children_segment] if x)
+    body = textwrap.indent("<br/>" + body + "", prefix="  ") if body else ""
+
+    type_str = f"[{subschema['type']}]" if is_list else subschema["type"]
+    if is_nullable:
+        type_str = f"{type_str} | null"
+    output = f"""<li><strong>{key}</strong> - <code>{type_str}</code>{body}</li>\n"""
+    # indent the output with textwrap
+    return textwrap.indent(output, " " * indent)
+
+
+def markdown_for_param_types(remote_component_type: RemoteComponentType) -> str:
+    schema = remote_component_type.component_schema or {}
+    return f"<ul>{markdown_for_json_schema('attributes', schema, schema)}</ul>"
 
 
 def markdown_for_component_type(remote_component_type: RemoteComponentType) -> str:
@@ -196,7 +307,11 @@ def markdown_for_component_type(remote_component_type: RemoteComponentType) -> s
 ### Description:
 {remote_component_type.description}
 
-### Sample Component Params:
+### Component Schema:
+
+{markdown_for_param_types(remote_component_type)}
+
+### Sample Component YAML:
 
 <textarea rows={rows} cols=100>
 {sample_yaml}
