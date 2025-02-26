@@ -32,6 +32,7 @@ export const AssetSelectionInput = ({
   assets,
   linter = defaultLinter,
   useAssetSelectionAutoComplete = defaultUseAssetSelectionAutoCompleteProvider,
+  saveOnBlur = false,
 }: AssetSelectionInputProps) => {
   const {useAutoComplete} = useAssetSelectionAutoComplete(assets);
 
@@ -43,6 +44,7 @@ export const AssetSelectionInput = ({
       linter={linter}
       value={value}
       onChange={onChange}
+      saveOnBlur={saveOnBlur}
     />
   );
 };
