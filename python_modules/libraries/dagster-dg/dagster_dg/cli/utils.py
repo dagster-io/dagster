@@ -7,7 +7,7 @@ import click
 
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, all_components_schema_from_dg_context
-from dagster_dg.component_key import GlobalComponentKey
+from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
@@ -75,15 +75,15 @@ def inspect_component_type_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    component_key = GlobalComponentKey.from_typename(component_type)
-    if not registry.has_global(component_key):
+    component_key = ComponentKey.from_typename(component_type)
+    if not registry.has(component_key):
         exit_with_error(generate_missing_component_type_error_message(component_type))
     elif sum([description, scaffold_params_schema, component_schema]) > 1:
         exit_with_error(
             "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
         )
 
-    component_type_metadata = registry.get_global(component_key)
+    component_type_metadata = registry.get(component_key)
 
     if description:
         if component_type_metadata.description:

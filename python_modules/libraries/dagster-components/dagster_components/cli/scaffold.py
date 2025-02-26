@@ -4,8 +4,8 @@ from typing import Optional
 import click
 from pydantic import TypeAdapter
 
-from dagster_components import ComponentTypeRegistry
-from dagster_components.core.component_key import GlobalComponentKey
+from dagster_components.core.component import discover_entry_point_component_types
+from dagster_components.core.component_key import ComponentKey
 from dagster_components.scaffold import (
     ComponentScaffolderUnavailableReason,
     scaffold_component_instance,
@@ -30,14 +30,12 @@ def scaffold_component_command(
     json_params: Optional[str],
 ) -> None:
     builtin_component_lib = ctx.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
-    registry = ComponentTypeRegistry.from_entry_point_discovery(
-        builtin_component_lib=builtin_component_lib
-    )
-    component_key = GlobalComponentKey.from_typename(component_type)
-    if not registry.has(component_key):
+    registered_components = discover_entry_point_component_types(builtin_component_lib)
+    key = ComponentKey.from_typename(component_type)
+    if key not in registered_components:
         exit_with_error(f"No component type `{component_type}` could be resolved.")
 
-    component_type_cls = registry.get(component_key)
+    component_type_cls = registered_components[key]
     if json_params:
         scaffolder = component_type_cls.get_scaffolder()
         if isinstance(scaffolder, ComponentScaffolderUnavailableReason):

@@ -4,7 +4,7 @@ import click
 
 from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.component_key import GlobalComponentKey
+from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.docs import html_from_markdown, markdown_for_component_type, open_html_in_browser
@@ -34,11 +34,11 @@ def component_type_docs_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    component_key = GlobalComponentKey.from_typename(component_type)
-    if not registry.has_global(component_key):
+    component_key = ComponentKey.from_typename(component_type)
+    if not registry.has(component_key):
         exit_with_error(f"Component type `{component_type}` not found.")
 
-    markdown = markdown_for_component_type(registry.get_global(component_key))
+    markdown = markdown_for_component_type(registry.get(component_key))
     if output == "browser":
         open_html_in_browser(html_from_markdown(markdown))
     else:

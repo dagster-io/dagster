@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import tomlkit
 from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.component_key import GlobalComponentKey
+from dagster_dg.component_key import ComponentKey
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
     cross_platfrom_string_path,
@@ -280,10 +280,10 @@ def test_scaffold_component_dynamic_subcommand_generation() -> None:
         # These are wrapped in a table so it's hard to check exact output.
         for line in [
             "╭─ Commands",
-            "│ all_metadata_empty_asset@dagster_components.test",
-            "│ complex_schema_asset@dagster_components.test",
-            "│ simple_asset@dagster_components.test",
-            "│ simple_pipes_script_asset@dagster_components.test",
+            "│ dagster_components.lib.test.AllMetadataEmptyAsset",
+            "│ dagster_components.lib.test.ComplexSchemaAsset",
+            "│ dagster_components.lib.test.SimpleAsset",
+            "│ dagster_components.lib.test.SimplePipesScriptAsset",
         ]:
             assert standardize_box_characters(line) in normalized_output
 
@@ -297,7 +297,7 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "all_metadata_empty_asset@dagster_components.test",
+            "dagster_components.lib.test.AllMetadataEmptyAsset",
             "qux",
         )
         assert_runner_result(result)
@@ -305,7 +305,7 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: all_metadata_empty_asset@dagster_components.test"
+            "type: dagster_components.lib.test.AllMetadataEmptyAsset"
             in component_yaml_path.read_text()
         )
 
@@ -319,7 +319,7 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "simple_pipes_script_asset@dagster_components.test",
+            "dagster_components.lib.test.SimplePipesScriptAsset",
             "qux",
             "--json-params",
             '{"asset_key": "foo", "filename": "hello.py"}',
@@ -330,7 +330,7 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: simple_pipes_script_asset@dagster_components.test"
+            "type: dagster_components.lib.test.SimplePipesScriptAsset"
             in component_yaml_path.read_text()
         )
 
@@ -344,7 +344,7 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
         result = runner.invoke(
             "scaffold",
             "component",
-            "simple_pipes_script_asset@dagster_components.test",
+            "dagster_components.lib.test.SimplePipesScriptAsset",
             "qux",
             "--asset-key=foo",
             "--filename=hello.py",
@@ -355,7 +355,7 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: simple_pipes_script_asset@dagster_components.test"
+            "type: dagster_components.lib.test.SimplePipesScriptAsset"
             in component_yaml_path.read_text()
         )
 
@@ -365,7 +365,7 @@ def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "simple_pipes_script_asset@dagster_components.test",
+            "dagster_components.lib.test.SimplePipesScriptAsset",
             "qux",
             "--json-params",
             '{"filename": "hello.py"}',
@@ -379,9 +379,9 @@ def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
 
 def test_scaffold_component_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        result = runner.invoke("scaffold", "component", "fake@fake", "qux")
+        result = runner.invoke("scaffold", "component", "fake.Fake", "qux")
         assert_runner_result(result, exit_0=False)
-        assert "No component type `fake@fake` is registered" in result.output
+        assert "No component type `fake.Fake` is registered" in result.output
 
 
 def test_scaffold_component_command_with_non_matching_module_name():
@@ -391,13 +391,10 @@ def test_scaffold_component_command_with_non_matching_module_name():
         python_module.rename("module_not_same_as_project")
 
         result = runner.invoke(
-            "scaffold", "component", "all_metadata_empty_asset@dagster_components.test", "qux"
+            "scaffold", "component", "dagster_components.lib.test.AllMetadataEmptyAsset", "qux"
         )
         assert_runner_result(result, exit_0=False)
-        assert (
-            "Could not find expected package `foo_bar` in the current environment. Components expects the package name to match the directory name of the project."
-            in str(result.exception)
-        )
+        assert "Module `foo_bar` is not installed" in str(result.exception)
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
@@ -409,14 +406,14 @@ def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "all_metadata_empty_asset@dagster_components.test",
+            "dagster_components.lib.test.AllMetadataEmptyAsset",
             "qux",
         )
         assert_runner_result(result)
         result = runner.invoke(
             "scaffold",
             "component",
-            "all_metadata_empty_asset@dagster_components.test",
+            "dagster_components.lib.test.AllMetadataEmptyAsset",
             "qux",
         )
         assert_runner_result(result, exit_0=False)
@@ -434,7 +431,7 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "all_metadata_empty_asset@dagster_components.test",
+            "dagster_components.lib.test.AllMetadataEmptyAsset",
             "qux",
         )
         assert_runner_result(result)
@@ -442,7 +439,7 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
         component_yaml_path = Path("foo_bar/_components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: all_metadata_empty_asset@dagster_components.test"
+            "type: dagster_components.lib.test.AllMetadataEmptyAsset"
             in component_yaml_path.read_text()
         )
 
@@ -450,29 +447,31 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
 def test_scaffold_component_fails_components_package_does_not_exist() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "components_module"), "bar._components")
+            set_toml_value(
+                toml, ("tool", "dg", "project", "components_module"), "foo_bar._components"
+            )
         result = runner.invoke(
             "scaffold",
             "component",
-            "all_metadata_empty_asset@dagster_components.test",
+            "dagster_components.lib.test.AllMetadataEmptyAsset",
             "qux",
         )
         assert_runner_result(result, exit_0=False)
-        assert "Components package `bar._components` is not installed" in str(result.exception)
+        assert "Module `foo_bar._components` is not installed" in str(result.exception)
 
 
 def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        result = runner.invoke("scaffold", "component-type", "baz")
+        result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
 
-        result = runner.invoke("scaffold", "component", "baz@foo_bar", "qux")
+        result = runner.invoke("scaffold", "component", "foo_bar.lib.Baz", "qux")
         assert_runner_result(result)
         assert Path("foo_bar/components/qux").exists()
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
-        assert "type: baz@foo_bar" in component_yaml_path.read_text()
+        assert "type: foo_bar.lib.Baz" in component_yaml_path.read_text()
 
 
 # ##### REAL COMPONENTS
@@ -499,7 +498,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "dbt_project@dagster_components",
+            "dagster_components.lib.DbtProjectComponent",
             "my_project",
             *params,
         )
@@ -508,7 +507,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
         component_yaml_path = Path("foo_bar/components/my_project/component.yaml")
         assert component_yaml_path.exists()
-        assert "type: dbt_project@dagster_components" in component_yaml_path.read_text()
+        assert "type: dagster_components.lib.DbtProjectComponent" in component_yaml_path.read_text()
         assert (
             cross_platfrom_string_path("stub_projects/dbt_project_location/components/jaffle_shop")
             in component_yaml_path.read_text()
@@ -525,12 +524,12 @@ def test_scaffold_component_type_success() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component-type", "baz")
+        result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        assert registry.has_global(GlobalComponentKey(name="baz", namespace="foo_bar"))
+        assert registry.has(ComponentKey(name="Baz", namespace="foo_bar.lib"))
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
@@ -538,9 +537,9 @@ def test_scaffold_component_type_already_exists_fails() -> None:
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component-type", "baz")
+        result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result)
-        result = runner.invoke("scaffold", "component-type", "baz")
+        result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
@@ -553,13 +552,13 @@ def test_scaffold_component_type_succeeds_non_default_component_lib_package() ->
         result = runner.invoke(
             "scaffold",
             "component-type",
-            "baz",
+            "Baz",
         )
         assert_runner_result(result)
         assert Path("foo_bar/_lib/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        assert registry.has_global(GlobalComponentKey(name="baz", namespace="foo_bar"))
+        assert registry.has(ComponentKey(name="Baz", namespace="foo_bar._lib"))
 
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:
@@ -575,7 +574,7 @@ def test_scaffold_component_type_fails_components_lib_package_does_not_exist(cap
         result = runner.invoke(
             "scaffold",
             "component-type",
-            "baz",
+            "Baz",
         )
         assert_runner_result(result, exit_0=False)
 
