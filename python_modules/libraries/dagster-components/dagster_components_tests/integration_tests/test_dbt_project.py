@@ -1,11 +1,13 @@
 import shutil
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from dagster import AssetKey
+from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -14,8 +16,12 @@ from dagster_components.core.component_defs_builder import (
 )
 from dagster_components.lib.dbt_project.component import DbtProjectComponent
 from dagster_dbt import DbtProject
+from pydantic.dataclasses import dataclass
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
@@ -85,3 +91,32 @@ def test_load_from_path(dbt_path: Path) -> None:
         assert asset_node.tags["foo"] == "bar"
         assert asset_node.tags["another"] == "one"
         assert asset_node.metadata["something"] == 1
+
+
+def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
+    @registered_component_type(name="debug_dbt_project")
+    @dataclass
+    class DebugDbtProjectComponent(DbtProjectComponent):
+        @classmethod
+        def get_additional_scope(cls) -> Mapping[str, Any]:
+            return {"get_tags_for_node": lambda node: {"model_id": node["name"].replace("_", "-")}}
+
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_dbt_project",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "asset_attributes": {"tags": "{{ get_tags_for_node(node) }}"},
+            },
+        ),
+    )
+    context = script_load_context(decl_node).with_rendering_scope(
+        DebugDbtProjectComponent.get_additional_scope()
+    )
+    component = DebugDbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()), context=context
+    )
+    defs = component.build_defs(script_load_context())
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
