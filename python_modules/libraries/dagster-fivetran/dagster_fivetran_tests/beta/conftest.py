@@ -250,166 +250,169 @@ def get_sample_connection_details(succeeded_at: str, failed_at: str) -> Mapping[
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/connector-schema/connector-schema-config
 # The sample is parameterized to test the sync and poll materialization method
-def get_sample_schema_config_for_connector(table_name: str) -> Mapping[str, Any]:
+def get_sample_schema_config_for_connector(
+    table_name: str, include_schemas: bool = True
+) -> Mapping[str, Any]:
+    schemas = {
+        "property1": {
+            "name_in_destination": "schema_name_in_destination_1",
+            "enabled": True,
+            "tables": {
+                "property1": {
+                    "sync_mode": "SOFT_DELETE",
+                    "name_in_destination": table_name,
+                    "enabled": True,
+                    "columns": {
+                        "property1": {
+                            "name_in_destination": "column_name_in_destination_1",
+                            "enabled": True,
+                            "hashed": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason": "...",
+                                "reason_code": "SYSTEM_COLUMN",
+                            },
+                            "is_primary_key": True,
+                        },
+                        "property2": {
+                            "name_in_destination": "column_name_in_destination_2",
+                            "enabled": True,
+                            "hashed": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason": "...",
+                                "reason_code": "SYSTEM_COLUMN",
+                            },
+                            "is_primary_key": True,
+                        },
+                    },
+                    "enabled_patch_settings": {
+                        "allowed": False,
+                        "reason": "...",
+                        "reason_code": "SYSTEM_TABLE",
+                    },
+                    "supports_columns_config": True,
+                },
+                "property2": {
+                    "sync_mode": "SOFT_DELETE",
+                    "name_in_destination": "table_name_in_destination_2",
+                    "enabled": True,
+                    "columns": {
+                        "property1": {
+                            "name_in_destination": "column_name_in_destination_1",
+                            "enabled": True,
+                            "hashed": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason": "...",
+                                "reason_code": "SYSTEM_COLUMN",
+                            },
+                            "is_primary_key": True,
+                        },
+                        "property2": {
+                            "name_in_destination": "column_name_in_destination_2",
+                            "enabled": True,
+                            "hashed": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason": "...",
+                                "reason_code": "SYSTEM_COLUMN",
+                            },
+                            "is_primary_key": True,
+                        },
+                    },
+                    "enabled_patch_settings": {
+                        "allowed": False,
+                        "reason": "...",
+                        "reason_code": "SYSTEM_TABLE",
+                    },
+                    "supports_columns_config": True,
+                },
+            },
+        },
+        "property2": {
+            "name_in_destination": "schema_name_in_destination_2",
+            "enabled": True,
+            "tables": {
+                "property1": {
+                    "sync_mode": "SOFT_DELETE",
+                    "name_in_destination": "table_name_in_destination_1",
+                    "enabled": True,
+                    "columns": {
+                        "property1": {
+                            "name_in_destination": "column_name_in_destination_1",
+                            "enabled": True,
+                            "hashed": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason": "...",
+                                "reason_code": "SYSTEM_COLUMN",
+                            },
+                            "is_primary_key": True,
+                        },
+                        "property2": {
+                            "name_in_destination": "column_name_in_destination_2",
+                            "enabled": True,
+                            "hashed": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason": "...",
+                                "reason_code": "SYSTEM_COLUMN",
+                            },
+                            "is_primary_key": True,
+                        },
+                    },
+                    "enabled_patch_settings": {
+                        "allowed": False,
+                        "reason": "...",
+                        "reason_code": "SYSTEM_TABLE",
+                    },
+                    "supports_columns_config": True,
+                },
+                "property2": {
+                    "sync_mode": "SOFT_DELETE",
+                    "name_in_destination": "table_name_in_destination_2",
+                    "enabled": True,
+                    "columns": {
+                        "property1": {
+                            "name_in_destination": "column_name_in_destination_1",
+                            "enabled": True,
+                            "hashed": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason": "...",
+                                "reason_code": "SYSTEM_COLUMN",
+                            },
+                            "is_primary_key": True,
+                        },
+                        "property2": {
+                            "name_in_destination": "column_name_in_destination_2",
+                            "enabled": True,
+                            "hashed": False,
+                            "enabled_patch_settings": {
+                                "allowed": False,
+                                "reason": "...",
+                                "reason_code": "SYSTEM_COLUMN",
+                            },
+                            "is_primary_key": True,
+                        },
+                    },
+                    "enabled_patch_settings": {
+                        "allowed": False,
+                        "reason": "...",
+                        "reason_code": "SYSTEM_TABLE",
+                    },
+                    "supports_columns_config": True,
+                },
+            },
+        },
+    }
     return {
         "code": "Success",
         "message": "Operation performed.",
         "data": {
             "enable_new_by_default": True,
-            "schemas": {
-                "property1": {
-                    "name_in_destination": "schema_name_in_destination_1",
-                    "enabled": True,
-                    "tables": {
-                        "property1": {
-                            "sync_mode": "SOFT_DELETE",
-                            "name_in_destination": table_name,
-                            "enabled": True,
-                            "columns": {
-                                "property1": {
-                                    "name_in_destination": "column_name_in_destination_1",
-                                    "enabled": True,
-                                    "hashed": False,
-                                    "enabled_patch_settings": {
-                                        "allowed": False,
-                                        "reason": "...",
-                                        "reason_code": "SYSTEM_COLUMN",
-                                    },
-                                    "is_primary_key": True,
-                                },
-                                "property2": {
-                                    "name_in_destination": "column_name_in_destination_2",
-                                    "enabled": True,
-                                    "hashed": False,
-                                    "enabled_patch_settings": {
-                                        "allowed": False,
-                                        "reason": "...",
-                                        "reason_code": "SYSTEM_COLUMN",
-                                    },
-                                    "is_primary_key": True,
-                                },
-                            },
-                            "enabled_patch_settings": {
-                                "allowed": False,
-                                "reason": "...",
-                                "reason_code": "SYSTEM_TABLE",
-                            },
-                            "supports_columns_config": True,
-                        },
-                        "property2": {
-                            "sync_mode": "SOFT_DELETE",
-                            "name_in_destination": "table_name_in_destination_2",
-                            "enabled": True,
-                            "columns": {
-                                "property1": {
-                                    "name_in_destination": "column_name_in_destination_1",
-                                    "enabled": True,
-                                    "hashed": False,
-                                    "enabled_patch_settings": {
-                                        "allowed": False,
-                                        "reason": "...",
-                                        "reason_code": "SYSTEM_COLUMN",
-                                    },
-                                    "is_primary_key": True,
-                                },
-                                "property2": {
-                                    "name_in_destination": "column_name_in_destination_2",
-                                    "enabled": True,
-                                    "hashed": False,
-                                    "enabled_patch_settings": {
-                                        "allowed": False,
-                                        "reason": "...",
-                                        "reason_code": "SYSTEM_COLUMN",
-                                    },
-                                    "is_primary_key": True,
-                                },
-                            },
-                            "enabled_patch_settings": {
-                                "allowed": False,
-                                "reason": "...",
-                                "reason_code": "SYSTEM_TABLE",
-                            },
-                            "supports_columns_config": True,
-                        },
-                    },
-                },
-                "property2": {
-                    "name_in_destination": "schema_name_in_destination_2",
-                    "enabled": True,
-                    "tables": {
-                        "property1": {
-                            "sync_mode": "SOFT_DELETE",
-                            "name_in_destination": "table_name_in_destination_1",
-                            "enabled": True,
-                            "columns": {
-                                "property1": {
-                                    "name_in_destination": "column_name_in_destination_1",
-                                    "enabled": True,
-                                    "hashed": False,
-                                    "enabled_patch_settings": {
-                                        "allowed": False,
-                                        "reason": "...",
-                                        "reason_code": "SYSTEM_COLUMN",
-                                    },
-                                    "is_primary_key": True,
-                                },
-                                "property2": {
-                                    "name_in_destination": "column_name_in_destination_2",
-                                    "enabled": True,
-                                    "hashed": False,
-                                    "enabled_patch_settings": {
-                                        "allowed": False,
-                                        "reason": "...",
-                                        "reason_code": "SYSTEM_COLUMN",
-                                    },
-                                    "is_primary_key": True,
-                                },
-                            },
-                            "enabled_patch_settings": {
-                                "allowed": False,
-                                "reason": "...",
-                                "reason_code": "SYSTEM_TABLE",
-                            },
-                            "supports_columns_config": True,
-                        },
-                        "property2": {
-                            "sync_mode": "SOFT_DELETE",
-                            "name_in_destination": "table_name_in_destination_2",
-                            "enabled": True,
-                            "columns": {
-                                "property1": {
-                                    "name_in_destination": "column_name_in_destination_1",
-                                    "enabled": True,
-                                    "hashed": False,
-                                    "enabled_patch_settings": {
-                                        "allowed": False,
-                                        "reason": "...",
-                                        "reason_code": "SYSTEM_COLUMN",
-                                    },
-                                    "is_primary_key": True,
-                                },
-                                "property2": {
-                                    "name_in_destination": "column_name_in_destination_2",
-                                    "enabled": True,
-                                    "hashed": False,
-                                    "enabled_patch_settings": {
-                                        "allowed": False,
-                                        "reason": "...",
-                                        "reason_code": "SYSTEM_COLUMN",
-                                    },
-                                    "is_primary_key": True,
-                                },
-                            },
-                            "enabled_patch_settings": {
-                                "allowed": False,
-                                "reason": "...",
-                                "reason_code": "SYSTEM_TABLE",
-                            },
-                            "supports_columns_config": True,
-                        },
-                    },
-                },
-            },
+            "schemas": schemas if include_schemas else {},
             "schema_change_handling": "ALLOW_ALL",
         },
     }
@@ -422,6 +425,11 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = get_sample_schema_config_for_connector(
 # We change the name of the original example to test the sync and poll materialization method
 ALTERED_SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = get_sample_schema_config_for_connector(
     table_name=TEST_ANOTHER_TABLE_NAME
+)
+
+# Schemas are missing from schema config when a connection has never been synced
+MISSING_SCHEMAS_SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = get_sample_schema_config_for_connector(
+    table_name=TEST_TABLE_NAME, include_schemas=False
 )
 
 SAMPLE_SUCCESS_MESSAGE = {"code": "Success", "message": "Operation performed."}
@@ -515,6 +523,24 @@ def fetch_workspace_data_api_mocks_fixture(
         )
 
         yield response
+
+
+@pytest.fixture(
+    name="missing_schemas_fetch_workspace_data_api_mocks",
+)
+def missing_schemas_fetch_workspace_data_api_mocks_fixture(
+    connector_id: str,
+    destination_id: str,
+    group_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=f"{get_fivetran_connector_api_url(connector_id)}/schemas",
+        json=MISSING_SCHEMAS_SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
+        status=200,
+    )
+    yield fetch_workspace_data_api_mocks
 
 
 @pytest.fixture(
