@@ -47,7 +47,7 @@ def test_list_components_succeeds():
         result = runner.invoke(
             "scaffold",
             "component",
-            "all_metadata_empty_asset@dagster_components.test",
+            "dagster_components.lib.test.AllMetadataEmptyAsset",
             "qux",
         )
         assert_runner_result(result)
@@ -66,33 +66,33 @@ def test_list_components_succeeds():
 # ########################
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃ Component Type                                    ┃ Summary                                                          ┃
-    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-    │ all_metadata_empty_asset@dagster_components.test  │                                                                  │
-    │ complex_schema_asset@dagster_components.test      │ An asset that has a complex schema.                              │
-    │ simple_asset@dagster_components.test              │ A simple asset that returns a constant string value.             │
-    │ simple_pipes_script_asset@dagster_components.test │ A simple asset that runs a Python script with the Pipes          │
-    │                                                   │ subprocess client.                                               │
-    └───────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────┘
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Component Type                                     ┃ Summary                                                         ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │ dagster_components.lib.test.AllMetadataEmptyAsset  │                                                                 │
+    │ dagster_components.lib.test.ComplexSchemaAsset     │ An asset that has a complex schema.                             │
+    │ dagster_components.lib.test.SimpleAsset            │ A simple asset that returns a constant string value.            │
+    │ dagster_components.lib.test.SimplePipesScriptAsset │ A simple asset that runs a Python script with the Pipes         │
+    │                                                    │ subprocess client.                                              │
+    └────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
 """).strip()
 
 _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
     [
         {
-            "key": "all_metadata_empty_asset@dagster_components.test",
+            "key": "dagster_components.lib.test.AllMetadataEmptyAsset",
             "summary": null
         },
         {
-            "key": "complex_schema_asset@dagster_components.test",
+            "key": "dagster_components.lib.test.ComplexSchemaAsset",
             "summary": "An asset that has a complex schema."
         },
         {
-            "key": "simple_asset@dagster_components.test",
+            "key": "dagster_components.lib.test.SimpleAsset",
             "summary": "A simple asset that returns a constant string value."
         },
         {
-            "key": "simple_pipes_script_asset@dagster_components.test",
+            "key": "dagster_components.lib.test.SimplePipesScriptAsset",
             "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
         }
     ]

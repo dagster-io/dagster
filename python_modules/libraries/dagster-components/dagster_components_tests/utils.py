@@ -11,22 +11,14 @@ from typing import AbstractSet, Any, Iterable, Optional, TypeVar  # noqa: UP035
 import tomlkit
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import pushd
-from dagster_components.core.component import (
-    Component,
-    ComponentDeclNode,
-    ComponentLoadContext,
-    ComponentTypeRegistry,
-)
+from dagster_components.core.component import Component, ComponentDeclNode, ComponentLoadContext
+from dagster_components.utils import ensure_loadable_path
 
 T = TypeVar("T")
 
 
-def registry() -> ComponentTypeRegistry:
-    return ComponentTypeRegistry.from_entry_point_discovery()
-
-
 def script_load_context(decl_node: Optional[ComponentDeclNode] = None) -> ComponentLoadContext:
-    return ComponentLoadContext.for_test(registry=registry(), decl_node=decl_node)
+    return ComponentLoadContext.for_test(decl_node=decl_node)
 
 
 def get_asset_keys(component: Component) -> AbstractSet[AssetKey]:
@@ -62,11 +54,7 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         ]
 
         [project.entry-points]
-        "dagster.components" = {{ {pkg_name} = "{pkg_name}.lib"}}
-
-        [tool.dg]
-        is_component_lib = true
-
+        "dagster.components" = {{ {pkg_name} = "{pkg_name}.lib" }}
     """)
     if is_project:
         return base + textwrap.dedent("""
@@ -115,22 +103,22 @@ def inject_component(
 
 
 @contextlib.contextmanager
-def create_code_location_from_components(
+def create_project_from_components(
     *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
 ) -> Iterator[Path]:
-    """Scaffolds a code location with the given components in a temporary directory,
+    """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
-        code_location_dir = Path(tmpdir) / "my_location"
-        code_location_dir.mkdir()
-        with open(code_location_dir / "pyproject.toml", "w") as f:
+        project_root = Path(tmpdir) / "my_location"
+        project_root.mkdir()
+        with open(project_root / "pyproject.toml", "w") as f:
             f.write(generate_component_lib_pyproject_toml("my_location", is_project=True))
 
         for src_path in src_paths:
             component_name = src_path.split("/")[-1]
 
-            components_dir = code_location_dir / "my_location" / "components" / component_name
+            components_dir = project_root / "my_location" / "components" / component_name
             components_dir.mkdir(parents=True, exist_ok=True)
 
             _setup_component_in_folder(
@@ -139,7 +127,8 @@ def create_code_location_from_components(
                 local_component_defn_to_inject=local_component_defn_to_inject,
             )
 
-        yield code_location_dir
+        with ensure_loadable_path(project_root):
+            yield project_root
 
 
 # ########################

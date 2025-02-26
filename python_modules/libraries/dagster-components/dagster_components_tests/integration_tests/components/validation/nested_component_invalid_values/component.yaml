@@ -1,4 +1,4 @@
-type: my_nested_component@file:__init__.py
+type: .MyNestedComponent
 
 attributes:
   nested:

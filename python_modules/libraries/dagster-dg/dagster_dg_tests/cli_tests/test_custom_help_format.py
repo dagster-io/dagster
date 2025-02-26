@@ -180,18 +180,19 @@ def test_dynamic_subcommand_help_message():
             result = runner.invoke(
                 "scaffold",
                 "component",
-                "simple_pipes_script_asset@dagster_components.test",
+                "dagster_components.lib.test.SimplePipesScriptAsset",
                 "--help",
             )
+            assert_runner_result(result)
             # Strip interpreter logging line
             output = "\n".join(result.output.split("\n")[1:])
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""
 
-                 Usage: dg scaffold component [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
-                 COMPONENT_INSTANCE_NAM
-                 E
+                 Usage: dg scaffold component [GLOBAL OPTIONS] dagster_components.lib.test.SimplePipesScriptAsset [OPTIONS]
+                 COMPONENT_INSTANCE_NA 
+                 ME
 
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ *    component_instance_name      TEXT  [required]                                                                   │

@@ -18,8 +18,8 @@ from dagster_components.core.component import (
     Component,
     ComponentDeclNode,
     ComponentLoadContext,
-    ComponentTypeRegistry,
     is_component_loader,
+    load_component_type,
 )
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.utils import load_module_from_path
@@ -97,11 +97,6 @@ class YamlComponentDecl(ComponentDeclNode):
             source_position_tree=parsed.source_position_tree,
         )
 
-    def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
-        parsed_defs = self.component_file_model
-        key = ComponentKey.from_typename(parsed_defs.type, self.path)
-        return registry.get(key)
-
     def get_attributes(self, schema: type[T]) -> T:
         with pushd(str(self.path)):
             if self.source_position_tree:
@@ -116,7 +111,9 @@ class YamlComponentDecl(ComponentDeclNode):
                 return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
-        component_type = self.get_component_type(context.registry)
+        type_str = context.normalize_component_type_str(self.component_file_model.type)
+        key = ComponentKey.from_typename(type_str)
+        component_type = load_component_type(key)
         component_schema = component_type.get_schema()
         context = context.with_rendering_scope(component_type.get_additional_scope())
         attributes = self.get_attributes(component_schema) if component_schema else None

@@ -89,18 +89,14 @@ def _get_spec_for_module(module_name: str) -> ModuleSpec:
 
 def get_path_for_module(module_name: str) -> str:
     spec = _get_spec_for_module(module_name)
-    file_path = spec.origin
-    if not file_path:
-        raise DgError(f"Cannot find file path for module: {module_name}")
-    return file_path
-
-
-def get_path_for_package(package_name: str) -> str:
-    spec = _get_spec_for_module(package_name)
     submodule_search_locations = spec.submodule_search_locations
-    if not submodule_search_locations:
-        raise DgError(f"Package does not have any locations for submodules: {package_name}")
-    return submodule_search_locations[0]
+    if submodule_search_locations:  # branch module (i.e. package), a directory
+        return submodule_search_locations[0]
+    else:  # leaf module, not a directory
+        file_path = spec.origin
+        if not file_path:
+            raise DgError(f"Cannot find file path for module: {module_name}")
+        return file_path
 
 
 def is_valid_json(value: str) -> bool:

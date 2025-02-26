@@ -1,4 +1,3 @@
-import copy
 import dataclasses
 import importlib
 import importlib.metadata
@@ -18,11 +17,7 @@ from dagster._core.errors import DagsterError
 from dagster._utils import pushd, snakecase
 from typing_extensions import Self
 
-from dagster_components.core.component_key import (
-    ComponentKey,
-    GlobalComponentKey,
-    LocalComponentKey,
-)
+from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import (
     ComponentScaffolder,
     ComponentScaffolderUnavailableReason,
@@ -30,7 +25,7 @@ from dagster_components.core.component_scaffolder import (
 )
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.utils import format_error_message, load_module_from_path
+from dagster_components.utils import format_error_message
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -134,101 +129,96 @@ BUILTIN_MAIN_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
 BUILTIN_TEST_COMPONENT_ENTRY_POINT = ".".join([BUILTIN_COMPONENTS_ENTRY_POINT_BASE, "test"])
 
 
-class ComponentTypeRegistry:
-    @classmethod
-    def from_entry_point_discovery(
-        cls, builtin_component_lib: str = BUILTIN_MAIN_COMPONENT_ENTRY_POINT
-    ) -> "ComponentTypeRegistry":
-        """Discover component types registered in the Python environment via the
-        `dagster_components` entry point group.
+def load_component_type(component_key: ComponentKey) -> type[Component]:
+    module_name, attr = component_key.namespace, component_key.name
+    try:
+        module = importlib.import_module(module_name)
+        if not hasattr(module, attr):
+            raise DagsterError(f"Module `{module_name}` has no attribute `{attr}`.")
+        component_type = getattr(module, attr)
+        if not issubclass(component_type, Component):
+            raise DagsterError(
+                f"Attribute `{attr}` in module `{module_name}` is not a subclass of `dagster_components.Component`."
+            )
+        return component_type
+    except ModuleNotFoundError as e:
+        raise DagsterError(f"Module `{module_name}` not found.") from e
+    except ImportError as e:
+        raise DagsterError(f"Error loading module `{module_name}`.") from e
 
-        `dagster-components` itself registers multiple component entry points. We call these
-        "builtin" component libraries. The `dagster_components` entry point resolves to published
-        component types and is loaded by default. Other entry points resolve to various sets of test
-        component types. This method will only ever load one builtin component library.
 
-        Args:
-            builtin-component-lib (str): Specifies the builtin components library to load. Built-in
+def discover_entry_point_component_types(
+    builtin_component_lib: str = BUILTIN_MAIN_COMPONENT_ENTRY_POINT,
+    extra_modules: Optional[Sequence[str]] = None,
+) -> dict[ComponentKey, type[Component]]:
+    """Discover component types registered in the Python environment via the
+    `dagster_components` entry point group.
+
+    `dagster-components` itself registers multiple component entry points. We call these
+    "builtin" component libraries. The `dagster_components` entry point resolves to published
+    component types and is loaded by default. Other entry points resolve to various sets of test
+    component types. This method will only ever load one builtin component library.
+
+    Args:
+        builtin-component-lib (str): Specifies the builtin components library to load. Built-in
             component libraries are defined under entry points with names matching the pattern
             `dagster_components*`. Only one built-in  component library can be loaded at a time.
             Defaults to `dagster_components`, the standard set of published component types.
-        """
-        component_types: dict[ComponentKey, type[Component]] = {}
-        for entry_point in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP):
-            # Skip built-in entry points that are not the specified builtin component library.
-            if (
-                entry_point.name.startswith(BUILTIN_COMPONENTS_ENTRY_POINT_BASE)
-                and not entry_point.name == builtin_component_lib
-            ):
-                continue
+    """
+    component_types: dict[ComponentKey, type[Component]] = {}
+    entry_points = [
+        ep
+        for ep in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP)
+        # Skip built-in entry points that are not the specified builtin component library.
+        if not (
+            ep.name.startswith(BUILTIN_COMPONENTS_ENTRY_POINT_BASE)
+            and not ep.name == builtin_component_lib
+        )
+    ]
 
-            try:
-                root_module = entry_point.load()
-            except Exception as e:
-                raise ComponentsEntryPointLoadError(
-                    format_error_message(f"""
-                        Error loading entry point `{entry_point.name}` in group `{COMPONENTS_ENTRY_POINT_GROUP}`.
-                        Please fix the error or uninstall the package that defines this entry point.
-                    """)
-                ) from e
+    for entry_point in entry_points:
+        try:
+            root_module = entry_point.load()
+        except Exception as e:
+            raise ComponentsEntryPointLoadError(
+                format_error_message(f"""
+                    Error loading entry point `{entry_point.name}` in group `{COMPONENTS_ENTRY_POINT_GROUP}`.
+                    Please fix the error or uninstall the package that defines this entry point.
+                """)
+            ) from e
 
-            if not isinstance(root_module, ModuleType):
-                raise DagsterError(
-                    f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "
-                    f"Value expected to be a module, got {root_module}."
-                )
-            for component_type in get_registered_component_types_in_module(root_module):
-                key = GlobalComponentKey(
-                    name=get_component_type_name(component_type), namespace=entry_point.name
-                )
-                component_types[key] = component_type
-
-        return cls(component_types)
-
-    def __init__(self, component_types: dict[ComponentKey, type[Component]]):
-        self._component_types: dict[ComponentKey, type[Component]] = copy.copy(component_types)
-
-    @staticmethod
-    def empty() -> "ComponentTypeRegistry":
-        return ComponentTypeRegistry({})
-
-    def register(self, key: ComponentKey, component_type: type[Component]) -> None:
-        if key in self._component_types:
-            raise DagsterError(f"There is an existing component registered under {key}")
-        self._component_types[key] = component_type
-
-    def has(self, key: ComponentKey) -> bool:
-        return key in self._component_types
-
-    def get(self, key: ComponentKey) -> type[Component]:
-        if isinstance(key, LocalComponentKey):
-            for component_type in find_component_types_in_file(key.python_file):
-                if get_component_type_name(component_type) == key.name:
-                    return component_type
-            raise ValueError(
-                f"Could not find component type {key.to_typename()} in {key.python_file}"
+        if not isinstance(root_module, ModuleType):
+            raise DagsterError(
+                f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "
+                f"Value expected to be a module, got {root_module}."
             )
-        else:
-            return self._component_types[key]
-
-    def keys(self) -> Iterable[ComponentKey]:
-        return self._component_types.keys()
-
-    def items(self) -> Iterable[tuple[ComponentKey, type[Component]]]:
-        return self._component_types.items()
-
-    def __repr__(self) -> str:
-        return f"<ComponentRegistry {list(self._component_types.keys())}>"
+        for name, component_type in get_component_types_in_module(root_module):
+            key = ComponentKey(name=name, namespace=entry_point.value)
+            component_types[key] = component_type
+    return component_types
 
 
-def get_registered_component_types_in_module(module: ModuleType) -> Iterable[type[Component]]:
+def discover_component_types(modules: Sequence[str]) -> dict[ComponentKey, type[Component]]:
+    component_types: dict[ComponentKey, type[Component]] = {}
+    for extra_module in modules:
+        for name, component_type in get_component_types_in_module(
+            importlib.import_module(extra_module)
+        ):
+            key = ComponentKey(name=name, namespace=extra_module)
+            component_types[key] = component_type
+    return component_types
+
+
+def get_component_types_in_module(
+    module: ModuleType,
+) -> Iterable[tuple[str, type[Component]]]:
     from dagster._core.definitions.module_loaders.load_assets_from_modules import (
         find_subclasses_in_module,
     )
 
-    for component in find_subclasses_in_module(module, (Component,)):
-        if is_registered_component_type(component):
-            yield component
+    for name, component in find_subclasses_in_module(module, (Component,)):
+        if not inspect.isabstract(component):
+            yield name, component
 
 
 T = TypeVar("T")
@@ -238,7 +228,6 @@ T = TypeVar("T")
 class ComponentLoadContext:
     module_name: str
     resources: Mapping[str, object]
-    registry: ComponentTypeRegistry
     decl_node: Optional[ComponentDeclNode]
     resolution_context: ResolutionContext
 
@@ -246,13 +235,11 @@ class ComponentLoadContext:
     def for_test(
         *,
         resources: Optional[Mapping[str, object]] = None,
-        registry: Optional[ComponentTypeRegistry] = None,
         decl_node: Optional[ComponentDeclNode] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             module_name="test",
             resources=resources or {},
-            registry=registry or ComponentTypeRegistry.empty(),
             decl_node=decl_node,
             resolution_context=ResolutionContext.default(),
         )
@@ -280,6 +267,9 @@ class ComponentLoadContext:
 
     def resolve(self, value: ResolvableSchema, as_type: type[T]) -> T:
         return self.resolution_context.resolve_value(value, as_type=as_type)
+
+    def normalize_component_type_str(self, type_str: str) -> str:
+        return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str
 
     def load_component_relative_python_module(self, file_path: Path) -> ModuleType:
         """Load a python module relative to the component's context path. This is useful for loading code
@@ -311,7 +301,7 @@ class ComponentLoadContext:
             # Problematic
             # See https://linear.app/dagster-labs/issue/BUILD-736/highly-suspect-hardcoding-of-components-string-is-component-relative
             component_module_relative_path = abs_context_path.parts[
-                abs_context_path.parts.index("components") + 1 :
+                abs_context_path.parts.index("components") + 2 :
             ]
             component_module_name = ".".join([self.module_name, *component_module_relative_path])
             if abs_file_path.name != "__init__.py":
@@ -381,30 +371,3 @@ def component(
 
 def is_component_loader(obj: Any) -> bool:
     return getattr(obj, COMPONENT_LOADER_FN_ATTR, False)
-
-
-def find_component_types_in_file(file_path: Path) -> list[type[Component]]:
-    """Find all component types defined in a specific file."""
-    component_types = []
-    for _name, obj in inspect.getmembers(
-        load_module_from_path(file_path.stem, file_path), inspect.isclass
-    ):
-        assert isinstance(obj, type)
-        if is_registered_component_type(obj):
-            component_types.append(obj)
-    return component_types
-
-
-def find_local_component_types(component_path: Path) -> Mapping[LocalComponentKey, type[Component]]:
-    """Find all component types defined in a component directory, and their respective paths."""
-    component_types = {}
-    for py_file in component_path.glob("*.py"):
-        for component_type in find_component_types_in_file(py_file):
-            component_types[
-                LocalComponentKey(
-                    name=get_component_type_name(component_type),
-                    namespace=f"file:{py_file.name}",
-                    dirpath=py_file.parent,
-                )
-            ] = component_type
-    return component_types

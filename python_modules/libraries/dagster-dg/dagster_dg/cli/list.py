@@ -69,13 +69,13 @@ def component_type_list(output_json: bool, **global_options: object) -> None:
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
-    sorted_keys = sorted(registry.global_keys(), key=lambda k: k.to_typename())
+    sorted_keys = sorted(registry.keys(), key=lambda k: k.to_typename())
 
     # JSON
     if output_json:
         output: list[dict[str, object]] = []
         for key in sorted_keys:
-            component_type_metadata = registry.get_global(key)
+            component_type_metadata = registry.get(key)
             output.append(
                 {
                     "key": key.to_typename(),
@@ -89,7 +89,7 @@ def component_type_list(output_json: bool, **global_options: object) -> None:
         table = Table(border_style="dim")
         table.add_column("Component Type", style="bold cyan", no_wrap=True)
         table.add_column("Summary")
-        for key in sorted(registry.global_keys(), key=lambda k: k.to_typename()):
-            table.add_row(key.to_typename(), registry.get_global(key).summary)
+        for key in sorted(registry.keys(), key=lambda k: k.to_typename()):
+            table.add_row(key.to_typename(), registry.get(key).summary)
         console = Console()
         console.print(table)

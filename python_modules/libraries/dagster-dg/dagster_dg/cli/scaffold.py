@@ -9,7 +9,7 @@ from typer.rich_utils import rich_format_help
 
 from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
-from dagster_dg.component_key import GlobalComponentKey
+from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import (
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -31,6 +31,7 @@ from dagster_dg.utils import (
     json_schema_property_to_click_option,
     not_none,
     parse_json_option,
+    snakecase,
 )
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
@@ -192,7 +193,7 @@ class ComponentScaffoldGroup(DgClickGroup):
         dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        for key, component_type in registry.global_items():
+        for key, component_type in registry.items():
             command = _create_component_scaffold_subcommand(key, component_type)
             self.add_command(command)
 
@@ -257,7 +258,7 @@ def component_scaffold_group(context: click.Context, help_: bool, **global_optio
 
 
 def _create_component_scaffold_subcommand(
-    component_key: GlobalComponentKey, component_type: RemoteComponentType
+    component_key: ComponentKey, component_type: RemoteComponentType
 ) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
@@ -302,7 +303,7 @@ def _create_component_scaffold_subcommand(
         dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has_global(component_key):
+        if not registry.has(component_key):
             exit_with_error(f"Component type `{component_key.to_typename()}` not found.")
         elif dg_context.has_component_instance(component_instance_name):
             exit_with_error(
@@ -368,8 +369,10 @@ def component_type_scaffold_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    component_key = GlobalComponentKey(name=name, namespace=dg_context.root_module_name)
-    if registry.has_global(component_key):
+
+    module_name = snakecase(name)
+    component_key = ComponentKey(name=name, namespace=dg_context.default_components_library_module)
+    if registry.has(component_key):
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
-    scaffold_component_type(dg_context, name)
+    scaffold_component_type(dg_context, name, module_name)

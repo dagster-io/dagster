@@ -1,4 +1,4 @@
-type: my_component@__init__.py
+type: .MyComponent
 
 attributes:
   a_string: "a string"
