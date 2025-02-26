@@ -44,6 +44,9 @@ def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliR
 def resolve_translator(
     context: ResolutionContext, schema: DbtProjectSchema
 ) -> DagsterDbtTranslator:
+    if schema.asset_attributes and schema.asset_attributes.deps:
+        # TODO: Consider supporting alerting deps in the future
+        raise ValueError("deps are not supported for dbt_project component")
     return get_wrapped_translator_class(DagsterDbtTranslator)(
         resolving_info=TranslatorResolvingInfo(
             "node", schema.asset_attributes or AssetAttributesSchema(), context

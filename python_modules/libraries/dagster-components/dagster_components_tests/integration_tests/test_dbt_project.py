@@ -1,12 +1,14 @@
 import shutil
 import tempfile
 from collections.abc import Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import pytest
 from dagster import AssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -118,3 +120,74 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     defs = component.build_defs(script_load_context())
     assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
+
+
+@pytest.mark.parametrize(
+    "attributes, assertion, should_error",
+    [
+        ({"group_name": "group"}, lambda asset_spec: asset_spec.group_name == "group", False),
+        (
+            {"owners": ["team:analytics"]},
+            lambda asset_spec: asset_spec.owners == ["team:analytics"],
+            False,
+        ),
+        ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
+        ({"kinds": ["snowflake"]}, lambda asset_spec: "snowflake" in asset_spec.kinds, False),
+        (
+            {"tags": {"foo": "bar"}, "kinds": ["snowflake"]},
+            lambda asset_spec: "snowflake" in asset_spec.kinds
+            and asset_spec.tags.get("foo") == "bar",
+            False,
+        ),
+        ({"code_version": "1"}, lambda asset_spec: asset_spec.code_version == "1", False),
+        (
+            {"description": "some description"},
+            lambda asset_spec: asset_spec.description == "some description",
+            False,
+        ),
+        (
+            {"metadata": {"foo": "bar"}},
+            lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
+            False,
+        ),
+        ({"deps": ["customers"]}, None, True),
+    ],
+    ids=[
+        "group_name",
+        "owners",
+        "tags",
+        "kinds",
+        "tags-and-kinds",
+        "code-version",
+        "description",
+        "metadata",
+        "deps",
+    ],
+)
+def test_asset_attributes(
+    dbt_path: Path,
+    attributes: Mapping[str, Any],
+    assertion: Optional[Callable[[AssetSpec], bool]],
+    should_error: bool,
+) -> None:
+    wrapper = pytest.raises(Exception) if should_error else nullcontext()
+    with wrapper:
+        decl_node = YamlComponentDecl(
+            path=dbt_path / COMPONENT_RELPATH,
+            component_file_model=ComponentFileModel(
+                type="dbt_project",
+                attributes={
+                    "dbt": {"project_dir": "jaffle_shop"},
+                    "asset_attributes": attributes,
+                },
+            ),
+        )
+        context = script_load_context(decl_node)
+        component = DbtProjectComponent.load(
+            attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
+        )
+        assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
+        defs = component.build_defs(script_load_context())
+        assets_def: AssetsDefinition = defs.get_assets_def("stg_customers")
+    if assertion:
+        assert assertion(assets_def.get_asset_spec(AssetKey("stg_customers")))

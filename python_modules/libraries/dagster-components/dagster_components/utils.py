@@ -132,10 +132,14 @@ def get_wrapped_translator_class(translator_type: type):
             )
 
         def get_tags(self, obj: Any) -> Mapping[str, str]:
-            kinds = self.resolving_info.get_resolved_attribute(
-                "kinds", obj, self.base_translator.get_kinds
-            )
             tags = {}
+
+            base_kinds = (
+                self.base_translator.get_kinds
+                if hasattr(self.base_translator, "get_kinds")
+                else lambda *args: []
+            )
+            kinds = self.resolving_info.get_resolved_attribute("kinds", obj, base_kinds)
             for kind in kinds:
                 tags.update(build_kind_tag(kind))
 
@@ -164,8 +168,10 @@ def get_wrapped_translator_class(translator_type: type):
             )
 
         def get_code_version(self, obj: Any) -> Optional[str]:
-            return self.resolving_info.get_resolved_attribute(
-                "code_version", obj, self.base_translator.get_code_version
+            return str(
+                self.resolving_info.get_resolved_attribute(
+                    "code_version", obj, self.base_translator.get_code_version
+                )
             )
 
         def get_description(self, obj: Any) -> Optional[str]:
