@@ -275,6 +275,13 @@ def test_fs_io_manager_partitioned_no_partitions():
                     required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
                 )
 
+            def validate_partition_mapping(
+                self,
+                upstream_partitions_def: PartitionsDefinition,
+                downstream_partitions_def: PartitionsDefinition,
+            ):
+                pass
+
             def get_downstream_partitions_for_partitions(
                 self,
                 upstream_partitions_subset,

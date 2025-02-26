@@ -76,6 +76,18 @@ class PartitionMapping(ABC):
                 downstream asset.
         """
 
+    @abstractmethod
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ) -> None:
+        """Raises an exception if the mapping is not valid for the two partitions definitions
+        due to some incompatibility between the definitions (ignoring specific keys or subsets).
+        For example, a StaticPartitionMapping is invalid if both mapped partitions definitions
+        are not StaticPartitionsDefinitions.
+        """
+
     @public
     @abstractmethod
     def get_upstream_mapped_partitions_result_for_partitions(
@@ -109,6 +121,13 @@ class IdentityPartitionMapping(PartitionMapping, NamedTuple("_IdentityPartitionM
     """Expects that the upstream and downstream assets are partitioned in the same way, and maps
     partitions in the downstream asset to the same partition in the upstream asset.
     """
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ):
+        pass
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -188,6 +207,13 @@ class AllPartitionMapping(PartitionMapping, NamedTuple("_AllPartitionMapping", [
     downstream asset depends on all partitions of the upstream asset.
     """
 
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ):
+        pass
+
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
@@ -241,6 +267,13 @@ class LastPartitionMapping(PartitionMapping, NamedTuple("_LastPartitionMapping",
     Commonly used in the case when the downstream asset is not partitioned, in which the entire
     downstream asset depends on the last partition of the upstream asset.
     """
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ):
+        pass
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -312,6 +345,13 @@ class SpecificPartitionsPartitionMapping(
             def a_downstream(upstream):
                 ...
     """
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ):
+        pass
 
     def get_upstream_mapped_partitions_result_for_partitions(
         self,
@@ -647,6 +687,18 @@ class MultiToSingleDimensionPartitionMapping(
             "multi-partition key with X in the matching dimension is a dependency."
         )
 
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ):
+        infer_mapping_result = _get_infer_single_to_multi_dimension_deps_result(
+            upstream_partitions_def, downstream_partitions_def
+        )
+        if not infer_mapping_result.can_infer:
+            check.invariant(isinstance(infer_mapping_result.inference_failure_reason, str))
+            check.failed(cast(str, infer_mapping_result.inference_failure_reason))
+
     def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
@@ -808,6 +860,16 @@ class MultiPartitionMapping(
             ]
         )
 
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ):
+        self._check_all_dimensions_accounted_for(
+            upstream_partitions_def,
+            downstream_partitions_def,
+        )
+
     def get_dimension_dependencies(
         self,
         upstream_partitions_def: PartitionsDefinition,
@@ -915,6 +977,26 @@ class StaticPartitionMapping(
         for upstream_key, downstream_keys in self._mapping.items():
             for downstream_key in downstream_keys:
                 self._inverse_mapping[downstream_key].add(upstream_key)
+
+    def validate_partition_mapping(
+        self,
+        upstream_partitions_def: PartitionsDefinition,
+        downstream_partitions_def: PartitionsDefinition,
+    ):
+        check.invariant(
+            isinstance(upstream_partitions_def, StaticPartitionsDefinition),
+            "Upstream partitions definition must be a StaticPartitionsDefinition",
+        )
+        check.invariant(
+            isinstance(downstream_partitions_def, StaticPartitionsDefinition),
+            "Downstream partitions definition must be a StaticPartitionsDefinition",
+        )
+        self._check_upstream(
+            upstream_partitions_def=cast(StaticPartitionsDefinition, upstream_partitions_def)
+        )
+        self._check_downstream(
+            downstream_partitions_def=cast(StaticPartitionsDefinition, downstream_partitions_def)
+        )
 
     @cached_method
     def _check_upstream(self, *, upstream_partitions_def: StaticPartitionsDefinition):
