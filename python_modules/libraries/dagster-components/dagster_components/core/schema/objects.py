@@ -29,12 +29,12 @@ PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
 
 
 @dataclass
-class SingleRunBackfillPolicy:
+class SingleRunBackfillPolicySchema:
     type: Literal["single_run"] = "single_run"
 
 
 @dataclass
-class MultiRunBackfillPolicy:
+class MultiRunBackfillPolicySchema:
     type: Literal["multi_run"] = "multi_run"
     max_partitions_per_run: int = 1
 
@@ -69,9 +69,9 @@ class OpSpecSchema(ResolvableSchema[OpSpec]):
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
     )
-    backfill_policy: Optional[Union[SingleRunBackfillPolicy, MultiRunBackfillPolicy]] = Field(
-        default=None, description="The backfill policy to use for the assets."
-    )
+    backfill_policy: Optional[
+        Union[SingleRunBackfillPolicySchema, MultiRunBackfillPolicySchema]
+    ] = Field(default=None, description="The backfill policy to use for the assets.")
 
 
 class AssetDepSchema(ResolvableSchema[AssetDep]):
