@@ -323,6 +323,9 @@ export function extractMetadataFromLogs(
       } else if (log.__typename === 'ExecutionStepFailureEvent') {
         upsertState(step, timestamp, IStepState.FAILED);
         step.end = Math.max(timestamp, step.end || 0);
+      } else if (log.__typename === 'ResourceInitFailureEvent') {
+        upsertState(step, timestamp, IStepState.FAILED);
+        step.end = Math.max(timestamp, step.end || 0);
       } else if (log.__typename === 'ExecutionStepUpForRetryEvent') {
         // We only get one event when the step fails/aborts and is queued for retry,
         // but we create an "exit" state separate from the "preparing for retry" state
