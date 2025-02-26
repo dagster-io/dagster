@@ -920,9 +920,9 @@ class FivetranWorkspace(ConfigurableResource):
                 if (
                     (connector_selector_fn and not connector_selector_fn(connector))
                     or not connector.is_connected
-                    # A connection that has not been synced yet has no `schemas` field in its schema config.
+                    # A connector that has not been synced yet has no `schemas` field in its schema config.
                     # Schemas are required for creating the asset definitions,
-                    # so connections for which the schemas are missing are discarded.
+                    # so connectors for which the schemas are missing are discarded.
                     or not schema_config.has_schemas
                 ):
                     continue

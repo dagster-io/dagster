@@ -83,7 +83,7 @@ def test_missing_schemas_fivetran_workspace_data(
     )
 
     actual_workspace_data = resource.fetch_fivetran_workspace_data()
-    # The connection is discarded because it's missing its schemas
+    # The connector is discarded because it's missing its schemas
     assert len(actual_workspace_data.connectors_by_id) == 0
     assert len(actual_workspace_data.destinations_by_id) == 1
 
