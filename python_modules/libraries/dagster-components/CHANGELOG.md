@@ -3,6 +3,7 @@
 ## 0.1.17
 
 - User-supplied code version, description, owners, kinds, and metadata in `asset_attributes` for dbt and sling assets now properly flow through to the generated assets.
+
 ## 0.1.15
 
 - Revamped component schema resolution logic, making it easier and more straightforward to convert from a Component's schema to an instance of the Python class. See the docs on creating a custom component to learn more!

@@ -254,8 +254,8 @@ def test_asset_attributes(
         ) as decl_node,
     ):
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollection.get_schema())
-        component = SlingReplicationCollection.load(attributes=attributes, context=context)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.get_schema())
+        component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
         defs = component.build_defs(context)
 
         assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
