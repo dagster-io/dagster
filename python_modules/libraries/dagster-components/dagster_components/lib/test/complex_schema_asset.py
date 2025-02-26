@@ -12,12 +12,13 @@ from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
-    AssetSpecTransformSchema,
+    AssetPostProcessorSchema,
     OpSpecSchema,
+    PostProcessorFn,
 )
 
 
-class ComplexAssetSchema(ResolvableSchema):
+class ComplexAssetSchema(ResolvableSchema["ComplexSchemaAsset"]):
     value: str = Field(..., examples=["example_for_value"])
     list_value: list[str] = Field(
         ..., examples=[["example_for_list_value_1", "example_for_list_value_2"]]
@@ -27,7 +28,7 @@ class ComplexAssetSchema(ResolvableSchema):
     asset_attributes: Annotated[
         Optional[AssetAttributesSchema], ResolvableFieldInfo(required_scope={"node"})
     ] = None
-    asset_transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
+    asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
 @registered_component_type(name="complex_schema_asset")
@@ -47,16 +48,19 @@ class ComplexSchemaAsset(Component):
         value: str,
         op_spec: Optional[OpSpecSchema],
         asset_attributes: Optional[AssetAttributesSchema],
-        asset_transforms: Sequence[AssetSpecTransformSchema],
+        asset_post_processors: Sequence[PostProcessorFn],
     ):
         self._value = value
         self._op_spec = op_spec
         self._asset_attributes = asset_attributes
-        self._asset_transforms = asset_transforms
+        self._asset_post_processors = asset_post_processors
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         @asset(spec=self._asset_attributes)
         def dummy(context: AssetExecutionContext):
             return self._value
 
-        return Definitions(assets=[dummy])
+        defs = Definitions(assets=[dummy])
+        for post_processor in self._asset_post_processors:
+            defs = post_processor(defs)
+        return defs

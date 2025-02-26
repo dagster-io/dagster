@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Sequence
-from typing import Annotated, Callable, Optional
+from typing import Annotated, Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -19,8 +19,9 @@ from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
-    AssetSpecTransformSchema,
+    AssetPostProcessorSchema,
     OpSpecSchema,
+    PostProcessorFn,
     ResolutionContext,
 )
 from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
@@ -34,7 +35,7 @@ class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
         Optional[AssetAttributesSchema],
         ResolvableFieldInfo(required_scope={"node"}),
     ] = None
-    transforms: Optional[Sequence[AssetSpecTransformSchema]] = None
+    asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
 def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliResource:
@@ -63,7 +64,7 @@ class DbtProjectComponent(Component):
     translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = Field(
         default_factory=lambda: DagsterDbtTranslator()
     )
-    transforms: Optional[Sequence[Callable[[Definitions], Definitions]]] = None
+    asset_post_processors: Optional[Sequence[PostProcessorFn]] = None
 
     @computed_field
     @property
@@ -102,8 +103,8 @@ class DbtProjectComponent(Component):
             yield from self.execute(context=context, dbt=self.dbt)
 
         defs = Definitions(assets=[_fn])
-        for transform in self.transforms or []:
-            defs = transform(defs)
+        for post_processor in self.asset_post_processors or []:
+            defs = post_processor(defs)
         return defs
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
