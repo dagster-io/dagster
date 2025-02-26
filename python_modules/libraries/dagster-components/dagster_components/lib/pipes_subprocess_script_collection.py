@@ -42,7 +42,7 @@ class PipesSubprocessScriptCollectionSchema(ResolvableSchema["PipesSubprocessScr
 
 
 def resolve_specs_by_path(
-    context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
+    context: ResolutionContext, _type: type, schema: PipesSubprocessScriptCollectionSchema
 ) -> Mapping[str, Sequence[AssetSpec]]:
     return {spec.path: spec.assets for spec in context.resolve_value(schema.scripts)}
 

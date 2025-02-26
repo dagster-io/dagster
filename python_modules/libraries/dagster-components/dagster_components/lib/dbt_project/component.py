@@ -1,5 +1,5 @@
-from collections.abc import Iterator, Sequence
-from typing import Annotated, Optional
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Annotated, Any, Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
@@ -38,16 +38,21 @@ class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
-def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliResource:
+def resolve_dbt(
+    context: ResolutionContext, _type: type, schema: DbtProjectSchema
+) -> DbtCliResource:
     return DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
 
 
 def resolve_translator(
-    context: ResolutionContext, schema: DbtProjectSchema
+    context: ResolutionContext, ttype: type["DbtProjectComponent"], schema: "DbtProjectSchema"
 ) -> DagsterDbtTranslator:
     return get_wrapped_translator_class(DagsterDbtTranslator)(
         resolving_info=TranslatorResolvingInfo(
-            "node", schema.asset_attributes or AssetAttributesSchema(), context
+            "node",
+            schema.asset_attributes or AssetAttributesSchema(),
+            context,
+            additional_scope_fn=ttype.get_additional_scope_for_node,
         )
     )
 
@@ -65,6 +70,10 @@ class DbtProjectComponent(Component):
         default_factory=lambda: DagsterDbtTranslator()
     )
     asset_post_processors: Optional[Sequence[PostProcessorFn]] = None
+
+    @classmethod
+    def get_additional_scope_for_node(cls, node: dict[str, Any]) -> Mapping[str, Any]:
+        return {}
 
     @computed_field
     @property

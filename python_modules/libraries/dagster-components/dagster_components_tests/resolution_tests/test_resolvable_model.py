@@ -7,7 +7,7 @@ from dagster_components import FieldResolver, ResolutionContext, ResolvableSchem
 from pydantic import BaseModel
 
 
-def resolve_val1(context: ResolutionContext, schema: "InnerSchema") -> int:
+def resolve_val1(context: ResolutionContext, _type: type, schema: "InnerSchema") -> int:
     return context.resolve_value(schema.val1, as_type=int) + 20
 
 

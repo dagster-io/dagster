@@ -35,7 +35,7 @@ class OpSpecSchema(ResolvableSchema):
 
 class AssetDepSchema(ResolvableSchema[AssetDep]):
     asset: Annotated[
-        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.asset, context))
+        str, FieldResolver(lambda context, _type, schema: _resolve_asset_key(schema.asset, context))
     ]
     partition_mapping: Optional[str]
 
@@ -91,7 +91,7 @@ class _ResolvableAssetAttributesMixin(BaseModel):
 
 class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpec]):
     key: Annotated[
-        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
+        str, FieldResolver(lambda context, _type, schema: _resolve_asset_key(schema.key, context))
     ] = Field(..., description="A unique identifier for the asset.")
 
 
@@ -104,7 +104,9 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
     key: Annotated[
         Optional[str],
         FieldResolver(
-            lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
+            lambda context, _type, schema: _resolve_asset_key(schema.key, context)
+            if schema.key
+            else None
         ),
     ] = Field(default=None, description="A unique identifier for the asset.")
 

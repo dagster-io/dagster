@@ -28,7 +28,7 @@ from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_transl
 
 
 def resolve_translator(
-    context: ResolutionContext, schema: "SlingReplicationSchema"
+    context: ResolutionContext, _type: type, schema: "SlingReplicationSchema"
 ) -> DagsterSlingTranslator:
     return get_wrapped_translator_class(DagsterSlingTranslator)(
         resolving_info=TranslatorResolvingInfo(
@@ -78,7 +78,7 @@ class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollect
 
 
 def resolve_resource(
-    context: ResolutionContext, schema: SlingReplicationCollectionSchema
+    context: ResolutionContext, _type: type, schema: SlingReplicationCollectionSchema
 ) -> SlingResource:
     return (
         SlingResource(**context.resolve_value(schema.sling.model_dump()))

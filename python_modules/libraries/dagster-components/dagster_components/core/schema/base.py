@@ -66,7 +66,7 @@ class ResolvableSchema(BaseModel, Generic[T]):
     def resolve_fields(self, target_type: type, context: "ResolutionContext") -> Mapping[str, Any]:
         """Returns a mapping of field names to resolved values for those fields."""
         return {
-            field_name: resolver.fn(context, self)
+            field_name: resolver.fn(context, target_type, self)
             for field_name, resolver in self._get_field_resolvers(target_type).items()
         }
 
@@ -80,7 +80,7 @@ class ResolvableSchema(BaseModel, Generic[T]):
 class FieldResolver(FieldInfo):
     """Contains information on how to resolve this field from a ResolvableSchema."""
 
-    def __init__(self, fn: Callable[["ResolutionContext", Any], Any]):
+    def __init__(self, fn: Callable[["ResolutionContext", type, Any], Any]):
         self.fn = fn
         super().__init__()
 
@@ -92,7 +92,7 @@ class FieldResolver(FieldInfo):
             if resolver:
                 return resolver
         return FieldResolver(
-            lambda context, schema: context.resolve_value(getattr(schema, field_name))
+            lambda context, _type, schema: context.resolve_value(getattr(schema, field_name))
         )
 
 

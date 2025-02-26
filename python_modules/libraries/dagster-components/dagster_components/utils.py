@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import click
 from dagster._core.definitions.asset_key import AssetKey
@@ -75,10 +75,12 @@ class TranslatorResolvingInfo:
     obj_name: str
     asset_attributes: AssetAttributesSchema
     resolution_context: ResolutionContext
+    additional_scope_fn: Optional[Callable[[Any], Mapping[str, Any]]] = None
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
         resolved_attributes = self.resolution_context.with_scope(
-            **{self.obj_name: obj}
+            **{self.obj_name: obj},
+            **(self.additional_scope_fn(obj) if self.additional_scope_fn else {}),
         ).resolve_value(self.asset_attributes)
         return (
             resolved_attributes[attribute]

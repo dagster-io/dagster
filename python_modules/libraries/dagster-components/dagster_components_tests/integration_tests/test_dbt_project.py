@@ -1,11 +1,14 @@
 import shutil
 import tempfile
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import pytest
 from dagster import AssetKey
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -85,3 +88,64 @@ def test_load_from_path(dbt_path: Path) -> None:
         assert asset_node.tags["foo"] == "bar"
         assert asset_node.tags["another"] == "one"
         assert asset_node.metadata["something"] == 1
+
+
+def test_dbt_subclass_additional_scope(dbt_path: Path) -> None:
+    @registered_component_type(name="debug_dbt_project")
+    class DebugDbtProjectComponent(DbtProjectComponent):
+        @classmethod
+        def get_additional_scope_for_node(cls, node: dict[str, Any]) -> Mapping[str, Any]:
+            # Here, we perform some custom transformation on the node scope data, which might
+            # be difficult or impossible in YAML. We expose this back to the component user
+            # so that the YAML file is still the source of truth for the asset's attributes.
+            return {"model_id": node["name"].replace("_", "-")}
+
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_dbt_project",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "asset_attributes": {"tags": {"model_id": "{{ model_id }}"}},
+            },
+        ),
+    )
+    context = script_load_context(decl_node)
+    component = DebugDbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()), context=context
+    )
+    assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
+    defs = component.build_defs(script_load_context())
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
+
+
+def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
+    @registered_component_type(name="debug_dbt_project")
+    class DebugDbtProjectComponent(DbtProjectComponent):
+        @classmethod
+        def get_additional_scope_for_node(cls, node: dict[str, Any]) -> Mapping[str, Any]:
+            # Here, we directly expose a transformation function, which the YAML consumer can
+            # invoke as they see fit.
+            return {"get_id_from_model_name": lambda s: s.replace("_", "-")}
+
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_dbt_project",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "asset_attributes": {
+                    "tags": {"model_id": "{{ get_id_from_model_name(model.name) }}"}
+                },
+            },
+        ),
+    )
+    context = script_load_context(decl_node)
+    component = DebugDbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()), context=context
+    )
+    assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
+    defs = component.build_defs(script_load_context())
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
