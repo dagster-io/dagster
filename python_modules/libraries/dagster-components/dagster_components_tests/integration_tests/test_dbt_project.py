@@ -3,12 +3,11 @@ import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import pytest
 from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -19,6 +18,9 @@ from dagster_components.lib.dbt_project.component import DbtProjectComponent
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
