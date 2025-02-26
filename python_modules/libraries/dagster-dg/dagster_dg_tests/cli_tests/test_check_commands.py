@@ -81,7 +81,9 @@ def test_check_component_succeeds_non_default_component_package() -> None:
         ),
     ):
         with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "component_package"), "foo_bar._components")
+            set_toml_value(
+                toml, ("tool", "dg", "project", "components_module"), "foo_bar._components"
+            )
 
         # We need to do all of this copying here rather than relying on the project setup
         # fixture because that fixture assumes a default component package.

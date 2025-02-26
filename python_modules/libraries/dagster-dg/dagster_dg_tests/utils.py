@@ -4,7 +4,7 @@ import subprocess
 import sys
 import traceback
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -18,6 +18,7 @@ from dagster_dg.cli import (
     cli as dg_cli,
 )
 from dagster_dg.utils import (
+    delete_toml_value,
     discover_git_root,
     get_venv_executable,
     install_to_venv,
@@ -61,8 +62,13 @@ def isolated_example_workspace(
     create_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
-        runner.invoke("init", input=f"\n{project_name or ''}\n")
+    with (
+        runner.isolated_filesystem(),
+        clear_module_from_cache("foo_bar"),
+        clear_module_from_cache(project_name) if project_name else nullcontext(),
+    ):
+        result = runner.invoke("init", input=f"\n{project_name or ''}\n")
+        assert_runner_result(result)
         with pushd("dagster-workspace"):
             # Create a venv capable of running dagster dev
             if create_venv:
@@ -101,7 +107,7 @@ def isolated_example_project_foo_bar(
         fs_context = runner.isolated_filesystem()
         project_path = Path("foo-bar")
     with fs_context:
-        runner.invoke(
+        result = runner.invoke(
             "scaffold",
             "project",
             "--use-editable-dagster",
@@ -110,6 +116,7 @@ def isolated_example_project_foo_bar(
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
         )
+        assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd(project_path):
             for src_dir in component_dirs:
                 component_name = src_dir.name
@@ -122,7 +129,7 @@ def isolated_example_project_foo_bar(
 @contextmanager
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
-    lib_package_name: Optional[str] = None,
+    lib_module_name: Optional[str] = None,
     skip_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
@@ -146,17 +153,17 @@ def isolated_example_component_library_foo_bar(
 
             # Make it not a project
             with modify_pyproject_toml() as toml:
-                set_toml_value(toml, ("tool", "dg", "is_project"), False)
+                delete_toml_value(toml, ("tool", "dg"))
 
                 # We need to set any alternative lib package name _before_ we install into the
                 # environment, since it affects entry points which are set at install time.
-                if lib_package_name:
+                if lib_module_name:
                     set_toml_value(
                         toml,
                         ("project", "entry-points", "dagster.components", "foo_bar"),
-                        lib_package_name,
+                        lib_module_name,
                     )
-                    Path(*lib_package_name.split(".")).mkdir(exist_ok=True)
+                    Path(*lib_module_name.split(".")).mkdir(exist_ok=True)
 
             # Install the component library into our venv
             if not skip_venv:

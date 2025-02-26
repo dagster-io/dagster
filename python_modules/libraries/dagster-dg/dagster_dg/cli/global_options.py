@@ -1,10 +1,9 @@
 from collections.abc import Sequence
-from pathlib import Path
 from typing import Any, Callable, Optional, TypeVar, Union
 
 import click
 
-from dagster_dg.config import DgConfig
+from dagster_dg.config import DgCliConfig
 from dagster_dg.utils import set_option_help_output_group
 
 T_Command = TypeVar("T_Command", bound=Union[Callable[..., Any], click.Command])
@@ -15,38 +14,37 @@ GLOBAL_OPTIONS = {
     for option in [
         click.Option(
             ["--cache-dir"],
-            type=Path,
-            default=DgConfig.cache_dir,
+            default=str(DgCliConfig.cache_dir),
             help="Specify a directory to use for the cache.",
         ),
         click.Option(
             ["--disable-cache"],
             is_flag=True,
-            default=DgConfig.disable_cache,
+            default=DgCliConfig.disable_cache,
             help="Disable the cache..",
         ),
         click.Option(
             ["--verbose"],
             is_flag=True,
-            default=DgConfig.verbose,
+            default=DgCliConfig.verbose,
             help="Enable verbose output for debugging.",
         ),
         click.Option(
             ["--builtin-component-lib"],
             type=str,
-            default=DgConfig.builtin_component_lib,
+            default=DgCliConfig.builtin_component_lib,
             help="Specify a builitin component library to use.",
         ),
         click.Option(
             ["--use-dg-managed-environment/--no-use-dg-managed-environment"],
             is_flag=True,
-            default=DgConfig.use_dg_managed_environment,
+            default=DgCliConfig.use_dg_managed_environment,
             help="Enable management of the virtual environment with uv.",
         ),
         click.Option(
             ["--require-local-venv/--no-require-local-venv"],
             is_flag=True,
-            default=DgConfig.require_local_venv,
+            default=DgCliConfig.require_local_venv,
             help="Require use of a local virtual environment (`.venv` found in ancestors of the working directory).",
         ),
     ]

@@ -102,7 +102,9 @@ def workspace_scaffold_command(
     hidden=True,
 )
 @dg_global_options
+@click.pass_context
 def project_scaffold_command(
+    context: click.Context,
     name: str,
     use_editable_dagster: Optional[str],
     skip_venv: bool,
@@ -133,8 +135,8 @@ def project_scaffold_command(
     component`).  The `<name>.lib` directory holds custom component types scoped to the project
     (which can be created with `dg scaffold component-type`).
     """  # noqa: D301
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    cli_config = normalize_cli_config(global_options, context)
+    dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
     if dg_context.is_workspace:
         if dg_context.has_project(name):
             exit_with_error(f"A project named {name} already exists.")
@@ -239,13 +241,13 @@ class ComponentScaffoldSubCommand(DgClickCommand):
 )
 @click.option("-h", "--help", "help_", is_flag=True, help="Show this message and exit.")
 @dg_global_options
-def component_scaffold_group(help_: bool, **global_options: object) -> None:
+@click.pass_context
+def component_scaffold_group(context: click.Context, help_: bool, **global_options: object) -> None:
     """Scaffold of a Dagster component."""
     # Click attempts to resolve subcommands BEFORE it invokes this callback.
     # Therefore we need to manually invoke this callback during subcommand generation to make sure
     # it runs first. It will be invoked again later by Click. We make it idempotent to deal with
     # that.
-    context = click.get_current_context()
     if not has_config_on_cli_context(context):
         cli_config = normalize_cli_config(global_options, context)
         set_config_on_cli_context(context, cli_config)
@@ -354,16 +356,19 @@ def _create_component_scaffold_subcommand(
 @scaffold_group.command(name="component-type", cls=DgClickCommand)
 @click.argument("name", type=str)
 @dg_global_options
-def component_type_scaffold_command(name: str, **global_options: object) -> None:
+@click.pass_context
+def component_type_scaffold_command(
+    context: click.Context, name: str, **global_options: object
+) -> None:
     """Scaffold of a custom Dagster component type.
 
     This command must be run inside a Dagster project directory. The component type scaffold
     will be placed in submodule `<project_name>.lib.<name>`.
     """
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    component_key = GlobalComponentKey(name=name, namespace=dg_context.root_package_name)
+    component_key = GlobalComponentKey(name=name, namespace=dg_context.root_module_name)
     if registry.has_global(component_key):
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 

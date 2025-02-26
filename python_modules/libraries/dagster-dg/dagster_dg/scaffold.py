@@ -7,6 +7,7 @@ from typing import Any, Optional
 import click
 
 from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.config import discover_workspace_root
 from dagster_dg.context import DgContext
 from dagster_dg.utils import camelcase, exit_with_error, scaffold_subtree
 
@@ -80,20 +81,14 @@ def scaffold_workspace(
     workspace_name: str,
 ) -> Path:
     # Can't create a workspace that is a child of another workspace
-    existing_workspace_path = DgContext.discover_workspace_path(Path.cwd())
+    new_workspace_path = Path.cwd() / workspace_name
+    existing_workspace_path = discover_workspace_root(new_workspace_path)
     if existing_workspace_path:
         exit_with_error(
-            f"Workspace already found at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
+            f"Workspace already exists at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
         )
-
-    new_workspace_path = Path.cwd() / workspace_name
-    if new_workspace_path.exists():
-        if DgContext.discover_workspace_path(new_workspace_path):
-            exit_with_error(
-                f"Workspace already exists at {new_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
-            )
-        else:
-            exit_with_error(f"Folder already exists at {new_workspace_path}.")
+    elif new_workspace_path.exists():
+        exit_with_error(f"Folder already exists at {new_workspace_path}.")
 
     scaffold_subtree(
         path=new_workspace_path,

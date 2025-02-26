@@ -77,7 +77,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[tool.dagster]"),
-                re_ignore_after("is_project = true"),
+                re_ignore_after('root_module = "jaffle_platform"'),
             ],
         )
         check_file(
