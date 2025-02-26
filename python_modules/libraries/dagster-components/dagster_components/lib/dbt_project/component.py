@@ -35,6 +35,8 @@ class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
         ResolvableFieldInfo(required_scope={"node"}),
     ] = None
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
+    select: str = "fqn:*"
+    exclude: Optional[str] = None
 
 
 def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliResource:
@@ -66,6 +68,14 @@ class DbtProjectComponent(Component):
         default_factory=lambda: DagsterDbtTranslator()
     )
     asset_post_processors: Optional[Sequence[PostProcessorFn]] = None
+    select: str = Field(
+        default="fqn:*",
+        description="A dbt selection string which specifies a subset of dbt nodes to represent as assets.",
+    )
+    exclude: Optional[str] = Field(
+        default=None,
+        description="A dbt selection string which specifies a subset of dbt nodes to exclude from the set of assets.",
+    )
 
     @computed_field
     @property
@@ -99,6 +109,8 @@ class DbtProjectComponent(Component):
             name=self.op.name if self.op else self.project.name,
             op_tags=self.op.tags if self.op else None,
             dagster_dbt_translator=self.translator,
+            select=self.select,
+            exclude=self.exclude,
         )
         def _fn(context: AssetExecutionContext):
             yield from self.execute(context=context, dbt=self.dbt)
