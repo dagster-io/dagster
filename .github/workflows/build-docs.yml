@@ -13,10 +13,9 @@ on:
       - examples/getting_started_etl_tutorial/**
       - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
-    paths-ignore:
-      - docs/README.md
-      - docs/CONTRIBUTING.md
-      - docs/content-templates/**
+      - '!docs/README.md'
+      - '!docs/CONTRIBUTING.md'
+      - '!docs/content-templates/**'
   pull_request:
     paths:
       - docs/**
@@ -26,10 +25,9 @@ on:
       - examples/getting_started_etl_tutorial/**
       - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
-    paths-ignore:
-      - docs/README.md
-      - docs/CONTRIBUTING.md
-      - docs/content-templates/**
+      - '!docs/README.md'
+      - '!docs/CONTRIBUTING.md'
+      - '!docs/content-templates/**'
     types:
       - opened
       - reopened
