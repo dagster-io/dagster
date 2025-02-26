@@ -2,7 +2,7 @@ import importlib.util
 import subprocess
 import sys
 import textwrap
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,6 +15,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterError
 
 from dagster_components.core.schema.context import ResolutionContext
@@ -131,14 +132,54 @@ def get_wrapped_translator_class(translator_type: type):
             )
 
         def get_tags(self, obj: Any) -> Mapping[str, str]:
-            return self.resolving_info.get_resolved_attribute(
-                "tags", obj, self.base_translator.get_tags
+            kinds = self.resolving_info.get_resolved_attribute(
+                "kinds", obj, self.base_translator.get_kinds
             )
+            tags = {}
+            for kind in kinds:
+                tags.update(build_kind_tag(kind))
+
+            tags.update(
+                self.resolving_info.get_resolved_attribute(
+                    "tags", obj, self.base_translator.get_tags
+                )
+            )
+            return tags
 
         def get_automation_condition(self, obj: Any) -> Optional[AutomationCondition]:
             return self.resolving_info.get_resolved_attribute(
-                "automation_condition", obj, self.base_translator.get_automation_condition
+                "automation_condition",
+                obj,
+                self.base_translator.get_automation_condition,
             )
+
+        def get_metadata(self, obj: Any) -> Mapping[str, Any]:
+            return self.resolving_info.get_resolved_attribute(
+                "metadata", obj, self.base_translator.get_metadata
+            )
+
+        def get_owners(self, obj: Any) -> Sequence[str]:
+            return self.resolving_info.get_resolved_attribute(
+                "owners", obj, self.base_translator.get_owners
+            )
+
+        def get_code_version(self, obj: Any) -> Optional[str]:
+            return self.resolving_info.get_resolved_attribute(
+                "code_version", obj, self.base_translator.get_code_version
+            )
+
+        def get_description(self, obj: Any) -> Optional[str]:
+            return self.resolving_info.get_resolved_attribute(
+                "description", obj, self.base_translator.get_description
+            )
+
+        def get_deps_asset_key(self, obj: Any) -> Iterable[AssetKey]:
+            return [
+                AssetKey.from_user_string(dep) if isinstance(dep, str) else dep
+                for dep in self.resolving_info.get_resolved_attribute(
+                    "deps", obj, self.base_translator.get_deps_asset_key
+                )
+            ]
 
     return WrappedTranslator
 
