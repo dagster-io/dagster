@@ -85,3 +85,39 @@ def test_load_from_path(dbt_path: Path) -> None:
         assert asset_node.tags["foo"] == "bar"
         assert asset_node.tags["another"] == "one"
         assert asset_node.metadata["something"] == 1
+
+
+def test_subselection(dbt_path: Path) -> None:
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="dbt_project",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "select": "raw_customers",
+            },
+        ),
+    )
+    context = script_load_context(decl_node)
+    component = DbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
+    )
+    assert get_asset_keys(component) == {AssetKey("raw_customers")}
+
+
+def test_exclude(dbt_path: Path) -> None:
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="dbt_project",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "exclude": "customers",
+            },
+        ),
+    )
+    context = script_load_context(decl_node)
+    component = DbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
+    )
+    assert get_asset_keys(component) == set(JAFFLE_SHOP_KEYS) - {AssetKey("customers")}
