@@ -876,7 +876,7 @@ class FivetranWorkspace(ConfigurableResource):
 
     def fetch_fivetran_workspace_data(
         self,
-            connector_selector_fn: Optional[ConnectorSelectorFn] = None,
+        connector_selector_fn: Optional[ConnectorSelectorFn] = None,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
 
@@ -935,7 +935,7 @@ class FivetranWorkspace(ConfigurableResource):
     def load_asset_specs(
         self,
         dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-            connector_selector_fn: Optional[ConnectorSelectorFn] = None,
+        connector_selector_fn: Optional[ConnectorSelectorFn] = None,
     ) -> Sequence[AssetSpec]:
         """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 
@@ -1089,7 +1089,7 @@ class FivetranWorkspace(ConfigurableResource):
 def load_fivetran_asset_specs(
     workspace: FivetranWorkspace,
     dagster_fivetran_translator: Optional[DagsterFivetranTranslator] = None,
-        connector_selector_fn: Optional[ConnectorSelectorFn] = None,
+    connector_selector_fn: Optional[ConnectorSelectorFn] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Fivetran content in the workspace.
 

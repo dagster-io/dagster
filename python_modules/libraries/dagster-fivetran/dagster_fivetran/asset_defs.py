@@ -815,7 +815,7 @@ def build_fivetran_assets_definitions(
 
     """
     dagster_fivetran_translator = dagster_fivetran_translator or DagsterFivetranTranslator()
-    connector_selector_fn = connector_selector_fn or (lambda connector: connector)
+    connector_selector_fn = connector_selector_fn or (lambda connector: bool(connector))
 
     all_asset_specs = workspace.load_asset_specs(
         dagster_fivetran_translator=dagster_fivetran_translator,
