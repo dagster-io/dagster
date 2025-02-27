@@ -1,5 +1,5 @@
 ---
-title: "Set up a local environment"
+title: "Setup"
 sidebar_position: 100
 ---
 
