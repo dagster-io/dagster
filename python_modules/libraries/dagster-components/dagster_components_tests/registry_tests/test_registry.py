@@ -102,25 +102,25 @@ def test_components_from_dagster():
     # No extras
     with _temp_venv([*common_deps, "-e", components_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster_components.lib.PipesSubprocessScriptCollection" in component_types
+        assert "dagster_components.lib.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_components.lib.DbtProjectComponent" not in component_types
-        assert "dagster_components.lib.SlingReplicationCollection" not in component_types
+        assert "dagster_components.lib.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[dbt]", "-e", dbt_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster_components.lib.PipesSubprocessScriptCollection" in component_types
+        assert "dagster_components.lib.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_components.lib.DbtProjectComponent" in component_types
-        assert "dagster_components.lib.SlingReplicationCollection" not in component_types
+        assert "dagster_components.lib.SlingReplicationCollectionComponent" not in component_types
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[sling]", "-e", sling_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster_components.lib.PipesSubprocessScriptCollection" in component_types
+        assert "dagster_components.lib.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_components.lib.DbtProjectComponent" not in component_types
-        assert "dagster_components.lib.SlingReplicationCollection" in component_types
+        assert "dagster_components.lib.SlingReplicationCollectionComponent" in component_types
 
 
 def test_all_dagster_components_have_defined_summary():

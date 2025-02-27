@@ -16,7 +16,7 @@ class SimpleAssetSchema(BaseModel):
     value: str
 
 
-class SimpleAsset(Component):
+class SimpleAssetComponent(Component):
     """A simple asset that returns a constant string value."""
 
     @classmethod

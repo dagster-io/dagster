@@ -17,19 +17,17 @@ from dagster_components.scaffold import scaffold_component_yaml
 
 
 # Same schema used for file generation and defs generation
-class SimplePipesScriptAssetSchema(BaseModel):
+class SimplePipesScriptSchema(BaseModel):
     asset_key: str
     filename: str
 
 
-class SimplePipesScriptAssetScaffolder(ComponentScaffolder):
+class SimplePipesScriptScaffolder(ComponentScaffolder):
     @classmethod
     def get_schema(cls):
-        return SimplePipesScriptAssetSchema
+        return SimplePipesScriptSchema
 
-    def scaffold(
-        self, request: ComponentScaffoldRequest, params: SimplePipesScriptAssetSchema
-    ) -> None:
+    def scaffold(self, request: ComponentScaffoldRequest, params: SimplePipesScriptSchema) -> None:
         scaffold_component_yaml(request, params.model_dump())
         Path(request.component_instance_root_path, params.filename).write_text(
             _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
@@ -46,7 +44,7 @@ context.report_asset_materialization(asset_key="{asset_key}")
 """
 
 
-class SimplePipesScriptAsset(Component):
+class SimplePipesScriptComponent(Component):
     """A simple asset that runs a Python script with the Pipes subprocess client.
 
     Because it is a pipes asset, no value is returned.
@@ -54,11 +52,11 @@ class SimplePipesScriptAsset(Component):
 
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:
-        return SimplePipesScriptAssetScaffolder()
+        return SimplePipesScriptScaffolder()
 
     @classmethod
     def get_schema(cls):
-        return SimplePipesScriptAssetSchema
+        return SimplePipesScriptSchema
 
     def __init__(self, asset_key: AssetKey, script_path: Path):
         self._asset_key = asset_key

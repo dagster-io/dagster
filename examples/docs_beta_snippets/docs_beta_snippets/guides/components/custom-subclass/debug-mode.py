@@ -1,12 +1,12 @@
 from collections.abc import Iterator
 
-from dagster_components.lib import SlingReplicationCollection
+from dagster_components.lib import SlingReplicationCollectionComponent
 from dagster_sling import SlingResource
 
 import dagster as dg
 
 
-class DebugSlingReplicationComponent(SlingReplicationCollection):
+class DebugSlingReplicationComponent(SlingReplicationCollectionComponent):
     def execute(
         self, context: dg.AssetExecutionContext, sling: SlingResource
     ) -> Iterator:

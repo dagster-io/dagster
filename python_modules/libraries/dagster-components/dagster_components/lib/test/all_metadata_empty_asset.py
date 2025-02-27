@@ -6,7 +6,7 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 
 
-class AllMetadataEmptyAsset(Component):
+class AllMetadataEmptyComponent(Component):
     @classmethod
     def get_scaffolder(cls) -> DefaultComponentScaffolder:
         return DefaultComponentScaffolder()

@@ -1,4 +1,4 @@
-from dagster_components.lib import SlingReplicationCollection
+from dagster_components.lib import SlingReplicationCollectionComponent
 
 
-class CustomSubclass(SlingReplicationCollection): ...
+class CustomSubclass(SlingReplicationCollectionComponent): ...

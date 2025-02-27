@@ -1,4 +1,4 @@
-type: dagster_components.lib.test.SimpleAsset
+type: dagster_components.lib.test.SimpleAssetComponent
 
 attributes:
   asset_key: "test"

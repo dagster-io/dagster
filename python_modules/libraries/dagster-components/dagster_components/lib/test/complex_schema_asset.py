@@ -18,7 +18,7 @@ from dagster_components.core.schema.objects import (
 )
 
 
-class ComplexAssetSchema(ResolvableSchema["ComplexSchemaAsset"]):
+class ComplexAssetSchema(ResolvableSchema["ComplexAssetComponent"]):
     value: str = Field(..., examples=["example_for_value"])
     list_value: list[str] = Field(
         ..., examples=[["example_for_list_value_1", "example_for_list_value_2"]]
@@ -31,7 +31,7 @@ class ComplexAssetSchema(ResolvableSchema["ComplexSchemaAsset"]):
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
-class ComplexSchemaAsset(Component):
+class ComplexAssetComponent(Component):
     """An asset that has a complex schema."""
 
     @classmethod

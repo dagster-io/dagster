@@ -33,7 +33,9 @@ class PipesSubprocessScriptSchema(ResolvableSchema[PipesSubprocessScriptSpec]):
     assets: Sequence[AssetSpecSchema]
 
 
-class PipesSubprocessScriptCollectionSchema(ResolvableSchema["PipesSubprocessScriptCollection"]):
+class PipesSubprocessScriptCollectionSchema(
+    ResolvableSchema["PipesSubprocessScriptCollectionComponent"]
+):
     scripts: Sequence[PipesSubprocessScriptSchema]
 
 
@@ -44,7 +46,7 @@ def resolve_specs_by_path(
 
 
 @dataclass
-class PipesSubprocessScriptCollection(Component):
+class PipesSubprocessScriptCollectionComponent(Component):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
     specs_by_path: Annotated[
@@ -55,9 +57,9 @@ class PipesSubprocessScriptCollection(Component):
     )
 
     @staticmethod
-    def introspect_from_path(path: Path) -> "PipesSubprocessScriptCollection":
+    def introspect_from_path(path: Path) -> "PipesSubprocessScriptCollectionComponent":
         path_specs = {str(path): [AssetSpec(path.stem)] for path in list(path.rglob("*.py"))}
-        return PipesSubprocessScriptCollection(specs_by_path=path_specs)
+        return PipesSubprocessScriptCollectionComponent(specs_by_path=path_specs)
 
     @classmethod
     def get_schema(cls) -> type[PipesSubprocessScriptCollectionSchema]:

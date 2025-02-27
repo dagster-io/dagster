@@ -1,7 +1,7 @@
 from dagster_components import ComponentLoadContext
 from dagster_components.core.component import component
 from dagster_components.core.schema.objects import AssetSpecSchema
-from dagster_components.lib import PipesSubprocessScriptCollection
+from dagster_components.lib import PipesSubprocessScriptCollectionComponent
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollectionSchema,
     PipesSubprocessScriptSchema,
@@ -9,7 +9,7 @@ from dagster_components.lib.pipes_subprocess_script_collection import (
 
 
 @component
-def load(context: ComponentLoadContext) -> PipesSubprocessScriptCollection:
+def load(context: ComponentLoadContext) -> PipesSubprocessScriptCollectionComponent:
     attributes = PipesSubprocessScriptCollectionSchema(
         scripts=[
             PipesSubprocessScriptSchema(
@@ -23,4 +23,4 @@ def load(context: ComponentLoadContext) -> PipesSubprocessScriptCollection:
             ),
         ]
     )
-    return PipesSubprocessScriptCollection.load(attributes=attributes, context=context)
+    return PipesSubprocessScriptCollectionComponent.load(attributes=attributes, context=context)
