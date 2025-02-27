@@ -21,6 +21,7 @@ import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetS
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
 import {AssetSelectionInput} from 'shared/asset-selection/input/AssetSelectionInput.oss';
 import {CatalogViewSelector} from 'shared/assets/CatalogViewSelector.oss';
+import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
@@ -784,6 +785,9 @@ const AssetGraphExplorerWithData = ({
                       />
                     )}
                   </GraphQueryInputFlexWrap>
+                  {featureEnabled(FeatureFlag.flagSelectionSyntax) ? (
+                    <CreateCatalogViewButton />
+                  ) : null}
                   <AssetLiveDataRefreshButton />
                   <LaunchAssetExecutionButton
                     preferredJobName={explorerPath.pipelineName}
