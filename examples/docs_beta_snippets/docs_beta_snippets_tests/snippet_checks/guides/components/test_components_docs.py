@@ -269,7 +269,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
                 contents=format_multiline("""
-                    type: dagster_components.dbt_project
+                    type: dagster_components.lib.DbtProjectComponent
 
                     attributes:
                       dbt:

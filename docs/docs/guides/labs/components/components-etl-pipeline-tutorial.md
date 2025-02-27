@@ -225,7 +225,7 @@ attributes:
 Next, update the dbt project so it executes after the Sling replication runs. Navigate to `components/jdbt/component.yaml` and add the `automation_condition` below:
 
 ```yaml create=jaffle_platform/components/jdbt/component.yaml title="jaffle-platform/jaffle_platform/components/jdbt/component.yaml"
-type: dagster_components.dbt_project
+type: dagster_components.lib.DbtProjectComponent
 
 attributes:
   dbt:
