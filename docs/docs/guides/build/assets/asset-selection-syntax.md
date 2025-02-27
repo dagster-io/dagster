@@ -13,9 +13,9 @@ With asset selection, you can:
 
 :::info Availability
 
-In the **Dagster OSS** UI, the asset selection syntax is available on the assets overview page.
+In the **Dagster OSS UI**, the asset selection syntax is available on the assets overview page.
 
-In the **Dagster+** UI, the asset selection syntax is available in:
+In the **Dagster+ UI**, the asset selection syntax is available in:
 
 - The Asset Catalog
 - The Alert Policy creation page (when creating an asset alert)
@@ -24,14 +24,6 @@ In the **Dagster+** UI, the asset selection syntax is available in:
 :::
 
 ## Syntax
-
-### Usage
-
-A query is a string that includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of the following methods. In these cases, each clause is a separate element in a list:
-
-- <PyObject section="dagster" module="dagster" object="define_asset_job" />
-- <PyObject section="execution" module="dagster" object="materialize" />
-- <PyObject section="execution" module="dagster" object="materialize_to_memory" />
 
 ### Basic syntax
 
