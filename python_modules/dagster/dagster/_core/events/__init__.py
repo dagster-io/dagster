@@ -801,6 +801,17 @@ class DagsterEvent(
         return cast(AssetCheckEvaluationPlanned, self.event_specific_data)
 
     @property
+    def planned_asset_materialization_failure_data(
+        self,
+    ) -> "PlannedAssetMaterializationFailureData":
+        _assert_type(
+            "planned_asset_materialization_failure",
+            DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE,
+            self.event_type,
+        )
+        return cast(PlannedAssetMaterializationFailureData, self.event_specific_data)
+
+    @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
         _assert_type(
             "step_expectation_result_data",
@@ -1549,6 +1560,31 @@ class AssetObservationData(
             asset_observation=check.inst_param(
                 asset_observation, "asset_observation", AssetObservation
             ),
+        )
+
+
+@whitelist_for_serdes
+class PlannedAssetMaterializationFailureData(
+    NamedTuple(
+        "_PlannedAssetMaterializationFailureData",
+        [
+            ("asset_key", AssetKey),
+            ("partition", Optional[str]),
+            ("error", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        partition: Optional[str],
+        error: Optional[SerializableErrorInfo] = None,
+    ):
+        return super().__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            partition=check.opt_str_param(partition, "partition"),
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
 
