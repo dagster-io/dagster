@@ -11,22 +11,36 @@ With asset selection, you can:
 - Define a job in Python that targets a selection of assets
 - List or materialize a set of assets using the [Dagster CLI](/api/python-api/cli#dagster-asset)
 
-## Syntax usage
+:::info Availability
 
-A query includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of the following methods. In these cases, each clause is a separate element in a list:
+In the **Dagster OSS** UI, the asset selection syntax is available on the assets overview page.
 
-* <PyObject section="dagster" module="dagster" object="define_asset_job" />
-* <PyObject section="execution" module="dagster" object="materialize" />
-* <PyObject section="execution" module="dagster" object="materialize_to_memory" />
+In the **Dagster+** UI, the asset selection syntax is available in:
 
-## Basic syntax
+- The Asset Catalog
+- The Alert Policy creation page (when creating an asset alert)
+- The Insights page
+
+:::
+
+## Syntax
+
+### Usage
+
+A query is a string that includes a list of clauses. Clauses are separated by commas, except in the case of the `selection` parameter of the following methods. In these cases, each clause is a separate element in a list:
+
+- <PyObject section="dagster" module="dagster" object="define_asset_job" />
+- <PyObject section="execution" module="dagster" object="materialize" />
+- <PyObject section="execution" module="dagster" object="materialize_to_memory" />
+
+### Basic syntax
 
 | Asset selection | Syntax | Description |
 | --- | --- | --- |
 | **Specific asset** | `key:"my_asset"` | Selects assets with key `my_key`. |
 | **Entire graph** | `*` | Displays all assets and connections. |
 
-## Upstream and downstream layers
+### Upstream and downstream layers
 
 Filtering by upstream and downstream layers can help you understand the data flow within your assets.
 
@@ -46,7 +60,7 @@ Filtering by upstream and downstream layers can help you understand the data flo
 | **Two layers upstream and downstream of an asset** | `2+key:"my_asset"+2` | Selects two layers of assets providing input to and receiving input from `my_asset`. |
 | **All layers upstream and downstream of an asset** | `+key:"my_asset"+ ` | Selects all assets upstream and downstream of `my_asset`. |
 
-## Filters, operands, and grouping
+### Filters
 
 Filters allow you to narrow your asset selection using specific criteria.
 
@@ -60,10 +74,10 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Group** | `group:"team1"` | Selects assets in the group `team1`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Kind** |  `kind:"table"` |  Selects assets of kind `table`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Code location** | `code_location:"repo1"` | Selects assets located in code location `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Column tag** | `column:tag: "my_tag"` | TODO | Dagster+ only |
-| **Columns** | `columns: "column_name"` | TODO | Dagster+ only |
-| **Table name** | `table_name: "my_table"` | TODO | Dagster+ only |
-| **Changed in branch** | `changed_in_branch: "TODO"` | TODO | Dagster+ branch deployments only |
+| **Column tag** | `column:tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
+| **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
+| **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
+| **Changed in branch** | `changed_in_branch: "my_branch"` | Selects assets changed in a branch named `my_branch`. | Dagster+ branch deployments only |
 
 :::info Wildcard matching
 
@@ -82,7 +96,7 @@ You can combine multiple filters with operands and group them with parentheses t
 | **`not`** | `not tag:"obsolete"` | Excludes assets tagged with `obsolete`. |
 | **Grouping `()`** | `(owner:"alice" and kind:"table") or group:"analytics"` | Symbols `(` and `)` used to group expressions and control the order of evaluation in queries. This example selects assets that are both owned by `alice` and of kind `table`, or that belong to the `analytics` group. |
 
-## Functions
+### Functions
 
 Functions allow you to perform specific operations on your asset selection. You can use `sink()` and `root()` functions to return the sink and root assets of the specified expression.
 
