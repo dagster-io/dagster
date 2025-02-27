@@ -7,7 +7,7 @@ from multiprocessing import Process
 from tempfile import NamedTemporaryFile
 
 import pytest
-from dagster import op
+from dagster import BetaWarning, op
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
@@ -62,7 +62,6 @@ from dagster._core.pipes.utils import (
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._utils import process_is_alive
 from dagster._utils.env import environ
-from dagster._utils.warnings import BetaWarning
 from dagster_pipes import DagsterPipesError
 
 from dagster_tests.execution_tests.pipes_tests.utils import temp_script
