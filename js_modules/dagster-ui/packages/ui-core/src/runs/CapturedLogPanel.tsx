@@ -317,6 +317,9 @@ const CapturedLogPanel = React.memo(
 
     const stdoutLocation = queryResult.data?.capturedLogsMetadata.stdoutLocation || undefined;
     const stderrLocation = queryResult.data?.capturedLogsMetadata.stderrLocation || undefined;
+    const stdoutDownloadUrl = queryResult.data?.capturedLogsMetadata.stdoutDownloadUrl;
+    const stderrDownloadUrl = queryResult.data?.capturedLogsMetadata.stderrDownloadUrl;
+
     const websocketsUnavailabile = availability === 'unavailable' || disabled;
     const Component = websocketsUnavailabile
       ? CapturedLogsQueryProvider
@@ -331,12 +334,14 @@ const CapturedLogPanel = React.memo(
                 isLoading={_state.isLoading}
                 location={stdoutLocation}
                 isVisible={visibleIOType === 'stdout'}
+                downloadUrl={stdoutDownloadUrl}
               />
               <RawLogContent
                 logData={_state.stderr}
                 isLoading={_state.isLoading}
                 location={stderrLocation}
                 isVisible={visibleIOType === 'stderr'}
+                downloadUrl={stderrDownloadUrl}
               />
             </>
           )}
