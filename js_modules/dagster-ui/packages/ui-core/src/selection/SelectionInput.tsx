@@ -246,6 +246,8 @@ export const SelectionAutoCompleteInput = ({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
+        e.stopPropagation();
+        e.preventDefault();
         onSelectionChange(innerValueRef.current);
         setShowResults({current: false});
       }
@@ -254,22 +256,26 @@ export const SelectionAutoCompleteInput = ({
       }
       if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex((prev) => ({
           current: (prev.current + 1) % (autoCompleteResults?.list.length ?? 0),
         }));
       } else if (e.key === 'ArrowUp' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex((prev) => ({
           current:
             prev.current - 1 < 0 ? (autoCompleteResults?.list.length ?? 1) - 1 : prev.current - 1,
         }));
       } else if (e.key === 'Tab') {
         e.preventDefault();
+        e.stopPropagation();
         if (selectedItem) {
           onSelect(selectedItem);
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         setShowResults({current: false});
       }
     },
