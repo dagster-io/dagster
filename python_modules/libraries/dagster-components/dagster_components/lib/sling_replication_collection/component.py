@@ -29,6 +29,11 @@ from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_transl
 def resolve_translator(
     context: ResolutionContext, schema: "SlingReplicationSchema"
 ) -> DagsterSlingTranslator:
+    # TODO: Consider supporting owners and code_version in the future
+    if schema.asset_attributes and schema.asset_attributes.owners:
+        raise ValueError("owners are not supported for sling_replication_collection component")
+    if schema.asset_attributes and schema.asset_attributes.code_version:
+        raise ValueError("code_version is not supported for sling_replication_collection component")
     return get_wrapped_translator_class(DagsterSlingTranslator)(
         resolving_info=TranslatorResolvingInfo(
             "stream_definition",
