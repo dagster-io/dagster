@@ -188,6 +188,9 @@ def build_airflow_polling_sensor(
         context.log.info(
             f"************Exiting sensor for {airflow_data.airflow_instance.name}***********"
         )
+        context.log.info(
+            f"Asset events: {len(updated_asset_events)}, Check keys: {len(all_check_keys)}"
+        )
         return SensorResult(
             asset_events=sorted_asset_events(updated_asset_events, repository_def),
             run_requests=[RunRequest(asset_check_keys=list(all_check_keys))]

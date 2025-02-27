@@ -2,9 +2,11 @@ import {Box, Colors, FontFamily, Icon, Tooltip} from '@dagster-io/ui-components'
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {AssetNodeSLARow} from 'shared/asset-graph/AssetNodeSLARow.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
+import {AssetNodeRowBox} from './AssetNodeRowBox';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
 import {LiveDataForNode} from './Utils';
@@ -70,6 +72,7 @@ export const AssetNode = React.memo(
 
             <AssetNodeStatusRow definition={definition} liveData={liveData} />
             {hasChecks && <AssetNodeChecksRow definition={definition} liveData={liveData} />}
+            <AssetNodeSLARow assetKey={definition.assetKey} />
           </AssetNodeBox>
           <Box
             style={{minHeight: ASSET_NODE_TAGS_HEIGHT}}
@@ -113,20 +116,6 @@ export const AssetNameRow = ({definition}: {definition: AssetNodeFragment}) => {
     </AssetName>
   );
 };
-
-const AssetNodeRowBox = styled(Box)`
-  white-space: nowrap;
-  line-height: 12px;
-  font-size: 12px;
-  height: 24px;
-  a:hover {
-    text-decoration: none;
-  }
-  &:last-child {
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-  }
-`;
 
 interface StatusRowProps {
   definition: AssetNodeFragment;

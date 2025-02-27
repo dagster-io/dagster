@@ -10,6 +10,7 @@ import {
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {AssetAlertsSection} from 'shared/assets/AssetAlertsSection.oss';
+import {AssetNodeOverviewSLASummary} from 'shared/assets/overview/AssetNodeOverviewSLASummary.oss';
 
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
@@ -111,7 +112,7 @@ export const AssetNodeOverview = ({
 
   const renderStatusSection = () => (
     <Box flex={{direction: 'column', gap: 16}}>
-      <Box style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'}}>
+      <Box style={{display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))'}}>
         <Box flex={{direction: 'column', gap: 6}}>
           <Subtitle2>
             Latest {assetNode?.isObservable ? 'observation' : 'materialization'}
@@ -141,6 +142,7 @@ export const AssetNodeOverview = ({
             />
           </Box>
         ) : undefined}
+        <AssetNodeOverviewSLASummary assetKey={cachedOrLiveAssetNode.assetKey} />
         {rowCountMeta?.intValue ? (
           <Box flex={{direction: 'column', gap: 6}}>
             <Subtitle2>Row count</Subtitle2>
