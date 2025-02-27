@@ -231,13 +231,9 @@ class PollingComputeLogSubscriptionManager:
         if not self._polling_thread:
             self._start_polling_thread()
 
-        if self.is_complete(subscription):
-            subscription.fetch()
-            subscription.complete()
-        else:
-            log_key = self._log_key(subscription)
-            watch_key = self._watch_key(log_key)
-            self._subscriptions[watch_key].append(subscription)
+        log_key = self._log_key(subscription)
+        watch_key = self._watch_key(log_key)
+        self._subscriptions[watch_key].append(subscription)
 
     def is_complete(self, subscription: CapturedLogSubscription) -> bool:
         return self._manager.is_capture_complete(subscription.log_key)

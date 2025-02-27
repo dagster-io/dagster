@@ -142,9 +142,6 @@ class CapturedLogSubscription:
 
     def __call__(self, observer: Optional[Callable[[CapturedLogData], None]]) -> Self:
         self._observer = observer
-        self.fetch()
-        if self._manager.is_capture_complete(self._log_key):
-            self.complete()
         return self
 
     @property
