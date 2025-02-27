@@ -1545,6 +1545,7 @@ class DagsterEvent(
 
     @staticmethod
     # TODO - naming. most other event builder fns are just the name of the event
+<<<<<<< HEAD
     def build_asset_failed_to_materialize_event(
         job_name: str,
         step_key: str,
@@ -1555,6 +1556,18 @@ class DagsterEvent(
             job_name=job_name,
             message=f"Asset {asset_failed_to_materialize_data.asset_key.to_string()} failed to materialize",
             event_specific_data=asset_failed_to_materialize_data,
+=======
+    def build_planned_asset_materialization_failure_event(
+        job_name: str,
+        step_key: str,
+        planned_asset_materialization_failure_data: "PlannedAssetMaterializationFailureData",
+    ) -> "DagsterEvent":
+        return DagsterEvent(
+            event_type_value=DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE.value,
+            job_name=job_name,
+            message=f"Asset {planned_asset_materialization_failure_data.asset_key.to_string()} failed to materialize",
+            event_specific_data=planned_asset_materialization_failure_data,
+>>>>>>> 0fc27c2145 (event builder, update properties)
             step_key=step_key,
         )
 
