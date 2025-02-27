@@ -52,7 +52,7 @@ To get started, see "[Migrate from Airflow to Dagster at the task level](/guides
 
 :::note
 
-If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster at the DAG level](/guides/migrate/airflow-to-dagster/full-dag-migration)
+If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster at the DAG level](/guides/migrate/airflow-to-dagster/dag-level-migration)
 
 :::
 
