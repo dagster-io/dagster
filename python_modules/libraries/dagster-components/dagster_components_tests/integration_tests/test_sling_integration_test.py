@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import pytest
 import yaml
+from click.testing import CliRunner
 from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import AssetMaterialization
@@ -15,14 +16,18 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.env import environ
+from dagster_components.cli import cli
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import YamlComponentDecl, build_component_defs
 from dagster_components.lib.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
+from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_sling import SlingResource
 
-from dagster_components_tests.utils import script_load_context
+ensure_dagster_components_tests_import()
+
+from dagster_components_tests.utils import script_load_context, temp_code_location_bar
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -261,3 +266,21 @@ def test_asset_attributes(
         assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
     if assertion:
         assert assertion(assets_def.get_asset_spec(AssetKey("input_duckdb")))
+
+
+def test_scaffold_sling():
+    runner = CliRunner()
+
+    with temp_code_location_bar():
+        result = runner.invoke(
+            cli,
+            [
+                "scaffold",
+                "component",
+                "dagster_components.lib.SlingReplicationCollectionComponent",
+                "bar/components/qux",
+            ],
+        )
+        assert result.exit_code == 0
+        assert Path("bar/components/qux/replication.yaml").exists()
+        assert Path("bar/components/qux/component.yaml").exists()
