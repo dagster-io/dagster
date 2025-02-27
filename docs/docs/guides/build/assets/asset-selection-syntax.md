@@ -363,10 +363,15 @@ Selects assets that are either owned by `ada.dagster@example.com` and of kind `c
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
-        TK
+    ```python
+    ada_csv_analytics_job = define_asset_job(
+        name="ada_csv_analytics_job", selection='(owner:"ada.dagster@example.com" and kind:"csv") or group:"analytics"'
+    )
+    ```
     </TabItem>
     <TabItem value="cli" label="CLI">
-        TK - CLI
+    dagster asset list --select '(owner:"ada.dagster@example.com" and kind:"csv") or group:"analytics"'
+    dagster asset materialize --select '(owner:"ada.dagster@example.com" and kind:"csv") or group:"analytics"'
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
     ```shell
