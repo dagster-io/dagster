@@ -22,10 +22,14 @@ export class CustomErrorListener implements ANTLRErrorListener<any> {
     msg: string,
     _e: RecognitionException | undefined,
   ): void {
+    let from = charPositionInLine;
+    if (offendingSymbol?.text === '<EOF>') {
+      from = 0;
+    }
     this.errors.push({
       message: msg,
       offendingSymbol: offendingSymbol?.text,
-      from: charPositionInLine,
+      from,
       to: charPositionInLine + (offendingSymbol?.text?.length ?? Infinity),
     });
   }
