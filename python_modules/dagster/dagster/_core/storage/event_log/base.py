@@ -61,11 +61,13 @@ class AssetEntry(
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
             ("cached_status", Optional["AssetStatusCacheValue"]),
-            # This is an optional field which can be used for more performant last observation
+            # Below optional fields which can be used for more performant last observation
             # queries if the underlying storage supports it
             ("last_observation_record", Optional[EventLogRecord]),
             ("last_planned_materialization_storage_id", Optional[int]),
             ("last_planned_materialization_run_id", Optional[str]),
+            ("last_planned_materialization_failure_storage_id", Optional[int]),
+            ("last_planned_materialization_failure_run_id", Optional[str]),
         ],
     )
 ):
@@ -79,6 +81,8 @@ class AssetEntry(
         last_observation_record: Optional[EventLogRecord] = None,
         last_planned_materialization_storage_id: Optional[int] = None,
         last_planned_materialization_run_id: Optional[str] = None,
+        last_planned_materialization_failure_storage_id: Optional[int] = None,
+        last_planned_materialization_failure_run_id: Optional[str] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -105,6 +109,14 @@ class AssetEntry(
             last_planned_materialization_run_id=check.opt_str_param(
                 last_planned_materialization_run_id,
                 "last_planned_materialization_run_id",
+            ),
+            last_planned_materialization_failure_storage_id=check.opt_int_param(
+                last_planned_materialization_failure_storage_id,
+                "last_planned_materialization_failure_storage_id",
+            ),
+            last_planned_materialization_failure_run_id=check.opt_str_param(
+                last_planned_materialization_failure_run_id,
+                "last_planned_materialization_failure_run_id",
             ),
         )
 
