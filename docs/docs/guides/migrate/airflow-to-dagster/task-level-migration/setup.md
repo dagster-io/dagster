@@ -79,4 +79,4 @@ You should be able to see the `rebuild_customers_list` DAG in the Airflow UI, ma
 
 ## Next steps
 
-The next step is to peer a Dagster installation with the Airflow Instance. [Click here](peer) to follow along for part 2.
+The next step is to peer your Dagster installation with the Airflow Instance. [Click here](peer) to follow along for part 2.
