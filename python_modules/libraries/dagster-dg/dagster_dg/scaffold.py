@@ -24,6 +24,7 @@ EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
     "dagster-components",
+    "dagster-test[components]",  # we include dagster-test for testing purposes
 )
 EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
 PYPI_DAGSTER_DEPENDENCIES = ("dagster-components",)

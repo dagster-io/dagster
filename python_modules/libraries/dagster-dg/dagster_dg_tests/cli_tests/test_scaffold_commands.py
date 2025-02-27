@@ -280,10 +280,10 @@ def test_scaffold_component_dynamic_subcommand_generation() -> None:
         # These are wrapped in a table so it's hard to check exact output.
         for line in [
             "╭─ Commands",
-            "│ dagster_components.lib.test.AllMetadataEmptyComponent",
-            "│ dagster_components.lib.test.ComplexAssetComponent",
-            "│ dagster_components.lib.test.SimpleAssetComponent",
-            "│ dagster_components.lib.test.SimplePipesScriptComponent",
+            "│ dagster_test.components.AllMetadataEmptyComponent",
+            "│ dagster_test.components.ComplexAssetComponent",
+            "│ dagster_test.components.SimpleAssetComponent",
+            "│ dagster_test.components.SimplePipesScriptComponent",
         ]:
             assert standardize_box_characters(line) in normalized_output
 
@@ -297,7 +297,7 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.test.AllMetadataEmptyComponent",
+            "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
         assert_runner_result(result)
@@ -305,7 +305,7 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: dagster_components.lib.test.AllMetadataEmptyComponent"
+            "type: dagster_test.components.AllMetadataEmptyComponent"
             in component_yaml_path.read_text()
         )
 
@@ -319,7 +319,7 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.test.SimplePipesScriptComponent",
+            "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--json-params",
             '{"asset_key": "foo", "filename": "hello.py"}',
@@ -330,7 +330,7 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: dagster_components.lib.test.SimplePipesScriptComponent"
+            "type: dagster_test.components.SimplePipesScriptComponent"
             in component_yaml_path.read_text()
         )
 
@@ -344,7 +344,7 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.test.SimplePipesScriptComponent",
+            "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--asset-key=foo",
             "--filename=hello.py",
@@ -355,7 +355,7 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
         component_yaml_path = Path("foo_bar/components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: dagster_components.lib.test.SimplePipesScriptComponent"
+            "type: dagster_test.components.SimplePipesScriptComponent"
             in component_yaml_path.read_text()
         )
 
@@ -365,7 +365,7 @@ def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.test.SimplePipesScriptComponent",
+            "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--json-params",
             '{"filename": "hello.py"}',
@@ -391,7 +391,10 @@ def test_scaffold_component_command_with_non_matching_module_name():
         python_module.rename("module_not_same_as_project")
 
         result = runner.invoke(
-            "scaffold", "component", "dagster_components.lib.test.AllMetadataEmptyComponent", "qux"
+            "scaffold",
+            "component",
+            "dagster_test.components.AllMetadataEmptyComponent",
+            "qux",
         )
         assert_runner_result(result, exit_0=False)
         assert "Module `foo_bar` is not installed" in str(result.exception)
@@ -406,14 +409,14 @@ def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.test.AllMetadataEmptyComponent",
+            "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
         assert_runner_result(result)
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.test.AllMetadataEmptyComponent",
+            "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
         assert_runner_result(result, exit_0=False)
@@ -431,7 +434,7 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.test.AllMetadataEmptyComponent",
+            "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
         assert_runner_result(result)
@@ -439,7 +442,7 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
         component_yaml_path = Path("foo_bar/_components/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
-            "type: dagster_components.lib.test.AllMetadataEmptyComponent"
+            "type: dagster_test.components.AllMetadataEmptyComponent"
             in component_yaml_path.read_text()
         )
 
@@ -453,7 +456,7 @@ def test_scaffold_component_fails_components_package_does_not_exist() -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.test.AllMetadataEmptyComponent",
+            "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
         assert_runner_result(result, exit_0=False)

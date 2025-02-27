@@ -180,7 +180,7 @@ def test_dynamic_subcommand_help_message():
             result = runner.invoke(
                 "scaffold",
                 "component",
-                "dagster_components.lib.test.SimplePipesScriptComponent",
+                "dagster_test.components.SimplePipesScriptComponent",
                 "--help",
             )
             assert_runner_result(result)
@@ -189,8 +189,9 @@ def test_dynamic_subcommand_help_message():
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""
-                 Usage: dg scaffold component [GLOBAL OPTIONS] dagster_components.lib.test.SimplePipesScriptComponent                   
-                            [OPTIONS] COMPONENT_INSTANCE_NAME  
+                 Usage: dg scaffold component [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS]             
+                                                                                                      COMPONENT_INSTANCE_NA 
+                 ME
 
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ *    component_instance_name      TEXT  [required]                                                                   │

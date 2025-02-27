@@ -11,7 +11,7 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_c
 # ########################
 
 _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
-    dagster_components.lib.test.SimplePipesScriptComponent
+    dagster_test.components.SimplePipesScriptComponent
 
     Description:
 
@@ -68,7 +68,7 @@ def test_inspect_component_type_all_metadata_success():
         result = runner.invoke(
             "utils",
             "inspect-component-type",
-            "dagster_components.lib.test.SimplePipesScriptComponent",
+            "dagster_test.components.SimplePipesScriptComponent",
         )
         assert_runner_result(result)
         assert result.output.strip().endswith(_EXPECTED_INSPECT_COMPONENT_TYPE_FULL)
@@ -79,12 +79,12 @@ def test_inspect_component_type_all_metadata_empty_success():
         result = runner.invoke(
             "utils",
             "inspect-component-type",
-            "dagster_components.lib.test.AllMetadataEmptyComponent",
+            "dagster_test.components.AllMetadataEmptyComponent",
         )
         assert_runner_result(result)
         assert result.output.strip().endswith(
             textwrap.dedent("""
-                dagster_components.lib.test.AllMetadataEmptyComponent
+                dagster_test.components.AllMetadataEmptyComponent
             """).strip()
         )
 
@@ -94,7 +94,7 @@ def test_inspect_component_type_flag_fields_success():
         result = runner.invoke(
             "utils",
             "inspect-component-type",
-            "dagster_components.lib.test.SimplePipesScriptComponent",
+            "dagster_test.components.SimplePipesScriptComponent",
             "--description",
         )
         assert_runner_result(result)
@@ -109,7 +109,7 @@ def test_inspect_component_type_flag_fields_success():
         result = runner.invoke(
             "utils",
             "inspect-component-type",
-            "dagster_components.lib.test.SimplePipesScriptComponent",
+            "dagster_test.components.SimplePipesScriptComponent",
             "--scaffold-params-schema",
         )
         assert_runner_result(result)
@@ -139,7 +139,7 @@ def test_inspect_component_type_flag_fields_success():
         result = runner.invoke(
             "utils",
             "inspect-component-type",
-            "dagster_components.lib.test.SimplePipesScriptComponent",
+            "dagster_test.components.SimplePipesScriptComponent",
             "--component-schema",
         )
         assert_runner_result(result)
@@ -172,7 +172,7 @@ def test_inspect_component_type_multiple_flags_fails() -> None:
         result = runner.invoke(
             "utils",
             "inspect-component-type",
-            "dagster_components.lib.test.SimplePipesScriptComponent",
+            "dagster_test.components.SimplePipesScriptComponent",
             "--description",
             "--scaffold-params-schema",
         )

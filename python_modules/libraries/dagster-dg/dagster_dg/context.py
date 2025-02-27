@@ -4,7 +4,7 @@ import subprocess
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final, Optional, Union
 
 import tomlkit
 import tomlkit.items
@@ -205,7 +205,8 @@ class DgContext:
     def has_cache(self) -> bool:
         return self._cache is not None
 
-    def get_cache_key(self, data_type: CachableDataType) -> tuple[str, str, str]:
+    # Allowing open-ended str data_type for now so we can do module names
+    def get_cache_key(self, data_type: Union[CachableDataType, str]) -> tuple[str, str, str]:
         path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
@@ -215,10 +216,13 @@ class DgContext:
         return ("_".join(path_parts), env_hash, data_type)
 
     def get_cache_key_for_module(self, module_name: str) -> tuple[str, str, str]:
-        path = self.get_path_for_module(module_name)
-        env_hash = hash_paths([path], includes=["*.py"])
-        path_parts = [str(part) for part in path.parts if part != "/"]
-        return ("_".join(path_parts), env_hash, "local_component_registry")
+        if module_name.startswith(self.root_module_name):
+            path = self.get_path_for_module(module_name)
+            env_hash = hash_paths([path], includes=["*.py"])
+            path_parts = [str(part) for part in path.parts if part != "/"]
+            return ("_".join(path_parts), env_hash, "local_component_registry")
+        else:
+            return self.get_cache_key(module_name)
 
     # ########################
     # ##### WORKSPACE METHODS

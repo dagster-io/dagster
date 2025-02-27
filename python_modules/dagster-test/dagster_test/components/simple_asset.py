@@ -2,13 +2,12 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from pydantic import BaseModel
-
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component_scaffolder import (
     ComponentScaffolder,
     DefaultComponentScaffolder,
 )
+from pydantic import BaseModel
 
 
 class SimpleAssetSchema(BaseModel):
