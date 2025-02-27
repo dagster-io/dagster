@@ -6,6 +6,7 @@ from typing import Optional, cast
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.events import EngineEventData, RunFailureReason
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.retries import auto_reexecution_should_retry_run
@@ -158,7 +159,16 @@ def retry_run(
         )
     )
 
-    _, run_group = check.not_none(instance.get_run_group(failed_run.run_id))
+    try:
+        _, run_group = check.not_none(instance.get_run_group(failed_run.run_id))
+    except DagsterRunNotFoundError:
+        instance.report_engine_event(
+            f"Could not find run group for {failed_run.run_id}. This is most likely because the"
+            " root run was deleted",
+            failed_run,
+        )
+        return
+
     run_group_list = list(run_group)
 
     # it is possible for the daemon to die between creating the run and submitting it. We account for this

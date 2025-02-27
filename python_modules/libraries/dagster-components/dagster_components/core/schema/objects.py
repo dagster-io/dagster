@@ -7,9 +7,11 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
+from pydantic.dataclasses import dataclass
 from typing_extensions import TypeAlias
 
 from dagster_components.core.schema.base import FieldResolver, ResolvableSchema
@@ -26,11 +28,50 @@ def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
 PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
 
 
-class OpSpecSchema(ResolvableSchema):
+@dataclass
+class SingleRunBackfillPolicySchema:
+    type: Literal["single_run"] = "single_run"
+
+
+@dataclass
+class MultiRunBackfillPolicySchema:
+    type: Literal["multi_run"] = "multi_run"
+    max_partitions_per_run: int = 1
+
+
+def resolve_backfill_policy(
+    context: ResolutionContext, schema: "OpSpecSchema"
+) -> Optional[BackfillPolicy]:
+    if schema.backfill_policy is None:
+        return None
+
+    if schema.backfill_policy.type == "single_run":
+        return BackfillPolicy.single_run()
+    elif schema.backfill_policy.type == "multi_run":
+        return BackfillPolicy.multi_run(
+            max_partitions_per_run=schema.backfill_policy.max_partitions_per_run
+        )
+
+    raise ValueError(f"Invalid backfill policy: {schema.backfill_policy}")
+
+
+@dataclass
+class OpSpec:
+    name: Optional[str] = None
+    tags: Optional[dict[str, str]] = None
+    backfill_policy: Annotated[Optional[BackfillPolicy], FieldResolver(resolve_backfill_policy)] = (
+        None
+    )
+
+
+class OpSpecSchema(ResolvableSchema[OpSpec]):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
     )
+    backfill_policy: Optional[
+        Union[SingleRunBackfillPolicySchema, MultiRunBackfillPolicySchema]
+    ] = Field(default=None, description="The backfill policy to use for the assets.")
 
 
 class AssetDepSchema(ResolvableSchema[AssetDep]):
