@@ -121,7 +121,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
-from dagster._core.storage.utils import OrderBy
+from dagster._core.storage.utils import AssetKeyOrdering
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -2926,31 +2926,17 @@ class TestEventLogStorage:
         ]
 
         # query ordering
-        asset_keys = storage.get_asset_keys(
-            order_by=OrderBy(column_name="asset_key", ascending=False)
+        asset_keys_asc = storage.get_asset_keys(
+            order_by=AssetKeyOrdering.LAST_MATERIALIZATION_TIMESTMAP_ASC
         )
-        assert len(asset_keys) == 6
-        assert [asset_key.to_string() for asset_key in asset_keys] == [
-            '["c"]',
-            '["banana"]',
-            '["b", "z"]',
-            '["b", "y"]',
-            '["b", "x"]',
-            '["a"]',
-        ]
-
-        asset_keys = storage.get_asset_keys(
-            order_by=OrderBy(column_name="asset_key", ascending=True)
+        assert len(asset_keys_asc) == 6
+        asset_keys_desc = storage.get_asset_keys(
+            order_by=AssetKeyOrdering.LAST_MATERIALIZATION_TIMESTMAP_DESC
         )
-        assert len(asset_keys) == 6
-        assert [asset_key.to_string() for asset_key in asset_keys] == [
-            '["a"]',
-            '["b", "x"]',
-            '["b", "y"]',
-            '["b", "z"]',
-            '["banana"]',
-            '["c"]',
-        ]
+        assert len(asset_keys_desc) == 6
+        assert [asset_key.to_string() for asset_key in asset_keys_asc] == list(
+            reversed([asset_key.to_string() for asset_key in asset_keys_desc])
+        )
 
         # run a second op so that some assets have a more recent materialization time
         test_run_id_2 = make_new_run_id()
@@ -2965,7 +2951,7 @@ class TestEventLogStorage:
         _synthesize_events(lambda: gen_op_2(), instance=instance, run_id=test_run_id_2)
 
         asset_keys = storage.get_asset_keys(
-            order_by=OrderBy(column_name="last_materialization_timestamp", ascending=False)
+            order_by=AssetKeyOrdering.LAST_MATERIALIZATION_TIMESTMAP_DESC
         )
         asset_records = storage.get_asset_records()
         assert len(asset_keys) == 6
