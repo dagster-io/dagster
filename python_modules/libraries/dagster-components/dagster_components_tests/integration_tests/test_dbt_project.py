@@ -9,6 +9,7 @@ import pytest
 from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -22,7 +23,7 @@ from pydantic.dataclasses import dataclass
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster import AssetsDefinition
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "components/jaffle_shop_dbt"
@@ -50,14 +51,25 @@ def dbt_path() -> Iterator[Path]:
         yield Path(temp_dir)
 
 
-def test_python_params(dbt_path: Path) -> None:
+@pytest.mark.parametrize(
+    "backfill_policy", [None, "single_run", "multi_run", "multi_run_with_max_partitions"]
+)
+def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
+    backfill_policy_arg = {}
+    if backfill_policy == "single_run":
+        backfill_policy_arg["backfill_policy"] = {"type": "single_run"}
+    elif backfill_policy == "multi_run":
+        backfill_policy_arg["backfill_policy"] = {"type": "multi_run"}
+    elif backfill_policy == "multi_run_with_max_partitions":
+        backfill_policy_arg["backfill_policy"] = {"type": "multi_run", "max_partitions_per_run": 3}
+
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="dbt_project",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
-                "op": {"name": "some_op", "tags": {"tag1": "value"}},
+                "op": {"name": "some_op", "tags": {"tag1": "value"}, **backfill_policy_arg},
             },
         ),
     )
@@ -67,8 +79,23 @@ def test_python_params(dbt_path: Path) -> None:
     )
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
     defs = component.build_defs(script_load_context())
-    assert defs.get_assets_def("stg_customers").op.name == "some_op"
-    assert defs.get_assets_def("stg_customers").op.tags["tag1"] == "value"
+    assets_def: AssetsDefinition = defs.get_assets_def("stg_customers")
+    assert assets_def.op.name == "some_op"
+    assert assets_def.op.tags["tag1"] == "value"
+
+    if backfill_policy is None:
+        assert assets_def.backfill_policy is None
+    elif backfill_policy == "single_run":
+        assert isinstance(assets_def.backfill_policy, BackfillPolicy)
+        assert assets_def.backfill_policy.policy_type == BackfillPolicyType.SINGLE_RUN
+    elif backfill_policy == "multi_run":
+        assert isinstance(assets_def.backfill_policy, BackfillPolicy)
+        assert assets_def.backfill_policy.policy_type == BackfillPolicyType.MULTI_RUN
+        assert assets_def.backfill_policy.max_partitions_per_run == 1
+    elif backfill_policy == "multi_run_with_max_partitions":
+        assert isinstance(assets_def.backfill_policy, BackfillPolicy)
+        assert assets_def.backfill_policy.policy_type == BackfillPolicyType.MULTI_RUN
+        assert assets_def.backfill_policy.max_partitions_per_run == 3
 
 
 def test_load_from_path(dbt_path: Path) -> None:
