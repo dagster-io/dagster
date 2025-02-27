@@ -24,6 +24,7 @@ export class CustomErrorListener implements ANTLRErrorListener<any> {
   ): void {
     let from = charPositionInLine;
     if (offendingSymbol?.text === '<EOF>') {
+      // If the error is at the very end of the input, set the from to the start of the input
       from = 0;
     }
     this.errors.push({
