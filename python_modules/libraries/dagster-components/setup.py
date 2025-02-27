@@ -42,7 +42,6 @@ setup(
         ],
         "dagster.components": [
             "dagster_components = dagster_components.lib",
-            "dagster_components.test = dagster_components.lib.test",
         ],
     },
     extras_require={

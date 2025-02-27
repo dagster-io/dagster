@@ -33,7 +33,13 @@ class RemoteComponentRegistry:
         if dg_context.use_dg_managed_environment:
             dg_context.ensure_uv_lock()
 
-        component_data = _load_entry_point_components(dg_context)
+        if dg_context.config.cli.use_component_modules:
+            component_data = _load_module_components(
+                dg_context, dg_context.config.cli.use_component_modules
+            )
+        else:
+            component_data = _load_entry_point_components(dg_context)
+
         if extra_modules:
             component_data.update(_load_module_components(dg_context, extra_modules))
 

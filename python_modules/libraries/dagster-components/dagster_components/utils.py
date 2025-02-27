@@ -22,8 +22,6 @@ from dagster_components.core.schema.objects import AssetAttributesSchema
 
 T = TypeVar("T")
 
-CLI_BUILTIN_COMPONENT_LIB_KEY = "builtin_component_lib"
-
 
 def ensure_dagster_components_tests_import() -> None:
     from dagster_components import __file__ as dagster_components_init_py

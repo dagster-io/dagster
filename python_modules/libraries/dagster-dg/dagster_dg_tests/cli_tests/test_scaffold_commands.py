@@ -461,7 +461,10 @@ def test_scaffold_component_fails_components_package_does_not_exist() -> None:
 
 
 def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with (
+        ProxyRunner.test(use_entry_points=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
         result = runner.invoke("scaffold", "component-type", "Baz")
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
@@ -489,7 +492,7 @@ dbt_project_path = Path("../stub_projects/dbt_project_location/components/jaffle
 )
 def test_scaffold_dbt_project_instance(params) -> None:
     with (
-        ProxyRunner.test(use_test_component_lib=False) as runner,
+        ProxyRunner.test(use_entry_points=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
@@ -534,7 +537,7 @@ def test_scaffold_component_type_success() -> None:
 
 def test_scaffold_component_type_already_exists_fails() -> None:
     with (
-        ProxyRunner.test() as runner,
+        ProxyRunner.test(use_entry_points=True) as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
         result = runner.invoke("scaffold", "component-type", "Baz")
@@ -546,7 +549,7 @@ def test_scaffold_component_type_already_exists_fails() -> None:
 
 def test_scaffold_component_type_succeeds_non_default_component_lib_package() -> None:
     with (
-        ProxyRunner.test() as runner,
+        ProxyRunner.test(use_entry_points=True) as runner,
         isolated_example_component_library_foo_bar(runner, lib_module_name="foo_bar._lib"),
     ):
         result = runner.invoke(
@@ -563,7 +566,7 @@ def test_scaffold_component_type_succeeds_non_default_component_lib_package() ->
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:
     with (
-        ProxyRunner.test() as runner,
+        ProxyRunner.test(use_entry_points=True) as runner,
         isolated_example_component_library_foo_bar(runner, lib_module_name="foo_bar.fake"),
     ):
         # Delete the entry point module

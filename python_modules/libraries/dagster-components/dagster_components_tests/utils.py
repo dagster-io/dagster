@@ -2,13 +2,16 @@ import contextlib
 import shutil
 import tempfile
 import textwrap
+import traceback
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import TracebackType
 from typing import AbstractSet, Any, Iterable, Optional, TypeVar  # noqa: UP035
 
 import tomlkit
+from click.testing import Result
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import pushd
 from dagster_components.core.component import Component, ComponentDeclNode, ComponentLoadContext
@@ -129,6 +132,33 @@ def create_project_from_components(
 
         with ensure_loadable_path(project_root):
             yield project_root
+
+
+# ########################
+# ##### CLI RUNNER
+# ########################
+
+
+def assert_runner_result(result: Result, exit_0: bool = True) -> None:
+    try:
+        assert result.exit_code == 0 if exit_0 else result.exit_code != 0
+    except AssertionError:
+        if result.output:
+            print(result.output)  # noqa: T201
+        if result.exc_info:
+            print_exception_info(result.exc_info)
+        raise
+
+
+def print_exception_info(
+    exc_info: tuple[type[BaseException], BaseException, TracebackType],
+) -> None:
+    """Prints a nicely formatted traceback for the current exception."""
+    exc_type, exc_value, exc_traceback = exc_info
+    print("Exception Traceback (most recent call last):")  # noqa: T201
+    formatted_traceback = "".join(traceback.format_tb(exc_traceback))
+    print(formatted_traceback)  # noqa: T201
+    print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
 
 
 # ########################
